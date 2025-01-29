@@ -133,6 +133,7 @@ public class Profile {
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
+        @Deprecated
         X_XSS_PROTECTION("Enable X_XSS_PROTECTION header in response", Type.DEPRECATED)
         ;
 
