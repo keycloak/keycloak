@@ -1,21 +1,15 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import {
-  KeycloakDataTable,
-  label,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  Flex,
-  FlexItem,
-  Icon,
+  Badge,
   Modal,
   ModalVariant,
-  Stack,
-  StackItem,
+  Popover,
+  Text,
+  Toolbar,
+  ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { CaretDownIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,36 +20,19 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { translationFormatter } from "../../utils/translationFormatter";
-import { AddRealm, RealmNameRepresentation } from "./RealmSelector";
+import {
+  AddRealm,
+  RealmNameRepresentation,
+  RealmSelector,
+} from "./RealmSelector";
 
 export const RealmPanel = () => {
   const { t } = useTranslation();
-  const { realmRepresentation: realm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  const { realm } = useRealm();
   const { adminClient } = useAdminClient();
 
-  const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
-
-  useFetch(
-    async () => {
-      try {
-        return await fetchAdminUI<RealmNameRepresentation[]>(
-          adminClient,
-          "ui-ext/realms/names",
-          { first: "0", max: "11" },
-        );
-      } catch (error) {
-        if (error instanceof NetworkError && error.response.status < 500) {
-          return [];
-        }
-
-        throw error;
-      }
-    },
-    (realms) => setShow(realms.length === 11),
-    [realm?.realm],
-  );
 
   const loader = async (first?: number, max?: number, search?: string) => {
     try {
@@ -73,33 +50,25 @@ export const RealmPanel = () => {
     }
   };
 
-  if (!show) {
-    return undefined;
-  }
-
   return (
     <>
-      <Button variant="control" onClick={() => setOpen((value) => !value)}>
-        <Flex alignItems={{ default: "alignItemsCenter" }}>
-          <FlexItem>
-            <Stack>
-              {realm?.displayName ? (
-                <StackItem className="pf-v5-u-font-weight-bold">
-                  {label(t, realm.displayName)}
-                </StackItem>
-              ) : null}
-              <StackItem isFilled>{realm?.realm}</StackItem>
-            </Stack>
-          </FlexItem>
-          <FlexItem>
-            <Icon>
-              <CaretDownIcon />
-            </Icon>
-          </FlexItem>
-        </Flex>
-      </Button>
+      <Toolbar>
+        <ToolbarContent>
+          <ToolbarItem>
+            <Text>{t("currentRealm")}</Text>
+          </ToolbarItem>
+          <ToolbarItem>
+            <RealmSelector onViewAll={() => setOpen(true)} />
+          </ToolbarItem>
+          <ToolbarItem>
+            {whoAmI.canCreateRealm() && (
+              <AddRealm onClick={() => setOpen(false)} />
+            )}
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
       <Modal
-        variant={ModalVariant.large}
+        variant={ModalVariant.medium}
         title={t("selectRealm")}
         isOpen={open}
         onClose={() => setOpen(false)}
@@ -109,25 +78,28 @@ export const RealmPanel = () => {
           isPaginated
           ariaLabelKey="selectRealm"
           searchPlaceholderKey="search"
-          toolbarItem={
-            whoAmI.canCreateRealm() ? (
-              <ToolbarItem>
-                <AddRealm onClick={() => setOpen(false)} />
-              </ToolbarItem>
-            ) : undefined
-          }
           columns={[
             {
               name: "name",
               transforms: [cellWidth(40)],
-              cellRenderer: ({ name }) => (
-                <Link
-                  to={toDashboard({ realm: name })}
-                  onClick={() => setOpen(false)}
-                >
-                  {name}
-                </Link>
-              ),
+              cellRenderer: ({ name }) =>
+                name !== realm ? (
+                  <Link
+                    to={toDashboard({ realm: name })}
+                    onClick={() => setOpen(false)}
+                  >
+                    {name}{" "}
+                  </Link>
+                ) : (
+                  <Popover
+                    bodyContent={t("currentRealmExplain")}
+                    triggerAction="hover"
+                  >
+                    <>
+                      {name} <Badge isRead>{t("currentRealm")}</Badge>
+                    </>
+                  </Popover>
+                ),
             },
             {
               name: "displayName",

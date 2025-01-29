@@ -4,26 +4,26 @@ import {
   Button,
   Divider,
   Dropdown,
+  DropdownGroup,
   DropdownItem,
   DropdownList,
-  Label,
   MenuToggle,
   Split,
   SplitItem,
   Stack,
   StackItem,
 } from "@patternfly/react-core";
-import { CheckIcon } from "@patternfly/react-icons";
+import { CheckIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useRecentRealms } from "../../context/RecentRealms";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
-import { toAddRealm } from "../../realm/routes/AddRealm";
+import NewRealmForm from "../../realm/add/NewRealmForm";
 
 import "./realm-selector.css";
 
@@ -34,50 +34,59 @@ type AddRealmProps = {
 };
 
 export const AddRealm = ({ onClick }: AddRealmProps) => {
-  const { realm } = useRealm();
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
   return (
-    <Button
-      data-testid="add-realm"
-      component={(props) => <Link {...props} to={toAddRealm({ realm })} />}
-      onClick={onClick}
-      isBlock
-    >
-      {t("createRealm")}
-    </Button>
+    <>
+      <Button
+        data-testid="add-realm"
+        variant="plain"
+        onClick={() => {
+          onClick();
+          setOpen(true);
+        }}
+      >
+        <PlusCircleIcon /> {t("createRealm")}
+      </Button>
+      {open && <NewRealmForm onClose={() => setOpen(false)} />}
+    </>
   );
 };
 
 type RealmTextProps = {
   name: string;
   displayName?: string;
-  showIsRecent?: boolean;
+  onClick?: () => void;
 };
 
-const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
+const RealmText = ({ name, displayName, onClick }: RealmTextProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
-    <Split>
-      <SplitItem isFilled>
-        <Stack>
-          {displayName ? (
-            <StackItem className="pf-v5-u-font-weight-bold" isFilled>
-              {label(t, displayName)}
-            </StackItem>
-          ) : null}
-          <StackItem isFilled>{name}</StackItem>
-        </Stack>
-      </SplitItem>
-      <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
-      {showIsRecent ? (
-        <SplitItem>
-          <Label>{t("recent")}</Label>
+    <DropdownItem
+      onClick={() => {
+        if (name === realm) return;
+        navigate(toDashboard({ realm: name }));
+        onClick?.();
+      }}
+    >
+      <Split>
+        <SplitItem isFilled>
+          <Stack>
+            {displayName ? (
+              <StackItem className="pf-v5-u-font-weight-bold" isFilled>
+                {label(t, displayName)}
+              </StackItem>
+            ) : null}
+            <StackItem isFilled>{name}</StackItem>
+          </Stack>
         </SplitItem>
-      ) : null}
-    </Split>
+        <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
+      </Split>
+    </DropdownItem>
   );
 };
 
@@ -86,15 +95,18 @@ export type RealmNameRepresentation = {
   displayName?: string;
 };
 
-export const RealmSelector = () => {
-  const { realm } = useRealm();
+type RealmSelectorProps = {
+  onViewAll: () => void;
+};
+
+export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
+  const { realm, realmRepresentation } = useRealm();
   const { adminClient } = useAdminClient();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const { t } = useTranslation();
   const recentRealms = useRecentRealms();
-  const navigate = useNavigate();
 
   useFetch(
     async () => {
@@ -116,27 +128,28 @@ export const RealmSelector = () => {
     [realm],
   );
 
+  const recentRealmsList = useMemo(
+    () => recentRealms.map((r) => r.name),
+    [recentRealms],
+  );
+
   const sortedRealms = useMemo(
     () =>
-      realms.sort((a, b) => {
-        if (a.name === realm) return -1;
-        if (b.name === realm) return 1;
-        if (recentRealms.includes(a.name)) return -1;
-        if (recentRealms.includes(b.name)) return 1;
+      realms
+        .filter((r) => !recentRealmsList.includes(r.name))
+        .sort((a, b) => {
+          if (a.name === realm) return -1;
+          if (b.name === realm) return 1;
 
-        return a.name.localeCompare(b.name, whoAmI.getLocale());
-      }),
-    [recentRealms, realms],
+          return a.name.localeCompare(b.name, whoAmI.getLocale());
+        }),
+    [recentRealmsList, realms],
   );
 
   const realmDisplayName = useMemo(
     () => realms.find((r) => r.name === realm)?.displayName,
     [realm, realms],
   );
-
-  if (realms.length > MAX_RESULTS) {
-    return undefined;
-  }
 
   return (
     <Dropdown
@@ -164,32 +177,46 @@ export const RealmSelector = () => {
         </MenuToggle>
       )}
     >
-      <DropdownList>
-        {sortedRealms.map((realm) => (
-          <DropdownItem
-            key={realm.name}
-            onClick={() => {
-              navigate(toDashboard({ realm: realm.name }));
-              setOpen(false);
-            }}
-          >
+      <DropdownGroup label={t("currentRealm")}>
+        <DropdownList>
+          <RealmText
+            name={realm}
+            displayName={realmRepresentation?.displayName}
+          />
+        </DropdownList>
+      </DropdownGroup>
+      <Divider component="li" />
+      <DropdownGroup label={t("recentlyUsed")}>
+        <DropdownList>
+          {recentRealms
+            .filter((r) => r.name !== realm)
+            .map((realm) => (
+              <RealmText
+                {...realm}
+                key={realm.name}
+                onClick={() => setOpen(false)}
+              />
+            ))}
+        </DropdownList>
+      </DropdownGroup>
+      <Divider component="li" />
+
+      {realms.length <= MAX_RESULTS && (
+        <DropdownList>
+          {sortedRealms.map((realm) => (
             <RealmText
               {...realm}
-              showIsRecent={
-                realms.length > 5 && recentRealms?.includes(realm.name)
-              }
+              key={realm.name}
+              onClick={() => setOpen(false)}
             />
-          </DropdownItem>
-        ))}
-        {whoAmI.canCreateRealm() && (
-          <>
-            <Divider key="divider" />
-            <DropdownItem key="add" component="div">
-              <AddRealm onClick={() => setOpen(false)} />
-            </DropdownItem>
-          </>
-        )}
-      </DropdownList>
+          ))}
+        </DropdownList>
+      )}
+      {realms.length > MAX_RESULTS && (
+        <DropdownItem onClick={() => onViewAll()}>
+          <Button variant="link">{t("viewAll")}</Button>
+        </DropdownItem>
+      )}
     </Dropdown>
   );
 };

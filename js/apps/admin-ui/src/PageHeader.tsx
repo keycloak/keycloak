@@ -216,13 +216,7 @@ export const Header = () => {
         />
       </MastheadBrand>
       <MastheadContent>
-        <Toolbar id="toolbar">
-          <ToolbarContent>
-            <ToolbarItem align={{ default: "alignRight" }}>
-              <RealmPanel />
-            </ToolbarItem>
-          </ToolbarContent>
-        </Toolbar>
+        <RealmPanel />
         <Toolbar>
           <ToolbarContent>
             <ToolbarItem
