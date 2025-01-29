@@ -15,7 +15,7 @@ export const propertyToString = (prop: string | number | undefined) =>
 
 export type KeycloakSelectProps<> = Omit<
   SelectProps,
-  "name" | "toggle" | "selected" | "onClick" | "onSelect"
+  "name" | "toggle" | "selected" | "onClick" | "onSelect" | "variant"
 > & {
   toggleId?: string;
   onFilter?: (value: string) => JSX.Element[];
