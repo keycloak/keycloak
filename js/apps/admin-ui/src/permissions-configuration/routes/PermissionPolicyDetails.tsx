@@ -17,7 +17,7 @@ const PermissionPolicyDetails = lazy(
 export const PermissionPolicyDetailsRoute: AppRouteObject = {
   path: "/:realm/permissions/:permissionClientId/policy/:policyId/:resourceType",
   element: <PermissionPolicyDetails />,
-  breadcrumb: (t) => t("permissionPolicyDetails"),
+  breadcrumb: (t) => t("policyDetails"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny(

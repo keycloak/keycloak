@@ -228,7 +228,9 @@ export const AuthorizationPolicies = ({
                     }}
                     isDisabled={isDisabled}
                   >
-                    {t("createPolicy")}
+                    {!isAdminPermissionsClient
+                      ? t("createPolicy")
+                      : t("createAPolicy")}
                   </Button>
                 </ToolbarItem>
               </>

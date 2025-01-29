@@ -12,6 +12,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import {
+  KeycloakSpinner,
   SelectControl,
   TextControl,
   useAlerts,
@@ -36,10 +37,10 @@ import { Aggregate } from "./permission-policy/Aggregate";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { Link, useParams } from "react-router-dom";
 import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurationTabs";
-import { NewPermissionPolicyDetailsParams } from "../routes/NewPermissionPolicy";
 import { useState, type JSX } from "react";
 import { capitalize, sortBy } from "lodash-es";
 import { FormAccess } from "../../components/form/FormAccess";
+import { PermissionPolicyDetailsParams } from "../routes/PermissionPolicyDetails";
 
 type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
@@ -84,17 +85,18 @@ export const isValidComponentType = (value: string) => value in COMPONENTS;
 export default function PermissionPolicyDetails() {
   const { adminClient } = useAdminClient();
   const { realmRepresentation } = useRealm();
-  const { permissionClientId, realm } =
-    useParams<NewPermissionPolicyDetailsParams>();
+  const { permissionClientId, policyId, realm, resourceType } =
+    useParams<PermissionPolicyDetailsParams>();
   const { t } = useTranslation();
   const form = useForm<Policy>({
     mode: "onChange",
     defaultValues,
   });
   const { addAlert, addError } = useAlerts();
-  const { handleSubmit } = form;
+  const { reset, handleSubmit } = form;
   const [providers, setProviders] = useState<PolicyProviderRepresentation[]>();
   const [policies, setPolicies] = useState<PolicyRepresentation[]>();
+  const [policy, setPolicy] = useState<PolicyRepresentation>();
   const isPermissionClient = realmRepresentation?.adminPermissionsEnabled;
 
   useFetch(
@@ -121,6 +123,39 @@ export default function PermissionPolicyDetails() {
       setPolicies(policies || []);
     },
     [permissionClientId],
+  );
+
+  useFetch(
+    async () => {
+      if (policyId) {
+        const result = await Promise.all([
+          adminClient.clients.findOnePolicy({
+            id: permissionClientId!,
+            type: resourceType!,
+            policyId,
+          }) as PolicyRepresentation | undefined,
+          adminClient.clients.getAssociatedPolicies({
+            id: permissionClientId!,
+            permissionId: policyId!,
+          }),
+        ]);
+
+        if (!result[0]) {
+          throw new Error(t("notFound"));
+        }
+
+        return {
+          policy: result[0],
+          policies: result[1].map((p) => p.id),
+        };
+      }
+      return { policy: defaultValues, policies: defaultValues.policies };
+    },
+    ({ policy, policies }) => {
+      reset({ ...defaultValues, ...policy, policies });
+      setPolicy(policy);
+    },
+    [permissionClientId, resourceType, policyId],
   );
 
   const policyTypeSelector = useWatch({
@@ -155,6 +190,10 @@ export default function PermissionPolicyDetails() {
       addError("policySaveError", error);
     }
   };
+
+  if (policyId && !policy) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
