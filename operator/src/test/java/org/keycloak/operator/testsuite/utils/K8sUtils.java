@@ -128,7 +128,7 @@ public final class K8sUtils {
 
     public static CurlResult inClusterCurl(KubernetesClient k8sClient, String namespace, Map<String, String> labels, String... args) {
         Log.infof("Starting cURL in namespace '%s' with labels '%s'", namespace, labels);
-        var podName = "curl-pod-" + UUID.randomUUID();
+        var podName = "curl-pod" + (labels.isEmpty()?"":("-" + UUID.randomUUID()));
         try {
             var builder = new PodBuilder();
             builder.withNewMetadata()
@@ -142,20 +142,22 @@ public final class K8sUtils {
             try {
                 k8sClient.resource(curlPod).create();
             } catch (KubernetesClientException e) {
-                if (e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
+                if (!labels.isEmpty() || e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
                     throw e;
                 }
             }
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-            try (ExecWatch watch = k8sClient.pods().resource(curlPod).withReadyWaitTimeout(60000)
+            try (ExecWatch watch = k8sClient.pods().resource(curlPod).withReadyWaitTimeout(15000)
                     .writingOutput(output)
                     .exec(Stream.concat(Stream.of("curl"), Stream.of(args)).toArray(String[]::new))) {
-                var exitCode = watch.exitCode().get(15, TimeUnit.SECONDS);
+                var exitCode = watch.exitCode().get(5, TimeUnit.SECONDS);
                 return new CurlResult(exitCode, output.toString(StandardCharsets.UTF_8));
             } finally {
-                k8sClient.resource(curlPod).delete();
+                if (!labels.isEmpty()) {
+                    k8sClient.resource(curlPod).delete();
+                }
             }
         } catch (Exception ex) {
             throw KubernetesClientException.launderThrowable(ex);

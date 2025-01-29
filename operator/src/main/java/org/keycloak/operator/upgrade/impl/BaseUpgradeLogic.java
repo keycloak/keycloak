@@ -20,6 +20,7 @@ package org.keycloak.operator.upgrade.impl;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.Container;
@@ -117,9 +118,7 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
     }
 
     private static boolean isArgsEquals(Container actual, Container desired) {
-        var actualArgs = actual.getArgs().stream().sorted().toList();
-        var desiredArgs = desired.getArgs().stream().sorted().toList();
-        return isEquals("args", actualArgs, desiredArgs);
+        return isEquals("args", actual.getArgs(), desired.getArgs());
     }
 
     private static boolean isEnvEquals(Container actual, Container desired) {
@@ -128,25 +127,12 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
         return isEquals("env", actualEnv, desiredEnv);
     }
 
-    private static Map<String, String> envVars(Container container) {
+    private static Map<String, EnvVar> envVars(Container container) {
         // The operator only sets value or secrets. Any other combination is from unsupported pod template.
         //noinspection DataFlowIssue
         return container.getEnv().stream()
                 .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP))
-                .filter(envVar -> Objects.nonNull(valueOrSecret(envVar)))
-                .collect(Collectors.toMap(EnvVar::getName, BaseUpgradeLogic::valueOrSecret));
-    }
-
-    private static String valueOrSecret(EnvVar envVar) {
-        var value = envVar.getValue();
-        if (value != null) {
-            return value;
-        }
-        var secret = envVar.getValueFrom().getSecretKeyRef();
-        if (secret != null) {
-            return secret.getName();
-        }
-        return null;
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
     }
 
     private static <T> boolean isEquals(String key, T actual, T desired) {

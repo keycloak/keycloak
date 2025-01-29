@@ -990,6 +990,47 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testConsentCancelCannotBeReusedAfterBackClicked() throws Exception {
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        Assert.assertEquals(60, response.getExpiresIn());
+        Assert.assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+        loginPage.assertCurrent();
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.assertCurrent();
+        grantPage.cancel();
+
+        //click back after cancel
+        grantPage.getDriver().navigate().back();
+
+        // Accept consent
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        verificationPage.assertDeniedPage();
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+
+        Assert.assertEquals(400, tokenResponse.getStatusCode());
+        Assert.assertEquals("access_denied", tokenResponse.getError());
+    }
+
+    @Test
     public void testNotFoundClient() throws Exception {
         oauth.realm(REALM_NAME);
         oauth.clientId("test-device-public2");

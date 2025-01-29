@@ -55,7 +55,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -77,6 +76,7 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -1017,6 +1017,11 @@ public class LoginActionsService {
             Response response = protocol.sendError(authSession, Error.CONSENT_DENIED, null);
             event.error(Errors.REJECTED_BY_USER);
             return response;
+        }
+
+        if (DeviceGrantType.isDeviceCodeDeniedForDeviceVerificationFlow(session, realm, authSession)) {
+            event.error(Errors.REJECTED_BY_USER);
+            return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
         }
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());

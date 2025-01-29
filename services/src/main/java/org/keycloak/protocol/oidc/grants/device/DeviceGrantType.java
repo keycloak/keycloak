@@ -163,6 +163,17 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         return deviceCodeModel;
     }
 
+    public static boolean isDeviceCodeDeniedForDeviceVerificationFlow(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        if (DeviceGrantType.isOAuth2DeviceVerificationFlow(authSession)) {
+            String verifiedUserCode = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
+            OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, verifiedUserCode);
+            if (deviceCodeModel != null) {
+                return deviceCodeModel.isDenied();
+            }
+        }
+        return false;
+    }
+
     public static void removeDeviceByDeviceCode(KeycloakSession session, String deviceCode) {
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         singleUseStore.remove(OAuth2DeviceCodeModel.createKey(deviceCode));
