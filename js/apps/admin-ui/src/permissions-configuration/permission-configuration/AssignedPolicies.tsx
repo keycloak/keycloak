@@ -50,6 +50,7 @@ export const AssignedPolicies = ({
     control,
     getValues,
     setValue,
+    trigger,
     formState: { errors },
   } = useFormContext<AssignedPolicyForm>();
   const values = getValues("policies");
@@ -95,7 +96,12 @@ export const AssignedPolicies = ({
     const assignedPolicies = policies.map(({ policy }) => ({
       id: policy.id!,
     }));
-    setValue("policies", [...(values || []), ...assignedPolicies]);
+
+    setValue("policies", [
+      ...(getValues("policies") || []),
+      ...assignedPolicies,
+    ]);
+    trigger("policies");
     setSelectedPolicies([
       ...selectedPolicies,
       ...policies.map(({ policy }) => policy),
@@ -142,6 +148,7 @@ export const AssignedPolicies = ({
         defaultValue={[]}
         rules={{
           validate: (value?: { id: string }[]) => {
+            console.log(">>> Validation called with value:", value);
             if (!value || value.length === 0) return false;
             return value.every(({ id }) => id && id.trim().length > 0);
           },
@@ -165,6 +172,9 @@ export const AssignedPolicies = ({
                 providers={providers!}
                 policies={policies!}
                 resourceType={resourceType}
+                onAssign={(newPolicy) => {
+                  assign([{ policy: newPolicy }]);
+                }}
               />
             )}
             <Button

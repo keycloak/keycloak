@@ -86,6 +86,7 @@ type NewPermissionConfigurationDialogProps = {
   policies: PolicyRepresentation[];
   resourceType: string;
   toggleDialog: () => void;
+  onAssign: (newPolicy: PolicyRepresentation) => void;
 };
 
 export const NewPermissionPolicyDialog = ({
@@ -93,6 +94,7 @@ export const NewPermissionPolicyDialog = ({
   providers,
   policies,
   toggleDialog,
+  onAssign,
 }: NewPermissionConfigurationDialogProps) => {
   const { adminClient } = useAdminClient();
   const { realmRepresentation } = useRealm();
@@ -120,7 +122,7 @@ export const NewPermissionPolicyDialog = ({
   const ComponentType = getComponentType();
 
   const save = async (policy: Policy) => {
-    // remove entries that only have the boolean set and no id
+    // Remove entries that only have the boolean set and no id
     policy.groups = policy.groups?.filter((g) => g.id);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
     policy.roles = policy.roles
@@ -128,10 +130,12 @@ export const NewPermissionPolicyDialog = ({
       .map((r) => ({ ...r, required: r.required || false }));
 
     try {
-      await adminClient.clients.createPolicy(
+      const createdPolicy = await adminClient.clients.createPolicy(
         { id: permissionClientId, type: policyTypeSelector! },
         policy,
       );
+
+      onAssign(createdPolicy);
       toggleDialog();
       addAlert(t("create" + "PolicySuccess"), AlertVariant.success);
     } catch (error) {

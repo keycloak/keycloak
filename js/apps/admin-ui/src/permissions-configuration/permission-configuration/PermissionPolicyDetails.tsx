@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
   Button,
-  Form,
   ButtonVariant,
   AlertVariant,
   PageSection,
@@ -40,6 +39,7 @@ import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurati
 import { NewPermissionPolicyDetailsParams } from "../routes/NewPermissionPolicy";
 import { useState, type JSX } from "react";
 import { capitalize, sortBy } from "lodash-es";
+import { FormAccess } from "../../components/form/FormAccess";
 
 type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
@@ -160,10 +160,11 @@ export default function PermissionPolicyDetails() {
     <>
       <ViewHeader titleKey={t("createAPolicy")} />
       <PageSection variant="light">
-        <Form
+        <FormAccess
           id="createAPolicy-form"
           onSubmit={handleSubmit(save)}
           isHorizontal
+          role="anyone"
         >
           <FormProvider {...form}>
             <TextControl
@@ -220,7 +221,7 @@ export default function PermissionPolicyDetails() {
               </Button>
             </div>
           </ActionGroup>
-        </Form>
+        </FormAccess>
       </PageSection>
     </>
   );

@@ -41,6 +41,7 @@ import { NewPolicyDialog } from "./NewPolicyDialog";
 import { SearchDropdown, SearchForm } from "./SearchDropdown";
 import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
 import { toCreatePermissionPolicy } from "../../permissions-configuration/routes/NewPermissionPolicy";
+import { toPermissionPolicyDetails } from "../../permissions-configuration/routes/PermissionPolicyDetails";
 
 type PoliciesProps = {
   clientId: string;
@@ -275,7 +276,16 @@ export const AuthorizationPolicies = ({
                             {policy.name}
                           </Link>
                         ) : (
-                          policy.name
+                          <Link
+                            to={toPermissionPolicyDetails({
+                              realm,
+                              permissionClientId: clientId,
+                              policyId: policy.id!,
+                              resourceType: policy.type!,
+                            })}
+                          >
+                            {policy.name}
+                          </Link>
                         )}
                       </Td>
                       <Td>{toUpperCase(policy.type!)}</Td>
