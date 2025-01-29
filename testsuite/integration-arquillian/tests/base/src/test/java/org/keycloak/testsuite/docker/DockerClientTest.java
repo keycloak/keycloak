@@ -147,15 +147,18 @@ public class DockerClientTest extends AbstractKeycloakTest {
         printCommandResult(result);
         assertThat("Error performing login", result.getExitCode(), is(0));
 
-        result = dockerClientContainer.execInContainer("docker", "pull", "docker.io/hello-world:latest");
+        // create a empty Dockerfile in /tmp
+        result = dockerClientContainer.execInContainer("sh", "-c", "echo -e \"FROM scratch\\nWORKDIR /\" > /tmp/Dockerfile");
         printCommandResult(result);
-        assertThat("Error pulling from docker.io", result.getExitCode(), is(0));
+        assertThat("Error creating dockerfile for empty image", result.getExitCode(), is(0));
 
-        result = dockerClientContainer.execInContainer("docker", "tag", "hello-world:latest", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/hello-world:latest");
+        // build the empty image
+        result = dockerClientContainer.execInContainer("docker", "build", "--tag", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty", "/tmp");
         printCommandResult(result);
-        assertThat("Error tagging the image", result.getExitCode(), is(0));
+        assertThat("Error building empty image", result.getExitCode(), is(0));
 
-        result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/hello-world:latest");
+        // push the image
+        result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty");
         printCommandResult(result);
         assertThat("Error pushing to registry", result.getExitCode(), is(0));
     }
