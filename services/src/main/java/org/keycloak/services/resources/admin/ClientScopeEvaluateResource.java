@@ -25,7 +25,10 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -172,7 +175,7 @@ public class ClientScopeEvaluateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation(summary = "Create JSON with payload of example user info")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map<String, Object>.class))),
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
@@ -201,7 +204,7 @@ public class ClientScopeEvaluateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Create JSON with payload of example id token"),
+    @Operation(summary = "Create JSON with payload of example id token")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IDToken.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
