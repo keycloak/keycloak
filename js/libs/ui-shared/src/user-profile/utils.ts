@@ -79,6 +79,7 @@ export function setUserProfileServerError<T>(
       message: t(
         isBundleKey(e.errorMessage) ? unWrap(e.errorMessage) : e.errorMessage,
         {
+          /* eslint-disable @typescript-eslint/no-misused-spread */
           ...params,
           defaultValue: e.errorMessage || e.field,
         },
