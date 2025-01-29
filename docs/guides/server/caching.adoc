@@ -318,14 +318,14 @@ The table below shows the TCP ports that need to be open for the `jdbc-ping` sta
 |Port |Property | Description
 
 m|7800
-m|jgroups.bind.address
+m|jgroups.bind.port
 |Unicast data transmission.
 
 m|57800
 m|jgroups.fd.port-offset
 |Failure detection by protocol `FD_SOCK2`.
 It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
-The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.address`.
+The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.port`.
 
 |===
 
@@ -348,6 +348,26 @@ To set up for IPv6 only and have {project_name} pick the bind address automatica
 ----
 export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
 ----
+
+== Running instances on different networks
+
+If you run {project_name} instances on different networks, for example behind firewalls or in containers, the different instances will not be able to reach each other by their local IP address.
+In such a case, set up a port forwarding rule (sometimes called "`virtual server`") to their local IP address.
+
+When using port forwarding, use the following properties so each node correctly advertises its external address to the other nodes:
+
+|===
+|Property | Description
+
+m|jgroups.external_port
+|Port that other instances in the {project_name} cluster should use to contact this node.
+
+m|jgroups.external_addr
+|IP address that other instances in the {project_name} should use to contact this node.
+
+|===
+
+NOTE: Use `-D<property>=<value>` set this in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
 == Exposing metrics from caches
 
