@@ -4,6 +4,7 @@ import io.quarkus.maven.dependency.Dependency;
 import org.jboss.logging.Logger;
 import org.keycloak.it.utils.OutputConsumer;
 import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.testframework.config.Config;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +13,6 @@ import java.util.regex.Pattern;
 
 public class DistributionKeycloakServer implements KeycloakServer {
 
-    private static final boolean DEBUG = false;
     private static final boolean MANUAL_STOP = true;
     private static final boolean ENABLE_TLS = false;
     private static final boolean RE_CREATE = false;
@@ -21,9 +21,20 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     private RawKeycloakDistribution keycloak;
 
+    private final boolean debug;
+
+    public DistributionKeycloakServer(boolean debug) {
+        this.debug = debug;
+    }
+
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
-        keycloak = new RawKeycloakDistribution(DEBUG, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
+        keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, ENABLE_TLS, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
+
+        // RawKeycloakDistribution sets "DEBUG_SUSPEND", not "DEBUG" when debug is passed to constructor
+        if (debug) {
+            keycloak.setEnvVar("DEBUG", "true");
+        }
 
         for (Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
