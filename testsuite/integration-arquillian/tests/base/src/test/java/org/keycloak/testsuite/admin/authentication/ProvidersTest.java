@@ -154,6 +154,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 ? "Initiates the SPNEGO protocol.  Most often used with Kerberos."
                 : "DISABLED. Please enable Kerberos feature and make sure Kerberos available in your platform. Initiates the SPNEGO protocol. Most often used with Kerberos.";
         addProviderInfo(result, "auth-spnego", "Kerberos", kerberosHelpMessage);
+        addProviderInfo(result, "conditional-auth-spnego", "Conditional SPNEGO", "Conditionally attempt SPNEGO based on existence of prompt=login and optionally a configured whitelist regex pattern to match against the first X-Forwarded-For");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
