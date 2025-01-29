@@ -102,9 +102,6 @@ public class UpgradeTest extends BaseOperatorTest {
     private static Keycloak createInitialDeployment(UpdateStrategy updateStrategy) {
         var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setInstances(3);
-        // unable to use custom image, it fails with:
-        // The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.features
-        kc.getSpec().setImage(null); //unable to use custom image
         if (updateStrategy == null) {
             return kc;
         }
