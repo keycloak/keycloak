@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.it.utils.OutputConsumer;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -27,6 +28,10 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         for (Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
+        }
+
+        for (Path configFile : keycloakServerConfigBuilder.toConfigFiles()) {
+            keycloak.copyConfigFile(configFile);
         }
 
         keycloak.run(keycloakServerConfigBuilder.toArgs());

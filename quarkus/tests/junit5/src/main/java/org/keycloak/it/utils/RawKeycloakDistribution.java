@@ -631,6 +631,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    public void copyConfigFile(Path configFilePath) {
+        try {
+            Files.copy(configFilePath, distPath.resolve("conf").resolve(configFilePath.getFileName()));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
+        }
+    }
+
     private void updateProperties(Consumer<Properties> propertiesConsumer, File propertiesFile) {
         Properties properties = new Properties();
 

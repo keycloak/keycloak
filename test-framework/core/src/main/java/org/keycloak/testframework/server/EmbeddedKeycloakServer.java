@@ -3,7 +3,12 @@ package org.keycloak.testframework.server;
 import io.quarkus.maven.dependency.Dependency;
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
+import org.keycloak.platform.Platform;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
@@ -17,6 +22,27 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
         }
+
+        Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
+        if (!configFiles.isEmpty()) {
+            Path homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+            Path conf = homeDir.resolve("conf");
+
+            if (!conf.toFile().exists()) {
+                conf.toFile().mkdirs();
+            }
+
+            for (Path configFile : keycloakServerConfigBuilder.toConfigFiles()) {
+                try {
+                    Files.copy(configFile, conf.resolve(configFile.getFileName()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            builder.setHomeDir(homeDir);
+        }
+
 
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }

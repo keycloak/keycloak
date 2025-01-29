@@ -6,6 +6,8 @@ import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
+    private final Set<Path> configFiles = new HashSet<>();
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -67,6 +70,11 @@ public class KeycloakServerConfigBuilder {
 
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
         dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder configFile(Path filePath) {
+        configFiles.add(filePath);
         return this;
     }
 
@@ -181,6 +189,10 @@ public class KeycloakServerConfigBuilder {
 
     public Set<Dependency> toDependencies() {
         return dependencies;
+    }
+
+    public Set<Path> toConfigFiles() {
+        return configFiles;
     }
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
