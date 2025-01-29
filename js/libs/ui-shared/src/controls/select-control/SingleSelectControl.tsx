@@ -56,6 +56,7 @@ export const SingleSelectControl = <
         render={({ field: { onChange, value } }) => (
           <Select
             {...rest}
+            variant="default"
             onClick={() => setOpen(!open)}
             onOpenChange={() => setOpen(false)}
             selected={

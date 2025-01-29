@@ -81,8 +81,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2
       '@patternfly/react-core':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons':
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -160,8 +160,8 @@ importers:
         specifier: ^5.4.2
         version: 5.4.2
       '@patternfly/react-core':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons':
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -377,8 +377,8 @@ importers:
         specifier: workspace:*
         version: link:../keycloak-admin-client
       '@patternfly/react-core':
-        specifier: ^5.4.10
-        version: 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^5.4.12
+        version: 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons':
         specifier: ^5.4.2
         version: 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1222,12 +1222,6 @@ packages:
 
   '@patternfly/patternfly@5.4.2':
     resolution: {integrity: sha512-+BaokNR8/AmTYMESxby9UtQXPGACg449BXQd0KejAvW/uGxlgO6mY1X1205DeBEHoK3e/vXkYXjvZPpv/tcxSA==}
-
-  '@patternfly/react-core@5.4.10':
-    resolution: {integrity: sha512-lThdXKqHc9sN5AqPskZa1YmUmSwbjdkaT8neTCdMjfnBaBanYCmSCNUMYUsoB0L/2siu2Vlcp12RRaG5hZeN2g==}
-    peerDependencies:
-      react: ^17 || ^18
-      react-dom: ^17 || ^18
 
   '@patternfly/react-core@5.4.12':
     resolution: {integrity: sha512-RI1xS1JGJdE/FvpkMzawaE21oeTc/e+WbxvFXqZfLhTz60P8RzVG1nYWXDL747Onkz3SYtY79PhQ8nsLeO5sJQ==}
@@ -6012,7 +6006,7 @@ snapshots:
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:libs/ui-shared
       '@patternfly/patternfly': 5.4.2
-      '@patternfly/react-core': 5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@patternfly/react-core': 5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
       '@patternfly/react-table': 5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6163,17 +6157,6 @@ snapshots:
   '@patternfly/patternfly@4.224.5': {}
 
   '@patternfly/patternfly@5.4.2': {}
-
-  '@patternfly/react-core@5.4.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-tokens': 5.4.1
-      focus-trap: 7.6.2
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-dropzone: 14.3.5(react@18.3.1)
-      tslib: 2.8.1
 
   '@patternfly/react-core@5.4.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
