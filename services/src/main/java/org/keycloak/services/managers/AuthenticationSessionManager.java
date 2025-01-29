@@ -209,7 +209,7 @@ public class AuthenticationSessionManager {
         return null;
     }
 
-    private String signAndEncodeToBase64AuthSessionId(String authSessionId) {
+    public String signAndEncodeToBase64AuthSessionId(String authSessionId) {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
         SignatureSignerContext signer = signatureProvider.signer();
         StringBuilder buffer = new StringBuilder();
@@ -326,7 +326,7 @@ public class AuthenticationSessionManager {
 
     public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSesionId, ClientModel client, String tabId) {
         String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSesionId, true);
-        return getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
+        return decodedAuthSessionId==null ? null : getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
     }
 
     public UserSessionModel getUserSessionFromAuthenticationCookie(RealmModel realm) {
