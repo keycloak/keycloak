@@ -69,8 +69,8 @@ importers:
         specifier: ^8.19.1
         version: 8.19.1(eslint@9.19.0)(typescript@5.7.3)
       wireit:
-        specifier: ^0.14.9
-        version: 0.14.9
+        specifier: ^0.14.10
+        version: 0.14.10
 
   apps/account-ui:
     dependencies:
@@ -3032,6 +3032,10 @@ packages:
     resolution: {integrity: sha512-oX2ruAFQwf/Orj8m737Y5adxDQO0LAB7/S5MnxCdTNDd4p6BsyIVsv9JQsATbTSq8KHRpLwIHbVlUNatxd+1Ow==}
     engines: {node: '>=8.6.0'}
 
+  fast-glob@3.3.3:
+    resolution: {integrity: sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg==}
+    engines: {node: '>=8.6.0'}
+
   fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
 
@@ -5299,8 +5303,8 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  wireit@0.14.9:
-    resolution: {integrity: sha512-hFc96BgyslfO1WGSzQqOVYd5N3TB+4u9w70L9GHR/T7SYjvFmeznkYMsRIjMLhPcVabCEYPW1vV66wmIVDs+dQ==}
+  wireit@0.14.10:
+    resolution: {integrity: sha512-Y9wiNU92PcyfTcXRYzqjmilKl4Yfg30Jk/dwTN0e64JCkzoIP2QVo6gc8fjYK0gpL0/pq2IW+iMlknHLmLV+MQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -6850,7 +6854,7 @@ snapshots:
       '@typescript-eslint/types': 8.19.1
       '@typescript-eslint/visitor-keys': 8.19.1
       debug: 4.4.0(supports-color@8.1.1)
-      fast-glob: 3.3.2
+      fast-glob: 3.3.3
       is-glob: 4.0.3
       minimatch: 9.0.5
       semver: 7.6.3
@@ -8195,6 +8199,14 @@ snapshots:
   fast-fifo@1.3.2: {}
 
   fast-glob@3.3.2:
+    dependencies:
+      '@nodelib/fs.stat': 2.0.5
+      '@nodelib/fs.walk': 1.2.8
+      glob-parent: 5.1.2
+      merge2: 1.4.1
+      micromatch: 4.0.8
+
+  fast-glob@3.3.3:
     dependencies:
       '@nodelib/fs.stat': 2.0.5
       '@nodelib/fs.walk': 1.2.8
@@ -10702,11 +10714,11 @@ snapshots:
       siginfo: 2.0.0
       stackback: 0.0.2
 
-  wireit@0.14.9:
+  wireit@0.14.10:
     dependencies:
       brace-expansion: 4.0.0
       chokidar: 3.6.0
-      fast-glob: 3.3.2
+      fast-glob: 3.3.3
       jsonc-parser: 3.3.1
       proper-lockfile: 4.1.2
 
