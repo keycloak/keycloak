@@ -28,7 +28,8 @@ public enum BrowserSecurityHeaders {
     CONTENT_SECURITY_POLICY_REPORT_ONLY("contentSecurityPolicyReportOnly", "Content-Security-Policy-Report-Only", ""),
     X_CONTENT_TYPE_OPTIONS("xContentTypeOptions", "X-Content-Type-Options", "nosniff"),
     X_ROBOTS_TAG("xRobotsTag", "X-Robots-Tag", "none"),
-    @Deprecated // This header is deprecated and marked for removal. See: https://github.com/keycloak/keycloak/issues/21728
+    /** This header is deprecated and marked for removal (see <a href="https://github.com/keycloak/keycloak/issues/21728">#21728</a>) */
+    @Deprecated(since = "26.2.0", forRemoval = true)
     X_XSS_PROTECTION("xXSSProtection", "X-XSS-Protection", "1; mode=block"),
     STRICT_TRANSPORT_SECURITY("strictTransportSecurity", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
     REFERRER_POLICY("referrerPolicy", "Referrer-Policy", "no-referrer");
