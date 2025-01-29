@@ -2,10 +2,22 @@ package org.keycloak.testframework.injection.mocks;
 
 public class MockParentValue {
 
+    private final String stringOption;
+    private final boolean booleanOption;
     private boolean closed = false;
 
-    public MockParentValue() {
+    public MockParentValue(String stringOption, boolean booleanOption) {
+        this.stringOption = stringOption;
+        this.booleanOption = booleanOption;
         MockInstances.INSTANCES.add(this);
+    }
+
+    public String getStringOption() {
+        return stringOption;
+    }
+
+    public boolean isBooleanOption() {
+        return booleanOption;
     }
 
     public boolean isClosed() {
