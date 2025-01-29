@@ -1,11 +1,18 @@
 package org.keycloak.testframework.injection.mocks;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 
 public class MockParentSupplier implements Supplier<MockParentValue, MockParentAnnotation> {
+
+    @ConfigProperty(name = "string")
+    String configString;
+
+    @ConfigProperty(name = "boolean", defaultValue = "true")
+    boolean configBoolean;
 
     public static LifeCycle DEFAULT_LIFECYCLE = LifeCycle.CLASS;
     public static boolean COMPATIBLE = true;
@@ -27,7 +34,7 @@ public class MockParentSupplier implements Supplier<MockParentValue, MockParentA
 
     @Override
     public MockParentValue getValue(InstanceContext<MockParentValue, MockParentAnnotation> instanceContext) {
-        return new MockParentValue();
+        return new MockParentValue(configString, configBoolean);
     }
 
     @Override
