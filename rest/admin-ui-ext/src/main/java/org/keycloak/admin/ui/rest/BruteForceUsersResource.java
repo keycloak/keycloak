@@ -159,10 +159,9 @@ public class BruteForceUsersResource {
     private Stream<BruteUser> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator,
             Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
-        boolean canViewGlobal = usersEvaluator.canView();
 
         usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(user -> canViewGlobal || usersEvaluator.canView(user)).map(user -> {
+        return userModels.filter(usersEvaluator::canView).map(user -> {
             UserRepresentation userRep = briefRepresentationB ?
                     ModelToRepresentation.toBriefRepresentation(user) :
                     ModelToRepresentation.toRepresentation(session, realm, user);

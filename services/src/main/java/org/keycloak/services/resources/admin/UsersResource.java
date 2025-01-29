@@ -460,10 +460,9 @@ public class UsersResource {
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
-        boolean canViewGlobal = usersEvaluator.canView();
 
         usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(user -> canViewGlobal || usersEvaluator.canView(user))
+        return userModels.filter(usersEvaluator::canView)
                 .map(user -> {
                     UserRepresentation userRep = briefRepresentationB
                             ? ModelToRepresentation.toBriefRepresentation(user)
