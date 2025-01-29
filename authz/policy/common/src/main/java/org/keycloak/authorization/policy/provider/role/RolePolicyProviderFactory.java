@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -210,6 +211,8 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         return Collections.emptySet();
     }
 
+    public static final Pattern UUID_PATTERN = Pattern.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
+
     private RoleModel getRole(RolePolicyRepresentation.RoleDefinition definition, RealmModel realm) {
         String roleName = definition.getId();
         String clientId = null;
@@ -223,10 +226,13 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         RoleModel role;
 
         if (clientId == null) {
-            role = realm.getRole(roleName);
+            // if the role name looks like a UUID, it is likely that it is a role ID. Then do this look-up first to avoid hitting the database twice
+            // TODO: In a future version of the auth feature, make this more strict to avoid the double lookup and any ambiguity
+            boolean looksLikeAUuid = UUID_PATTERN.matcher(roleName).matches();
+            role = looksLikeAUuid ? realm.getRoleById(roleName) : realm.getRole(roleName);
 
             if (role == null) {
-                role = realm.getRoleById(roleName);
+                role = !looksLikeAUuid ? realm.getRoleById(roleName) : realm.getRole(roleName);;
             }
         } else {
             ClientModel client = realm.getClientByClientId(clientId);
