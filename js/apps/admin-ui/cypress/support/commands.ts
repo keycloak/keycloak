@@ -30,6 +30,7 @@ import "cypress-axe";
 
 Cypress.Commands.overwrite("checkA11y", (originalFn, options) => {
   const mergedOptions = {
+    /* eslint-disable @typescript-eslint/no-misused-spread */
     ...(typeof options === "object" ? options : {}),
     includedImpacts: ["critical", "serious"],
   };
