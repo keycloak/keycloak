@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
@@ -71,6 +72,10 @@ public class UserProfileResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Get the configuration for the user profile")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UPConfig.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public UPConfig getConfiguration() {
         auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
@@ -81,6 +86,10 @@ public class UserProfileResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Get the UserProfileMetadata from the configuration")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserProfileMetadata.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public UserProfileMetadata getMetadata() {
         auth.requireAnyAdminRole();
         UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
@@ -92,7 +101,10 @@ public class UserProfileResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(description = "Set the configuration for the user profile")
-    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UPConfig.class)))
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UPConfig.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Response update(UPConfig config) {
         auth.realm().requireManageRealm();
         return Response.ok(setAndGetConfiguration(config)).type(MediaType.APPLICATION_JSON).build();

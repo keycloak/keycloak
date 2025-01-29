@@ -17,8 +17,13 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -121,8 +126,15 @@ public class UsersResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Create a new user Username must be unique.")
+    @Operation(summary = "Create a new user Username must be unique.")
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -250,8 +262,12 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -365,6 +381,10 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Integer.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Returns the number of users that match the given criteria.",
