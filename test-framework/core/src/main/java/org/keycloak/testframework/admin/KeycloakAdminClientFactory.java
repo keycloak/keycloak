@@ -8,10 +8,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.TestFrameworkException;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
-import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.ManagedUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,33 +21,21 @@ public class KeycloakAdminClientFactory {
 
     private final InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext;
     private final String serverUrl;
-    private final String grantType;
 
-    public KeycloakAdminClientFactory(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext, String serverUrl, String grantType) {
+    public KeycloakAdminClientFactory(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext, String serverUrl) {
         this.instanceContext = instanceContext;
         this.serverUrl = serverUrl;
-        this.grantType = grantType;
     }
 
-    public Keycloak createMaster() {
-        KeycloakBuilder clientBuilder = KeycloakBuilder.builder()
-                .serverUrl(serverUrl)
-                .grantType(grantType);
-
-        clientBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
-        Keycloak adminClient = clientBuilder.build();
-        adminClients.add(adminClient);
-        return adminClient;
-    }
-
-    public Keycloak create(String realmRef, String clientId, String user) {
+    public Keycloak create(String realmRef, String clientId, String user, String password) {
         ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class, realmRef);
 
         KeycloakBuilder clientBuilder = createBuilder(managedRealm.getName());
+        clientBuilder.grantType(OAuth2Constants.PASSWORD);
         RealmResource realmRes = managedRealm.admin();
 
         setClient(clientBuilder, realmRes, clientId);
-        setUser(clientBuilder, realmRes, user);
+        setUser(clientBuilder, realmRes, user, password);
 
         Keycloak adminClient = clientBuilder.build();
         adminClients.add(adminClient);
@@ -60,6 +46,7 @@ public class KeycloakAdminClientFactory {
         ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class, realmRef);
 
         KeycloakBuilder clientBuilder = createBuilder(managedRealm.getName());
+        clientBuilder.grantType(OAuth2Constants.CLIENT_CREDENTIALS);
         RealmResource realmRes = managedRealm.admin();
 
         setClient(clientBuilder, realmRes, clientId);
@@ -72,7 +59,6 @@ public class KeycloakAdminClientFactory {
     private KeycloakBuilder createBuilder(String realm) {
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
-                .grantType(grantType)
                 .realm(realm);
     }
 
@@ -82,12 +68,10 @@ public class KeycloakAdminClientFactory {
         clientBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
     }
 
-    private void setUser(KeycloakBuilder clientBuilder, RealmResource realmRes, String user) {
+    private void setUser(KeycloakBuilder clientBuilder, RealmResource realmRes, String user, String password) {
         UserRepresentation userRep = realmRes.users().search(user).stream()
                 .findFirst().orElseThrow(() -> new TestFrameworkException("User " + user + " not found in managed realm"));
-        String password = ManagedUser.getPassword(userRep);
         clientBuilder.username(userRep.getUsername()).password(password);
-        clientBuilder.grantType(OAuth2Constants.PASSWORD);
     }
 
     public void close() {

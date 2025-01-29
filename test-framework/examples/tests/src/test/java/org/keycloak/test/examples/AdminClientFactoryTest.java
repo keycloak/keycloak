@@ -11,6 +11,7 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -24,6 +25,9 @@ public class AdminClientFactoryTest {
 
     @InjectAdminClientFactory
     KeycloakAdminClientFactory adminClientFactory;
+
+    @InjectRealm(ref = "master", attachTo = "master")
+    ManagedRealm masterRealm;
 
     @InjectRealm(ref = REALM1)
     ManagedRealm realm1;
@@ -39,7 +43,7 @@ public class AdminClientFactoryTest {
         Keycloak adminClientRealm1 = adminClientFactory.create(REALM1, client1.getClientId());
         Assertions.assertThrows(ProcessingException.class, () -> adminClientRealm1.realm(REALM1).toRepresentation());
 
-        Keycloak adminClientMasterRealm = adminClientFactory.createMaster();
+        Keycloak adminClientMasterRealm = adminClientFactory.create("master", Config.getAdminClientId());
         RealmResource findRealm1 = adminClientMasterRealm.realm(REALM1);
         Assertions.assertEquals(realm1.getName(), findRealm1.toRepresentation().getRealm());
         Assertions.assertFalse(
