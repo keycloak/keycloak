@@ -25,7 +25,7 @@ public class MockParent2Supplier implements Supplier<MockParentValue, MockParent
 
     @Override
     public MockParentValue getValue(InstanceContext<MockParentValue, MockParentAnnotation> instanceContext) {
-        return new MockParentValue();
+        return new MockParentValue(null, false);
     }
 
     @Override

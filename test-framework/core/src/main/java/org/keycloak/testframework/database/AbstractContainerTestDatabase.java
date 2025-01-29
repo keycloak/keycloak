@@ -16,7 +16,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     protected JdbcDatabaseContainer<?> container;
 
     public AbstractContainerTestDatabase() {
-        reuse = Config.get("kc.test.database.reuse", false, Boolean.class);
+        reuse = Config.getValueTypeConfig(TestDatabase.class, "reuse", false, Boolean.class);
     }
 
     public void start() {

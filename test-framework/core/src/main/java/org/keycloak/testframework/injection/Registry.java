@@ -4,7 +4,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -136,7 +135,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             requestedInstances.add(requestedServerInstance);
         }
 
-        for (Field f : listFields(testClass)) {
+        for (Field f : ReflectionUtils.listFields(testClass)) {
             RequestedInstance requestedInstance = createRequestedInstance(f.getAnnotations(), f.getType());
             if (requestedInstance != null) {
                 requestedInstances.add(requestedInstance);
@@ -179,17 +178,12 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     private void injectFields(Object testInstance) {
-        for (Field f : listFields(testInstance.getClass())) {
+        for (Field f : ReflectionUtils.listFields(testInstance.getClass())) {
             InstanceContext<?, ?> instance = getDeployedInstance(f.getType(), f.getAnnotations());
             if (instance == null) { // a test class might have fields not meant for injection
                 continue;
             }
-            try {
-                f.setAccessible(true);
-                f.set(testInstance, instance.getValue());
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            ReflectionUtils.setField(f, testInstance, instance.getValue());
         }
     }
 
@@ -305,18 +299,6 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         for (InstanceContext i : deployedInstances) {
             i.getSupplier().onBeforeEach(i);
         }
-    }
-
-    private List<Field> listFields(Class clazz) {
-        List<Field> fields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
-
-        Class<?> superclass = clazz.getSuperclass();
-        while (superclass != null && !superclass.equals(Object.class)) {
-            fields.addAll(Arrays.asList(superclass.getDeclaredFields()));
-            superclass = superclass.getSuperclass();
-        }
-
-        return fields;
     }
 
     private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {
