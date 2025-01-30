@@ -22,7 +22,7 @@ public class KeycloakAdminClientFactorySupplier implements Supplier<KeycloakAdmi
     public KeycloakAdminClientFactory getValue(InstanceContext<KeycloakAdminClientFactory, InjectAdminClientFactory> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
-        return new KeycloakAdminClientFactory(instanceContext, server.getBaseUrl());
+        return new KeycloakAdminClientFactory(server.getBaseUrl());
     }
 
     @Override
