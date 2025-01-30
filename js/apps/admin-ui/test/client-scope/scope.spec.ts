@@ -49,7 +49,7 @@ test.describe("Scope tab test", () => {
 
     await assignRole(page);
     await changeRoleTypeFilter(page, "roles");
-    await pickRole(page, role);
+    await pickRole(page, role, true);
     await confirmModalAssign(page);
 
     await assertNotificationMessage(page, "Role mapping updated");
