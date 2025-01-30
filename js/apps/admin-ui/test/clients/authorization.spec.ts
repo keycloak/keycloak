@@ -31,6 +31,10 @@ import {
   setPolicy,
 } from "./authorization";
 
+test.use({
+  permissions: ["clipboard-write", "clipboard-read"],
+});
+
 test.describe("Client authentication subtab", () => {
   const clientId = `client-authentication-${crypto.randomUUID()}`;
 
@@ -104,6 +108,22 @@ test.describe("Client authentication subtab", () => {
     await assertRowExists(page, "The scope");
   });
 
+  test("Should create a permission", async ({ page }) => {
+    await goToPermissionsSubTab(page);
+
+    await createPermission(page, "resource", {
+      name: "Permission name",
+      description: "Something describing this permission",
+    });
+    await selectResource(page, "Default Resource");
+
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully created the permission",
+    );
+  });
+
   test("Should create a policy", async ({ page }) => {
     await goToPoliciesSubTab(page);
     await createPolicy(page, "Regex", {
@@ -134,22 +154,6 @@ test.describe("Client authentication subtab", () => {
     await inputClient(page, "master-realm");
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Successfully created the policy");
-  });
-
-  test("Should create a permission", async ({ page }) => {
-    await goToPermissionsSubTab(page);
-
-    await createPermission(page, "resource", {
-      name: "Permission name",
-      description: "Something describing this permission",
-    });
-    await selectResource(page, "Default Resource");
-
-    await clickSaveButton(page);
-    await assertNotificationMessage(
-      page,
-      "Successfully created the permission",
-    );
   });
 
   test("Should copy auth details", async ({ page }) => {

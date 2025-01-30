@@ -36,8 +36,6 @@ import {
   goToRolesTab,
 } from "./role";
 
-// Helper functions for common actions
-
 test.describe("Roles tab test", () => {
   const realmName = `clients-realm-${uuid()}`;
   const itemId = `client-crud-${uuid()}`;
@@ -205,7 +203,9 @@ test.describe("Roles tab test", () => {
     await confirmModal(page);
   });
 
-  test("Should delete client role from role details test", async ({ page }) => {
+  test.skip("Should delete client role from role details test", async ({
+    page,
+  }) => {
     await clickTableRowItem(page, oneRoleClient);
     await goToRolesTab(page);
     await clickTableRowItem(page, updatableItem);

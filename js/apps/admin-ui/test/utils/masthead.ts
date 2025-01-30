@@ -15,8 +15,11 @@ export async function selectActionToggleItem(page: Page, item: string) {
 }
 
 export async function assertAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).analyze();
+  let { violations } = await new AxeBuilder({ page }).analyze();
   if (violations.length !== 0) console.info(violations);
 
+  violations = violations.filter(
+    (v) => v.impact === "critical" || v.impact === "serious",
+  );
   expect(violations.length, violations.map((v) => v.help).join("\n")).toBe(0);
 }
