@@ -17,7 +17,12 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -77,7 +82,6 @@ public class ClientScopeResource {
         this.clientScope = clientScope;
         this.session = session;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_SCOPE);
-
     }
 
     @Path("protocol-mappers")
@@ -108,6 +112,12 @@ public class ClientScopeResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
     @Operation(summary = "Update the client scope")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
         validateDynamicScopeUpdate(rep);
@@ -124,7 +134,6 @@ public class ClientScopeResource {
         }
     }
 
-
     /**
      * Get representation of the client scope
      *
@@ -135,9 +144,12 @@ public class ClientScopeResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
     @Operation(summary = "Get representation of the client scope")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public ClientScopeRepresentation getClientScope() {
         auth.clients().requireView(clientScope);
-
 
         return ModelToRepresentation.toRepresentation(clientScope);
     }
@@ -149,8 +161,13 @@ public class ClientScopeResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
     @Operation(summary = "Delete the client scope")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response deleteClientScope() {
-
         auth.clients().requireManage(clientScope);
         long clientScopesCount =  Arrays.stream(realm.getClientScopesStream().toArray()).count();
         if (clientScopesCount > 1) {
