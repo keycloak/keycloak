@@ -1,7 +1,10 @@
 import { test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
+import adminClient from "../../cypress/support/util/AdminClient";
 import { clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
-import { goToAuthentication } from "../utils/sidebar";
+import { assertNotificationMessage } from "../utils/masthead";
+import { goToAuthentication, goToRealm } from "../utils/sidebar";
 import {
   assertSupportedApplications,
   fillSelects,
@@ -12,11 +15,17 @@ import {
   setPolicyType,
   setWebAuthnPolicyCreateTimeout,
 } from "./policies";
-import { assertNotificationMessage } from "../utils/masthead";
 
 test.describe("OTP policies tab", () => {
+  const realmName = `policies-otp-${uuid()}`;
+
+  test.beforeAll(() => adminClient.createRealm(realmName));
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToAuthentication(page);
     await goToOTPPolicyTab(page);
   });

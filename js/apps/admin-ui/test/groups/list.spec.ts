@@ -60,6 +60,7 @@ test.describe("Group test", () => {
 
     await searchGroup(page, secondGroupName);
     await assertRowExists(page, secondGroupName, true);
+    await adminClient.deleteGroups();
   });
 
   test("Fail to create group with empty name", async ({ page }) => {

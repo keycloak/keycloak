@@ -37,7 +37,7 @@ export async function assertExpirationGreaterThanZeroError(page: Page) {
   await assertFieldError(
     page,
     "expiration",
-    "Value should should be greater or equal to 1",
+    "Value should be greater than or equal to 1",
   );
 }
 

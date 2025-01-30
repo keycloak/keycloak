@@ -242,8 +242,14 @@ test.describe("Required actions", () => {
 });
 
 test.describe("Password policies tab", () => {
+  const realmName = `policies-password-${uuidv4()}`;
+
+  test.beforeAll(() => adminClient.createRealm(realmName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToAuthentication(page);
     await goToPoliciesTab(page);
   });

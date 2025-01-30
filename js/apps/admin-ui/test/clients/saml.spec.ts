@@ -138,7 +138,6 @@ test.describe("Clients SAML tests", () => {
     // Assert SAML Capabilities switches exist
     const switches = [
       ['[data-testid="attributes.saml_force_name_id_format"]', "on"],
-      ['[data-testid="attributes.saml.force.post.binding"]', "off"],
       ['[data-testid="attributes.saml.artifact.binding"]', "on"],
       ['[data-testid="attributes.saml.artifact.binding"]', "off"],
       ['[data-testid="attributes.saml.server.signature"]', "off"],

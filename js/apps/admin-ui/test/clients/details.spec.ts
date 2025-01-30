@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../../cypress/support/util/AdminClient";
-import { login } from "../utils/login";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { clickTableRowItem, searchItem } from "../utils/table";
-import { continueNext, createClient, save } from "./utils";
 import { assertRequiredFieldError } from "../utils/form";
+import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
+import { goToClients, goToRealm } from "../utils/sidebar";
+import { searchItem } from "../utils/table";
+import { continueNext, createClient, save } from "./utils";
 
 test.describe("Clients details test", () => {
   const realmName = `clients-details-realm-${uuid()}`;
@@ -32,7 +32,6 @@ test.describe("Clients details test", () => {
     await goToRealm(page, realmName);
     await goToClients(page);
     await searchItem(page, "Search for client", clientId);
-    await clickTableRowItem(page, clientId);
   });
 
   test("Should test clientId required", async ({ page }) => {
