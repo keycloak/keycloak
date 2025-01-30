@@ -21,9 +21,9 @@ import { useAdminClient } from "../../admin-client";
 import { useRecentRealms } from "../../context/RecentRealms";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import NewRealmForm from "../../realm/add/NewRealmForm";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 import "./realm-selector.css";
 
@@ -102,7 +102,7 @@ type RealmSelectorProps = {
 export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
   const { realm, realmRepresentation } = useRealm();
   const { adminClient } = useAdminClient();
-  const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
   const [open, setOpen] = useState(false);
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const { t } = useTranslation();
@@ -135,14 +135,10 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
 
   const sortedRealms = useMemo(
     () =>
-      realms
-        .filter((r) => !recentRealmsList.includes(r.name))
-        .sort((a, b) => {
-          if (a.name === realm) return -1;
-          if (b.name === realm) return 1;
-
-          return a.name.localeCompare(b.name, whoAmI.getLocale());
-        }),
+      localeSort(
+        realms.filter((r) => !recentRealmsList.includes(r.name)),
+        mapByKey("name"),
+      ),
     [recentRealmsList, realms],
   );
 
@@ -165,6 +161,7 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
             setOpen(!open);
           }}
           isFullWidth
+          isDisabled={realms.length <= 1}
         >
           <Stack className="keycloak__realm_selector__dropdown">
             {realmDisplayName ? (
@@ -200,7 +197,6 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
         </DropdownList>
       </DropdownGroup>
       <Divider component="li" />
-
       {realms.length <= MAX_RESULTS && (
         <DropdownList>
           {sortedRealms.map((realm) => (
@@ -213,9 +209,7 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
         </DropdownList>
       )}
       {realms.length > MAX_RESULTS && (
-        <DropdownItem onClick={() => onViewAll()}>
-          <Button variant="link">{t("viewAll")}</Button>
-        </DropdownItem>
+        <DropdownItem onClick={() => onViewAll()}>{t("viewAll")}</DropdownItem>
       )}
     </Dropdown>
   );

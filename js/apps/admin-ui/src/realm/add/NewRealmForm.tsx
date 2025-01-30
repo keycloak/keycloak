@@ -68,6 +68,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
       actions={[
         <FormSubmitButton
           form="realm-form"
+          data-testid="create"
           formState={formState}
           allowInvalid
           allowNonDirty
@@ -75,7 +76,12 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
         >
           {t("create")}
         </FormSubmitButton>,
-        <Button variant="link" onClick={onClose} key={"cancel"}>
+        <Button
+          variant="link"
+          onClick={onClose}
+          key={"cancel"}
+          data-testid="cancel"
+        >
           {t("cancel")}
         </Button>,
       ]}
