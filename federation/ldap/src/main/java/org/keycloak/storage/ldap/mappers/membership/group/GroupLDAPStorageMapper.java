@@ -573,8 +573,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             return Collections.emptyList();
         }
 
-        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
-        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+        String strategyKey = config.getUserGroupsRetrieveStrategy();
+        UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
+        return strategy.getLDAPRoleMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 
     public void addGroupMappingInLDAP(RealmModel realm, GroupModel kcGroup, LDAPObject ldapUser) {

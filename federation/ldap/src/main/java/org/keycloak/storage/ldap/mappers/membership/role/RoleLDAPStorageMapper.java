@@ -500,7 +500,8 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             return Collections.emptyList();
         }
 
-        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
-        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+        String strategyKey = config.getUserRolesRetrieveStrategy();
+        UserRolesRetrieveStrategy strategy = factory.getUserRolesRetrieveStrategy(strategyKey);
+        return strategy.getLDAPRoleMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 }
