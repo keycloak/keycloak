@@ -22,12 +22,12 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
@@ -45,7 +45,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +56,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
-import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
 public class AccountCredentialResource {
 
@@ -179,8 +177,9 @@ public class AccountCredentialResource {
 
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes();
 
-        Stream<CredentialModel> modelsStream = includeUserCredentials ? user.credentialManager().getStoredCredentialsStream() : Stream.empty();
-        List<CredentialModel> models = modelsStream.collect(Collectors.toList());
+        SubjectCredentialManager credentialManager = user.credentialManager();
+        Stream<CredentialModel> modelsStream = includeUserCredentials ? credentialManager.getCredentials() : Stream.empty();
+        List<CredentialModel> models = modelsStream.toList();
 
         Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
             CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
@@ -192,8 +191,8 @@ public class AccountCredentialResource {
 
             if (includeUserCredentials) {
                 List<CredentialModel> modelsOfType = models.stream()
-                        .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
-                        .collect(Collectors.toList());
+                        .filter(credentialProvider::supportsCredentialType)
+                        .toList();
 
 
                 List<CredentialMetadata> credentialMetadataList = modelsOfType.stream()
@@ -207,16 +206,6 @@ public class AccountCredentialResource {
                 credentialMetadataList.stream().forEach(md -> md.getCredentialModel().setSecretData(null));
                 userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
 
-                if (userCredentialMetadataModels.isEmpty() &&
-                        user.credentialManager().isConfiguredFor(credentialProvider.getType())) {
-                    // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
-                    // creating "dummy" credential representing the credential provided by userStorage
-                    CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
-                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
-                    metadataRepresentation.setCredential(credential);
-                    userCredentialMetadataModels = Collections.singletonList(metadataRepresentation);
-                }
-
                 // In case that there are no userCredentials AND there are not required actions for setup new credential,
                 // we won't include credentialType as user won't be able to do anything with it
                 if (userCredentialMetadataModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
@@ -228,7 +217,7 @@ public class AccountCredentialResource {
         };
 
         return AuthenticatorUtil.getCredentialProviders(session)
-                .filter(p -> type == null || Objects.equals(p.getType(), type))
+                .filter(p -> type == null || p.supportsCredentialType(type))
                 .filter(p -> enabledCredentialTypes.contains(p.getType()))
                 .map(toCredentialContainer)
                 .filter(Objects::nonNull)

@@ -738,7 +738,8 @@ public class UserResource {
     @Operation()
     public Stream<CredentialRepresentation> credentials(){
         auth.users().requireView(user);
-        return user.credentialManager().getStoredCredentialsStream()
+
+        return user.credentialManager().getCredentials()
                 .map(ModelToRepresentation::toRepresentation)
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
     }

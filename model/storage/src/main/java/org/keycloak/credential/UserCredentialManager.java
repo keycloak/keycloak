@@ -129,6 +129,27 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     @Override
+    public Stream<CredentialModel> getFederatedCredentialsStream() {
+        String providerId = user.getFederationLink();
+
+        if (providerId != null) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+
+            if (model == null || !model.isEnabled()) {
+                return Stream.empty();
+            }
+
+            CredentialInputUpdater credentialProvider = getStorageProviderInstance(model, CredentialInputUpdater.class);
+
+            if (credentialProvider != null) {
+                return credentialProvider.getCredentials(realm, user);
+            }
+        }
+
+        return Stream.empty();
+    }
+
+    @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
         return getStoreForUser(user).getStoredCredentialsByTypeStream(realm, user, type);
     }
@@ -220,7 +241,7 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
         return session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(CredentialProvider.class)
                 .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
-                .filter(provider -> Objects.equals(provider.getType(), model.getType()))
+                .filter(provider -> provider.supportsCredentialType(model))
                 .map(cp -> cp.createCredential(realm, user, cp.getCredentialFromModel(model)))
                 .findFirst()
                 .orElse(null);

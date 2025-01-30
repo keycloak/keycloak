@@ -119,6 +119,7 @@ public class LDAPConstants {
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
     public static final String USER_ACCOUNT_CONTROL = "userAccountControl";
     public static final String PWD_LAST_SET = "pwdLastSet";
+    public static final String PWD_CHANGED_TIME = "pwdChangedTime";
     public static final String MSDS_USER_ACCOUNT_DISABLED = "msDS-UserAccountDisabled";
     public static final String MSDS_USER_PASSWORD_NOTREQD = "msDS-UserPasswordNotRequired";
     public static final String MSDS_USER_PASSWORD_EXPIRED = "msDS-UserPasswordExpired"; // read-only

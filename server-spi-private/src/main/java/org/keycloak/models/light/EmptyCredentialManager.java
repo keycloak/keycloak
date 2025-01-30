@@ -69,6 +69,11 @@ class EmptyCredentialManager implements SubjectCredentialManager {
     }
 
     @Override
+    public Stream<CredentialModel> getFederatedCredentialsStream() {
+        return Stream.empty();
+    }
+
+    @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
         return Stream.empty();
     }

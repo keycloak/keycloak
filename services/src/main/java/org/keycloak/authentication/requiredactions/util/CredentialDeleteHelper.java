@@ -60,14 +60,14 @@ public class CredentialDeleteHelper {
     public static CredentialModel removeCredential(KeycloakSession session, UserModel user, String credentialId, Supplier<Integer> currentLoAProvider) {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
-            // Backwards compatibility with account console 1 - When stored credential is not found, it may be federated credential.
-            // In this case, it's ID needs to be something like "otp-id", which is returned by account REST GET endpoint as a placeholder
-            // for federated credentials (See CredentialHelper.createUserStorageCredentialRepresentation )
-            if (credentialId.endsWith("-id")) {
-                String credentialType = credentialId.substring(0, credentialId.length() - 3);
-                checkIfCanBeRemoved(session, user, credentialType, currentLoAProvider);
-                user.credentialManager().disableCredentialType(credentialType);
-                return null;
+            if (user.getFederationLink() != null) {
+                credential = user.credentialManager().getFederatedCredentialsStream().filter(credential1 -> credentialId.equals(credential1.getId())).findAny().orElse(null);
+                if (credential != null) {
+                    String type = credential.getType();
+                    checkIfCanBeRemoved(session, user, type, currentLoAProvider);
+                    user.credentialManager().disableCredentialType(type);
+                    return null;
+                }
             }
             throw new NotFoundException("Credential not found");
         }
@@ -78,7 +78,7 @@ public class CredentialDeleteHelper {
 
     private static void checkIfCanBeRemoved(KeycloakSession session, UserModel user, String credentialType, Supplier<Integer> currentLoAProvider) {
         CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
-                .filter(credentialProvider1 -> credentialType.equals(credentialProvider1.getType()))
+                .filter(credentialProvider1 -> credentialProvider1.supportsCredentialType(credentialType))
                 .findAny().orElse(null);
         if (credentialProvider == null) {
             logger.warnf("Credential provider %s not found", credentialType);
