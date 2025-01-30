@@ -348,6 +348,52 @@ public class RoleModelTest extends KeycloakModelTest {
 
     }
 
+    @Test
+    public void getClientRoleByNameFromTheDatabaseAndTheCache() {
+        String roleName = "role-" + new Random().nextInt();
+
+        // Look up a non-existent role from the database
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
+            RoleModel role = session.roles().getClientRole(client, roleName);
+            assertThat(role, nullValue());
+            return null;
+        });
+
+        // Look up a non-existent role from the cache
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
+            RoleModel role = session.roles().getClientRole(client, roleName);
+            assertThat(role, nullValue());
+            return null;
+        });
+
+        // Create the role, and invalidate the cache
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
+            RoleModel role = session.roles().addClientRole(client, roleName);
+            assertThat(role, notNullValue());
+            return null;
+        });
+
+        // Find the role from the database
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
+            RoleModel role = session.roles().getClientRole(client, roleName);
+            assertThat(role, notNullValue());
+            return null;
+        });
+
+        // Find the role from the cache
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().getClientByClientId(realm, CLIENT_NAME);
+            RoleModel role = session.roles().getClientRole(client, roleName);
+            assertThat(role, notNullValue());
+            return null;
+        });
+
+    }
+
     public void testRolesWithIdsPaginationSearchQueries(GetResult resultProvider) {
         // test all parameters together
         List<RoleModel> result = resultProvider.getResult("1", 4, 3);
