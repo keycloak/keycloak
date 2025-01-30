@@ -236,10 +236,9 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         String accountToken = tokenUtil.getToken();
 
         // Setup OTP
-        setupOTPForUserWithRequiredAction(userId, false);
+        String totpSecret = setupOTPForUserWithRequiredAction(userId, false);
 
         assertUserDontHaveDBCredentials();
-        assertUserHaveFederatedCredentials();
         assertUserHasOTPCredentialInUserStorage(true);
 
         try (CloseableHttpClient httpClient = oauth.getHttpClient().get()) {
@@ -341,14 +340,6 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
             RealmModel realm1 = session.realms().getRealmByName("test");
             UserModel user1 = session.users().getUserByUsername(realm1, "otp1");
             Assert.assertEquals(0, user1.credentialManager().getStoredCredentialsStream().count());
-        });
-    }
-
-    private void assertUserHaveFederatedCredentials() {
-        testingClient.server().run(session -> {
-            RealmModel realm1 = session.realms().getRealmByName("test");
-            UserModel user1 = session.users().getUserByUsername(realm1, "otp1");
-            Assert.assertEquals(2, user1.credentialManager().getFederatedCredentialsStream().count());
         });
     }
 

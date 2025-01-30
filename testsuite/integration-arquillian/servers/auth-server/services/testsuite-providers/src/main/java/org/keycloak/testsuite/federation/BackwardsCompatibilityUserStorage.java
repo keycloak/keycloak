@@ -18,11 +18,11 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
@@ -33,6 +33,7 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -143,7 +144,6 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
             CredentialModel newPassword = new CredentialModel();
             newPassword.setType(CredentialModel.PASSWORD);
-            newPassword.setId(user.getUsername() + "-" + newPassword.getType());
             long createdDate = Time.currentTimeMillis();
             newPassword.setCreatedDate(createdDate);
 
@@ -173,7 +173,6 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
             CredentialModel newOTP = new CredentialModel();
             newOTP.setType(input.getType());
-            newOTP.setId(user.getUsername() + "-" + newOTP.getType());
             long createdDate = Time.currentTimeMillis();
             newOTP.setCreatedDate(createdDate);
             newOTP.setValue(otpCredential.getValue());
@@ -358,27 +357,6 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         // Assume that this is not supported
         return Stream.empty();
-    }
-
-    @Override
-    public Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
-        List<CredentialModel> credentials = new ArrayList<>();
-
-        MyUser myUser = getMyUser(user);
-
-        if (myUser == null) {
-            return Stream.empty();
-        }
-
-        if (myUser.hashedPassword != null) {
-            credentials.add(myUser.hashedPassword);
-        }
-
-        if (myUser.otp != null) {
-            credentials.add(myUser.otp);
-        }
-
-        return credentials.stream();
     }
 
     @Override

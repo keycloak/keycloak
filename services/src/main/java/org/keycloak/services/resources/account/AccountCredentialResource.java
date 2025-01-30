@@ -28,6 +28,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
@@ -45,6 +46,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
+import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
 public class AccountCredentialResource {
 
@@ -205,6 +208,16 @@ public class AccountCredentialResource {
                 // Don't return secrets from REST endpoint
                 credentialMetadataList.stream().forEach(md -> md.getCredentialModel().setSecretData(null));
                 userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+
+                if (userCredentialMetadataModels.isEmpty() &&
+                        user.credentialManager().isConfiguredFor(credentialProvider.getType())) {
+                    // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
+                    // creating "dummy" credential representing the credential provided by userStorage
+                    CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
+                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
+                    metadataRepresentation.setCredential(credential);
+                    userCredentialMetadataModels = Collections.singletonList(metadataRepresentation);
+                }
 
                 // In case that there are no userCredentials AND there are not required actions for setup new credential,
                 // we won't include credentialType as user won't be able to do anything with it

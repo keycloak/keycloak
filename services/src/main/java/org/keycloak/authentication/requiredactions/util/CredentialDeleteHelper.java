@@ -69,6 +69,15 @@ public class CredentialDeleteHelper {
                     return null;
                 }
             }
+            // Backwards compatibility with account console 1 - When stored credential is not found, it may be federated credential.
+            // In this case, it's ID needs to be something like "otp-id", which is returned by account REST GET endpoint as a placeholder
+            // for federated credentials (See CredentialHelper.createUserStorageCredentialRepresentation )
+            if (credentialId.endsWith("-id")) {
+                String credentialType = credentialId.substring(0, credentialId.length() - 3);
+                checkIfCanBeRemoved(session, user, credentialType, currentLoAProvider);
+                user.credentialManager().disableCredentialType(credentialType);
+                return null;
+            }
             throw new NotFoundException("Credential not found");
         }
         checkIfCanBeRemoved(session, user, credential.getType(), currentLoAProvider);
