@@ -25,17 +25,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -48,7 +42,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
-import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.WebApplicationException;
@@ -57,9 +51,9 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.utils.RoleResolveUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,6 +66,7 @@ public class ClientRegistrationAuth {
 
     private RealmModel realm;
     private JsonWebToken jwt;
+    private AccessToken accessToken;
     private ClientInitialAccessModel initialAccessModel;
     private String kid;
     private String token;
@@ -105,6 +100,7 @@ public class ClientRegistrationAuth {
         }
         kid = tokenVerification.getKid();
         jwt = tokenVerification.getJwt();
+        accessToken = tokenVerification.getAccessToken();
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.realms().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
@@ -293,38 +289,11 @@ public class ClientRegistrationAuth {
 
     private boolean hasRole(String... roles) {
         try {
-
-            //support for lightweight access token
-            if (jwt.getSubject() == null) {
-                String sid = (String) jwt.getOtherClaims().get("sid");
-                if (sid != null) {
-                    final String issuedFor = jwt.getIssuedFor();
-                    UserSessionProvider sessions = session.sessions();
-                    UserSessionModel userSession = sessions.getUserSession(realm, sid);
-                    if (userSession == null) {
-                        userSession = sessions.getOfflineUserSession(realm, sid);
-                    }
-
-                    if (userSession != null) {
-                        //get client session
-                        ClientModel client = realm.getClientByClientId(issuedFor);
-                        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-
-                        //set realm roles
-                        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, (String) jwt.getOtherClaims().get("scope"), session);
-                        Map<String, AccessToken.Access> resourceAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
-
-                        Map<String, Map<String, List<String>>> resourceAccessMap = new HashMap<>();
-                        resourceAccess.forEach((key, access) ->
-                                resourceAccessMap.put(key, Map.of("roles", new ArrayList<>(access.getRoles())))
-                        );
-                        jwt.setSubject(userSession.getUser().getId());
-                        jwt.getOtherClaims().put("resource_access", resourceAccessMap);
-                    }
-                }
-            }
+            AuthenticationManager.resolveLightweightAccessTokenRoles(session, accessToken, session.getContext().getRealm());
+            jwt.setSubject(accessToken.getSubject());
+            jwt.getOtherClaims().put("resource_access", accessToken.getResourceAccess().entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> Map.of("roles", new ArrayList<>(e.getValue().getRoles())))));
             return hasRoleInToken(roles);
-
         } catch (Throwable t) {
             return false;
         }
