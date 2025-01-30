@@ -63,7 +63,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @InjectUser(ref = "alice")
     ManagedUser userAlice;
 
-    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, clientId = "myclient", username = "myadmin")
     Keycloak realmAdminClient;
 
     private final String newUserUsername = "new_user";

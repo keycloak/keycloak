@@ -30,7 +30,14 @@ public class RealmSpecificAdminClientTest {
     @InjectAdminClient(ref = "bootstrap-client")
     Keycloak bootstrapAdminClient;
 
-    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
+    @InjectAdminClient(
+            mode = InjectAdminClient.Mode.MANAGED_REALM,
+            realm =RealmWithClientAndUser.REALM,
+            clientId = RealmWithClientAndUser.CLIENT_ID,
+            clientSecret = RealmWithClientAndUser.CLIENT_SECRET,
+            username = RealmWithClientAndUser.USERNAME,
+            password = RealmWithClientAndUser.PASSWORD
+    )
     Keycloak realmAdminClient;
 
     @Test
@@ -70,17 +77,25 @@ public class RealmSpecificAdminClientTest {
 
     public static class RealmWithClientAndUser implements RealmConfig {
 
+        public final static String REALM = "myrealm";
+        public final static String CLIENT_ID = "myclient";
+        public final static String CLIENT_SECRET = "mysecret";
+        public final static String USERNAME = "myadmin";
+        public final static String PASSWORD = "mypassword";
+
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("myclient")
-                    .secret("mysecret")
+            realm.name(REALM);
+
+            realm.addClient(CLIENT_ID)
+                    .secret(CLIENT_SECRET)
                     .directAccessGrants();
 
-            realm.addUser("myadmin")
+            realm.addUser(USERNAME)
                     .name("My", "Admin")
                     .email("myadmin@localhost")
                     .emailVerified()
-                    .password("mypassword")
+                    .password(PASSWORD)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
 
             return realm;

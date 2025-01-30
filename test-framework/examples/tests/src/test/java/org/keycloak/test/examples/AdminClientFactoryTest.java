@@ -23,9 +23,6 @@ public class AdminClientFactoryTest {
     private final String CLIENT1 = "client1";
     private final String USER1 = "user1";
 
-    @InjectAdminClientFactory
-    KeycloakAdminClientFactory adminClientFactory;
-
     @InjectRealm(ref = "master", attachTo = "master")
     ManagedRealm masterRealm;
 
@@ -38,12 +35,15 @@ public class AdminClientFactoryTest {
     @InjectUser(ref = USER1, realmRef = REALM1)
     ManagedUser user1;
 
+    @InjectAdminClientFactory
+    KeycloakAdminClientFactory adminClientFactory;
+
     @Test
-    public void test() {
-        Keycloak adminClientRealm1 = adminClientFactory.create(REALM1, client1.getClientId());
+    public void testAdminClientFactory() {
+        Keycloak adminClientRealm1 = adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Automatic, REALM1, client1.getClientId(), client1.getSecret());
         Assertions.assertThrows(ProcessingException.class, () -> adminClientRealm1.realm(REALM1).toRepresentation());
 
-        Keycloak adminClientMasterRealm = adminClientFactory.create("master", Config.getAdminClientId());
+        Keycloak adminClientMasterRealm = adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Automatic, "master", Config.getAdminClientId(), Config.getAdminClientSecret());
         RealmResource findRealm1 = adminClientMasterRealm.realm(REALM1);
         Assertions.assertEquals(realm1.getName(), findRealm1.toRepresentation().getRealm());
         Assertions.assertFalse(

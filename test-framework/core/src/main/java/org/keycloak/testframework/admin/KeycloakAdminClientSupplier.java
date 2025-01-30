@@ -1,21 +1,14 @@
 package org.keycloak.testframework.admin;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.TestFrameworkException;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
+import org.keycloak.testframework.injection.StringUtil;
 import org.keycloak.testframework.injection.Supplier;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.server.KeycloakServer;
 
 public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
@@ -35,42 +28,37 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
 
         InjectAdminClient.Mode mode = annotation.mode();
 
-        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        KeycloakBuilder clientBuilder = KeycloakBuilder.builder()
-                .serverUrl(server.getBaseUrl())
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS);
+        KeycloakAdminClientFactory adminClientFactory = instanceContext.getDependency(KeycloakAdminClientFactory.class);
 
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
-            clientBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
+            return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, "master", Config.getAdminClientId(), Config.getAdminClientSecret());
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
-            ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class);
-            clientBuilder.realm(managedRealm.getName());
+            String realm = StringUtil.convertEmptyToNull(annotation.realm());
 
-            String clientId = !annotation.client().isEmpty() ? annotation.client() : null;
-            String userId = !annotation.user().isEmpty() ? annotation.user() : null;
+            if (realm == null) {
+                throw new TestFrameworkException("Realm is required when using managed realm mode");
+            }
 
-            if (clientId == null) {
+            String clientId = StringUtil.convertEmptyToNull(annotation.clientId());
+            String clientSecret = StringUtil.convertEmptyToNull(annotation.clientSecret());
+
+            if (clientId == null || clientSecret == null) {
                 throw new TestFrameworkException("Client is required when using managed realm mode");
             }
 
-            RealmRepresentation realmRep = managedRealm.getCreatedRepresentation();
-            ClientRepresentation clientRep = realmRep.getClients().stream()
-                    .filter(c -> c.getClientId().equals(annotation.client()))
-                    .findFirst().orElseThrow(() -> new TestFrameworkException("Client " + annotation.client() + " not found in managed realm"));
+            String username = StringUtil.convertEmptyToNull(annotation.username());
+            String password = StringUtil.convertEmptyToNull(annotation.password());
 
-            clientBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
-
-            if (userId != null) {
-                UserRepresentation userRep = realmRep.getUsers().stream()
-                        .filter(u -> u.getUsername().equals(annotation.user()))
-                        .findFirst().orElseThrow(() -> new TestFrameworkException("User " + annotation.user() + " not found in managed realm"));
-                String password = ManagedUser.getPassword(userRep);
-                clientBuilder.username(userRep.getUsername()).password(password);
-                clientBuilder.grantType(OAuth2Constants.PASSWORD);
+            if (username == null && password == null) {
+                return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, realm, clientId, clientSecret);
+            } else if (username != null && password != null) {
+                return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, realm, clientId, clientSecret, username, password);
+            } else {
+                throw new TestFrameworkException("Both username and password are required");
             }
+        } else {
+            throw new TestFrameworkException("Undefined Admin Client Mode");
         }
-
-        return clientBuilder.build();
     }
 
     @Override
