@@ -18,7 +18,7 @@ public class KeycloakAdminClientFactory {
         this.serverUrl = serverUrl;
     }
 
-    public Keycloak create(AutoClose autoClose, String realm, String clientId, String clientSecret, String username, String password) {
+    public Keycloak create(String realm, String clientId, String clientSecret, String username, String password, boolean autoClose) {
         KeycloakBuilder clientBuilder = KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
                 .realm(realm)
@@ -28,13 +28,13 @@ public class KeycloakAdminClientFactory {
 
         Keycloak adminClient = clientBuilder.build();
 
-        if (autoClose == AutoClose.Automatic) {
+        if (autoClose) {
             adminClients.add(adminClient);
         }
         return adminClient;
     }
 
-    public Keycloak create(AutoClose autoClose, String realm, String clientId, String clientSecret) {
+    public Keycloak create(String realm, String clientId, String clientSecret, boolean autoClose) {
         KeycloakBuilder clientBuilder = KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
                 .realm(realm)
@@ -43,15 +43,10 @@ public class KeycloakAdminClientFactory {
 
         Keycloak adminClient = clientBuilder.build();
 
-        if (autoClose == AutoClose.Automatic) {
+        if (autoClose) {
             adminClients.add(adminClient);
         }
         return adminClient;
-    }
-
-    public enum AutoClose {
-        Automatic,
-        Manual
     }
 
     public void close() {
