@@ -31,7 +31,7 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
         KeycloakAdminClientFactory adminClientFactory = instanceContext.getDependency(KeycloakAdminClientFactory.class);
 
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
-            return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, "master", Config.getAdminClientId(), Config.getAdminClientSecret());
+            return adminClientFactory.create("master", Config.getAdminClientId(), Config.getAdminClientSecret(), false);
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
             String realm = StringUtil.convertEmptyToNull(annotation.realm());
 
@@ -50,9 +50,9 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
             String password = StringUtil.convertEmptyToNull(annotation.password());
 
             if (username == null && password == null) {
-                return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, realm, clientId, clientSecret);
+                return adminClientFactory.create(realm, clientId, clientSecret, false);
             } else if (username != null && password != null) {
-                return adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Manual, realm, clientId, clientSecret, username, password);
+                return adminClientFactory.create(realm, clientId, clientSecret, username, password, false);
             } else {
                 throw new TestFrameworkException("Both username and password are required");
             }

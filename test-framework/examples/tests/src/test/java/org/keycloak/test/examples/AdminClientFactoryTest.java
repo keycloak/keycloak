@@ -40,10 +40,10 @@ public class AdminClientFactoryTest {
 
     @Test
     public void testAdminClientFactory() {
-        Keycloak adminClientRealm1 = adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Automatic, REALM1, client1.getClientId(), client1.getSecret());
+        Keycloak adminClientRealm1 = adminClientFactory.create(REALM1, client1.getClientId(), client1.getSecret(), true);
         Assertions.assertThrows(ProcessingException.class, () -> adminClientRealm1.realm(REALM1).toRepresentation());
 
-        Keycloak adminClientMasterRealm = adminClientFactory.create(KeycloakAdminClientFactory.AutoClose.Automatic, "master", Config.getAdminClientId(), Config.getAdminClientSecret());
+        Keycloak adminClientMasterRealm = adminClientFactory.create("master", Config.getAdminClientId(), Config.getAdminClientSecret(), true);
         RealmResource findRealm1 = adminClientMasterRealm.realm(REALM1);
         Assertions.assertEquals(realm1.getName(), findRealm1.toRepresentation().getRealm());
         Assertions.assertFalse(
