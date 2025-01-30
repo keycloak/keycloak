@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
@@ -100,6 +101,32 @@ public class UpgradeTest extends BaseOperatorTest {
         var upgradeCondition = updateStrategy == UpdateStrategy.RECREATE ?
                 eventuallyRecreateUpgradeStatus(k8sclient, kc) :
                 eventuallyRollingUpgradeStatus(k8sclient, kc);
+
+        deployKeycloak(k8sclient, kc, true);
+
+        await(upgradeCondition);
+
+        if (updateStrategy == UpdateStrategy.AUTO) {
+            assertUpdateJobExists(kc);
+        }
+    }
+
+    @ParameterizedTest(name = "testOptimizedImage-{0}")
+    @MethodSource("upgradeStrategy")
+    @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
+    public void testOptimizedImage(UpdateStrategy updateStrategy) throws InterruptedException {
+        // In GHA, the custom image is an optimized image of the base image.
+        // We should be able to do a zero-downtime upgrade with Auto strategy.
+        var kc = createInitialDeployment(updateStrategy);
+        // use the base image
+        kc.getSpec().setImage(null);
+        deployKeycloak(k8sclient, kc, true);
+
+        // use the optimized image, auto strategy should use a rolling upgrade
+        kc.getSpec().setImage(getTestCustomImage());
+        var upgradeCondition = updateStrategy == UpdateStrategy.AUTO ?
+                eventuallyRollingUpgradeStatus(k8sclient, kc) :
+                eventuallyRecreateUpgradeStatus(k8sclient, kc);
 
         deployKeycloak(k8sclient, kc, true);
 

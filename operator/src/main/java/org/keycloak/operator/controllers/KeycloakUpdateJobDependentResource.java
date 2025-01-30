@@ -18,6 +18,7 @@
 package org.keycloak.operator.controllers;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
@@ -50,6 +51,17 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private static final List<String> INIT_CONTAINER_ARGS = List.of("update-compatibility", "metadata", "--file", UPDATES_FILE_PATH);
     private static final List<String> CONTAINER_ARGS = List.of("update-compatibility", "check", "--file", UPDATES_FILE_PATH);
 
+    // Job and Pod defaults
+    // Pod is restarted if it fails with an exit code != 0, and we don't want that.
+    private static final int JOB_RETRIES = 0;
+    // Job time to live
+    private static final int JOB_TIME_TO_LIVE_SECONDS = (int) TimeUnit.MINUTES.toSeconds(30);
+    // Pod deadline, it will terminate after exceeding this time. We don't want to crash loop back forever.
+    private static final long POD_DEADLINE_SECONDS = TimeUnit.MINUTES.toSeconds(1);
+
+    // container args to replace
+    private static final Set<String> START_ARGS = Set.of("start", "start-dev");
+
     public KeycloakUpdateJobDependentResource() {
         super(Job.class);
         this.configureWith(new KubernetesDependentResourceConfigBuilder<Job>()
@@ -64,10 +76,10 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         var specBuilder = builder.withNewSpec();
         addPodSpecTemplate(specBuilder, primary, context);
         // we don't need retries; we use exit code != 1 to signal the upgrade decision.
-        specBuilder.withBackoffLimit(0);
+        specBuilder.withBackoffLimit(JOB_RETRIES);
         // Remove the job after 30 minutes.
         // TODO make it configurable!?
-        specBuilder.withTtlSecondsAfterFinished((int) TimeUnit.MINUTES.toSeconds(30));
+        specBuilder.withTtlSecondsAfterFinished(JOB_TIME_TO_LIVE_SECONDS);
         specBuilder.endSpec();
         return builder.build();
     }
@@ -109,7 +121,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // it uses a pause image, which never ends.
         // After 60 seconds, the job is terminated allowing the test to complete.
         // TODO should be configurable?
-        builder.withActiveDeadlineSeconds(60L);
+        builder.withActiveDeadlineSeconds(POD_DEADLINE_SECONDS);
         return builder.build();
     }
 
@@ -129,9 +141,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
 
     private static void configureContainer(ContainerFluent<?> containerBuilder, String name, List<String> args) {
         containerBuilder.withName(name);
-        // TODO take into consideration the args from PodTemplate
-        // TODO optimized image?
-        containerBuilder.withArgs(args);
+        containerBuilder.withArgs(replaceStartWithUpdateCommand(containerBuilder.getArgs(), args));
         // remove volumes, won't be used
         containerBuilder.withVolumeDevices();
         containerBuilder.withVolumeMounts();
@@ -145,6 +155,17 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
                 .withName(WORK_DIR_VOLUME_NAME)
                 .withMountPath(WORK_DIR_VOLUME_MOUNT_PATH)
                 .endVolumeMount();
+    }
+
+    private static List<String> replaceStartWithUpdateCommand(List<String> currentArgs, List<String> updateArgs) {
+        return currentArgs.stream().
+                <String>mapMulti((arg, downstream) -> {
+            if (START_ARGS.contains(arg)) {
+                updateArgs.forEach(downstream);
+                return;
+            }
+            downstream.accept(arg);
+        }).toList();
     }
 
 }
