@@ -58,8 +58,6 @@ test.describe("Events tests", () => {
 
     test("Show empty when no save events", async ({ page }) => {
       await goToEventsConfig(page);
-      await enableSaveEvents(page);
-
       await goToEvents(page);
       await assertEmptyTable(page);
     });

@@ -22,11 +22,13 @@ export async function clickAuthenticationSaveButton(page: Page) {
 }
 
 export async function assertDefaultResource(page: Page) {
-  expect(getRowByCellText(page, "Default Resource")).toBeVisible();
+  await expect(page.getByTestId("name-column-Default Resource")).toHaveText(
+    "Default Resource",
+  );
 }
 
 export async function assertResource(page: Page, name: string) {
-  expect(getRowByCellText(page, name)).toBeVisible();
+  await expect(getRowByCellText(page, name)).toBeVisible();
 }
 
 export async function createResource(
@@ -50,7 +52,7 @@ export async function fillForm(
       for (let index = 0; index < value.length; index++) {
         const v = value[index];
         await page.getByTestId(`${key}${index}`).fill(v);
-        await page.getByTestId("addValue").click();
+        await page.getByTestId("uris-addValue").click();
       }
     } else {
       await page.getByTestId(key).fill(value);
