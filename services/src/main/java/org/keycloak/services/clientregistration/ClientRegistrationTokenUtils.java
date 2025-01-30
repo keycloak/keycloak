@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -91,6 +92,7 @@ public class ClientRegistrationTokenUtils {
 
         String kid;
         JsonWebToken jwt;
+        AccessToken accessToken = null;
         try {
             TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
                     .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
@@ -113,7 +115,12 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Invalid type of token"));
         }
 
-        return TokenVerification.success(kid, jwt);
+        try {
+            accessToken = TokenVerifier.create(token, AccessToken.class).parse().getToken();
+        } catch (VerificationException e) {
+        }
+
+        return TokenVerification.success(kid, jwt, accessToken);
     }
 
     private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
@@ -137,19 +144,21 @@ public class ClientRegistrationTokenUtils {
 
         private final String kid;
         private final JsonWebToken jwt;
+        private final AccessToken accessToken;
         private final RuntimeException error;
 
-        public static TokenVerification success(String kid, JsonWebToken jwt) {
-            return new TokenVerification(kid, jwt, null);
+        public static TokenVerification success(String kid, JsonWebToken jwt, AccessToken accessToken) {
+            return new TokenVerification(kid, jwt, accessToken, null);
         }
 
         public static TokenVerification error(RuntimeException error) {
-            return new TokenVerification(null,null, error);
+            return new TokenVerification(null,null, null, error);
         }
 
-        private TokenVerification(String kid, JsonWebToken jwt, RuntimeException error) {
+        private TokenVerification(String kid, JsonWebToken jwt, AccessToken accessToken, RuntimeException error) {
             this.kid = kid;
             this.jwt = jwt;
+            this.accessToken = accessToken;
             this.error = error;
         }
 
@@ -159,6 +168,10 @@ public class ClientRegistrationTokenUtils {
 
         public JsonWebToken getJwt() {
             return jwt;
+        }
+
+        public AccessToken getAccessToken() {
+            return accessToken;
         }
 
         public RuntimeException getError() {
