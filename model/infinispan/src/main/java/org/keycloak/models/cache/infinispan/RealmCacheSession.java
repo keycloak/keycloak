@@ -895,11 +895,19 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
             RoleModel model = getRoleDelegate().getClientRole(client, name);
-            if (model == null) return null;
-            query = new RoleListQuery(loaded, cacheKey, client.getRealm(), model.getId(), client.getClientId());
+            if (model == null) {
+                // caching empty results will speed up the policy evaluation which tries to look up the role by name and ID
+                query = new RoleListQuery(loaded, cacheKey, client.getRealm(), Set.of());
+            } else {
+                query = new RoleListQuery(loaded, cacheKey, client.getRealm(), model.getId(), client.getClientId());
+            }
             logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
             cache.addRevisioned(query, startupRevision);
             return model;
+        }
+        Iterator<String> iterator = query.getRoles().iterator();
+        if (!iterator.hasNext()) {
+            return null;
         }
         RoleModel role = getRoleById(client.getRealm(), query.getRoles().iterator().next());
         if (role == null) {
