@@ -200,7 +200,7 @@ public class KeycloakServerConfigBuilder {
         return dependencies;
     }
 
-    public Set<Path> toConfigFiles() {
+    Set<Path> toConfigFiles() {
         return configFiles;
     }
 
