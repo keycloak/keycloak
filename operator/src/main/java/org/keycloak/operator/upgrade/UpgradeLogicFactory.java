@@ -20,9 +20,11 @@ package org.keycloak.operator.upgrade;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.upgrade.impl.AlwaysRecreateUpgradeLogic;
+import org.keycloak.operator.upgrade.impl.AutoUpgradeLogic;
 import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
 
 /**
@@ -32,13 +34,14 @@ import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
 public class UpgradeLogicFactory {
 
     @SuppressWarnings("removal")
-    public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context, KeycloakDeploymentDependentResource dependentResource) {
+    public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context, KeycloakDeploymentDependentResource dependentResource, KeycloakUpdateJobDependentResource updateJobDependentResource) {
         var strategy = UpdateSpec.findUpdateStrategy(keycloak);
         if (strategy.isEmpty()) {
             return new RecreateOnImageChangeUpgradeLogic(context, keycloak, dependentResource);
         }
         return switch (strategy.get()) {
             case RECREATE -> new AlwaysRecreateUpgradeLogic(context, keycloak, dependentResource);
+            case AUTO -> new AutoUpgradeLogic(context, keycloak, dependentResource, updateJobDependentResource);
         };
     }
 
