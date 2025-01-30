@@ -8,6 +8,7 @@ import { assertNotificationMessage } from "../utils/masthead";
 import { assertModalTitle, confirmModal } from "../utils/modal";
 import { goToClients, goToRealm } from "../utils/sidebar";
 import {
+  clearAllFilters,
   clickRowKebabItem,
   getRowByCellText,
   searchItem,
@@ -114,7 +115,7 @@ test.describe("Clients test", () => {
       page.getByRole("heading", { name: "No search results" }),
     ).toBeVisible();
 
-    await searchItem(page, placeHolder, "");
+    await clearAllFilters(page);
     await expect(getRowByCellText(page, "account")).toBeVisible();
   });
 
