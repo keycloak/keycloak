@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import adminClient from "../../cypress/support/util/AdminClient";
 import { clickSaveButton } from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
@@ -6,6 +7,7 @@ import { assertModalTitle, confirmModal } from "../utils/modal";
 import { goToClients } from "../utils/sidebar";
 import {
   assertNoResults,
+  clearAllFilters,
   clickRowKebabItem,
   clickTableToolbarItem,
   getTableData,
@@ -23,7 +25,10 @@ import {
   goToCreateFromEmptyList,
   goToInitialAccessTokenTab,
 } from "./initial-access";
-import adminClient from "../../cypress/support/util/AdminClient";
+
+test.use({
+  permissions: ["clipboard-write", "clipboard-read"],
+});
 
 test.describe("Client initial access tokens", () => {
   const tableName = "Initial access token";
@@ -70,7 +75,7 @@ test.describe("Client initial access tokens", () => {
 
     await searchItem(page, placeHolder, "John Doe");
     await assertNoResults(page);
-    await searchItem(page, placeHolder, "");
+    await clearAllFilters(page);
 
     let data = (await getTableData(page, tableName))[0];
     expect(data[countCellNumber]).toBe("4");
