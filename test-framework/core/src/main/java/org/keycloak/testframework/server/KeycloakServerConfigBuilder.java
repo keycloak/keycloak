@@ -6,14 +6,16 @@ import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
 
-import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -73,8 +75,15 @@ public class KeycloakServerConfigBuilder {
         return this;
     }
 
-    public KeycloakServerConfigBuilder configFile(Path filePath) {
-        configFiles.add(filePath);
+    public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
+        try {
+            Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
+            configFiles.add(p);
+            option("cache-config-file", p.getFileName().toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
         return this;
     }
 

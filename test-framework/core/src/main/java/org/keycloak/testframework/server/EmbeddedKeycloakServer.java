@@ -14,6 +14,7 @@ import java.util.concurrent.TimeoutException;
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
+    private Path homeDir;
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -25,14 +26,17 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
         Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
         if (!configFiles.isEmpty()) {
-            Path homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+            if (homeDir == null) {
+                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+            }
+
             Path conf = homeDir.resolve("conf");
 
             if (!conf.toFile().exists()) {
                 conf.toFile().mkdirs();
             }
 
-            for (Path configFile : keycloakServerConfigBuilder.toConfigFiles()) {
+            for (Path configFile : configFiles) {
                 try {
                     Files.copy(configFile, conf.resolve(configFile.getFileName()));
                 } catch (IOException e) {
@@ -40,10 +44,9 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
                 }
             }
 
-            builder.setHomeDir(homeDir);
         }
 
-
+        builder.setHomeDir(homeDir);
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 

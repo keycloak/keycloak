@@ -635,7 +635,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         try {
             Files.copy(configFilePath, distPath.resolve("conf").resolve(configFilePath.getFileName()));
         } catch (IOException cause) {
-            throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
+            throw new RuntimeException("Failed to copy config file [" + configFilePath + "] to 'conf' directory", cause);
         }
     }
 
