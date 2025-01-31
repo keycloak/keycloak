@@ -227,8 +227,8 @@ importers:
         version: 4.0.1(react-router-dom@6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@4tw/cypress-drag-drop':
-        specifier: ^2.2.5
-        version: 2.2.5(cypress@14.0.1)
+        specifier: ^2.3.0
+        version: 2.3.0(cypress@14.0.1)
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.0.1)
@@ -486,10 +486,10 @@ importers:
 
 packages:
 
-  '@4tw/cypress-drag-drop@2.2.5':
-    resolution: {integrity: sha512-3ghTmzhOmUqeN6U3QmUnKRUxI7OMLbJA4hHUY/eS/FhWJgxbiGgcaELbolWnBAOpajPXcsNQGYEj9brd59WH6A==}
+  '@4tw/cypress-drag-drop@2.3.0':
+    resolution: {integrity: sha512-r6/Um+GLidi9mFTx8qiFf1ECMNmwLTLp+CgKVLpYZvJ2aV6mYoe1Uv8Iq1AwqRhhIAdf04aFJ0xzGEO1gnOm1g==}
     peerDependencies:
-      cypress: 2 - 13
+      cypress: 2 - 14
 
   '@actions/core@1.11.1':
     resolution: {integrity: sha512-hXJCSrkwfA46Vd9Z3q4cpEpHB1rL5NG04+/rbqW9d3+CSvtB1tYe8UTpAlixa1vj0m/ULglfEK2UKxMGxCxv5A==}
@@ -5456,7 +5456,7 @@ ignoredOptionalDependencies:
 
 snapshots:
 
-  '@4tw/cypress-drag-drop@2.2.5(cypress@14.0.1)':
+  '@4tw/cypress-drag-drop@2.3.0(cypress@14.0.1)':
     dependencies:
       cypress: 14.0.1
 
