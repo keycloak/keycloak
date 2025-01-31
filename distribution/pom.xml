@@ -82,6 +82,17 @@
                 <module>downloads</module>
             </modules>
         </profile>
+        <profile>
+            <id>dist-api-docs</id>
+            <activation>
+                <property>
+                    <name>dist.api.docs</name>
+                </property>
+            </activation>
+            <modules>
+                <module>api-docs-dist</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>
