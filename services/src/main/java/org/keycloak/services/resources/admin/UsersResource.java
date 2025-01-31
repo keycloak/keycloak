@@ -44,6 +44,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -128,10 +129,10 @@ public class UsersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "409", description = "Conflict"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Create a new user Username must be unique.")
@@ -263,7 +264,7 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
@@ -382,7 +383,7 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Integer.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Integer.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)

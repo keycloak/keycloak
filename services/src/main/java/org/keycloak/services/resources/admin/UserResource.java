@@ -183,10 +183,10 @@ public class UserResource {
     @Operation(summary = "Update the user")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "409", description = "Conflict"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response updateUser(final UserRepresentation rep) {
 
@@ -337,7 +337,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get representation of the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public UserRepresentation getUser(
@@ -378,8 +378,8 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Impersonate the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = Object.class))),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, Object> impersonate() {
@@ -443,7 +443,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get sessions associated with the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<UserSessionRepresentation> getSessions() {
@@ -463,7 +463,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get offline sessions associated with the user and client")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
@@ -490,7 +490,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get social logins associated with the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = FederatedIdentityRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = FederatedIdentityRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<FederatedIdentityRepresentation> getFederatedIdentity() {
@@ -519,7 +519,7 @@ public class UserResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "409", description = "Conflict")
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response addFederatedIdentity(final @Parameter(description = "Social login provider id") @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.users().requireManage(user);
@@ -568,7 +568,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get consents granted by the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Map.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<Map<String, Object>> getConsents() {
@@ -698,7 +698,7 @@ public class UserResource {
     @Operation(summary = "Delete the user")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response deleteUser() {
@@ -757,7 +757,7 @@ public class UserResource {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public void resetPassword(@Parameter(description = "The representation must contain a rawPassword with the plain-text password") CredentialRepresentation cred) {
         auth.users().requireManage(user);
@@ -805,7 +805,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = CredentialRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CredentialRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<CredentialRepresentation> credentials() {
@@ -829,7 +829,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Return credential types, which are provided by the user storage where user is stored.", description = "Returned values can contain for example \"password\", \"otp\" etc. This will always return empty list for \"local\" users, which are not backed by any user storage")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<String> getConfiguredUserStorageCredentialTypes() {
@@ -955,10 +955,10 @@ public class UserResource {
             deprecated = true)
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response resetPasswordEmail(@Parameter(description = "redirect uri") @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
                                        @Parameter(description = "client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
@@ -992,10 +992,10 @@ public class UserResource {
     )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response executeActionsEmail(@Parameter(description = "Redirect uri") @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
                                         @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
@@ -1057,9 +1057,9 @@ public class UserResource {
     )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response sendVerifyEmail(
             @Parameter(description = "Redirect uri") @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
@@ -1100,7 +1100,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<GroupRepresentation> groupMembership(@QueryParam("search") String search,
@@ -1118,7 +1118,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = Long.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, Long> getGroupMembershipCount(@QueryParam("search") String search) {
@@ -1145,7 +1145,7 @@ public class UserResource {
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public void removeMembership(@PathParam("groupId") String groupId) {
         auth.users().requireManageGroupMembership(user);
@@ -1214,7 +1214,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = String[].class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, List<String>> getUnmanagedAttributes() {
