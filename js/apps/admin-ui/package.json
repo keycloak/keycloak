@@ -23,9 +23,7 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "cy:open": "cypress open --e2e --browser chrome",
-    "cy:run": "cypress run --browser chrome",
-    "cy:check-types": "wireit",
+    "test:integration": "playwright test",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
   },
   "wireit": {
@@ -74,15 +72,9 @@
       ]
     },
     "test": {
-      "command": "vitest && playwright test",
+      "command": "vitest",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-admin-client:build"
-      ]
-    },
-    "cy:check-types": {
-      "command": "tsc --project cypress/tsconfig.json",
-      "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
     }
