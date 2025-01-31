@@ -36,6 +36,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
@@ -47,6 +48,8 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+
+import java.util.Set;
 
 /**
  * OAuth 2.0 Resource Owner Password Credentials Grant
@@ -132,6 +135,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         ClientSessionContext clientSessionCtx = processor.attachSession();
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
+        updateResourceIndicatorsInClientSession(clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
@@ -172,4 +176,8 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         return EventType.LOGIN;
     }
 
+    @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        return AuthzEndpointRequestParser.KNOWN_MULTI_PARAMS;
+    }
 }

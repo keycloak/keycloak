@@ -64,11 +64,13 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -146,7 +148,7 @@ public class TokenManager {
     }
 
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm,
-                                         RefreshToken oldToken, HttpHeaders headers, String oldTokenScope) throws OAuthErrorException {
+                                         RefreshToken oldToken, HttpHeaders headers, String oldTokenScope, List<String> resourceParamValues) throws OAuthErrorException {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
 
@@ -241,6 +243,20 @@ public class TokenManager {
 
         if (oldToken.getNonce() != null) {
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
+        }
+
+        if (resourceParamValues != null && !resourceParamValues.isEmpty()) {
+            Set<String> requestedResourceIndicators = Set.copyOf(resourceParamValues);
+
+            CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, clientSession, requestedResourceIndicators);
+            if (checkedResourceIndicators.hasUnsupportedResources()) {
+                String errorMessage = "Unsupported resource indicators: " + checkedResourceIndicators.getUnsupportedResources();
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid resource", errorMessage);
+            }
+
+            if (checkedResourceIndicators.hasSupportedResources()) {
+                clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, checkedResourceIndicators.getSupportedResources());
+            }
         }
 
         // recreate token.
@@ -404,8 +420,9 @@ public class TokenManager {
                     .collect(Collectors.joining(" "));
         }
 
+        List<String> resourceParamValues = request.getDecodedFormParameters().get(OAuth2Constants.RESOURCE);
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope, resourceParamValues);
 
-        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
