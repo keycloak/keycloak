@@ -58,7 +58,7 @@ export const UserSelect = ({
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
 
-  const debounceFn = useCallback(debounce(setSearch, 1000), []);
+  const debounceFn = useCallback(debounce(setSearch, 500), []);
 
   useFetch(
     async () => {
@@ -77,24 +77,13 @@ export const UserSelect = ({
   );
 
   useFetch(
-    async () => {
-      if (!search) {
-        return [];
-      }
-
-      const foundUsers = await adminClient.users.find({
+    async () =>
+      adminClient.users.find({
         username: search,
         max: 20,
-      });
-
-      if (!values) {
-        return foundUsers;
-      }
-
-      return foundUsers.filter((user) => !values.includes(user.id!));
-    },
+      }),
     setSearchedUsers,
-    [search, values],
+    [search],
   );
 
   const users = useMemo(
