@@ -46,7 +46,8 @@ import org.keycloak.utils.StringUtil;
                 " where o.realmId = :realmId AND (lower(o.name) like concat('%',:search,'%') OR d.name like concat('%',:search,'%')) order by o.name ASC"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
-        @NamedQuery(name="getGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId")
+        @NamedQuery(name="getGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId"),
+        @NamedQuery(name="getGroupsByFederatedMember", query="select m.groupId from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.userId = :userId")
 })
 public class OrganizationEntity {
 
