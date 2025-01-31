@@ -18,8 +18,8 @@ importers:
         specifier: ^9.19.0
         version: 9.19.0
       '@types/node':
-        specifier: ^22.10.10
-        version: 22.10.10
+        specifier: ^22.12.0
+        version: 22.12.0
       eslint:
         specifier: ^9.19.0
         version: 9.19.0
@@ -114,8 +114,8 @@ importers:
         specifier: ^15.4.0
         version: 15.4.0(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
-        specifier: ^6.28.2
-        version: 6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.29.0
+        version: 6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
@@ -217,18 +217,18 @@ importers:
         specifier: ^15.4.0
         version: 15.4.0(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
-        specifier: ^6.28.2
-        version: 6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.29.0
+        version: 6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow:
         specifier: ^11.11.4
         version: 11.11.4(@types/react@18.3.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs:
         specifier: ^4.0.1
-        version: 4.0.1(react-router-dom@6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 4.0.1(react-router-dom@6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@4tw/cypress-drag-drop':
-        specifier: ^2.2.5
-        version: 2.2.5(cypress@14.0.1)
+        specifier: ^2.3.0
+        version: 2.3.0(cypress@14.0.1)
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.0.1)
@@ -263,8 +263,8 @@ importers:
         specifier: ^14.0.1
         version: 14.0.1
       cypress-axe:
-        specifier: ^1.5.0
-        version: 1.5.0(axe-core@4.10.2)(cypress@14.0.1)
+        specifier: ^1.6.0
+        version: 1.6.0(axe-core@4.10.2)(cypress@14.0.1)
       cypress-split:
         specifier: ^1.24.7
         version: 1.24.7(@babel/core@7.26.0)
@@ -354,8 +354,8 @@ importers:
         specifier: ^10.0.10
         version: 10.0.10
       '@types/node':
-        specifier: ^22.10.10
-        version: 22.10.10
+        specifier: ^22.12.0
+        version: 22.12.0
       chai:
         specifier: ^5.1.2
         version: 5.1.2
@@ -367,7 +367,7 @@ importers:
         version: 11.1.0
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.9.3)(@types/node@22.10.10)(typescript@5.7.3)
+        version: 10.9.2(@swc/core@1.9.3)(@types/node@22.12.0)(typescript@5.7.3)
 
   libs/keycloak-js: {}
 
@@ -486,10 +486,10 @@ importers:
 
 packages:
 
-  '@4tw/cypress-drag-drop@2.2.5':
-    resolution: {integrity: sha512-3ghTmzhOmUqeN6U3QmUnKRUxI7OMLbJA4hHUY/eS/FhWJgxbiGgcaELbolWnBAOpajPXcsNQGYEj9brd59WH6A==}
+  '@4tw/cypress-drag-drop@2.3.0':
+    resolution: {integrity: sha512-r6/Um+GLidi9mFTx8qiFf1ECMNmwLTLp+CgKVLpYZvJ2aV6mYoe1Uv8Iq1AwqRhhIAdf04aFJ0xzGEO1gnOm1g==}
     peerDependencies:
-      cypress: 2 - 13
+      cypress: 2 - 14
 
   '@actions/core@1.11.1':
     resolution: {integrity: sha512-hXJCSrkwfA46Vd9Z3q4cpEpHB1rL5NG04+/rbqW9d3+CSvtB1tYe8UTpAlixa1vj0m/ULglfEK2UKxMGxCxv5A==}
@@ -1296,8 +1296,8 @@ packages:
       react: '>=17'
       react-dom: '>=17'
 
-  '@remix-run/router@1.21.1':
-    resolution: {integrity: sha512-KeBYSwohb8g4/wCcnksvKTYlg69O62sQeLynn2YE+5z7JWEj95if27kclW9QqbrlsQ2DINI8fjbV3zyuKfwjKg==}
+  '@remix-run/router@1.22.0':
+    resolution: {integrity: sha512-MBOl8MeOzpK0HQQQshKB7pABXbmyHizdTpqnrIseTbsv0nAepwC2ENZa1aaBExNQcpLoXmWthhak8SABLzvGPw==}
     engines: {node: '>=14.0.0'}
 
   '@rollup/plugin-commonjs@28.0.2':
@@ -1822,9 +1822,6 @@ packages:
 
   '@types/mocha@10.0.10':
     resolution: {integrity: sha512-xPyYSz1cMPnJQhl0CLMH68j3gprKZaTjG3s5Vi+fDgx+uhG9NOXwbVt52eFS8ECyXhyKcjDLCBEqBExKuiZb7Q==}
-
-  '@types/node@22.10.10':
-    resolution: {integrity: sha512-X47y/mPNzxviAGY5TcYPtYL8JsY3kAq2n8fMmKoRCxq/c4v4pyGNCzM2R6+M5/umG4ZfHuT+sgqDYqWc9rJ6ww==}
 
   '@types/node@22.10.6':
     resolution: {integrity: sha512-qNiuwC4ZDAUNcY47xgaSuS92cjf8JbSUoaKS77bmLG1rU7MlATVSiw/IlrjtIyyskXBZ8KkNfjK/P5na7rgXbQ==}
@@ -2500,12 +2497,12 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
-  cypress-axe@1.5.0:
-    resolution: {integrity: sha512-Hy/owCjfj+25KMsecvDgo4fC/781ccL+e8p+UUYoadGVM2ogZF9XIKbiM6KI8Y3cEaSreymdD6ZzccbI2bY0lQ==}
+  cypress-axe@1.6.0:
+    resolution: {integrity: sha512-C/ij50G8eebBrl/WsGT7E+T/SFyIsRZ3Epx9cRTLrPL9Y1GcxlQGFoAVdtSFWRrHSCWXq9HC6iJQMaI89O9yvQ==}
     engines: {node: '>=10'}
     peerDependencies:
       axe-core: ^3 || ^4
-      cypress: ^10 || ^11 || ^12 || ^13
+      cypress: ^10 || ^11 || ^12 || ^13 || ^14
 
   cypress-split@1.24.7:
     resolution: {integrity: sha512-JOxWgCQHi/JMOwznm6VF7V1GHYEM9Mxz6EipZu9WgQtqnRjk3QX6lBXJMjRXOPqArguL9S49OSFUQXDiC19hBg==}
@@ -4378,15 +4375,15 @@ packages:
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
-  react-router-dom@6.28.2:
-    resolution: {integrity: sha512-O81EWqNJWqvlN/a7eTudAdQm0TbI7hw+WIi7OwwMcTn5JMyZ0ibTFNGz+t+Lju0df4LcqowCegcrK22lB1q9Kw==}
+  react-router-dom@6.29.0:
+    resolution: {integrity: sha512-pkEbJPATRJ2iotK+wUwHfy0xs2T59YPEN8BQxVCPeBZvK7kfPESRc/nyxzdcxR17hXgUPYx2whMwl+eo9cUdnQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  react-router@6.28.2:
-    resolution: {integrity: sha512-BgFY7+wEGVjHCiqaj2XiUBQ1kkzfg6UoKYwEe0wv+FF+HNPCxtS/MVPvLAPH++EsuCMReZl9RYVGqcHLk5ms3A==}
+  react-router@6.29.0:
+    resolution: {integrity: sha512-DXZJoE0q+KyeVw75Ck6GkPxFak63C4fGqZGNijnWgzB/HzSP1ZfTlBj5COaGWwhrMQ/R8bXiq5Ooy4KG+ReyjQ==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       react: '>=16.8'
@@ -5456,7 +5453,7 @@ ignoredOptionalDependencies:
 
 snapshots:
 
-  '@4tw/cypress-drag-drop@2.2.5(cypress@14.0.1)':
+  '@4tw/cypress-drag-drop@2.3.0(cypress@14.0.1)':
     dependencies:
       cypress: 14.0.1
 
@@ -6024,9 +6021,9 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-hook-form: 7.54.2(react@18.3.1)
       react-i18next: 15.4.0(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-router-dom: 6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router-dom: 6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - '@babel/runtime'
       - '@types/react'
@@ -6276,7 +6273,7 @@ snapshots:
       - '@types/react'
       - immer
 
-  '@remix-run/router@1.21.1': {}
+  '@remix-run/router@1.22.0': {}
 
   '@rollup/plugin-commonjs@28.0.2(rollup@4.32.1)':
     dependencies:
@@ -6737,10 +6734,6 @@ snapshots:
 
   '@types/mocha@10.0.10': {}
 
-  '@types/node@22.10.10':
-    dependencies:
-      undici-types: 6.20.0
-
   '@types/node@22.10.6':
     dependencies:
       undici-types: 6.20.0
@@ -6775,7 +6768,7 @@ snapshots:
 
   '@types/tar-stream@3.1.3':
     dependencies:
-      '@types/node': 22.10.10
+      '@types/node': 22.12.0
 
   '@types/unist@2.0.11': {}
 
@@ -7461,7 +7454,7 @@ snapshots:
 
   csstype@3.1.3: {}
 
-  cypress-axe@1.5.0(axe-core@4.10.2)(cypress@14.0.1):
+  cypress-axe@1.6.0(axe-core@4.10.2)(cypress@14.0.1):
     dependencies:
       axe-core: 4.10.2
       cypress: 14.0.1
@@ -9631,16 +9624,16 @@ snapshots:
 
   react-is@17.0.2: {}
 
-  react-router-dom@6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-router-dom@6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@remix-run/router': 1.21.1
+      '@remix-run/router': 1.22.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      react-router: 6.28.2(react@18.3.1)
+      react-router: 6.29.0(react@18.3.1)
 
-  react-router@6.28.2(react@18.3.1):
+  react-router@6.29.0(react@18.3.1):
     dependencies:
-      '@remix-run/router': 1.21.1
+      '@remix-run/router': 1.22.0
       react: 18.3.1
 
   react@18.3.1:
@@ -10277,26 +10270,6 @@ snapshots:
     dependencies:
       typescript: 5.7.3
 
-  ts-node@10.9.2(@swc/core@1.9.3)(@types/node@22.10.10)(typescript@5.7.3):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 22.10.10
-      acorn: 8.14.0
-      acorn-walk: 8.3.4
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 5.7.3
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    optionalDependencies:
-      '@swc/core': 1.9.3
-
   ts-node@10.9.2(@swc/core@1.9.3)(@types/node@22.12.0)(typescript@5.7.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
@@ -10471,10 +10444,10 @@ snapshots:
 
   url-template@3.1.1: {}
 
-  use-react-router-breadcrumbs@4.0.1(react-router-dom@6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  use-react-router-breadcrumbs@4.0.1(react-router-dom@6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
-      react-router-dom: 6.28.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router-dom: 6.29.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   use-sync-external-store@1.2.2(react@18.3.1):
     dependencies:
