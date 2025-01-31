@@ -23,7 +23,6 @@ import java.util.Set;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -137,10 +136,14 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     protected void killBackendNode(ContainerInfo node) {
-        backendAdminClients.get(node).close();
-        backendAdminClients.remove(node);
-        backendTestingClients.get(node).close();
-        backendTestingClients.remove(node);
+        if(backendAdminClients.containsKey(node)) {
+            backendAdminClients.get(node).close();
+            backendAdminClients.remove(node);
+        }
+        if(backendTestingClients.containsKey(node)) {
+            backendTestingClients.get(node).close();
+            backendTestingClients.remove(node);
+        }
         log.info("Killing backend node: " + node);
         controller.kill(node.getQualifier());
     }
@@ -182,9 +185,11 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeClusterTest() {
+        for(ContainerInfo survivor : getCurrentSurvivorNodes()) {
+            killBackendNode(survivor);
+        }
         failback();
         logFailoverSetup();
-        pause(3000);
     }
 
     @Override
