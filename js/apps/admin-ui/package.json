@@ -115,7 +115,7 @@
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
-    "@4tw/cypress-drag-drop": "^2.2.5",
+    "@4tw/cypress-drag-drop": "^2.3.0",
     "@testing-library/cypress": "^10.0.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
