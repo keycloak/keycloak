@@ -178,7 +178,7 @@ public class KeycloakServerConfigBuilder {
         }
     }
 
-    public List<String> toArgs() {
+    List<String> toArgs() {
         log.build();
 
         List<String> args = new LinkedList<>();
@@ -196,7 +196,7 @@ public class KeycloakServerConfigBuilder {
         return args;
     }
 
-    public Set<Dependency> toDependencies() {
+    Set<Dependency> toDependencies() {
         return dependencies;
     }
 
