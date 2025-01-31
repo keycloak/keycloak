@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.cluster;
 
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.AfterClass;
@@ -11,7 +10,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.arquillian.containers.RemoteContainer;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -21,12 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *
@@ -140,10 +136,14 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     protected void killBackendNode(ContainerInfo node) {
-        backendAdminClients.get(node).close();
-        backendAdminClients.remove(node);
-        backendTestingClients.get(node).close();
-        backendTestingClients.remove(node);
+        if(backendAdminClients.containsKey(node)) {
+            backendAdminClients.get(node).close();
+            backendAdminClients.remove(node);
+        }
+        if(backendTestingClients.containsKey(node)) {
+            backendTestingClients.get(node).close();
+            backendTestingClients.remove(node);
+        }
         log.info("Killing backend node: " + node);
         controller.kill(node.getQualifier());
     }
@@ -185,6 +185,9 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
 
     @Before
     public void beforeClusterTest() {
+        for(ContainerInfo survivor : getCurrentSurvivorNodes()) {
+            killBackendNode(survivor);
+        }
         failback();
         logFailoverSetup();
     }
