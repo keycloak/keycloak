@@ -90,7 +90,7 @@ public class Config {
     private static ConfigSource initTestEnvConfigSource() {
         Path currentPath = Paths.get(System.getProperty("user.dir"));
         while (Files.isDirectory(currentPath)) {
-            Path envTestPath = currentPath.resolve(".env-test");
+            Path envTestPath = currentPath.resolve(".env.test");
             if (Files.isRegularFile(envTestPath)) {
                 try {
                     return new EnvConfigSource(ConfigSourceUtil.urlToMap(envTestPath.toUri().toURL()), 350);
