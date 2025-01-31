@@ -36,10 +36,12 @@ import org.keycloak.testframework.realm.ManagedRealm;
 
 public abstract class AbstractPermissionTest {
 
-    @InjectRealm(config = RealmAdminPermissionsConfig.class)
+    public final String REALM_REF = "AbstractPermissionTestRealm";
+
+    @InjectRealm(config = RealmAdminPermissionsConfig.class, ref = REALM_REF)
     ManagedRealm realm;
 
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
+    @InjectClient(realmRef = REALM_REF, attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient client;
 
     protected PermissionsResource getPermissionsResource() {
