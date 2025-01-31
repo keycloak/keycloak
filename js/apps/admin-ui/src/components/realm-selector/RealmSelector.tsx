@@ -161,7 +161,9 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
             setOpen(!open);
           }}
           isFullWidth
-          isDisabled={realms.length <= 1}
+          isDisabled={
+            realms.length <= 1 && realms.map((r) => r.name).includes(realm)
+          }
         >
           <Stack className="keycloak__realm_selector__dropdown">
             {realmDisplayName ? (
