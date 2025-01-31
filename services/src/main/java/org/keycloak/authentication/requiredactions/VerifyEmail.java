@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -64,8 +65,18 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             logger.debug("User is required to verify email");
         }
     }
+
+    @Override
+    public InitiatedActionSupport initiatedActionSupport() {
+        return InitiatedActionSupport.SUPPORTED;
+    }
+
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        process(context, true);
+    }
+
+    public void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (context.getUser().isEmailVerified()) {
@@ -81,11 +92,12 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         }
 
         LoginFormsProvider loginFormsProvider = context.form();
+        loginFormsProvider.setAuthenticationSession(context.getAuthenticationSession());
         Response challenge;
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
-        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
+        if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
             authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
             EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
             challenge = sendVerifyEmail(context, event);
@@ -96,6 +108,9 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         context.challenge(challenge);
     }
 
+    private boolean isCurrentActionTriggeredFromAIA(RequiredActionContext context) {
+        return Objects.equals(context.getAuthenticationSession().getClientNote(Constants.KC_ACTION), getId());
+    }
 
     @Override
     public void processAction(RequiredActionContext context) {
@@ -104,7 +119,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         // This will allow user to re-send email again
         context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
 
-        requiredActionChallenge(context);
+        process(context, false);
     }
 
 
