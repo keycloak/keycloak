@@ -103,45 +103,45 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     @Override
     public void updateStoredCredential(CredentialModel cred) {
         throwExceptionIfInvalidUser(user);
-        getStoreForUser(user).updateCredential(realm, user, cred);
+        getStoreForUser().updateCredential(realm, user, cred);
     }
 
     @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         throwExceptionIfInvalidUser(user);
-        return getStoreForUser(user).createCredential(realm, user, cred);
+        return getStoreForUser().createCredential(realm, user, cred);
     }
 
     @Override
     public boolean removeStoredCredentialById(String id) {
         throwExceptionIfInvalidUser(user);
-        return getStoreForUser(user).removeStoredCredential(realm, user, id);
+        return getStoreForUser().removeStoredCredential(realm, user, id);
     }
 
     @Override
     public CredentialModel getStoredCredentialById(String id) {
-        return getStoreForUser(user).getStoredCredentialById(realm, user, id);
+        return getStoreForUser().getStoredCredentialById(realm, user, id);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsStream() {
-        return getStoreForUser(user).getStoredCredentialsStream(realm, user);
+        return getStoreForUser().getStoredCredentialsStream(realm, user);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
-        return getStoreForUser(user).getStoredCredentialsByTypeStream(realm, user, type);
+        return getStoreForUser().getStoredCredentialsByTypeStream(realm, user, type);
     }
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
-        return getStoreForUser(user).getStoredCredentialByNameAndType(realm, user, name, type);
+        return getStoreForUser().getStoredCredentialByNameAndType(realm, user, name, type);
     }
 
     @Override
     public boolean moveStoredCredentialTo(String id, String newPreviousCredentialId) {
         throwExceptionIfInvalidUser(user);
-        return getStoreForUser(user).moveCredentialTo(realm, user, id, newPreviousCredentialId);
+        return getStoreForUser().moveCredentialTo(realm, user, id, newPreviousCredentialId);
     }
 
     @Override
@@ -219,7 +219,7 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
         throwExceptionIfInvalidUser(user);
         return session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(CredentialProvider.class)
-                .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
+                .map(f -> (CredentialProvider<?>) session.getProvider(CredentialProvider.class, f.getId()))
                 .filter(provider -> Objects.equals(provider.getType(), model.getType()))
                 .map(cp -> cp.createCredential(realm, user, cp.getCredentialFromModel(model)))
                 .findFirst()
@@ -281,13 +281,22 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
         }
     }
 
-    private UserCredentialStore getStoreForUser(UserModel user) {
-        StoreManagers p = (StoreManagers) session.getProvider(DatastoreProvider.class);
-        if (StorageId.isLocalStorage(user.getId())) {
-            return (UserCredentialStore) p.userLocalStorage();
-        } else {
-            return (UserCredentialStore) p.userFederatedStorage();
+    private UserCredentialStore getStoreForUser() {
+        String providerId = user.getFederationLink();
+        if (providerId != null) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+            if (model == null || !model.isEnabled()) return DisabledCredentialStore.INSTANCE;
+
+            UserCredentialStore store = getStorageProviderInstance(model, UserCredentialStore.class);
+            if (store != null) return store;
         }
+
+        StoreManagers storeManagers = (StoreManagers) session.getProvider(DatastoreProvider.class);
+        return (UserCredentialStore) (
+            StorageId.isLocalStorage(user.getId())
+                ? storeManagers.userLocalStorage()
+                : storeManagers.userFederatedStorage()
+        );
     }
 
 }
