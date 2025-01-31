@@ -208,6 +208,10 @@ public class OAuthClient {
 
     private Supplier<CloseableHttpClient> httpClient = OAuthClient::newCloseableHttpClient;
 
+    public String getDpopProof() {
+        return dpopProof;
+    }
+
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
 
