@@ -24,16 +24,21 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 public class RealmAdminPermissionsConfig implements RealmConfig {
 
+    public static final String USERNAME = "myadmin";
+    public static final String PASSWORD = "password";
+    public static final String CLIENT_ID = "myclient";
+    public static final String CLIENT_SECRET = "mysecret";
+
     @Override
     public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-        realm.addUser("myadmin")
+        realm.addUser(USERNAME)
                 .name("My", "Admin")
                 .email("myadmin@localhost")
                 .emailVerified()
-                .password("password")
+                .password(PASSWORD)
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_USERS);
-        realm.addClient("myclient")
-                .secret("mysecret")
+        realm.addClient(CLIENT_ID)
+                .secret(CLIENT_SECRET)
                 .directAccessGrants();
         return realm.adminPermissionsEnabled(true);
     }
