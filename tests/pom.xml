@@ -35,6 +35,7 @@
     <modules>
         <module>base</module>
         <module>utils</module>
+        <module>custom-providers</module>
     </modules>
 
 </project>

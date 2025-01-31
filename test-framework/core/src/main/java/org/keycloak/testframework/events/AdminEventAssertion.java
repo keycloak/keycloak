@@ -39,6 +39,21 @@ public class AdminEventAssertion {
         return new AdminEventAssertion(event, false).assertValidOperationType();
     }
 
+    public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, Object representation, ResourceType resourceType) {
+        return assertSuccess(event)
+                .operationType(operationType)
+                .resourcePath(resourcePath)
+                .representation(representation)
+                .resourceType(resourceType);
+    }
+
+    public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, ResourceType resourceType) {
+        return assertSuccess(event)
+                .operationType(operationType)
+                .resourcePath(resourcePath)
+                .resourceType(resourceType);
+    }
+
     public AdminEventAssertion operationType(OperationType operationType) {
         Assertions.assertEquals(operationType.name(), getOperationType());
         return this;

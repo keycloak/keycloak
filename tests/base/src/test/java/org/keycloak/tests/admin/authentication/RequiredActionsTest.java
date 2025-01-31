@@ -15,19 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.authentication;
+package org.keycloak.tests.admin.authentication;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionConfigInfoRepresentation;
 import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
@@ -41,13 +49,14 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest(config = RequiredActionsTest.CustomProvidersServerConfig.class)
 public class RequiredActionsTest extends AbstractAuthenticationTest {
 
-    @Override
-    protected boolean removeVerifyProfileAtImport() {
-        // do not remove verify profile action for this test
-        return false;
-    }
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
     @Test
     public void testRequiredActions() {
@@ -70,22 +79,22 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         RequiredActionProviderRepresentation forUpdate = newRequiredAction("VERIFY_EMAIL", "Verify Email", false, false, null);
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
         RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
 
-        Assert.assertNotNull("Required Action still there", updated);
+        Assertions.assertNotNull(updated, "Required Action still there");
         compareRequiredAction(forUpdate, updated);
 
         forUpdate.setConfig(Collections.<String, String>emptyMap());
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
         updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
 
-        Assert.assertNotNull("Required Action still there", updated);
+        Assertions.assertNotNull(updated, "Required Action still there");
         compareRequiredAction(forUpdate, updated);
     }
 
@@ -95,16 +104,16 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(2, result.size());
+        Assertions.assertEquals(2, result.size());
         RequiredActionProviderSimpleRepresentation action = result.stream().filter(
                 a -> a.getProviderId().equals(DummyRequiredActionFactory.PROVIDER_ID)
         ).findFirst().get();
-        Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
-        Assert.assertEquals("Dummy Action", action.getName());
+        Assertions.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
+        Assertions.assertEquals("Dummy Action", action.getName());
 
         // Register it
         authMgmtResource.registerRequiredAction(action);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
 
         // Try to register 2nd time
         try {
@@ -119,7 +128,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         requiredAction.setProviderId("not-existent");
         try {
             authMgmtResource.registerRequiredAction(requiredAction);
-            Assert.fail("Didn't expect to register requiredAction with providerId: 'not-existent'");
+            Assertions.fail("Didn't expect to register requiredAction with providerId: 'not-existent'");
         } catch (Exception ex) {
             // Expected
         }
@@ -127,7 +136,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         // Try to find not-existent action - should fail
         try {
             authMgmtResource.getRequiredAction("not-existent");
-            Assert.fail("Didn't expect to find requiredAction of alias 'not-existent'");
+            Assertions.fail("Didn't expect to find requiredAction of alias 'not-existent'");
         } catch (NotFoundException nfe) {
             // Expected
         }
@@ -138,12 +147,12 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
                 true, false, Collections.<String, String>emptyMap()));
 
         // Confirm the registered priority - should be N + 1
-        Assert.assertEquals(lastPriority + 1, rep.getPriority());
+        Assertions.assertEquals(lastPriority + 1, rep.getPriority());
 
         // Update not-existent - should fail
         try {
             authMgmtResource.updateRequiredAction("not-existent", rep);
-            Assert.fail("Not expected to update not-existent requiredAction");
+            Assertions.fail("Not expected to update not-existent requiredAction");
         } catch (NotFoundException nfe) {
             // Expected
         }
@@ -151,21 +160,21 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         // Update (set it as defaultAction)
         rep.setDefaultAction(true);
         authMgmtResource.updateRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, rep);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), rep, ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), rep, ResourceType.REQUIRED_ACTION);
         compareRequiredAction(rep, newRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, "Dummy Action",
                 true, true, Collections.<String, String>emptyMap()));
 
         // Remove unexistent - should fail
         try {
             authMgmtResource.removeRequiredAction("not-existent");
-            Assert.fail("Not expected to remove not-existent requiredAction");
+            Assertions.fail("Not expected to remove not-existent requiredAction");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // Remove success
         authMgmtResource.removeRequiredAction(DummyRequiredActionFactory.PROVIDER_ID);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
 
     }
 
@@ -176,9 +185,9 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // query configurable properties
         RequiredActionConfigInfoRepresentation requiredActionConfigDescription = authMgmtResource.getRequiredActionConfigDescription(providerId);
-        Assert.assertNotNull(requiredActionConfigDescription);
-        Assert.assertNotNull(requiredActionConfigDescription.getProperties());
-        Assert.assertTrue(requiredActionConfigDescription.getProperties().size() == 2);
+        Assertions.assertNotNull(requiredActionConfigDescription);
+        Assertions.assertNotNull(requiredActionConfigDescription.getProperties());
+        Assertions.assertTrue(requiredActionConfigDescription.getProperties().size() == 2);
     }
 
     @Test
@@ -187,45 +196,45 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(2, result.size());
+        Assertions.assertEquals(2, result.size());
         String providerId = DummyConfigurableRequiredActionFactory.PROVIDER_ID;
         RequiredActionProviderSimpleRepresentation action = result.stream().filter(
                 a -> providerId.equals(a.getProviderId())
         ).findFirst().get();
-        Assert.assertEquals(providerId, action.getProviderId());
-        Assert.assertEquals("Configurable Test Action", action.getName());
+        Assertions.assertEquals(providerId, action.getProviderId());
+        Assertions.assertEquals("Configurable Test Action", action.getName());
 
         // Register it
         authMgmtResource.registerRequiredAction(action);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
 
         RequiredActionConfigRepresentation requiredActionConfigRep = new RequiredActionConfigRepresentation();
         Map<String, String> newActionConfig = Map.ofEntries(Map.entry("setting1", "value1"), Map.entry("setting2", "false"));
         requiredActionConfigRep.setConfig(newActionConfig);
 
         authMgmtResource.updateRequiredActionConfig(providerId, requiredActionConfigRep);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
 
         RequiredActionConfigRepresentation savedRequiredActionConfigRep = authMgmtResource.getRequiredActionConfig(providerId);
-        Assert.assertNotNull(savedRequiredActionConfigRep);
-        Assert.assertNotNull(savedRequiredActionConfigRep.getConfig());
-        Assert.assertTrue(savedRequiredActionConfigRep.getConfig().entrySet().containsAll(newActionConfig.entrySet()));
+        Assertions.assertNotNull(savedRequiredActionConfigRep);
+        Assertions.assertNotNull(savedRequiredActionConfigRep.getConfig());
+        Assertions.assertTrue(savedRequiredActionConfigRep.getConfig().entrySet().containsAll(newActionConfig.entrySet()));
 
         // delete config
         authMgmtResource.removeRequiredActionConfig(providerId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authRequiredActionConfigPath(providerId), ResourceType.REQUIRED_ACTION_CONFIG);
 
         RequiredActionProviderRepresentation rep = authMgmtResource.getRequiredAction(providerId);
 
         // Remove success
         authMgmtResource.removeRequiredAction(providerId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
 
         // Retrieval after deletion should throw a NotFound exception
         try {
             authMgmtResource.getRequiredActionConfig(providerId);
         } catch (Exception ex) {
-            Assert.assertTrue(NotFoundException.class.isInstance(ex));
+            Assertions.assertTrue(NotFoundException.class.isInstance(ex));
         }
     }
 
@@ -245,8 +254,8 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
     }
 
     private void compareRequiredActions(List<RequiredActionProviderRepresentation> expected, List<RequiredActionProviderRepresentation> actual) {
-        Assert.assertNotNull("Actual null", actual);
-        Assert.assertEquals("Required actions count", expected.size(), actual.size());
+        Assertions.assertNotNull(actual, "Actual null");
+        Assertions.assertEquals(expected.size(), actual.size(), "Required actions count");
 
         Iterator<RequiredActionProviderRepresentation> ite = expected.iterator();
         Iterator<RequiredActionProviderRepresentation> ita = actual.iterator();
@@ -256,11 +265,11 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
     }
 
     private void compareRequiredAction(RequiredActionProviderRepresentation expected, RequiredActionProviderRepresentation actual) {
-        Assert.assertEquals("alias - " + expected.getAlias(), expected.getAlias(), actual.getAlias());
-        Assert.assertEquals("name - "  + expected.getAlias(), expected.getName(), actual.getName());
-        Assert.assertEquals("enabled - "  + expected.getAlias(), expected.isEnabled(), actual.isEnabled());
-        Assert.assertEquals("defaultAction - "  + expected.getAlias(), expected.isDefaultAction(), actual.isDefaultAction());
-        Assert.assertEquals("config - " + expected.getAlias(), expected.getConfig() != null ? expected.getConfig() : Collections.<String, String>emptyMap(), actual.getConfig());
+        Assertions.assertEquals(expected.getAlias(), actual.getAlias(), "alias - " + expected.getAlias());
+        Assertions.assertEquals(expected.getName(), actual.getName(), "name - "  + expected.getAlias());
+        Assertions.assertEquals(expected.isEnabled(), actual.isEnabled(), "enabled - "  + expected.getAlias());
+        Assertions.assertEquals(expected.isDefaultAction(), actual.isDefaultAction(), "defaultAction - "  + expected.getAlias());
+        Assertions.assertEquals(expected.getConfig() != null ? expected.getConfig() : Collections.<String, String>emptyMap(), actual.getConfig(), "config - " + expected.getAlias());
     }
 
     private void addRequiredAction(List<RequiredActionProviderRepresentation> target, String alias, String name, boolean enabled, boolean defaultAction, Map<String, String> conf) {
@@ -283,4 +292,14 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
             return o1.getAlias().compareTo(o2.getAlias());
         }
     }
+
+    public static class CustomProvidersServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
+        }
+
+    }
+
 }
