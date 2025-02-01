@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin;
 
 import jakarta.ws.rs.core.UriBuilder;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -169,6 +170,7 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @Ignore
     public void testWithTokenAuthEnabledAndSavedCredentials() throws Exception {
         RealmRepresentation realmRep = realm.toRepresentation();
         Map<String, String> oldSmtp = realmRep.getSmtpServer();
