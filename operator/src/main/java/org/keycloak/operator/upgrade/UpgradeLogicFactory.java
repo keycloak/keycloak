@@ -19,7 +19,7 @@ package org.keycloak.operator.upgrade;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import jakarta.inject.Inject;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
@@ -32,13 +32,15 @@ import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
  */
 @ApplicationScoped
 public class UpgradeLogicFactory {
+    @Inject
+    KeycloakUpdateJobDependentResource updateJobDependentResource;
 
-    public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context, KeycloakDeploymentDependentResource dependentResource, KeycloakUpdateJobDependentResource updateJobDependentResource) {
+    public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context) {
         var strategy = UpdateSpec.getUpdateStrategy(keycloak);
         return switch (strategy) {
-            case RECREATE_ON_IMAGE_CHANGE -> new RecreateOnImageChangeUpgradeLogic(context, keycloak, dependentResource);
-            case FORCE_RECREATE -> new ForceRecreateUpgradeLogic(context, keycloak, dependentResource);
-            case AUTO -> new AutoUpgradeLogic(context, keycloak, dependentResource, updateJobDependentResource);
+            case RECREATE_ON_IMAGE_CHANGE -> new RecreateOnImageChangeUpgradeLogic(context, keycloak);
+            case FORCE_RECREATE -> new ForceRecreateUpgradeLogic(context, keycloak);
+            case AUTO -> new AutoUpgradeLogic(context, keycloak, updateJobDependentResource);
         };
     }
 

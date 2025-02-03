@@ -62,7 +62,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakRealmImportController;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
@@ -212,24 +215,6 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
         @Override
         public KubernetesClient getKubernetesClient() {
             return k8sclient;
-        }
-
-        @Override
-        public DependentResourceFactory dependentResourceFactory() {
-            return new DependentResourceFactory<ControllerConfiguration<?>>() {
-                @Override
-                public DependentResource createFrom(DependentResourceSpec spec,
-                        ControllerConfiguration<?> configuration) {
-                    final var dependentResourceClass = spec.getDependentResourceClass();
-                    // workaround for https://github.com/operator-framework/java-operator-sdk/issues/2010
-                    // create a fresh instance of the dependentresource
-                    CDI.current().destroy(CDI.current().select(dependentResourceClass).get());
-                    DependentResource instance = (DependentResource) CDI.current().select(dependentResourceClass).get();
-                    var context = Utils.contextFor(configuration, dependentResourceClass, Dependent.class);
-                    DependentResourceConfigurationResolver.configure(instance, spec, configuration);
-                    return instance;
-                }
-            };
         }
     });
   }
@@ -448,6 +433,11 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     if (operatorDeployment == OperatorDeployment.local) {
       Log.info("Stopping Operator");
       operator.stop();
+
+      // Avoid issues with Event Informers between tests
+      Log.info("Removing Controllers and application scoped DRs from CDI");
+      Stream.of(KeycloakController.class, KeycloakRealmImportController.class, KeycloakUpdateJobDependentResource.class)
+                      .forEach(c -> CDI.current().destroy(CDI.current().select(c).get()));
 
       Log.info("Creating new K8s Client");
       // create a new client bc operator has closed the old one

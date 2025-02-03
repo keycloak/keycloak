@@ -64,7 +64,6 @@ public class KeycloakStatusAggregator {
             existingConditions = Map.of();
         }
 
-        // we're not setting this on the statusBuilder as we're letting the sdk manage that
         observedGeneration = generation;
 
         readyCondition.setType(KeycloakStatusCondition.READY);
@@ -144,7 +143,10 @@ public class KeycloakStatusAggregator {
         updateConditionFromExisting(hasErrorsCondition, existingConditions, now);
         updateConditionFromExisting(rollingUpdate, existingConditions, now);
 
-        return statusBuilder.withConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate)).build();
+        return statusBuilder
+                .withObservedGeneration(observedGeneration)
+                .withConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate))
+                .build();
     }
 
     static void updateConditionFromExisting(KeycloakStatusCondition condition, Map<String, KeycloakStatusCondition> existingConditions, String now) {

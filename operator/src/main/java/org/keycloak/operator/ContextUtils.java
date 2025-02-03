@@ -17,44 +17,72 @@
 
 package org.keycloak.operator;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.upgrade.UpgradeType;
+
+import java.util.Optional;
 
 public final class ContextUtils {
 
     // context keys
-    private static final String OLD_DEPLOYMENT_KEY = "current_stateful_set";
-    private static final String NEW_DEPLOYMENT_KEY = "desired_new_stateful_set";
-    private static final String UPGRADE_TYPE_KEY = "upgrade_type";
+    public static final String OLD_DEPLOYMENT_KEY = "current_stateful_set";
+    public static final String NEW_DEPLOYMENT_KEY = "desired_new_stateful_set";
+    public static final String UPGRADE_TYPE_KEY = "upgrade_type";
+    public static final String OPERATOR_CONFIG_KEY = "operator_config";
+    public static final String WATCHED_RESOURCES_KEY = "watched_resources";
+    public static final String DIST_CONFIGURATOR_KEY = "dist_configurator";
 
     private ContextUtils() {}
 
 
-    public static void storeCurrentStatefulSet(Context<Keycloak> context, StatefulSet statefulSet) {
-        context.managedDependentResourceContext().put(OLD_DEPLOYMENT_KEY, statefulSet);
+    public static void storeCurrentStatefulSet(Context<?> context, StatefulSet statefulSet) {
+        context.managedWorkflowAndDependentResourceContext().put(OLD_DEPLOYMENT_KEY, statefulSet);
     }
 
-    public static StatefulSet getCurrentStatefulSet(Context<Keycloak> context) {
-        return context.managedDependentResourceContext().getMandatory(OLD_DEPLOYMENT_KEY, StatefulSet.class);
+    public static Optional<StatefulSet> getCurrentStatefulSet(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().get(OLD_DEPLOYMENT_KEY, StatefulSet.class);
     }
 
-    public static void storeDesiredStatefulSet(Context<Keycloak> context, StatefulSet statefulSet) {
-        context.managedDependentResourceContext().put(NEW_DEPLOYMENT_KEY, statefulSet);
+    public static void storeDesiredStatefulSet(Context<?> context, StatefulSet statefulSet) {
+        context.managedWorkflowAndDependentResourceContext().put(NEW_DEPLOYMENT_KEY, statefulSet);
     }
 
-    public static StatefulSet getDesiredStatefulSet(Context<Keycloak> context) {
-        return context.managedDependentResourceContext().getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class);
+    public static StatefulSet getDesiredStatefulSet(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class);
     }
 
-    public static void storeUpgradeType(Context<Keycloak> context, UpgradeType upgradeType) {
-        context.managedDependentResourceContext().put(UPGRADE_TYPE_KEY, upgradeType);
+    public static void storeUpgradeType(Context<?> context, UpgradeType upgradeType) {
+        context.managedWorkflowAndDependentResourceContext().put(UPGRADE_TYPE_KEY, upgradeType);
     }
 
-    public static Optional<UpgradeType> getUpgradeType(Context<Keycloak> context) {
-        return context.managedDependentResourceContext().get(UPGRADE_TYPE_KEY, UpgradeType.class);
+    public static Optional<UpgradeType> getUpgradeType(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().get(UPGRADE_TYPE_KEY, UpgradeType.class);
+    }
+
+    public static void storeOperatorConfig(Context<?> context, Config operatorConfig) {
+        context.managedWorkflowAndDependentResourceContext().put(OPERATOR_CONFIG_KEY, operatorConfig);
+    }
+
+    public static Config getOperatorConfig(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().getMandatory(OPERATOR_CONFIG_KEY, Config.class);
+    }
+
+    public static void storeWatchedResources(Context<?> context, WatchedResources watchedResources) {
+        context.managedWorkflowAndDependentResourceContext().put(WATCHED_RESOURCES_KEY, watchedResources);
+    }
+
+    public static WatchedResources getWatchedResources(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class);
+    }
+
+    public static void storeDistConfigurator(Context<?> context, KeycloakDistConfigurator distConfigurator) {
+        context.managedWorkflowAndDependentResourceContext().put(DIST_CONFIGURATOR_KEY, distConfigurator);
+    }
+
+    public static KeycloakDistConfigurator getDistConfigurator(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class);
     }
 }

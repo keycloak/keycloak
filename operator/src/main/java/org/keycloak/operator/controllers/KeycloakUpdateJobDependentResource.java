@@ -36,16 +36,18 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecFluent;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
-import org.keycloak.operator.Config;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
+@ApplicationScoped
 public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentResource<Job, Keycloak> {
 
     // shared volume configuration
@@ -71,13 +73,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     // container args to replace
     private static final Set<String> START_ARGS = Set.of("start", "start-dev");
 
-    private final Config operatorConfig;
-
-    public KeycloakUpdateJobDependentResource(Config config) {
+    public KeycloakUpdateJobDependentResource() {
         super(Job.class);
-        operatorConfig = config;
         this.configureWith(new KubernetesDependentResourceConfigBuilder<Job>()
-                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .withKubernetesDependentInformerConfig(InformerConfiguration.builder(resourceType())
+                        .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                        .build())
                 .build());
     }
 
@@ -144,12 +145,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // For test KeycloakDeploymentTest#testDeploymentDurability
         // it uses a pause image, which never ends.
         // After this seconds, the job is terminated allowing the test to complete.
-        builder.withActiveDeadlineSeconds(operatorConfig.keycloak().updatePodDeadlineSeconds());
+        builder.withActiveDeadlineSeconds(ContextUtils.getOperatorConfig(context).keycloak().updatePodDeadlineSeconds());
         return builder.build();
     }
 
     private static void addInitContainer(PodSpecBuilder builder, Context<Keycloak> context, Collection<String> availableVolumes, Collection<String> requiredVolumes) {
-        var existing = CRDUtils.firstContainerOf(ContextUtils.getCurrentStatefulSet(context)).orElseThrow();
+        var existing = CRDUtils.firstContainerOf(ContextUtils.getCurrentStatefulSet(context).orElseThrow()).orElseThrow();
         var containerBuilder = builder.addNewInitContainerLike(existing);
         configureContainer(containerBuilder, INIT_CONTAINER_NAME, INIT_CONTAINER_ARGS, availableVolumes, requiredVolumes);
         containerBuilder.endInitContainer();
@@ -196,7 +197,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private Map<String, Volume> getAllVolumes(Context<Keycloak> context) {
         Map<String, Volume> allVolumes = new HashMap<>();
         Consumer<Volume> volumeConsumer = volume -> allVolumes.put(volume.getName(), volume);
-        CRDUtils.volumesFromStatefulSet(ContextUtils.getCurrentStatefulSet(context)).forEach(volumeConsumer);
+        CRDUtils.volumesFromStatefulSet(ContextUtils.getCurrentStatefulSet(context).orElseThrow()).forEach(volumeConsumer);
         CRDUtils.volumesFromStatefulSet(ContextUtils.getDesiredStatefulSet(context)).forEach(volumeConsumer);
         return allVolumes;
     }
