@@ -27,7 +27,6 @@ import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOp
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -76,6 +75,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.mutiny.tuples.Functions.TriConsumer;
 import picocli.CommandLine;
 import picocli.CommandLine.DuplicateOptionAnnotationsException;
 import picocli.CommandLine.Help.Ansi;
@@ -91,7 +91,7 @@ import picocli.CommandLine.ParseResult;
 
 public class Picocli {
 
-    private static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
+    static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
     public static final String ARG_PREFIX = "--";
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
@@ -350,12 +350,26 @@ public class Picocli {
             return;
         }
 
+        final List<String> ignoredBuildTime = new ArrayList<>();
+
+        if (!options.includeBuildTime) {
+            // check for provider changes, or overrides of existing persisted options
+            // we have to ignore things like the profile properties because the commands set them at runtime
+            checkChangesInBuildOptions((key, oldValue, newValue) -> {
+                if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
+                    throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
+                } else if (newValue != null && !isIgnoredPersistedOption(key)
+                        && isUserModifiable(Configuration.getConfigValue(key))) {
+                    ignoredBuildTime.add(key);
+                }
+            });
+        }
+
         final boolean disabledMappersInterceptorEnabled = DisabledMappersInterceptor.isEnabled(); // return to the state before the disable
         try {
             PropertyMappingInterceptor.disable(); // we don't want the mapped / transformed properties, we want what the user effectively supplied
             DisabledMappersInterceptor.disable(); // we want all properties, even disabled ones
 
-            final List<String> ignoredBuildTime = new ArrayList<>();
             final List<String> ignoredRunTime = new ArrayList<>();
             final Set<String> disabledBuildTime = new HashSet<>();
             final Set<String> disabledRunTime = new HashSet<>();
@@ -368,9 +382,9 @@ public class Picocli {
             }
             if (options.includeRuntime) {
                 disabledMappers.addAll(PropertyMappers.getDisabledRuntimeMappers().values());
+            } else {
+                checkRuntimeSpiOptions(options, ignoredRunTime);
             }
-
-            checkSpiOptions(options, ignoredBuildTime, ignoredRunTime);
 
             for (OptionCategory category : abstractCommand.getOptionCategories()) {
                 List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
@@ -401,20 +415,13 @@ public class Picocli {
                             return;
                         }
 
-                        if (mapper.isBuildTime() && !options.includeBuildTime) {
-                            String currentValue = getRawPersistedProperty(mapper.getFrom()).orElse(null);
-                            if (!Objects.equals(configValueStr, currentValue)) {
-                                ignoredBuildTime.add(mapper.getFrom());
-                                return;
-                            }
-                        }
                         if (mapper.isRunTime() && !options.includeRuntime) {
                             if (configValueStr != null) {
                                 ignoredRunTime.add(mapper.getFrom());
                             }
                             return;
                         }
-                        
+
                         if (configValueStr == null) {
                             if (mapper.isRequired()) {
                                 handleRequired(missingOption, mapper);
@@ -461,31 +468,21 @@ public class Picocli {
         return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 
-    private static void checkSpiOptions(IncludeOptions options, final List<String> ignoredBuildTime,
-            final List<String> ignoredRunTime) {
+    private static void checkRuntimeSpiOptions(IncludeOptions options, final List<String> ignoredRunTime) {
         for (String key : Configuration.getConfig().getPropertyNames()) {
             if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
                 continue;
             }
             boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
 
-            ConfigValue configValue = Configuration.getConfigValue(key);
-            String configValueStr = configValue.getValue();
+            if (!buildTimeOption) {
+                ConfigValue configValue = Configuration.getConfigValue(key);
+                String configValueStr = configValue.getValue();
 
-            // don't consider missing or anything below standard env properties
-            if (configValueStr == null || configValue.getConfigSourceOrdinal() < 300) {
-                continue;
-            }
-
-            if (!options.includeBuildTime) {
-                if (buildTimeOption) {
-                    String currentValue = getRawPersistedProperty(key).orElse(null);
-                    if (!configValueStr.equals(currentValue)) {
-                        ignoredBuildTime.add(key);
-                    }
+                // don't consider missing or anything below standard env properties
+                if (configValueStr != null && isUserModifiable(configValue)) {
+                    ignoredRunTime.add(key);
                 }
-            } else if (!options.includeRuntime && !buildTimeOption) {
-                ignoredRunTime.add(key);
             }
         }
     }
@@ -671,7 +668,7 @@ public class Picocli {
 
         if (!result.includeBuildTime && !result.includeRuntime) {
             return result;
-        } else if (result.includeRuntime && !result.includeBuildTime && !ShowConfig.NAME.equals(commandName)) {
+        } else if (result.includeRuntime && !result.includeBuildTime) {
             result.includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
         } else if (result.includeBuildTime && !result.includeRuntime) {
             result.includeRuntime = isRebuildCheck();
@@ -880,23 +877,7 @@ public class Picocli {
     private static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
 
-        var current = getNonPersistedBuildTimeOptions();
-        var persisted = Configuration.getRawPersistedProperties();
-
-        // TODO: order is not well defined here
-
-        current.forEach((key, value) -> {
-            String persistedValue = persisted.get(key);
-            if (!value.equals(persistedValue)) {
-                optionChanged(options, (String)key, persistedValue, (String)value);
-            }
-        });
-
-        persisted.forEach((key, value) -> {
-            if (current.get(key) == null) {
-                optionChanged(options, key, value, null);
-            }
-        });
+        checkChangesInBuildOptions((key, oldValue, newValue) -> optionChanged(options, key, oldValue, newValue));
 
         if (options.isEmpty()) {
             return;
@@ -912,11 +893,30 @@ public class Picocli {
         );
     }
 
+    private static void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
+        var current = getNonPersistedBuildTimeOptions();
+        var persisted = Configuration.getRawPersistedProperties();
+
+        // TODO: order is not well defined here
+
+        current.forEach((key, value) -> {
+            String persistedValue = persisted.get(key);
+            if (!value.equals(persistedValue)) {
+                valueChanged.accept((String)key, persistedValue, (String)value);
+            }
+        });
+
+        persisted.forEach((key, value) -> {
+            if (current.get(key) == null) {
+                valueChanged.accept(key, value, null);
+            }
+        });
+    }
+
     private static void optionChanged(StringBuilder options, String key, String oldValue, String newValue) {
         // the assumption here is that no build time options need mask handling
         boolean isIgnored = !key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
-                || key.startsWith(KC_PROVIDER_FILE_PREFIX) || key.equals(Configuration.KC_OPTIMIZED)
-                || key.equals(org.keycloak.common.util.Environment.PROFILE);
+                || key.startsWith(KC_PROVIDER_FILE_PREFIX) || isIgnoredPersistedOption(key);
         if (!isIgnored) {
             key = key.substring(3);
             options.append("\n\t- ").append(key).append("=")
@@ -924,6 +924,11 @@ public class Picocli {
                     .append(key).append("=")
                     .append(Optional.ofNullable(newValue).orElse("<unset>"));
         }
+    }
+
+    private static boolean isIgnoredPersistedOption(String key) {
+        return key.equals(Configuration.KC_OPTIMIZED) || key.equals(org.keycloak.common.util.Environment.PROFILE)
+                || key.equals(LaunchMode.current().getProfileKey());
     }
 
     public void start() {
