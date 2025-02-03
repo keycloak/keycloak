@@ -149,7 +149,7 @@ public class OrganizationsResource {
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
-            @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
+            @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
@@ -157,9 +157,9 @@ public class OrganizationsResource {
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return provider.getAllStream(attributes, first, max).map(model -> ModelToRepresentation.toBriefRepresentation(model, briefRepresentation));
+            return provider.getAllStream(attributes, first, max).map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
         } else {
-            return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toBriefRepresentation(model, briefRepresentation));
+            return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
         }
     }
 

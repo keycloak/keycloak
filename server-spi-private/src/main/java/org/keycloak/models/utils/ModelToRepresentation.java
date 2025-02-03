@@ -1317,15 +1317,10 @@ public class ModelToRepresentation {
     }
 
     public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
-        OrganizationRepresentation rep = toBriefRepresentation(model,false);
-        if (rep == null) {
-            return null;
-        }
-        rep.setAttributes(model.getAttributes());
-        return rep;
+        return toRepresentation(model, true);
     }
 
-    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model, Boolean briefRepresentation) {
+    public static OrganizationRepresentation toRepresentation(OrganizationModel model, boolean briefRepresentation) {
         if (model == null) {
             return null;
         }
@@ -1333,7 +1328,7 @@ public class ModelToRepresentation {
         rep.setId(model.getId());
         rep.setName(model.getName());
         rep.setAlias(model.getAlias());
-        if (briefRepresentation) {
+        if (!briefRepresentation) {
             rep.setAttributes(model.getAttributes());
         }
         rep.setEnabled(model.isEnabled());
