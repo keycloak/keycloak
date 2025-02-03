@@ -28,7 +28,7 @@ ManagedRealm realm;
 
 ### Assertions
 
-Change `import org.junit.Assert;` to `import org.junit.Assert;`, and replace `Assert.` with `Assertions.` throughout.
+Change `import org.junit.Assert;` to `import org.junit.jupiter.api.Assertions;`, and replace `Assert.` with `Assertions.` throughout.
 
 If the assert passes a message (for example `Assert.assertEquals("Message", expected, actual)`) the message in `Assertions`
 is now the last parameter (for example `Assertions.assertEquals(expected, actual, "Message")`).
