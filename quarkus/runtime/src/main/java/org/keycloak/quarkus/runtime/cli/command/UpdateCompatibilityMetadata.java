@@ -41,6 +41,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
 
     @Override
     public void run() {
+        assertFeatureEnabled();
         printPreviewWarning();
         validateConfig();
         var info = compatibilityManager.current();
