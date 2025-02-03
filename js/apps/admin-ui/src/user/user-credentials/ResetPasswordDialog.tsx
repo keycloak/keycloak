@@ -97,7 +97,10 @@ export const ResetPasswordDialog = ({
         id: user.id!,
       });
       const credentialLabel = credentials.find((c) => c.type === "password");
-      if (credentialLabel) {
+      const localCredential = credentials.find(
+        (c) => c.federationLink === undefined,
+      );
+      if (credentialLabel && localCredential) {
         await adminClient.users.updateCredentialLabel(
           {
             id: user.id!,

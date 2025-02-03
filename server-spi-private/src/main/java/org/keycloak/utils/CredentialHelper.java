@@ -47,16 +47,6 @@ public class CredentialHelper {
 
     private static final Logger logger = Logger.getLogger(CredentialHelper.class);
 
-    public static void setRequiredCredential(KeycloakSession session, String type, RealmModel realm) {
-        AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
-        setOrReplaceAuthenticationRequirement(session, realm, type, requirement, null);
-    }
-
-    public static void setAlternativeCredential(KeycloakSession session, String type, RealmModel realm) {
-        AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.ALTERNATIVE;
-        setOrReplaceAuthenticationRequirement(session, realm, type, requirement, null);
-    }
-
     public static void setOrReplaceAuthenticationRequirement(KeycloakSession session, RealmModel realm, String type, AuthenticationExecutionModel.Requirement requirement, AuthenticationExecutionModel.Requirement currentRequirement) {
         realm.getAuthenticationFlowsStream().forEach(flow -> realm.getAuthenticationExecutionsStream(flow.getId())
                 .filter(exe -> {
@@ -113,17 +103,6 @@ public class CredentialHelper {
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
         UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
         return user.credentialManager().isValid(credential);
-    }
-
-    public static void deleteOTPCredential(KeycloakSession session, RealmModel realm, UserModel user, String credentialId) {
-        CredentialProvider otpCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-otp");
-        boolean removed = otpCredentialProvider.deleteCredential(realm, user, credentialId);
-
-        // This can usually happened when credential is stored in the userStorage. Propagate to "disable" credential in the userStorage
-        if (!removed) {
-            logger.debug("Removing OTP credential from userStorage");
-            user.credentialManager().disableCredentialType(OTPCredentialModel.TYPE);
-        }
     }
 
     /**

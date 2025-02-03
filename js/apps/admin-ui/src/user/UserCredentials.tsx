@@ -31,6 +31,7 @@ import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog"
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
 
 import "./user-credentials.css";
+import useFormatDate from "../utils/useFormatDate";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
@@ -99,6 +100,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
+  const formatDate = useFormatDate();
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
@@ -114,6 +116,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const [isUserLabelEdit, setIsUserLabelEdit] = useState<UserLabelEdit>();
 
   const bodyRef = useRef<HTMLTableSectionElement>(null);
+  const [loading, setLoading] = useState(true);
   const [state, setState] = useState({
     draggedItemId: "",
     draggingToItemIndex: -1,
@@ -121,12 +124,25 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     tempItemOrder: [""],
   });
 
+  const [credentialTypes, setCredentialTypes] = useState<
+    CredentialRepresentation[]
+  >([]);
+
   useFetch(
     () => adminClient.users.getCredentials({ id: user.id! }),
     (credentials) => {
-      setUserCredentials(credentials);
+      setUserCredentials(
+        credentials.filter(
+          (c: CredentialRepresentation) => c.federationLink === undefined,
+        ),
+      );
+      setCredentialTypes(
+        credentials.filter(
+          (c: CredentialRepresentation) => c.federationLink !== undefined,
+        ),
+      );
 
-      const groupedCredentials = credentials.reduce((r, a) => {
+      const groupedCredentials = userCredentials.reduce((r, a) => {
         r[a.type!] = r[a.type!] || [];
         r[a.type!].push(a);
         return r;
@@ -142,6 +158,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
           isExpanded: false,
         })),
       );
+      setLoading(false);
     },
     [key],
   );
@@ -353,15 +370,8 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   };
 
   const useFederatedCredentials = user.federationLink;
-  const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
 
-  useFetch(
-    () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
-    setCredentialTypes,
-    [],
-  );
-
-  if (!credentialTypes) {
+  if (loading) {
     return <KeycloakSpinner />;
   }
 
@@ -554,19 +564,21 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
               <Tr>
                 <Th>{t("type")}</Th>
                 <Th>{t("providedBy")}</Th>
+                <Th>{t("createdAt")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>
               {credentialTypes.map((credential) => (
-                <Tr key={credential}>
+                <Tr key={credential.type}>
                   <Td>
-                    <b>{credential}</b>
+                    <b>{credential.type}</b>
                   </Td>
                   <Td>
                     <FederatedUserLink user={user} />
                   </Td>
-                  {credential === "password" && (
+                  <Td>{formatDate(new Date(credential.createdDate!))}</Td>
+                  {credential.type === "password" && (
                     <Td modifier="fitContent">
                       <Button variant="secondary" onClick={toggleModal}>
                         {t("setPassword")}
