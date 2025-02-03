@@ -1,4 +1,4 @@
-package org.keycloak.testframework.remote.providers;
+package org.keycloak.testframework.remote.providers.timeoffset;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
