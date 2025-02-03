@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -36,7 +37,6 @@ import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.instrument.Metrics;
 import io.quarkus.arc.Arc;
 import jakarta.persistence.EntityManager;
-
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
@@ -72,6 +72,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -100,6 +102,8 @@ import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
@@ -111,6 +115,11 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
 public class CacheManagerFactory {
 
     private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
+    // Map with the default cache configuration if the cache is not present in the XML.
+    private static final Map<String, Supplier<ConfigurationBuilder>> DEFAULT_CONFIGS = Map.of(
+            CRL_CACHE_NAME, InfinispanUtil::getCrlCacheConfig
+    );
+    private static final Supplier<ConfigurationBuilder> TO_NULL = () -> null;
 
     private final CompletableFuture<EmbeddedCacheManager> cacheManagerFuture;
     private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
@@ -337,6 +346,13 @@ public class CacheManagerFactory {
         }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
+        assertAllCachesAreConfigured(builder,
+                // skip revision caches, those are defined by DefaultInfinispanConnectionProviderFactory
+                Arrays.stream(LOCAL_CACHE_NAMES)
+                        .filter(Predicate.not(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME::equals))
+                        .filter(Predicate.not(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME::equals))
+                        .filter(Predicate.not(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME::equals))
+        );
         if (InfinispanUtils.isRemoteInfinispan()) {
             var builders = builder.getNamedConfigurationBuilders();
             // remove all distributed caches
@@ -352,6 +368,7 @@ public class CacheManagerFactory {
             builder.getGlobalConfigurationBuilder().nonClusteredDefault();
         } else {
             // embedded mode!
+            assertAllCachesAreConfigured(builder, Arrays.stream(CLUSTERED_CACHE_NAMES));
             if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
                 configureTransportStack(builder, em);
                 configureRemoteStores(builder);
@@ -600,14 +617,26 @@ public class CacheManagerFactory {
 
     private static void configureCacheMaxCount(ConfigurationBuilderHolder holder, String[] caches) {
         for (String cache : caches) {
+            var memory = holder.getNamedConfigurationBuilders().get(cache).memory();
             String propKey = CachingOptions.cacheMaxCountProperty(cache);
             Configuration.getOptionalKcValue(propKey)
                   .map(Integer::parseInt)
-                  .ifPresent(maxCount -> holder.getNamedConfigurationBuilders()
-                        .get(cache)
-                        .memory()
-                        .maxCount(maxCount)
-                  );
+                  .ifPresent(memory::maxCount);
+        }
+    }
+
+    private static void assertAllCachesAreConfigured(ConfigurationBuilderHolder holder, Stream<String> caches)  {
+        for (var it = caches.iterator() ; it.hasNext() ; ) {
+            var cache = it.next();
+            var builder = holder.getNamedConfigurationBuilders().get(cache);
+            if (builder != null) {
+                continue;
+            }
+            builder = DEFAULT_CONFIGS.getOrDefault(cache, TO_NULL).get();
+            if (builder == null) {
+                throw new IllegalStateException("Infinispan cache '%s' not found. Make sure it is defined in your XML configuration file.".formatted(cache));
+            }
+            holder.getNamedConfigurationBuilders().put(cache, builder);
         }
     }
 

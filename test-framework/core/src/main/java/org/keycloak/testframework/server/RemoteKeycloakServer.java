@@ -4,6 +4,7 @@ import io.quarkus.maven.dependency.Dependency;
 
 import java.net.ConnectException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +50,14 @@ public class RemoteKeycloakServer implements KeycloakServer {
                 sb.append(d.getGroupId());
                 sb.append(":");
                 sb.append(d.getArtifactId());
+                sb.append("\n");
+            }
+        }
+        Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
+        if (!configFiles.isEmpty()) {
+            sb.append("Copy following config files to your conf directory:\n");
+            for (Path c : configFiles) {
+                sb.append(c.toAbsolutePath());
                 sb.append("\n");
             }
         }

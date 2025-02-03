@@ -68,7 +68,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_BIND_ADDR;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR;
@@ -480,13 +479,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     protected Configuration getCrlCacheConfig() {
-        ConfigurationBuilder cb = createCacheConfigurationBuilder();
-
-        cb.memory()
-                .whenFull(EvictionStrategy.REMOVE)
-                .maxCount(CRL_CACHE_DEFAULT_MAX);
-
-        return cb.build();
+        return InfinispanUtil.getCrlCacheConfig().build();
     }
 
     private void registerSystemWideListeners(KeycloakSession session) {
