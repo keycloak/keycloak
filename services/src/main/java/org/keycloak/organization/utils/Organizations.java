@@ -229,7 +229,7 @@ public class Organizations {
         }
 
         organization = ofNullable(user).stream().flatMap(provider::getByMember)
-                .filter(o -> o.isEnabled() && provider.isManagedMember(o, user))
+                .filter(OrganizationModel::isEnabled)
                 .findAny();
 
         if (organization.isPresent()) {
