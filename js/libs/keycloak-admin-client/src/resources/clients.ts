@@ -774,6 +774,20 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "resourceName"],
   });
 
+  public listPermissionScope = this.makeRequest<
+    {
+      id: string;
+      policyId?: string;
+      name?: string;
+      resource?: string;
+    } & PaginatedQuery,
+    PolicyRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/authz/resource-server/permission/scope",
+    urlParamKeys: ["id"],
+  });
+
   public createAuthorizationScope = this.makeUpdateRequest<
     { id: string },
     ScopeRepresentation
