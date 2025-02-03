@@ -15,7 +15,6 @@ import organizationRoutes from "./organizations/routes";
 import pageRoutes from "./page/routes";
 import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
-import realmRoutes from "./realm/routes";
 import sessionRoutes from "./sessions/routes";
 import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
@@ -47,7 +46,6 @@ export const routes: AppRouteObject[] = [
   ...identityProviders,
   ...organizationRoutes,
   ...realmRoleRoutes,
-  ...realmRoutes,
   ...realmSettingRoutes,
   ...sessionRoutes,
   ...userFederationRoutes,

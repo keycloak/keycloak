@@ -7,31 +7,23 @@ import {
   DropdownGroup,
   DropdownItem,
   DropdownList,
-  Label,
   MenuToggle,
-  SearchInput,
-  Spinner,
   Split,
   SplitItem,
   Stack,
   StackItem,
 } from "@patternfly/react-core";
-import {
-  AngleLeftIcon,
-  AngleRightIcon,
-  CheckIcon,
-} from "@patternfly/react-icons";
-import { debounce } from "lodash-es";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { CheckIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useRecentRealms } from "../../context/RecentRealms";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
-import { toAddRealm } from "../../realm/routes/AddRealm";
+import NewRealmForm from "../../realm/add/NewRealmForm";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 import "./realm-selector.css";
 
@@ -41,79 +33,80 @@ type AddRealmProps = {
   onClick: () => void;
 };
 
-const AddRealm = ({ onClick }: AddRealmProps) => {
-  const { realm } = useRealm();
+export const AddRealm = ({ onClick }: AddRealmProps) => {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
   return (
-    <Button
-      data-testid="add-realm"
-      component={(props) => <Link {...props} to={toAddRealm({ realm })} />}
-      onClick={onClick}
-      isBlock
-    >
-      {t("createRealm")}
-    </Button>
+    <>
+      <Button
+        data-testid="add-realm"
+        variant="plain"
+        onClick={() => {
+          onClick();
+          setOpen(true);
+        }}
+      >
+        <PlusCircleIcon /> {t("createRealm")}
+      </Button>
+      {open && <NewRealmForm onClose={() => setOpen(false)} />}
+    </>
   );
 };
 
 type RealmTextProps = {
   name: string;
   displayName?: string;
-  showIsRecent?: boolean;
+  onClick?: () => void;
 };
 
-const RealmText = ({ name, displayName, showIsRecent }: RealmTextProps) => {
+const RealmText = ({ name, displayName, onClick }: RealmTextProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
-    <Split>
-      <SplitItem isFilled>
-        <Stack>
-          {displayName ? (
-            <StackItem className="pf-v5-u-font-weight-bold" isFilled>
-              {label(t, displayName)}
-            </StackItem>
-          ) : null}
-          <StackItem isFilled>{name}</StackItem>
-        </Stack>
-      </SplitItem>
-      <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
-      {showIsRecent ? (
-        <SplitItem>
-          <Label>{t("recent")}</Label>
+    <DropdownItem
+      onClick={() => {
+        if (name === realm) return;
+        navigate(toDashboard({ realm: name }));
+        onClick?.();
+      }}
+    >
+      <Split>
+        <SplitItem isFilled>
+          <Stack>
+            {displayName ? (
+              <StackItem className="pf-v5-u-font-weight-bold" isFilled>
+                {label(t, displayName)}
+              </StackItem>
+            ) : null}
+            <StackItem isFilled>{name}</StackItem>
+          </Stack>
         </SplitItem>
-      ) : null}
-    </Split>
+        <SplitItem>{name === realm && <CheckIcon />}</SplitItem>
+      </Split>
+    </DropdownItem>
   );
 };
 
-type RealmNameRepresentation = {
+export type RealmNameRepresentation = {
   name: string;
   displayName?: string;
 };
 
-export const RealmSelector = () => {
-  const { realm } = useRealm();
+type RealmSelectorProps = {
+  onViewAll: () => void;
+};
+
+export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
+  const { realm, realmRepresentation } = useRealm();
   const { adminClient } = useAdminClient();
-  const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
   const [open, setOpen] = useState(false);
   const [realms, setRealms] = useState<RealmNameRepresentation[]>([]);
   const { t } = useTranslation();
   const recentRealms = useRecentRealms();
-  const navigate = useNavigate();
-
-  const [search, setSearch] = useState("");
-  const [first, setFirst] = useState(0);
-
-  const debounceFn = useCallback(
-    debounce((value: string) => {
-      setFirst(0);
-      setSearch(value);
-    }, 300),
-    [],
-  );
 
   useFetch(
     async () => {
@@ -121,7 +114,7 @@ export const RealmSelector = () => {
         return await fetchAdminUI<RealmNameRepresentation[]>(
           adminClient,
           "ui-ext/realms/names",
-          { first: `${first}`, max: `${MAX_RESULTS + 1}`, search },
+          { first: "0", max: `${MAX_RESULTS + 1}` },
         );
       } catch (error) {
         if (error instanceof NetworkError && error.response.status < 500) {
@@ -132,20 +125,21 @@ export const RealmSelector = () => {
       }
     },
     setRealms,
-    [open, first, search],
+    [realm],
+  );
+
+  const recentRealmsList = useMemo(
+    () => recentRealms.map((r) => r.name),
+    [recentRealms],
   );
 
   const sortedRealms = useMemo(
     () =>
-      realms.sort((a, b) => {
-        if (a.name === realm) return -1;
-        if (b.name === realm) return 1;
-        if (recentRealms.includes(a.name)) return -1;
-        if (recentRealms.includes(b.name)) return 1;
-
-        return a.name.localeCompare(b.name, whoAmI.getLocale());
-      }),
-    [recentRealms, realms, first, search],
+      localeSort(
+        realms.filter((r) => !recentRealmsList.includes(r.name)),
+        mapByKey("name"),
+      ),
+    [recentRealmsList, realms],
   );
 
   const realmDisplayName = useMemo(
@@ -167,6 +161,9 @@ export const RealmSelector = () => {
             setOpen(!open);
           }}
           isFullWidth
+          isDisabled={
+            realms.length <= 1 && realms.map((r) => r.name).includes(realm)
+          }
         >
           <Stack className="keycloak__realm_selector__dropdown">
             {realmDisplayName ? (
@@ -179,90 +176,43 @@ export const RealmSelector = () => {
         </MenuToggle>
       )}
     >
-      <DropdownList>
-        {(realms.length > 5 || search || first !== 0) && (
-          <>
-            <DropdownGroup>
-              <DropdownList>
-                <SearchInput
-                  value={search}
-                  onChange={(_, value) => debounceFn(value)}
-                  onClear={() => setSearch("")}
-                />
-              </DropdownList>
-            </DropdownGroup>
-            <Divider component="li" />
-          </>
-        )}
-        {(realms.length !== 0
-          ? [
-              first !== 0 ? (
-                <DropdownItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFirst(first - MAX_RESULTS);
-                  }}
-                >
-                  <AngleLeftIcon /> {t("previous")}
-                </DropdownItem>
-              ) : (
-                []
-              ),
-              ...sortedRealms.map((realm) => (
-                <DropdownItem
-                  key={realm.name}
-                  onClick={() => {
-                    navigate(toDashboard({ realm: realm.name }));
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <RealmText
-                    {...realm}
-                    showIsRecent={
-                      realms.length > 5 && recentRealms?.includes(realm.name)
-                    }
-                  />
-                </DropdownItem>
-              )),
-              realms.length > MAX_RESULTS ? (
-                <DropdownItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFirst(first + MAX_RESULTS);
-                  }}
-                >
-                  <AngleRightIcon />
-                  {t("next")}
-                </DropdownItem>
-              ) : (
-                []
-              ),
-            ]
-          : !search
-            ? [
-                <DropdownItem key="loader">
-                  <Spinner size="sm" /> {t("loadingRealms")}
-                </DropdownItem>,
-              ]
-            : [
-                <DropdownItem key="no-results">
-                  {t("noResultsFound")}
-                </DropdownItem>,
-              ]
-        ).concat([
-          <Fragment key="add-realm">
-            {whoAmI.canCreateRealm() && (
-              <>
-                <Divider key="divider" />
-                <DropdownItem key="add" component="div">
-                  <AddRealm onClick={() => setOpen(false)} />
-                </DropdownItem>
-              </>
-            )}
-          </Fragment>,
-        ])}
-      </DropdownList>
+      <DropdownGroup label={t("currentRealm")}>
+        <DropdownList>
+          <RealmText
+            name={realm}
+            displayName={realmRepresentation?.displayName}
+          />
+        </DropdownList>
+      </DropdownGroup>
+      <Divider component="li" />
+      <DropdownGroup label={t("recentlyUsed")}>
+        <DropdownList>
+          {recentRealms
+            .filter((r) => r.name !== realm)
+            .map((realm) => (
+              <RealmText
+                {...realm}
+                key={realm.name}
+                onClick={() => setOpen(false)}
+              />
+            ))}
+        </DropdownList>
+      </DropdownGroup>
+      <Divider component="li" />
+      {realms.length <= MAX_RESULTS && (
+        <DropdownList>
+          {sortedRealms.map((realm) => (
+            <RealmText
+              {...realm}
+              key={realm.name}
+              onClick={() => setOpen(false)}
+            />
+          ))}
+        </DropdownList>
+      )}
+      {realms.length > MAX_RESULTS && (
+        <DropdownItem onClick={() => onViewAll()}>{t("viewAll")}</DropdownItem>
+      )}
     </Dropdown>
   );
 };

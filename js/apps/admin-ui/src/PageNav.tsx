@@ -1,21 +1,16 @@
 import {
-  Divider,
   Nav,
   NavGroup,
-  NavItem,
-  NavList,
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useMatch, useNavigate } from "react-router-dom";
-import { RealmSelector } from "./components/realm-selector/RealmSelector";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import { toPage } from "./page/routes";
-import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
@@ -94,19 +89,11 @@ export const PageNav = () => {
     "view-identity-providers",
   );
 
-  const isOnAddRealm = !!useMatch(AddRealmRoute.path);
-
   return (
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
-          <NavList>
-            <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-              <RealmSelector />
-            </NavItem>
-          </NavList>
-          <Divider />
-          {showManage && !isOnAddRealm && (
+          {showManage && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&
                 realmRepresentation?.organizationsEnabled && (
@@ -122,7 +109,7 @@ export const PageNav = () => {
             </NavGroup>
           )}
 
-          {showConfigure && !isOnAddRealm && (
+          {showConfigure && (
             <NavGroup aria-label={t("configure")} title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />

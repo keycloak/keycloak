@@ -24,7 +24,7 @@ export default class SidebarPage extends CommonElements {
     cy.get(this.realmsElements).contains("Loading realms…").should("not.exist");
     cy.get(this.realmsElements).should(
       "have.length",
-      length + 1, // account for button
+      length + 2, // account for recent realms
     );
     cy.findByTestId(this.#realmsDrpDwn).click({ force: true });
 
@@ -61,7 +61,6 @@ export default class SidebarPage extends CommonElements {
 
   goToCreateRealm() {
     this.waitForPageLoad();
-    cy.findByTestId(this.#realmsDrpDwn).click();
     cy.findByTestId(this.#createRealmBtn).click();
     this.waitForPageLoad();
 
