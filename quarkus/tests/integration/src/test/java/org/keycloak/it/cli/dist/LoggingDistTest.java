@@ -245,6 +245,19 @@ public class LoggingDistTest {
         assertThat(output, not(containsString("INFO  [io.quarkus")));
     }
 
+    @Test
+    @Launch({"start-dev", "--log=console,file", "--log-console-output=json", "--log-console-json-format=ecs", "--log-file-output=json", "--log-file-json-format=ecs"})
+    void ecsFormat(CLIResult cliResult, RawDistRootPath path) {
+        var output = cliResult.getOutput();
+
+        assertThat(output, containsString("ecs.version"));
+        assertThat(output, containsString("@timestamp"));
+
+        String data = readDefaultFileLog(path);
+        assertThat(data, containsString("ecs.version"));
+        assertThat(data, containsString("@timestamp"));
+    }
+
     protected static String readDefaultFileLog(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());

@@ -1,6 +1,5 @@
 package org.keycloak.config;
 
-import io.quarkus.runtime.configuration.MemorySize;
 import org.jboss.logmanager.handlers.SyslogHandler;
 
 import java.io.File;
@@ -76,6 +75,16 @@ public class LoggingOptions {
         }
     }
 
+    public enum JsonFormat {
+        DEFAULT,
+        ECS;
+
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase(Locale.ROOT);
+        }
+    }
+
     // Console
     public static final Option<Output> LOG_CONSOLE_OUTPUT = new OptionBuilder<>("log-console-output", Output.class)
             .category(OptionCategory.LOGGING)
@@ -96,6 +105,12 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("The format of unstructured console log entries. If the format has spaces in it, escape the value using \"<format>\".")
             .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<JsonFormat> LOG_CONSOLE_JSON_FORMAT = new OptionBuilder<>("log-console-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
@@ -140,6 +155,12 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("Set a format specific to file log entries.")
             .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<JsonFormat> LOG_FILE_JSON_FORMAT = new OptionBuilder<>("log-file-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
             .build();
 
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)
@@ -206,6 +227,12 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("Set a format specific to Syslog entries.")
             .defaultValue(DEFAULT_LOG_FORMAT)
+            .build();
+
+    public static final Option<JsonFormat> LOG_SYSLOG_JSON_FORMAT = new OptionBuilder<>("log-syslog-json-format", JsonFormat.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(JsonFormat.DEFAULT)
+            .description("Set the format of the produced JSON.")
             .build();
 
     public static final Option<Boolean> LOG_SYSLOG_INCLUDE_TRACE = new OptionBuilder<>("log-syslog-include-trace", Boolean.class)
