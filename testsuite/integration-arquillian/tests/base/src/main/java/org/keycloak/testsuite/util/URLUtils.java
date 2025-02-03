@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;

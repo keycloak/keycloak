@@ -50,7 +50,7 @@ import java.util.List;
 
 import java.util.Objects;
 import org.junit.Assume;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  * Test user logins utilizing various LDAP authentication methods and different LDAP connection encryption mechanisms.

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.util;
+package org.keycloak.testsuite.util.oauth;
 
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
@@ -59,7 +59,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
@@ -76,6 +75,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -698,33 +700,6 @@ public class OAuthClient {
         }
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
-        try (CloseableHttpClient client = httpClient.get()) {
-            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
-
-            List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-
-            }
-
-            if (clientSecret != null) {
-                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-                post.setHeader("Authorization", authorization);
-            } else {
-                parameters.add(new BasicNameValuePair("client_id", clientId));
-
-            }
-
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-            post.setEntity(formEntity);
-
-            return new AccessTokenResponse(client.execute(post));
-        }
-    }
-
-
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpGet get = new HttpGet(getCertsUrl(realm));
@@ -757,22 +732,6 @@ public class OAuthClient {
             post.setEntity(formEntity);
 
             return new AccessTokenResponse(client.execute(post));
-        }
-    }
-
-    public AccessTokenResponse doPreauthorizedTokenRequest(String preAuthorizedCode) throws Exception {
-        try (CloseableHttpClient client = httpClient.get()) {
-            HttpPost post = new HttpPost(getAccessTokenUrl());
-
-            List<NameValuePair> parameters = new LinkedList<>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
-            parameters.add(new BasicNameValuePair("code", preAuthorizedCode));
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-            post.setEntity(formEntity);
-
-            return new AccessTokenResponse(client.execute(post));
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
         }
     }
 
@@ -1412,10 +1371,6 @@ public class OAuthClient {
         driver.navigate().to(getRegistrationFormUrl());
     }
 
-    public void openOAuth2DeviceVerificationForm(String verificationUri) {
-        driver.navigate().to(verificationUri);
-    }
-
     public void openLogout() {
         UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (postLogoutRedirectUri != null) {
@@ -1432,15 +1387,6 @@ public class OAuthClient {
 
     public String getRedirectUri() {
         return redirectUri;
-    }
-
-    /**
-     * Application-initiated action.
-     *
-     * @return The action name.
-     */
-    public String getKcAction() {
-        return kcAction;
     }
 
     public String getState() {
@@ -1663,11 +1609,6 @@ public class OAuthClient {
 
     public OAuthClient idTokenHint(String idTokenHint) {
         this.idTokenHint = idTokenHint;
-        return this;
-    }
-
-    public OAuthClient initiatingIDP(String initiatingIDP) {
-        this.initiatingIDP = initiatingIDP;
         return this;
     }
 

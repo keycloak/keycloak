@@ -31,7 +31,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import jakarta.ws.rs.NotFoundException;
 import java.util.concurrent.atomic.AtomicInteger;

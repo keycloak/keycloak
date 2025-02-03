@@ -60,9 +60,9 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
 /**

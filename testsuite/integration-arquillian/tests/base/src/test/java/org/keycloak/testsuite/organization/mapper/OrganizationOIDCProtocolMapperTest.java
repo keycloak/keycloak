@@ -70,7 +70,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient.AccessTokenResponse;
 
 public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest {
 

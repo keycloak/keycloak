@@ -34,7 +34,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 

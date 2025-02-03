@@ -30,7 +30,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import java.util.Set;
 import org.hamcrest.Matchers;
 

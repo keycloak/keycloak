@@ -49,6 +49,8 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.*;
 
 import jakarta.mail.internet.MimeMessage;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import java.util.Arrays;
 import java.util.List;
 

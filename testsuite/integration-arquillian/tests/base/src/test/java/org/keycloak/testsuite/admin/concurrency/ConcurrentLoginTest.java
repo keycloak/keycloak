@@ -59,7 +59,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Random;

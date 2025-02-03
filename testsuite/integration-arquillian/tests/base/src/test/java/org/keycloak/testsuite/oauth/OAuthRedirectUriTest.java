@@ -44,7 +44,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

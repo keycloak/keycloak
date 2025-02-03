@@ -8,7 +8,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.IDToken;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import java.util.Map;
 

@@ -55,7 +55,7 @@ import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 

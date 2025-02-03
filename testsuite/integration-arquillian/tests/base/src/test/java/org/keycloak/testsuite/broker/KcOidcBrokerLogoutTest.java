@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import static org.junit.Assert.assertEquals;

@@ -23,7 +23,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

@@ -26,7 +26,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 //OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
 public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {

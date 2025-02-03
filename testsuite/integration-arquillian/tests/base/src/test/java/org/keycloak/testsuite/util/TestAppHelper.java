@@ -23,6 +23,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import java.io.IOException;
 
 public class TestAppHelper {
