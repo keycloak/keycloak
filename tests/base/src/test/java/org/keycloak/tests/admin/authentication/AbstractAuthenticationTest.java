@@ -223,7 +223,6 @@ public abstract class AbstractAuthenticationTest {
         if (autoDelete) {
             managedRealm.cleanup().add(r -> r.flows().deleteFlow(flowId));
         }
-//        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.CREATE)
                 .resourcePath(AdminEventPaths.authFlowPath(flowId))

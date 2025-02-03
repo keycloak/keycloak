@@ -86,12 +86,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates client based on signed JWT issued by client and signed with the Client private key", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header", true);
-//        addClientAuthenticatorProviderInfo(expected, "testsuite-client-id-required", "Signed Jwt", "Validates client based on signed JWT issued by client " +
-//                "and signed with the Client private key", false);
-//        addClientAuthenticatorProviderInfo(expected, "testsuite-client-passthrough", "Testsuite Dummy Client Validation", "Testsuite dummy authenticator, " +
-//                "which automatically authenticates hardcoded client (like 'test-app' )", false);
-//        addClientAuthenticatorProviderInfo(expected, "testsuite-client-dummy", "Testsuite ClientId Dummy",
-//                "Dummy client authenticator, which authenticates the client with clientId only", false);
         addClientAuthenticatorProviderInfo(expected, "client-x509", "X509 Certificate",
                 "Validates client based on a X509 Certificate", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
@@ -105,14 +99,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         Map<String, List<ConfigPropertyRepresentation>> configs = authMgmtResource.getPerClientConfigDescription();
         Assertions.assertTrue(configs.containsKey("client-jwt"));
         Assertions.assertTrue(configs.containsKey("client-secret"));
-//        Assertions.assertTrue(configs.containsKey("testsuite-client-passthrough"));
         Assertions.assertTrue(configs.get("client-jwt").isEmpty());
         Assertions.assertTrue(configs.get("client-secret").isEmpty());
-//        List<ConfigPropertyRepresentation> cfg = configs.get("testsuite-client-passthrough");
-//        Assert.assertProviderConfigProperty(cfg.get(0), "passthroughauth.foo", "Foo Property", null,
-//                "Foo Property of this authenticator, which does nothing", "String");
-//        Assert.assertProviderConfigProperty(cfg.get(1), "passthroughauth.bar", "Bar Property", null,
-//                "Bar Property of this authenticator, which does nothing", "boolean");
     }
 
     @Test
@@ -164,8 +152,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
         addProviderInfo(result, "docker-http-basic-authenticator", "Docker Authenticator", "Uses HTTP Basic authentication to validate docker users, returning a docker error token on auth failure");
-//        addProviderInfo(result, "expected-param-authenticator", "TEST: Expected Parameter",
-//                "You will be approved if you send query string parameter 'foo' with expected value.");
         addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
         addProviderInfo(result, "identity-provider-redirector", "Identity Provider Redirector", "Redirects to default Identity Provider or Identity Provider specified with kc_idp_hint query parameter");
         addProviderInfo(result, "idp-auto-link", "Automatically set existing user", "Automatically set existing user to authentication context without any verification");
@@ -180,24 +166,11 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username may be already known from identity provider authentication");
-//        addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
-//                "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
         addProviderInfo(result, "reset-otp", "Reset OTP", "Removes existing OTP configurations (if chosen) and sets the 'Configure OTP' required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
-//        addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
-//                "Testsuite Dummy authenticator.  User needs to click through the page to continue.");
-//        addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",
-//                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
-//        addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",
-//                "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
-//        addProviderInfo(result, "set-client-note-authenticator", "Set Client Note Authenticator", "Set client note of specified name with the specified value to the authenticationSession.");
-//        addProviderInfo(result, "testsuite-username", "Testsuite Username Only",
-//                "Testsuite Username authenticator.  Username parameter sets username");
-//        addProviderInfo(result, "test-suite-fire-error-event", "Fire Error Event",
-//                "Testsuite Error event firer authenticator.");
         addProviderInfo(result, "webauthn-authenticator", "WebAuthn Authenticator", "Authenticator for WebAuthn. Usually used for WebAuthn two-factor authentication");
         addProviderInfo(result, "webauthn-authenticator-passwordless", "WebAuthn Passwordless Authenticator", "Authenticator for Passwordless WebAuthn authentication");
 
@@ -211,8 +184,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Executes the current flow only if authenticators are configured");
         addProviderInfo(result, "conditional-user-attribute", "Condition - user attribute",
                 "Flow is executed only if the user attribute exists and has the expected value");
-//        addProviderInfo(result, "set-attribute", "Set user attribute",
-//                "Set a user attribute");
         addProviderInfo(result, "idp-detect-existing-broker-user", "Detect existing broker user",
                 "Detect if there is an existing Keycloak account with same email like identity provider. If no, throw an error.");
 
@@ -226,9 +197,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
         addProviderInfo(result, "user-session-limits", "User session count limiter",
                 "Configures how many concurrent sessions a single user is allowed to create for this realm and/or client");
-
-//        addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
-//                "Used for testing purposes of Callback factory");
 
         addProviderInfo(result, "idp-add-organization-member", "Organization Member Onboard", "Adds a federated user as a member of an organization");
         addProviderInfo(result, "organization", "Organization Identity-First Login", "If organizations are enabled, automatically redirects users to the corresponding identity provider.");
