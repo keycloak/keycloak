@@ -116,6 +116,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
   const [isUserLabelEdit, setIsUserLabelEdit] = useState<UserLabelEdit>();
 
   const bodyRef = useRef<HTMLTableSectionElement>(null);
+  const [loading, setLoading] = useState(true);
   const [state, setState] = useState({
     draggedItemId: "",
     draggingToItemIndex: -1,
@@ -157,6 +158,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
           isExpanded: false,
         })),
       );
+      setLoading(false);
     },
     [key],
   );
@@ -369,7 +371,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
 
   const useFederatedCredentials = user.federationLink;
 
-  if (!credentialTypes) {
+  if (loading) {
     return <KeycloakSpinner />;
   }
 
