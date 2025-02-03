@@ -19,7 +19,6 @@ package org.keycloak.models.cache.infinispan;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +64,7 @@ import org.keycloak.models.cache.infinispan.entities.GroupListQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
 import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
 import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
+import org.keycloak.models.cache.infinispan.entities.RoleByNameQuery;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientScopeAddedEvent;
@@ -849,7 +849,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             return getRoleDelegate().getRealmRole(realm, name);
         }
 
-        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        RoleByNameQuery query = cache.get(cacheKey, RoleByNameQuery.class);
         if (query != null) {
             logger.tracev("getRealmRole cache hit: {0}.{1}", realm.getName(), name);
         }
@@ -859,19 +859,19 @@ public class RealmCacheSession implements CacheRealmProvider {
             RoleModel model = getRoleDelegate().getRealmRole(realm, name);
             if (model == null) {
                 // caching empty results will speed up the policy evaluation which tries to look up the role by name and ID
-                query = new RoleListQuery(loaded, cacheKey, realm, Set.of());
+                query = new RoleByNameQuery(loaded, cacheKey, realm, null);
             } else {
-                query = new RoleListQuery(loaded, cacheKey, realm, model.getId());
+                query = new RoleByNameQuery(loaded, cacheKey, realm, model.getId());
             }
             logger.tracev("adding realm role cache miss: client {0} key {1}", realm.getName(), cacheKey);
             cache.addRevisioned(query, startupRevision);
             return model;
         }
-        Iterator<String> iterator = query.getRoles().iterator();
-        if (!iterator.hasNext()) {
+        String roleId = query.getRole();
+        if (roleId == null) {
             return null;
         }
-        RoleModel role = getRoleById(realm, iterator.next());
+        RoleModel role = getRoleById(realm, roleId);
         if (role == null) {
             invalidations.add(cacheKey);
             return getRoleDelegate().getRealmRole(realm, name);
@@ -887,7 +887,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             return getRoleDelegate().getClientRole(client, name);
         }
 
-        RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
+        RoleByNameQuery query = cache.get(cacheKey, RoleByNameQuery.class);
         if (query != null) {
             logger.tracev("getClientRole cache hit: {0}.{1}", client.getClientId(), name);
         }
@@ -897,19 +897,19 @@ public class RealmCacheSession implements CacheRealmProvider {
             RoleModel model = getRoleDelegate().getClientRole(client, name);
             if (model == null) {
                 // caching empty results will speed up the policy evaluation which tries to look up the role by name and ID
-                query = new RoleListQuery(loaded, cacheKey, client.getRealm(), Set.of());
+                query = new RoleByNameQuery(loaded, cacheKey, client.getRealm(), null, client.getClientId());
             } else {
-                query = new RoleListQuery(loaded, cacheKey, client.getRealm(), model.getId(), client.getClientId());
+                query = new RoleByNameQuery(loaded, cacheKey, client.getRealm(), model.getId(), client.getClientId());
             }
             logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
             cache.addRevisioned(query, startupRevision);
             return model;
         }
-        Iterator<String> iterator = query.getRoles().iterator();
-        if (!iterator.hasNext()) {
+        String roleId = query.getRole();
+        if (roleId == null) {
             return null;
         }
-        RoleModel role = getRoleById(client.getRealm(), query.getRoles().iterator().next());
+        RoleModel role = getRoleById(client.getRealm(), roleId);
         if (role == null) {
             invalidations.add(cacheKey);
             return getRoleDelegate().getClientRole(client, name);
