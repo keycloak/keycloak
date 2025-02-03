@@ -17,13 +17,18 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.core.UriBuilder;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -32,6 +37,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -46,6 +52,7 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
 
     @Rule
     public GreenMailRule greenMailRule = new GreenMailRule();
+
     private RealmResource realm;
 
     @Override
@@ -67,6 +74,33 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
                             String username, String password) throws Exception {
         return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
+    }
+
+
+    private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
+                                         String username, String authTokenUrl, String authTokenClientId, String authTokenClientSecret, String authTokenScope) throws Exception {
+        return smtpMapForTokenAuth(host, port, from, auth, ssl, starttls, username, authTokenUrl, authTokenClientId, authTokenClientSecret, authTokenScope,"", "");
+    }
+
+
+    private Map<String, String> smtpMapForTokenAuth(String host, String port, String from, String auth, String ssl, String starttls,
+                                        String username, String authTokenUrl, String authTokenClientId, String authTokenClientSecret, String authTokenScope, String replyTo, String envelopeFrom) {
+        Map<String, String> config = new HashMap<>();
+        config.put("host", host);
+        config.put("port", port);
+        config.put("from", from);
+        config.put("auth", auth);
+        config.put("ssl", ssl);
+        config.put("starttls", starttls);
+        config.put("user", username);
+        config.put("authType", "token");
+        config.put("authTokenUrl", authTokenUrl);
+        config.put("authTokenClientId", authTokenClientId);
+        config.put("authTokenClientSecret", authTokenClientSecret);
+        config.put("authTokenScope", authTokenScope);
+        config.put("replyTo", replyTo);
+        config.put("envelopeFrom", envelopeFrom);
+        return config;
     }
 
     private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,
@@ -101,14 +135,14 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testWithAuthEnabledCredentialsEmpty() throws Exception {
+    public void testWithPasswordAuthEnabledCredentialsEmpty() throws Exception {
         Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
                 null, null));
         assertStatus(response, 500);
     }
 
     @Test
-    public void testWithAuthEnabledValidCredentials() throws Exception {
+    public void testWithPasswordAuthEnabledValidCredentials() throws Exception {
         greenMailRule.credentials("admin@localhost", "admin");
         Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", SMTP_PASSWORD));
@@ -116,7 +150,7 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testAuthEnabledAndSavedCredentials() throws Exception {
+    public void testWithPasswordAuthEnabledAndSavedCredentials() throws Exception {
         RealmRepresentation realmRep = realm.toRepresentation();
         Map<String, String> oldSmtp = realmRep.getSmtpServer();
         try {
@@ -132,6 +166,52 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
             // Revert SMTP back
             realmRep.setSmtpServer(oldSmtp);
             realm.update(realmRep);
+        }
+    }
+
+    @Test
+    @Ignore
+    public void testWithTokenAuthEnabledAndSavedCredentials() throws Exception {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Map<String, String> oldSmtp = realmRep.getSmtpServer();
+        try {
+            final var tokenUrl = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(getAuthServerRoot())).build(realmRep.getRealm()).toString();
+
+            realmRep.setSmtpServer(smtpMapForTokenAuth("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                    "admin@localhost", tokenUrl, "test-smtp-client", "secret", "basic", null, null));
+            realm.update(realmRep);
+
+            //add client for token gathering
+            final var clientRepresentation = ClientBuilder.create().serviceAccount().clientId("test-smtp-client").secret("secret").build();
+
+            try (var result = realm.clients().create(clientRepresentation)) {
+
+                assertStatus(result, 201);
+
+                //verify token sent to smtp
+                /*greenMailRule.credentials("admin@localhost", new TokenValidator() {
+                    public boolean isValid(String token) {
+                        var accessTokenVerifier = TokenVerifier.create(token, AccessToken.class);
+                        try {
+                            var parsedAccessToken = accessTokenVerifier.verify().getToken();
+                            return parsedAccessToken.isActive();
+                        } catch (VerificationException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });*/
+
+                final var response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                        "admin@localhost", tokenUrl, "test-smtp-client", "secret", "basic"));
+                assertStatus(response, 204);
+            }
+        } finally {
+            // Revert SMTP back
+            realmRep.setSmtpServer(oldSmtp);
+            realm.update(realmRep);
+            // Remove created client
+            var createdSMTPAuthTokenClient = realm.clients().findByClientId("test-smtp-client").stream().findAny();
+            createdSMTPAuthTokenClient.ifPresent(client -> realm.clients().get(client.getId()).remove());
         }
     }
 

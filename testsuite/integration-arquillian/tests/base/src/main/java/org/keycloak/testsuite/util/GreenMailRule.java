@@ -58,6 +58,11 @@ public class GreenMailRule extends ExternalResource {
         greenMail.setUser(username, password);
     }
 
+    /*public void credentials(String username, TokenValidator validator) {
+        greenMail.setUser(username, null);
+        greenMail.getUserManager().getUser(username).setTokenValidator(validator);
+    }*/
+
     @Override
     protected void after() {
         if (greenMail != null) {

@@ -1,0 +1,24 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="keycloak-ju5-in-memory-logging" type="Application" factoryName="Application">
+    <envs>
+      <env name="KC_LOG_LEVEL" value="DEBUG" />
+      <env name="KC_ADMIN_VITE_URL" value="http://localhost:5174" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="org.keycloak.Keycloak" />
+    <module name="keycloak-junit5" />
+    <option name="PROGRAM_PARAMETERS" value="start-dev --log-console-level=debug --log-level=org.keycloak.services:debug,org.keycloak.protocol:debug,io.quarkus:debug --http-port=8080 --verbose" />
+    <extension name="net.ashald.envfile">
+      <option name="IS_ENABLED" value="false" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+      </ENTRIES>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
