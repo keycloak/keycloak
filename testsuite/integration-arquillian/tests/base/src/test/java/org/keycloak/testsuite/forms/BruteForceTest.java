@@ -603,7 +603,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
 
-            checkEmailPresent("User disabled by permament lockout");
+            checkEmailPresent("User disabled by permanent lockout");
 
             // assert
             expectPermanentlyDisabled();
