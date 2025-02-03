@@ -6,8 +6,7 @@
 
 <@tmpl.guide
 title="Configuring logging"
-summary="Learn how to configure Logging"
-includedOptions="log log-*">
+summary="Learn how to configure Logging">
 
 {project_name} uses the JBoss Logging framework.
 The following is a high-level overview for the available log handlers with the common parent log handler `root`:
@@ -375,5 +374,18 @@ To use unstructured logging, enter the following command:
 ----
 
 As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-*">
+
+=== Console
+<@opts.includeOptions includedOptions="log-console-*"/>
+
+=== File
+<@opts.includeOptions includedOptions="log-file log-file-*"/>
+
+=== Syslog
+<@opts.includeOptions includedOptions="log-syslog-*"/>
+
+</@opts.printRelevantOptions>
 
 </@tmpl.guide>

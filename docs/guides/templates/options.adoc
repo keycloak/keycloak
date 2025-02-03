@@ -5,6 +5,17 @@
     </#list>
 </#macro>
 
+<#macro includeOptions includedOptions excludedOptions="" deniedCategories="">
+<@list options=ctx.options.getOptions(includedOptions, excludedOptions, deniedCategories) anchor=false></@list>
+</#macro>
+
+<#macro printRelevantOptions includedOptions excludedOptions="" deniedCategories="">
+== Relevant options
+
+<@includeOptions includedOptions=includedOptions excludedOptions=excludedOptions deniedCategories=deniedCategories></@includeOptions>
+<#nested>
+</#macro>
+
 <#macro list options buildIcon=true anchor=true>
 [cols="12a,4",role="options"]
 |===

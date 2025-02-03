@@ -5,8 +5,7 @@
 
 <@tmpl.guide
 title="Configuring distributed caches"
-summary="Understand how to configure the caching layer"
-includedOptions="cache cache-*">
+summary="Understand how to configure the caching layer">
 
 {project_name} is designed for high availability and multi-node clustered setups.
 The current distributed cache implementation is built on top of https://infinispan.org[Infinispan], a high-performance, distributable in-memory data grid.
@@ -359,5 +358,15 @@ While these metrics provide more insights into the latency distribution, collect
 <@kc.start parameters="--metrics-enabled=true --cache-metrics-histograms-enabled=true"/>
 
 For more details about how to enable metrics, see <@links.observability id="configuration-metrics"/>.
+
+<@opts.printRelevantOptions includedOptions="cache cache-*" excludedOptions="cache-embedded-* cache-remote-*">
+
+=== Embedded Cache
+<@opts.includeOptions includedOptions="cache-embedded-*"/>
+
+=== Remote Cache
+<@opts.includeOptions includedOptions="cache-remote-*"/>
+
+</@opts.printRelevantOptions>
 
 </@tmpl.guide>
