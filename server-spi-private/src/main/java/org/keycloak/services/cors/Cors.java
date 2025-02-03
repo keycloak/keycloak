@@ -71,6 +71,8 @@ public interface Cors extends Provider {
 
     Cors allowedMethods(String... allowedMethods);
 
+    Cors allowedHeaders(String... allowedHeaders);
+
     Cors exposedHeaders(String... exposedHeaders);
 
     /**
