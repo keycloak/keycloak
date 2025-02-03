@@ -85,8 +85,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private Process keycloak;
     private int exitCode = -1;
     private final Path distPath;
-    private final List<String> outputStream = Collections.synchronizedList(new ArrayList<>());
-    private final List<String> errorStream = Collections.synchronizedList(new ArrayList<>());
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
@@ -115,7 +113,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.distPath = prepareDistribution();
         this.outputConsumer = outputConsumer;
     }
-    
+
     public CLIResult kcadm(String... arguments) throws IOException {
     	return kcadm(Arrays.asList(arguments));
     }
