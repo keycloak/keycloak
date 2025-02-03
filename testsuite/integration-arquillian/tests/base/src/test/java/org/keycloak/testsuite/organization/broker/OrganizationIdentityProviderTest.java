@@ -110,7 +110,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         //remove Org related stuff from the template
         idpTemplate.setOrganizationId(null);
         idpTemplate.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        idpTemplate.getConfig().remove(OrganizationModel.IdentityProviderMode.EMAIL_MATCH.getKey());
 
         for (int i = 0; i < 5; i++) {
             idpTemplate.setAlias("idp-" + i);
@@ -280,7 +280,7 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         assertThat(idpRep.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE), is(nullValue()));
     }
 
-    private IdentityProviderRepresentation createRep(String alias, String providerId) {
+    protected static IdentityProviderRepresentation createRep(String alias, String providerId) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(alias);
