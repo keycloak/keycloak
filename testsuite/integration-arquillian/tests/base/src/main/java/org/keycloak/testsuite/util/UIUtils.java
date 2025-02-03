@@ -84,6 +84,16 @@ public final class UIUtils {
         clickElement(element, Keys.ENTER);
     }
 
+    /**
+     * Same than clickLink but it does not perform any wait after clicking or sending the
+     * enter key.
+     *
+     * @param element The element to click
+     */
+    public static void clickLinkWithoutWait(WebElement element) {
+        clickLinkWithoutWait(element, Keys.ENTER);
+    }
+
     private static void clickElement(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
@@ -94,6 +104,17 @@ public final class UIUtils {
                 : element::click);
     }
 
+    private static void clickLinkWithoutWait(WebElement element, CharSequence key) {
+        WebDriver driver = getCurrentDriver();
+
+        waitUntilElement(element).is().clickable();
+
+        if (BrowserDriverUtil.isDriverChrome(driver)) {
+            element.sendKeys(key);
+        } else {
+            element.click();
+        }
+    }
 
     /**
      * The method executes click in the element. This method always uses click and
