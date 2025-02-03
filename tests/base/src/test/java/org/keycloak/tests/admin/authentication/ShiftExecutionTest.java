@@ -15,36 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.authentication;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.testsuite.util.AdminEventPaths;
+package org.keycloak.tests.admin.authentication;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+
 import java.util.HashMap;
 import java.util.List;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class ShiftExecutionTest extends AbstractAuthenticationTest {
 
     @Test
     public void testShiftExecution() {
-
         // copy built-in flow so we get a new editable flow
         HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
-            Assert.assertEquals("Copy flow", 201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus(), "Copy flow");
         } finally {
             response.close();
         }
@@ -58,42 +60,42 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         // Not possible to raisePriority of not-existent flow
         try {
             authMgmtResource.raisePriority("not-existent");
-            Assert.fail("Not expected to raise priority of not existent flow");
+            Assertions.fail("Not expected to raise priority of not existent flow");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // shift last execution up
         authMgmtResource.raisePriority(last.getId());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRaiseExecutionPath(last.getId()), ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRaiseExecutionPath(last.getId()), ResourceType.AUTH_EXECUTION);
 
         List<AuthenticationExecutionInfoRepresentation> executions2 = authMgmtResource.getExecutions("Copy of browser");
 
         AuthenticationExecutionInfoRepresentation last2 = executions2.get(executions.size() - 1);
         AuthenticationExecutionInfoRepresentation oneButLast2 = executions2.get(executions.size() - 2);
 
-        Assert.assertEquals("Execution shifted up - N", last.getId(), oneButLast2.getId());
-        Assert.assertEquals("Execution shifted up - N-1", oneButLast.getId(), last2.getId());
+        Assertions.assertEquals(last.getId(), oneButLast2.getId(), "Execution shifted up - N");
+        Assertions.assertEquals(oneButLast.getId(), last2.getId(), "Execution shifted up - N-1");
 
         // Not possible to lowerPriority of not-existent flow
         try {
             authMgmtResource.lowerPriority("not-existent");
-            Assert.fail("Not expected to raise priority of not existent flow");
+            Assertions.fail("Not expected to raise priority of not existent flow");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // shift one before last down
         authMgmtResource.lowerPriority(oneButLast2.getId());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authLowerExecutionPath(oneButLast2.getId()), ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authLowerExecutionPath(oneButLast2.getId()), ResourceType.AUTH_EXECUTION);
 
         executions2 = authMgmtResource.getExecutions("Copy of browser");
 
         last2 = executions2.get(executions.size() - 1);
         oneButLast2 = executions2.get(executions.size() - 2);
 
-        Assert.assertEquals("Execution shifted down - N", last.getId(), last2.getId());
-        Assert.assertEquals("Execution shifted down - N-1", oneButLast.getId(), oneButLast2.getId());
+        Assertions.assertEquals(last.getId(), last2.getId(), "Execution shifted down - N");
+        Assertions.assertEquals(oneButLast.getId(), oneButLast2.getId(), "Execution shifted down - N-1");
     }
 
     @Test
@@ -106,7 +108,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         // Not possible to raise - It's builtin flow
         try {
             authMgmtResource.raisePriority(last.getId());
-            Assert.fail("Not expected to raise priority of builtin flow");
+            Assertions.fail("Not expected to raise priority of builtin flow");
         } catch (BadRequestException nfe) {
             // Expected
         }
@@ -114,7 +116,7 @@ public class ShiftExecutionTest extends AbstractAuthenticationTest {
         // Not possible to lower - It's builtin flow
         try {
             authMgmtResource.lowerPriority(oneButLast.getId());
-            Assert.fail("Not expected to lower priority of builtin flow");
+            Assertions.fail("Not expected to lower priority of builtin flow");
         } catch (BadRequestException nfe) {
             // Expected
         }

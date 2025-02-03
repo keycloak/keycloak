@@ -15,29 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.authentication;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.admin.client.CreatedResponseUtil;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.ContainerAssume;
+package org.keycloak.tests.admin.authentication;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
@@ -46,6 +24,31 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+import org.keycloak.tests.utils.admin.ApiUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +59,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -67,27 +69,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.Matchers.body;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
+import static org.keycloak.tests.utils.matchers.Matchers.body;
+import static org.keycloak.tests.utils.matchers.Matchers.statusCodeIs;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class FlowTest extends AbstractAuthenticationTest {
 
     // KEYCLOAK-3681: Delete top flow doesn't delete all subflows
     @Test
     public void testRemoveSubflows() {
-        createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
+        createFlow(newFlow("Foo", "Foo flow", "generic", true, false), false);
         addFlowToParent("Foo", "child");
         addFlowToParent("child", "grandchild");
 
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation found = findFlowByAlias("Foo", flows);
         authMgmtResource.deleteFlow(found.getId());
-        assertAdminEvents.clear();
 
-        createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
+        adminEvents.skipAll();
+
+        createFlow(newFlow("Foo", "Foo flow", "generic", true, false), false);
         addFlowToParent("Foo", "child");
 
         // Under the old code, this would throw an error because "grandchild"
@@ -109,13 +113,11 @@ public class FlowTest extends AbstractAuthenticationTest {
                 .filter(r -> "child".equals(r.getDisplayName()) && r.getLevel() == 0).findAny().orElse(null);
         assertNotNull(childExececution);
         authMgmtResource.removeExecution(childExececution.getId());
-        assertAdminEvents.clear();
+        adminEvents.skip();
 
         // check subflows were removed and can be re-created
         addFlowToParent("Foo", "child");
         addFlowToParent("child", "grandchild");
-
-        authMgmtResource.deleteFlow(findFlowByAlias("Foo", authMgmtResource.getFlows()).getId());
     }
 
     private void addFlowToParent(String parentAlias, String childAlias) {
@@ -129,13 +131,13 @@ public class FlowTest extends AbstractAuthenticationTest {
     @Test
     public void testAddFlowWithRestrictedCharInAlias() {
         Response resp = authMgmtResource.createFlow(newFlow("fo]o", "Browser flow", "basic-flow", true, false));
-        Assert.assertEquals(400, resp.getStatus());
+        Assertions.assertEquals(400, resp.getStatus());
 
         try {
             CreatedResponseUtil.getCreatedId(resp);
-            Assert.fail("Not expected getCreatedId to success");
+            Assertions.fail("Not expected getCreatedId to success");
         } catch (WebApplicationException wae) {
-            Assert.assertThat(wae.getMessage(), endsWith("Error: Character ']' not allowed."));
+            MatcherAssert.assertThat(wae.getMessage(), endsWith("Error: Character ']' not allowed."));
         }
     }
 
@@ -145,19 +147,19 @@ public class FlowTest extends AbstractAuthenticationTest {
         // test that built-in flow cannot be deleted
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation builtInFlow = flows.stream().filter(AuthenticationFlowRepresentation::isBuiltIn).findAny().orElse(null);
-        Assert.assertNotNull("No built in flow in the realm", builtInFlow);
+        Assertions.assertNotNull(builtInFlow, "No built in flow in the realm");
         try {
             authMgmtResource.deleteFlow(builtInFlow.getId());
-            Assert.fail("deleteFlow should fail for built in flow");
+            Assertions.fail("deleteFlow should fail for built in flow");
         } catch (BadRequestException e) {
             OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-            Assert.assertEquals("Can't delete built in flow", error.getError());
+            Assertions.assertEquals("Can't delete built in flow", error.getError());
         }
 
         // try create new flow using alias of already existing flow
         Response response = authMgmtResource.createFlow(newFlow("browser", "Browser flow", "basic-flow", true, false));
         try {
-            Assert.assertEquals("createFlow using the alias of existing flow should fail", 409, response.getStatus());
+            Assertions.assertEquals(409, response.getStatus(), "createFlow using the alias of existing flow should fail");
         } finally {
             response.close();
         }
@@ -165,7 +167,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // try create flow without alias
         response = authMgmtResource.createFlow(newFlow(null, "Browser flow", "basic-flow", true, false));
         try {
-            Assert.assertEquals("createFlow using the alias of existing flow should fail", 409, response.getStatus());
+            Assertions.assertEquals(409, response.getStatus(), "createFlow using the alias of existing flow should fail");
         } finally {
             response.close();
         }
@@ -173,26 +175,26 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // create new flow that should succeed
         AuthenticationFlowRepresentation newFlow = newFlow("browser-2", "Browser flow", "basic-flow", true, false);
-        createFlow(newFlow);
+        createFlow(newFlow, false);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation found = findFlowByAlias("browser-2", flows);
 
-        Assert.assertNotNull("created flow visible in parent", found);
+        Assertions.assertNotNull(found, "created flow visible in parent");
         compareFlows(newFlow, found);
 
         // check lookup flow with unexistent ID
         try {
             authMgmtResource.getFlow("id-123-notExistent");
-            Assert.fail("Not expected to find unexistent flow");
+            Assertions.fail("Not expected to find unexistent flow");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // check that new flow is returned individually
         AuthenticationFlowRepresentation found2 = authMgmtResource.getFlow(found.getId());
-        Assert.assertNotNull("created flow visible directly", found2);
+        Assertions.assertNotNull(found2, "created flow visible directly");
         compareFlows(newFlow, found2);
 
 
@@ -214,7 +216,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // inexistent parent flow - should fail
         try {
             authMgmtResource.addExecutionFlow("inexistent-parent-flow-alias", data);
-            Assert.fail("addExecutionFlow for inexistent parent should have failed");
+            Assertions.fail("addExecutionFlow for inexistent parent should have failed");
         } catch (Exception expected) {
             // Expected
         }
@@ -223,7 +225,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         try {
             data.put("alias", "browser");
             authMgmtResource.addExecutionFlow("browser-2", data);
-            Assert.fail("addExecutionFlow should have failed as browser flow already exists");
+            Assertions.fail("addExecutionFlow should have failed as browser flow already exists");
         } catch (Exception expected) {
             // Expected
         }
@@ -232,17 +234,17 @@ public class FlowTest extends AbstractAuthenticationTest {
         data.put("alias", "SomeFlow");
         authMgmtResource.addExecutionFlow("browser-2", data);
         authMgmtResource.addExecutionFlow("browser-2", data2);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
         found2 = findFlowByAlias("browser-2", flows);
-        Assert.assertNotNull("created flow visible in parent", found2);
+        Assertions.assertNotNull(found2, "created flow visible in parent");
 
         List<AuthenticationExecutionExportRepresentation> execs = found2.getAuthenticationExecutions();
-        Assert.assertNotNull(execs);
-        Assert.assertEquals("Size two", 2, execs.size());
+        Assertions.assertNotNull(execs);
+        Assertions.assertEquals(2, execs.size(), "Size two");
 
         AuthenticationExecutionExportRepresentation expected = new AuthenticationExecutionExportRepresentation();
         expected.setFlowAlias("SomeFlow");
@@ -263,17 +265,17 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         // check the deleted flow is no longer returned
         flows = authMgmtResource.getFlows();
         found = findFlowByAlias("browser-2", flows);
-        Assert.assertNull("flow deleted", found);
+        Assertions.assertNull(found, "flow deleted");
 
         // Check deleting flow second time will fail
         try {
             authMgmtResource.deleteFlow("id-123-notExistent");
-            Assert.fail("Not expected to delete flow, which doesn't exist");
+            Assertions.fail("Not expected to delete flow, which doesn't exist");
         } catch (NotFoundException nfe) {
             // Expected
         }
@@ -287,10 +289,10 @@ public class FlowTest extends AbstractAuthenticationTest {
         Runnable assertRemoveFail = () -> {
             try {
                 authMgmtResource.deleteFlow(flowId);
-                Assert.fail("Not expected to delete flow that is in use.");
+                Assertions.fail("Not expected to delete flow that is in use.");
             } catch (WebApplicationException e) {
                 OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-                Assert.assertEquals("For more on this error consult the server log.", error.getErrorDescription());
+                Assertions.assertEquals("For more on this error consult the server log.", error.getErrorDescription());
             }
         };
 
@@ -347,9 +349,9 @@ public class FlowTest extends AbstractAuthenticationTest {
             idp.setProviderId("oidc");
 
             Response response = realmResource.identityProviders().create(idp);
-            Assert.assertNotNull(ApiUtil.getCreatedId(response));
+            Assertions.assertNotNull(ApiUtil.getCreatedId(response));
             response.close();
-            getCleanup().addIdentityProviderAlias(idp.getAlias());
+            managedRealm.cleanup().add(r -> r.identityProviders().get(idp.getAlias()).remove());
 
             IdentityProviderResource idpResource = realmResource.identityProviders().get("idp");
             BiConsumer<Supplier<String>, Consumer<String>> assertRemoveFailByIdp =
@@ -399,7 +401,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy that should succeed
         params.put("newName", "Copy of browser");
         response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
             assertThat("Copy flow", response, statusCodeIs(Status.CREATED));
         } finally {
@@ -411,8 +413,8 @@ public class FlowTest extends AbstractAuthenticationTest {
         AuthenticationFlowRepresentation browser = findFlowByAlias("browser", flows);
         AuthenticationFlowRepresentation copyOfBrowser = findFlowByAlias("Copy of browser", flows);
 
-        Assert.assertNotNull(browser);
-        Assert.assertNotNull(copyOfBrowser);
+        Assertions.assertNotNull(browser);
+        Assertions.assertNotNull(copyOfBrowser);
 
         // adjust expected values before comparing
         browser.setAlias("Copy of browser");
@@ -423,7 +425,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // get new flow directly and compare
         copyOfBrowser = authMgmtResource.getFlow(copyOfBrowser.getId());
-        Assert.assertNotNull(copyOfBrowser);
+        Assertions.assertNotNull(copyOfBrowser);
         compareFlows(browser, copyOfBrowser);
         authMgmtResource.deleteFlow(copyOfBrowser.getId());
     }
@@ -434,9 +436,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "parent");
         Response response = authMgmtResource.copy("browser", params);
-        Assert.assertEquals(201, response.getStatus());
+        Assertions.assertEquals(201, response.getStatus());
         response.close();
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
 
         params = new HashMap<>();
         params.put("alias", "child");
@@ -445,7 +447,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("parent", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         authMgmtResource.deleteFlow(findFlowByAlias("parent", authMgmtResource.getFlows()).getId());
     }
@@ -460,9 +462,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         HashMap<String, Object> params = new HashMap<>();
         params.put("newName", "Copy of browser");
         Response response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
-            Assert.assertEquals("Copy flow", 201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus(), "Copy flow");
         } finally {
             response.close();
         }
@@ -473,9 +475,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         //Set a new unique name. Should succeed
         testFlow.setAlias("Copy of browser2");
         authMgmtResource.updateFlow(testFlow.getId(), testFlow);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(testFlow.getId()), ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authEditFlowPath(testFlow.getId()), ResourceType.AUTH_FLOW);
         flows = authMgmtResource.getFlows();
-        Assert.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
+        Assertions.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
 
         //Create new flow and edit the old one to have the new ones name
         AuthenticationFlowRepresentation newFlow = newFlow("New Flow", "Test description", "basic-flow", true, false);
@@ -484,7 +486,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation found = findFlowByAlias("New Flow", flows);
 
-        Assert.assertNotNull("created flow visible in parent", found);
+        Assertions.assertNotNull(found, "created flow visible in parent");
         compareFlows(newFlow, found);
 
         //try to update old flow with alias that already exists
@@ -506,15 +508,15 @@ public class FlowTest extends AbstractAuthenticationTest {
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow
-        Assert.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
+        Assertions.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
 
         //Only update the description
         found.setDescription("New description");
         authMgmtResource.updateFlow(found.getId(), found);
         flows = authMgmtResource.getFlows();
 
-        Assert.assertEquals("New description", findFlowByAlias("New Flow", flows).getDescription());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        Assertions.assertEquals("New description", findFlowByAlias("New Flow", flows).getDescription());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         //Update name and description
         found.setAlias("New Flow2");
@@ -522,13 +524,12 @@ public class FlowTest extends AbstractAuthenticationTest {
         authMgmtResource.updateFlow(found.getId(), found);
         flows = authMgmtResource.getFlows();
 
-        Assert.assertEquals("New Flow2", findFlowByAlias("New Flow2", flows).getAlias());
-        Assert.assertEquals("New description2", findFlowByAlias("New Flow2", flows).getDescription());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
-        Assert.assertNull(findFlowByAlias("New Flow", flows));
+        Assertions.assertEquals("New Flow2", findFlowByAlias("New Flow2", flows).getAlias());
+        Assertions.assertEquals("New description2", findFlowByAlias("New Flow2", flows).getDescription());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authEditFlowPath(found.getId()), ResourceType.AUTH_FLOW);
+        Assertions.assertNull(findFlowByAlias("New Flow", flows));
 
         authMgmtResource.deleteFlow(testFlow.getId());
-        authMgmtResource.deleteFlow(found.getId());
     }
 
     @Test
@@ -546,7 +547,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("Parent-Flow", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
 
@@ -559,7 +560,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         try {
             authMgmtResource.addExecutionFlow("Parent-Flow", params);
-            Assert.fail("addExecutionFlow the alias already exist");
+            Assertions.fail("addExecutionFlow the alias already exist");
         } catch (Exception expected) {
             // Expected
         }
@@ -578,19 +579,19 @@ public class FlowTest extends AbstractAuthenticationTest {
         found.setDescription("This is another child flow2");
 
         authMgmtResource.updateExecutions("Parent-Flow", found);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
-        Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
-        Assert.assertEquals("This is another child flow2", executionReps.get(0).getDescription());
+        Assertions.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
+        Assertions.assertEquals("This is another child flow2", executionReps.get(0).getDescription());
 
         //edit only description
         found.setDescription("This is another child flow3");
         authMgmtResource.updateExecutions("Parent-Flow", found);
 
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("Parent-Flow"), ResourceType.AUTH_EXECUTION);
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
-        Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
-        Assert.assertEquals("This is another child flow3", executionReps.get(0).getDescription());
+        Assertions.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
+        Assertions.assertEquals("This is another child flow3", executionReps.get(0).getDescription());
     }
 
     @Test
@@ -607,7 +608,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("priority", 50);
 
         authMgmtResource.addExecutionFlow("Parent-Flow", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         params.clear();
         params.put("alias", "Child-Flow2");
@@ -617,7 +618,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("priority", 10);
 
         authMgmtResource.addExecutionFlow("Parent-Flow", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         params.clear();
         params.put("alias", "Child-Flow3");
@@ -627,16 +628,16 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("priority", 20);
 
         authMgmtResource.addExecutionFlow("Parent-Flow", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("Parent-Flow"), params, ResourceType.AUTH_EXECUTION_FLOW);
 
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Parent-Flow");
         // Verify the initial order and priority value
-        Assert.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
-        Assert.assertEquals(10, executionReps.get(0).getPriority());
-        Assert.assertEquals("Child-Flow3", executionReps.get(1).getDisplayName());
-        Assert.assertEquals(20, executionReps.get(1).getPriority());
-        Assert.assertEquals("Child-Flow1", executionReps.get(2).getDisplayName());
-        Assert.assertEquals(50, executionReps.get(2).getPriority());
+        Assertions.assertEquals("Child-Flow2", executionReps.get(0).getDisplayName());
+        Assertions.assertEquals(10, executionReps.get(0).getPriority());
+        Assertions.assertEquals("Child-Flow3", executionReps.get(1).getDisplayName());
+        Assertions.assertEquals(20, executionReps.get(1).getPriority());
+        Assertions.assertEquals("Child-Flow1", executionReps.get(2).getDisplayName());
+        Assertions.assertEquals(50, executionReps.get(2).getPriority());
 
         // Move last execution to the beginning
         AuthenticationExecutionInfoRepresentation lastToFirst = executionReps.get(2);
@@ -645,24 +646,18 @@ public class FlowTest extends AbstractAuthenticationTest {
         executionReps = authMgmtResource.getExecutions("Parent-Flow");
 
         // Verify new order and priority
-        Assert.assertEquals("Child-Flow1", executionReps.get(0).getDisplayName());
-        Assert.assertEquals(5, executionReps.get(0).getPriority());
-        Assert.assertEquals("Child-Flow2", executionReps.get(1).getDisplayName());
-        Assert.assertEquals(10, executionReps.get(1).getPriority());
-        Assert.assertEquals("Child-Flow3", executionReps.get(2).getDisplayName());
-        Assert.assertEquals(20, executionReps.get(2).getPriority());
+        Assertions.assertEquals("Child-Flow1", executionReps.get(0).getDisplayName());
+        Assertions.assertEquals(5, executionReps.get(0).getPriority());
+        Assertions.assertEquals("Child-Flow2", executionReps.get(1).getDisplayName());
+        Assertions.assertEquals(10, executionReps.get(1).getPriority());
+        Assertions.assertEquals("Child-Flow3", executionReps.get(2).getDisplayName());
+        Assertions.assertEquals(20, executionReps.get(2).getPriority());
     }
 
     @Test
     public void failWithLongDescription() throws IOException {
-        ContainerAssume.assumeAuthServerQuarkus();
         AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
-                .filter(new Predicate<AuthenticationFlowRepresentation>() {
-                    @Override
-                    public boolean test(AuthenticationFlowRepresentation rep) {
-                        return "docker auth".equals(rep.getAlias());
-                    }
-                }).findAny().orElse(null);
+                .filter(rep1 -> "docker auth".equals(rep1.getAlias())).findAny().orElse(null);
 
         assertNotNull(rep);
 
@@ -692,27 +687,27 @@ public class FlowTest extends AbstractAuthenticationTest {
         // get a built in flow
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation flow = flows.stream().filter(AuthenticationFlowRepresentation::isBuiltIn).findFirst().orElse(null);
-        Assert.assertNotNull("There is no builtin flow", flow);
+        Assertions.assertNotNull(flow, "There is no builtin flow");
 
         // adding an execution should fail
         Map<String, Object> data = new HashMap<>();
         data.put("provider", "allow-access-authenticator");
-        BadRequestException e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.addExecution(flow.getAlias(), data));
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class, () -> authMgmtResource.addExecution(flow.getAlias(), data));
         OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("It is illegal to add execution to a built in flow", error.getError());
+        Assertions.assertEquals("It is illegal to add execution to a built in flow", error.getError());
 
         // adding a sub-flow should fail as well
-        e = Assert.assertThrows(BadRequestException.class, () -> addFlowToParent(flow.getAlias(), "child"));
+        e = Assertions.assertThrows(BadRequestException.class, () -> addFlowToParent(flow.getAlias(), "child"));
         error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("It is illegal to add sub-flow to a built in flow", error.getError());
+        Assertions.assertEquals("It is illegal to add sub-flow to a built in flow", error.getError());
 
         // removing any execution (execution or flow) should fail too
         List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions(flow.getAlias());
-        Assert.assertNotNull("The builtin flow has no executions", executions);
-        Assert.assertFalse("The builtin flow has no executions", executions.isEmpty());
-        e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.removeExecution(executions.get(0).getId()));
+        Assertions.assertNotNull(executions, "The builtin flow has no executions");
+        Assertions.assertFalse(executions.isEmpty(), "The builtin flow has no executions");
+        e = Assertions.assertThrows(BadRequestException.class, () -> authMgmtResource.removeExecution(executions.get(0).getId()));
         error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("It is illegal to remove execution from a built in flow", error.getError());
+        Assertions.assertEquals("It is illegal to remove execution from a built in flow", error.getError());
     }
 
     @Test
@@ -725,7 +720,7 @@ public class FlowTest extends AbstractAuthenticationTest {
             }
         }
 
-        Assert.assertNotNull(existingFlow);
+        Assertions.assertNotNull(existingFlow);
 
         List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions(existingFlow.getAlias());
         AuthenticationExecutionInfoRepresentation executionWithConfig = null;
@@ -736,7 +731,7 @@ public class FlowTest extends AbstractAuthenticationTest {
             }
         }
 
-        Assert.assertNotNull(executionWithConfig);
+        Assertions.assertNotNull(executionWithConfig);
 
         AuthenticatorConfigRepresentation executionConfig = new AuthenticatorConfigRepresentation();
 
@@ -744,14 +739,14 @@ public class FlowTest extends AbstractAuthenticationTest {
         executionConfig.setConfig(Map.of("key", "value"));
 
         try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
-            getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTHENTICATOR_CONFIG);
+            managedRealm.cleanup().add(r -> r.flows().removeAuthenticatorConfig(ApiUtil.getCreatedId(response)));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTHENTICATOR_CONFIG);
         }
 
         String newFlowName = "Duplicated of " + DefaultAuthenticationFlows.BROWSER_FLOW;
         Map<String, Object> copyFlowParams = Map.of("newName", newFlowName);
         authMgmtResource.copy(existingFlow.getAlias(), copyFlowParams).close();
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), copyFlowParams, ResourceType.AUTH_FLOW);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), copyFlowParams, ResourceType.AUTH_FLOW);
 
         AuthenticationFlowRepresentation newFlow = null;
 
@@ -776,7 +771,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         assertFalse(newExecutionConfigIds.isEmpty());
 
         for (String executionConfigId : newExecutionConfigIds) {
-            Assert.assertFalse("Execution config not duplicated", existingExecutionConfigIds.contains(executionConfigId));
+            Assertions.assertFalse(existingExecutionConfigIds.contains(executionConfigId), "Execution config not duplicated");
         }
     }
 }
