@@ -185,6 +185,16 @@ public class InfinispanUtil {
         return cb;
     }
 
+    public static ConfigurationBuilder getCrlCacheConfig() {
+        var builder = createCacheConfigurationBuilder();
+
+        builder.memory()
+                .whenFull(EvictionStrategy.REMOVE)
+                .maxCount(InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX);
+
+        return builder;
+    }
+
     /**
      * Replaces the {@link TimeService} in infinispan with the one that respects Keycloak {@link Time}.
      * @param cacheManager
