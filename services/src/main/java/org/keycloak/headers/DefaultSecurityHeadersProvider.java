@@ -17,6 +17,7 @@
 package org.keycloak.headers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ContentSecurityPolicyBuilder;
 import org.keycloak.models.KeycloakSession;
@@ -87,7 +88,9 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
     private void addGenericHeaders(MultivaluedMap<String, Object> headers) {
         addHeader(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, headers);
         addHeader(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, headers);
-        addHeader(BrowserSecurityHeaders.X_XSS_PROTECTION, headers);
+        if (Profile.isFeatureEnabled(Profile.Feature.X_XSS_PROTECTION)) {
+            addHeader(BrowserSecurityHeaders.X_XSS_PROTECTION, headers);
+        }
         addHeader(BrowserSecurityHeaders.REFERRER_POLICY, headers);
     }
 
@@ -95,7 +98,9 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
         addHeader(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, headers);
         addHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS, headers);
         addHeader(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, headers);
-        addHeader(BrowserSecurityHeaders.X_XSS_PROTECTION, headers);
+        if (Profile.isFeatureEnabled(Profile.Feature.X_XSS_PROTECTION)) {
+            addHeader(BrowserSecurityHeaders.X_XSS_PROTECTION, headers);
+        }
         addHeader(BrowserSecurityHeaders.REFERRER_POLICY, headers);
     }
 

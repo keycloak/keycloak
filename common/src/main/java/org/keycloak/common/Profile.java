@@ -131,7 +131,10 @@ public class Profile {
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.PREVIEW),
 
-        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL)
+        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
+
+        @Deprecated
+        X_XSS_PROTECTION("Enable X_XSS_PROTECTION header in response", Type.DEPRECATED)
         ;
 
         private final Type type;
