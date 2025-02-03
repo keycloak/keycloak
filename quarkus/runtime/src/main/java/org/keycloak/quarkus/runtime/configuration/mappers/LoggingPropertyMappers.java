@@ -56,6 +56,11 @@ public final class LoggingPropertyMappers {
                         .paramLabel("format")
                         .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE))
                         .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_JSON_FORMAT)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, CONSOLE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.console.json.log-format")
+                        .paramLabel("format")
+                        .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "Console log handler and Tracing is activated")
@@ -90,6 +95,11 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.file.format")
                         .paramLabel("format")
                         .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_FILE_INCLUDE_TRACE))
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_JSON_FORMAT)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.log-format")
+                        .paramLabel("format")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && TracingPropertyMappers.isTracingEnabled(),
@@ -159,6 +169,11 @@ public final class LoggingPropertyMappers {
                         .paramLabel("format")
                         .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE))
                         .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_JSON_FORMAT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.syslog.json.log-format")
+                        .paramLabel("format")
+                        .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isSyslogEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "Syslog handler and Tracing is activated")
@@ -178,12 +193,24 @@ public final class LoggingPropertyMappers {
         return isTrue(LoggingOptions.LOG_CONSOLE_ENABLED);
     }
 
+    public static boolean isConsoleJsonEnabled() {
+        return isConsoleEnabled() && Configuration.isTrue("quarkus.log.console.json");
+    }
+
     public static boolean isFileEnabled() {
         return isTrue(LoggingOptions.LOG_FILE_ENABLED);
     }
 
+    public static boolean isFileJsonEnabled() {
+        return isFileEnabled() && Configuration.isTrue("quarkus.log.file.json");
+    }
+
     public static boolean isSyslogEnabled() {
         return isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
+    }
+
+    public static boolean isSyslogJsonEnabled() {
+        return isSyslogEnabled() && Configuration.isTrue("quarkus.log.syslog.json");
     }
 
     private static BiFunction<String, ConfigSourceInterceptorContext, String> resolveLogHandler(String handler) {
