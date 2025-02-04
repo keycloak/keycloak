@@ -9,8 +9,7 @@ This directory contains the UIs and related libraries of the Keycloak project wr
     │   ├── admin-ui                   # Admin UI for handling login, registration, administration, and account management
     │   └── keycloak-server            # Keycloak server for local development of UIs
     ├── libs
-    │   ├── keycloak-admin-client      # Keycloak Admin Client library for Keycloak REST API
-    │   └── keycloak-js                # Keycloak JS library for securing HTML5/JavaScript applications
+    │   └── keycloak-admin-client      # Keycloak Admin Client library for Keycloak REST API
     ├── ...
 
 ## Data processing

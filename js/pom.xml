@@ -20,7 +20,6 @@
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
         <module>libs/ui-shared</module>
-        <module>libs/keycloak-js</module>
         <module>themes-vendor</module>
     </modules>
 

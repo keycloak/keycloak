@@ -22,8 +22,6 @@ export default tseslint.config(
       "**/lib/",
       "**/target/",
       "./apps/keycloak-server/server/",
-      // Keycloak JS follows a completely different and outdated style, so we'll exclude it for now.
-      "./libs/keycloak-js/",
     ],
   },
   eslint.configs.recommended,
