@@ -35,6 +35,7 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
     // LDAP DN where are groups of this tree saved.
     public static final String GROUPS_DN = "groups.dn";
+    public static final String GROUPS_RELATIVE_CREATE_DN = "groups.relative.create.dn";
 
     // Name of LDAP attribute, which is used in group objects for name and RDN of group. Usually it will be "cn"
     public static final String GROUP_NAME_LDAP_ATTRIBUTE = "group.name.ldap.attribute";
@@ -77,6 +78,14 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
             throw new ModelException("Groups DN is null! Check your configuration");
         }
         return groupsDn;
+    }
+
+    public String getRelativeCreateDn() {
+        String relativeCreateDn = mapperModel.getConfig().getFirst(GROUPS_RELATIVE_CREATE_DN);
+        if(relativeCreateDn != null) {
+            return relativeCreateDn + ",";
+        }
+        return "";
     }
 
     @Override
