@@ -19,6 +19,8 @@ package org.keycloak.storage.ldap.mappers.membership;
 
 
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
@@ -26,10 +28,12 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.utils.StreamsUtil;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -41,6 +45,8 @@ public interface UserRolesRetrieveStrategy {
 
 
     List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig);
+
+    List<UserModel> getLDAPRoleMembers(RealmModel realm, CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapRoleOrGroup, int firstResult, int maxResults);
 
     void beforeUserLDAPQuery(CommonLDAPGroupMapper roleOrGroupMapper, LDAPQuery query);
 
@@ -65,6 +71,12 @@ public interface UserRolesRetrieveStrategy {
 
                 return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
             }
+        }
+
+        @Override
+        public List<UserModel> getLDAPRoleMembers(RealmModel realm, CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapRoleOrGroup, int firstResult, int maxResults) {
+            MembershipType membershipType = roleOrGroupMapper.getConfig().getMembershipTypeLdapAttribute();
+            return membershipType.getGroupMembers(realm, roleOrGroupMapper, ldapRoleOrGroup, firstResult, maxResults);
         }
 
         @Override
@@ -111,6 +123,15 @@ public interface UserRolesRetrieveStrategy {
                 }
             }
             return roles;
+        }
+
+        @Override
+        public List<UserModel> getLDAPRoleMembers(RealmModel realm, CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapRoleOrGroup, int firstResult, int maxResults) {
+            String memberOfLdapAttrName = roleOrGroupMapper.getConfig().getMemberOfLdapAttribute();
+            String roleOrGroupDn = ldapRoleOrGroup.getDn().toString();
+            return StreamsUtil.paginatedStream(
+                    roleOrGroupMapper.getLdapProvider().searchForUserByUserAttributeStream(realm, memberOfLdapAttrName, roleOrGroupDn), firstResult, maxResults)
+                    .toList();
         }
 
         @Override
