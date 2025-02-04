@@ -506,4 +506,54 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
+    @Test
+    public void logConsoleJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-json-format'. Available only when Console log handler is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logConsoleJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-console-json-format': invalid. Expected values are: default, ecs"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logFileJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-file-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-file-json-format'. Available only when File log handler is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logFileJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-console-json-format': invalid. Expected values are: default, ecs"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-output=json", "--log-console-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    @Test
+    public void logSyslogJsonFormatDisabled() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-syslog-json-format'. Available only when Syslog is activated and output is set to 'json'"));
+    }
+
+    @Test
+    public void logSyslogJsonFormat() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-output=json", "--log-syslog-json-format=invalid");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-syslog-json-format': invalid. Expected values are: default, ecs"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-output=json", "--log-syslog-json-format=ecs");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
 }
