@@ -58,3 +58,9 @@ link:{grafanadashboards_link}[The guide] contains two dashboards.
 * Keycloak troubleshooting dashboard - showing metrics related to service level indicators and troubleshooting.
 * Keycloak capacity planning dashboard - showing metrics related to estimating the load handled by Keycloak.
 
+
+= Removal of XSS Header
+
+We have removed the default X-XSS-Protection header from response.
+
+See this https://github.com/keycloak/keycloak/issues/21728[discussion] for more details.

@@ -419,11 +419,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getBrowserSecurityHeaders() != null) {
             newRealm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         } else {
-            Map<String, String> headers = new HashMap<>(BrowserSecurityHeaders.realmDefaultHeaders);
-            if (Profile.isFeatureEnabled(Feature.X_XSS_PROTECTION)) {
-                headers.put(BrowserSecurityHeaders.X_XSS_PROTECTION.getKey(), BrowserSecurityHeaders.X_XSS_PROTECTION.getDefaultValue());
-            }
-            newRealm.setBrowserSecurityHeaders(Collections.unmodifiableMap(headers));
+            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
         if (rep.getGroups() != null) {
