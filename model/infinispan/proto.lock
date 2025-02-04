@@ -1143,6 +1143,11 @@
           "name" : "containerId",
           "type" : "string",
           "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "roleName",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "GroupAddedEvent",
