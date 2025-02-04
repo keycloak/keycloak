@@ -281,7 +281,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
-      MAVEN_OPTS: -Xmx1024m
+      MAVEN_OPTS: -Xmx1536m
     steps:
       - uses: actions/checkout@v4
 
@@ -782,7 +782,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      MAVEN_OPTS: -Xmx1024m
+      MAVEN_OPTS: -Xmx1536m
     steps:
       - uses: actions/checkout@v4
 
