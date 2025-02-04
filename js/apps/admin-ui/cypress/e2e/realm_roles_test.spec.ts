@@ -287,7 +287,7 @@ describe("Realm roles test", () => {
       cy.injectAxe();
     });
 
-    const role = "a11y-role";
+    const role = "a11y-role" + crypto.randomUUID();
     const defaultRolesMaster = "default-roles-master";
 
     it("Check a11y violations on load/ realm roles", () => {
