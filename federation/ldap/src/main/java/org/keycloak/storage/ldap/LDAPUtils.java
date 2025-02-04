@@ -155,7 +155,7 @@ public class LDAPUtils {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
 
-        LDAPDn dn = LDAPDn.fromString(config.getUsersDn());
+        LDAPDn dn = LDAPDn.fromString(config.getRelativeCreateDn() + config.getUsersDn());
         dn.addFirst(rdnLdapAttrName, rdnLdapAttrValue);
         ldapUser.setDn(dn);
     }
