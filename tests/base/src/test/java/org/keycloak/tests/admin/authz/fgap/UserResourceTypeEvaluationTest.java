@@ -80,6 +80,17 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testSingleUserPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy("Only My Admin User Policy", myadmin.getId());
+        // allow my admin to see alice only
+        createUserPermission(userAlice.admin().toRepresentation(), Set.of(VIEW), allowMyAdminPermission);
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(1, search.size());
+        assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+    }
+
+    @Test
     public void testImpersonatePermission() {
         // myadmin shouldn't be able to impersonate user just yet
         try {

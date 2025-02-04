@@ -74,7 +74,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     protected final KeycloakSession session;
     private final AuthorizationProvider authz;
     protected final MgmtPermissions root;
-    private final PolicyStore policyStore;
+    protected final PolicyStore policyStore;
     protected final ResourceStore resourceStore;
     private boolean grantIfNoPermission = false;
 
