@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.pages;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -43,7 +44,7 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
 
     public void clickAuthenticate() {
         WaitUtils.waitUntilElement(authenticateButton).is().clickable();
-        authenticateButton.click();
+        UIUtils.clickLink(authenticateButton);
     }
 
     public boolean isCurrent() {

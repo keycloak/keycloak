@@ -93,8 +93,6 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         // The Job should not connect to the cache
         envvars.add(new EnvVarBuilder().withName(cacheEnvVarName).withValue("local").build());
-        // The Job doesn't need health to be enabled
-        envvars.add(new EnvVarBuilder().withName(healthEnvVarName).withValue("false").build());
 
         if (replacePlaceholders) {
             for (Map.Entry<String, Placeholder> secret : primary.getSpec().getPlaceholders().entrySet()) {

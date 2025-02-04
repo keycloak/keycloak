@@ -34,6 +34,7 @@ import { AttributeParams } from "../../routes/Attribute";
 import { TranslatableField } from "./TranslatableField";
 
 import "../../realm-settings-section.css";
+import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 const REQUIRED_FOR = [
   { label: "requiredForLabel.both", value: ["admin", "user"] },
@@ -50,6 +51,10 @@ export const AttributeGeneralSettings = () => {
   const [config, setConfig] = useState<UserProfileConfig>();
   const [selectEnabledWhenOpen, setSelectEnabledWhenOpen] = useState(false);
   const [selectRequiredForOpen, setSelectRequiredForOpen] = useState(false);
+
+  const [enabledWhenSearch, setEnableWhenSearch] = useState("");
+  const localeSort = useLocaleSort();
+
   const { attributeName } = useParams<AttributeParams>();
   const editMode = attributeName ? true : false;
 
@@ -83,6 +88,17 @@ export const AttributeGeneralSettings = () => {
   function setHasRequiredScopes(hasRequiredScopes: boolean) {
     form.setValue("hasRequiredScopes", hasRequiredScopes);
   }
+
+  const items = () =>
+    localeSort(clientScopes, mapByKey("name"))
+      .filter(
+        (s) => enabledWhenSearch === "" || s.name?.includes(enabledWhenSearch),
+      )
+      .map((option) => (
+        <SelectOption key={option.name} value={option.name}>
+          {option.name}
+        </SelectOption>
+      ));
 
   return (
     <FormProvider {...form}>
@@ -175,6 +191,10 @@ export const AttributeGeneralSettings = () => {
                     <KeycloakSelect
                       data-testid="enabled-when-scope-field"
                       variant={SelectVariant.typeaheadMulti}
+                      onFilter={(value) => {
+                        setEnableWhenSearch(value);
+                        return items();
+                      }}
                       typeAheadAriaLabel="Select"
                       chipGroupProps={{
                         numChips: 3,
@@ -204,11 +224,7 @@ export const AttributeGeneralSettings = () => {
                       isOpen={selectEnabledWhenOpen}
                       aria-labelledby={"scope"}
                     >
-                      {clientScopes.map((option) => (
-                        <SelectOption key={option.name} value={option.name}>
-                          {option.name}
-                        </SelectOption>
-                      ))}
+                      {items()}
                     </KeycloakSelect>
                   )}
                 />
