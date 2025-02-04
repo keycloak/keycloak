@@ -11,3 +11,7 @@ export async function confirmModal(page: Page) {
 export async function cancelModal(page: Page) {
   await page.getByTestId("cancel").click();
 }
+
+export async function clickAdd(page: Page) {
+  await page.getByTestId("add").click();
+}
