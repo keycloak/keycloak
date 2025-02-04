@@ -12,17 +12,13 @@ public @interface InjectAdminClient {
 
     String ref() default "";
 
-    String realm() default "";
+    String realmRef() default "";
 
     Mode mode() default Mode.BOOTSTRAP;
 
-    String clientId() default "";
+    String clientRef() default "";
 
-    String clientSecret() default "";
-
-    String username() default "";
-
-    String password() default "";
+    String userRef() default "";
 
     enum Mode {
 

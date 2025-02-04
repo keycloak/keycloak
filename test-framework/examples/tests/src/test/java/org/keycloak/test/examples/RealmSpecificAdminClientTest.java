@@ -13,30 +13,39 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 
 import java.util.List;
 
 @KeycloakIntegrationTest
 public class RealmSpecificAdminClientTest {
 
-    @InjectRealm(config = RealmWithClientAndUser.class)
+    @InjectRealm
     ManagedRealm realm;
 
     @InjectAdminClient(ref = "bootstrap-client")
     Keycloak bootstrapAdminClient;
 
+    @InjectClient(config = CustomClient.class, ref = "myclient")
+    ManagedClient myClient;
+
+    @InjectUser(config = CustomUser.class, ref = "myadmin")
+    ManagedUser myAdmin;
+
     @InjectAdminClient(
             mode = InjectAdminClient.Mode.MANAGED_REALM,
-            realm =RealmWithClientAndUser.REALM,
-            clientId = RealmWithClientAndUser.CLIENT_ID,
-            clientSecret = RealmWithClientAndUser.CLIENT_SECRET,
-            username = RealmWithClientAndUser.USERNAME,
-            password = RealmWithClientAndUser.PASSWORD
+            clientRef = "myclient",
+            userRef = "myadmin"
     )
     Keycloak realmAdminClient;
 
@@ -75,30 +84,26 @@ public class RealmSpecificAdminClientTest {
         Assertions.assertEquals(1, roles.getClientMappings().get(Constants.REALM_MANAGEMENT_CLIENT_ID).getMappings().size());
     }
 
-    public static class RealmWithClientAndUser implements RealmConfig {
-
-        public final static String REALM = "myrealm";
-        public final static String CLIENT_ID = "myclient";
-        public final static String CLIENT_SECRET = "mysecret";
-        public final static String USERNAME = "myadmin";
-        public final static String PASSWORD = "mypassword";
+    public static class CustomClient implements ClientConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.name(REALM);
-
-            realm.addClient(CLIENT_ID)
-                    .secret(CLIENT_SECRET)
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("myclient")
+                    .secret("mysecret")
                     .directAccessGrants();
+        }
+    }
 
-            realm.addUser(USERNAME)
+    public static class CustomUser implements UserConfig {
+
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.username("myadmin")
                     .name("My", "Admin")
                     .email("myadmin@localhost")
                     .emailVerified()
-                    .password(PASSWORD)
+                    .password("mypassword")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-
-            return realm;
         }
     }
 

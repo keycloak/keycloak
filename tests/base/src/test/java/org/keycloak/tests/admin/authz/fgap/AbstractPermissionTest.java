@@ -25,23 +25,39 @@ import java.util.Set;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 
 public abstract class AbstractPermissionTest {
 
-    public final String REALM_REF = "AbstractPermissionTestRealm";
+    final static String REF_USER_MY_ADMIN = "myadmin";
+    final static String REF_MY_CLIENT = "myclient";
 
-    @InjectRealm(config = RealmAdminPermissionsConfig.class, ref = REALM_REF)
+    @InjectRealm(config = RealmAdminPermissionsConfig.class)
     ManagedRealm realm;
 
-    @InjectClient(realmRef = REALM_REF, attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
+    @InjectUser(config = UserAdminPermissionsConfig.class, ref = REF_USER_MY_ADMIN)
+    ManagedUser myAdmin;
+
+    @InjectClient(config = ClientAdminPermissionsConfig.class, ref = REF_MY_CLIENT)
+    ManagedClient myClient;
+
+    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient client;
 
     protected PermissionsResource getPermissionsResource() {
@@ -104,6 +120,35 @@ public abstract class AbstractPermissionTest {
         PermissionBuilder addPolicies(List<String> policies) {
             policies.forEach(policy -> permission.addPolicy(policy));
             return this;
+        }
+    }
+
+    public static class RealmAdminPermissionsConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.adminPermissionsEnabled(true);
+        }
+    }
+
+    public static class UserAdminPermissionsConfig implements UserConfig {
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.username("myadmin")
+                    .name("My", "Admin")
+                    .email("myadmin@localhost")
+                    .emailVerified()
+                    .password("password")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_USERS);
+        }
+    }
+
+    public static class ClientAdminPermissionsConfig implements ClientConfig {
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("myclient")
+                    .secret("mysecret")
+                    .directAccessGrants();
         }
     }
 }

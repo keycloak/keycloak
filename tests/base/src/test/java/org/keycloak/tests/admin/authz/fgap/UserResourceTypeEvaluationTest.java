@@ -60,16 +60,13 @@ import org.keycloak.testframework.util.ApiUtil;
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
 public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
-    @InjectUser(ref = "alice", realmRef = REALM_REF)
+    @InjectUser(ref = "alice")
     ManagedUser userAlice;
 
     @InjectAdminClient(
             mode = InjectAdminClient.Mode.MANAGED_REALM,
-            realm = REALM_REF,
-            clientId = RealmAdminPermissionsConfig.CLIENT_ID,
-            clientSecret = RealmAdminPermissionsConfig.CLIENT_SECRET,
-            username = RealmAdminPermissionsConfig.USERNAME,
-            password = RealmAdminPermissionsConfig.PASSWORD
+            clientRef = REF_MY_CLIENT,
+            userRef = REF_USER_MY_ADMIN
     )
     Keycloak realmAdminClient;
 

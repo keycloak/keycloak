@@ -9,6 +9,9 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.StringUtil;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 
 public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
@@ -33,28 +36,21 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
             return adminClientFactory.create("master", Config.getAdminClientId(), Config.getAdminClientSecret(), false);
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
-            String realm = StringUtil.convertEmptyToNull(annotation.realm());
+            String realmRef = StringUtil.convertEmptyToNull(annotation.realmRef());
+            ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, realmRef);
 
-            if (realm == null) {
-                throw new TestFrameworkException("Realm is required when using managed realm mode");
-            }
-
-            String clientId = StringUtil.convertEmptyToNull(annotation.clientId());
-            String clientSecret = StringUtil.convertEmptyToNull(annotation.clientSecret());
-
-            if (clientId == null || clientSecret == null) {
+            String clientRef = StringUtil.convertEmptyToNull(annotation.clientRef());
+            if (clientRef == null) {
                 throw new TestFrameworkException("Client is required when using managed realm mode");
             }
+            ManagedClient client = instanceContext.getDependency(ManagedClient.class, clientRef);
 
-            String username = StringUtil.convertEmptyToNull(annotation.username());
-            String password = StringUtil.convertEmptyToNull(annotation.password());
-
-            if (username == null && password == null) {
-                return adminClientFactory.create(realm, clientId, clientSecret, false);
-            } else if (username != null && password != null) {
-                return adminClientFactory.create(realm, clientId, clientSecret, username, password, false);
+            String userRef = StringUtil.convertEmptyToNull(annotation.userRef());
+            if (userRef == null) {
+                return adminClientFactory.create(realm.getName(), client.getClientId(), client.getSecret(), false);
             } else {
-                throw new TestFrameworkException("Both username and password are required");
+                ManagedUser user = instanceContext.getDependency(ManagedUser.class, userRef);
+                return adminClientFactory.create(realm.getName(), client.getClientId(), client.getSecret(), user.getUsername(), user.getPassword(), false);
             }
         } else {
             throw new TestFrameworkException("Undefined Admin Client Mode");

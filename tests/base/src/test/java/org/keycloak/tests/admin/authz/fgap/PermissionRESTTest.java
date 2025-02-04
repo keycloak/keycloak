@@ -39,7 +39,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 @KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
 public class PermissionRESTTest extends AbstractPermissionTest {
 
-    @InjectUser(ref = "alice", realmRef = REALM_REF)
+    @InjectUser(ref = "alice")
     private ManagedUser userAlice;
 
     @Test
