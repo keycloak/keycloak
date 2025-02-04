@@ -70,7 +70,8 @@ import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -293,7 +294,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
                 .assertEvent(true);
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
         Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }
@@ -407,7 +408,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             String tab1WindowHandle = util.getActualWindowHandle();
             loginSuccessAndDoRequiredActions();
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
 
             // seamless login in the second tab, user already authenticated

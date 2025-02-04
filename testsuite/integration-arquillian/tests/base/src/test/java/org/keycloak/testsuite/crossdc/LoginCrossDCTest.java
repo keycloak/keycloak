@@ -17,15 +17,13 @@
 
 package org.keycloak.testsuite.crossdc;
 
-import jakarta.ws.rs.core.Response;
-
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -39,15 +37,13 @@ public class LoginCrossDCTest extends AbstractAdminCrossDCTest {
         //log.info("Started to sleep");
         //Thread.sleep(10000000);
         for (int i=0 ; i<30 ; i++) {
-            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
             String code = response1.getCode();
-            OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
             Assert.assertNotNull(response2.getAccessToken());
 
-            try (CloseableHttpResponse response3 = oauth.doLogout(response2.getRefreshToken(), "password")) {
-                assertThat(response3, Matchers.statusCodeIsHC(Response.Status.NO_CONTENT));
-                //assertNotNull(testingClient.testApp().getAdminLogoutAction());
-            }
+            LogoutResponse logoutResponse = oauth.doLogout(response2.getRefreshToken(), "password");
+            assertTrue(logoutResponse.isSuccess());
 
             log.infof("Iteration %d finished", i);
         }

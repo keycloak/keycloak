@@ -13,12 +13,10 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
-import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -27,7 +25,6 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
@@ -105,8 +102,8 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         testRealms.add(realm.build());
     }
 
-    private OAuthClient.AccessTokenResponse accessToken(String realmName, String username, String password) throws Exception {
-        return oauth.doGrantAccessTokenRequest(realmName, username, password, null, ADMIN_CLI_CLIENT_ID, null);
+    private org.keycloak.testsuite.util.oauth.AccessTokenResponse accessToken(String realmName, String username, String password) throws Exception {
+        return oauth.doGrantAccessTokenRequest(realmName, username, password, ADMIN_CLI_CLIENT_ID, null);
     }
 
     private String whoAmiUrl(String realmName) {
@@ -134,7 +131,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithoutLocale() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(REALM_I18N_OFF, USER_WITHOUT_LOCALE, PASSWORD, null, ADMIN_CLI_CLIENT_ID, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(REALM_I18N_OFF, USER_WITHOUT_LOCALE, PASSWORD, ADMIN_CLI_CLIENT_ID, null);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
@@ -148,7 +145,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithLocale() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_OFF, USER_WITH_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_OFF, USER_WITH_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
@@ -162,7 +159,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledUserWithoutLocale() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
@@ -176,7 +173,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledUserWithLocale() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITH_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITH_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
@@ -190,7 +187,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledAcceptLanguageHeader() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
@@ -205,7 +202,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nEnabledKeycloakLocaleCookie() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_WITHOUT_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_ON), client)
             .header("Accept", "application/json")
@@ -220,7 +217,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testMasterRealm() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(AuthRealm.MASTER), client)
             .header("Accept", "application/json")
@@ -234,7 +231,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testMasterRealmCurrentRealm() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(AuthRealm.MASTER, REALM_I18N_ON), client)
             .header("Accept", "application/json")
@@ -258,7 +255,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmUserNoAccess() throws Exception {
-        OAuthClient.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_NO_ACCESS, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = accessToken(REALM_I18N_ON, USER_NO_ACCESS, PASSWORD);
         try (SimpleHttp.Response res = SimpleHttpDefault
                 .doGet(whoAmiUrl(REALM_I18N_ON), client)
                 .header("Accept", "application/json")

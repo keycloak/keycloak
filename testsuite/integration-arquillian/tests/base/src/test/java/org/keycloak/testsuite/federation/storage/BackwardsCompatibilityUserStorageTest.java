@@ -24,7 +24,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -48,7 +47,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TestAppHelper;
 
 import jakarta.ws.rs.core.Response;
@@ -241,23 +240,22 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(true);
 
-        try (CloseableHttpClient httpClient = oauth.getHttpClient().get()) {
-            String accountCredentialsUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/credentials";
+        CloseableHttpClient httpClient = oauth.httpClient().get();
+        String accountCredentialsUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/credentials";
 
-            // Get credentials by account REST. User should have OTP credential
-            List<CredentialMetadataRepresentation> otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-            Assert.assertEquals(1, otpCreds.size());
-            String otpCredentialId = otpCreds.get(0).getCredential().getId();
+        // Get credentials by account REST. User should have OTP credential
+        List<CredentialMetadataRepresentation> otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
+        Assert.assertEquals(1, otpCreds.size());
+        String otpCredentialId = otpCreds.get(0).getCredential().getId();
 
-            // Delete OTP credential from federated storage
-            int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, httpClient)
-                .auth(accountToken).acceptJson().asStatus();
-            Assert.assertEquals(204, deleteStatus);
+        // Delete OTP credential from federated storage
+        int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, oauth.httpClient().get())
+            .auth(accountToken).acceptJson().asStatus();
+        Assert.assertEquals(204, deleteStatus);
 
-            // Get credentials by account REST. User should not have OTP credential
-            otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-            Assert.assertEquals(0, otpCreds.size());
-        }
+        // Get credentials by account REST. User should not have OTP credential
+        otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
+        Assert.assertEquals(0, otpCreds.size());
 
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(false);

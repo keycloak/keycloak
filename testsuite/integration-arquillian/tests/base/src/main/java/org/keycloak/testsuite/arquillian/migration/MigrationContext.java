@@ -27,7 +27,8 @@ import java.nio.charset.StandardCharsets;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.StreamUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -79,7 +80,7 @@ public class MigrationContext {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.realm("Migration");
             oauth.clientId("migration-test-client");
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "offline-test-user", "password2");
+            AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "offline-test-user", "password2");
             return tokenResponse.getRefreshToken();
         } catch (Exception e) {
             throw new RuntimeException(e);

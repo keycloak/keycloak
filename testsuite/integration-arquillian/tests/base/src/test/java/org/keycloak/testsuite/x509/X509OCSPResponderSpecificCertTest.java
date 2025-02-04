@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import jakarta.ws.rs.core.Response;
 
@@ -77,7 +77,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         Assert.assertNotNull(cfgId);
 
         oauth.clientId("resource-owner");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -116,7 +116,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         Assert.assertNotNull(cfgId);
 
         oauth.clientId("resource-owner");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());

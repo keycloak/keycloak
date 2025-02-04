@@ -46,7 +46,8 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
@@ -114,7 +115,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();

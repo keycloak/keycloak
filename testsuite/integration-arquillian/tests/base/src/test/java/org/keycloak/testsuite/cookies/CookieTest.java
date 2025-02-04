@@ -40,8 +40,10 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.Cookie;
 
@@ -100,13 +102,13 @@ public class CookieTest extends AbstractKeycloakTest {
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
         AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();
         appPage.assertCurrent();
 
-        try (CloseableHttpClient hc = OAuthClient.newCloseableHttpClient()) {
+        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(cookieName, accessToken);
             cookie.setDomain("localhost");
@@ -137,14 +139,14 @@ public class CookieTest extends AbstractKeycloakTest {
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
         AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();
         appPage.assertCurrent();
         AccountHelper.logout(realmsResouce().realm("test"), "test-user@localhost");
 
-        try (CloseableHttpClient hc = OAuthClient.newCloseableHttpClient()) {
+        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(CookieType.IDENTITY.getName(), accessToken);
             cookie.setDomain("localhost");

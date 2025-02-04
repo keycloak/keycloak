@@ -41,7 +41,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 
 import java.util.Collections;
@@ -126,7 +127,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
         // resource owner password credentials grant - fail
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, TEST_USERNAME, TEST_USERSECRET);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, TEST_USERNAME, TEST_USERSECRET);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -213,9 +214,9 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         oauth.clientId(clientId);
         oauth.redirectUri(validRedirectUri);
         setValidPkce(clientId);
-        OAuthClient.AuthorizationEndpointResponse res = oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        AuthorizationEndpointResponse res = oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(res.getCode(), null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(res.getCode(), null);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 

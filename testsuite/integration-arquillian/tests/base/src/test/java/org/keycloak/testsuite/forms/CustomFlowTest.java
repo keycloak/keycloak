@@ -52,7 +52,7 @@ import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -336,7 +336,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         state.setClientId("unknown");
         testingClient.testing().updateAuthenticator(state);
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
@@ -368,7 +368,7 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     private void grantAccessToken(String clientId, String login) throws Exception {
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", login, "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", login, "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -391,7 +391,7 @@ public class CustomFlowTest extends AbstractFlowTest {
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
-        OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());

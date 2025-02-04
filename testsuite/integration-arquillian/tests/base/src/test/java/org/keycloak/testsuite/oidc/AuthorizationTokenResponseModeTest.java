@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -55,7 +55,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.responseMode(OIDCResponseMode.QUERY_JWT.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -74,7 +74,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.responseMode("jwt");
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -98,7 +98,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.responseMode(OIDCResponseMode.FRAGMENT_JWT.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -145,7 +145,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.nonce("123456");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -176,7 +176,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.nonce("123456");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -211,7 +211,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, responseToken.getOtherClaims().get("error"));
         Assert.assertEquals("Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted", responseToken.getOtherClaims().get("error_description"));
@@ -229,7 +229,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
 
         assertNotNull(responseToken.getIssuer());

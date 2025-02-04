@@ -1,38 +1,18 @@
 package org.keycloak.testsuite.oauth.hok;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.KeyStore;
-import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -67,13 +47,35 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.oauth.RefreshTokenTest;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
+
+import java.io.IOException;
+import java.net.URI;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 
 public class HoKTest extends AbstractTestRealmKeycloakTest {
@@ -191,9 +193,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            response = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Success Pattern
@@ -208,9 +213,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
-            response = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Error Pattern
@@ -278,9 +286,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse tokenResponse = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            tokenResponse = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
         String refreshTokenString = tokenResponse.getRefreshToken();
@@ -292,18 +303,24 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         String code2 = oauth2.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse tokenResponse2 = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
-            tokenResponse2 = oauth2.doAccessTokenRequest(code2, "password", client);
+            oauth2.httpClient().set(client);
+            tokenResponse2 = oauth2.doAccessTokenRequest(code2, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth2.httpClient().reset();
         }
         verifyHoKTokenOtherCertThumbPrint(tokenResponse2);
 
         // token refresh by second client by first client's refresh token
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
-            response = oauth2.doRefreshTokenRequest(refreshTokenString, "password", client);
+            oauth2.httpClient().set(client);
+            response = oauth2.doRefreshTokenRequest(refreshTokenString, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth2.httpClient().reset();
         }
 
         // Error Pattern
@@ -323,9 +340,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse tokenResponse = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            tokenResponse = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
@@ -345,9 +365,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            response = oauth.doRefreshTokenRequest(refreshTokenString, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Success Pattern
@@ -382,9 +405,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
-            response = oauth.doRefreshTokenRequest(refreshTokenString, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Error Pattern
@@ -452,9 +478,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse tokenResponse = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            tokenResponse = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
         events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -490,9 +519,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse tokenResponse = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            tokenResponse = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
         events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -528,15 +560,18 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     public void postLogoutByHoKRefreshTokenWithClientCertificate() throws Exception {
         String refreshTokenString = execPreProcessPostLogout();
 
-        CloseableHttpResponse response = null;
+        LogoutResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            response = oauth.doLogout(refreshTokenString, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doLogout(refreshTokenString, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Success Pattern
-        assertThat(response, org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.NO_CONTENT));
+        assertTrue(response.isSuccess());
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }
 
@@ -544,14 +579,17 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     public void postLogoutByHoKRefreshTokenWithoutClientCertificate() throws Exception {
         String refreshTokenString = execPreProcessPostLogout();
 
-        CloseableHttpResponse response = null;
+        LogoutResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
-            response = oauth.doLogout(refreshTokenString, "password", client);
+            oauth.httpClient().set(client);
+            response = oauth.doLogout(refreshTokenString, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
         // Error Pattern
-        assertEquals(401, response.getStatusLine().getStatusCode());
+        assertEquals(401, response.getStatusCode());
     }
 
     private String execPreProcessPostLogout() throws Exception {
@@ -579,7 +617,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, true);
         Assert.assertNotNull(authzResponse.getSessionState());
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
         for (IDToken idToken : idTokens) {
@@ -588,7 +626,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
         Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
         // IDToken from the authorization response
@@ -616,18 +654,24 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         AccessTokenResponse accessTokenResponse = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-           accessTokenResponse = oauth.doAccessTokenRequest(code, "password", client);
+            oauth.httpClient().set(client);
+            accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Do token introspection
         // mimic Resource Server
         String tokenResponse;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
-            tokenResponse = oauth.introspectTokenWithClientCredential("confidential-cli", "secret1", "access_token", accessTokenResponse.getAccessToken(), client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth.introspectTokenWithClientCredential("confidential-cli", "secret1", "access_token", accessTokenResponse.getAccessToken());
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
         TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
         JWSInput jws = new JWSInput(accessTokenResponse.getAccessToken());
@@ -656,27 +700,31 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response;
 
-        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
-
         try {
             // Request without HoK should fail
-            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore);
-            response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
-            assertEquals(400, response.getStatusCode());
-            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-            assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+                oauth.httpClient().set(client);
+                response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+                assertEquals(400, response.getStatusCode());
+                assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+                assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+            } finally {
+                oauth.httpClient().reset();
+            }
 
             // Request with HoK - success
-            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
-            response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
-            assertEquals(200, response.getStatusCode());
+            try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+                oauth.httpClient().set(client);
+                response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+                assertEquals(200, response.getStatusCode());
 
-            // Success Pattern
-            verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+                // Success Pattern
+                verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+            } finally {
+                oauth.httpClient().reset();
+            }
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } finally {
-            oauth.httpClient(previous);
         }
     }
 
@@ -686,27 +734,27 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse response;
 
-        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
-
-        try {
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             // Request without HoK should fail
-            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore);
-            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            oauth.httpClient().set(client);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
             assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+        } finally {
+            oauth.httpClient().reset();
+        }
 
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             // Request with HoK - success
-            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
-            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            oauth.httpClient().set(client);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
 
             // Success Pattern
             verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
-        }  catch (IOException ioe) {
-            throw new RuntimeException(ioe);
         } finally {
-            oauth.httpClient(previous);
+            oauth.httpClient().reset();
         }
     }
 

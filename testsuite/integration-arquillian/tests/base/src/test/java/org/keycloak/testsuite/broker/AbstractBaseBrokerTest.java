@@ -50,7 +50,8 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.TimeoutException;
 
 import jakarta.ws.rs.core.Response;
@@ -340,8 +341,8 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                 oauth.init(driver);
             }
 
-            final OAuthClient.LogoutUrlBuilder builder = oauth.realm(realm)
-                    .getLogoutUrl()
+            final LogoutUrlBuilder builder = oauth.getEndpoints(realm)
+                    .getLogoutBuilder()
                     .idTokenHint(idTokenHint)
                     .clientId(clientId)
                     .initiatingIdp(initiatingIdp);

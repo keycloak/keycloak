@@ -28,7 +28,7 @@ import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;

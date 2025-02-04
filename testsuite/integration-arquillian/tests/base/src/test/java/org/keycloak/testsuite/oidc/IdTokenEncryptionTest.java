@@ -51,8 +51,8 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -212,9 +212,9 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             clientResource.update(clientRep);
 
             // get id token
-            OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
             String code = response.getCode();
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
             // parse JWE and JOSE Header
             String jweStr = tokenResponse.getIdToken();
@@ -309,14 +309,14 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             clientResource.update(clientRep);
 
             // get id token but failed
-            OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
             AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode(), "password");
             Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, atr.getError());
             Assert.assertEquals("can not get encryption KEK", atr.getErrorDescription());
 
             // get id token but failed with client_credentials grant type
             oauth.scope("openid");
-            OAuthClient.AccessTokenResponse responseClientCredentials = oauth.doClientCredentialsGrantAccessTokenRequest(clientRep.getSecret());
+            AccessTokenResponse responseClientCredentials = oauth.doClientCredentialsGrantAccessTokenRequest(clientRep.getSecret());
             Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, responseClientCredentials.getError());
             Assert.assertEquals("can not get encryption KEK", responseClientCredentials.getErrorDescription());
         } finally {

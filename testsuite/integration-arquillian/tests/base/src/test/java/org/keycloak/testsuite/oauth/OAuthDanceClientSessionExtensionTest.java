@@ -25,7 +25,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.util.List;
 
@@ -64,7 +64,7 @@ public class OAuthDanceClientSessionExtensionTest extends AbstractKeycloakTest {
         String clientSessionState = "1234";
         String clientSessionHost = "test-client-host";
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.clientSessionState(clientSessionState)
+        AccessTokenResponse tokenResponse = oauth.clientSessionState(clientSessionState)
                 .clientSessionHost(clientSessionHost)
                 .doAccessTokenRequest(code, "password");
 

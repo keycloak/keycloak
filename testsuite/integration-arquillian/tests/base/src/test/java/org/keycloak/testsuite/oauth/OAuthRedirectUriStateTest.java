@@ -26,7 +26,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 public class OAuthRedirectUriStateTest extends AbstractTestRealmKeycloakTest {
 
@@ -44,7 +44,7 @@ public class OAuthRedirectUriStateTest extends AbstractTestRealmKeycloakTest {
     void assertStateReflected(String state) {
         oauth.stateParamHardcoded(state);
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
 
         URL url;

@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TempFileResource;
 
 import java.io.File;

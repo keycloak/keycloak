@@ -50,7 +50,8 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -403,7 +404,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         EventRepresentation loginEvent = events.expectLogin().session(authSessionId1).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(authSessionId1).assertEvent();
@@ -476,7 +477,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
@@ -564,7 +565,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
@@ -624,7 +625,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();

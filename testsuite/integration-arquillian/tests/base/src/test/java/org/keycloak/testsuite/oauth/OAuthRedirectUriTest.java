@@ -44,7 +44,9 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.IOException;
@@ -56,7 +58,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -240,7 +242,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testValid() throws IOException {
         oauth.redirectUri(APP_ROOT + "/auth");
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
@@ -261,7 +263,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testWithParams() throws IOException {
         oauth.redirectUri(APP_ROOT + "/auth?key=value");
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
@@ -277,7 +279,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.responseMode("fragment");
 
         oauth.redirectUri(APP_ROOT + "/auth#key=value");
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
@@ -468,7 +470,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         Assert.assertNotNull(code);
         oauth.redirectUri(null);
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals("Expected 400, but got something else", 400, tokenResponse.getStatusCode());
     }
@@ -513,7 +515,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                 }
 
                 oauth.redirectUri(redirectUri);
-                OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+                AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
                 Assert.assertEquals("Expected success, but got error: " + tokenResponse.getError(), 200, tokenResponse.getStatusCode());
 

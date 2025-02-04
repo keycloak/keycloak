@@ -30,7 +30,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  *
@@ -54,9 +55,9 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).build();
             driver.navigate().to(logoutUrl);
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
@@ -85,9 +86,9 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).build();
             driver.navigate().to(logoutUrl);
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
@@ -115,9 +116,9 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString).build();
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString).build();
             driver.navigate().to(logoutUrl);
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
             org.keycloak.testsuite.Assert.assertNotNull(logoutToken);
@@ -148,9 +149,9 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString).build();
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString).build();
             driver.navigate().to(logoutUrl);
             LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
             Assert.assertNotNull(logoutToken);

@@ -42,7 +42,7 @@ import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
@@ -93,7 +93,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequest() throws IOException {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -139,7 +139,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationValidRedirectUri() throws IOException {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -168,7 +168,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestNoState() throws IOException {
         oauth.stateParamHardcoded(null);
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -185,7 +185,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
@@ -360,7 +360,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
         // Set response_mode=fragment and login
         oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
@@ -372,7 +372,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
         oauth.openLoginForm();
-        response = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        response = new AuthorizationEndpointResponse(oauth);
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());

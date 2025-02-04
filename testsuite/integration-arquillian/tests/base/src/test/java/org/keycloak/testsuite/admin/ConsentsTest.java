@@ -60,9 +60,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
 /**
@@ -389,7 +388,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         providerRealm.clients().get(providerAccountRep.getId()).update(providerAccountRep);
 
         log.debug("Obtain offline_token");
-        OAuthClient.AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
+        AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
                 .clientId(providerAccountRep.getClientId())
                 .scope(OAuth2Constants.SCOPE_OPENID +" " + OAuth2Constants.SCOPE_PROFILE + " " + OAuth2Constants.OFFLINE_ACCESS)
                 .doGrantAccessTokenRequest(null, getUserLogin(), getUserPassword());

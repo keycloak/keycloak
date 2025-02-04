@@ -275,7 +275,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
     private void testDirectGrantNoOverride(String clientId) {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password
@@ -325,7 +325,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     public void testGrantAccessTokenWithClientOverride() throws Exception {
         String clientId = TEST_APP_DIRECT_OVERRIDE;
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password

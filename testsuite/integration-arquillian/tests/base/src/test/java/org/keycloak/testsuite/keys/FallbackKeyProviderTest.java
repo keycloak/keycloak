@@ -30,7 +30,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -75,7 +75,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertNotNull(response.getAccessToken());
 
@@ -110,7 +110,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
             oauth.openLoginForm();
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
             assertNotNull(response.getAccessToken());
         }
 

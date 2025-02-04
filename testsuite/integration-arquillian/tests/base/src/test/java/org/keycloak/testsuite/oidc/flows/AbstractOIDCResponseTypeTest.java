@@ -38,7 +38,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -82,7 +83,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     public void nonceAndSessionStateMatches() {
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
         Assert.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
@@ -98,7 +99,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     public void initialSessionStateUsedInRedirect() {
         EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
         Assert.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
@@ -116,7 +117,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         driver.navigate().to(b.build().toURL());
 
         // Always read error from the "query"
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, false);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth, false);
         org.junit.Assert.assertTrue(errorResponse.isRedirected());
         org.junit.Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
 
@@ -135,7 +136,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         assertTrue(appPage.isCurrent());
 
         // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
         Assert.assertNull(resp.getCode());
         Assert.assertNull(resp.getIdToken());
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
@@ -150,7 +151,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
@@ -169,7 +170,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
@@ -216,7 +217,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
     protected abstract boolean isFragment();
 
-    protected abstract List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent);
+    protected abstract List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent);
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
@@ -225,7 +226,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     private void oidcFlow(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
         Assert.assertNotNull(authzResponse.getSessionState());
 
         JWSHeader header = null;

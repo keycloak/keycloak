@@ -36,7 +36,8 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -189,8 +190,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login("bwilson", "Password1");
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
@@ -208,7 +209,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login("jbrown", "Password1");
 
-        code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        code = new AuthorizationEndpointResponse(oauth).getCode();
         response = oauth.doAccessTokenRequest(code, "password");
 
         org.keycloak.testsuite.Assert.assertEquals(200, response.getStatusCode());

@@ -7,7 +7,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
 import jakarta.ws.rs.client.WebTarget;
@@ -40,7 +40,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         oauth.clientId("test-app2");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
         try {
@@ -66,7 +66,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         oauth.clientId("test-app2");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         // Set time offset to make sure that userInfo request will be invalid due the expired token
         setTimeOffset(600);
@@ -95,7 +95,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         oauth.clientId("test-app2");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
         try {
@@ -119,7 +119,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         oauth.clientId("test-app2");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
         // remove the session in keycloak
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());

@@ -61,7 +61,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
@@ -398,7 +398,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
 
         String code = oauth.getCurrentQuery().get("code");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, tokenResponse.getStatusCode());
         assertEquals(userId, oauth.verifyToken(tokenResponse.getAccessToken()).getSubject());
@@ -471,7 +471,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent();
             String sessionId = loginEvent.getSessionId();
 
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
             events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
@@ -1106,7 +1106,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
         String sessionId = loginEvent.getSessionId();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
@@ -1325,7 +1325,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
 
-            String logoutUrl = oauth.getLogoutUrl().build();
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().build();
             driver.navigate().to(logoutUrl);
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();

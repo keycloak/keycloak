@@ -60,7 +60,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ServerURLs;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
@@ -152,7 +152,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         return code;
     }
 
-    protected void assertSuccessfulTokenResponse(OAuthClient.AccessTokenResponse tokenResponse) {
+    protected void assertSuccessfulTokenResponse(AccessTokenResponse tokenResponse) {
         assertEquals(200, tokenResponse.getStatusCode());
         MatcherAssert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
         MatcherAssert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
@@ -190,7 +190,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         Assert.assertEquals(expectedError, errorPage.getError());
     }
 
-    protected OAuthClient.AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, String codeVerifier, Supplier<CloseableHttpClient> httpClientSupplier) {
+    protected AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, String codeVerifier, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
@@ -202,8 +202,8 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-            CloseableHttpResponse response = sendRequest(oauth.getAccessTokenUrl(), parameters, httpClientSupplier);
-            return new OAuthClient.AccessTokenResponse(response);
+            CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters, httpClientSupplier);
+            return new AccessTokenResponse(response);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -219,14 +219,11 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     }
 
     protected CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
-        CloseableHttpClient client = httpClientSupplier.get();
-        try {
+        try (CloseableHttpClient client = httpClientSupplier.get()) {
             HttpPost post = new HttpPost(requestUrl);
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
         }
     }
 }

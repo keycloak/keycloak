@@ -71,7 +71,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import javax.naming.AuthenticationException;
 import jakarta.ws.rs.core.Response;
@@ -382,7 +382,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(events.poll());
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(events.poll());
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
         events.poll();
     }
@@ -478,7 +478,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithDirectGrant() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "Password1");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "Password1");
         Assert.assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
@@ -540,7 +540,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         events.expectRegister(username, email).assertEvent();
         EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 

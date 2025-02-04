@@ -53,13 +53,12 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -918,7 +917,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .detail("username", EMAIL_OR_USERNAME.toLowerCase())
                 .user(userId)
                 .assertEvent();
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.idTokenHint(tokenResponse.getIdToken());
         assertUserBasicRegisterAttributes(userId, emailAsUsername ? null : USERNAME, EMAIL, "firstName", "lastName");
 

@@ -44,7 +44,8 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.openqa.selenium.By;
@@ -114,7 +115,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String sessionId = loginEvent.getSessionId();
 
-        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
+        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
         String tokenString = accessToken.getAccessToken();
         Assert.assertNotNull(tokenString);
@@ -350,14 +351,14 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
 
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
                 .client(THIRD_PARTY_APP)
                 .assertEvent();
 
-        String logoutUrl = oauth.getLogoutUrl().idTokenHint(res.getIdToken()).build();
+        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(res.getIdToken()).build();
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(loginEvent.getSessionId()).client(THIRD_PARTY_APP).removeDetail(Details.REDIRECT_URI).assertEvent();

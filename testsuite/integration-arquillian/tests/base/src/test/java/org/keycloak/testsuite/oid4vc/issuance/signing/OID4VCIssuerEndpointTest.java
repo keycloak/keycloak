@@ -69,7 +69,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -104,7 +105,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
 
     protected String getBearerToken(OAuthClient oAuthClient) {
-        OAuthClient.AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john", "password");
+        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john", "password");
         return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode(), "password").getAccessToken();
     }
 

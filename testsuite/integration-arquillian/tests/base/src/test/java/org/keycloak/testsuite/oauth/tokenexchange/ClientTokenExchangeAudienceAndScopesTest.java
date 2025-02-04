@@ -35,7 +35,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -63,7 +64,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
     public void test01_scopeParamIncludedWithoutAudience() throws Exception {
         String accessToken = resourceOwnerLogin();
         oauth.scope("optional-scope2");
-        OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, (String) null, "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, (String) null, "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1", "target-client2"), List.of("default-scope1", "optional-scope2"));
     }
 
@@ -71,7 +72,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
     public void test02_scopeParamIncludedAudienceIncluded() throws Exception {
         String accessToken = resourceOwnerLogin();
         oauth.scope("optional-scope2");
-        OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1"), "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1"), "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
     }
 
@@ -82,7 +83,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         oauth.scope("optional-scope2");
 
         // The "target-client3" is valid client, but unavailable to the user. Request allowed, but "target-client3" audience will not be available
-        OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
     }
 
@@ -92,7 +93,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         oauth.clientId("requester-client");
         oauth.scope(null);
         oauth.openid(false);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "john", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "john", "password");
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         assertAudiences(token, List.of("target-client1"));
@@ -109,7 +110,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         MatcherAssert.assertThat("Incompatible scopes", List.of(token.getScope().split(" ")), containsInAnyOrder(expectedScopes.toArray()));
     }
 
-    private void assertAudiencesAndScopes(OAuthClient.AccessTokenResponse tokenExchangeResponse, List<String> expectedAudiences, List<String> expectedScopes) throws Exception {
+    private void assertAudiencesAndScopes(AccessTokenResponse tokenExchangeResponse, List<String> expectedAudiences, List<String> expectedScopes) throws Exception {
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(tokenExchangeResponse.getAccessToken(), AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         if (expectedAudiences == null) {

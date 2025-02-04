@@ -387,7 +387,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     protected void logout() {
         try {
             waitForPageToLoad();
-            String logoutUrl = oauth.getLogoutUrl().build();
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().build();
             driver.navigate().to(logoutUrl);
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();

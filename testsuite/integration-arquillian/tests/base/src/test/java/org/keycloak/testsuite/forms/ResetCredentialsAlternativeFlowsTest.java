@@ -49,6 +49,9 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.*;
 
 import jakarta.mail.internet.MimeMessage;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -346,8 +349,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Login & set up the initial OTP code for the user
             loginPage.open();
             loginPage.login("login-test", "password");
-            String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            String code = new AuthorizationEndpointResponse(oauth).getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
             String customOtpLabel = "my-original-otp-label";
 
@@ -422,7 +425,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "login-test"));
 
             // Logout
-            driver.navigate().to(oauth.getLogoutUrl().build());
+            driver.navigate().to(oauth.getEndpoints().getLogoutBuilder().build());
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
@@ -450,7 +453,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
 
             // Logout
-            driver.navigate().to(oauth.getLogoutUrl().build());
+            driver.navigate().to(oauth.getEndpoints().getLogoutBuilder().build());
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
@@ -485,7 +488,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
 
             // Logout
-            driver.navigate().to(oauth.getLogoutUrl().build());
+            driver.navigate().to(oauth.getEndpoints().getLogoutBuilder().build());
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 

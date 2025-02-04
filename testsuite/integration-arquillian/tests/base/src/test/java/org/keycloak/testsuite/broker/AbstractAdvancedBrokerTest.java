@@ -24,7 +24,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.openqa.selenium.TimeoutException;
@@ -198,7 +198,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
+        AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
         AtomicReference<String> accessToken = (AtomicReference<String>) new AtomicReference<>(accessTokenResponse.getAccessToken());
         Client client = KeycloakTestingClient.getRestEasyClientBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
 

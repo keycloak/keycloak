@@ -33,7 +33,6 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
@@ -41,7 +40,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.ThirdBrowser;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -147,7 +147,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
                 System.getProperty("browser").equals("htmlUnit"));
         oauth.setBrowserHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0) Gecko/20100101 Firefox/15.0.1");
-        OAuthClient.AccessTokenResponse tokenResponse = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse = codeGrant("public-client-0");
         joinSsoSession("public-client-1");
 
         List<DeviceRepresentation> devices = getDevicesOtherThanOther(tokenResponse.getAccessToken());
@@ -185,7 +185,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         // first browser authenticates from Fedora
         oauth.setBrowserHeader("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
-        OAuthClient.AccessTokenResponse tokenResponse1 = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse1 = codeGrant("public-client-0");
         List<DeviceRepresentation> devices = getDevicesOtherThanOther();
         assertEquals("Should have a single device", 1, devices.size());
         List<DeviceRepresentation> fedoraDevices = devices.stream()
@@ -201,7 +201,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         oauth.setDriver(secondBrowser);
         oauth.setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
-        OAuthClient.AccessTokenResponse tokenResponse2 = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse2 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther();
         // should have two devices
         assertEquals("Should have two devices", 2, devices.size());
@@ -236,7 +236,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         oauth.setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
         oauth.setBrowserHeader("X-Forwarded-For", "192.168.10.3");
-        OAuthClient.AccessTokenResponse tokenResponse3 = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse3 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther(tokenResponse3.getAccessToken());
         assertEquals(
                 "Should have a single device because all browsers (and sessions) are from the same platform (OS + OS version)",
@@ -329,7 +329,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     public void testLogoutAll() throws IOException {
         codeGrant("public-client-0");
         oauth.setDriver(secondBrowser);
-        OAuthClient.AccessTokenResponse tokenResponse = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse = codeGrant("public-client-0");
 
         assertEquals(3, getSessions().size());
 
@@ -357,7 +357,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 System.getProperty("browser").equals("htmlUnit"));
 
         oauth.setBrowserHeader("User-Agent", null);
-        OAuthClient.AccessTokenResponse tokenResponse = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse = codeGrant("public-client-0");
 
         List<DeviceRepresentation> devices = queryDevices(tokenResponse.getAccessToken());
 
@@ -432,7 +432,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 });
     }
 
-    private OAuthClient.AccessTokenResponse codeGrant(String clientId) {
+    private AccessTokenResponse codeGrant(String clientId) {
         oauth.clientId(clientId);
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.doLogin("test-user@localhost", "password");

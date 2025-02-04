@@ -35,7 +35,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ServerURLs;
 
 import java.util.Arrays;
@@ -702,9 +703,9 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     private void testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(String clientId, String redirectUri) {
         oauth.clientId(clientId);
         oauth.redirectUri(redirectUri);
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode(), "secret");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode(), "secret");
         assertEquals(200, res.getStatusCode());
         oauth.doLogout(res.getRefreshToken(), "secret");
     }

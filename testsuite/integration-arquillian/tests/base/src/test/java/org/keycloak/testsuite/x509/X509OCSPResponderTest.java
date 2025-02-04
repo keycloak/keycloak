@@ -26,7 +26,9 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
 
 import jakarta.ws.rs.core.Response;
 
@@ -41,7 +43,6 @@ import io.undertow.server.handlers.BlockingHandler;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.function.Supplier;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
@@ -85,7 +86,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         Assert.assertNotNull(cfgId);
 
         oauth.clientId("resource-owner");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -110,11 +111,10 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.clientId("resource-owner");
-            oauth.httpClient(() -> OAuthClient.newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword));
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+            oauth.httpClient().set(client);
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
             assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
             assertEquals("invalid_request", response.getError());
@@ -122,7 +122,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
             // the ocsp signer cert is issued by the same CA but no OCSP-Signing extension so error
             assertThat(response.getErrorDescription(), containsString("Responder's certificate not valid for signing OCSP responses"));
         } finally {
-            oauth.httpClient(previous);
+            oauth.httpClient().reset();
         }
     }
 
@@ -143,16 +143,15 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.clientId("resource-owner");
-            oauth.httpClient(() -> OAuthClient.newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword));
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+            oauth.httpClient().set(client);
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
             // now it's OK because the certificate is fixed
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         } finally {
-            oauth.httpClient(previous);
+            oauth.httpClient().reset();
         }
     }
 
@@ -177,16 +176,15 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
-        try {
+        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.clientId("resource-owner");
-            oauth.httpClient(() -> OAuthClient.newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword));
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+            oauth.httpClient().set(client);
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
 
             // now it's OK because the certificate is fixed
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         } finally {
-            oauth.httpClient(previous);
+            oauth.httpClient().reset();
         }
     }
 

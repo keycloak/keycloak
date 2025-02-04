@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**
  *
@@ -59,7 +59,7 @@ public class ServiceAccountClientTest extends AbstractClientTest {
 
         // perform a login and check the claims are there
         oauth.clientId("service-account-client");
-        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals("service-account-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_HOST));

@@ -81,7 +81,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
@@ -583,7 +583,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         String origClientId = oauth.getClientId();
         oauth.clientId("service-account-app");
         try {
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
             assertEquals(400, response.getStatusCode());
             assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST.toString(), response.getError());
             assertEquals("Exception thrown intentionally", response.getErrorDescription());

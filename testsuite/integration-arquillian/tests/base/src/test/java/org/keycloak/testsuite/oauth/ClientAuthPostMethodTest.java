@@ -34,7 +34,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -74,7 +74,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
+        AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -90,9 +90,9 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     }
 
 
-    private OAuthClient.AccessTokenResponse doAccessTokenRequestPostAuth(String code, String clientSecret) {
+    private AccessTokenResponse doAccessTokenRequestPostAuth(String code, String clientSecret) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+            HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
@@ -107,7 +107,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
             post.setEntity(formEntity);
 
             try {
-                return new OAuthClient.AccessTokenResponse(client.execute(post));
+                return new AccessTokenResponse(client.execute(post));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }

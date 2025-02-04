@@ -59,7 +59,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -215,7 +217,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             oauth1.init(driver);
             oauth1.clientId("client0");
 
-            OAuthClient.AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
             String code = resp.getCode();
             Assert.assertNotNull(code);
             String codeURL = driver.getCurrentUrl();
@@ -230,7 +232,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
                     log.infof("Trying to execute codeURL: %s, threadIndex: %d", codeURL, threadIndex);
 
-                    OAuthClient.AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
+                    AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
                     if (resp.getAccessToken() != null && resp.getError() == null) {
                         codeToTokenSuccessCount.incrementAndGet();
                     } else if (resp.getAccessToken() == null && resp.getError() != null) {
@@ -393,11 +395,11 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             Assert.assertEquals("Invalid state.", state, oauth1.getState());
 
-            AtomicReference<OAuthClient.AccessTokenResponse> accessResRef = new AtomicReference<>();
+            AtomicReference<AccessTokenResponse> accessResRef = new AtomicReference<>();
             totalInvocations.incrementAndGet();
 
             // obtain access + refresh token via code-to-token flow
-            OAuthClient.AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
+            AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
             Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
               200, accessRes.getStatusCode());
 
@@ -413,10 +415,10 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             accessResRef.set(accessRes);
 
             // Refresh access + refresh token using refresh token
-            AtomicReference<OAuthClient.AccessTokenResponse> refreshResRef = new AtomicReference<>();
+            AtomicReference<AccessTokenResponse> refreshResRef = new AtomicReference<>();
 
             int invocationIndex = Retry.execute(() -> {
-                OAuthClient.AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessResRef.get().getRefreshToken(), "password");
+                AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessResRef.get().getRefreshToken(), "password");
                 Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
                   200, refreshRes.getStatusCode());
 
