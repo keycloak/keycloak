@@ -1,3 +1,4 @@
+import type { ResourceTypesRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useTranslation } from "react-i18next";
 import {
   Modal,
@@ -10,7 +11,6 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useMemo } from "react";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
-import { ResourceTypesRepresentation } from "libs/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { isValidComponentType } from "./permission-configuration/PermissionConfigurationDetails";
 
 type NewPermissionConfigurationDialogProps = {
