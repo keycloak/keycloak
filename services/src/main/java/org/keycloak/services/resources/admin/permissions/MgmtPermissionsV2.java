@@ -24,6 +24,7 @@ import org.keycloak.services.resources.admin.AdminAuth;
 
 class MgmtPermissionsV2 extends MgmtPermissions {
 
+    private GroupPermissionsV2 groupPermissions;
     private UserPermissionsV2 userPermissions;
 
     private ClientPermissionsV2 clientPermissions;
@@ -51,6 +52,13 @@ class MgmtPermissionsV2 extends MgmtPermissions {
     @Override
     public ClientModel getRealmPermissionsClient() {
         return realm.getAdminPermissionsClient();
+    }
+
+    @Override
+    public GroupPermissions groups() {
+        if (groupPermissions != null) return groupPermissions;
+        groupPermissions = new GroupPermissionsV2(session, authz, this);
+        return groupPermissions;
     }
 
     @Override

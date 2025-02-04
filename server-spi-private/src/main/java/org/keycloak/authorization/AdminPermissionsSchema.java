@@ -33,6 +33,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
@@ -50,27 +51,42 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
-    
-    public static final String USERS_RESOURCE_TYPE = "Users";
-    public static final String CLIENTS_RESOURCE_TYPE = "Clients";
 
-    //scopes
+    public static final String CLIENTS_RESOURCE_TYPE = "Clients";
+    public static final String GROUPS_RESOURCE_TYPE = "Groups";
+    public static final String USERS_RESOURCE_TYPE = "Users";
+
+    // common scopes
     public static final String MANAGE = "manage";
     public static final String VIEW = "view";
-    public static final String IMPERSONATE = "impersonate";
-    public static final String MAP_ROLES = "map-roles";
-    public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
+
+    // client specific scopes
     public static final String CONFIGURE = "configure";
     public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
     public static final String MAP_ROLES_COMPOSITE = "map-roles-composite";
 
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
+    // group specific scopes
+    public static final String MANAGE_MEMBERSHIP = "manage-membership";
+    public static final String MANAGE_MEMBERS = "manage-members";
+    public static final String VIEW_MEMBERS = "view-members";
+
+    // user specific scopes
+    public static final String IMPERSONATE = "impersonate";
+    public static final String MAP_ROLES = "map-roles";
+    public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
+
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(CONFIGURE, MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
+    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
 
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
     private AdminPermissionsSchema() {
-        super(Map.of(USERS_RESOURCE_TYPE, USERS, CLIENTS_RESOURCE_TYPE, CLIENTS));
+        super(Map.of(
+            CLIENTS_RESOURCE_TYPE, CLIENTS,
+            GROUPS_RESOURCE_TYPE, GROUPS,
+            USERS_RESOURCE_TYPE, USERS
+        ));
     }
 
     public Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String policyType, String resourceType, String id) {
@@ -86,12 +102,13 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return resource;
         }
 
-        String name = null;
+        String name;
 
-        if (USERS.getType().equals(resourceType)) {
-            name = resolveUser(session, id);
-        } else if (CLIENTS.getType().equals(resourceType)) {
-            name = resolveClient(session, id);
+        switch (resourceType) {
+            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id);
+            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id);
+            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id);
+            default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
         }
 
         if (name == null) {
@@ -159,6 +176,13 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         if (isAdminPermissionClient(session.getContext().getRealm(), id)) {
             throw new ModelValidationException("Not supported for this client.");
         }
+    }
+
+    private String resolveGroup(KeycloakSession session, String id) {
+        RealmModel realm = session.getContext().getRealm();
+        GroupModel group = session.groups().getGroupById(realm, id);
+
+        return group == null ? null : group.getId();
     }
 
     private String resolveUser(KeycloakSession session, String id) {

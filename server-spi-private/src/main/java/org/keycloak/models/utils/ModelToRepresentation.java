@@ -173,10 +173,6 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, Map<String,String> attributes, Integer first, Integer max) {
-        return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
-    }
-
     @Deprecated
     public static Stream<GroupRepresentation> toGroupHierarchy(KeycloakSession session, RealmModel realm, boolean full) {
         return session.groups().getTopLevelGroupsStream(realm, null, null)

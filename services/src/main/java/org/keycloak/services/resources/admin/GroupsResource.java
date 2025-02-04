@@ -47,7 +47,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -100,7 +99,7 @@ public class GroupsResource {
         Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, attributes, firstResult, maxResults);
+            stream = session.groups().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, firstResult, maxResults);
         } else {
@@ -110,9 +109,8 @@ public class GroupsResource {
         if (populateHierarchy) {
             return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
         }
-        boolean canViewGlobal = groupsEvaluator.canView();
-        return stream
-            .filter(g -> canViewGlobal || groupsEvaluator.canView(g))
+
+        return stream.filter(groupsEvaluator::canView)
             .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 

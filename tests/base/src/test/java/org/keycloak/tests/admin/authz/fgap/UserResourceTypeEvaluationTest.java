@@ -32,7 +32,6 @@ import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 

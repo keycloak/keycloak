@@ -299,7 +299,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.users().canManageDefault()) return checkAdminRoles(role);
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
         if (!root.isAdminSameRealm()) {
             return false;
         }

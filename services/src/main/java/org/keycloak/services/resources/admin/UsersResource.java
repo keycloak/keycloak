@@ -71,7 +71,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -396,7 +395,7 @@ public class UsersResource {
             } else if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, search.trim());
             } else {
-                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
@@ -423,12 +422,12 @@ public class UsersResource {
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -446,16 +445,12 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!auth.users().canView()) {
-            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
-
-            if (!groupModels.isEmpty()) {
-                session.setAttribute(UserModel.GROUPS, groupModels);
-            }
+        Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
+        if (!groupIds.isEmpty()) {
+            session.setAttribute(UserModel.GROUPS, groupIds);
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults).filter(usersEvaluator::canView);
-        return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
+        return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
