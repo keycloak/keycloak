@@ -117,6 +117,10 @@ class UserPermissionsV2 extends UserPermissions {
         Resource resource = user == null ? null : resourceStore.findByName(server, user.getId());
 
         if (resource == null) {
+            // check if there is permission for "all-users". If so, load its resource and proceed with evaluation
+            if (policyStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE) == null) {
+                return false;
+            }
             resource = resourceStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE, server.getId());
         }
 
@@ -127,9 +131,11 @@ class UserPermissionsV2 extends UserPermissions {
         List<String> expectedScopes = Arrays.asList(scopes);
 
         for (Permission permission : permissions) {
-            for (String scope : permission.getScopes()) {
-                if (expectedScopes.contains(scope)) {
-                    return true;
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String scope : permission.getScopes()) {
+                    if (expectedScopes.contains(scope)) {
+                        return true;
+                    }
                 }
             }
         }
