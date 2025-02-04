@@ -45,6 +45,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     private static final String IDP_ALIAS_KEY_SUFFIX = ".idp.alias";
     private static final String IDP_ORG_ID_KEY_SUFFIX = ".idp.orgId";
     private static final String IDP_LOGIN_SUFFIX = ".idp.login";
+    private static final String IDP_ENABLED_KEY_SUFFIX = ".idp.enabled";
 
     private final KeycloakSession session;
     private final IdentityProviderStorageProvider idpDelegate;
@@ -76,6 +77,10 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
     public static String cacheKeyForLogin(RealmModel realm, FetchMode fetchMode) {
         return realm.getId() + IDP_LOGIN_SUFFIX + "." + fetchMode;
+    }
+
+    public static String cacheKeyIsEnabled(RealmModel realm) {
+        return realm.getId() + IDP_ENABLED_KEY_SUFFIX;
     }
 
     @Override
@@ -162,6 +167,26 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         }
 
         return createOrganizationAwareIdentityProviderModel(cached.getIdentityProvider());
+    }
+
+    @Override
+    public boolean isIdentityFederationEnabled() {
+        String cacheKey = cacheKeyIsEnabled(getRealm());
+
+        if (isInvalid(cacheKey)) {
+            return idpDelegate.isIdentityFederationEnabled();
+        }
+
+        CachedCount cached = realmCache.getCache().get(cacheKey, CachedCount.class);
+
+        if (cached == null) {
+            Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+            long count = idpDelegate.getAllStream(Map.of(), 0, 1).count();
+            cached = new CachedCount(loaded, getRealm(), cacheKey, count);
+            realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        }
+
+        return cached.getCount() > 0;
     }
 
     @Override
@@ -369,6 +394,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
     private void registerCountInvalidation() {
         realmCache.registerInvalidation(cacheKeyIdpCount(getRealm()));
+        realmCache.registerInvalidation(cacheKeyIsEnabled(getRealm()));
     }
 
     private void registerIDPMapperInvalidation(IdentityProviderMapperModel mapper) {
