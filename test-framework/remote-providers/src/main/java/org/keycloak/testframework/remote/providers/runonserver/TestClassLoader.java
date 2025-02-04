@@ -1,6 +1,6 @@
 package org.keycloak.testframework.remote.providers.runonserver;
 
-import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -10,17 +10,21 @@ public class TestClassLoader extends URLClassLoader {
 
     public static TestClassLoader getInstance() {
         if (instance == null) {
-            ClassLoader parent = TestClassLoader.class.getClassLoader();
-            try {
-                instance = new TestClassLoader(parent);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            instance = new TestClassLoader(TestClassLoader.class.getClassLoader());
         }
         return instance;
     }
 
-    private TestClassLoader(ClassLoader parent) throws IOException {
-        super(new URL[] { new URL("http://localhost:8500/test-classes") }, parent);
+    public TestClassLoader(ClassLoader parent) {
+        super(createUrls(), parent);
     }
+
+    private static URL[] createUrls() {
+        try {
+            return new URL[] { new URL("http://localhost:8500/test-classes/") };
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

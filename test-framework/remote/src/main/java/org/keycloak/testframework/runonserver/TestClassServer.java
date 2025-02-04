@@ -6,12 +6,14 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class TestClassServer {
 
+    public static final String CONTEXT_PATH = "/test-classes/";
     private final HttpServer server;
     private final TestClassPathHandler handler;
     public static final String[] PERMITTED_PACKAGES = new String[] {
@@ -32,7 +34,7 @@ public class TestClassServer {
 
         try {
             server = HttpServer.create(new InetSocketAddress("localhost", 8500), 0);
-            server.createContext("/test-classes", handler);
+            server.createContext(CONTEXT_PATH, handler);
             server.start();
         } catch (IOException exp) {
             throw new RuntimeException(exp);
@@ -47,17 +49,24 @@ public class TestClassServer {
 
         @Override
         public void handle(HttpExchange httpExchange) throws IOException {
-            String request = new String(httpExchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-            String classAsPath = request.replace(".", "/") + ".class";
+            String resource = httpExchange.getRequestURI().getPath().substring(CONTEXT_PATH.length() - 1);
 
             Headers respHeaders = httpExchange.getResponseHeaders();
-            respHeaders.set("Content-Type", "text/plain;charset=utf-8");
-            byte[] response = isPermittedPackage(classAsPath) ?
-                    TestClassServer.class.getClassLoader().getResource(classAsPath).getPath().getBytes(StandardCharsets.UTF_8) :
-                    null;
+            respHeaders.set("Content-Type", "application/x-java-applet;charset=utf-8");
 
-            httpExchange.sendResponseHeaders(200, Objects.requireNonNull(response).length);
-            httpExchange.getResponseBody().write(response);
+            if (!isPermittedPackage(resource) && resource.endsWith(".class")) {
+                httpExchange.sendResponseHeaders(403, 0);
+            } else {
+                try (InputStream resourceStream = TestClassServer.class.getResourceAsStream(resource)) {
+                    if (resourceStream != null) {
+                        byte[] bytes = resourceStream.readAllBytes();
+                        httpExchange.sendResponseHeaders(200, bytes.length);
+                        httpExchange.getResponseBody().write(bytes);
+                    } else {
+                        httpExchange.sendResponseHeaders(404, 0);
+                    }
+                }
+            }
             httpExchange.close();
         }
     }
