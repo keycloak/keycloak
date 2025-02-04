@@ -64,5 +64,6 @@
 
         <@validator.templates/>
         <@validator.script field="password"/>
+
     </#if>
 </@layout.registrationLayout>
