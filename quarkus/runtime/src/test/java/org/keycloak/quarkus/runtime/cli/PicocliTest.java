@@ -126,6 +126,23 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testNegativeArgumentMgmtInterfaceCertReload() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("1h",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("5m",
+                nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
+    }
+
+    @Test
     public void testInvalidArgumentType() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=a");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);

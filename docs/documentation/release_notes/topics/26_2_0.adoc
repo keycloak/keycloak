@@ -9,6 +9,13 @@ A `direction` query parameter was also added, allowing controlling the order of 
 Finally, the returned event representations now also include the `id`, which provides a unique identifier for
 an event.
 
+= Option to reload trust and key material for the management interface
+
+The `https-management-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by `https-management-*` options for the management interface.
+Use -1 to disable reloading. Defaults to `https-certificates-reload-period`, which defaults to 1h (one hour).
+
+For more information, check the link:https://www.keycloak.org/server/management-interface#_tls_support[Configuring the Management Interface] guide.
+
 = New cache for CRLs loaded for the X.509 authenticator
 
 Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.
