@@ -671,6 +671,7 @@ public class ModelToRepresentation {
         rep.setCreatedDate(cred.getCreatedDate());
         rep.setSecretData(cred.getSecretData());
         rep.setCredentialData(cred.getCredentialData());
+        rep.setFederationLink(cred.getFederationLink());
         return rep;
     }
 

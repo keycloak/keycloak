@@ -22,6 +22,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -179,8 +180,9 @@ public class AccountCredentialResource {
 
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes();
 
-        Stream<CredentialModel> modelsStream = includeUserCredentials ? user.credentialManager().getStoredCredentialsStream() : Stream.empty();
-        List<CredentialModel> models = modelsStream.collect(Collectors.toList());
+        SubjectCredentialManager credentialManager = user.credentialManager();
+        Stream<CredentialModel> modelsStream = includeUserCredentials ? credentialManager.getCredentials() : Stream.empty();
+        List<CredentialModel> models = modelsStream.toList();
 
         Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
             CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
@@ -192,8 +194,8 @@ public class AccountCredentialResource {
 
             if (includeUserCredentials) {
                 List<CredentialModel> modelsOfType = models.stream()
-                        .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
-                        .collect(Collectors.toList());
+                        .filter(credentialProvider::supportsCredentialType)
+                        .toList();
 
 
                 List<CredentialMetadata> credentialMetadataList = modelsOfType.stream()
@@ -228,7 +230,7 @@ public class AccountCredentialResource {
         };
 
         return AuthenticatorUtil.getCredentialProviders(session)
-                .filter(p -> type == null || Objects.equals(p.getType(), type))
+                .filter(p -> type == null || p.supportsCredentialType(type))
                 .filter(p -> enabledCredentialTypes.contains(p.getType()))
                 .map(toCredentialContainer)
                 .filter(Objects::nonNull)

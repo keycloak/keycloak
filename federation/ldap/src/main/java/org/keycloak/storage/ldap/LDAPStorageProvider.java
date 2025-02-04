@@ -45,6 +45,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
@@ -101,6 +102,8 @@ import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
 
 import org.keycloak.utils.StreamsUtil;
+import org.keycloak.utils.StringUtil;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -1199,5 +1202,41 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         return metadatas;
+    }
+
+    @Override
+    public Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
+        LDAPObject ldapObject = loadLDAPUserByUuid(realm, user.getFirstAttribute(LDAPConstants.LDAP_ID));
+
+        if (ldapObject == null) {
+            LDAPConfig config = getLdapIdentityStore().getConfig();
+            throw new IllegalStateException("LDAP object not found for user with attribute [" + config.getUuidLDAPAttributeName() + "] and value [" + user.getFirstAttribute(LDAPConstants.LDAP_ID) + "]");
+        }
+
+        CredentialModel credential = new CredentialModel();
+
+        credential.setType(PasswordCredentialModel.TYPE);
+        credential.setFederationLink(model.getId());
+        credential.setCreatedDate(getPasswordChangedTime(ldapObject));
+
+        return Stream.of(credential);
+    }
+
+    private long getPasswordChangedTime(LDAPObject ldapObject) {
+        String value = ldapObject.getAttributeAsString(getAttributeName());
+
+        if (StringUtil.isBlank(value)) {
+            return -1L;
+        }
+
+        if (LDAPConstants.PWD_LAST_SET.equals(getAttributeName())) {
+            return (Long.parseLong(value) / 10000L) - 11644473600000L;
+        }
+        return LDAPUtils.generalizedTimeToDate(value).getTime();
+    }
+
+    private String getAttributeName() {
+        LDAPConfig config = getLdapIdentityStore().getConfig();
+        return config.isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
     }
 }

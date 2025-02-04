@@ -39,4 +39,15 @@ public interface CredentialInputUpdater {
      * @return a non-null {@link Stream} of credential types.
      */
     Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user);
+
+    /**
+     * Returns a stream of {@link CredentialModel} instances managed by this provider for the given {@code user}.
+     *
+     * @param realm the realm
+     * @param user the user
+     * @return the credentials managed by this provider for the given {@code user}
+     */
+    default Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
+        return Stream.empty();
+    }
 }

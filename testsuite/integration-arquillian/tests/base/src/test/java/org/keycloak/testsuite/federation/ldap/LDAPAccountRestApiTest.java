@@ -99,6 +99,8 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
             LDAPObject john = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, "Password1");
+            john.setSingleAttribute(LDAPConstants.PWD_CHANGED_TIME, "22000101000000Z");
+            ctx.getLdapProvider().getLdapIdentityStore().update(john);
         });
     }
 
@@ -241,7 +243,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         // Password won't have createdDate and any metadata set
         Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
-        Assert.assertEquals(userPassword.getCreatedDate(), Long.valueOf(-1L));
+        Assert.assertTrue(userPassword.getCreatedDate() > -1L);
         Assert.assertNull(userPassword.getCredentialData());
         Assert.assertNull(userPassword.getSecretData());
     }
