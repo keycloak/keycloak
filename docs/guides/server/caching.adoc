@@ -317,14 +317,14 @@ The table below shows the TCP ports that need to be open for the `jdbc-ping` sta
 |Port |Property | Description
 
 m|7800
-m|jgroups.bind.address
+m|jgroups.bind.port
 |Unicast data transmission.
 
 m|57800
 m|jgroups.fd.port-offset
 |Failure detection by protocol `FD_SOCK2`.
 It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
-The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.address`.
+The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.port`.
 
 |===
 
