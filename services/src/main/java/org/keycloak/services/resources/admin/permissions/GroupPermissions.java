@@ -53,9 +53,9 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     private static final String RESOURCE_NAME_PREFIX = "group.resource.";
 
     private final AuthorizationProvider authz;
-    private final MgmtPermissions root;
-    private final ResourceStore resourceStore;
-    private final PolicyStore policyStore;
+    protected final MgmtPermissions root;
+    protected final ResourceStore resourceStore;
+    protected final PolicyStore policyStore;
 
     GroupPermissions(AuthorizationProvider authz, MgmtPermissions root) {
         this.authz = authz;
@@ -72,7 +72,6 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     private static String getGroupResourceName(GroupModel group) {
         return RESOURCE_NAME_PREFIX + group.getId();
     }
-
 
     private static String getManagePermissionGroup(GroupModel group) {
         return "manage.permission.group." + group.getId();
@@ -147,7 +146,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public boolean canList() {
-        return canView() || root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_GROUPS);
+        return root.hasOneAdminRole(AdminRoles.QUERY_GROUPS) || canView();
     }
 
     @Override
@@ -273,7 +272,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public boolean canManage() {
-        return root.users().canManageDefault();
+        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
     }
 
     @Override
@@ -282,9 +281,10 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             throw new ForbiddenException();
         }
     }
+
     @Override
     public boolean canView() {
-        return root.users().canViewDefault();
+        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS);
     }
 
     @Override
@@ -295,24 +295,8 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
-    public boolean getGroupsWithViewPermission(GroupModel group) {
-        if (root.users().canView() || root.users().canManage()) {
-            return true;
-        }
-
-        if (!root.isAdminSameRealm()) {
-            return false;
-        }
-
-        ResourceServer server = root.realmResourceServer();
-        if (server == null) return false;
-
-        return hasPermission(group, VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE);
-    }
-
-    @Override
-    public Set<String> getGroupsWithViewPermission() {
-        if (root.users().canView() || root.users().canManage()) return Collections.emptySet();
+    public Set<String> getGroupIdsWithViewPermission() {
+        if (root.users().canView()) return Collections.emptySet();
 
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
@@ -337,7 +321,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public void requireViewMembers(GroupModel group) {
-        if (!getGroupsWithViewPermission(group)) {
+        if (!canViewMembers(group)) {
             throw new ForbiddenException();
         }
     }
@@ -353,7 +337,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
 
-        return hasPermission(group, VIEW_MEMBERS_SCOPE);
+        return hasPermission(group, VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE);
     }
 
     @Override

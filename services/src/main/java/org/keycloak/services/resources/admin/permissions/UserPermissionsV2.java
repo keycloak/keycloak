@@ -45,32 +45,20 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canView(UserModel user) {
-        if (root.hasOneAdminRole(AdminRoles.ADMIN, AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
             return true;
         }
 
-        boolean result = hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
-
-        if (!result) {
-            return canViewByGroup(user);
-        }
-
-        return result;
+        return hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE) || canViewByGroup(user);
     }
 
     @Override
     public boolean canManage(UserModel user) {
-        if (root.hasOneAdminRole(AdminRoles.ADMIN, AdminRoles.MANAGE_USERS)) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
-        boolean result = hasPermission(user, null, AdminPermissionsSchema.MANAGE);
-
-        if (!result) {
-            return canManageByGroup(user);
-        }
-
-        return result;
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE) || canManageByGroup(user);
     }
 
     @Override
@@ -87,20 +75,20 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canMapRoles(UserModel user) {
-        if (canManage(user)) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MAP_ROLES);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MAP_ROLES) || canManageByGroup(user);
     }
 
     @Override
     public boolean canManageGroupMembership(UserModel user) {
-        if (canManage(user)) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP) || canManageByGroup(user);
     }
 
     private boolean hasPermission(UserModel user, EvaluationContext context, String... scopes) {

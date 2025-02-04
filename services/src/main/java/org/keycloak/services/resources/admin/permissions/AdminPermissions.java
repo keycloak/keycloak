@@ -71,10 +71,10 @@ public class AdminPermissions {
     }
 
     public static void registerListener(ProviderEventManager manager) {
-        manager.register(new ProviderEventListener() {
-            @Override
-            public void onEvent(ProviderEvent event) {
-                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            manager.register(new ProviderEventListener() {
+                @Override
+                public void onEvent(ProviderEvent event) {
                     if (event instanceof RoleContainerModel.RoleRemovedEvent) {
                         RoleContainerModel.RoleRemovedEvent cast = (RoleContainerModel.RoleRemovedEvent) event;
                         RoleModel role = cast.getRole();
@@ -94,8 +94,8 @@ public class AdminPermissions {
                         management(cast.getKeycloakSession(), cast.getRealm()).groups().setPermissionsEnabled(cast.getGroup(), false);
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
 

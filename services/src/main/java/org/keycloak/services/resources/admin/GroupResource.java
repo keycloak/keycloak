@@ -174,10 +174,9 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
-        boolean canViewGlobal = auth.groups().canView();
         return paginatedStream(
             group.getSubGroupsStream(search, exact, -1, -1)
-            .filter(g -> canViewGlobal || auth.groups().canView(g)), first, max)
+            .filter(auth.groups()::canView), first, max)
             .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 
@@ -204,7 +203,7 @@ public class GroupResource {
 
         try {
             Response.ResponseBuilder builder = Response.status(204);
-            GroupModel child = null;
+            GroupModel child;
             if (rep.getId() != null) {
                 child = realm.getGroupById(rep.getId());
                 if (child == null) {

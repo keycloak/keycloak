@@ -177,10 +177,6 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         }
     }
 
-    public boolean canManageDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
-    }
-
     @Override
     public Resource resource() {
         ResourceServer server = root.realmResourceServer();
@@ -235,7 +231,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canManage() {
-        if (canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
@@ -274,7 +270,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canQuery() {
-        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_USERS);
+        return root.hasOneAdminRole(AdminRoles.QUERY_USERS) || canView();
     }
 
     @Override
@@ -299,7 +295,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canView() {
-        if (canViewDefault() || canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
             return true;
         }
 
@@ -585,15 +581,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     protected boolean canManageByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
-
+        return evaluateHierarchy(user, root.groups()::canManageMembers);
     }
+
     protected boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
-    }
-
-    public boolean canViewDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS);
+        return evaluateHierarchy(user, root.groups()::canViewMembers);
     }
 }
