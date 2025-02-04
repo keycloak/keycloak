@@ -1,0 +1,100 @@
+import { expect, test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
+import adminClient from "../../cypress/support/util/AdminClient";
+import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form";
+import { login } from "../utils/login";
+import {
+  assertNotificationMessage,
+  selectActionToggleItem,
+} from "../utils/masthead";
+import { confirmModal } from "../utils/modal";
+import {
+  goToOrganizations,
+  goToRealm,
+  goToRealmSettings,
+} from "../utils/sidebar";
+import {
+  assertRowExists,
+  clickRowKebabItem,
+  clickTableRowItem,
+} from "../utils/table";
+import {
+  clickRealmSaveButton,
+  enableOrganizations,
+  fillCreatePage,
+  fillNameField,
+  getNameField,
+  goToCreate,
+} from "./main";
+
+test.describe("Organization CRUD", () => {
+  const realmName = `organization-${uuid()}`;
+
+  test.beforeAll(() => adminClient.createRealm(realmName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToRealmSettings(page);
+    await enableOrganizations(page);
+    await clickRealmSaveButton(page);
+  });
+
+  test("should create new organization", async ({ page }) => {
+    await goToOrganizations(page);
+    await goToCreate(page);
+    await assertSaveButtonIsDisabled(page);
+    await fillCreatePage(page, { name: "orgName" });
+    await fillCreatePage(page, {
+      name: "orgName",
+      domain: ["ame.org", "test.nl"],
+      description: "some description",
+    });
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Organization successfully saved.");
+  });
+
+  test("should modify existing organization", async ({ page }) => {
+    await adminClient.createOrganization({
+      realm: realmName,
+      name: "editName",
+      domains: [{ name: "go.org", verified: false }],
+    });
+    await goToRealm(page, realmName);
+    await goToOrganizations(page);
+    await clickTableRowItem(page, "editName");
+    const newValue = "newName";
+    await fillNameField(page, newValue);
+    await expect(getNameField(page)).toHaveValue(newValue);
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Organization successfully saved.");
+    await goToOrganizations(page);
+    await assertRowExists(page, newValue);
+  });
+
+  test("should delete from list", async ({ page }) => {
+    await adminClient.createOrganization({
+      realm: realmName,
+      name: "deleteName",
+      domains: [{ name: "go.org", verified: false }],
+    });
+    await goToOrganizations(page);
+    await clickRowKebabItem(page, "deleteName", "Delete");
+    await confirmModal(page);
+    await assertNotificationMessage(page, "The organization has been deleted");
+  });
+
+  test("should delete from details page", async ({ page }) => {
+    await adminClient.createOrganization({
+      realm: realmName,
+      name: "deleteName2",
+      domains: [{ name: "go.org", verified: false }],
+    });
+    await goToOrganizations(page);
+    await clickTableRowItem(page, "deleteName2");
+    await selectActionToggleItem(page, "Delete");
+    await confirmModal(page);
+    await assertNotificationMessage(page, "The organization has been deleted");
+  });
+});
