@@ -27,13 +27,11 @@ import java.util.Set;
 public class RoleByNameQuery extends AbstractRevisioned implements RoleQuery, InClient {
     private final String role;
     private final String realm;
-    private final String realmName;
     private String client;
 
     public RoleByNameQuery(Long revisioned, String id, RealmModel realm, String role) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.role = role;
     }
 
@@ -65,7 +63,7 @@ public class RoleByNameQuery extends AbstractRevisioned implements RoleQuery, In
     public String toString() {
         return "RoleNameQuery{" +
                 "id='" + getId() + "'" +
-                ", realmName='" + realmName + '\'' +
+                ", realm='" + realm + '\'' +
                 ", clientUuid='" + client + '\'' +
                 '}';
     }
