@@ -591,8 +591,10 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     private void assertPasswordConfiguredThroughLDAPOnly(UserResource user) {
         // Assert password not stored locally
         List<CredentialRepresentation> storedCredentials = user.credentials();
+        assertEquals(1, storedCredentials.size());
         for (CredentialRepresentation credential : storedCredentials) {
-            Assert.assertFalse(PasswordCredentialModel.TYPE.equals(credential.getType()));
+            Assert.assertTrue(PasswordCredentialModel.TYPE.equals(credential.getType()));
+            Assert.assertNotNull(credential.getFederationLink());
         }
 
         // Assert password is stored in the LDAP

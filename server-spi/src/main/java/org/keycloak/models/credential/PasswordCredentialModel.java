@@ -1,5 +1,7 @@
 package org.keycloak.models.credential;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.credential.dto.PasswordSecretData;
@@ -48,9 +50,9 @@ public class PasswordCredentialModel extends CredentialModel {
 
     public static PasswordCredentialModel createFromCredentialModel(CredentialModel credentialModel) {
         try {
-            PasswordCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(),
+            PasswordCredentialData credentialData = isBlank(credentialModel.getCredentialData()) ? null : JsonSerialization.readValue(credentialModel.getCredentialData(),
                     PasswordCredentialData.class);
-            PasswordSecretData secretData = JsonSerialization.readValue(credentialModel.getSecretData(), PasswordSecretData.class);
+            PasswordSecretData secretData = isBlank(credentialModel.getSecretData()) ? null : JsonSerialization.readValue(credentialModel.getSecretData(), PasswordSecretData.class);
             PasswordCredentialModel passwordCredentialModel = new PasswordCredentialModel(credentialData, secretData);
             passwordCredentialModel.setCreatedDate(credentialModel.getCreatedDate());
             passwordCredentialModel.setCredentialData(credentialModel.getCredentialData());

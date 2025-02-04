@@ -26,3 +26,19 @@ All available log handlers now support *ECS* (Elastic Common Schema) JSON format
 It helps to improve {project_name}'s observability story and centralized logging.
 
 For more details, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Federated credentials are available now when fetching user credentials
+
+Until now, querying user credentials using the User API will not return credentials managed by user storage providers and, as a consequence,
+prevent fetching additional metadata associated with federated credentials like the last time a credential was updated.
+
+In this release, we are adding a new method `getCredentials(RealmModel, UserModel)` to the `org.keycloak.credential.CredentialInputUpdater` interface so that
+user storage providers can return the credentials they manage for a specific user in a realm. By doing this, user storage providers can indicate
+whether the credential is linked to it as well as provide additional metadata so that additional information can be shown when managing users through the administration console.
+
+For LDAP, it should be possible now to see the last time the password was updated based on the standard `pwdChangedTime` attribute or, if
+using Microsoft AD, based on the `pwdLastSet` attribute.
+
+In order to check if a credential is local - managed by {project_name} - or federated, you can check the `federationLink` property available from both
+`CredentialRepresentation` and `CredentialModel` types. If set, the `federationLink` property holds the UUID of the component model associated with a given
+user storage provider.
