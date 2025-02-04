@@ -358,12 +358,17 @@ class AdminClient {
     return await this.#client.roles.delByName({ name });
   }
 
-  async createIdentityProvider(idpDisplayName: string, alias: string) {
+  async createIdentityProvider(
+    idpDisplayName: string,
+    alias: string,
+    realm: string = "master",
+  ) {
     await this.#login();
     const identityProviders =
-      (await this.#client.serverInfo.find()).identityProviders || [];
+      (await this.#client.serverInfo.find({ realm })).identityProviders || [];
     const idp = identityProviders.find(({ name }) => name === idpDisplayName);
     await this.#client.identityProviders.create({
+      realm,
       providerId: idp?.id!,
       displayName: idpDisplayName,
       alias: alias,
@@ -448,7 +453,9 @@ class AdminClient {
     }
   }
 
-  async createOrganization(org: OrganizationRepresentation) {
+  async createOrganization(
+    org: OrganizationRepresentation & { realm?: string },
+  ) {
     await this.#login();
     await this.#client.organizations.create(org);
   }
