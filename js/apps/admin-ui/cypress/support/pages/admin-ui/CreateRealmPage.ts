@@ -4,8 +4,8 @@ export default class CreateRealmPage {
   #modalClearBtn = "clear-button";
   #realmNameInput = "realm";
   #enabledSwitch = ".pf-v5-c-toolbar .pf-v5-c-switch__toggle";
-  #createBtn = '.pf-v5-c-form__group:last-child button[type="submit"]';
-  #cancelBtn = '.pf-v5-c-form__group:last-child button[type="button"]';
+  #createBtn = '[data-testid="create"]';
+  #cancelBtn = '[data-testid="cancel"]';
   #codeEditor = ".w-tc-editor-text";
 
   #getClearBtn() {

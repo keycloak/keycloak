@@ -1,52 +1,81 @@
-import { PropsWithChildren } from "react";
-
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   createNamedContext,
   useFetch,
   useRequiredContext,
   useStoredState,
 } from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useEffect } from "react";
 import { useAdminClient } from "../admin-client";
 import { useRealm } from "./realm-context/RealmContext";
+import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
-const MAX_REALMS = 4;
+const MAX_REALMS = 5;
 
-export const RecentRealmsContext = createNamedContext<string[] | undefined>(
-  "RecentRealmsContext",
-  undefined,
-);
+export const RecentRealmsContext = createNamedContext<
+  RealmNameRepresentation[] | undefined
+>("RecentRealmsContext", undefined);
+
+export type RealmNameRepresentation = {
+  name: string;
+  displayName?: string;
+};
+
+function convertRealmToNameRepresentation(
+  realm?: RealmRepresentation,
+): RealmNameRepresentation {
+  return { name: realm?.realm || "", displayName: realm?.displayName || "" };
+}
 
 export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
-  const { realm } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
   const { adminClient } = useAdminClient();
 
   const [storedRealms, setStoredRealms] = useStoredState(
     localStorage,
     "recentRealms",
-    [realm],
+    [{ name: "" }] as RealmNameRepresentation[],
   );
 
   useFetch(
-    () => {
-      return Promise.all(
-        [...new Set([realm, ...storedRealms])].map(async (realm) => {
+    () =>
+      Promise.all(
+        storedRealms.map(async (r) => {
+          if (!r.name) {
+            return undefined;
+          }
           try {
-            const response = await adminClient.realms.findOne({ realm });
-            if (response) {
-              return response.realm;
-            }
-          } catch {
+            return (
+              await fetchAdminUI<RealmNameRepresentation[]>(
+                adminClient,
+                "ui-ext/realms/names",
+                { search: r.name },
+              )
+            )[0];
+          } catch (error) {
+            console.info("recent realm not found", error);
             return undefined;
           }
         }),
-      );
-    },
-    (realms) => {
-      const newRealms = realms.filter((r) => r) as string[];
-      setStoredRealms(newRealms.slice(0, MAX_REALMS));
-    },
-    [realm],
+      ),
+    (realms) => setStoredRealms(realms.filter((r) => !!r)),
+    [realm?.realm === "master"],
   );
+
+  useEffect(() => {
+    if (
+      storedRealms.map((r) => r.name).includes(realm?.realm || "") ||
+      !realm
+    ) {
+      return;
+    }
+    setStoredRealms(
+      [
+        convertRealmToNameRepresentation(realm),
+        ...storedRealms.filter((r) => r.name !== ""),
+      ].slice(0, MAX_REALMS),
+    );
+  }, [realm]);
 
   return (
     <RecentRealmsContext.Provider value={storedRealms}>
