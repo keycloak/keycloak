@@ -25,6 +25,7 @@ import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionT
 import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -37,14 +38,19 @@ import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -339,19 +345,39 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordForceLogin() throws IOException, MessagingException {
         // add the force login option in the reset-credential-email authenticator
-        AuthenticationExecutionInfoRepresentation sendEmailExec = testRealm()
-                .flows()
-                .getExecutions(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW)
-                .stream()
-                .filter(e -> ResetCredentialEmail.PROVIDER_ID.equals(e.getProviderId()))
-                .findAny().orElseThrow();
-        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
-        config.setAlias("reset-password-config");
-        config.getConfig().put(ResetCredentialEmail.FORCE_LOGIN, Boolean.TRUE.toString());
-        String configId = ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(sendEmailExec.getId(), config));
-        getCleanup().addAuthenticationConfigId(configId);
+        configureForceLogin(Boolean.TRUE.toString());
 
         resetPassword("login-test", "resetPassword", true);
+    }
+
+    @Test
+    public void resetPasswordForceLoginFederatedUser() throws IOException, MessagingException {
+        // create the example map storage user federation
+        ComponentRepresentation memProvider = new ComponentRepresentation();
+        memProvider.setName(UserStorageProvider.class.getName());
+        memProvider.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+        memProvider.setProviderType(UserStorageProvider.class.getName());
+        memProvider.setConfig(new MultivaluedHashMap<>());
+        memProvider.getConfig().putSingle("priority", Integer.toString(0));
+        memProvider.getConfig().putSingle(UserStorageProviderModel.IMPORT_ENABLED, Boolean.toString(false));
+        String componentId = ApiUtil.getCreatedId(testRealm().components().add(memProvider));
+        getCleanup().addComponentId(componentId);
+
+        // remove the test user and create it but federated
+        testRealm().users().get(userId).remove();
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("login-test");
+        user.setEmail("login@test.com");
+        user.setFederationLink(componentId);
+        this.userId = ApiUtil.getCreatedId(testRealm().users().create(user));
+        Assert.assertFalse(StorageId.isLocalStorage(userId));
+
+        // by default federated users are force to re-login
+        resetPassword("login-test", "resetPassword", true);
+
+        // check with false the session is maintained
+        configureForceLogin(Boolean.FALSE.toString());
+        resetPassword("login-test", "resetPassword", false);
     }
 
     @Test
@@ -419,6 +445,20 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         resetPasswordPage.assertCurrent();
         driver.navigate().back();
         loginPage.assertCurrent();
+    }
+
+    private void configureForceLogin(String value) {
+        AuthenticationExecutionInfoRepresentation sendEmailExec = testRealm()
+                .flows()
+                .getExecutions(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW)
+                .stream()
+                .filter(e -> ResetCredentialEmail.PROVIDER_ID.equals(e.getProviderId()))
+                .findAny().orElseThrow();
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias("reset-password-config");
+        config.getConfig().put(ResetCredentialEmail.FORCE_LOGIN, value);
+        String configId = ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(sendEmailExec.getId(), config));
+        getCleanup().addAuthenticationConfigId(configId);
     }
 
     private String resetPassword(String username) throws IOException, MessagingException {
