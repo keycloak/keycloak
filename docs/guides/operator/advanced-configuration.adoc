@@ -149,6 +149,39 @@ spec:
               secretName: keycloak-additional-secret
 ----
 
+===== Probe Timeouts
+
+The unsupported podTemplate may be used to override the default probes.
+
+In particular the default startup probe timeout of 10 minutes may be too short in scenarios where there is a long-running migration. 
+
+If your instances encounter this startup failure or if you wish to proactively prevent such a startup failure from occurring, then the startup probe timeout should be increased.
+
+With otherwise default settings, something like the following would increase the timeout to 20 minutes:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  unsupported:
+    podTemplate:
+      spec:
+        containers:
+          startupProbe:
+            httpGet:
+              path: "/health/started"
+            port: 9000
+            scheme: "HTTPS"
+            failureThreshold: 1200
+            periodSeconds: 1
+----
+
+Note that the usage of a relative HTTP path, an alternative management port, or require changes to the probe configuration.
+
 === Disabling required options
 
 {project_name} and the {project_name} Operator provide the best production-ready experience with security in mind.
