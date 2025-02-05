@@ -118,10 +118,11 @@ class UserPermissionsV2 extends UserPermissions {
 
         if (resource == null) {
             // check if there is permission for "all-users". If so, load its resource and proceed with evaluation
-            if (policyStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE) == null) {
+            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+
+            if (policyStore.findByResource(server, resource).isEmpty()) {
                 return false;
             }
-            resource = resourceStore.findByName(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE, server.getId());
         }
 
         Collection<Permission> permissions = (context == null) ?
