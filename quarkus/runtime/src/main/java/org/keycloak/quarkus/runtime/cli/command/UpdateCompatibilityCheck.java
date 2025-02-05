@@ -20,7 +20,9 @@ package org.keycloak.quarkus.runtime.cli.command;
 import java.io.File;
 import java.io.IOException;
 
+import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.compatibility.CompatibilityResult;
 import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
@@ -41,7 +43,10 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     @Override
     public void run() {
-        assertFeatureEnabled();
+        if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
+            picocli.exit(CompatibilityResult.FEATURE_DISABLED);
+            return;
+        }
         printPreviewWarning();
         validateConfig();
         var info = readServerInfo();

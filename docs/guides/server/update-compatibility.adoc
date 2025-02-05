@@ -128,6 +128,10 @@ m|2
 m|3
 |Rolling Upgrade is not possible.
 The deployment must be shut down before applying the new configuration.
+
+m|4
+|Rolling Upgrade is not possible.
+The feature `rolling-updates` is disabled.
 |===
 
 </@tmpl.guide>

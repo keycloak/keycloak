@@ -17,16 +17,10 @@
 
 package org.keycloak.operator.upgrade;
 
-import java.util.Collection;
-
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.keycloak.common.Profile;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.upgrade.impl.AlwaysRecreateUpgradeLogic;
 import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
@@ -43,24 +37,9 @@ public class UpgradeLogicFactory {
         if (strategy.isEmpty()) {
             return new RecreateOnImageChangeUpgradeLogic(context, keycloak, dependentResource);
         }
-        assertFeatureEnabled(keycloak, strategy.get());
         return switch (strategy.get()) {
             case RECREATE -> new AlwaysRecreateUpgradeLogic(context, keycloak, dependentResource);
         };
-    }
-
-    private static void assertFeatureEnabled(Keycloak keycloak, UpdateStrategy updateStrategy) {
-        var rollingUpdatesEnabled = CRDUtils.keycloakSpecOf(keycloak)
-                .map(KeycloakSpec::getFeatureSpec)
-                .map(FeatureSpec::getEnabledFeatures)
-                .stream()
-                .flatMap(Collection::stream)
-                .anyMatch(Profile.Feature.ROLLING_UPDATES.getKey()::equals);
-        if (rollingUpdatesEnabled) {
-            return;
-        }
-        // Is it safe to throw an exception? Or should return RecreateOnImageChangeUpgradeLogic?
-        throw new IllegalArgumentException("Unable to use update strategy %s. The preview feature '%s' is not enabled.".formatted(updateStrategy, Profile.Feature.ROLLING_UPDATES.getKey()));
     }
 
 }
