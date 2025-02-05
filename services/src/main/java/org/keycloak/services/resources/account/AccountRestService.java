@@ -227,6 +227,7 @@ public class AccountRestService {
 
     @Path("supportedLocales")
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public List<String> supportedLocales() {
         return auth.getRealm().getSupportedLocalesStream().collect(Collectors.toList());
     }
