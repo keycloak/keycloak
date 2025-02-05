@@ -342,4 +342,6 @@ In the same way the migrationExport to point to a specific file and location:
 .Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
 <@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=<path>/<file.sql>"/>
 
+For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
+
 </@tmpl.guide>

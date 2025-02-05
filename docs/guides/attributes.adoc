@@ -29,5 +29,6 @@
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:upgrading_guide_link: {project_doc_base_url}/upgrading/
 :kc_js_path: /js
 :kc_realms_path: /realms
