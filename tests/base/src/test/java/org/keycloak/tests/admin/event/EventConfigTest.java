@@ -15,85 +15,98 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.event;
+package org.keycloak.tests.admin.event;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test updates to the events configuration.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class EventConfigTest extends AbstractEventTest {
+@KeycloakIntegrationTest
+public class EventConfigTest {
+
+    @InjectRealm(config = EventConfigRealmConfig.class)
+    ManagedRealm configRealm;
+
+    RealmEventsConfigRepresentation configRep;
+
+    @BeforeEach
+    public void setConfigRep() {
+        configRep = configRealm.admin().getRealmEventsConfig();
+    }
 
     @Test
     public void defaultEventConfigTest() {
-        assertFalse(configRep.isAdminEventsDetailsEnabled());
-        assertFalse(configRep.isAdminEventsEnabled());
-        assertFalse(configRep.isEventsEnabled());
+        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false));
+
+        configRep = configRealm.admin().getRealmEventsConfig();
+        Assertions.assertFalse(configRep.isAdminEventsDetailsEnabled());
+        Assertions.assertFalse(configRep.isAdminEventsEnabled());
+        Assertions.assertFalse(configRep.isEventsEnabled());
 
         List<String> eventListeners = configRep.getEventsListeners();
-        assertEquals(1, eventListeners.size());
-        assertEquals("jboss-logging", eventListeners.get(0));
+        Assertions.assertEquals(1, eventListeners.size());
+        Assertions.assertEquals("jboss-logging", eventListeners.get(0));
     }
 
     @Test
     public void enableEventsTest() {
-        enableEvents();
-
-        assertTrue(configRep.isEventsEnabled());
-        assertTrue(configRep.isAdminEventsEnabled());
+        Assertions.assertTrue(configRep.isEventsEnabled());
+        Assertions.assertTrue(configRep.isAdminEventsEnabled());
     }
 
     @Test
     public void addRemoveListenerTest() {
-        configRep.setEventsListeners(Collections.EMPTY_LIST);
-        saveConfig();
-        assertEquals(0, configRep.getEventsListeners().size());
+        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false).overwriteEventsListeners());
 
-        configRep.setEventsListeners(Arrays.asList("email"));
-        saveConfig();
+        configRep = configRealm.admin().getRealmEventsConfig();
+
+        Assertions.assertEquals(0, configRep.getEventsListeners().size());
+
+        configRealm.updateWithCleanup(r -> r.overwriteEventsListeners("email"));
+        configRep = configRealm.admin().getRealmEventsConfig();
         List<String> eventListeners = configRep.getEventsListeners();
-        assertEquals(1, eventListeners.size());
-        assertEquals("email", eventListeners.get(0));
+        Assertions.assertEquals(1, eventListeners.size());
+        Assertions.assertEquals("email", eventListeners.get(0));
     }
 
     @Test
     public void loginEventSettingsTest() {
-        enableEvents();
-
-        assertTrue(hasEventType("LOGIN"));
-        assertTrue(hasEventType("LOGOUT"));
-        assertTrue(hasEventType("CLIENT_DELETE_ERROR"));
+        Assertions.assertTrue(hasEventType("LOGIN"));
+        Assertions.assertTrue(hasEventType("LOGOUT"));
+        Assertions.assertTrue(hasEventType("CLIENT_DELETE_ERROR"));
 
         int defaultEventCount = configRep.getEnabledEventTypes().size();
 
-        configRep.setEnabledEventTypes(Arrays.asList("CLIENT_DELETE", "CLIENT_DELETE_ERROR"));
-        saveConfig();
+        configRealm.updateWithCleanup(r -> r.enabledEventTypes("CLIENT_DELETE", "CLIENT_DELETE_ERROR"));
 
-        List<String> enabledEventTypes = configRep.getEnabledEventTypes();
-        assertEquals(2, enabledEventTypes.size());
+        List<String> enabledEventTypes = configRealm.admin().getRealmEventsConfig().getEnabledEventTypes();
+        Assertions.assertEquals(2, enabledEventTypes.size());
 
         // remove all event types
-        configRep.setEnabledEventTypes(Collections.EMPTY_LIST);
-        saveConfig();
+        configRealm.updateWithCleanup(RealmConfigBuilder::overwriteEnabledEventTypes);
 
         // removing all event types restores default events
-        assertEquals(defaultEventCount, configRep.getEnabledEventTypes().size());
+        Assertions.assertEquals(defaultEventCount, configRealm.admin().getRealmEventsConfig().getEnabledEventTypes().size());
     }
 
     private boolean hasEventType(String eventType) {
         for (String event : configRep.getEnabledEventTypes()) {
-            if (eventType.equals(event)) return true;
+            if (eventType.equals(event)) {
+                return true;
+            }
         }
 
         return false;
@@ -101,27 +114,29 @@ public class EventConfigTest extends AbstractEventTest {
 
     @Test
     public void includeRepresentationTest() {
-        enableEvents();
+        Assertions.assertTrue(configRep.isAdminEventsEnabled());
+        Assertions.assertFalse(configRep.isAdminEventsDetailsEnabled());
 
-        assertTrue(configRep.isAdminEventsEnabled());
-        assertFalse(configRep.isAdminEventsDetailsEnabled());
+        configRealm.updateWithCleanup(r -> r.adminEventsDetailsEnabled(true));
 
-        configRep.setAdminEventsDetailsEnabled(Boolean.TRUE);
-        saveConfig();
-
-        assertTrue(configRep.isAdminEventsDetailsEnabled());
+        Assertions.assertTrue(configRealm.admin().getRealmEventsConfig().isAdminEventsDetailsEnabled());
     }
 
     @Test
     public void setLoginEventExpirationTest() {
-        enableEvents();
+        Assertions.assertNull(configRep.getEventsExpiration());
 
-        assertNull(configRep.getEventsExpiration());
+        long oneHour = 3600;
+        configRealm.updateWithCleanup(r -> r.eventsExpiration(oneHour));
 
-        Long oneHour = 3600L;
-        configRep.setEventsExpiration(oneHour);
-        saveConfig();
+        Assertions.assertEquals(oneHour, configRealm.admin().getRealmEventsConfig().getEventsExpiration());
+    }
 
-        assertEquals(oneHour, configRep.getEventsExpiration());
+    public static class EventConfigRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.eventsEnabled(true).adminEventsEnabled(true);
+        }
     }
 }
