@@ -187,8 +187,9 @@ public class QuarkusPropertiesDistTest {
             "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
     @Order(12)
     void testSmallRyeKeyStoreConfigSource(CLIResult cliResult) {
-        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
-        cliResult.assertMessage("DEBUG");
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
+        cliResult.assertNoMessage("DEBUG [org.keycloak.services");
+        cliResult.assertMessage("DEBUG [org.keycloak.timer");
         cliResult.assertStarted();
     }
 
