@@ -234,6 +234,14 @@ Management:
                      The file path to a private key in PEM format for the management server. If not
                        given, the value is inherited from HTTP options. Relevant only when
                        something is exposed on the management interface - see the guide for details.
+--https-management-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-management-* options for the management server. May be a
+                       java.time.Duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
+                       to disable. If not given, the value is inherited from HTTP options. Relevant
+                       only when something is exposed on the management interface - see the guide
+                       for details. Default: 1h.
 --https-management-client-auth <auth>
                      Configures the management interface to require/request client authentication.
                        If not given, the value is inherited from HTTP options. Relevant only when
