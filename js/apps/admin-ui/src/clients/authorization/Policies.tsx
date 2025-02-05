@@ -185,7 +185,17 @@ export const AuthorizationPolicies = ({
               policyProviders={policyProviders}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
+                  isAdminPermissionsClient
+                    ? toCreatePermissionPolicy({
+                        realm,
+                        permissionClientId: clientId,
+                        policyType: p.type!,
+                      })
+                    : toCreatePolicy({
+                        id: clientId,
+                        realm,
+                        policyType: p.type!,
+                      }),
                 )
               }
               toggleDialog={toggleDialog}
@@ -215,22 +225,13 @@ export const AuthorizationPolicies = ({
                   <Button
                     data-testid="createPolicy"
                     onClick={() => {
-                      if (!isAdminPermissionsClient) {
-                        toggleDialog();
-                      } else {
-                        navigate(
-                          toCreatePermissionPolicy({
-                            realm,
-                            permissionClientId: clientId,
-                          }),
-                        );
-                      }
+                      toggleDialog();
                     }}
                     isDisabled={isDisabled}
                   >
-                    {!isAdminPermissionsClient
-                      ? t("createPolicy")
-                      : t("createAPolicy")}
+                    {isAdminPermissionsClient
+                      ? t("createPermissionPolicy")
+                      : t("createPolicy")}
                   </Button>
                 </ToolbarItem>
               </>
@@ -266,24 +267,24 @@ export const AuthorizationPolicies = ({
                         }}
                       />
                       <Td data-testid={`name-column-${policy.name}`}>
-                        {!isAdminPermissionsClient ? (
+                        {isAdminPermissionsClient ? (
                           <Link
-                            to={toPolicyDetails({
+                            to={toPermissionPolicyDetails({
                               realm,
-                              id: clientId,
-                              policyType: policy.type!,
+                              permissionClientId: clientId,
                               policyId: policy.id!,
+                              policyType: policy.type!,
                             })}
                           >
                             {policy.name}
                           </Link>
                         ) : (
                           <Link
-                            to={toPermissionPolicyDetails({
+                            to={toPolicyDetails({
                               realm,
-                              permissionClientId: clientId,
+                              id: clientId,
+                              policyType: policy.type!,
                               policyId: policy.id!,
-                              resourceType: policy.type!,
                             })}
                           >
                             {policy.name}
@@ -379,7 +380,17 @@ export const AuthorizationPolicies = ({
               )}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
+                  isAdminPermissionsClient
+                    ? toCreatePermissionPolicy({
+                        realm,
+                        permissionClientId: clientId,
+                        policyType: p.type!,
+                      })
+                    : toCreatePolicy({
+                        id: clientId,
+                        realm,
+                        policyType: p.type!,
+                      }),
                 )
               }
               toggleDialog={toggleDialog}
@@ -387,19 +398,18 @@ export const AuthorizationPolicies = ({
           )}
           <ListEmptyState
             message={t("emptyPolicies")}
-            instructions={t("emptyPoliciesInstructions")}
-            isDisabled={isDisabled}
-            primaryActionText={t("createPolicy")}
-            onPrimaryAction={() =>
-              !isAdminPermissionsClient
-                ? toggleDialog()
-                : navigate(
-                    toCreatePermissionPolicy({
-                      realm,
-                      permissionClientId: clientId,
-                    }),
-                  )
+            instructions={
+              isAdminPermissionsClient
+                ? t("emptyPermissionPoliciesInstructions")
+                : t("emptyPoliciesInstructions")
             }
+            isDisabled={isDisabled}
+            primaryActionText={
+              isAdminPermissionsClient
+                ? t("createPermissionPolicy")
+                : t("createPolicy")
+            }
+            onPrimaryAction={() => toggleDialog()}
           />
         </>
       )}

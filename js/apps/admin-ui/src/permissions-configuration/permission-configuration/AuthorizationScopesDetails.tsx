@@ -5,6 +5,7 @@ import { Label, Popover } from "@patternfly/react-core";
 
 type AuthorizationScopesDetailsProps = {
   row: {
+    resourceType: string;
     associatedScopes?: { name: string }[];
   };
 };
@@ -43,7 +44,9 @@ export const AuthorizationScopesDetails = ({
                     <strong>{t("authorizationScopeDetailsDescription")}</strong>
                   </td>
                   <td style={{ paddingBottom: "10px" }}>
-                    {t("authorizationScopeDetailsDescriptionText")}
+                    {t(
+                      `authorizationScope.${row.resourceType}.${row.associatedScopes?.[0]?.name}`,
+                    )}
                   </td>
                 </tr>
               </tbody>

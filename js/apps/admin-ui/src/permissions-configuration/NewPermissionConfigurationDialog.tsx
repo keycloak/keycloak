@@ -50,26 +50,25 @@ export const NewPermissionConfigurationDialog = ({
           </Tr>
         </Thead>
         <Tbody>
-          {resourceTypes?.map((resourceType) => (
-            <Tr
-              key={resourceType.type}
-              data-testid={resourceType.type}
-              onRowClick={() => {
-                const transformedResourceType: ResourceTypesRepresentation = {
-                  ...resourceType,
-                  scopes: resourceType.scopes,
-                };
-                onSelect(transformedResourceType);
-              }}
-              isClickable
-            >
-              <Td>{resourceType.type}</Td>
-              <Td style={{ textWrap: "wrap" }}>
-                {isValidComponentType(resourceType.type!) &&
-                  t(`resourceType.${resourceType.type}`)}
-              </Td>
-            </Tr>
-          ))}
+          {Object.keys(resourceTypes || {}).map((key: any) => {
+            const resourceType = resourceTypes![key];
+            return (
+              <Tr
+                key={resourceType.type}
+                data-testid={resourceType.type}
+                onRowClick={() => {
+                  onSelect(resourceType);
+                }}
+                isClickable
+              >
+                <Td>{resourceType.type}</Td>
+                <Td style={{ textWrap: "wrap" }}>
+                  {isValidComponentType(resourceType.type!) &&
+                    t(`resourceType.${resourceType.type}`)}
+                </Td>
+              </Tr>
+            );
+          })}
         </Tbody>
       </Table>
     </Modal>

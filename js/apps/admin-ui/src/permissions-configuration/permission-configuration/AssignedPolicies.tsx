@@ -132,14 +132,14 @@ export const AssignedPolicies = ({
 
   return (
     <FormGroup
-      label={t("assignedPolicies")}
+      label={t("policies")}
       labelIcon={
         <HelpItem
           helpText={t("permissionPoliciesHelp")}
-          fieldLabelId="assignedPolicies"
+          fieldLabelId="policies"
         />
       }
-      fieldId="assignedPolicies"
+      fieldId="policies"
       isRequired
     >
       <Controller
@@ -148,7 +148,6 @@ export const AssignedPolicies = ({
         defaultValue={[]}
         rules={{
           validate: (value?: { id: string }[]) => {
-            console.log(">>> Validation called with value:", value);
             if (!value || value.length === 0) return false;
             return value.every(({ id }) => id && id.trim().length > 0);
           },
@@ -269,9 +268,7 @@ export const AssignedPolicies = ({
           }
         />
       )}
-      {errors.policies && (
-        <FormErrorText message={t("requiredAssignedPolicies")} />
-      )}
+      {errors.policies && <FormErrorText message={t("requiredPolicies")} />}
     </FormGroup>
   );
 };

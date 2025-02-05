@@ -201,7 +201,7 @@ export default function PermissionConfigurationDetails() {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
-    messageKey: t("deletePermissionConfirm", {
+    messageKey: t("deleteAdminPermissionConfirm", {
       permission: permission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
@@ -237,15 +237,11 @@ export default function PermissionConfigurationDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={
-          permissionId
-            ? permission?.name!
-            : t("createPermissionOfType", { resourceType })
-        }
+        titleKey={permissionId ? permission?.name! : t("createPermission")}
         subKey={
           permissionId
-            ? permission?.description
-            : t(`resourceType.${resourceType}`)
+            ? permission?.description!
+            : t("createPermissionOfType", { resourceType })
         }
         dropdownItems={
           permissionId

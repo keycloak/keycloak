@@ -6,16 +6,17 @@ import type { AppRouteObject } from "../../routes";
 export type NewPermissionPolicyDetailsParams = {
   realm: string;
   permissionClientId: string;
+  policyType: string;
 };
 
 const NewPermissionPolicyDetails = lazy(
-  () => import("../permission-configuration/PermissionPolicyDetails"),
+  () => import("../../clients/authorization/policy/PolicyDetails"),
 );
 
 export const NewPermissionPolicyRoute: AppRouteObject = {
-  path: "/:realm/permissions/:permissionClientId/policy/new",
+  path: "/:realm/permissions/:permissionClientId/policy/new/:policyType",
   element: <NewPermissionPolicyDetails />,
-  breadcrumb: (t) => t("createAPolicy"),
+  breadcrumb: (t) => t("createPermissionPolicy"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny("manage-clients", "manage-authorization"),

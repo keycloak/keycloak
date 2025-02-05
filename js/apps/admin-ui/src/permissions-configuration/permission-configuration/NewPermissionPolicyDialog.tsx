@@ -36,7 +36,7 @@ import { Role } from "../../clients/authorization/policy/Role";
 import { Time } from "../../clients/authorization/policy/Time";
 import { JavaScript } from "../../clients/authorization/policy/JavaScript";
 import { LogicSelector } from "../../clients/authorization/policy/LogicSelector";
-import { Aggregate } from "./permission-policy/Aggregate";
+import { Aggregate } from "../../clients/authorization/policy/Aggregate";
 import { capitalize } from "lodash-es";
 import { type JSX } from "react";
 
@@ -145,17 +145,21 @@ export const NewPermissionPolicyDialog = ({
 
   return (
     <Modal
-      aria-label={t("createAPolicy")}
+      aria-label={t("createPermissionPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
-          <Text component={TextVariants.h1}>{t("createAPolicy")}</Text>
+          <Text component={TextVariants.h1}>{t("createPermissionPolicy")}</Text>
         </TextContent>
       }
       isOpen
       onClose={toggleDialog}
     >
-      <Form id="createAPolicy-form" onSubmit={handleSubmit(save)} isHorizontal>
+      <Form
+        id="createPermissionPolicy-form"
+        onSubmit={handleSubmit(save)}
+        isHorizontal
+      >
         <FormProvider {...form}>
           <TextControl
             name="name"

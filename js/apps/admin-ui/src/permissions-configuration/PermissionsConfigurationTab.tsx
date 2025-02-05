@@ -155,7 +155,7 @@ export const PermissionsConfigurationTab = ({
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
-    messageKey: t("deletePermissionConfirm", {
+    messageKey: t("deleteAdminPermissionConfirm", {
       permission: selectedPermission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
@@ -290,6 +290,7 @@ export const PermissionsConfigurationTab = ({
                       <Td>
                         <AuthorizationScopesDetails
                           row={{
+                            resourceType: permission.resourceType || "",
                             associatedScopes: permission.scopes?.map(
                               (scope: ScopeRepresentation) => ({
                                 name: scope.name || "",
@@ -393,7 +394,7 @@ export const PermissionsConfigurationTab = ({
         <ListEmptyState
           isSearchVariant
           message={t("noSearchResults")}
-          instructions={t("noSearchResultsInstructions")}
+          instructions={t("noPermissionSearchResultsInstructions")}
         />
       )}
     </PageSection>
