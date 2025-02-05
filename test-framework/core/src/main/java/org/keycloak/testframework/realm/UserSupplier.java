@@ -2,6 +2,9 @@ package org.keycloak.testframework.realm;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -53,26 +56,34 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             UserResource userResource = realm.admin().users().get(userUuid);
             userRepresentation.setId(userUuid);
 
+            // let's assign the client roles with as much optimization as possible
             Map<String, List<String>> clientRoles = userRepresentation.getClientRoles();
             if (clientRoles == null || clientRoles.isEmpty()) {
                 return new ManagedUser(userRepresentation, userResource);
             }
-            // replace map keys (instead of clientId we need the client's uuid)
+            // replace map keys (instead of the clientId we need the client's uuid)
+            ClientsResource clientsResource = realm.admin().clients();
             Map<String, List<String>> clientRolesUuid = clientRoles.entrySet().stream().collect(Collectors.toMap(
-                    entry -> realm.admin().clients().findByClientId(entry.getKey()).stream()
+                    entry -> clientsResource.findByClientId(entry.getKey()).stream()
                             .findFirst()
                             .orElseThrow()
                             .getId(),
                     Map.Entry::getValue
             ));
+            // for each client uuid, get the RoleScopeResource
+            RoleMappingResource roleMappingResource = userResource.roles();
+            Map<String, RoleScopeResource> roleScopeResources = clientRolesUuid.keySet().stream().collect(Collectors.toMap(
+                    key -> key,
+                    roleMappingResource::clientLevel
+            ));
             // replace the string described roles with actual role representations
             Map<String, List<RoleRepresentation>> clientRolesRepresentations = clientRolesUuid.entrySet().stream().collect(Collectors.toMap(
                     Map.Entry::getKey,
-                    entry -> realm.admin().users().get(userUuid).roles().clientLevel(entry.getKey()).listAvailable().stream()
+                    entry -> roleScopeResources.get(entry.getKey()).listAvailable().stream()
                             .filter(role -> entry.getValue().contains(role.getName())).toList()
             ));
             // assign user the client roles
-            clientRolesRepresentations.forEach((key, value) -> userResource.roles().clientLevel(key).add(value));
+            clientRolesRepresentations.forEach((key, value) -> roleScopeResources.get(key).add(value));
 
             return new ManagedUser(userRepresentation, userResource);
         }
