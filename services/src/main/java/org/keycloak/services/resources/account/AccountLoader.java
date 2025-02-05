@@ -16,9 +16,6 @@
  */
 package org.keycloak.services.resources.account;
 
-import jakarta.ws.rs.OPTIONS;
-import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -98,16 +95,6 @@ public class AccountLoader {
             throw new NotFoundException();
         }
     }
-
-    // Remove once Quarkus is upgraded to 3.15.3, or reconsidered to use this approach
-    // See https://github.com/keycloak/keycloak/issues/36009
-    @OPTIONS
-    @Path("{any:.*}")
-    @Operation(hidden = true)
-    public Response preFlight() {
-        return new CorsPreflightService().preflight();
-    }
-    // remove until here
 
     @Path("{version : v\\d[0-9a-zA-Z_\\-]*}")
     @Produces(MediaType.APPLICATION_JSON)
