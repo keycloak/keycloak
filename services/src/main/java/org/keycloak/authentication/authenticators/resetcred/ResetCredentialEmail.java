@@ -31,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -43,6 +44,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.StorageId;
 
 import java.util.*;
 import jakarta.ws.rs.core.Response;
@@ -60,6 +62,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     public static final String PROVIDER_ID = "reset-credential-email";
     public static final String FORCE_LOGIN = "force-login";
+    public static final String FEDERATED_OPTION = "only-federated";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -77,8 +80,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
         if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
             logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
-            if (context.getAuthenticatorConfig() != null
-                    && Boolean.parseBoolean(context.getAuthenticatorConfig().getConfig().get(FORCE_LOGIN))) {
+            if (forceLogin(context.getAuthenticatorConfig(), user)) {
                 // force end of auth session after the required actions
                 context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
             }
@@ -204,10 +206,13 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                         If this property is true, the user needs to login again after the reset credentials.
                         If this property is false, the user will be automatically logged in after the succesful
                         reset credentials when the same authentication session is used.
+                        If this property is only-federated (default), only federated users will be forced to login again,
+                        users stored in the internal database will be logged in if using the same authentication session.
                         """
                 )
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .defaultValue(Boolean.FALSE.toString())
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
+                .defaultValue(FEDERATED_OPTION)
                 .add()
                 .build();
     }
@@ -235,5 +240,20 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    private boolean forceLogin(AuthenticatorConfigModel config, UserModel user) {
+        final String forceLogin = config != null? config.getConfig().get(FORCE_LOGIN) : null;
+        if (forceLogin == null || FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
+            // default is only-federated, return true only for federated users
+            return !StorageId.isLocalStorage(user.getId()) || user.getFederationLink() != null;
+        } else if (Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+            return Boolean.TRUE;
+        } else if (Boolean.FALSE.toString().equalsIgnoreCase(forceLogin)) {
+            return Boolean.FALSE;
+        } else {
+            logger.warnf("Invalid value for force-login option: %s", forceLogin);
+            throw new AuthenticationFlowException("Invalid value for force-login option: " + forceLogin, AuthenticationFlowError.INTERNAL_ERROR);
+        }
     }
 }
