@@ -32,7 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
@@ -48,12 +47,12 @@ import org.keycloak.util.TokenUtil;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.utils.RoleResolveUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -65,8 +64,7 @@ public class ClientRegistrationAuth {
     private final EventBuilder event;
 
     private RealmModel realm;
-    private JsonWebToken jwt;
-    private AccessToken accessToken;
+    private AccessToken jwt;
     private ClientInitialAccessModel initialAccessModel;
     private String kid;
     private String token;
@@ -100,7 +98,6 @@ public class ClientRegistrationAuth {
         }
         kid = tokenVerification.getKid();
         jwt = tokenVerification.getJwt();
-        accessToken = tokenVerification.getAccessToken();
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.realms().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
@@ -118,7 +115,7 @@ public class ClientRegistrationAuth {
         return kid;
     }
 
-    public JsonWebToken getJwt() {
+    public AccessToken getJwt() {
         return jwt;
     }
 
@@ -289,10 +286,7 @@ public class ClientRegistrationAuth {
 
     private boolean hasRole(String... roles) {
         try {
-            AuthenticationManager.resolveLightweightAccessTokenRoles(session, accessToken, session.getContext().getRealm());
-            jwt.setSubject(accessToken.getSubject());
-            jwt.getOtherClaims().put("resource_access", accessToken.getResourceAccess().entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> Map.of("roles", new ArrayList<>(e.getValue().getRoles())))));
+            AuthenticationManager.resolveLightweightAccessTokenRoles(session, jwt, session.getContext().getRealm());
             return hasRoleInToken(roles);
         } catch (Throwable t) {
             return false;
@@ -300,37 +294,20 @@ public class ClientRegistrationAuth {
     }
 
     private boolean hasRoleInToken(String[] role) {
-        Map<String, Object> otherClaims = jwt.getOtherClaims();
-        if (otherClaims != null) {
-            Map<String, Map<String, List<String>>> resourceAccess = (Map<String, Map<String, List<String>>>) jwt.getOtherClaims().get("resource_access");
-            if (resourceAccess == null) {
-                return false;
-            }
-
-            List<String> roles = null;
-
-            Map<String, List<String>> map;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
-            } else {
-                map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
-            }
-
-            if (map != null) {
-                roles = map.get("roles");
-            }
-
-            if (roles == null) {
-                return false;
-            }
-
-            for (String r : role) {
-                if (roles.contains(r)) {
-                    return true;
-                }
-            }
+        Map<String, AccessToken.Access> resourceAccess = jwt.getResourceAccess();
+        if (resourceAccess == null) {
+            return false;
         }
-        return false;
+
+        String clientId = realm.getName().equals(Config.getAdminRealm())
+                ? realm.getMasterAdminClient().getClientId()
+                : Constants.REALM_MANAGEMENT_CLIENT_ID;
+
+        Set<String> roles = Optional.ofNullable(resourceAccess.get(clientId))
+                .map(AccessToken.Access::getRoles)
+                .orElse(Collections.emptySet());
+
+        return Arrays.stream(role).anyMatch(roles::contains);
     }
 
     private boolean authenticatePublicClient(ClientModel client) {
