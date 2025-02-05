@@ -175,13 +175,13 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testManageUserPermission() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
         UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", myadminId);
-        createAllUserPermission(policy, Set.of(MANAGE));
+        ScopePermissionRepresentation allUsersPermission = createAllUserPermission(policy, Set.of(MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
+        allUsersPermission = getScopePermissionsResource().findByName(allUsersPermission.getName());
         getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
@@ -263,7 +263,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create all-users permission for "myadmin" (so that myadmin can map roles to users in the realm)
         UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MAP_ROLES));
+        ScopePermissionRepresentation allUsersPermission = createAllUserPermission(policy, Set.of(MAP_ROLES));
 
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(testRole));
@@ -277,7 +277,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
+        allUsersPermission = getScopePermissionsResource().findByName(allUsersPermission.getName());
         getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
 
         // now myadmin cannot map roles
@@ -313,7 +313,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create all-users permission for "myadmin" (so that myadmin can add users into a group)
         UserPolicyRepresentation policy = createUserPolicy("Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllUserPermission(policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
+        ScopePermissionRepresentation allUsersPermission = createAllUserPermission(policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
 
         //check myadmin can manage membership using all-users permission
         try {
@@ -325,7 +325,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // remove all-users permissions to test user-permission
-        ScopePermissionRepresentation allUsersPermission = getScopePermissionsResource().findByName(AdminPermissionsSchema.USERS.getType());
+        allUsersPermission = getScopePermissionsResource().findByName(allUsersPermission.getName());
         getScopePermissionsResource().findById(allUsersPermission.getId()).remove();
 
         // now myadmin cannot manage membership
@@ -388,7 +388,6 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     private ScopePermissionRepresentation createAllUserPermission(UserPolicyRepresentation policy, Set<String> scopes) {
         ScopePermissionRepresentation permission = PermissionBuilder.create()
-                .name(AdminPermissionsSchema.USERS.getType())
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(scopes)
                 .addPolicies(List.of(policy.getName()))

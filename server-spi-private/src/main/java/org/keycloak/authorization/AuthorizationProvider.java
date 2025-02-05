@@ -299,9 +299,9 @@ public final class AuthorizationProvider implements Provider {
                 AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(keycloakSession, resourceServer, representation);
                 Set<String> resources = representation.getResources();
 
-                if (resources != null) {
+                if (resources != null && !resources.isEmpty()) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
+                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getType(), representation.getResourceType(), id);
 
                         if (resource == null) {
                             resource = storeFactory.getResourceStore().findById(resourceServer, id);
@@ -319,6 +319,12 @@ public final class AuthorizationProvider implements Provider {
 
                         return Optional.ofNullable(resource).map(Resource::getId).orElse(null);
                     }).filter(Objects::nonNull).collect(Collectors.toSet()));
+                } else {
+                    Resource resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(keycloakSession, resourceServer, representation.getResourceType());
+
+                    if (resource != null) {
+                        representation.setResources(Set.of(resource.getId()));
+                    }
                 }
 
                 Set<String> scopes = representation.getScopes();
