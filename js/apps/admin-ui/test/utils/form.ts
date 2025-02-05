@@ -22,14 +22,14 @@ export async function assertSelectValue(field: Locator, value: string) {
   expect(text).toBe(value);
 }
 
-export async function switchOn(page: Page, id: string) {
-  const switchElement = page.locator(id);
+export async function switchOn(page: Page, id: string | Locator) {
+  const switchElement = typeof id === "string" ? page.locator(id) : id;
   await switchElement.click({ force: true });
   await expect(switchElement).toBeChecked();
 }
 
-export async function switchOff(page: Page, id: string) {
-  const switchElement = page.locator(id);
+export async function switchOff(page: Page, id: string | Locator) {
+  const switchElement = typeof id === "string" ? page.locator(id) : id;
   await expect(switchElement).toBeChecked();
   await switchElement.click({ force: true });
 }

@@ -284,7 +284,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
         actions={[
           <Button
             id="modal-import"
-            data-testid="import-button"
+            data-testid="confirm"
             key="import"
             isDisabled={!isAnyResourceChecked}
             onClick={() => {
@@ -295,7 +295,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
           </Button>,
           <Button
             id="modal-cancel"
-            data-testid="cancel-button"
+            data-testid="cancel"
             key="cancel"
             variant={ButtonVariant.link}
             onClick={() => {
