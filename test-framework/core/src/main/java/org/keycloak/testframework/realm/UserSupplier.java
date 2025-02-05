@@ -3,6 +3,7 @@ package org.keycloak.testframework.realm;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.injection.InstanceContext;
@@ -10,6 +11,10 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.util.ApiUtil;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
@@ -41,12 +46,33 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
                 throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
             }
-            String uuid = ApiUtil.handleCreatedResponse(response);
+            String userUuid = ApiUtil.handleCreatedResponse(response);
 
-            instanceContext.addNote(USER_UUID_KEY, uuid);
+            instanceContext.addNote(USER_UUID_KEY, userUuid);
 
-            UserResource userResource = realm.admin().users().get(uuid);
-            userRepresentation.setId(uuid);
+            UserResource userResource = realm.admin().users().get(userUuid);
+            userRepresentation.setId(userUuid);
+
+            Map<String, List<String>> clientRoles = userRepresentation.getClientRoles();
+            if (clientRoles == null || clientRoles.isEmpty()) {
+                return new ManagedUser(userRepresentation, userResource);
+            }
+            // replace map keys (instead of clientId we need the client's uuid)
+            Map<String, List<String>> clientRolesUuid = clientRoles.entrySet().stream().collect(Collectors.toMap(
+                    entry -> realm.admin().clients().findByClientId(entry.getKey()).stream()
+                            .findFirst()
+                            .orElseThrow()
+                            .getId(),
+                    Map.Entry::getValue
+            ));
+            // replace the string described roles with actual role representations
+            Map<String, List<RoleRepresentation>> clientRolesRepresentations = clientRolesUuid.entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> realm.admin().users().get(userUuid).roles().clientLevel(entry.getKey()).listAvailable().stream()
+                            .filter(role -> entry.getValue().contains(role.getName())).toList()
+            ));
+            // assign user the client roles
+            clientRolesRepresentations.forEach((key, value) -> userResource.roles().clientLevel(key).add(value));
 
             return new ManagedUser(userRepresentation, userResource);
         }
