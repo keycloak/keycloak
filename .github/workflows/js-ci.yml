@@ -11,6 +11,9 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  # Temporary workaround for https://github.com/nodejs/corepack/issues/612
+  # TODO: Remove this once the issue is fixed
+  COREPACK_INTEGRITY_KEYS: 0
 
 concurrency:
   # Only cancel jobs for PR updates
