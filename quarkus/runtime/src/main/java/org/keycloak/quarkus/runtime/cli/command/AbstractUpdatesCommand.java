@@ -80,4 +80,8 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
     }
 
+    void printFeatureDisabled() {
+        printError("Unable to use this command. The preview feature 'rolling-updates' is not enabled.");
+    }
+
 }

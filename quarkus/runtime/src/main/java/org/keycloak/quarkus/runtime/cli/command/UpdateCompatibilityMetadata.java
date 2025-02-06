@@ -44,6 +44,7 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     @Override
     public void run() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
+            printFeatureDisabled();
             picocli.exit(CompatibilityResult.FEATURE_DISABLED);
             return;
         }
