@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -27,10 +28,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.keycloak.common.Profile;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.upgrade.UpdateStrategy;
 
@@ -105,11 +107,12 @@ public class UpgradeTest extends BaseOperatorTest {
         }
         var updateSpec = new UpdateSpec();
         updateSpec.setStrategy(updateStrategy);
-
-        if (kc.getSpec().getUnsupported() == null) {
-            kc.getSpec().setUnsupported(new UnsupportedSpec());
-        }
         kc.getSpec().setUpdateSpec(updateSpec);
+
+        if (kc.getSpec().getFeatureSpec() == null) {
+            kc.getSpec().setFeatureSpec(new FeatureSpec());
+        }
+        kc.getSpec().getFeatureSpec().setEnabledFeatures(List.of(Profile.Feature.ROLLING_UPDATES.getKey()));
         return kc;
     }
 

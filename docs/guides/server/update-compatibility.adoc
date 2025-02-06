@@ -9,7 +9,11 @@ preview="true"
 previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/36785"
 >
 
-// TODO Link to discussion?
+[CAUTION]
+====
+While on preview stage, the feature `rolling-updates` must be enabled.
+Otherwise, the commands will fail.
+====
 
 The goal of this tool is to assist with modifying a {project_name} deployment, whether upgrading to a new version, enabling/disabling features, or changing configuration.
 The outcome will indicate whether a rolling upgrade is possible or if a recreate upgrade is required.
@@ -124,6 +128,10 @@ m|2
 m|3
 |Rolling Upgrade is not possible.
 The deployment must be shut down before applying the new configuration.
+
+m|4
+|Rolling Upgrade is not possible.
+The feature `rolling-updates` is disabled.
 |===
 
 </@tmpl.guide>

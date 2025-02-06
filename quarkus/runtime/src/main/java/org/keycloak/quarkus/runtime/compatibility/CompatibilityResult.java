@@ -28,7 +28,11 @@ import java.util.Optional;
 public interface CompatibilityResult {
 
     int ROLLING_UPGRADE_EXIT_CODE = 0;
-    int RECREATE_UPGRADE_EXIT_CODE = 4;
+    // see picocli.CommandLine.ExitCode
+    // 1 -> software error
+    // 2 -> usage error
+    int RECREATE_UPGRADE_EXIT_CODE = 3;
+    int FEATURE_DISABLED = 4;
 
     /**
      * The compatible {@link CompatibilityResult} implementation
