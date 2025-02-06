@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -70,30 +71,30 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void searchUserWithWildcards() throws Exception {
-        createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
+        createUser(AbstractAdminTest.REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
 
-        assertThat(adminClient.realm(REALM_NAME).users().search("Use%", null, null), hasSize(0));
-        assertThat(adminClient.realm(REALM_NAME).users().search("Use_", null, null), hasSize(0));
-        assertThat(adminClient.realm(REALM_NAME).users().search("Us_r", null, null), hasSize(0));
-        assertThat(adminClient.realm(REALM_NAME).users().search("Use", null, null), hasSize(1));
-        assertThat(adminClient.realm(REALM_NAME).users().search("Use*", null, null), hasSize(1));
-        assertThat(adminClient.realm(REALM_NAME).users().search("Us*e", null, null), hasSize(1));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Use%", null, null), hasSize(0));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Use_", null, null), hasSize(0));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Us_r", null, null), hasSize(0));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Use", null, null), hasSize(1));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Use*", null, null), hasSize(1));
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().search("Us*e", null, null), hasSize(1));
     }
 
     @Test
     public void searchUserDefaultSettings() throws Exception {
-        createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
+        createUser(AbstractAdminTest.REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
 
         assertCaseInsensitiveSearch();
     }
     
     @Test
     public void searchUserMatchUsersCount() {
-        createUser(REALM_NAME, "john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
+        createUser(AbstractAdminTest.REALM_NAME, "john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
         String search = "jo do";
 
-        assertThat(adminClient.realm(REALM_NAME).users().count(search), is(1));
-        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(search, null, null);
+        MatcherAssert.assertThat(adminClient.realm(AbstractAdminTest.REALM_NAME).users().count(search), is(1));
+        List<UserRepresentation> users = adminClient.realm(AbstractAdminTest.REALM_NAME).users().search(search, null, null);
         assertThat(users, hasSize(1));
         assertThat(users.get(0).getUsername(), is("john.doe"));
     }
@@ -104,8 +105,8 @@ public class UsersTest extends AbstractAdminTest {
     @Test
     public void findUsersByEmailVerifiedStatus() {
 
-        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
 
         boolean emailVerified;
         emailVerified = true;
@@ -125,32 +126,32 @@ public class UsersTest extends AbstractAdminTest {
     @Test
     public void countUsersByEmailVerifiedStatus() {
 
-        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
-        createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+        createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(AbstractAdminTest.REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
 
         boolean emailVerified;
         emailVerified = true;
-        assertThat(realm.users().countEmailVerified(emailVerified), is(2));
-        assertThat(realm.users().count(null,null,null,emailVerified,null), is(2));
+        MatcherAssert.assertThat(realm.users().countEmailVerified(emailVerified), is(2));
+        MatcherAssert.assertThat(realm.users().count(null,null,null,emailVerified,null), is(2));
 
         emailVerified = false;
-        assertThat(realm.users().countEmailVerified(emailVerified), is(1));
-        assertThat(realm.users().count(null,null,null,emailVerified,null), is(1));
+        MatcherAssert.assertThat(realm.users().countEmailVerified(emailVerified), is(1));
+        MatcherAssert.assertThat(realm.users().count(null,null,null,emailVerified,null), is(1));
     }
 
     @Test
     public void countUsersWithViewPermission() {
-        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
-        assertThat(realm.users().count(), is(2));
+        createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        MatcherAssert.assertThat(realm.users().count(), is(2));
     }
 
     @Test
     public void countUsersBySearchWithViewPermission() {
-        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
-        createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+        createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(AbstractAdminTest.REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
 
         // Prefix search count
         assertSearchMatchesCount(realm, "user", 3);
@@ -190,38 +191,38 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithViewPermission() {
-        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
         //search username
-        assertThat(realm.users().count(null, null, null, "user"), is(2));
-        assertThat(realm.users().count(null, null, null, "user1"), is(1));
-        assertThat(realm.users().count(null, null, null, "notExisting"), is(0));
-        assertThat(realm.users().count(null, null, null, ""), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, null, "user"), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, null, "user1"), is(1));
+        MatcherAssert.assertThat(realm.users().count(null, null, null, "notExisting"), is(0));
+        MatcherAssert.assertThat(realm.users().count(null, null, null, ""), is(2));
         //search first name
-        assertThat(realm.users().count(null, "FirstName", null, null), is(2));
-        assertThat(realm.users().count(null, "user2FirstName", null, null), is(1));
-        assertThat(realm.users().count(null, "notExisting", null, null), is(0));
-        assertThat(realm.users().count(null, "", null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, "FirstName", null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, "user2FirstName", null, null), is(1));
+        MatcherAssert.assertThat(realm.users().count(null, "notExisting", null, null), is(0));
+        MatcherAssert.assertThat(realm.users().count(null, "", null, null), is(2));
         //search last name
-        assertThat(realm.users().count("LastName", null, null, null), is(2));
-        assertThat(realm.users().count("user2LastName", null, null, null), is(1));
-        assertThat(realm.users().count("notExisting", null, null, null), is(0));
-        assertThat(realm.users().count("", null, null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count("LastName", null, null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count("user2LastName", null, null, null), is(1));
+        MatcherAssert.assertThat(realm.users().count("notExisting", null, null, null), is(0));
+        MatcherAssert.assertThat(realm.users().count("", null, null, null), is(2));
         //search in email
-        assertThat(realm.users().count(null, null, "@example.com", null), is(2));
-        assertThat(realm.users().count(null, null, "user1@example.com", null), is(1));
-        assertThat(realm.users().count(null, null, "user1@test.com", null), is(0));
-        assertThat(realm.users().count(null, null, "", null), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, "@example.com", null), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, "user1@example.com", null), is(1));
+        MatcherAssert.assertThat(realm.users().count(null, null, "user1@test.com", null), is(0));
+        MatcherAssert.assertThat(realm.users().count(null, null, "", null), is(2));
         //search for combinations
-        assertThat(realm.users().count("LastName", "FirstName", null, null), is(2));
-        assertThat(realm.users().count("user1LastName", "FirstName", null, null), is(1));
-        assertThat(realm.users().count("user1LastName", "", null, null), is(1));
-        assertThat(realm.users().count("LastName", "", null, null), is(2));
-        assertThat(realm.users().count("LastName", "", null, null), is(2));
-        assertThat(realm.users().count(null, null, "@example.com", "user"), is(2));
+        MatcherAssert.assertThat(realm.users().count("LastName", "FirstName", null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count("user1LastName", "FirstName", null, null), is(1));
+        MatcherAssert.assertThat(realm.users().count("user1LastName", "", null, null), is(1));
+        MatcherAssert.assertThat(realm.users().count("LastName", "", null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count("LastName", "", null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, "@example.com", "user"), is(2));
         //search not specified (defaults to simply /count)
-        assertThat(realm.users().count(null, null, null, null), is(2));
-        assertThat(realm.users().count("", "", "", ""), is(2));
+        MatcherAssert.assertThat(realm.users().count(null, null, null, null), is(2));
+        MatcherAssert.assertThat(realm.users().count("", "", "", ""), is(2));
     }
 
     @Test
@@ -358,7 +359,7 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     private RealmResource setupTestEnvironmentWithPermissions(boolean grp1ViewPermissions) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
-        String testUserId = createUser(REALM_NAME, "test-user", "password", "", "", "");
+        String testUserId = createUser(AbstractAdminTest.REALM_NAME, "test-user", "password", "", "", "");
         //assign 'query-users' role to test user
         ClientRepresentation clientRepresentation = realm.clients().findByClientId("realm-management").get(0);
         String realmManagementId = clientRepresentation.getId();
@@ -397,10 +398,10 @@ public class UsersTest extends AbstractAdminTest {
         GroupRepresentation grp1 = createGroupWithPermissions("grp1");
         GroupRepresentation grp2 = createGroupWithPermissions("grp2");
         //create test users
-        String user1Id = createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        String user2Id = createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
-        String user3Id = createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com");
-        String user4Id = createUser(REALM_NAME, "user4", "password", "user4FirstName", "user4LastName", "user4@example.com");
+        String user1Id = createUser(AbstractAdminTest.REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        String user2Id = createUser(AbstractAdminTest.REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        String user3Id = createUser(AbstractAdminTest.REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com");
+        String user4Id = createUser(AbstractAdminTest.REALM_NAME, "user4", "password", "user4FirstName", "user4LastName", "user4@example.com");
         //add users to groups
         realm.users().get(user1Id).joinGroup(grp1.getId());
         realm.users().get(user2Id).joinGroup(grp1.getId());
@@ -424,22 +425,22 @@ public class UsersTest extends AbstractAdminTest {
         String id = grp.getId();
         //enable the permissions
         realm.groups().group(id).setPermissions(new ManagementPermissionRepresentation(true));
-        assertThat(realm.groups().group(id).getPermissions().isEnabled(), is(true));
+        MatcherAssert.assertThat(realm.groups().group(id).getPermissions().isEnabled(), is(true));
 
         return grp;
     }
 
     private void assertCaseInsensitiveSearch() {
         // not-exact case-insensitive search
-        assertThat(realm.users().search("user"), hasSize(1));
-        assertThat(realm.users().search("User"), hasSize(1));
-        assertThat(realm.users().search("USER"), hasSize(1));
-        assertThat(realm.users().search("Use"), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("user"), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("User"), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("USER"), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("Use"), hasSize(1));
 
         // exact case-insensitive search
-        assertThat(realm.users().search("user", true), hasSize(1));
-        assertThat(realm.users().search("User", true), hasSize(1));
-        assertThat(realm.users().search("USER", true), hasSize(1));
-        assertThat(realm.users().search("Use", true), hasSize(0));
+        MatcherAssert.assertThat(realm.users().search("user", true), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("User", true), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("USER", true), hasSize(1));
+        MatcherAssert.assertThat(realm.users().search("Use", true), hasSize(0));
     }
 }
