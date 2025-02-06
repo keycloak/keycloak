@@ -29,7 +29,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 
@@ -58,7 +58,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     protected LoginPage loginPage;
 
     @Page
-    protected VerifyEmailPage verifyEmailPage;
+    protected TermsAndConditionsPage termsAndConditionsPage;
 
     @Test
     public void executeUnknownAction() {
@@ -106,17 +106,19 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void executeActionWithVerifyEmailUnsupportedAIA() throws IOException {
+    public void executeActionWithTermsAndConditionsUnsupportedAIA() throws IOException {
         RealmResource realm = testRealm();
-        RequiredActionProviderRepresentation model = realm.flows().getRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name());
-        int prevPriority = model.getPriority();
+        RequiredActionProviderRepresentation termsAndConditions = realm.flows().getRequiredAction(TermsAndConditions.PROVIDER_ID);
+        int prevPriority = termsAndConditions.getPriority();
+        boolean prevEnabled = termsAndConditions.isEnabled();
 
         try (UserAttributeUpdater userUpdater = UserAttributeUpdater
                 .forUserByUsername(realm, "test-user@localhost")
-                .setRequiredActions(UserModel.RequiredAction.VERIFY_EMAIL).update()) {
-            // Set max priority for verify email (AIA not supported) to be executed before update password
-            model.setPriority(1);
-            realm.flows().updateRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name(), model);
+                .setRequiredActions(UserModel.RequiredAction.TERMS_AND_CONDITIONS).update()) {
+            // Set max priority for terms and conditions (AIA not supported) to be executed before update password
+            termsAndConditions.setPriority(1);
+            termsAndConditions.setEnabled(true);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
 
             oauth.kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).openLoginForm();
             loginPage.login("test-user@localhost", "password");
@@ -125,11 +127,12 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
             passwordUpdatePage.assertCurrent();
             passwordUpdatePage.changePassword("password", "password");
 
-            // once the AIA password is executed the verify profile should be displayed for the login
-            verifyEmailPage.assertCurrent();
+            // once the AIA password is executed the terms and conditions should be displayed for the login
+            termsAndConditionsPage.assertCurrent();
         } finally {
-            model.setPriority(prevPriority);
-            realm.flows().updateRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name(), model);
+            termsAndConditions.setPriority(prevPriority);
+            termsAndConditions.setEnabled(prevEnabled);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
         }
     }
 }

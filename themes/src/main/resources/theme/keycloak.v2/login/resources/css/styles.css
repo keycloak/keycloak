@@ -79,6 +79,11 @@ div.kc-logo-text span {
     overflow-wrap: break-word
 }
 
+#kc-verify-email-form {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
 #kc-header-wrapper {
     font-size: 29px;
     text-transform: uppercase;
