@@ -2,7 +2,6 @@ package org.keycloak.testframework.admin;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -15,9 +14,8 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.server.KeycloakServer;
 
-public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
+public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
     @Override
     public Class<InjectAdminClient> getAnnotationClass() {
@@ -35,16 +33,14 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
 
         InjectAdminClient.Mode mode = annotation.mode();
 
-        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        KeycloakBuilder clientBuilder = KeycloakBuilder.builder()
-                .serverUrl(server.getBaseUrl())
+        AdminClientBuilder adminBuilder = instanceContext.getDependency(AdminClientFactory.class).create()
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS);
 
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
-            clientBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
+            adminBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
             ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class);
-            clientBuilder.realm(managedRealm.getName());
+            adminBuilder.realm(managedRealm.getName());
 
             String clientId = !annotation.client().isEmpty() ? annotation.client() : null;
             String userId = !annotation.user().isEmpty() ? annotation.user() : null;
@@ -58,19 +54,19 @@ public class KeycloakAdminClientSupplier implements Supplier<Keycloak, InjectAdm
                     .filter(c -> c.getClientId().equals(annotation.client()))
                     .findFirst().orElseThrow(() -> new TestFrameworkException("Client " + annotation.client() + " not found in managed realm"));
 
-            clientBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
+            adminBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
 
             if (userId != null) {
                 UserRepresentation userRep = realmRep.getUsers().stream()
                         .filter(u -> u.getUsername().equals(annotation.user()))
                         .findFirst().orElseThrow(() -> new TestFrameworkException("User " + annotation.user() + " not found in managed realm"));
                 String password = ManagedUser.getPassword(userRep);
-                clientBuilder.username(userRep.getUsername()).password(password);
-                clientBuilder.grantType(OAuth2Constants.PASSWORD);
+                adminBuilder.username(userRep.getUsername()).password(password);
+                adminBuilder.grantType(OAuth2Constants.PASSWORD);
             }
         }
 
-        return clientBuilder.build();
+        return adminBuilder.build();
     }
 
     @Override

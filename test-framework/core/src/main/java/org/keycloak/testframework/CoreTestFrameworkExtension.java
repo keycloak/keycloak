@@ -1,6 +1,7 @@
 package org.keycloak.testframework;
 
-import org.keycloak.testframework.admin.KeycloakAdminClientSupplier;
+import org.keycloak.testframework.admin.AdminClientFactorySupplier;
+import org.keycloak.testframework.admin.AdminClientSupplier;
 import org.keycloak.testframework.database.DevFileDatabaseSupplier;
 import org.keycloak.testframework.database.DevMemDatabaseSupplier;
 import org.keycloak.testframework.database.TestDatabase;
@@ -26,7 +27,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
     @Override
     public List<Supplier<?, ?>> suppliers() {
         return List.of(
-                new KeycloakAdminClientSupplier(),
+                new AdminClientSupplier(),
+                new AdminClientFactorySupplier(),
                 new ClientSupplier(),
                 new RealmSupplier(),
                 new UserSupplier(),
