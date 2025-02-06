@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="26.2.0-37149-speed-up-persistent-sessions-on-innodb">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql" />
+                <dbms type="mariadb" />
+            </or>
+        </preConditions>
+
+        <dropPrimaryKey tableName="OFFLINE_USER_SESSION" />
+
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="ID" autoIncrement="true" type="BIGINT">
+                <constraints primaryKey="true" />
+            </column>
+        </addColumn>
+
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="CONSTRAINT_OFFL_US_SES_PK" unique="true">
+            <column name="USER_SESSION_ID" />
+            <column name="OFFLINE_FLAG" />
+        </createIndex>
+
+        <dropPrimaryKey tableName="OFFLINE_CLIENT_SESSION" />
+
+        <addColumn tableName="OFFLINE_CLIENT_SESSION">
+            <column name="ID" autoIncrement="true" type="BIGINT">
+                <constraints primaryKey="true" />
+            </column>
+        </addColumn>
+
+        <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="CONSTRAINT_OFFL_CL_SES_PK" unique="true">
+            <column name="USER_SESSION_ID" />
+            <column name="CLIENT_ID" />
+            <column name="CLIENT_STORAGE_PROVIDER" />
+            <column name="EXTERNAL_CLIENT_ID" />
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.2.0-37149-speed-up-lookup-of-user-session-ids">
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH" />
+
+        <!-- create a covering index that prevents looking up the USER_SESSION_ID from the OFFLINE_USER_SESSION on cleanup -->
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH">
+            <column name="REALM_ID" />
+            <column name="OFFLINE_FLAG" />
+            <column name="LAST_SESSION_REFRESH" />
+            <column name="USER_SESSION_ID" />
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
