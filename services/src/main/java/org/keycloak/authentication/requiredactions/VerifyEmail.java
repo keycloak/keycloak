@@ -76,7 +76,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         process(context, true);
     }
 
-    public void process(RequiredActionContext context, boolean isChallenge) {
+    private void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
         if (context.getUser().isEmailVerified()) {
