@@ -89,6 +89,8 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -99,6 +101,7 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.RoleResolveUtil;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -1604,6 +1607,33 @@ public class AuthenticationManager {
             return false;
         }
         return true;
+    }
+
+    public static void resolveLightweightAccessTokenRoles(KeycloakSession session, AccessToken accessToken, RealmModel realm) {
+        final String issuedFor = accessToken.getIssuedFor();
+        ClientModel client = realm.getClientByClientId(issuedFor);
+        if(client == null) {
+            return;
+        }
+        boolean isAlwaysUseLightweightAccessToken = Boolean.parseBoolean(client.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED));
+        if (isAlwaysUseLightweightAccessToken || accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
+            //get user session
+            EventBuilder event = new EventBuilder(realm, session);
+            event.event(EventType.INTROSPECT_TOKEN);
+            UserSessionModel userSession = UserSessionUtil.findValidSession(session,realm, accessToken, event, client);
+
+            if (userSession != null) {
+                //get client session
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+                //set realm roles
+                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, accessToken.getScope(), session);
+                AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
+                Map<String, AccessToken.Access> clientAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
+                accessToken.subject(userSession.getUser().getId());
+                accessToken.setRealmAccess(realmAccess);
+                accessToken.setResourceAccess(clientAccess);
+            }
+        }
     }
 
     public enum AuthenticationStatus {

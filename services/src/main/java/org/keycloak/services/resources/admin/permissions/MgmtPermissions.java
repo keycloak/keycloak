@@ -43,6 +43,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
@@ -107,28 +108,8 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
-        final String issuedFor = auth.getToken().getIssuedFor();
         AccessToken accessToken = auth.getToken();
-        ClientModel client = adminsRealm.getClientByClientId(issuedFor);
-        //support for lightweight access token and transient session
-        boolean isAlwaysUseLightweightAccessToken = Boolean.parseBoolean(client.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED));
-        if (isAlwaysUseLightweightAccessToken || accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
-            //get user session
-            EventBuilder event = new EventBuilder(adminsRealm, session);
-            event.event(EventType.INTROSPECT_TOKEN);
-            UserSessionModel userSession = UserSessionUtil.findValidSession(session, adminsRealm, accessToken, event, client);
-
-            if (userSession != null) {
-                //get client session
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-                //set realm roles
-                ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, auth.getToken().getScope(), session);
-                AccessToken.Access realmAccess = RoleResolveUtil.getResolvedRealmRoles(session, clientSessionCtx, false);
-                Map<String, AccessToken.Access> clientAccess = RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx);
-                accessToken.setRealmAccess(realmAccess);
-                accessToken.setResourceAccess(clientAccess);
-            }
-        }
+        AuthenticationManager.resolveLightweightAccessTokenRoles(session, accessToken, adminsRealm);
         this.identity = new KeycloakIdentity(accessToken, session, adminsRealm);
     }
 
