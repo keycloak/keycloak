@@ -67,26 +67,16 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const tableData: string[][] = [];
   const table = page.getByLabel(name, { exact: true });
   await table.locator("tbody").waitFor();
-  const rowCount = await table.locator("tbody tr").count();
-  const columnCount = await table.locator("tbody tr:first-child td").count();
+  const rows = await table.locator("tbody tr").elementHandles();
 
-  for (let i = 0; i < rowCount; i++) {
-    tableData.push([]);
-    for (let j = 0; j < columnCount; j++) {
-      tableData[i].push(
-        await table
-          .locator("tbody")
-          .locator("tr")
-          .nth(i)
-          .locator("td")
-          .nth(j)
-          .innerText(),
-      );
-    }
-  }
+  const tableData = await Promise.all(
+    rows.map(async (row) => {
+      const cells = await row.$$("td");
+      return await Promise.all(cells.map((cell) => cell.innerText()));
+    }),
+  );
   return tableData;
 }
 
