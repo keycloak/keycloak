@@ -15,22 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.authentication;
-
-import java.util.List;
+package org.keycloak.tests.admin.authentication;
 
 import jakarta.ws.rs.NotFoundException;
-
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
  */
+@KeycloakIntegrationTest
 public class ShiftRequiredActionTest extends AbstractAuthenticationTest {
 
     @Test
@@ -45,41 +47,41 @@ public class ShiftRequiredActionTest extends AbstractAuthenticationTest {
         // Not possible to raisePriority of not-existent required action
         try {
             authMgmtResource.raisePriority("not-existent");
-            Assert.fail("Not expected to raise priority of not existent required action");
+            Assertions.fail("Not expected to raise priority of not existent required action");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // shift last required action up
         authMgmtResource.raiseRequiredActionPriority(last.getAlias());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRaiseRequiredActionPath(last.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authRaiseRequiredActionPath(last.getAlias()), ResourceType.REQUIRED_ACTION);
 
         List<RequiredActionProviderRepresentation> actions2 = authMgmtResource.getRequiredActions();
 
         RequiredActionProviderRepresentation last2 = actions2.get(actions.size() - 1);
         RequiredActionProviderRepresentation oneButLast2 = actions2.get(actions.size() - 2);
 
-        Assert.assertEquals("Required action shifted up - N", last.getAlias(), oneButLast2.getAlias());
-        Assert.assertEquals("Required action up - N-1", oneButLast.getAlias(), last2.getAlias());
+        Assertions.assertEquals(last.getAlias(), oneButLast2.getAlias(), "Required action shifted up - N");
+        Assertions.assertEquals(oneButLast.getAlias(), last2.getAlias(), "Required action up - N-1");
 
         // Not possible to lowerPriority of not-existent required action
         try {
             authMgmtResource.lowerRequiredActionPriority("not-existent");
-            Assert.fail("Not expected to raise priority of not existent required action");
+            Assertions.fail("Not expected to raise priority of not existent required action");
         } catch (NotFoundException nfe) {
             // Expected
         }
 
         // shift one before last down
         authMgmtResource.lowerRequiredActionPriority(oneButLast2.getAlias());
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authLowerRequiredActionPath(oneButLast2.getAlias()), ResourceType.REQUIRED_ACTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authLowerRequiredActionPath(oneButLast2.getAlias()), ResourceType.REQUIRED_ACTION);
 
         actions2 = authMgmtResource.getRequiredActions();
 
         last2 = actions2.get(actions.size() - 1);
         oneButLast2 = actions2.get(actions.size() - 2);
 
-        Assert.assertEquals("Required action shifted down - N", last.getAlias(), last2.getAlias());
-        Assert.assertEquals("Required action shifted down - N-1", oneButLast.getAlias(), oneButLast2.getAlias());
+        Assertions.assertEquals(last.getAlias(), last2.getAlias(), "Required action shifted down - N");
+        Assertions.assertEquals(oneButLast.getAlias(), oneButLast2.getAlias(), "Required action shifted down - N-1");
     }
 }

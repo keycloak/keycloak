@@ -342,7 +342,7 @@ jobs:
         run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
       - name: Run new base tests
-        run: ./mvnw test -f tests/pom.xml -Dtest=JDKTestSuite
+        run: ./mvnw package -f tests/pom.xml -Dtest=JDKTestSuite
 
       - name: Run base tests
         run: |
@@ -681,7 +681,7 @@ jobs:
 
       - name: Run new base tests
         run: |
-          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw test -f tests/pom.xml -Dtest=DatabaseTestSuite
+          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite
 
       - name: Database container port
         run: |
@@ -1083,7 +1083,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        run: ./mvnw test -f tests/pom.xml
+        run: ./mvnw package -f tests/pom.xml
 
   check:
     name: Status Check - Keycloak CI
