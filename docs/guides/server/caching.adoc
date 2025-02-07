@@ -301,10 +301,15 @@ If you are defining a custom stack, make sure the `cache-stack` option is not us
 
 == Network Ports
 
-To ensure a healthy {project_name} clustering, {project_name} opens socket connection each other and watch connection close.
-RHBK uses the port calculated as `jgroups.bind.port` + `jgroups.fd.port-offset` for the connection.
-Since `jgroups.bind.port` is randomly assigned and `jgroups.fd.port-offset` defaults to `50000`, configuring `jgroups.bind.port` explicitly is necessary if a fixed port is required for firewall.
-From RHBK version 26.2, the default value of `jgroups.bind.port` is planned to be fixed at `7800`, so setting `jgroups.bind.port` to `7800` and opening port `57800` would be recommended choice.
+To ensure a healthy {project_name} clustering, two network ports need to be open.
+
+{project_name} uses `jgroups.bind.port` for the data transport in UDP- and TCP-based stacks.
+For the TCP-based stacks like `tcp`, `ec2`, `google` and `kubernetes` it picks `7800` by default.
+For the UDP-based stack `udp` it picks a random port by default.
+To set a fixed port for the `udp` stack as well, for example, to simplify the configuration of firewalls, set the property `jgroups.bind.port` to `7800`.
+
+For failure detection {project_name} uses another TCP-based port at an offset of `jgroups.fd.port-offset` relative to the first port that defaults to `50000`.
+If the property `jgroups.bind.port` is set to `7800`, it will open a TCP port on `57800`.
 
 NOTE: Use `-D<property>=<value>` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
