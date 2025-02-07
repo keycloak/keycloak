@@ -63,6 +63,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;

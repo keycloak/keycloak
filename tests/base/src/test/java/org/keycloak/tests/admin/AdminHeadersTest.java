@@ -16,8 +16,6 @@ import static org.hamcrest.Matchers.is;
 @KeycloakIntegrationTest
 public class AdminHeadersTest {
 
-    private static final String X_XSS_HEADER = "X-XSS-Protection";
-
     @InjectRealm
     private ManagedRealm realm;
 
@@ -33,8 +31,6 @@ public class AdminHeadersTest {
         assertDefaultValue(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, h);
         assertDefaultValue(BrowserSecurityHeaders.REFERRER_POLICY, h);
 
-        // Make sure that X-XSS-Protection header is not set. See: https://github.com/keycloak/keycloak/issues/21728
-        assertThat(h.containsKey(X_XSS_HEADER), is(false));
         response.close();
     }
 

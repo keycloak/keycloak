@@ -165,10 +165,6 @@ describe("Realm settings tabs tests", () => {
       );
       cy.findByTestId("browserSecurityHeaders.xRobotsTag").clear();
       cy.findByTestId("browserSecurityHeaders.xRobotsTag").type("none");
-      cy.findByTestId("browserSecurityHeaders.xXSSProtection").clear();
-      cy.findByTestId("browserSecurityHeaders.xXSSProtection").type(
-        "1; mode=block",
-      );
       cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").clear();
       cy.findByTestId("browserSecurityHeaders.strictTransportSecurity").type(
         "max-age=31537000",

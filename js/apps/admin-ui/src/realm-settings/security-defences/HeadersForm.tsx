@@ -49,10 +49,6 @@ export const HeadersForm = ({ realm, save }: HeadersFormProps) => {
         url="https://developers.google.com/search/docs/advanced/robots/robots_meta_tag"
       />
       <HelpLinkTextInput
-        fieldName="browserSecurityHeaders.xXSSProtection"
-        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection"
-      />
-      <HelpLinkTextInput
         fieldName="browserSecurityHeaders.strictTransportSecurity"
         url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
       />

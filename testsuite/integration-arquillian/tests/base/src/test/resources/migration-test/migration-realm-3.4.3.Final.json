@@ -1181,7 +1181,6 @@
     "xContentTypeOptions" : "nosniff",
     "xRobotsTag" : "none",
     "xFrameOptions" : "SAMEORIGIN",
-    "xXSSProtection" : "1; mode=block",
     "contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
@@ -1630,7 +1629,6 @@
   "clientAuthenticationFlow" : "clients",
   "dockerAuthenticationFlow" : "docker auth",
   "attributes" : {
-    "_browser_header.xXSSProtection" : "1; mode=block",
     "_browser_header.xFrameOptions" : "SAMEORIGIN",
     "_browser_header.strictTransportSecurity" : "max-age=31536000; includeSubDomains",
     "permanentLockout" : "false",
@@ -2498,7 +2496,6 @@
     "xContentTypeOptions" : "nosniff",
     "xRobotsTag" : "none",
     "xFrameOptions" : "SAMEORIGIN",
-    "xXSSProtection" : "1; mode=block",
     "contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
@@ -2947,7 +2944,6 @@
   "clientAuthenticationFlow" : "clients",
   "dockerAuthenticationFlow" : "docker auth",
   "attributes" : {
-    "_browser_header.xXSSProtection" : "1; mode=block",
     "_browser_header.xFrameOptions" : "SAMEORIGIN",
     "_browser_header.strictTransportSecurity" : "max-age=31536000; includeSubDomains",
     "permanentLockout" : "false",
@@ -4522,7 +4518,6 @@
     "xContentTypeOptions" : "nosniff",
     "xRobotsTag" : "none",
     "xFrameOptions" : "SAMEORIGIN",
-    "xXSSProtection" : "1; mode=block",
     "contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
@@ -4971,7 +4966,6 @@
   "clientAuthenticationFlow" : "clients",
   "dockerAuthenticationFlow" : "docker auth",
   "attributes" : {
-    "_browser_header.xXSSProtection" : "1; mode=block",
     "_browser_header.xFrameOptions" : "SAMEORIGIN",
     "_browser_header.strictTransportSecurity" : "max-age=31536000; includeSubDomains",
     "permanentLockout" : "false",
