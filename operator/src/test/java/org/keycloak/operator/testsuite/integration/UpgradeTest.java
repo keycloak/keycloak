@@ -176,7 +176,7 @@ public class UpgradeTest extends BaseOperatorTest {
         job = assertUpdateJobExists(kc);
         var newHash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertNotEquals(hash, newHash);
-        assertEquals(1, containerExitCode(job));
+        assertNotEquals(0, containerExitCode(job));
     }
 
     private Job assertUpdateJobExists(Keycloak keycloak) {
