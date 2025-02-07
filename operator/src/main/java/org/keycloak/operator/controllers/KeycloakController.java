@@ -107,7 +107,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         this.deploymentDependentResource = new KeycloakDeploymentDependentResource(config, watchedResources, distConfigurator);
         sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, this.deploymentDependentResource));
 
-        updateJobDependentResource = new KeycloakUpdateJobDependentResource();
+        updateJobDependentResource = new KeycloakUpdateJobDependentResource(config);
         sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, updateJobDependentResource));
 
         return sources;

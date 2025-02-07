@@ -17,23 +17,29 @@
 
 package org.keycloak.operator.controllers;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecFluent;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
@@ -61,14 +67,15 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private static final int JOB_RETRIES = 0;
     // Job time to live
     private static final int JOB_TIME_TO_LIVE_SECONDS = (int) TimeUnit.MINUTES.toSeconds(30);
-    // Pod deadline, it will terminate after exceeding this time. We don't want to crash loop back forever.
-    private static final long POD_DEADLINE_SECONDS = TimeUnit.MINUTES.toSeconds(1);
 
     // container args to replace
     private static final Set<String> START_ARGS = Set.of("start", "start-dev");
 
-    public KeycloakUpdateJobDependentResource() {
+    private final Config operatorConfig;
+
+    public KeycloakUpdateJobDependentResource(Config config) {
         super(Job.class);
+        operatorConfig = config;
         this.configureWith(new KubernetesDependentResourceConfigBuilder<Job>()
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .build());
@@ -83,7 +90,6 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // we don't need retries; we use exit code != 1 to signal the upgrade decision.
         specBuilder.withBackoffLimit(JOB_RETRIES);
         // Remove the job after 30 minutes.
-        // TODO make it configurable!?
         specBuilder.withTtlSecondsAfterFinished(JOB_TIME_TO_LIVE_SECONDS);
         specBuilder.endSpec();
         return builder.build();
@@ -112,64 +118,89 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return builder.build();
     }
 
-    private static void addPodSpecTemplate(JobSpecFluent<?> builder, Keycloak keycloak, Context<Keycloak> context) {
+    private void addPodSpecTemplate(JobSpecFluent<?> builder, Keycloak keycloak, Context<Keycloak> context) {
         var podTemplate = builder.withNewTemplate();
         podTemplate.withMetadata(createMetadata(podName(keycloak), keycloak));
         podTemplate.withSpec(createPodSpec(context));
         podTemplate.endTemplate();
     }
 
-    private static PodSpec createPodSpec(Context<Keycloak> context) {
+    private PodSpec createPodSpec(Context<Keycloak> context) {
+        var allVolumes = getAllVolumes(context);
+        Collection<String> requiredVolumes = new HashSet<>();
         var builder = new PodSpecBuilder();
         builder.withRestartPolicy("Never");
-        addInitContainer(builder, context);
-        addContainer(builder, context);
+        addInitContainer(builder, context, allVolumes.keySet(), requiredVolumes);
+        addContainer(builder, context, allVolumes.keySet(), requiredVolumes);
         builder.addNewVolume()
                 .withName(WORK_DIR_VOLUME_NAME)
                 .withNewEmptyDir()
                 .endEmptyDir()
                 .endVolume();
+        // add volumes to the pod
+        requiredVolumes.stream()
+                .map(allVolumes::get)
+                .forEach(volume -> builder.addNewVolumeLike(volume).endVolume());
         // For test KeycloakDeploymentTest#testDeploymentDurability
         // it uses a pause image, which never ends.
-        // After 60 seconds, the job is terminated allowing the test to complete.
-        // TODO should be configurable?
-        builder.withActiveDeadlineSeconds(POD_DEADLINE_SECONDS);
+        // After this seconds, the job is terminated allowing the test to complete.
+        builder.withActiveDeadlineSeconds(operatorConfig.keycloak().updatePodDeadlineSeconds());
         return builder.build();
     }
 
-    private static void addInitContainer(PodSpecBuilder builder, Context<Keycloak> context) {
+    private static void addInitContainer(PodSpecBuilder builder, Context<Keycloak> context, Collection<String> availableVolumes, Collection<String> requiredVolumes) {
         var existing = CRDUtils.firstContainerOf(ContextUtils.getCurrentStatefulSet(context)).orElseThrow();
         var containerBuilder = builder.addNewInitContainerLike(existing);
-        configureContainer(containerBuilder, INIT_CONTAINER_NAME, INIT_CONTAINER_ARGS);
+        configureContainer(containerBuilder, INIT_CONTAINER_NAME, INIT_CONTAINER_ARGS, availableVolumes, requiredVolumes);
         containerBuilder.endInitContainer();
     }
 
-    private static void addContainer(PodSpecBuilder builder, Context<Keycloak> context) {
+    private static void addContainer(PodSpecBuilder builder, Context<Keycloak> context, Collection<String> availableVolumes, Collection<String> requiredVolumes) {
         var existing = CRDUtils.firstContainerOf(ContextUtils.getDesiredStatefulSet(context)).orElseThrow();
         var containerBuilder = builder.addNewContainerLike(existing);
-        configureContainer(containerBuilder, CONTAINER_NAME, CONTAINER_ARGS);
+        configureContainer(containerBuilder, CONTAINER_NAME, CONTAINER_ARGS, availableVolumes, requiredVolumes);
         containerBuilder.endContainer();
     }
 
-    private static void configureContainer(ContainerFluent<?> containerBuilder, String name, List<String> args) {
+    private static void configureContainer(ContainerFluent<?> containerBuilder, String name, List<String> args, Collection<String> availableVolumes, Collection<String> requiredVolumes) {
         containerBuilder.withName(name);
         containerBuilder.withArgs(replaceStartWithUpdateCommand(containerBuilder.getArgs(), args));
-        // remove volumes, won't be used
+
+        // remove volume devices
         containerBuilder.withVolumeDevices();
-        containerBuilder.withVolumeMounts();
+
+        // add existing volume mounts
+        var volumeMounts = containerBuilder.buildVolumeMounts();
+        if (volumeMounts != null) {
+            var newVolumeMounts = volumeMounts.stream()
+                    .filter(volumeMount -> availableVolumes.contains(volumeMount.getName()))
+                    .filter(volumeMount -> !volumeMount.getName().startsWith("kube-api"))
+                    .peek(volumeMount -> requiredVolumes.add(volumeMount.getName()))
+                    .toList();
+            containerBuilder.withVolumeMounts(newVolumeMounts);
+        }
+
         // remove restart policy and probes
         containerBuilder.withRestartPolicy(null);
         containerBuilder.withReadinessProbe(null);
         containerBuilder.withLivenessProbe(null);
         containerBuilder.withStartupProbe(null);
-        // remove resource request/limit
-        containerBuilder.withResources(null);
+
         // add the shared volume
         containerBuilder.addNewVolumeMount()
                 .withName(WORK_DIR_VOLUME_NAME)
                 .withMountPath(WORK_DIR_VOLUME_MOUNT_PATH)
                 .endVolumeMount();
     }
+
+    private Map<String, Volume> getAllVolumes(Context<Keycloak> context) {
+        Map<String, Volume> allVolumes = new HashMap<>();
+        Consumer<Volume> volumeConsumer = volume -> allVolumes.put(volume.getName(), volume);
+        CRDUtils.volumesFromStatefulSet(ContextUtils.getCurrentStatefulSet(context)).forEach(volumeConsumer);
+        CRDUtils.volumesFromStatefulSet(ContextUtils.getDesiredStatefulSet(context)).forEach(volumeConsumer);
+        return allVolumes;
+    }
+
 
     private static List<String> replaceStartWithUpdateCommand(List<String> currentArgs, List<String> updateArgs) {
         return currentArgs.stream().
@@ -183,7 +214,6 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     private static String keycloakHash(Keycloak keycloak) {
-        // TODO! is hashing ".spec" enough!?
         return Utils.hash(List.of(keycloak.getSpec()));
     }
 
