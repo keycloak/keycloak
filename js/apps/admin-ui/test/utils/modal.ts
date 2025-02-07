@@ -4,6 +4,10 @@ export async function assertModalTitle(page: Page, title: string) {
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
+export async function assertModalMessage(page: Page, message: string) {
+  await expect(page.getByText(message, { exact: true })).toBeVisible();
+}
+
 export async function confirmModal(page: Page) {
   await page.getByTestId("confirm").click();
 }
