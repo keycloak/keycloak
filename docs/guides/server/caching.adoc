@@ -299,6 +299,15 @@ For more details, see https://infinispan.org/docs/stable/titles/server/server.ht
 By default, the value set to the `cache-stack` option has precedence over the transport stack you define in the cache configuration file.
 If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
 
+== Network Ports
+
+To ensure a healthy {project_name} clustering, {project_name} opens socket connection each other and watch connection close.
+RHBK uses the port calculated as `jgroups.bind.port` + `jgroups.fd.port-offset` for the connection.
+Since `jgroups.bind.port` is randomly assigned and `jgroups.fd.port-offset` defaults to `50000`, configuring `jgroups.bind.port` explicitly is necessary if a fixed port is required for firewall.
+From RHBK version 26.2, the default value of `jgroups.bind.port` is planned to be fixed at `7800`, so setting `jgroups.bind.port` to `7800` and opening port `57800` would be recommended choice.
+
+NOTE: Use `-D<property>=<value>` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
+
 == Securing cache communication
 The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and transport stack encryption.
 
