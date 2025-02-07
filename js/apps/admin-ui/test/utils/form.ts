@@ -12,8 +12,13 @@ export async function assertFieldError(
   await expect(page.getByTestId(field + "-helper")).toHaveText(text);
 }
 
-export async function selectItem(page: Page, field: Locator, value: string) {
-  await field.click();
+export async function selectItem(
+  page: Page,
+  field: Locator | string,
+  value: string,
+) {
+  const element = typeof field === "string" ? page.locator(field) : field;
+  await element.click();
   await page.getByRole("option", { name: value, exact: true }).click();
 }
 

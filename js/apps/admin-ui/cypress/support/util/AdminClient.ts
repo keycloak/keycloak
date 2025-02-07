@@ -353,6 +353,32 @@ class AdminClient {
     });
   }
 
+  async createClientPolicy(
+    name: string,
+    description: string,
+    realm: string = "master",
+  ) {
+    await this.#login();
+    const { policies } = await this.#client.clientPolicies.listPolicies({
+      realm,
+    });
+    return await this.#client.clientPolicies.updatePolicy({
+      realm,
+      policies: [...policies!, { name, description }],
+    });
+  }
+
+  async deleteClientPolicy(name: string, realm: string = "master") {
+    await this.#login();
+    const { policies } = await this.#client.clientPolicies.listPolicies({
+      realm,
+    });
+    return await this.#client.clientPolicies.updatePolicy({
+      realm,
+      policies: [...policies!.filter((policy) => policy.name !== name)],
+    });
+  }
+
   async deleteRealmRole(name: string) {
     await this.#login();
     return await this.#client.roles.delByName({ name });
