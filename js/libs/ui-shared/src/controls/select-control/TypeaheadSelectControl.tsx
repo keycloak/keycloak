@@ -90,7 +90,7 @@ export const TypeaheadSelectControl = <
       case "Enter": {
         event.preventDefault();
 
-        if (isTypeaheadMulti) {
+        if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
         } else {
           setFilterValue("");
