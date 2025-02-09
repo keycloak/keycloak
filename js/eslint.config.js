@@ -2,6 +2,7 @@
 import { fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
+import importPlugin from "eslint-plugin-import";
 import mochaPlugin from "eslint-plugin-mocha";
 import playwright from "eslint-plugin-playwright";
 import prettierRecommended from "eslint-plugin-prettier/recommended";
@@ -29,6 +30,8 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
+  importPlugin.flatConfigs.recommended,
+  importPlugin.flatConfigs.typescript,
   reactRecommended,
   reactJsxRuntime,
   prettierRecommended,
@@ -137,6 +140,11 @@ export default tseslint.config(
       // Prefer a specific import scope (e.g. `lodash/map` vs `lodash`).
       // Allows for more efficient tree-shaking and better code splitting.
       "lodash/import-scope": ["error", "member"],
+      // Does not accurately detect type-only imports, so we need to disable it.
+      "import/default": "off",
+      // Ignore Keycloak JS, it does not have a `main` field in its package.json.
+      // TODO: Remove this when https://github.com/import-js/eslint-plugin-import/issues/2703 is resolved.
+      "import/no-unresolved": ["error", { ignore: ["keycloak-js"] }],
     },
   },
   ...[
