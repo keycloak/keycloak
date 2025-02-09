@@ -30,6 +30,7 @@ Here's how you can get started:
 To ensure consistency and quality across translations, please adhere to the following guidelines:
 
 - Use formal or informal language as appropriate for the context.
+- For Spanish translations, please use the formal "usted" form instead of the informal "vos or tu" (i.e., avoid tuteo), ensuring a more formal tone.
 - Maintain consistency with existing translations.
 - Translate text accurately, ensuring that the meaning is preserved.
 - Weblate will pushe translations as a pull request to the [Keycloak repository](https://github.com/keycloak/keycloak) at least once a day. A maintainer for that language has the ability to approve or decline that translation.
