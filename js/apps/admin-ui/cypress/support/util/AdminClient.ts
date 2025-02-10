@@ -379,6 +379,21 @@ class AdminClient {
     });
   }
 
+  async createClientProfile(
+    name: string,
+    description: string,
+    realm: string = "master",
+  ) {
+    await this.#login();
+    const { profiles } = await this.#client.clientPolicies.listProfiles({
+      realm,
+    });
+    return await this.#client.clientPolicies.createProfiles({
+      realm,
+      profiles: [...profiles!, { name, description }],
+    });
+  }
+
   async deleteRealmRole(name: string) {
     await this.#login();
     return await this.#client.roles.delByName({ name });
