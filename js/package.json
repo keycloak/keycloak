@@ -35,7 +35,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "prettier": "^3.4.2",
+    "prettier": "^3.5.0",
     "tslib": "^2.8.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.23.0",
