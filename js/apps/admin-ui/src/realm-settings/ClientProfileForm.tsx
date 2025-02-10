@@ -362,13 +362,13 @@ export default function ClientProfileForm() {
                                         />
                                         {!isGlobalProfile && (
                                           <Button
+                                            data-testid="deleteExecutor"
                                             variant="link"
                                             isInline
                                             icon={
                                               <TrashIcon
                                                 key={`executorType-trash-icon-${type.id}`}
                                                 className="kc-executor-trash-icon"
-                                                data-testid="deleteExecutor"
                                               />
                                             }
                                             onClick={() => {
