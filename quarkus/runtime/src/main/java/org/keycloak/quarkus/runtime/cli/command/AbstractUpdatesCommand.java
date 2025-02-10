@@ -21,10 +21,13 @@ import java.io.File;
 import java.util.List;
 import java.util.function.Predicate;
 
+import org.keycloak.common.Profile;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.compatibility.CompatibilityManager;
 import org.keycloak.quarkus.runtime.compatibility.CompatibilityManagerImpl;
+import org.keycloak.quarkus.runtime.compatibility.CompatibilityResult;
 import picocli.CommandLine;
 
 public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
@@ -45,11 +48,21 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
                 .toList();
     }
 
-    static void validateOptionIsPresent(String value, String option) {
-        if (value == null || value.isBlank()) {
-            throw new PropertyException("Missing required argument: " + option);
+    @Override
+    public void run() {
+        Environment.updateProfile(true);
+        if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
+            printFeatureDisabled();
+            picocli.exit(CompatibilityResult.FEATURE_DISABLED);
+            return;
         }
+        printPreviewWarning();
+        validateConfig();
+        var exitCode = executeAction();
+        picocli.exit(exitCode);
     }
+
+    abstract int executeAction();
 
     static void validateFileIsNotDirectory(File file, String option) {
         if (file.isDirectory()) {
@@ -76,7 +89,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         }
     }
 
-    void printPreviewWarning() {
+    private void printPreviewWarning() {
         printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
     }
 

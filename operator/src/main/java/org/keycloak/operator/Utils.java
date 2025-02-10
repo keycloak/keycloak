@@ -17,23 +17,30 @@
 
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -109,6 +116,41 @@ public final class Utils {
         limits.putIfAbsent("memory", config.keycloak().resources().limits().memory());
 
         kcContainer.setResources(resourcesSpec);
+    }
+
+    public static <T> String hash(List<T> current) {
+        var messageDigest = getMessageDigest();
+
+        current.stream()
+                .map(Utils::getData)
+                .map(Serialization::asYaml)
+                .map(Utils::utf8Bytes)
+                .forEachOrdered(messageDigest::update);
+
+        return new BigInteger(1, messageDigest.digest()).toString(16);
+    }
+
+    private static MessageDigest getMessageDigest() {
+        // Uses a fips compliant hash
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Object getData(Object object) {
+        if (object instanceof Secret) {
+            return ((Secret) object).getData();
+        }
+        if (object instanceof ConfigMap) {
+            return ((ConfigMap) object).getData();
+        }
+        return object;
+    }
+
+    private static byte[] utf8Bytes(String string) {
+        return string.getBytes(StandardCharsets.UTF_8);
     }
 
 }

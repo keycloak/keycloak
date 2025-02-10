@@ -141,6 +141,7 @@ jobs:
               -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
+              -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-update-pod-deadline-seconds=60 \
               --no-transfer-progress -Dtest.operator.deployment=remote
 
   test-olm:

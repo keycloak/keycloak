@@ -495,6 +495,10 @@ When the image field changes, the StatefulSet is scaled down before applying the
 |On any configuration or image change
 |The StatefulSet is scaled down before applying the new configuration or image.
 
+|`Auto`
+|On incompatible changes
+|The {project_name} Operator detects if a rolling or recreate upgrade is possible.
+
 |===
 
 </@tmpl.guide>
