@@ -15,7 +15,7 @@ See the https://www.keycloak.org/server/caching[Configuring distributed caches] 
 
 = Virtual Threads enabled for Infinispan and JGroups thread pools
 
-Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups  when running on OpenJDK 21.
+Starting from this release, {project_name} automatically enables the virtual thread pool support in both the embedded Infinispan and JGroups when running on OpenJDK 21 for environments with at least 2 CPU cores available.
 This removes the need to configure the JGroups thread pool, the need to align the JGroups thread pool with the HTTP worker thread pool, and reduces the overall memory footprint.
 
 = OpenTelemetry Tracing supported
