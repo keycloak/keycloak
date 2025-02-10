@@ -911,15 +911,6 @@ public class SAMLEndpoint {
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
-                ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
-                List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
-                if (! assertions.isEmpty() ) {
-                    // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
-                    // In that case, signature is validated on assertion element
-                    return;
-                }
-            }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
         }
 
