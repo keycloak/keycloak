@@ -4,11 +4,17 @@
         <#if messageHeader??>
             ${kcSanitize(msg("${messageHeader}"))?no_esc}
         <#else>
-        ${message.summary}
+            ${kcSanitize(message.summary)?no_esc}
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction">${message.summary}<#if requiredActions??><#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list><#else></#if></p>
+        <p class="instruction">
+            ${kcSanitize(message.summary)?no_esc}
+            <#if requiredActions??>
+                <#list requiredActions>: <b><#items as reqActionItem>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}<#sep>, </#items></b></#list>
+            <#else>
+            </#if>
+        </p>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>
