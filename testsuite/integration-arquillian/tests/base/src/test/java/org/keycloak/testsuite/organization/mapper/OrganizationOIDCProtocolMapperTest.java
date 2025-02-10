@@ -30,13 +30,16 @@ import static org.hamcrest.Matchers.oneOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.OAuth2Constants.SCOPE_PROFILE;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -859,6 +862,37 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.login(memberPassword);
 
         assertScopeAndClaims(scopeName, orgA);
+    }
+
+    @Test
+    public void testOrganizationNotMapperIfNotMember() {
+        OrganizationRepresentation orgARep = createOrganization("orga", true);
+        OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
+        MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
+        orgA.members().member(member.getId()).delete().close();
+
+        ClientRepresentation clientRep = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientResource client = testRealm().clients().get(clientRep.getId());
+        ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream().filter(scope -> "organization".equals(scope.getName())).findAny().orElse(null);
+        client.removeOptionalClientScope(orgScopeRep.getId());
+        client.addDefaultClientScope(orgScopeRep.getId());
+        getCleanup().addCleanup(() -> {
+            client.removeDefaultClientScope(orgScopeRep.getId());
+            client.addOptionalClientScope(orgScopeRep.getId());
+        });
+        // resolve organization based on the organization scope value
+        oauth.clientId("broker-app");
+        oauth.scope(null);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        assertThat(response.getScope(), containsString(orgScopeRep.getName()));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(orgScopeRep.getName()));
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {
