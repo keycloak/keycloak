@@ -69,7 +69,7 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         var pod = findPodForJob(context.getClient(), existingJob.get());
         if (pod.isEmpty()) {
             // TODO some cases the pod is removed. Do we start over or use recreate update?
-            Log.error("Pod for Update Job not found.");
+            Log.warn("Pod for Update Job not found.");
             decideRecreateUpgrade();
             return Optional.empty();
         }
@@ -99,12 +99,12 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         var initContainerExitCode = initContainer(pod)
                 .map(AutoUpgradeLogic::exitCode);
         if (initContainerExitCode.isEmpty()) {
-            Log.fatal("InitContainer not found for Update Job.");
+            Log.warn("InitContainer not found for Update Job.");
             decideRecreateUpgrade();
             return;
         }
         if (initContainerExitCode.get() != 0) {
-            Log.error("InitContainer unexpectedly failed for Update Job.");
+            Log.warn("InitContainer unexpectedly failed for Update Job.");
             decideRecreateUpgrade();
             return;
         }
@@ -113,7 +113,7 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         var containerExitCode = container(pod)
                 .map(AutoUpgradeLogic::exitCode);
         if (containerExitCode.isEmpty()) {
-            Log.error("Container not found for Update Job.");
+            Log.warn("Container not found for Update Job.");
             decideRecreateUpgrade();
             return;
         }
@@ -123,12 +123,12 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
                 return;
             }
             case 1: {
-                Log.error("Container has an unexpected error for Update Job");
+                Log.warn("Container has an unexpected error for Update Job");
                 decideRecreateUpgrade();
                 return;
             }
             case 2: {
-                Log.fatal("Container has an invalid arguments for Update Job.");
+                Log.warn("Container has an invalid arguments for Update Job.");
                 decideRecreateUpgrade();
                 return;
             }
@@ -143,7 +143,7 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
                 return;
             }
             default: {
-                Log.errorf("Unexpected Update Job exit code: " + containerExitCode.get());
+                Log.warnf("Unexpected Update Job exit code: " + containerExitCode.get());
                 decideRecreateUpgrade();
             }
         }
