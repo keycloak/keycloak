@@ -132,7 +132,18 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
                 decideRecreateUpgrade();
                 return;
             }
+            case 3: {
+                Log.warn("Rolling Update not possible.");
+                decideRecreateUpgrade();
+                return;
+            }
+            case 4: {
+                Log.warn("Feature 'rolling-update' not enabled.");
+                decideRecreateUpgrade();
+                return;
+            }
             default: {
+                Log.errorf("Unexpected Update Job exit code: " + containerExitCode.get());
                 decideRecreateUpgrade();
             }
         }
