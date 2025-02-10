@@ -62,6 +62,7 @@ import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -548,6 +549,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                 if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
                     b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
+                } else {
+                    HttpRequest request = session.getContext().getHttpRequest();
+                    MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
+
+                    if (queryParameters != null && queryParameters.getFirst(Constants.TOKEN) != null) {
+                        // changing locale should forward the action token
+                        b.queryParam(Constants.TOKEN, queryParameters.getFirst(Constants.TOKEN));
+                    }
                 }
 
                 final var localeBean = new LocaleBean(realm, locale, b, messagesBundle);
