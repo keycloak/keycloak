@@ -28,6 +28,8 @@ import org.keycloak.it.storage.database.PostgreSQLTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "postgres")
@@ -38,5 +40,11 @@ public class PostgreSQLDistTest extends PostgreSQLTest {
     public void testDbOptionFromPersistedConfigSource(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
+    }
+
+    @Test
+    @Launch({"start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--spi-connections-jpa-quarkus-migration-strategy=manual", "--spi-connections-jpa-quarkus-initialize-empty=false", "--http-enabled=true", "--hostname-strict=false",})
+    public void testKeycloakDbUpdateScript(LaunchResult result, RawDistRootPath rawDistRootPath) {
+        assertManualDbInitialization((CLIResult) result, rawDistRootPath);
     }
 }

@@ -17,15 +17,30 @@
 
 package org.keycloak.it.storage.database;
 
+import io.quarkus.logging.Log;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.apache.commons.lang3.StringUtils.countMatches;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public abstract class BasicDatabaseTest {
@@ -74,5 +89,34 @@ public abstract class BasicDatabaseTest {
         cliResult.assertMessage("target/export");
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
+    }
+
+    public void assertManualDbInitialization(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
+        cliResult.assertMessage("Database not initialized, please initialize database with");
+
+        var output = readKeycloakDbUpdateScript(rawDistRootPath);
+
+        assertThat(output, notNullValue());
+        assertThat(output, containsString("Create Database Change Log Table"));
+
+        var outputLowerCase = output.toLowerCase();
+        var count = countMatches(outputLowerCase, "create table public.databasechangelog") + countMatches(outputLowerCase, "create table keycloak.databasechangelog");
+        assertThat(count, is(1));
+    }
+
+    protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {
+        final String defaultScriptName = "keycloak-database-update.sql";
+        Path scriptPath = Paths.get(path.getDistRootPath() + File.separator + "bin" + File.separator + defaultScriptName);
+        File script = new File(scriptPath.toString());
+        assertThat(String.format("Script '%s' does not exist!", defaultScriptName), script.isFile(), is(true));
+
+        try {
+            var result = FileUtils.readFileToString(script, Charset.defaultCharset());
+            Log.infof("Deleting Keycloak DB update script '%s'", defaultScriptName);
+            Files.delete(scriptPath);
+            return result;
+        } catch (IOException e) {
+            throw new AssertionError(String.format("Cannot read or delete script '%s'", defaultScriptName), e);
+        }
     }
 }
