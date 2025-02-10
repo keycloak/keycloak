@@ -35,7 +35,6 @@ import liquibase.snapshot.SnapshotControl;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.AddColumnStatement;
-import liquibase.statement.core.CreateDatabaseChangeLogTableStatement;
 import liquibase.statement.core.SetNullableStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Column;
@@ -54,7 +53,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -211,12 +209,10 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         loggingExecutor.comment("* Keycloak database creation script - apply this script to empty DB *");
         loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
-        loggingExecutor.execute(new CreateDatabaseChangeLogTableStatement());
+        // DatabaseChangeLogTable is automatically added to the script by Liquibase
         // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
-
-        loggingExecutor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
 
         executorService.setExecutor(LiquibaseConstants.JDBC_EXECUTOR, database, oldTemplate);
     }
