@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -203,6 +204,45 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             registerUser(organization, email);
 
+            // authenticated to the account console
+            Assert.assertTrue(driver.getPageSource().contains("Account Management"));
+            Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+
+            List<MemberRepresentation> memberByEmail = organization.members().search(email, Boolean.TRUE, null, null);
+            assertThat(memberByEmail, Matchers.hasSize(1));
+            assertThat(memberByEmail.get(0).getMembershipType(), equalTo(MembershipType.MANAGED));
+        }
+    }
+
+    @Test
+    public void testRegistrationEnabledWhenInvitingNewUserWithLocalization() throws Exception {
+        String email = "inviteduser@email";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        try (
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
+                Response response = organization.members().inviteUser(email, null, null)
+        ) {
+            RealmRepresentation realmRep = testRealm().toRepresentation();
+            Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
+            realmRep.setInternationalizationEnabled(true);
+            realmRep.setSupportedLocales(Set.of("en", "pt-BR"));
+            testRealm().update(realmRep);
+            getCleanup().addCleanup(() -> {
+                realmRep.setInternationalizationEnabled(internationalizationEnabled);
+                testRealm().update(realmRep);
+            });
+
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            String link = getInvitationLinkFromEmail();
+            driver.navigate().to(link);
+            Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
+            registerPage.assertCurrent(organizationName);
+            registerPage.openLanguage("Portuguese");
+            Assert.assertTrue(driver.getPageSource().contains("Campos obrigatórios"));
+            registerPage.register("firstName", "lastName", email,
+                    "invitedUser", "password", "password", null, false, null);
             // authenticated to the account console
             Assert.assertTrue(driver.getPageSource().contains("Account Management"));
             Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));

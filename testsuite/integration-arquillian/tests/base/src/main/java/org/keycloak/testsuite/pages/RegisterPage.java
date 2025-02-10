@@ -36,7 +36,8 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RegisterPage extends AbstractPage {
+public class RegisterPage extends LanguageComboboxAwarePage
+{
 
     @Page
     private AccountFields.AccountErrors accountErrors;
