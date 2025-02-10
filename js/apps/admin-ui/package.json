@@ -128,7 +128,7 @@
     "@vitejs/plugin-react-swc": "^3.8.0",
     "cypress": "^14.0.2",
     "cypress-axe": "^1.6.0",
-    "cypress-split": "^1.24.7",
+    "cypress-split": "^1.24.10",
     "jsdom": "^26.0.0",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.29.1",
