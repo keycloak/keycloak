@@ -152,7 +152,7 @@ importers:
     dependencies:
       '@axe-core/playwright':
         specifier: ^4.10.1
-        version: 4.10.1(playwright-core@1.50.0)
+        version: 4.10.1(playwright-core@1.50.1)
       '@keycloak/keycloak-admin-client':
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
@@ -179,7 +179,7 @@ importers:
         version: 3.1.0(@babel/runtime@7.26.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.7)(@types/react@18.3.13)(playwright-core@1.50.0)(typescript@5.7.3)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.7)(@types/react@18.3.13)(playwright-core@1.50.1)(typescript@5.7.3)'
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
@@ -234,7 +234,7 @@ importers:
         version: 2.3.0(cypress@14.0.2)
       '@playwright/test':
         specifier: ^1.49.1
-        version: 1.50.0
+        version: 1.50.1
       '@testing-library/cypress':
         specifier: ^10.0.3
         version: 10.0.3(cypress@14.0.2)
@@ -5580,10 +5580,10 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.32.2
       '@ast-grep/napi-win32-x64-msvc': 0.32.2
 
-  '@axe-core/playwright@4.10.1(playwright-core@1.50.0)':
+  '@axe-core/playwright@4.10.1(playwright-core@1.50.1)':
     dependencies:
       axe-core: 4.10.2
-      playwright-core: 1.50.0
+      playwright-core: 1.50.1
 
   '@babel/code-frame@7.26.2':
     dependencies:
@@ -6075,9 +6075,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.7)(@types/react@18.3.13)(playwright-core@1.50.0)(typescript@5.7.3)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.7)(@types/react@18.3.13)(playwright-core@1.50.1)(typescript@5.7.3)':
     dependencies:
-      '@axe-core/playwright': 4.10.1(playwright-core@1.50.0)
+      '@axe-core/playwright': 4.10.1(playwright-core@1.50.1)
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
       '@keycloak/keycloak-ui-shared': link:libs/ui-shared
       '@patternfly/patternfly': 5.4.2
