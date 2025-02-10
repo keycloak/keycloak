@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -140,7 +140,7 @@ public final class Environment {
     }
 
     public static boolean isWindows() {
-        return SystemUtils.IS_OS_WINDOWS;
+        return NetworkUtils.checkForWindows();
     }
 
     public static void forceDevProfile() {
