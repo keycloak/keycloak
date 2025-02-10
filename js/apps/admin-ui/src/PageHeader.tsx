@@ -122,8 +122,8 @@ export const Header = () => {
       }}
       dropdownItems={userDropdownItems(isMasterRealm, isManager)}
       kebabDropdownItems={kebabDropdownItems(isMasterRealm, isManager)}
+      toolbar={<RealmPanel />}
       toolbarItems={[
-        <RealmPanel />
         <ToolbarItem
           key="help"
           align={{ default: "alignRight" }}
