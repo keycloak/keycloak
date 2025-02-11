@@ -23,9 +23,7 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "cy:open": "cypress open --e2e --browser chrome",
-    "cy:run": "cypress run --browser chrome",
-    "cy:check-types": "wireit",
+    "test:integration": "playwright test",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
   },
   "wireit": {
@@ -79,15 +77,10 @@
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
       ]
-    },
-    "cy:check-types": {
-      "command": "tsc --project cypress/tsconfig.json",
-      "dependencies": [
-        "../../libs/keycloak-admin-client:build"
-      ]
     }
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.2",
@@ -116,6 +109,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.3.0",
+    "@playwright/test": "^1.49.1",
     "@testing-library/cypress": "^10.0.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -136,6 +130,7 @@
     "vite": "^6.1.0",
     "vite-plugin-checker": "^0.8.0",
     "vite-plugin-dts": "^4.5.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "uuid": "^11.0.3"
   }
 }
