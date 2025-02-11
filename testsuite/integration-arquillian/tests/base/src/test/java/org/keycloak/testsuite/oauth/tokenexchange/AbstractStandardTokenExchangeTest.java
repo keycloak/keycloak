@@ -95,7 +95,7 @@ public abstract class AbstractStandardTokenExchangeTest extends AbstractKeycloak
         return accessToken;
     }
 
-    private String getSessionIdFromToken(String accessToken) throws Exception {
+    protected String getSessionIdFromToken(String accessToken) throws Exception {
         return TokenVerifier.create(accessToken, AccessToken.class)
                 .parse()
                 .getToken()

@@ -48,7 +48,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true) // TODO: Remove as we may not need to use FGAP for token exchange
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTest {
 
