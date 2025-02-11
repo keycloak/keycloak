@@ -299,6 +299,21 @@ For more details, see https://infinispan.org/docs/stable/titles/server/server.ht
 By default, the value set to the `cache-stack` option has precedence over the transport stack you define in the cache configuration file.
 If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
 
+== Network Ports
+
+To ensure a healthy {project_name} clustering, two network ports need to be open.
+
+{project_name} uses `jgroups.bind.port` for the data transport in UDP- and TCP-based stacks.
+* For the TCP-based stacks like `tcp`, `ec2`, `google` and `kubernetes` it picks `7800` by default.
+* For the UDP-based stack `udp` it picks a random port by default.
++
+To set a fixed port for the `udp` stack as well, for example, to simplify the configuration of firewalls, set the property `jgroups.bind.port` to `7800`.
+
+For failure detection, {project_name} uses another TCP-based port at an offset of `jgroups.fd.port-offset` relative to the first port that defaults to `50000`.
+If the property `jgroups.bind.port` is set to `7800`, it will open a TCP port on `57800`.
+
+NOTE: Use `-D<property>=<value>` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
+
 == Securing cache communication
 The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and transport stack encryption.
 
