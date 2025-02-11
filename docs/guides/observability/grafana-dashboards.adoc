@@ -1,0 +1,91 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="{project_name} Grafana dashboards"
+summary="Learn how to import {project_name} provided Grafana dashboards to your Grafana instance" >
+
+{project_name} provides metrics to observe what is happening inside the deployment.
+To understand how metrics evolve over time, it is helpful to collect them and visualize in graphs.
+
+
+This guide provides instructions on how to visualize collected {project_name} metrics in a running Grafana instance.
+
+== Prerequisites
+
+* {project_name} metrics are enabled. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
+* Grafana instance is running and {project_name} metrics are collected into a Prometheus instance.
+
+== Keycloak Grafana dashboards
+
+Grafana dashboards are distributed in form of a JSON file that is imported into a Grafana instance.
+JSON definitions of {project_name} Grafana dashboards are available in the following https://github.com/keycloak/keycloak-grafana-dashboard[Github repository].
+
+Follow these steps to download JSON file definitions.
+
+. Identify the branch from `keycloak-grafana-dashboards` to use from the following table.
++
+
+|===
+|{project_name} version |`keycloak-grafana-dashboards` branch
+
+|>= 26.1
+|`main`
+|===
+
+. Clone Github repository
++
+----
+git clone -b BRANCH_FROM_STEP_1 https://github.com/keycloak/keycloak-grafana-dashboard.git
+----
+. The dashboards are available in the directory `keycloak-grafana-dashboard/dashboards`.
+
+Below is the list of available dashboards and their purpose.
+
+=== Keycloak troubleshooting dashboard
+
+This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboard.json`.
+
+On the top of the dashboard, there are graphs displaying the SLIs defined in <@links.observability id="keycloak-service-level-indicators"/>.
+It can be also used while troubleshooting {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
+
+A screenshot of this dashboard:
+
+image::observability/keycloak-troubleshooting-grafana-dashboard.png[]
+
+=== Keycloak capacity planning dashboard
+
+This dashboard is available in the JSON file: `keycloak-capacity-planning-dashboard.json`.
+
+This dashboard shows metrics important when estimating the load handled by {project_name} deployment.
+For example, it shows the number of password validations or login flows performed by {project_name}.
+To learn more about these metrics proceed to the following {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>.
+
+WARNING: It is necessary to enable {project_name} event metrics for this dashboard to work correctly. Proceed to the following {section} <@links.observability id="event-metrics"/> to enable them.
+
+A screenshot of this dashboard:
+
+image::observability/keycloak-capacity-planning-dashboard.png[]
+
+== Import a dashboard
+
+To import a dashboard follow these steps.
+
+. Open the dashboard page from the left Grafana menu
+. Click `New` and `Import`
+. Click `Upload dashboard JSON file` and pick the JSON file of the dashboard you want to import
+. Pick your Prometheus datasource
+. Click `Import`
+
+== Export a dashboard
+
+Exporting a dashboard may be useful, for example, if you want to suggest a change in our dashboard repository.
+Follow these steps to export a dashboard to JSON format.
+
+. Open a dashboard you would like to export
+. Click the share button in the top left corner next to the name of the dashboard
+. Change tab to `Export`
+. Click `Export for sharing externally option`
+. Then either `Save to file` or `View JSON` and `Copy to Clipboard` depending on where you want to store the resulting JSON
+
+</@tmpl.guide>
