@@ -7,11 +7,6 @@ inputs:
     required: false
     default: "22"
 
-env:
-  # Temporary workaround for https://github.com/nodejs/corepack/issues/612
-  # TODO: Remove this once the issue is fixed
-  COREPACK_INTEGRITY_KEYS: 0
-
 runs:
   using: composite
   steps:

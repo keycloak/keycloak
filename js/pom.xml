@@ -25,8 +25,8 @@
     </modules>
 
     <properties>
-        <node.version>v22.11.0</node.version>
-        <pnpm.version>9.14.4</pnpm.version>
+        <node.version>v22.14.0</node.version>
+        <pnpm.version>10.3.0</pnpm.version>
         <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
         <maven.build.cache.input.2>public</maven.build.cache.input.2>
