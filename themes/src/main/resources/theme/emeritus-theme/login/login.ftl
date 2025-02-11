@@ -53,17 +53,7 @@
             }
         }
 </style>
-<div class="notice">
-    <div class="noticeWrapper">
-        <div class="header"><img id="notice" src="${url.resourcesPath}/img/alert-triangle.svg" />Important Notice</div>
-        <div class="description">We've updated our login system, and your current password is no longer valid for security reasons.<br>
-            Please click on <strong>'Forgot Password'</strong> below the login, enter your email, and follow the instructions in the reset email to create a new strong password.
-        </div>
-        <p class="footer">
-            This is a one-time action, and you won't need to reset your password again unless you forget it.
-        </p>
-    </div>
-</div>
+
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
       ${msg("loginAccountTitle")}
