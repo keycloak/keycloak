@@ -159,6 +159,18 @@ function Keycloak (config) {
             kc.enableLogging = false;
         }
 
+        if (typeof initOptions.omitWellKnownConfigRequest === 'boolean') {
+            kc.omitWellKnownConfigRequest = initOptions.omitWellKnownConfigRequest;
+        } else {
+            kc.omitWellKnownConfigRequest = false;
+        }
+
+        if (typeof initOptions.useDeprecatedRegisterEndpoint === 'boolean') {
+            kc.useDeprecatedRegisterEndpoint = initOptions.useDeprecatedRegisterEndpoint;
+        } else {
+            kc.useDeprecatedRegisterEndpoint = false;
+        }
+
         if (initOptions.logoutMethod === 'POST') {
             kc.logoutMethod = 'POST';
         } else {
@@ -394,15 +406,20 @@ function Keycloak (config) {
             loginOptions: options
         };
 
-        if (options && options.prompt) {
-            callbackState.prompt = options.prompt;
-        }
+        var prompt = (options && options.prompt) ? options.prompt : null;
 
         var baseUrl;
         if (options && options.action == 'register') {
             baseUrl = kc.endpoints.register();
+            if (!kc.useDeprecatedRegisterEndpoint) {
+                prompt = prompt ? prompt + " create" : "create";
+            }
         } else {
             baseUrl = kc.endpoints.authorize();
+        }
+
+        if (prompt) {
+            callbackState.prompt = prompt;
         }
 
         var scope = options && options.scope || kc.scope;
@@ -425,8 +442,8 @@ function Keycloak (config) {
             url = url + '&nonce=' + encodeURIComponent(nonce);
         }
 
-        if (options && options.prompt) {
-            url += '&prompt=' + encodeURIComponent(options.prompt);
+        if (prompt) {
+            url += '&prompt=' + encodeURIComponent(prompt);
         }
 
         if (options && typeof options.maxAge === 'number') {
@@ -817,7 +834,20 @@ function Keycloak (config) {
             configUrl = config;
         }
 
-        function setupOidcEndoints(oidcConfiguration) {
+        function processOidcConfiguration(oidcConfiguration) {
+
+            function getRegistrationUrl(authzEndpointUrl) {
+                if (kc.useDeprecatedRegisterEndpoint) {
+                    var realmUrl = getRealmUrl();
+                    if (!realmUrl) {
+                        throw 'Redirection to "Register user" page not supported in standard OIDC mode';
+                    }
+                    return realmUrl + '/protocol/openid-connect/registrations';
+                } else {
+                    return authzEndpointUrl;
+                }
+            }
+
             if (! oidcConfiguration) {
                 kc.endpoints = {
                     authorize: function() {
@@ -836,13 +866,18 @@ function Keycloak (config) {
                         return getRealmUrl() + '/protocol/openid-connect/3p-cookies/step1.html';
                     },
                     register: function() {
-                        return getRealmUrl() + '/protocol/openid-connect/registrations';
+                        return getRegistrationUrl(getRealmUrl() + '/protocol/openid-connect/auth');
                     },
                     userinfo: function() {
                         return getRealmUrl() + '/protocol/openid-connect/userinfo';
                     }
                 };
             } else {
+                if (!kc.useDeprecatedRegisterEndpoint) {
+                    // Get from the OIDC configuration if it was not enforced by configuration to useDeprecatedRegisterEndpoint
+                    kc.useDeprecatedRegisterEndpoint = !oidcConfiguration.prompt_values_supported || !oidcConfiguration.prompt_values_supported.includes("create");
+                }
+
                 kc.endpoints = {
                     authorize: function() {
                         return oidcConfiguration.authorization_endpoint;
@@ -863,7 +898,7 @@ function Keycloak (config) {
                         return oidcConfiguration.check_session_iframe;
                     },
                     register: function() {
-                        throw 'Redirection to "Register user" page not supported in standard OIDC mode';
+                        return getRegistrationUrl(oidcConfiguration.authorization_endpoint);
                     },
                     userinfo: function() {
                         if (!oidcConfiguration.userinfo_endpoint) {
@@ -872,6 +907,38 @@ function Keycloak (config) {
                         return oidcConfiguration.userinfo_endpoint;
                     }
                 }
+            }
+
+            logInfo('[KEYCLOAK] Will use deprecated register endpoint: ' + kc.useDeprecatedRegisterEndpoint);
+        }
+
+        function checkSendingOidcWellKnownRequest(oidcWellKnownUrl) {
+            if (kc.omitWellKnownConfigRequest) {
+                logInfo('[KEYCLOAK] Will omit request to OIDC well-known endpoint');
+                if (!kc.authServerUrl || !kc.realm || !kc.clientId) {
+                    throw "Requested to omit sending request to OIDC well-known endpoint, but some required parameters missing from OIDC configuration";
+                }
+                processOidcConfiguration(null);
+                promise.setSuccess();
+            } else {
+                logInfo('[KEYCLOAK] Sending request to OIDC well-known endpoint on URL ' + oidcWellKnownUrl);
+                var req = new XMLHttpRequest();
+                req.open('GET', oidcWellKnownUrl, true);
+                req.setRequestHeader('Accept', 'application/json');
+
+                req.onreadystatechange = function () {
+                    if (req.readyState == 4) {
+                        if (req.status == 200 || fileLoaded(req)) {
+                            var oidcProviderConfig = JSON.parse(req.responseText);
+                            processOidcConfiguration(oidcProviderConfig);
+                            promise.setSuccess();
+                        } else {
+                            promise.setError({ error: "Incorrect response from the OIDC well-known endpoint."});
+                        }
+                    }
+                };
+
+                req.send();
             }
         }
 
@@ -888,8 +955,7 @@ function Keycloak (config) {
                         kc.authServerUrl = config['auth-server-url'];
                         kc.realm = config['realm'];
                         kc.clientId = config['resource'];
-                        setupOidcEndoints(null);
-                        promise.setSuccess();
+                        checkSendingOidcWellKnownRequest(getRealmUrl() + '/.well-known/openid-configuration');
                     } else {
                         promise.setError();
                     }
@@ -904,8 +970,7 @@ function Keycloak (config) {
             if (!oidcProvider) {
                 kc.authServerUrl = config.url;
                 kc.realm = config.realm;
-                setupOidcEndoints(null);
-                promise.setSuccess();
+                checkSendingOidcWellKnownRequest(getRealmUrl() + '/.well-known/openid-configuration');
             } else {
                 if (typeof oidcProvider === 'string') {
                     var oidcProviderConfigUrl;
@@ -914,25 +979,9 @@ function Keycloak (config) {
                     } else {
                         oidcProviderConfigUrl = oidcProvider + '/.well-known/openid-configuration';
                     }
-                    var req = new XMLHttpRequest();
-                    req.open('GET', oidcProviderConfigUrl, true);
-                    req.setRequestHeader('Accept', 'application/json');
-
-                    req.onreadystatechange = function () {
-                        if (req.readyState == 4) {
-                            if (req.status == 200 || fileLoaded(req)) {
-                                var oidcProviderConfig = JSON.parse(req.responseText);
-                                setupOidcEndoints(oidcProviderConfig);
-                                promise.setSuccess();
-                            } else {
-                                promise.setError();
-                            }
-                        }
-                    };
-
-                    req.send();
+                    checkSendingOidcWellKnownRequest(oidcProviderConfigUrl);
                 } else {
-                    setupOidcEndoints(oidcProvider);
+                    processOidcConfiguration(oidcProvider);
                     promise.setSuccess();
                 }
             }

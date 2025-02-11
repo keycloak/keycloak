@@ -208,6 +208,27 @@ export interface KeycloakInitOptions {
 	 * HTTP method for calling the end_session endpoint. Defaults to 'GET'.
 	 */
 	logoutMethod?: 'GET' | 'POST';
+
+	/**
+     * By default, adapter will send initial request to OIDC well-known endpoint. The response from this request can help to
+     * retrieve some available capabilities of the server, which can allow adapter to optimize it's behaviour. If the option is true, adapter
+     * will omit the request and the behaviour will stick to the default options.
+     * @default false
+     */
+    omitWellKnownConfigRequest?: boolean;
+
+   /**
+     * When false and the keycloak.register is invoked, adapter will use the official OIDC way to send request to Keycloak registration. This means
+     * the request to OIDC authentication endpoint with the parameter prompt=create. When true, the adapter will use deprecated register endpoint, which is not compatible
+     * with OIDC specification and might be removed in the future versions of the Keycloak server.
+     *
+     * The default value of this option is retrieved from the OIDC well-known endpoint request based on the fact if new OIDC way is supported by the server,
+     * which is as long as OIDC well-known response contains "create" in the supported values of the prompt parameters. From the Keycloak 26.1, this will be false by default, but for the older
+     * Keycloak server versions, this will be true by default as those support only deprecated registration endpoint.
+     *
+	 * @default false
+	 */
+	useDeprecatedRegisterEndpoint?: boolean;
 }
 
 export interface KeycloakLoginOptions {

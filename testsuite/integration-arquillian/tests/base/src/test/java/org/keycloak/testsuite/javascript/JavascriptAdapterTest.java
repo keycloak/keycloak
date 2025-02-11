@@ -935,7 +935,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         testExecutor
                 .configure(keycloakConfig)
-                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+                .init(initOptions, assertErrorResponse("Incorrect response from the OIDC well-known endpoint."));
 
     }
 
@@ -953,7 +953,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         testExecutor
                 .configure(keycloakConfig)
-                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+                .init(initOptions, assertErrorResponse("Incorrect response from the OIDC well-known endpoint."));
 
     }
 
