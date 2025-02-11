@@ -676,6 +676,7 @@
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
                 <property name="outputToConsole">true</property>
+                <property name="jgroupsMtls">${auth.server.jgroups.mtls}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-quarkus-backend2" mode="manual" >
@@ -700,6 +701,7 @@
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
                 <property name="outputToConsole">true</property>
+                <property name="jgroupsMtls">${auth.server.jgroups.mtls}</property>
             </configuration>
         </container>
     </group>

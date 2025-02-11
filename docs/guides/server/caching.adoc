@@ -304,6 +304,19 @@ It requires a keystore with the certificate to use: `cache-embedded-mtls-key-sto
 The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
 To restrict unauthorized access, use a self-signed certificate for each {project_name} deployment.
 
+[NOTE]
+====
+**Zero Configuration Encryption**
+
+{project_name} offers a zero-configuration approach to encrypting network communication between nodes.
+This feature automatically generates self-signed certificates, eliminating the need for manual certificate creation and management.
+The generated certificate and associated keys are securely stored within the database of each {project_name} instance.
+
+To enable zero-configuration TLS encryption, set the `cache-embedded-mtls-enabled` option to true.
+It's important to note that this disables any custom certificate configurations specified using other cache-embedded-mtls-* options.
+Therefore, for zero-configuration encryption, you should not set any other cache-embedded-mtls-* options.
+====
+
 For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
 
 For more information about securing cache communication, see the {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport] documentation.

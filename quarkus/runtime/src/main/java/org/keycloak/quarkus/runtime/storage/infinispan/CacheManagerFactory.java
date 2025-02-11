@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime.storage.infinispan;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -28,15 +27,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.instrument.Metrics;
-import io.quarkus.arc.Arc;
-import jakarta.persistence.EntityManager;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
@@ -48,7 +43,6 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
@@ -59,23 +53,13 @@ import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
-import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
-import org.jgroups.conf.ProtocolConfiguration;
-import org.jgroups.protocols.JDBC_PING2;
-import org.jgroups.protocols.TCP_NIO2;
-import org.jgroups.protocols.UDP;
-import org.jgroups.util.TLS;
-import org.jgroups.util.TLSClientAuth;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
@@ -86,15 +70,10 @@ import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsConfigurator;
 
 import javax.net.ssl.SSLContext;
-import javax.sql.DataSource;
 
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
-import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
@@ -114,26 +93,25 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
 
 public class CacheManagerFactory {
 
-    private static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
+    public static final Logger logger = Logger.getLogger(CacheManagerFactory.class);
     // Map with the default cache configuration if the cache is not present in the XML.
     private static final Map<String, Supplier<ConfigurationBuilder>> DEFAULT_CONFIGS = Map.of(
             CRL_CACHE_NAME, InfinispanUtil::getCrlCacheConfig
     );
     private static final Supplier<ConfigurationBuilder> TO_NULL = () -> null;
 
-    private final CompletableFuture<EmbeddedCacheManager> cacheManagerFuture;
+    private volatile CompletableFuture<EmbeddedCacheManager> cacheManagerFuture;
     private final CompletableFuture<RemoteCacheManager> remoteCacheManagerFuture;
-    private final Function<EntityManager, EmbeddedCacheManager> jdbcCacheManagerFunction;
-    private volatile EmbeddedCacheManager cacheManager;
+    private final JGroupsConfigurator jGroupsConfigurator;
 
     public CacheManagerFactory(String config) {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
-        if (!isJdbcPingRequired(builder)) {
-            cacheManagerFuture = CompletableFuture.supplyAsync(() -> startEmbeddedCacheManager(builder, null));
-            jdbcCacheManagerFunction = null;
-        } else {
+        jGroupsConfigurator = JGroupsConfigurator.create(builder);
+
+        if (jGroupsConfigurator.requiresKeycloakSession()) {
             cacheManagerFuture = null;
-            jdbcCacheManagerFunction = em -> startEmbeddedCacheManager(builder, em);
+        } else {
+            cacheManagerFuture = CompletableFuture.supplyAsync(() -> startEmbeddedCacheManager(null));
         }
 
         if (InfinispanUtils.isRemoteInfinispan()) {
@@ -145,35 +123,18 @@ public class CacheManagerFactory {
         }
     }
 
-    private static boolean isJdbcPingRequired(ConfigurationBuilderHolder builder) {
-        if (InfinispanUtils.isRemoteInfinispan())
-            return false;
-
-        var transportConfig = builder.getGlobalConfigurationBuilder().transport();
-        if (transportConfig.getTransport() == null)
-            return false;
-
-        String transportStack = Configuration.getRawValue("kc.cache-stack");
-        if (transportStack != null && !isJdbcPingStack(transportStack))
-            return false;
-
-        var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
-        return !stackXmlAttribute.isModified() || isJdbcPingStack(stackXmlAttribute.get());
-    }
-
     public EmbeddedCacheManager getOrCreateEmbeddedCacheManager(KeycloakSession keycloakSession) {
         if (cacheManagerFuture != null)
             return join(cacheManagerFuture);
 
-        if (cacheManager == null) {
+        if (cacheManagerFuture == null) {
            synchronized (this) {
-              if (cacheManager == null) {
-                  EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
-                  cacheManager = jdbcCacheManagerFunction.apply(em);
+               if (cacheManagerFuture == null) {
+                   cacheManagerFuture = CompletableFuture.completedFuture(startEmbeddedCacheManager(keycloakSession));
               }
            }
         }
-        return cacheManager;
+        return join(cacheManagerFuture);
     }
 
     public RemoteCacheManager getOrCreateRemoteCacheManager() {
@@ -327,23 +288,13 @@ public class CacheManagerFactory {
         admin.reindexCache(cacheName);
     }
 
-    private EmbeddedCacheManager startEmbeddedCacheManager(ConfigurationBuilderHolder builder, EntityManager em) {
+    private EmbeddedCacheManager startEmbeddedCacheManager(KeycloakSession session) {
         logger.info("Starting Infinispan embedded cache manager");
+        var builder = jGroupsConfigurator.holder();
 
         // We must disable the Infinispan default ShutdownHook as we manage the EmbeddedCacheManager lifecycle explicitly
         // with #shutdown and multiple calls to EmbeddedCacheManager#stop can lead to Exceptions being thrown
         builder.getGlobalConfigurationBuilder().shutdown().hookBehavior(ShutdownHookBehavior.DONT_REGISTER);
-
-        if (Configuration.isTrue(MetricsOptions.METRICS_ENABLED)) {
-            builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
-            builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
-            builder.getGlobalConfigurationBuilder().cacheContainer().statistics(true);
-            builder.getGlobalConfigurationBuilder().metrics().namesAsTags(true);
-            if (Configuration.isTrue(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)) {
-                builder.getGlobalConfigurationBuilder().metrics().histograms(true);
-            }
-            builder.getNamedConfigurationBuilders().forEach((s, configurationBuilder) -> configurationBuilder.statistics().enabled(true));
-        }
 
         Marshalling.configure(builder.getGlobalConfigurationBuilder());
         assertAllCachesAreConfigured(builder,
@@ -370,17 +321,34 @@ public class CacheManagerFactory {
             // embedded mode!
             assertAllCachesAreConfigured(builder, Arrays.stream(CLUSTERED_CACHE_NAMES));
             if (builder.getNamedConfigurationBuilders().entrySet().stream().anyMatch(c -> c.getValue().clustering().cacheMode().isClustered())) {
-                configureTransportStack(builder, em);
+                if (jGroupsConfigurator.isLocal()) {
+                    throw new RuntimeException("Unable to use clustered cache with local mode.");
+                }
                 configureRemoteStores(builder);
             }
+            jGroupsConfigurator.configure(session);
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
             configureSessionsCaches(builder);
             validateWorkCacheConfiguration(builder);
         }
         configureCacheMaxCount(builder, CachingOptions.LOCAL_MAX_COUNT_CACHES);
         checkForRemoteStores(builder);
+        configureMetrics(builder);
 
         return new DefaultCacheManager(builder, isStartEagerly());
+    }
+
+    private static void configureMetrics(ConfigurationBuilderHolder holder) {
+        if (Configuration.isTrue(MetricsOptions.METRICS_ENABLED)) {
+            holder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
+            holder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
+            holder.getGlobalConfigurationBuilder().cacheContainer().statistics(true);
+            holder.getGlobalConfigurationBuilder().metrics().namesAsTags(true);
+            if (Configuration.isTrue(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)) {
+                holder.getGlobalConfigurationBuilder().metrics().histograms(true);
+            }
+            holder.getNamedConfigurationBuilders().forEach((s, configurationBuilder) -> configurationBuilder.statistics().enabled(true));
+        }
     }
 
     private static boolean isRemoteTLSEnabled() {
@@ -414,102 +382,6 @@ public class CacheManagerFactory {
 
     private static int getStartTimeout() {
         return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
-    }
-
-    private static void configureTransportStack(ConfigurationBuilderHolder builder, EntityManager em) {
-        var transportConfig = builder.getGlobalConfigurationBuilder().transport();
-        if (Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)) {
-            validateTlsAvailable(transportConfig.build());
-            var tls = new TLS()
-                  .enabled(true)
-                  .setKeystorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY))
-                  .setKeystorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY))
-                  .setKeystoreType("pkcs12")
-                  .setTruststorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY))
-                  .setTruststorePassword(requiredStringProperty(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY))
-                  .setTruststoreType("pkcs12")
-                  .setClientAuth(TLSClientAuth.NEED)
-                  .setProtocols(new String[]{"TLSv1.3"});
-            transportConfig.addProperty(JGroupsTransport.SOCKET_FACTORY, tls.createSocketFactory());
-            logger.info("MTLS enabled for communications for embedded caches");
-        }
-
-        String transportStack = Configuration.getRawValue("kc.cache-stack");
-        if (transportStack != null && !transportStack.isBlank() && !isJdbcPingStack(transportStack)) {
-            warnDeprecatedStack(transportStack);
-            transportConfig.defaultTransport().stack(transportStack);
-            return;
-        }
-
-        var stackXmlAttribute = transportConfig.defaultTransport().attributes().attribute(STACK);
-        // If the user has explicitly defined a transport stack that is not jdbc-ping or jdbc-ping-udp, return
-        if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
-            warnDeprecatedStack(stackXmlAttribute.get());
-            return;
-        }
-
-        var stackName = transportStack != null ?
-              transportStack :
-              stackXmlAttribute.isModified() ? stackXmlAttribute.get() : "jdbc-ping";
-        warnDeprecatedStack(stackName);
-
-        var udp = stackName.endsWith("udp");
-
-        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var attributes = Map.of(
-              // Leave initialize_sql blank as table is already created by Keycloak
-              "initialize_sql", "",
-              // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-              // "cluster" cannot be used with Oracle DB as it's a reserved word.
-              "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-              "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-              "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-              "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
-              "remove_all_data_on_view_change", "true",
-              "register_shutdown_hook", "false",
-              "stack.combine", "REPLACE",
-              "stack.position", udp ? "PING" : "MPING"
-        );
-        var stack = List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
-        builder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), udp ? "udp" : "tcp");
-
-        Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
-        transportConfig.addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
-        transportConfig.defaultTransport().stack(stackName);
-    }
-
-    private static void warnDeprecatedStack(String stackName) {
-        switch (stackName) {
-            case "jdbc-ping-udp":
-            case "tcp":
-            case "udp":
-            case "azure":
-            case "ec2":
-            case "google":
-                Logger.getLogger(CacheManagerFactory.class).warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
-        }
-    }
-
-    private static boolean isJdbcPingStack(String stackName) {
-        return "jdbc-ping".equals(stackName) || "jdbc-ping-udp".equals(stackName);
-    }
-
-    private static void validateTlsAvailable(GlobalConfiguration config) {
-        var stackName = config.transport().stack();
-        if (stackName == null) {
-            // unable to validate
-            return;
-        }
-        for (var protocol : config.transport().jgroups().configurator(stackName).getProtocolStack()) {
-            var name = protocol.getProtocolName();
-            if (name.equals(UDP.class.getSimpleName()) ||
-                    name.equals(UDP.class.getName()) ||
-                    name.equals(TCP_NIO2.class.getSimpleName()) ||
-                    name.equals(TCP_NIO2.class.getName())) {
-                throw new RuntimeException("Cache TLS is not available with protocol " + name);
-            }
-        }
-
     }
 
     private static void configureRemoteStores(ConfigurationBuilderHolder builder) {
@@ -655,7 +527,7 @@ public class CacheManagerFactory {
         }
     }
 
-    private static String requiredStringProperty(String propertyName) {
+    public static String requiredStringProperty(String propertyName) {
         return Configuration.getOptionalKcValue(propertyName).orElseThrow(() -> new RuntimeException("Property " + propertyName + " required but not specified"));
     }
 

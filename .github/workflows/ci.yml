@@ -814,6 +814,41 @@ jobs:
         with:
           job-id: clustering-integration-tests
 
+  clustering-integration-tests-mtls:
+    name: Clustering IT (mTLS)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      MAVEN_OPTS: -Xmx1536m
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run cluster tests with mtls
+        run: |
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=RealmInvalidationClusterTest -Dauth.server.jgroups.mtls=true -pl testsuite/integration-arquillian/tests/base
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Clustering IT (mTLS)
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: clustering-integration-tests-mtls
+
   fips-unit-tests:
     name: FIPS UT
     runs-on: ubuntu-latest
