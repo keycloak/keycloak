@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -57,7 +58,10 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
-    void testMetricsEndpoint() {
+    void testMetricsEndpoint(CLIResult cliResult) {
+        // See https://github.com/keycloak/keycloak/issues/36927
+        cliResult.assertNoMessage("A MeterFilter is being configured after a Meter has been registered to this registry.");
+
         // Send one request to populate some of the HTTP metrics that are not available on an instance on startup
         when().get("/metrics").then()
                 .statusCode(200);
