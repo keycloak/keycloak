@@ -169,6 +169,8 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.requestUri(requestUri);
             String state = oauth.stateParamRandom().getState();
             oauth.stateParamHardcoded(state);
+            oauth.openLoginForm();
+            oauth.openLoginForm();  // request the auth page three times simulating page reloads
             OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertEquals(state, loginResponse.getState());
             String code = loginResponse.getCode();
