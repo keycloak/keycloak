@@ -18,8 +18,8 @@ This guide provides instructions on how to visualize collected {project_name} me
 
 == Keycloak Grafana dashboards
 
-Grafana dashboards are distributed in form of a JSON file that is imported into a Grafana instance.
-JSON definitions of {project_name} Grafana dashboards are available in the following https://github.com/keycloak/keycloak-grafana-dashboard[Github repository].
+Grafana dashboards are distributed in the form of a JSON file that is imported into a Grafana instance.
+JSON definitions of {project_name} Grafana dashboards are available in the https://github.com/keycloak/keycloak-grafana-dashboard[keycloak/keycloak-grafana-dashboard GitHub repository].
 
 Follow these steps to download JSON file definitions.
 
@@ -33,7 +33,7 @@ Follow these steps to download JSON file definitions.
 |`main`
 |===
 
-. Clone Github repository
+. Clone the GitHub repository
 +
 ----
 git clone -b BRANCH_FROM_STEP_1 https://github.com/keycloak/keycloak-grafana-dashboard.git
@@ -46,7 +46,7 @@ Below is the list of available dashboards and their purpose.
 
 This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboard.json`.
 
-On the top of the dashboard, there are graphs displaying the SLIs defined in <@links.observability id="keycloak-service-level-indicators"/>.
+On the top of the dashboard, there are graphs displaying the service level indicators as defined in <@links.observability id="keycloak-service-level-indicators"/>.
 It can be also used while troubleshooting {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
 
 A screenshot of this dashboard:
@@ -69,23 +69,23 @@ image::observability/keycloak-capacity-planning-dashboard.png[]
 
 == Import a dashboard
 
-To import a dashboard follow these steps.
+To import a dashboard, follow these steps:
 
-. Open the dashboard page from the left Grafana menu
-. Click `New` and `Import`
-. Click `Upload dashboard JSON file` and pick the JSON file of the dashboard you want to import
-. Pick your Prometheus datasource
-. Click `Import`
+. Open the dashboard page from the left Grafana menu.
+. Click *New* and *Import*.
+. Click *Upload dashboard JSON file* and pick the JSON file of the dashboard you want to import.
+. Pick your Prometheus datasource.
+. Click *Import*.
 
 == Export a dashboard
 
 Exporting a dashboard may be useful, for example, if you want to suggest a change in our dashboard repository.
 Follow these steps to export a dashboard to JSON format.
 
-. Open a dashboard you would like to export
-. Click the share button in the top left corner next to the name of the dashboard
-. Change tab to `Export`
-. Click `Export for sharing externally option`
-. Then either `Save to file` or `View JSON` and `Copy to Clipboard` depending on where you want to store the resulting JSON
+. Open a dashboard you would like to export.
+. Click the share button in the top left corner next to the name of the dashboard.
+. Change tab to *Export*.
+. Enable the option *Export for sharing externally*.
+. Then either click on *Save to file* or click on *View JSON* and *Copy to Clipboard* depending on where you want to store the resulting JSON.
 
 </@tmpl.guide>
