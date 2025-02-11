@@ -23,7 +23,7 @@ export type SearchForm = {
   uri?: string;
   owner?: string;
   resourceType?: string;
-  policy?: string;
+  policyId?: string;
 };
 
 type SearchDropdownProps = {
@@ -44,7 +44,11 @@ export const SearchDropdown = ({
   type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
-  const form = useForm<SearchForm>({ mode: "onChange" });
+  const form = useForm<SearchForm>({
+    mode: "onChange",
+    defaultValues: search,
+  });
+
   const {
     reset,
     formState: { isDirty },
@@ -53,20 +57,30 @@ export const SearchDropdown = ({
 
   const [open, toggle] = useToggle();
   const [resourceScopes, setResourceScopes] = useState<string[]>([]);
+  const [localPolicies, setLocalPolicies] = useState<PolicyRepresentation[]>(
+    policies || [],
+  );
+  const selectedType = useWatch({ control: form.control, name: "type" });
+  const [key, setKey] = useState(0);
 
   const submit = (form: SearchForm) => {
     toggle();
     onSearch(form);
   };
 
-  const selectedType = useWatch({ control: form.control, name: "type" });
-
   useEffect(() => {
     const type = types?.find((item) => item.type === selectedType);
     setResourceScopes(type?.scopes || []);
-  }, [selectedType, types]);
 
-  useEffect(() => reset(search), [search]);
+    if (policies?.length) {
+      setLocalPolicies(policies);
+    }
+  }, [selectedType, types, policies]);
+
+  useEffect(() => {
+    reset(search);
+    setKey((prevKey) => prevKey + 1);
+  }, [search]);
 
   return (
     <Dropdown
@@ -88,6 +102,7 @@ export const SearchDropdown = ({
     >
       <FormProvider {...form}>
         <Form
+          key={key}
           isHorizontal
           className="keycloak__client_authentication__searchdropdown_form"
           onSubmit={handleSubmit(submit)}
@@ -162,15 +177,15 @@ export const SearchDropdown = ({
             <SelectControl
               name={"policyId"}
               label={t("policy")}
-              controller={{
-                defaultValue: "",
-              }}
-              options={[
-                ...(policies || []).map(({ id, name }) => ({
-                  key: id!,
-                  value: name!,
-                })),
-              ]}
+              controller={{ defaultValue: search.policyId || "" }}
+              options={
+                localPolicies
+                  ? localPolicies.map(({ id, name }) => ({
+                      key: id!,
+                      value: name!,
+                    }))
+                  : []
+              }
             />
           )}
           <ActionGroup>
@@ -185,7 +200,10 @@ export const SearchDropdown = ({
             <Button
               variant="link"
               data-testid="revert-btn"
-              onClick={() => onSearch({})}
+              onClick={() => {
+                reset({});
+                onSearch({});
+              }}
             >
               {t("clear")}
             </Button>

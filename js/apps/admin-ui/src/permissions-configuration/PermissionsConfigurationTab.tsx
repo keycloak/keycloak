@@ -94,7 +94,7 @@ export const PermissionsConfigurationTab = ({
         id: clientId,
       });
 
-      const permissions = adminClient.clients.findPermissions({
+      const permissions = adminClient.clients.listPermissionScope({
         first,
         max: max + 1,
         id: clientId,
@@ -149,9 +149,11 @@ export const PermissionsConfigurationTab = ({
     [key, search, first, max],
   );
 
-  const policies = permissions
-    ?.flatMap((permission) => permission?.policies!)
-    .filter((policy) => policy?.name);
+  const policies = useMemo(() => {
+    return permissions
+      ?.flatMap((permission) => permission?.policies!)
+      .filter((policy) => policy?.name);
+  }, [permissions]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
