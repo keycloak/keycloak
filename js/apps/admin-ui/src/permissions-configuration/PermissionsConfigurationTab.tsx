@@ -149,12 +149,6 @@ export const PermissionsConfigurationTab = ({
     [key, search, first, max],
   );
 
-  const policies = useMemo(() => {
-    return permissions
-      ?.flatMap((permission) => permission?.policies!)
-      .filter((policy) => policy?.name);
-  }, [permissions]);
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
     messageKey: t("deleteAdminPermissionConfirm", {
@@ -217,7 +211,6 @@ export const PermissionsConfigurationTab = ({
               <>
                 <ToolbarItem>
                   <SearchDropdown
-                    policies={policies!}
                     resources={users!}
                     types={resourceTypes}
                     search={search}
