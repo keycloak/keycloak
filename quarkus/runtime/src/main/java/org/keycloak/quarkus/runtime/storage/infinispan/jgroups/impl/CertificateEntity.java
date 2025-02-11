@@ -21,6 +21,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
@@ -72,21 +73,25 @@ public class CertificateEntity {
         this.publicKeyPem = publicKeyPem;
     }
 
+    @JsonIgnore
     public void setCertificate(X509Certificate certificate) {
         Objects.requireNonNull(certificate);
         setCertificatePem(PemUtils.encodeCertificate(certificate));
     }
 
+    @JsonIgnore
     public void setKeyPair(KeyPair keyPair) {
         Objects.requireNonNull(keyPair);
         setPrivateKeyPem(PemUtils.encodeKey(keyPair.getPrivate()));
         setPublicKeyPem(PemUtils.encodeKey(keyPair.getPublic()));
     }
 
+    @JsonIgnore
     public X509Certificate getCertificate() {
         return PemUtils.decodeCertificate(getCertificatePem());
     }
 
+    @JsonIgnore
     public KeyPair getKeyPair() {
         var prv = PemUtils.decodePrivateKey(getPrivateKeyPem());
         var pub = PemUtils.decodePublicKey(getPublicKeyPem());
