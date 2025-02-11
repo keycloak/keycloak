@@ -17,10 +17,9 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
-import java.util.Optional;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.generator.annotation.Default;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -31,7 +30,12 @@ import org.keycloak.operator.upgrade.UpdateStrategy;
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class UpdateSpec {
 
+    // those are the default, keep them in sync.
+    private static final UpdateStrategy DEFAULT = UpdateStrategy.RECREATE_ON_IMAGE_CHANGE;
+    private static final String DEFAULT_JSON = "RecreateOnImageChange";
+
     @JsonPropertyDescription("Sets the upgrade strategy to use.")
+    @Default(DEFAULT_JSON)
     private UpdateStrategy strategy;
 
     public UpdateStrategy getStrategy() {
@@ -42,9 +46,10 @@ public class UpdateSpec {
         this.strategy = strategy;
     }
 
-    public static Optional<UpdateStrategy> findUpdateStrategy(Keycloak keycloak) {
+    public static UpdateStrategy getUpdateStrategy(Keycloak keycloak) {
         return CRDUtils.keycloakSpecOf(keycloak)
                 .map(KeycloakSpec::getUpdateSpec)
-                .map(UpdateSpec::getStrategy);
+                .map(UpdateSpec::getStrategy)
+                .orElse(DEFAULT);
     }
 }

@@ -262,7 +262,7 @@ public class CRSerializationTest {
         assertNotNull(updateSpec);
         var upgradeStrategy = updateSpec.getStrategy();
         assertNotNull(upgradeStrategy);
-        assertEquals(UpdateStrategy.RECREATE, upgradeStrategy);
+        assertEquals(UpdateStrategy.FORCE_RECREATE, upgradeStrategy);
     }
 
     @Test
