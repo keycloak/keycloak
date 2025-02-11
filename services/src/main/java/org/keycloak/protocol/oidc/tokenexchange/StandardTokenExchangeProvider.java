@@ -121,6 +121,30 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
+    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
+        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
+        //reject if the requester-client is not in the audience of the subject token
+        if (!client.equals(tokenHolder)) {
+            forbiddenIfClientIsNotWithinTokenAudience(token, null);
+        }
+        for (ClientModel targetClient : targetAudienceClients) {
+            boolean isClientTheAudience = targetClient.equals(client);
+            if (isClientTheAudience) {
+                if (client.isPublicClient()) {
+                    // public clients can only exchange on to themselves if they are the token holder
+                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+                } else if (!client.equals(tokenHolder)) {
+                    // confidential clients can only exchange to themselves if they are within the token audience
+                    forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
+                }
+            } else {
+                if (client.isPublicClient()) {
+                    // public clients can not exchange tokens from other client
+                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+                }
+            }
+        }
+    }
 
     // For now, include "scope" parameter as is
     @Override
@@ -128,12 +152,10 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return params.getScope();
     }
 
-
     protected void setClientToContext(List<ClientModel> targetAudienceClients) {
         // The client requesting exchange is set in the context
         session.getContext().setClient(client);
     }
-
 
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope) {

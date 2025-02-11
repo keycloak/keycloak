@@ -21,6 +21,7 @@ package org.keycloak.testsuite.oauth.tokenexchange;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
@@ -60,11 +61,8 @@ public class TokenExchangeTestUtils {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.getRole("example");
 
-        AdminPermissionManagement management = AdminPermissions.management(session, realm);
         ClientModel target = realm.getClientByClientId("target");
         assertNotNull(target);
-
-        RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
 
         ClientModel differentScopeClient = realm.addClient("different-scope-client");
         differentScopeClient.setClientId("different-scope-client");
@@ -84,10 +82,18 @@ public class TokenExchangeTestUtils {
         clientExchanger.setSecret("secret");
         clientExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientExchanger.setFullScopeAllowed(false);
-        clientExchanger.addScopeMapping(impersonateRole);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
+            clientExchanger.addScopeMapping(impersonateRole);
+        }
+
         clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("different-scope-client-audience", differentScopeClient.getClientId(), null, true, false, true));
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger1", null, "legal", true, false, true));
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger2", null, "no-refresh-token", true, false, true));
 
         ClientModel illegal = realm.addClient("illegal");
         illegal.setClientId("illegal");
@@ -176,9 +182,12 @@ public class TokenExchangeTestUtils {
         clientRep.addClient(serviceAccount.getId());
         clientRep.addClient(differentScopeClient.getId());
 
-        ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
-        management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            ResourceServer server = management.realmResourceServer();
+            Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
+            management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
+        }
 
         // permission for user impersonation for a client
 
@@ -188,17 +197,26 @@ public class TokenExchangeTestUtils {
         clientImpersonateRep.addClient(directPublic.getId());
         clientImpersonateRep.addClient(directUntrustedPublic.getId());
         clientImpersonateRep.addClient(directNoSecret.getId());
-        server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
-        management.users().setPermissionsEnabled(true);
-        management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
-        management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            ResourceServer server = management.realmResourceServer();
+            Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
+            management.users().setPermissionsEnabled(true);
+            management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
+            management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        }
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
         user.credentialManager().updateCredential(UserCredentialModel.password("password"));
         user.grantRole(exampleRole);
-        user.grantRole(impersonateRole);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            RoleModel impersonateRole = management.getRealmPermissionsClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
+            user.grantRole(impersonateRole);
+        }
 
         UserModel bad = session.users().addUser(realm, "bad-impersonator");
         bad.setEnabled(true);
@@ -221,7 +239,7 @@ public class TokenExchangeTestUtils {
     public static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
-        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+
 
         ClientModel target = realm.addClient("target");
         target.setName("target");
@@ -243,18 +261,19 @@ public class TokenExchangeTestUtils {
         directExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directExchanger.setFullScopeAllowed(false);
 
-        // permission for client to client exchange to "target" client
-        management.clients().setPermissionsEnabled(target, true);
-
         ClientPolicyRepresentation clientImpersonateRep = new ClientPolicyRepresentation();
         clientImpersonateRep.setName("clientImpersonatorsDirect");
         clientImpersonateRep.addClient(directExchanger.getId());
 
-        ResourceServer server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
-        management.users().setPermissionsEnabled(true);
-        management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
-        management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+            AdminPermissionManagement management = AdminPermissions.management(session, realm);
+            management.clients().setPermissionsEnabled(target, true);
+            ResourceServer server = management.realmResourceServer();
+            Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
+            management.users().setPermissionsEnabled(true);
+            management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
+            management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        }
 
         UserModel impersonatedUser = session.users().addUser(realm, "impersonated-user");
         impersonatedUser.setEnabled(true);

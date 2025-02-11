@@ -206,8 +206,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
 
     }
 
-    protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
-            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
+    protected String getRequestedTokenType() {
         String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
@@ -217,13 +216,13 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             event.detail(Details.REASON, "requested_token_type unsupported");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
-
         }
+        return requestedTokenType;
+    }
 
+    protected List<ClientModel> getTargetAudienceClients() {
         List<String> audienceParams = params.getAudience();
-        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
         List<ClientModel> targetAudienceClients = new ArrayList<>();
-
         if (audienceParams != null) {
             for (String audience : audienceParams) {
                 ClientModel targetClient = realm.getClientByClientId(audience);
@@ -237,12 +236,10 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 }
             }
         }
-
         // Assume client itself is audience in case audience parameter not provided
         if (targetAudienceClients.isEmpty()) {
             targetAudienceClients.add(client);
         }
-
         for (ClientModel targetClient : targetAudienceClients) {
             if (targetClient.isConsentRequired()) {
                 event.detail(Details.REASON, "audience requires consent");
@@ -257,7 +254,11 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
             }
         }
+        return targetAudienceClients;
+    }
 
+    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
+        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
         for (ClientModel targetClient : targetAudienceClients) {
             boolean isClientTheAudience = targetClient.equals(client);
             if (isClientTheAudience) {
@@ -281,7 +282,14 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 }
             }
         }
+    }
 
+    protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
+            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
+
+        String requestedTokenType = getRequestedTokenType();
+        List<ClientModel> targetAudienceClients = getTargetAudienceClients();
+        validateAudience(token, disallowOnHolderOfTokenMismatch, targetAudienceClients);
         String scope = getRequestedScope(token, targetAudienceClients);
 
         try {
@@ -300,7 +308,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 
-    private void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token, ClientModel tokenHolder) {
+    protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token, ClientModel tokenHolder) {
         if (token != null && !token.hasAudience(client.getClientId())) {
             event.detail(Details.REASON, "client is not within the token audience");
             event.error(Errors.NOT_ALLOWED);
@@ -308,7 +316,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
     }
 
-    private void forbiddenIfClientIsNotTokenHolder(boolean disallowOnHolderOfTokenMismatch, ClientModel tokenHolder) {
+    protected void forbiddenIfClientIsNotTokenHolder(boolean disallowOnHolderOfTokenMismatch, ClientModel tokenHolder) {
         if (disallowOnHolderOfTokenMismatch && !client.equals(tokenHolder)) {
             event.detail(Details.REASON, "client is not the token holder");
             event.error(Errors.NOT_ALLOWED);

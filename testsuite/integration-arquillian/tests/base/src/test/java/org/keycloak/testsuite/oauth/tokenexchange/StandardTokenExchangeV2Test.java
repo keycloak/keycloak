@@ -19,10 +19,9 @@
 
 package org.keycloak.testsuite.oauth.tokenexchange;
 
-import java.util.Map;
-
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
@@ -39,13 +38,13 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true) // TODO: Replace with admin-fine-grained-authz V2
 public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTest {
 
     @Override
@@ -85,6 +84,43 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
         return accessToken;
     }
 
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchange() throws Exception {
+        setupRealm();
+        oauth.realm(TEST);
+        String accessToken = getInitialAccessTokenForClientExchanger();
+        {
+            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+            Assert.assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+            Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+        {
+            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "legal", "secret");
+            Assert.assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+            Assert.assertEquals("legal", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+            assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+        {
+            //exchange not allowed due the illegal client is not in the client-exchanger audience
+            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
+            Assert.assertEquals(403, response.getStatusCode());
+        }
+    }
+
     // Scope parameter is different with V2. TODO: Should write differently this test for V2
     @Test
     @UncaughtServerErrorExpected
@@ -99,6 +135,21 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
     @Ignore
     public void testExchangeDifferentScopesWithScopeParameter() throws Exception {
 
+    }
+
+    //token exchange for public client will be not supported for v2 TODO: Should write differently this test for V2
+    @Test
+    @Ignore
+    @UncaughtServerErrorExpected
+    public void testExchangeFromPublicClient() {
+    }
+
+
+    //token exchange for public client will be not supported for v2 TODO: Should write differently this test for V2
+    @Test
+    @Ignore
+    @UncaughtServerErrorExpected
+    public void testPublicClientNotAllowed() {
     }
 
 }
