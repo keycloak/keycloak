@@ -36,7 +36,7 @@ import { Role } from "../../clients/authorization/policy/Role";
 import { Time } from "../../clients/authorization/policy/Time";
 import { JavaScript } from "../../clients/authorization/policy/JavaScript";
 import { LogicSelector } from "../../clients/authorization/policy/LogicSelector";
-import { Aggregate } from "./permission-policy/Aggregate";
+import { Aggregate } from "../../clients/authorization/policy/Aggregate";
 import { capitalize } from "lodash-es";
 import { type JSX } from "react";
 
@@ -86,6 +86,7 @@ type NewPermissionConfigurationDialogProps = {
   policies: PolicyRepresentation[];
   resourceType: string;
   toggleDialog: () => void;
+  onAssign: (newPolicy: PolicyRepresentation) => void;
 };
 
 export const NewPermissionPolicyDialog = ({
@@ -93,6 +94,7 @@ export const NewPermissionPolicyDialog = ({
   providers,
   policies,
   toggleDialog,
+  onAssign,
 }: NewPermissionConfigurationDialogProps) => {
   const { adminClient } = useAdminClient();
   const { realmRepresentation } = useRealm();
@@ -120,7 +122,7 @@ export const NewPermissionPolicyDialog = ({
   const ComponentType = getComponentType();
 
   const save = async (policy: Policy) => {
-    // remove entries that only have the boolean set and no id
+    // Remove entries that only have the boolean set and no id
     policy.groups = policy.groups?.filter((g) => g.id);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
     policy.roles = policy.roles
@@ -128,10 +130,12 @@ export const NewPermissionPolicyDialog = ({
       .map((r) => ({ ...r, required: r.required || false }));
 
     try {
-      await adminClient.clients.createPolicy(
+      const createdPolicy = await adminClient.clients.createPolicy(
         { id: permissionClientId, type: policyTypeSelector! },
         policy,
       );
+
+      onAssign(createdPolicy);
       toggleDialog();
       addAlert(t("create" + "PolicySuccess"), AlertVariant.success);
     } catch (error) {
@@ -141,17 +145,21 @@ export const NewPermissionPolicyDialog = ({
 
   return (
     <Modal
-      aria-label={t("createAPolicy")}
+      aria-label={t("createPermissionPolicy")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
-          <Text component={TextVariants.h1}>{t("createAPolicy")}</Text>
+          <Text component={TextVariants.h1}>{t("createPermissionPolicy")}</Text>
         </TextContent>
       }
       isOpen
       onClose={toggleDialog}
     >
-      <Form id="createAPolicy-form" onSubmit={handleSubmit(save)} isHorizontal>
+      <Form
+        id="createPermissionPolicy-form"
+        onSubmit={handleSubmit(save)}
+        isHorizontal
+      >
         <FormProvider {...form}>
           <TextControl
             name="name"

@@ -1,7 +1,10 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import ResourceServerRepresentation, {
+  ResourceTypesRepresentation,
+} from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -24,7 +27,7 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -41,6 +44,7 @@ import { toCreatePermissionConfiguration } from "./routes/NewPermissionConfigura
 import "../clients/authorization/permissions.css";
 import { AuthorizationScopesDetails } from "./permission-configuration/AuthorizationScopesDetails";
 import { toPermissionConfigurationDetails } from "./routes/PermissionConfigurationDetails";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 
 type PermissionsConfigurationProps = {
   clientId: string;
@@ -67,33 +71,45 @@ export const PermissionsConfigurationTab = ({
     useState<PolicyRepresentation>();
   const [resourceServer, setResourceServer] =
     useState<ResourceServerRepresentation>();
+  const [users, setUsers] = useState<UserRepresentation[]>();
   const [search, setSearch] = useState<SearchForm>({});
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [newDialog, toggleDialog] = useToggle();
+  const localeSort = useLocaleSort();
+  const allResourceTypes = resourceServer?.authorizationSchema?.resourceTypes;
+
+  const resourceTypes = useMemo(() => {
+    const resourceTypes = allResourceTypes
+      ? (Object.values(allResourceTypes) as ResourceTypesRepresentation[])
+      : [];
+    return localeSort(resourceTypes, mapByKey("type"));
+  }, [allResourceTypes, localeSort]);
 
   useFetch(
     async () => {
-      const resourceServerPromise = adminClient.clients.getResourceServer({
+      const resourceServer = adminClient.clients.getResourceServer({
         id: clientId,
       });
 
-      const permissionsPromise = adminClient.clients.findPermissions({
+      const permissions = adminClient.clients.listPermissionScope({
         first,
         max: max + 1,
         id: clientId,
         ...search,
       });
 
-      const [resourceServer, permissions] = await Promise.all([
-        resourceServerPromise,
-        permissionsPromise,
-      ]);
+      const users = adminClient.users.find({
+        realm,
+      });
+
+      const [resourceServerData, permissionsData, usersData] =
+        await Promise.all([resourceServer, permissions, users]);
 
       const processedPermissions = await Promise.all(
-        permissions.map(async (permission) => {
+        permissionsData.map(async (permission) => {
           const policies = await adminClient.clients.getAssociatedPolicies({
             id: clientId,
             permissionId: permission.id!,
@@ -119,18 +135,29 @@ export const PermissionsConfigurationTab = ({
         }),
       );
 
-      return { resourceServer, permissions: processedPermissions };
+      return {
+        resourceServerData,
+        permissionsData: processedPermissions,
+        usersData,
+      };
     },
     (data) => {
-      setResourceServer(data.resourceServer);
-      setPermissions(data.permissions as any[]);
+      setResourceServer(data.resourceServerData);
+      setPermissions(data.permissionsData as any[]);
+      setUsers(data.usersData);
     },
     [key, search, first, max],
   );
 
+  const policies = useMemo(() => {
+    return permissions
+      ?.flatMap((permission) => permission?.policies!)
+      .filter((policy) => policy?.name);
+  }, [permissions]);
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deletePermission",
-    messageKey: t("deletePermissionConfirm", {
+    messageKey: t("deleteAdminPermissionConfirm", {
       permission: selectedPermission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
@@ -163,7 +190,7 @@ export const PermissionsConfigurationTab = ({
         <>
           {newDialog && (
             <NewPermissionConfigurationDialog
-              resourceTypes={resourceServer?.authorizationSchema?.resourceTypes}
+              resourceTypes={resourceTypes}
               onSelect={(resourceType) =>
                 navigate(
                   toCreatePermissionConfiguration({
@@ -190,10 +217,9 @@ export const PermissionsConfigurationTab = ({
               <>
                 <ToolbarItem>
                   <SearchDropdown
-                    types={resourceServer?.authorizationSchema?.resourceTypes}
-                    resources={[]}
-                    scopes={[]}
-                    policies={[]}
+                    policies={policies!}
+                    resources={users!}
+                    types={resourceTypes}
                     search={search}
                     onSearch={setSearch}
                     type="adminPermission"
@@ -266,6 +292,7 @@ export const PermissionsConfigurationTab = ({
                       <Td>
                         <AuthorizationScopesDetails
                           row={{
+                            resourceType: permission.resourceType || "",
                             associatedScopes: permission.scopes?.map(
                               (scope: ScopeRepresentation) => ({
                                 name: scope.name || "",
@@ -369,7 +396,7 @@ export const PermissionsConfigurationTab = ({
         <ListEmptyState
           isSearchVariant
           message={t("noSearchResults")}
-          instructions={t("noSearchResultsInstructions")}
+          instructions={t("noPermissionSearchResultsInstructions")}
         />
       )}
     </PageSection>

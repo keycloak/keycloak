@@ -7,17 +7,17 @@ export type PermissionPolicyDetailsParams = {
   realm: string;
   permissionClientId: string;
   policyId: string;
-  resourceType: string;
+  policyType: string;
 };
 
 const PermissionPolicyDetails = lazy(
-  () => import("../permission-configuration/PermissionPolicyDetails"),
+  () => import("../../clients/authorization/policy/PolicyDetails"),
 );
 
 export const PermissionPolicyDetailsRoute: AppRouteObject = {
-  path: "/:realm/permissions/:permissionClientId/policy/:policyId/:resourceType",
+  path: "/:realm/permissions/:permissionClientId/policy/:policyId/:policyType",
   element: <PermissionPolicyDetails />,
-  breadcrumb: (t) => t("permissionPolicyDetails"),
+  breadcrumb: (t) => t("policyDetails"),
   handle: {
     access: (accessChecker) =>
       accessChecker.hasAny(

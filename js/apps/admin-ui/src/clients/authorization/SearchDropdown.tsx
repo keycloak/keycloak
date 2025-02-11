@@ -1,7 +1,5 @@
-import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -10,8 +8,8 @@ import {
   Form,
   MenuToggle,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import useToggle from "../../utils/useToggle";
 
@@ -25,14 +23,13 @@ export type SearchForm = {
   uri?: string;
   owner?: string;
   resourceType?: string;
-  policy?: string;
+  policyId?: string;
 };
 
 type SearchDropdownProps = {
   policies?: PolicyRepresentation[];
-  types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
-  resources?: ResourceRepresentation[];
-  scopes?: ScopeRepresentation[];
+  resources?: UserRepresentation[];
+  types?: PolicyRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
   type: "resource" | "policy" | "permission" | "adminPermission";
@@ -40,15 +37,18 @@ type SearchDropdownProps = {
 
 export const SearchDropdown = ({
   policies,
-  types,
   resources,
-  scopes,
+  types,
   search,
   onSearch,
   type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
-  const form = useForm<SearchForm>({ mode: "onChange" });
+  const form = useForm<SearchForm>({
+    mode: "onChange",
+    defaultValues: search,
+  });
+
   const {
     reset,
     formState: { isDirty },
@@ -56,13 +56,31 @@ export const SearchDropdown = ({
   } = form;
 
   const [open, toggle] = useToggle();
+  const [resourceScopes, setResourceScopes] = useState<string[]>([]);
+  const [localPolicies, setLocalPolicies] = useState<PolicyRepresentation[]>(
+    policies || [],
+  );
+  const selectedType = useWatch({ control: form.control, name: "type" });
+  const [key, setKey] = useState(0);
 
   const submit = (form: SearchForm) => {
     toggle();
     onSearch(form);
   };
 
-  useEffect(() => reset(search), [search]);
+  useEffect(() => {
+    const type = types?.find((item) => item.type === selectedType);
+    setResourceScopes(type?.scopes || []);
+
+    if (policies?.length) {
+      setLocalPolicies(policies);
+    }
+  }, [selectedType, types, policies]);
+
+  useEffect(() => {
+    reset(search);
+    setKey((prevKey) => prevKey + 1);
+  }, [search]);
 
   return (
     <Dropdown
@@ -84,6 +102,7 @@ export const SearchDropdown = ({
     >
       <FormProvider {...form}>
         <Form
+          key={key}
           isHorizontal
           className="keycloak__client_authentication__searchdropdown_form"
           onSubmit={handleSubmit(submit)}
@@ -106,17 +125,19 @@ export const SearchDropdown = ({
           )}
           {type !== "resource" && (
             <SelectControl
-              name={type !== "adminPermission" ? "type" : "resourceType"}
+              name={type !== "adminPermission" ? "type" : "type"}
               label={type !== "adminPermission" ? t("type") : t("resourceType")}
               controller={{
                 defaultValue: "",
               }}
               options={[
-                { key: "", value: t("allTypes") },
+                ...(type !== "adminPermission"
+                  ? [{ key: "", value: t("allTypes") }]
+                  : []),
                 ...(Array.isArray(types)
                   ? types.map(({ type, name }) => ({
                       key: type!,
-                      value: name!,
+                      value: name! || type!,
                     }))
                   : []),
               ]}
@@ -130,41 +151,41 @@ export const SearchDropdown = ({
                 defaultValue: "",
               }}
               options={[
-                ...(resources || []).map(({ type, name }) => ({
-                  key: type!,
-                  value: name!,
+                ...(resources || []).map(({ id, username }) => ({
+                  key: id!,
+                  value: username!,
                 })),
               ]}
             />
           )}
           {type === "adminPermission" && (
             <SelectControl
-              name={"authorizationScope"}
+              name={"scope"}
               label={t("authorizationScope")}
               controller={{
                 defaultValue: "",
               }}
               options={[
-                ...(scopes || []).map(({ name }) => ({
-                  key: name!,
-                  value: name!,
+                ...(resourceScopes || []).map((resourceScope) => ({
+                  key: resourceScope!,
+                  value: resourceScope!,
                 })),
               ]}
             />
           )}
           {type === "adminPermission" && (
             <SelectControl
-              name={"policy"}
+              name={"policyId"}
               label={t("policy")}
-              controller={{
-                defaultValue: "",
-              }}
-              options={[
-                ...(policies || []).map(({ type, name }) => ({
-                  key: type!,
-                  value: name!,
-                })),
-              ]}
+              controller={{ defaultValue: search.policyId || "" }}
+              options={
+                localPolicies
+                  ? localPolicies.map(({ id, name }) => ({
+                      key: id!,
+                      value: name!,
+                    }))
+                  : []
+              }
             />
           )}
           <ActionGroup>
@@ -179,7 +200,10 @@ export const SearchDropdown = ({
             <Button
               variant="link"
               data-testid="revert-btn"
-              onClick={() => onSearch({})}
+              onClick={() => {
+                reset({});
+                onSearch({});
+              }}
             >
               {t("clear")}
             </Button>

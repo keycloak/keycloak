@@ -34,13 +34,13 @@ import { toCreatePolicy } from "../routes/NewPolicy";
 import { toPolicyDetails } from "../routes/PolicyDetails";
 import { toResourceDetails } from "../routes/Resource";
 import { NewPolicyDialog } from "./NewPolicyDialog";
+import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
 
 type Type = "resources" | "policies";
 
 type ResourcesPolicySelectProps = {
   name: Type;
   clientId: string;
-  isPermissionClient?: boolean;
   permissionId?: string;
   variant?: Variant;
   preSelected?: string;
@@ -77,7 +77,6 @@ const typeMapping: TypeMapping = {
 export const ResourcesPolicySelect = ({
   name,
   clientId,
-  isPermissionClient,
   permissionId,
   variant = SelectVariant.typeaheadMulti,
   preSelected,
@@ -101,6 +100,7 @@ export const ResourcesPolicySelect = ({
     useState<PolicyProviderRepresentation[]>();
   const [onUnsavedChangesConfirm, setOnUnsavedChangesConfirm] =
     useState<() => void>();
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
   const functions = typeMapping[name];
 
@@ -282,7 +282,7 @@ export const ResourcesPolicySelect = ({
             typeAheadAriaLabel={t(name)}
             chipGroupComponent={toChipGroupItems(field)}
             footer={
-              name === "policies" && !isPermissionClient ? (
+              name === "policies" && !isAdminPermissionsClient ? (
                 <Button
                   variant="link"
                   isInline

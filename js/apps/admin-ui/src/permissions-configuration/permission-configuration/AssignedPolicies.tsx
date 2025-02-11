@@ -50,6 +50,7 @@ export const AssignedPolicies = ({
     control,
     getValues,
     setValue,
+    trigger,
     formState: { errors },
   } = useFormContext<AssignedPolicyForm>();
   const values = getValues("policies");
@@ -95,7 +96,12 @@ export const AssignedPolicies = ({
     const assignedPolicies = policies.map(({ policy }) => ({
       id: policy.id!,
     }));
-    setValue("policies", [...(values || []), ...assignedPolicies]);
+
+    setValue("policies", [
+      ...(getValues("policies") || []),
+      ...assignedPolicies,
+    ]);
+    trigger("policies");
     setSelectedPolicies([
       ...selectedPolicies,
       ...policies.map(({ policy }) => policy),
@@ -126,14 +132,14 @@ export const AssignedPolicies = ({
 
   return (
     <FormGroup
-      label={t("assignedPolicies")}
+      label={t("policies")}
       labelIcon={
         <HelpItem
           helpText={t("permissionPoliciesHelp")}
-          fieldLabelId="assignedPolicies"
+          fieldLabelId="policies"
         />
       }
-      fieldId="assignedPolicies"
+      fieldId="policies"
       isRequired
     >
       <Controller
@@ -165,6 +171,9 @@ export const AssignedPolicies = ({
                 providers={providers!}
                 policies={policies!}
                 resourceType={resourceType}
+                onAssign={(newPolicy) => {
+                  assign([{ policy: newPolicy }]);
+                }}
               />
             )}
             <Button
@@ -259,9 +268,7 @@ export const AssignedPolicies = ({
           }
         />
       )}
-      {errors.policies && (
-        <FormErrorText message={t("requiredAssignedPolicies")} />
-      )}
+      {errors.policies && <FormErrorText message={t("requiredPolicies")} />}
     </FormGroup>
   );
 };

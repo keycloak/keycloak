@@ -1,3 +1,4 @@
+import { ResourceTypesRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useTranslation } from "react-i18next";
 import {
   Modal,
@@ -8,9 +9,6 @@ import {
   Alert,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { useMemo } from "react";
-import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
-import { ResourceTypesRepresentation } from "libs/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { isValidComponentType } from "./permission-configuration/PermissionConfigurationDetails";
 
 type NewPermissionConfigurationDialogProps = {
@@ -25,14 +23,6 @@ export const NewPermissionConfigurationDialog = ({
   toggleDialog,
 }: NewPermissionConfigurationDialogProps) => {
   const { t } = useTranslation();
-  const localeSort = useLocaleSort();
-
-  const sortedResourceTypes = useMemo(() => {
-    const resourceTypeArray = resourceTypes
-      ? (Object.values(resourceTypes) as ResourceTypesRepresentation[])
-      : [];
-    return localeSort(resourceTypeArray, mapByKey("type"));
-  }, [resourceTypes, localeSort]);
 
   return (
     <Modal
@@ -60,26 +50,25 @@ export const NewPermissionConfigurationDialog = ({
           </Tr>
         </Thead>
         <Tbody>
-          {sortedResourceTypes.map((resourceType) => (
-            <Tr
-              key={resourceType.type}
-              data-testid={resourceType.type}
-              onRowClick={() => {
-                const transformedResourceType: ResourceTypesRepresentation = {
-                  ...resourceType,
-                  scopes: resourceType.scopes,
-                };
-                onSelect(transformedResourceType);
-              }}
-              isClickable
-            >
-              <Td>{resourceType.type}</Td>
-              <Td style={{ textWrap: "wrap" }}>
-                {isValidComponentType(resourceType.type!) &&
-                  t(`resourceType.${resourceType.type}`)}
-              </Td>
-            </Tr>
-          ))}
+          {Object.keys(resourceTypes || {}).map((key: any) => {
+            const resourceType = resourceTypes![key];
+            return (
+              <Tr
+                key={resourceType.type}
+                data-testid={resourceType.type}
+                onRowClick={() => {
+                  onSelect(resourceType);
+                }}
+                isClickable
+              >
+                <Td>{resourceType.type}</Td>
+                <Td style={{ textWrap: "wrap" }}>
+                  {isValidComponentType(resourceType.type!) &&
+                    t(`resourceType.${resourceType.type}`)}
+                </Td>
+              </Tr>
+            );
+          })}
         </Tbody>
       </Table>
     </Modal>
