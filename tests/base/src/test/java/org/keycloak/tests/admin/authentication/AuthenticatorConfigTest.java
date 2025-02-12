@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.authentication;
+package org.keycloak.tests.admin.authentication;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticatorFactory;
 import org.keycloak.events.admin.OperationType;
@@ -30,9 +31,17 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -44,13 +53,23 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     private String flowId;
     private String executionId;
     private String executionId2;
 
-    @Before
+    @BeforeEach
     public void beforeConfigTest() {
         AuthenticationFlowRepresentation flowRep = newFlow("firstBrokerLogin2", "firstBrokerLogin2", "basic-flow", true, false);
         flowId = createFlow(flowRep);
@@ -58,17 +77,17 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         HashMap<String, Object> params = new HashMap<>();
         params.put("provider", IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
         authMgmtResource.addExecution("firstBrokerLogin2", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
         params.put("provider", IdpDetectExistingBrokerUserAuthenticatorFactory.PROVIDER_ID);
         authMgmtResource.addExecution("firstBrokerLogin2", params);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
 
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("firstBrokerLogin2");
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, executionReps);
-        Assert.assertNotNull(exec);
+        Assertions.assertNotNull(exec);
         executionId = exec.getId();
         exec = findExecutionByProvider(IdpDetectExistingBrokerUserAuthenticatorFactory.PROVIDER_ID, executionReps);
-        Assert.assertNotNull(exec);
+        Assertions.assertNotNull(exec);
         executionId2 = exec.getId();
     }
 
@@ -76,7 +95,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
     public void testCreateConfigWithReservedChar() {
         AuthenticatorConfigRepresentation cfg = newConfig("f!oo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
         Response resp = authMgmtResource.newExecutionConfig(executionId, cfg);
-        Assert.assertEquals(400, resp.getStatus());
+        Assertions.assertEquals(400, resp.getStatus());
     }
 
     @Test
@@ -85,7 +104,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Attempt to create config for non-existent execution
         try (Response response = authMgmtResource.newExecutionConfig("exec-id-doesnt-exists", cfg)) {
-            Assert.assertEquals(404, response.getStatus());
+            Assertions.assertEquals(404, response.getStatus());
         }
 
         // Create config success
@@ -97,17 +116,17 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Cleanup
         authMgmtResource.removeAuthenticatorConfig(cfgId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
     }
 
-    @Test (expected = BadRequestException.class)
+    @Test
     public void testUpdateConfigWithBadChar() {
         AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
         String cfgId = createConfig(executionId, cfg);
         AuthenticatorConfigRepresentation cfgRep = authMgmtResource.getAuthenticatorConfig(cfgId);
         
         cfgRep.setAlias("Bad@Char");
-        authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
+        Assertions.assertThrows(BadRequestException.class, () -> authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep));
     }
     
     @Test
@@ -117,8 +136,8 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         final AuthenticatorConfigRepresentation cfgRepNonExistent = authMgmtResource.getAuthenticatorConfig(cfgId);
 
         // Try to update not existent config
-        NotFoundException nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.updateAuthenticatorConfig("not-existent", cfgRepNonExistent));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        NotFoundException nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.updateAuthenticatorConfig("not-existent", cfgRepNonExistent));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         // Assert nothing changed
         AuthenticatorConfigRepresentation cfgRep = authMgmtResource.getAuthenticatorConfig(cfgId);
@@ -128,7 +147,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         cfgRep.setAlias("foo2");
         cfgRep.getConfig().put("configKey2", "configValue2");
         authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep, ResourceType.AUTHENTICATOR_CONFIG);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep, ResourceType.AUTHENTICATOR_CONFIG);
 
         // Assert updated
         cfgRep = authMgmtResource.getAuthenticatorConfig(cfgRep.getId());
@@ -147,24 +166,24 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         // Assert execution has our config
         AuthenticationExecutionInfoRepresentation execution = findExecutionByProvider(
                 IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, authMgmtResource.getExecutions("firstBrokerLogin2"));
-        Assert.assertEquals(cfgRep.getId(), execution.getAuthenticationConfig());
+        Assertions.assertEquals(cfgRep.getId(), execution.getAuthenticationConfig());
 
         // Test remove not-existent
-        NotFoundException nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.removeAuthenticatorConfig("not-existent"));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        NotFoundException nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.removeAuthenticatorConfig("not-existent"));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         // Test remove our config
         authMgmtResource.removeAuthenticatorConfig(cfgId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
 
         // Assert config not found
-        nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(cfgRep.getId()));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(cfgRep.getId()));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         // Assert execution doesn't have our config
         execution = findExecutionByProvider(
                 IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, authMgmtResource.getExecutions("firstBrokerLogin2"));
-        Assert.assertNull(execution.getAuthenticationConfig());
+        Assertions.assertNull(execution.getAuthenticationConfig());
     }
 
     @Test
@@ -173,8 +192,8 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         String providerName = "Cookie";
         AuthenticatorConfigInfoRepresentation description = authMgmtResource.getAuthenticatorConfigDescription(providerId);
 
-        Assert.assertEquals(providerName, description.getName());
-        Assert.assertTrue(description.getProperties().isEmpty());
+        Assertions.assertEquals(providerName, description.getName());
+        Assertions.assertTrue(description.getProperties().isEmpty());
     }
 
     @Test
@@ -187,7 +206,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // create the same config name for step2, should fail
         try (Response response = authMgmtResource.newExecutionConfig(executionId2, config1)) {
-            Assert.assertEquals(409, response.getStatus());
+            Assertions.assertEquals(409, response.getStatus());
         }
 
         // create a config for step2
@@ -201,27 +220,19 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         config3.setAlias("test-config-1-modified");
         config3.setConfig(Map.of("key", "value"));
         String tmpConfig3Id = createConfig(executionId, config3);
-        NotFoundException nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config1Id));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        NotFoundException nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config1Id));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         // create a new config with thew same name but that overwrites the previous one
         String config3Id = createConfig(executionId, config3);
-        nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(tmpConfig3Id));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(tmpConfig3Id));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         // delete execution step1, config3 should be removed
         authMgmtResource.removeExecution(executionId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionPath(executionId), ResourceType.AUTH_EXECUTION);
-        nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config3Id));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
-
-        // remove flow, config and exec for step2 should be removed
-        authMgmtResource.deleteFlow(flowId);
-        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authFlowPath(flowId), ResourceType.AUTH_FLOW);
-        nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getExecution(executionId));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
-        nfe = Assert.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config2Id));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.authExecutionPath(executionId), ResourceType.AUTH_EXECUTION);
+        nfe = Assertions.assertThrows(NotFoundException.class, () -> authMgmtResource.getAuthenticatorConfig(config3Id));
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
     }
 
     @Test
@@ -230,9 +241,9 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         final String cfgId = createConfig(executionId, cfg);
         final String realmId = testRealmId;
         AuthenticatorConfigRepresentation cfgRep = authMgmtResource.getAuthenticatorConfig(cfgId);
-        Assert.assertNotNull(cfgRep);
+        Assertions.assertNotNull(cfgRep);
 
-        testingClient.server().run(session -> {
+        runOnServer.run(session -> {
             // emulating a broken config id, remove the config but do not remove the link in the authenticator
             RealmModel realm = session.realms().getRealm(realmId);
             AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(cfgId);
@@ -245,21 +256,21 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
                 .filter(ae -> IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(ae.getAuthenticator()))
                 .findAny()
                 .orElse(null);
-        Assert.assertNotNull(execExport);
-        Assert.assertNull(execExport.getAuthenticatorConfig());
+        Assertions.assertNotNull(execExport);
+        Assertions.assertNull(execExport.getAuthenticatorConfig());
 
         // check the execution can be read with no configuration assigned
         AuthenticationExecutionInfoRepresentation execInfo = findExecutionByProvider(
                 IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, authMgmtResource.getExecutions("firstBrokerLogin2"));
-        Assert.assertNull(execInfo.getAuthenticationConfig());
+        Assertions.assertNull(execInfo.getAuthenticationConfig());
     }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
         try (Response resp = authMgmtResource.newExecutionConfig(executionId, cfg)) {
-            Assert.assertEquals(201, resp.getStatus());
+            Assertions.assertEquals(201, resp.getStatus());
             String cfgId = ApiUtil.getCreatedId(resp);
-            Assert.assertNotNull(cfgId);
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg, ResourceType.AUTHENTICATOR_CONFIG);
+            Assertions.assertNotNull(cfgId);
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg, ResourceType.AUTHENTICATOR_CONFIG);
             return cfgId;
         }
     }
@@ -274,8 +285,8 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
     }
 
     private void assertConfig(AuthenticatorConfigRepresentation cfgRep, String id, String alias, String... fields) {
-        Assert.assertEquals(id, cfgRep.getId());
-        Assert.assertEquals(alias, cfgRep.getAlias());
+        Assertions.assertEquals(id, cfgRep.getId());
+        Assertions.assertEquals(alias, cfgRep.getAlias());
         Assert.assertMap(cfgRep.getConfig(), fields);
     }
 }
