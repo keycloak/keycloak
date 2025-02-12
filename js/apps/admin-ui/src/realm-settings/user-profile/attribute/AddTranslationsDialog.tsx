@@ -21,7 +21,7 @@ import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../../context/whoami/WhoAmI";
@@ -30,12 +30,14 @@ import useLocale from "../../../utils/useLocale";
 import { Translation, TranslationForm } from "./TranslatableField";
 
 type AddTranslationsDialogProps = {
+  orgKey: string;
   translationKey: string;
   fieldName: string;
   toggleDialog: () => void;
 };
 
 export const AddTranslationsDialog = ({
+  orgKey,
   translationKey,
   fieldName,
   toggleDialog,
@@ -62,7 +64,12 @@ export const AddTranslationsDialog = ({
     translation[translationKey].forEach((translation, rowIndex) => {
       const valueKey = `${prefix}.${rowIndex}.value`;
       setValue(`${prefix}.${rowIndex}.locale`, translation.locale || "");
-      setValue(valueKey, getValues(valueKey) || translation.value);
+      setValue(
+        valueKey,
+        getValues(valueKey) ||
+          translation.value ||
+          (t(orgKey) !== orgKey ? t(orgKey) : ""),
+      );
     });
   };
 
@@ -132,12 +139,10 @@ export const AddTranslationsDialog = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <TextContent>
-            <Text component={TextVariants.p}>
-              {t("addTranslationsModalSubTitle", { fieldName })}
-              <strong>{t("addTranslationsModalSubTitleBolded")}</strong>
-            </Text>
-          </TextContent>
+          <Trans i18nKey="addTranslationsModalTitle" values={{ fieldName }}>
+            You are able to translate the fieldName based on your locale or
+            <strong>location</strong>
+          </Trans>
         </FlexItem>
         <FlexItem>
           <Form id="add-translation" data-testid="addTranslationForm">
@@ -147,7 +152,7 @@ export const AddTranslationsDialog = ({
                 label={t("translationKey")}
                 data-testid="translation-key"
                 isDisabled
-                value={translationKey}
+                value={t(orgKey) !== orgKey ? `\${${orgKey}}` : translationKey}
               />
             </FormGroup>
             <FlexItem>
