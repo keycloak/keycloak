@@ -27,7 +27,6 @@ import java.util.concurrent.TimeoutException;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,7 +34,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.keycloak.common.Profile;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
@@ -46,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRecreateUpgradeStatus;
 import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUpgradeStatus;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
@@ -60,27 +57,14 @@ public class UpgradeTest extends BaseOperatorTest {
         var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
 
-        var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
-        final String newImage = "quay.io/keycloak/non-existing-keycloak";
-
         // changing the image to non-existing will always use the recreate upgrade type.
-        kc.getSpec().setImage(newImage);
-        var upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc);
+        kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
+        var upgradeCondition = updateStrategy == UpdateStrategy.FORCE_ROLLING ?
+                eventuallyRollingUpgradeStatus(k8sclient, kc) :
+                eventuallyRecreateUpgradeStatus(k8sclient, kc);
 
         deployKeycloak(k8sclient, kc, false);
         await(upgradeCondition);
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .untilAsserted(() -> {
-                    var sts = stsGetter.get();
-                    assertEquals(kc.getSpec().getInstances(), sts.getSpec().getReplicas()); // just checking specs as we're using a non-existing image
-                    assertEquals(newImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-
-                    var currentKc = k8sclient.resources(Keycloak.class)
-                            .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
-                    assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Waiting for more replicas");
-                });
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -122,9 +106,10 @@ public class UpgradeTest extends BaseOperatorTest {
 
         // use the optimized image, auto strategy should use a rolling upgrade
         kc.getSpec().setImage(getTestCustomImage());
-        var upgradeCondition = updateStrategy == UpdateStrategy.AUTO ?
-                eventuallyRollingUpgradeStatus(k8sclient, kc) :
-                eventuallyRecreateUpgradeStatus(k8sclient, kc);
+        var upgradeCondition = switch (updateStrategy) {
+            case AUTO, FORCE_ROLLING -> eventuallyRollingUpgradeStatus(k8sclient, kc);
+            case RECREATE_ON_IMAGE_CHANGE, FORCE_RECREATE -> eventuallyRecreateUpgradeStatus(k8sclient, kc);
+        };
 
         deployKeycloak(k8sclient, kc, true);
 

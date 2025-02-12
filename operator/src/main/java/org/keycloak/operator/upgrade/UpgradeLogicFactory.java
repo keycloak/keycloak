@@ -25,6 +25,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.upgrade.impl.ForceRecreateUpgradeLogic;
 import org.keycloak.operator.upgrade.impl.AutoUpgradeLogic;
+import org.keycloak.operator.upgrade.impl.ForceRollingUpgradeLogic;
 import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
 
 /**
@@ -38,6 +39,7 @@ public class UpgradeLogicFactory {
         return switch (strategy) {
             case RECREATE_ON_IMAGE_CHANGE -> new RecreateOnImageChangeUpgradeLogic(context, keycloak, dependentResource);
             case FORCE_RECREATE -> new ForceRecreateUpgradeLogic(context, keycloak, dependentResource);
+            case FORCE_ROLLING -> new ForceRollingUpgradeLogic(context, keycloak, dependentResource);
             case AUTO -> new AutoUpgradeLogic(context, keycloak, dependentResource, updateJobDependentResource);
         };
     }

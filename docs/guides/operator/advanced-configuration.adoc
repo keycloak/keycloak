@@ -468,7 +468,7 @@ spec:
     enabled:
       - rolling-updates # <1>
   update:
-    strategy: RecreateOnImageChange|ForceRecreate|Auto # <2>
+    strategy: RecreateOnImageChange|ForceRecreate|ForceRolling|Auto # <2>
 ----
 <1> Enable preview feature `rolling-updates`.
 <2> Set the desired update strategy here (Recreate in this example).
@@ -487,10 +487,21 @@ When the image field changes, the StatefulSet is scaled down before applying the
 |On any configuration or image change
 |The StatefulSet is scaled down before applying the new configuration or image.
 
+|`ForceRolling`
+|None
+|The StatefulSet is rolled out on every change.
+Use with caution.
+
 |`Auto`
 |On incompatible changes
 |The {project_name} Operator detects if a rolling or recreate upgrade is possible.
 
 |===
+
+[WARNING]
+====
+The `ForceRolling` always rollout the StatefulSet with the new Keycloak CR changes, even if they are not backwards compatible.
+Use with caution!
+====
 
 </@tmpl.guide>
