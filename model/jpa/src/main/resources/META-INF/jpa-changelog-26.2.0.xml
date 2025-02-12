@@ -19,7 +19,7 @@
 
     <changeSet author="keycloak" id="26.2.0-36750">
         <createTable tableName="SERVER_CONFIG">
-            <column name="ID" type="VARCHAR(255)">
+            <column name="KEY" type="VARCHAR(255)">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
             <column name="VALUE" type="CLOB">

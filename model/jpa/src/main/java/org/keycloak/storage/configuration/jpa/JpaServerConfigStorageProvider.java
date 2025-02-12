@@ -48,7 +48,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
         var entity = getEntity(key, LockModeType.WRITE);
         if (entity == null) {
             entity = new ServerConfigEntity();
-            entity.setId(Objects.requireNonNull(key));
+            entity.setKey(Objects.requireNonNull(key));
             entity.setValue(Objects.requireNonNull(value));
             entityManager.persist(entity);
             return;
@@ -73,7 +73,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
         }
         var value = Objects.requireNonNull(valueGenerator.get());
         entity = new ServerConfigEntity();
-        entity.setId(Objects.requireNonNull(key));
+        entity.setKey(Objects.requireNonNull(key));
         entity.setValue(value);
         entityManager.persist(entity);
         return value;

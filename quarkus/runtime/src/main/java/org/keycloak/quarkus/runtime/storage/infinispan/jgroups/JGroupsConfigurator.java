@@ -86,10 +86,7 @@ public class JGroupsConfigurator {
             return new JGroupsConfigurator(holder, List.of());
         }
         // Configure stack from CLI options to Global Configuration
-        var transportStack = Configuration.getRawValue("kc.cache-stack");
-        if (transportStack != null) {
-            JGroupsUtil.transportOf(holder).stack(transportStack);
-        }
+        Configuration.getOptionalKcValue(CachingOptions.CACHE_STACK).ifPresent(JGroupsUtil.transportOf(holder)::stack);
         var configurator = new ArrayList<JGroupsStackConfigurator>(2);
         createJdbcPingConfigurator(holder, configurator);
         createTlsConfigurator(configurator);

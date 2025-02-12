@@ -14,8 +14,8 @@ import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalBooleanKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -57,21 +57,25 @@ final class CachingPropertyMappers {
                     .build(),
               fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                     .paramLabel("file")
-                    .validator(value -> checkCacheEmbeddedMtlsEnabledAndOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
+                    .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
+                    .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD))
                     .build(),
               fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD)
                     .paramLabel("password")
                     .isMasked(true)
-                    .validator(value -> checkCacheEmbeddedMtlsEnabledAndOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE))
+                    .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
+                    .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE))
                     .build(),
               fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
                     .paramLabel("file")
-                    .validator(value -> checkCacheEmbeddedMtlsEnabledAndOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
+                    .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
+                    .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD))
                     .build(),
               fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
                     .paramLabel("password")
                     .isMasked(true)
-                    .validator(value -> checkCacheEmbeddedMtlsEnabledAndOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE))
+                    .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled.".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
+                    .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE))
                     .build(),
               fromOption(CachingOptions.CACHE_REMOTE_HOST)
                     .paramLabel("hostname")
@@ -176,15 +180,7 @@ final class CachingPropertyMappers {
         }
     }
 
-    private static void checkCacheEmbeddedMtlsEnabled(Option<String> option) {
-        if (getOptionalBooleanKcValue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED).orElse(Boolean.FALSE)) {
-            return;
-        }
-        throw new PropertyException("The option '%s' requires '%s' to be enabled.".formatted(option.getKey(), CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()));
-    }
-
-    private static void checkCacheEmbeddedMtlsEnabledAndOptionPresent(Option<String> option, Option<String> requiredOption) {
-        checkCacheEmbeddedMtlsEnabled(option);
+    private static void checkOptionPresent(Option<String> option, Option<String> requiredOption) {
         if (getOptionalKcValue(requiredOption).isPresent()) {
             return;
         }

@@ -34,8 +34,8 @@ import jakarta.persistence.Version;
 public class ServerConfigEntity {
 
     @Id
-    @Column(name = "ID")
-    private String id;
+    @Column(name = "KEY")
+    private String key;
 
     @Column(name = "VALUE")
     private String value;
@@ -44,12 +44,12 @@ public class ServerConfigEntity {
     @Column(name = "VERSION")
     private int version;
 
-    public String getId() {
-        return id;
+    public String getKey() {
+        return key;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getValue() {
@@ -73,12 +73,12 @@ public class ServerConfigEntity {
         if (o == null || getClass() != o.getClass()) return false;
 
         ServerConfigEntity that = (ServerConfigEntity) o;
-        return version == that.version && Objects.equals(id, that.id) && Objects.equals(value, that.value);
+        return version == that.version && Objects.equals(key, that.key) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(id);
+        int result = Objects.hashCode(key);
         result = 31 * result + Objects.hashCode(value);
         result = 31 * result + version;
         return result;
