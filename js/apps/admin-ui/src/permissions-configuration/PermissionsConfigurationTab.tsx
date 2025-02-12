@@ -364,7 +364,7 @@ export const PermissionsConfigurationTab = ({
         <>
           {newDialog && (
             <NewPermissionConfigurationDialog
-              resourceTypes={resourceServer?.authorizationSchema!.resourceTypes}
+              resourceTypes={resourceTypes}
               onSelect={(resourceType) =>
                 navigate(
                   toCreatePermissionConfiguration({

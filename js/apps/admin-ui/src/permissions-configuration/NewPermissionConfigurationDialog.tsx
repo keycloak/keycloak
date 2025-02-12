@@ -51,6 +51,7 @@ export const NewPermissionConfigurationDialog = ({
         <Tbody>
           {Object.keys(resourceTypes || {}).map((key: any) => {
             const resourceType = resourceTypes![key];
+            console.log(resourceType);
             return (
               <Tr
                 key={resourceType.type}

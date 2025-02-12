@@ -3,7 +3,7 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useFormContext } from "react-hook-form";
 import { useState } from "react";
-import { UserSelect } from "../../components/users/UserSelect";
+import { ResourceTypeSelect } from "./ResourceTypeSelect";
 
 type PermissionTypeProps = {
   resourceType: string;
@@ -26,7 +26,7 @@ export const ResourceType = ({ resourceType }: PermissionTypeProps) => {
         labelIcon={
           <HelpItem
             helpText={t("enforceAccessToHelpText")}
-            fieldLabelId="apply-permission-to"
+            fieldLabelId="enforce-access-to"
           />
         }
         fieldId="EnforceAccessTo"
@@ -59,7 +59,7 @@ export const ResourceType = ({ resourceType }: PermissionTypeProps) => {
         />
       </FormGroup>
       {isSpecificUsers && (
-        <UserSelect
+        <ResourceTypeSelect
           name="resources"
           helpText={t("permissionUsersHelpText")}
           defaultValue={[]}
