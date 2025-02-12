@@ -186,6 +186,22 @@ public class LoginPage extends LanguageComboboxAwarePage {
         }
     }
 
+    public String getUsernameInputError() {
+        try {
+            return getTextFromElement(userNameInputError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getPasswordInputError() {
+        try {
+            return getTextFromElement(passwordInputError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public String getError() {
         try {
             return getTextFromElement(loginErrorMessage);
