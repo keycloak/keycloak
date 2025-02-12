@@ -313,8 +313,7 @@ This feature automatically generates self-signed certificates, eliminating the n
 The generated certificate and associated keys are stored within the database of each {project_name} instance.
 
 To enable zero-configuration TLS encryption, set the `cache-embedded-mtls-enabled` option to true.
-It's important to note that this disables any custom certificate configurations specified using other cache-embedded-mtls-* options.
-Therefore, for zero-configuration encryption, you should not set any other cache-embedded-mtls-* options.
+No other `cache-embedded-mtls-*` must be set to enable the zero-configuration mode.
 ====
 
 For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
