@@ -841,12 +841,15 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldSaveChangedJSONProfiles() {
     cy.findByTestId(this.#jsonEditorProfilesView).check();
-    cy.get(this.#jsonEditor).type(`{pageup}{del} [{
+    cy.get(this.#jsonEditor).type(
+      `{pageup}{del} [{
       "name": "Test",
       "description": "Test Description",
       "executors": [],
       "global": false
-    }, {downarrow}{end}{backspace}{backspace}`);
+    }, {downarrow}{end}{backspace}{backspace}`,
+      { force: true },
+    );
     cy.findByTestId(this.#jsonEditorSaveBtn).click();
     cy.get(this.#alertMessage).should(
       "be.visible",
