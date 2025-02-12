@@ -139,7 +139,10 @@ export const AddTranslationsDialog = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <Trans i18nKey="addTranslationsModalTitle" values={{ fieldName }}>
+          <Trans
+            i18nKey="addTranslationsModalTitle"
+            values={{ fieldName: t(fieldName) }}
+          >
             You are able to translate the fieldName based on your locale or
             <strong>location</strong>
           </Trans>
