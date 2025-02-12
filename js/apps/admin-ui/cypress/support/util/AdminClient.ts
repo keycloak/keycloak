@@ -542,6 +542,27 @@ class AdminClient {
       });
     }
   }
+
+  async addKeyProvider(
+    name: string,
+    active: boolean,
+    enabled: boolean,
+    providerType: string,
+    realm: string = "master",
+  ) {
+    await this.#login();
+    await this.#client.components.create({
+      realm,
+      name,
+      config: {
+        enabled: [`${enabled}`],
+        active: [`${active}`],
+        priority: ["0"],
+      },
+      providerId: providerType,
+      providerType: "org.keycloak.keys.KeyProvider",
+    });
+  }
 }
 
 const adminClient = new AdminClient();

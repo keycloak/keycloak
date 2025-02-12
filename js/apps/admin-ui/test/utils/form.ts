@@ -39,6 +39,11 @@ export async function switchOff(page: Page, id: string | Locator) {
   await switchElement.click({ force: true });
 }
 
+export async function switchToggle(page: Page, id: string | Locator) {
+  const switchElement = typeof id === "string" ? page.locator(id) : id;
+  await switchElement.click({ force: true });
+}
+
 export async function assertSwitchIsChecked(
   page: Page,
   id: string,
@@ -65,4 +70,17 @@ export async function assertSaveButtonIsDisabled(page: Page) {
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("cancel").click();
+}
+
+async function clickOption(page: Page, option: string) {
+  await page.getByRole("option", { name: option }).click();
+}
+
+export async function changeTimeUnit(
+  page: Page,
+  unit: "Minutes" | "Hours" | "Days",
+  inputType: string,
+) {
+  await page.locator(inputType).click();
+  await clickOption(page, unit);
 }

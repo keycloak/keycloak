@@ -113,3 +113,7 @@ export async function expandRow(page: Page, tableName: string, row: number) {
     .locator(`button[id="expandable-row-${row}"]`)
     .click();
 }
+
+export async function refreshTable(page: Page) {
+  await page.getByTestId("refresh").click();
+}
