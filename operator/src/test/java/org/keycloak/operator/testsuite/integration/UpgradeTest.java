@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
@@ -32,7 +31,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.keycloak.common.Profile;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -55,16 +54,8 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 @QuarkusTest
 public class UpgradeTest extends BaseOperatorTest {
 
-    private static Stream<UpdateStrategy> upgradeStrategy() {
-        return Stream.of(
-                null,
-                UpdateStrategy.RECREATE,
-                UpdateStrategy.AUTO
-        );
-    }
-
     @ParameterizedTest(name = "testImageChange-{0}")
-    @MethodSource("upgradeStrategy")
+    @EnumSource(UpdateStrategy.class)
     public void testImageChange(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
@@ -97,7 +88,7 @@ public class UpgradeTest extends BaseOperatorTest {
     }
 
     @ParameterizedTest(name = "testCacheMaxCount-{0}")
-    @MethodSource("upgradeStrategy")
+    @EnumSource(UpdateStrategy.class)
     public void testCacheMaxCount(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
@@ -105,7 +96,7 @@ public class UpgradeTest extends BaseOperatorTest {
         // changing the local cache max-count should never use the recreate upgrade type
         // except if forced by the Keycloak CR.
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("cache-embedded-authorization-max-count", "10"));
-        var upgradeCondition = updateStrategy == UpdateStrategy.RECREATE ?
+        var upgradeCondition = updateStrategy == UpdateStrategy.FORCE_RECREATE ?
                 eventuallyRecreateUpgradeStatus(k8sclient, kc) :
                 eventuallyRollingUpgradeStatus(k8sclient, kc);
 
@@ -119,7 +110,7 @@ public class UpgradeTest extends BaseOperatorTest {
     }
 
     @ParameterizedTest(name = "testOptimizedImage-{0}")
-    @MethodSource("upgradeStrategy")
+    @EnumSource(UpdateStrategy.class)
     @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
     public void testOptimizedImage(UpdateStrategy updateStrategy) throws InterruptedException {
         // In GHA, the custom image is an optimized image of the base image.

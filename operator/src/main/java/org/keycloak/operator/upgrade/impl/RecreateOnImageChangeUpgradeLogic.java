@@ -34,11 +34,8 @@ import org.keycloak.operator.upgrade.UpgradeType;
  * Implements Keycloak 26.0 logic.
  * <p>
  * It uses a {@link UpgradeType#RECREATE} if the image changes; otherwise uses {@link UpgradeType#ROLLING}.
- *
- * @deprecated To be removed when the new zero-downtime feature is completed.
  */
 @SuppressWarnings("ALL")
-@Deprecated(forRemoval = true)
 public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
 
     public RecreateOnImageChangeUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource dependentResource) {

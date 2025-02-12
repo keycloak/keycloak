@@ -30,9 +30,9 @@ import org.keycloak.operator.upgrade.UpgradeType;
  * An {@link UpgradeLogic} implementation that forces a {@link UpgradeType#RECREATE} on every configuration or image
  * change.
  */
-public class AlwaysRecreateUpgradeLogic extends BaseUpgradeLogic {
+public class ForceRecreateUpgradeLogic extends BaseUpgradeLogic {
 
-    public AlwaysRecreateUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource) {
+    public ForceRecreateUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource) {
         super(context, keycloak, statefulSetResource);
     }
 
