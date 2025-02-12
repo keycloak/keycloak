@@ -33,7 +33,8 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,8 +61,8 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(200, response.getStatusCode());
 
         // Test scopes

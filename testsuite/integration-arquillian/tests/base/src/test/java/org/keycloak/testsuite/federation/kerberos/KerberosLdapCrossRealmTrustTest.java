@@ -30,7 +30,7 @@ import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -70,7 +70,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test01SpnegoLoginCRTSuccess() throws Exception {
         // Login as user from realm KC2.COM . Realm KEYCLOAK.ORG will trust us
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
@@ -86,7 +86,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test02SpnegoLoginCorrectKerberosPrincipalUserFound() throws Exception {
         // Login as kerberos user jduke@KC2.COM. Ensure I am logged as user "jduke2" from realm KC2.COM (not as user jduke@KEYCLOAK.ORG)
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
@@ -129,7 +129,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, null));
 
         // Keycloak will lookup user just based on 1st part of kerberos principal. Hence for "jduke@KC2.COM", it will lookup user "jduke"
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke", "theduke2");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");

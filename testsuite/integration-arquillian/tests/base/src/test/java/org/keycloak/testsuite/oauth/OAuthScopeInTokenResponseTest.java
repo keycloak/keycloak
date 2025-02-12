@@ -26,7 +26,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 //OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
 public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
@@ -139,7 +139,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.openid(false);
         oauth.scope("user phone");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
         
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
@@ -221,7 +221,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     }
     
     private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope, String clientSecret) throws Exception {
-    	OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+    	AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, response.getStatusCode());
         log.info("expectedScopes = " + expectedScope);
         log.info("receivedScopes = " + response.getScope());

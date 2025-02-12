@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -71,7 +71,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -448,9 +448,10 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
-        CloseableHttpResponse response = oauth.getHttpClient().get().execute(post);
-        assertEquals(401, response.getStatusLine().getStatusCode());
-        assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        }
     }
 
     @Test
@@ -629,9 +630,9 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         oauth.realm("authz-test");
         oauth.clientId("test-app");
         oauth.openLoginForm();
-        OAuthClient.AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
+        AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
         String code = resp.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, password);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code, password);
         return response.getIdToken();
     }
 }

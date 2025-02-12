@@ -39,7 +39,9 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
@@ -144,7 +146,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         assertNotEquals(login1.getSessionId(), login2.getSessionId());
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
         events.expectLogout(login1.getSessionId()).assertEvent();
 
@@ -158,8 +160,8 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
         Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth2).getCode();
-        OAuthClient.AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
+        String code = new AuthorizationEndpointResponse(oauth2).getCode();
+        AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
         events.poll();
         oauth2.idTokenHint(response.getIdToken()).openLogout();
         events.expectLogout(login2.getSessionId()).assertEvent();
@@ -221,10 +223,13 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         secondCodeParts[1] = firstCodeParts[1];
         secondCode = String.join(".", secondCodeParts);
 
-        OAuthClient.AccessTokenResponse tokenResponse;
+        AccessTokenResponse tokenResponse;
 
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
-            tokenResponse = oauth2.doAccessTokenRequest(secondCode, "password", client);
+            oauth.httpClient().set(client);
+            tokenResponse = oauth2.doAccessTokenRequest(secondCode, "password");
+        } finally {
+            oauth.httpClient().reset();
         }
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), tokenResponse.getStatusCode());

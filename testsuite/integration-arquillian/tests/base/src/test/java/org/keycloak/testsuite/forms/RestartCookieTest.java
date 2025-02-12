@@ -52,7 +52,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.Cookie;
 
@@ -146,7 +146,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         oauth.clientId(clientId);
         String requestUri = null;
         try {
-            OAuthClient.ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, "secret");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, "secret");
             assertEquals(201, pResp.getStatusCode());
             requestUri = pResp.getRequestUri();
         }

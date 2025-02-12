@@ -37,7 +37,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
@@ -65,9 +65,9 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
 
             assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
-            assertEquals(configuration.getTokenEndpoint(), oauth.getAccessTokenUrl());
-            assertEquals(configuration.getJwksUri(), oauth.getCertsUrl("test"));
-            assertEquals(configuration.getIntrospectionEndpoint(), oauth.getTokenIntrospectionUrl());
+            assertEquals(configuration.getTokenEndpoint(), oauth.getEndpoints().getToken());
+            assertEquals(configuration.getJwksUri(), oauth.getEndpoints("test").getJwks());
+            assertEquals(configuration.getIntrospectionEndpoint(), oauth.getEndpoints().getIntrospection());
 
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)

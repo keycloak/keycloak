@@ -27,7 +27,7 @@ import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
 import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
@@ -749,7 +749,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         oauth.doLogin(testUser);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         String token = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
@@ -781,7 +781,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         oauth.doLogin(testUser);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         String token = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
@@ -814,7 +814,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         oauth.doLogin(testUser);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         String token = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 

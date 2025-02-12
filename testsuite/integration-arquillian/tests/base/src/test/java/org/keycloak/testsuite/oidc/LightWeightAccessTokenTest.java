@@ -65,7 +65,9 @@ import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -152,7 +154,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.nonce("123456");
             oauth.scope("address");
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
@@ -173,7 +175,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.nonce("123456");
             oauth.scope("address");
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
@@ -195,7 +197,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.nonce("123456");
             oauth.scope("address");
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
@@ -216,7 +218,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.nonce("123456");
             oauth.scope("address");
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
@@ -246,7 +248,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.clientId(TEST_CLIENT);
             TokenResponseContext ctx = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse response = ctx.tokenResponse;
+            AccessTokenResponse response = ctx.tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             logger.debug("idtoken:" + response.getIdToken());
@@ -270,7 +272,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.scope("address");
 
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), false, false, false);
@@ -293,7 +295,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.scope("address");
 
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
+            AccessTokenResponse response = browserLogin(TEST_CLIENT_SECRET, TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
@@ -320,8 +322,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.clientId(TEST_CLIENT);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
             String accessToken = tokenResponse.getAccessToken();
             assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
             logger.debug("lightweight access token:" + accessToken);
@@ -355,8 +357,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.clientId(TEST_CLIENT);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
@@ -381,8 +383,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.clientId(TEST_CLIENT);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
             String accessToken = tokenResponse.getAccessToken();
             assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
             logger.debug("lightweight access token:" + accessToken);
@@ -416,8 +418,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.clientId(TEST_CLIENT);
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
@@ -442,8 +444,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.clientId(TEST_CLIENT);
             oauth.scope("address");
 
-            OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true,  false,true);
@@ -483,7 +485,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             oauth.nonce("123456");
 
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), false,  false,false);
@@ -510,8 +512,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
         oauth.codeVerifier(pkce.getCodeVerifier());
 
-        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
         String accessToken = tokenResponse.getAccessToken();
         logger.debug("access token:" + accessToken);
         assertBasicClaims(oauth.verifyToken(accessToken), true, true);
@@ -536,7 +538,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                 .setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
                 .update()) {
             oauth.clientId(TEST_CLIENT);
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
             String accessToken = response.getAccessToken();
             logger.debug("access token:" + accessToken);
             assertBasicClaims(oauth.verifyToken(accessToken), false, false);
@@ -567,7 +569,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         try {
             oauth.realm("master");
             oauth.clientId(transientClient.getClientId());
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest(transientClient.getSecret());
+            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest(transientClient.getSecret());
             String accessTokenString = tokenResponse.getAccessToken();
             Assert.assertNull(tokenResponse.getRefreshToken());
             AccessToken accessToken = oauth.verifyToken(accessTokenString);
@@ -600,8 +602,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
         oauth.codeVerifier(pkce.getCodeVerifier());
 
-        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), TEST_CLIENT_SECRET);
         String accessToken = tokenResponse.getAccessToken();
         logger.debug("access token:" + accessToken);
         assertBasicClaims(oauth.verifyToken(accessToken), false, false);
@@ -883,18 +885,18 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private TokenResponseContext browserLogin(String clientSecret, String username, String password) {
-        OAuthClient.AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(username, password);
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(username, password);
         String userSessionId = authsEndpointResponse.getSessionState();
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), clientSecret);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode(), clientSecret);
         return new TokenResponseContext(userSessionId, tokenResponse);
     }
 
     private class TokenResponseContext {
 
         private final String userSessionId;
-        private final OAuthClient.AccessTokenResponse tokenResponse;
+        private final AccessTokenResponse tokenResponse;
 
-        public TokenResponseContext(String userSessionId, OAuthClient.AccessTokenResponse tokenResponse) {
+        public TokenResponseContext(String userSessionId, AccessTokenResponse tokenResponse) {
             this.userSessionId = userSessionId;
             this.tokenResponse = tokenResponse;
         }

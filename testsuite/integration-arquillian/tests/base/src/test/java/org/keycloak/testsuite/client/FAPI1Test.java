@@ -50,7 +50,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -511,7 +511,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         // Check HoK required
         String signedJwt = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
-        OAuthClient.AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, null, DefaultHttpClient::new);
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, null, DefaultHttpClient::new);
         Assert.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
         Assert.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
 
@@ -576,7 +576,7 @@ public class FAPI1Test extends AbstractFAPITest {
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
         // Check HoK required
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -666,10 +666,10 @@ public class FAPI1Test extends AbstractFAPITest {
     }
 
     // codeToTokenExchanger is supposed to exchange "code" for the accessTokenResponse. It is supposed to send the tokenRequest including proper client authentication
-    private void successfulLoginAndLogout(String clientId, String username, boolean fragmentResponseModeExpected, Function<String, OAuthClient.AccessTokenResponse> codeToTokenExchanger) throws Exception {
+    private void successfulLoginAndLogout(String clientId, String username, boolean fragmentResponseModeExpected, Function<String, AccessTokenResponse> codeToTokenExchanger) throws Exception {
         String code = loginUserAndGetCode(clientId, fragmentResponseModeExpected);
 
-        OAuthClient.AccessTokenResponse tokenResponse = codeToTokenExchanger.apply(code);
+        AccessTokenResponse tokenResponse = codeToTokenExchanger.apply(code);
 
         assertSuccessfulTokenResponse(tokenResponse);
 

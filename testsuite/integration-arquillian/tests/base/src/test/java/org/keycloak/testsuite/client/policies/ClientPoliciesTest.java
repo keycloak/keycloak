@@ -124,7 +124,8 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -608,26 +609,32 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             // Check login.
-            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             Assert.assertNull(loginResponse.getError());
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
             // Check token obtaining.
-            OAuthClient.AccessTokenResponse accessTokenResponse;
+            AccessTokenResponse accessTokenResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET, client);
+                oauth.httpClient().set(client);
+                accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                oauth.httpClient().reset();
             }
             assertEquals(200, accessTokenResponse.getStatusCode());
 
             // Check token refresh.
-            OAuthClient.AccessTokenResponse accessTokenResponseRefreshed;
+            AccessTokenResponse accessTokenResponseRefreshed;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET, client);
+                oauth.httpClient().set(client);
+                accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                oauth.httpClient().reset();
             }
             assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
             assertNull(accessTokenResponseRefreshed.getRefreshToken());
@@ -971,7 +978,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD, null);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -1213,7 +1220,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.getCurrentFragment().get(OAuth2Constants.CODE);
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
+        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, true);
         JWSInput idToken = new JWSInput(authzResponse.getIdToken());
         ObjectMapper mapper = JsonSerialization.mapper;
         JsonParser parser = mapper.getFactory().createParser(idToken.readContentAsString());
@@ -1222,7 +1229,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // send a token request
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
 
         // check a token response
         assertEquals(200, response.getStatusCode());

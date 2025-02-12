@@ -65,7 +65,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -121,7 +121,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), null, brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
         assertThat(tokenResponse.getIdToken(), notNullValue());
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
@@ -176,11 +176,11 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
             identityProviderResource.update(idpRep);
         });
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), null, brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
         assertThat(tokenResponse.getIdToken(), notNullValue());
         String idTokenString = tokenResponse.getIdToken();
         oauth.realm(bc.providerRealmName());
-        String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
                 .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
         driver.navigate().to(logoutUrl);
         String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
@@ -273,7 +273,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
         final String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, brokerApp.getSecret());
         assertThat(tokenResponse.getError(), nullValue());
         assertThat(tokenResponse.getAccessToken(), notNullValue());
 

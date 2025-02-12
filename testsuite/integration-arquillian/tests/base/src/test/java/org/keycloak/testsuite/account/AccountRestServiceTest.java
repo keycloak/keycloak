@@ -76,7 +76,7 @@ import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
@@ -1141,7 +1141,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplications() throws Exception {
         oauth.clientId("in-use-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1164,7 +1164,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsFiltered() throws Exception {
         oauth.clientId("in-use-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1187,7 +1187,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void listApplicationsOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
-        OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         oauth.clientId("offline-client-without-base-url");
@@ -1273,7 +1273,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsWithRootUrl() throws Exception {
         oauth.clientId("root-url-client");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1713,7 +1713,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void revokeOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
-        OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         tokenUtil = new TokenUtil("view-applications-access", "password");
@@ -1760,7 +1760,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testAudience() throws Exception {
         oauth.clientId("custom-audience");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)

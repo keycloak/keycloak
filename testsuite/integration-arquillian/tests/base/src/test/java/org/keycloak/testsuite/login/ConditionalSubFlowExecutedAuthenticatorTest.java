@@ -40,7 +40,7 @@ import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**
  * <p>Test for the ConditionalSubFlowExecutedAuthenticator. A <em>test</em> parent

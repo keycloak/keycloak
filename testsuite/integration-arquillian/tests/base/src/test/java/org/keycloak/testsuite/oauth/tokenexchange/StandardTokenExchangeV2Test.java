@@ -37,7 +37,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -76,7 +77,7 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
     @Override
     protected String getInitialAccessTokenForClientExchanger() throws Exception {
         oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

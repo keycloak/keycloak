@@ -47,7 +47,6 @@ import java.util.Optional;
 import jakarta.ws.rs.BadRequestException;
 
 import org.apache.http.HttpResponse;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
@@ -113,8 +112,9 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient.ParResponse;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -249,7 +249,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, "secret");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "secret");
         assertEquals(400, res.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, res.getError());
         assertEquals("Configured client authentication method not allowed for client", res.getErrorDescription());
@@ -297,8 +297,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -320,7 +320,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         loginEvent = events.expectLogin().client(clientId).assertEvent();
         sessionId = loginEvent.getSessionId();
         codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        code = new AuthorizationEndpointResponse(oauth).getCode();
         res = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
@@ -331,7 +331,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // shall allow code using response_mode jwt
         oauth.responseType(OIDCResponseType.CODE);
         oauth.responseMode("jwt");
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse authzResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         String jwsResponse = authzResponse.getResponse();
         AuthorizationResponseToken responseObject = oauth.verifyAuthorizationResponseToken(jwsResponse);
         code = (String) responseObject.getOtherClaims().get(OAuth2Constants.CODE);
@@ -350,7 +350,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN); // token response type allowed
         oauth.responseMode("jwt");
         oauth.openLoginForm();
-        final JWSInput errorJws = new JWSInput(new OAuthClient.AuthorizationEndpointResponse(oauth).getResponse());
+        final JWSInput errorJws = new JWSInput(new AuthorizationEndpointResponse(oauth).getResponse());
         JsonNode errorClaims = JsonSerialization.readValue(errorJws.getContent(), JsonNode.class);
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorClaims.get("error").asText());
     }
@@ -428,9 +428,9 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
 
-        IDToken idToken = oauth.verifyIDToken(new OAuthClient.AuthorizationEndpointResponse(oauth).getIdToken());
+        IDToken idToken = oauth.verifyIDToken(new AuthorizationEndpointResponse(oauth).getIdToken());
         // confirm ID token as detached signature does not include authenticated user's claims
         Assert.assertNull(idToken.getEmailVerified());
         Assert.assertNull(idToken.getName());
@@ -440,9 +440,9 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         Assert.assertNull(idToken.getEmail());
         assertEquals("LIVieviDie028f", idToken.getNonce());
         // confirm an access token not returned
-        Assert.assertNull(new OAuthClient.AuthorizationEndpointResponse(oauth).getAccessToken());
+        Assert.assertNull(new AuthorizationEndpointResponse(oauth).getAccessToken());
 
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -738,7 +738,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
 
         oauth.request(signRequestObject(requestObject));
-        OAuthClient.ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
@@ -746,7 +746,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(null);
         oauth.request(null);
         oauth.requestUri(requestUri);
-        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertNotNull(loginResponse.getCode());
         oauth.openLogout();
 
@@ -1283,7 +1283,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         // obtain access token
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequestWithSignedJWT(code, signedJwt);
+        AccessTokenResponse response = doAccessTokenRequestWithSignedJWT(code, signedJwt);
 
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
@@ -1297,7 +1297,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // refresh token
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.ES256);
-        OAuthClient.AccessTokenResponse refreshedResponse = doRefreshTokenRequestWithSignedJWT(response.getRefreshToken(), signedJwt);
+        AccessTokenResponse refreshedResponse = doRefreshTokenRequestWithSignedJWT(response.getRefreshToken(), signedJwt);
         assertEquals(200, refreshedResponse.getStatusCode());
 
         // introspect token
@@ -1311,7 +1311,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(200, revokeTokenResponse.getStatusLine().getStatusCode());
 
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.ES256);
-        OAuthClient.AccessTokenResponse tokenRes = doRefreshTokenRequestWithSignedJWT(refreshedResponse.getRefreshToken(), signedJwt);
+        AccessTokenResponse tokenRes = doRefreshTokenRequestWithSignedJWT(refreshedResponse.getRefreshToken(), signedJwt);
         assertEquals(400, tokenRes.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, tokenRes.getError());
 
@@ -1373,7 +1373,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         // obtain access token
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequestWithSignedJWT(code, signedJwt);
+        AccessTokenResponse response = doAccessTokenRequestWithSignedJWT(code, signedJwt);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -1455,7 +1455,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         ).toString();
         updateProfiles(json);
 
-        OAuthClient.AccessTokenResponse response = successfulLogin(clientId, clientSecret);
+        AccessTokenResponse response = successfulLogin(clientId, clientSecret);
 
         oauth.idTokenHint(response.getIdToken()).openLogout();
 

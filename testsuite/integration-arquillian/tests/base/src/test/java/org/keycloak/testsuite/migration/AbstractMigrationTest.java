@@ -78,7 +78,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
@@ -887,7 +887,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         oauth.realm(MIGRATION);
         oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
 
         if (response.getError() != null) {
             String errorMessage = String.format("Error when refreshing offline token. Error: %s, Error details: %s, offline token from previous version: %s",
@@ -1016,20 +1016,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
 
             // Try invalid password first
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password", otp);
+            AccessTokenResponse response = oauth.passwordGrantRequest("migration-test-user", "password").clientSecret("secret").otp(otp).send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try invalid OTP then
-            response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password2", "invalid");
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").clientSecret("secret").otp("invalid").send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try successful login now
-            response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password2", otp);
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").clientSecret("secret").otp(otp).send();
             Assert.assertNull(response.getError());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals("migration-test-user", accessToken.getPreferredUsername());

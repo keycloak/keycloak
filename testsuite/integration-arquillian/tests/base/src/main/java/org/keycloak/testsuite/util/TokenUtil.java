@@ -19,6 +19,8 @@ package org.keycloak.testsuite.util;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.common.util.Time;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.junit.Assert.fail;
 
@@ -68,7 +70,7 @@ public class TokenUtil implements TestRule {
 
     private void load() {
         try {
-            OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest("password", username, password);
+            AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest("password", username, password);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }
@@ -84,7 +86,7 @@ public class TokenUtil implements TestRule {
 
     private void refresh() {
         try {
-            OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken, "password");
+            AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken, "password");
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }

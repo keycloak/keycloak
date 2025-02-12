@@ -61,7 +61,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -239,7 +239,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -318,7 +318,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -366,7 +366,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -412,7 +412,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -457,7 +457,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -505,7 +505,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "bad-impersonator", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "bad-impersonator", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

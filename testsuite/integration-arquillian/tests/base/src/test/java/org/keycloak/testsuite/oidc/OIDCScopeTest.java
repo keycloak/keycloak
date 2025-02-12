@@ -44,7 +44,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -492,7 +492,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertPhone(idToken, false);
 
         // Ensure that I can refresh token
-        OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokens.refreshToken, "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokens.refreshToken, "password");
         Assert.assertEquals(200, refreshResponse.getStatusCode());
         idToken = oauth.verifyIDToken(refreshResponse.getIdToken());
 
@@ -580,14 +580,14 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Ensure I can refresh refreshToken1. Just role1 is present
         oauth.scope(null);
-        OAuthClient.AccessTokenResponse refreshResponse1 = oauth.doRefreshTokenRequest(tokens1.refreshToken, "password");
+        AccessTokenResponse refreshResponse1 = oauth.doRefreshTokenRequest(tokens1.refreshToken, "password");
         Assert.assertEquals(200, refreshResponse1.getStatusCode());
         AccessToken accessToken1 = oauth.verifyToken(refreshResponse1.getAccessToken());
         Assert.assertTrue(accessToken1.getRealmAccess().isUserInRole("role-1"));
         Assert.assertFalse(accessToken1.getRealmAccess().isUserInRole("role-2"));
 
         // Ensure I can refresh refreshToken2. Just role2 is present
-        OAuthClient.AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(tokens2.refreshToken, "password");
+        AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(tokens2.refreshToken, "password");
         Assert.assertEquals(200, refreshResponse2.getStatusCode());
         AccessToken accessToken2 = oauth.verifyToken(refreshResponse2.getAccessToken());
         Assert.assertFalse(accessToken2.getRealmAccess().isUserInRole("role-1"));

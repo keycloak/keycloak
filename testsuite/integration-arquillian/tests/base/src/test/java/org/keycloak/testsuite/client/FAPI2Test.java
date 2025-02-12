@@ -47,10 +47,10 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
-import org.keycloak.testsuite.util.OAuthClient.ParResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):
@@ -123,7 +123,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        OAuthClient.AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
         assertSuccessfulTokenResponse(tokenResponse);
 
         // check HoK required
@@ -216,7 +216,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         oauth.codeVerifier(codeVerifier);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
 
         // check HoK required
         assertSuccessfulTokenResponse(tokenResponse);
@@ -300,7 +300,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         oauth.codeVerifier(codeVerifier);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
 
         // check HoK required
         assertSuccessfulTokenResponse(tokenResponse);
@@ -378,7 +378,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        OAuthClient.AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
         assertSuccessfulTokenResponse(tokenResponse);
  
         // check HoK required

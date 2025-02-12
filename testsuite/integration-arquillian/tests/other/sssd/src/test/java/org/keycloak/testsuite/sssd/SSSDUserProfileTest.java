@@ -43,7 +43,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
@@ -123,7 +123,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .assertEvent();
 
         // logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
     }
@@ -167,7 +167,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .assertEvent();
 
         // logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
     }
@@ -218,7 +218,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .assertEvent();
 
             // logout
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
             events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
         } finally {
@@ -270,7 +270,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .assertEvent();
 
             // logout
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
             events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
         } finally {

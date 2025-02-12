@@ -85,7 +85,8 @@ import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -1120,7 +1121,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     private TokenCtx assertLoggedInWithAcr(String acr) {
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
         Assert.assertEquals(acr, idToken.getAcr());
         return new TokenCtx(tokenResponse.getAccessToken(), idToken);

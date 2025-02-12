@@ -30,7 +30,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -200,7 +201,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
             // Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
-            OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
             org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
             org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
         }

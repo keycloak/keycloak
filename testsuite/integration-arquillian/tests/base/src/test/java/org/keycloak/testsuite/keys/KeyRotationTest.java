@@ -50,7 +50,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
 import jakarta.ws.rs.core.Response;
@@ -129,7 +129,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         // Get token with keys #1
         oauth.doLogin("test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys1.get(Algorithm.RS256), response.getAccessToken());
         assertTokenKid(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());

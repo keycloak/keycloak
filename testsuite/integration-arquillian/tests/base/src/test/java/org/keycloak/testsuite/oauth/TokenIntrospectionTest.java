@@ -56,10 +56,8 @@ import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -257,7 +255,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         Assert.assertFalse(loginPage.isCurrent());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
 
         String introspectResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", tokenResponse2.getRefreshToken());
 
@@ -552,13 +550,13 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertNull(rep.getSubject());
     }
 
-    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+    private AccessTokenResponse loginAndForceNewLoginPage() {
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.clientSessionState("client-session");
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
 
         setTimeOffset(1);
 
@@ -652,7 +650,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     }
 
     private String introspectAccessTokenWithDuplicateParams(String clientId, String clientSecret, String tokenToIntrospect) {
-        HttpPost post = new HttpPost(oauth.getTokenIntrospectionUrl());
+        HttpPost post = new HttpPost(oauth.getEndpoints().getIntrospection());
 
         String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
         post.setHeader("Authorization", authorization);

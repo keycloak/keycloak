@@ -31,7 +31,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import jakarta.ws.rs.NotFoundException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,9 +74,9 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         AtomicInteger lsrDc2 = new AtomicInteger(-1);
 
         // Login
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
         String code = response1.getCode();
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         Assert.assertNotNull(tokenResponse.getAccessToken());
         String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
         String refreshToken1 = tokenResponse.getRefreshToken();
@@ -153,9 +154,9 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             AtomicInteger lsrDc2 = new AtomicInteger(-1);
 
             // Login
-            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
             String code = response1.getCode();
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
             Assert.assertNotNull(tokenResponse.getAccessToken());
             String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
             String refreshToken1 = tokenResponse.getRefreshToken();
@@ -283,9 +284,9 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
         // Login
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
         String code = response1.getCode();
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
         Assert.assertNotNull(tokenResponse.getAccessToken());
         String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
         String refreshToken1 = tokenResponse.getRefreshToken();

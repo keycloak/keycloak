@@ -38,7 +38,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -107,8 +108,8 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         // IDToken is not there
         Assert.assertEquals(200, response.getStatusCode());
@@ -131,7 +132,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingScopeOpenidInResourceOwnerPasswordCredentialRequest() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -192,7 +193,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
-        OAuthClient.AuthorizationEndpointResponse response = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
         Assert.assertNull(response.getError());
         Assert.assertNull(response.getCode());
         Assert.assertNull(response.getIdToken());

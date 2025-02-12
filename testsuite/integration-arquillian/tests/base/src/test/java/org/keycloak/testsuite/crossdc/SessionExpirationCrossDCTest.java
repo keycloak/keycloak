@@ -47,7 +47,7 @@ import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -78,7 +78,6 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
     @Before
     public void beforeTest() {
         try {
-            oauth.removeCachedPublicKeys();
             adminClient.realm(REALM_NAME).remove();
         } catch (NotFoundException ignore) {
         }
@@ -153,7 +152,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     // Return last used accessTokenResponse
-    private List<OAuthClient.AccessTokenResponse> createInitialSessions(String cacheName, String clientSessionsCacheName, boolean offline, InfinispanStatistics cacheDc1Statistics, InfinispanStatistics cacheDc2Statistics, boolean includeRemoteStats) throws Exception {
+    private List<AccessTokenResponse> createInitialSessions(String cacheName, String clientSessionsCacheName, boolean offline, InfinispanStatistics cacheDc1Statistics, InfinispanStatistics cacheDc2Statistics, boolean includeRemoteStats) throws Exception {
 
         // Enable second DC
         enableDcOnLoadBalancer(DC.SECOND);
@@ -175,7 +174,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         }
 
-        List<OAuthClient.AccessTokenResponse> responses = new ArrayList<>();
+        List<AccessTokenResponse> responses = new ArrayList<>();
         for (int i=0 ; i<SESSIONS_COUNT ; i++) {
             responses.add(oauth.doGrantAccessTokenRequest("password", "login-test", "password"));
         }
@@ -278,10 +277,10 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        OAuthClient.AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,false, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
+        AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,false, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
 
         // Assert I am able to refresh
-        OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
         Assert.assertNotNull(refreshResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getError());
 
@@ -323,11 +322,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        OAuthClient.AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
+        AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
                 true, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
 
         // Assert I am able to refresh
-        OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
         Assert.assertNotNull(refreshResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getError());
 
@@ -451,7 +450,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
         // Don't include remote stats. Size is smaller because of distributed cache
-        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+        List<AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
                 false, cacheDc1Statistics, cacheDc2Statistics, false);
 
         // Kill node2 now. Around 10 sessions (half of SESSIONS_COUNT) will be lost on Keycloak side. But not on infinispan side
@@ -459,9 +458,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
         // Assert it's still possible to refresh tokens. UserSessions, which were cleared from the Keycloak node, should be downloaded from remoteStore
         int i1 = 0;
-        for (OAuthClient.AccessTokenResponse response : responses) {
+        for (AccessTokenResponse response : responses) {
             i1++;
-            OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
             Assert.assertNotNull("Failed in iteration " + i1, refreshTokenResponse.getRefreshToken());
             Assert.assertNull("Failed in iteration " + i1, refreshTokenResponse.getError());
         }
@@ -482,9 +481,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         Retry.execute(() -> {
             i.incrementAndGet();
             int j = 0;
-            for (OAuthClient.AccessTokenResponse response : responses) {
+            for (AccessTokenResponse response : responses) {
                 j++;
-                OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+                AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
                 Assert.assertNull("Failed in iteration " + j, refreshTokenResponse.getRefreshToken());
                 Assert.assertNotNull("Failed in iteration " + j, refreshTokenResponse.getError());
             }
@@ -502,7 +501,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
         // Create sessions. Don't include remote stats. Size is smaller because of distributed cache
-        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+        List<AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
                 false, cacheDc1Statistics, cacheDc2Statistics, false);
 
         // Simulate displaying sessions in admin console
@@ -569,11 +568,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
         // Don't include remote stats. Size is smaller because of distributed cache
-        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+        List<AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
                 false, cacheDc1Statistics, cacheDc2Statistics, true);
 
         // Directly remove the userSession entity on DC0. Should be propagated to DC1 as well, but clientSessions are not yet cleared (they become detached)
-        for (OAuthClient.AccessTokenResponse response : responses) {
+        for (AccessTokenResponse response : responses) {
             String userSessionId = oauth.verifyToken(response.getAccessToken()).getSessionState();
             getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).removeKey(userSessionId);
         }
@@ -599,11 +598,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
         // Don't include remote stats. Size is smaller because of distributed cache
-        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
+        List<AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
                 true, cacheDc1Statistics, cacheDc2Statistics, true);
 
         // Directly remove the userSession entity on DC0. Should be propagated to DC1 as well, but clientSessions are not yet cleared (they become detached)
-        for (OAuthClient.AccessTokenResponse response : responses) {
+        for (AccessTokenResponse response : responses) {
             String userSessionId = oauth.verifyToken(response.getAccessToken()).getSessionState();
             getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).removeKey(userSessionId);
         }

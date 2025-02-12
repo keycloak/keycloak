@@ -69,8 +69,9 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
@@ -131,8 +132,8 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeToken() throws Exception {
         oauth.clientSessionState("client-session");
-        OAuthClient.AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse tokenResponse2 = login("test-app-scope", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse2 = login("test-app-scope", "test-user@localhost", "password");
 
         UserResource testUser = realm.users().get(realm.users().search("test-user@localhost").get(0).getId());
         List<UserSessionRepresentation> userSessions = testUser.getUserSessions();
@@ -145,8 +146,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app-scope");
 
         oauth.clientId("test-app");
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse1.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse1.getRefreshToken(), "refresh_token", "password").isSuccess());
 
         userSessions = testUser.getUserSessions();
         assertEquals(1, userSessions.size());
@@ -158,8 +158,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app-scope");
 
         // Revoke second token and assert no sessions for testUser
-        response = oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password").isSuccess());
 
         userSessions = testUser.getUserSessions();
         assertEquals(0, userSessions.size());
@@ -169,13 +168,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAccessToken() throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password").isSuccess());
 
         isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
     }
@@ -183,12 +181,11 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokedAccessTokenCacheLifespan() throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password").isSuccess());
 
         setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
 
@@ -201,24 +198,23 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testRevokeOfflineToken() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password").isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
 
     @Test
     public void testRevokeOfflineTokenWithOnlineSSOSession() throws Exception {
-        OAuthClient.AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
 
         // Offline login of same client in same SSO session as previous login
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        OAuthClient.AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
 
         // Session IDs of "offline" and online session are same for now. This may change in the future
         Assert.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
@@ -226,8 +222,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app");
 
         // Disable both offline and refresh
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password").isSuccess());
 
         isTokenDisabled(tokenResponse2, "test-app");
     }
@@ -236,13 +231,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testTokenTypeHint() throws Exception {
         // different token_type_hint
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "access_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "access_token", "password").isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
 
@@ -252,8 +246,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "invalid_token_type_hint", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "invalid_token_type_hint", "password").isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
@@ -261,14 +254,13 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeTokenFromDifferentClient() throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
         oauth.clientId("test-app-scope");
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        assertEquals(400, oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password").getStatusCode());
 
         isTokenEnabled(tokenResponse, "test-app");
     }
@@ -276,7 +268,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAlreadyRevokedToken() throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -285,8 +277,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenDisabled(tokenResponse, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password").isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
@@ -295,7 +286,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeRequestParamsMoreThanOnce() throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -320,16 +311,16 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     private void testRevokeSingleSession(String expectedTokenType) throws Exception {
         oauth.clientId("test-app");
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
                 "password");
-        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+        AccessTokenResponse tokenResponse2 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
                 "password");
 
         isTokenEnabled(tokenResponse, "test-app");
         isTokenEnabled(tokenResponse2, "test-app");
 
-        CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password").isSuccess());
+
         events.expect(EventType.REVOKE_GRANT)
                 .session(tokenResponse.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
@@ -347,7 +338,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
         }
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
         return oauth.doAccessTokenRequest(code, "password");
     }
 
@@ -358,7 +349,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         assertTrue(rep.isActive());
 
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
+        AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
             "password");
         assertEquals(Status.OK.getStatusCode(), tokenRefreshResponse.getStatusCode());
     }
@@ -367,7 +358,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isAccessTokenDisabled(tokenResponse.getAccessToken(), clientId);
 
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
+        AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
             "password");
         assertEquals(Status.BAD_REQUEST.getStatusCode(), tokenRefreshResponse.getStatusCode());
     }
@@ -404,7 +395,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     private String doTokenRevokeWithDuplicateParams(String token, String tokenTypeHint, String clientSecret)
         throws IOException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(oauth.getTokenRevocationUrl());
+            HttpPost post = new HttpPost(oauth.getEndpoints().getRevocation());
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair("token", token));

@@ -24,7 +24,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -73,7 +74,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("non-duplicate-email-user", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, response.getStatusCode());
         
@@ -88,7 +89,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("duplicate-email-user1", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, response.getStatusCode());
         
@@ -103,7 +104,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("duplicate-email-user2", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, response.getStatusCode());
         

@@ -15,7 +15,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,10 +64,10 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         oauth.clientId("consumer-client");
         oauth.nonce("123456");
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth
+        AuthorizationEndpointResponse authzResponse = oauth
                 .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         String code = authzResponse.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
         IDToken idToken = toIdToken(response.getIdToken());
         
         Assert.assertEquals("123456", idToken.getNonce());
@@ -91,10 +92,10 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         oauth.clientId("consumer-client");
         oauth.nonce(null);
 
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth
+        AuthorizationEndpointResponse authzResponse = oauth
                 .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         String code = authzResponse.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
         IDToken idToken = toIdToken(response.getIdToken());
 
         Assert.assertNull(idToken.getNonce());

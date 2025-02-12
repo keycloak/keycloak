@@ -157,7 +157,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
-        String token = oauth.doGrantAccessTokenRequest("master", "admin", "admin", null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+        String token = oauth.doGrantAccessTokenRequest("master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
         masterReg.auth(Auth.token(token));
 
         ClientRepresentation client = new ClientRepresentation();
@@ -210,9 +210,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         oauth.clientId("myclient");
         String bearerToken = getToken("myclient", "password", "manage-clients", "password");
-        try (CloseableHttpResponse response = oauth.doTokenRevoke(bearerToken, "access_token", "password")) {
-            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusLine().getStatusCode());
-        }
+        assertTrue(oauth.doTokenRevoke(bearerToken, "access_token", "password").isSuccess());
 
         try {
             reg.auth(Auth.token(bearerToken));

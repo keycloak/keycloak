@@ -73,7 +73,9 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.DeviceAuthorizationResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -266,7 +268,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
-        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -277,7 +279,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
-        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -321,7 +323,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         // Token request from device
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
@@ -332,7 +334,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
-        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -376,7 +378,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         // Token request from device
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE.toString(), tokenResponse.getError());
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
@@ -417,7 +419,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
 
         events.expectLogin().client(clientId).assertEvent();
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.TOKEN_RESPONSE.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -441,9 +443,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
 
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -466,7 +468,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         String refreshTokenString = res.getRefreshToken();
-        OAuthClient.AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         assertEquals(null, accessTokenResponseRefreshed.getRefreshToken());
 
@@ -504,9 +506,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        String code = new AuthorizationEndpointResponse(oauth).getCode();
 
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, res.getStatusCode());
         AccessToken token = oauth.verifyToken(res.getAccessToken());
         assertNotNull(token);
@@ -536,7 +538,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         Assert.assertEquals(404, nfe.getResponse().getStatus());
 
         String refreshTokenString = res.getRefreshToken();
-        OAuthClient.AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         assertNull(accessTokenResponseRefreshed.getRefreshToken());
     }
@@ -578,7 +580,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.clientId("service-account-app");
         oauth.scope("offline_access");
         try {
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
             assertEquals(400, response.getStatusCode());
             assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE.toString(), response.getError());
             assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -620,7 +622,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD, null);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE.toString(), response.getError());
@@ -697,7 +699,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
 
         events.expectLogin().client(clientId).assertEvent();
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
         assertEquals(200, response.getStatusCode());
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         assertNull(token.getSubject());

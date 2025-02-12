@@ -8,7 +8,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,13 +45,13 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
 
     @Test
     public void preflightRequest() throws Exception {
-        CloseableHttpResponse response = oauth.doPreflightRequest();
+        try (CloseableHttpResponse response = oauth.doPreflightRequest()) {
+            String[] methods = response.getHeaders("Access-Control-Allow-Methods")[0].getValue().split(", ");
+            Set allowedMethods = new HashSet(Arrays.asList(methods));
 
-        String[] methods = response.getHeaders("Access-Control-Allow-Methods")[0].getValue().split(", ");
-        Set allowedMethods = new HashSet(Arrays.asList(methods));
-
-        assertEquals(2, allowedMethods.size());
-        assertTrue(allowedMethods.containsAll(Arrays.asList("POST", "OPTIONS")));
+            assertEquals(2, allowedMethods.size());
+            assertTrue(allowedMethods.containsAll(Arrays.asList("POST", "OPTIONS")));
+        }
     }
 
     @Test
@@ -66,7 +66,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         // Token request
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.origin(VALID_CORS_URL);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
@@ -100,7 +100,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // Token request
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
@@ -119,7 +119,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // Successful token request with correct origin - cors should work
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
@@ -135,13 +135,13 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         assertNotCors(response);
     }
 
-    private static void assertCors(OAuthClient.AccessTokenResponse response) {
+    private static void assertCors(AccessTokenResponse response) {
         assertEquals("true", response.getHeaders().get("Access-Control-Allow-Credentials"));
         assertEquals(VALID_CORS_URL, response.getHeaders().get("Access-Control-Allow-Origin"));
         assertEquals("Access-Control-Allow-Methods", response.getHeaders().get("Access-Control-Expose-Headers"));
     }
 
-    private static void assertNotCors(OAuthClient.AccessTokenResponse response) {
+    private static void assertNotCors(AccessTokenResponse response) {
         assertNull(response.getHeaders().get("Access-Control-Allow-Credentials"));
         assertNull(response.getHeaders().get("Access-Control-Allow-Origin"));
         assertNull(response.getHeaders().get("Access-Control-Expose-Headers"));

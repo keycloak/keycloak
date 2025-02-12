@@ -44,7 +44,7 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.*;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -183,7 +183,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
             // get authorization response
             oauth.responseMode("jwt");
             oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-            OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
             // parse JWE and JOSE Header
             String jweStr = response.getResponse();
@@ -281,7 +281,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
             oauth.responseMode("jwt");
             oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-            OAuthClient.AuthorizationEndpointResponse errorResponse =  oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse errorResponse =  oauth.doLogin("test-user@localhost", "password");
 
             System.out.println(driver.getPageSource().contains("Unexpected error when handling authentication request to identity provider."));
 

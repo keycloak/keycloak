@@ -42,7 +42,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import jakarta.ws.rs.core.UriBuilder;
 
@@ -89,7 +89,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
     @Test
     public void testExcludeSessionStateParameter() {
         // Open login form and login successfully. Assert session_state is present
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(authzResponse.getSessionState());
@@ -106,7 +106,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
-        authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        authzResponse = new AuthorizationEndpointResponse(oauth);
         Assert.assertNull(authzResponse.getSessionState());
 
         // Revert
@@ -117,7 +117,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
     @Test
     public void testExcludeIssuerParameter() {
         // Open login form and login successfully. Assert iss parameter is present
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         events.expectLogin().assertEvent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", authzResponse.getIssuer());
@@ -134,7 +134,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
-        authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        authzResponse = new AuthorizationEndpointResponse(oauth);
         Assert.assertNull(authzResponse.getIssuer());
 
         // Revert
@@ -149,7 +149,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
@@ -166,7 +166,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login again and assert iss parameter is not present
         driver.navigate().to(b.build().toURL());
 
-        errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        errorResponse = new AuthorizationEndpointResponse(oauth);
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertNull(errorResponse.getIssuer());

@@ -44,7 +44,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
 
 
@@ -189,7 +189,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         response.close();
 
         // SPNEGO login
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         // Assert kerberos ticket in the accessToken can be re-used to authenticate against other 3rd party kerberos service (ApacheDS Server in this case)

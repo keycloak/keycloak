@@ -65,8 +65,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -388,12 +388,12 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClientSessions() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
-        OAuthClient.AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
 
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
         assertEquals(200, response2.getStatusCode());
 
         ClientResource app = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
