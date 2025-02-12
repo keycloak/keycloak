@@ -15,16 +15,6 @@ public class GreenMailSupplier implements Supplier<MailServer, InjectMailServer>
     private final String FROM = "auto@keycloak.org";
 
     @Override
-    public Class<InjectMailServer> getAnnotationClass() {
-        return InjectMailServer.class;
-    }
-
-    @Override
-    public Class<MailServer> getValueType() {
-        return MailServer.class;
-    }
-
-    @Override
     public MailServer getValue(InstanceContext<MailServer, InjectMailServer> instanceContext) {
         return new MailServer(HOSTNAME, PORT);
     }

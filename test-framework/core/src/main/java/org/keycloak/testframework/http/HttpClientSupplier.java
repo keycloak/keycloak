@@ -13,16 +13,6 @@ import java.io.IOException;
 public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient> {
 
     @Override
-    public Class<InjectHttpClient> getAnnotationClass() {
-        return InjectHttpClient.class;
-    }
-
-    @Override
-    public Class<HttpClient> getValueType() {
-        return HttpClient.class;
-    }
-
-    @Override
     public HttpClient getValue(InstanceContext<HttpClient, InjectHttpClient> instanceContext) {
         return HttpClientBuilder.create().build();
     }

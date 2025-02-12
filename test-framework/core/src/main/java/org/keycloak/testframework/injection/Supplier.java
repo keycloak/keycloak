@@ -6,9 +6,15 @@ import java.util.Set;
 
 public interface Supplier<T, S extends Annotation> {
 
-    Class<S> getAnnotationClass();
+    default Class<S> getAnnotationClass() {
+        //noinspection unchecked
+        return (Class<S>) ReflectionUtils.getAnnotationType(this);
+    }
 
-    Class<T> getValueType();
+    default Class<T> getValueType() {
+        //noinspection unchecked
+        return (Class<T>) ReflectionUtils.getValueType(this);
+    }
 
     T getValue(InstanceContext<T, S> instanceContext);
 

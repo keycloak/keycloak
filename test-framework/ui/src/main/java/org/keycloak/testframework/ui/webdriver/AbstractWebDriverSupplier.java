@@ -1,10 +1,10 @@
 package org.keycloak.testframework.ui.webdriver;
 
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
@@ -14,16 +14,6 @@ import java.time.Duration;
 import java.util.Map;
 
 public abstract class AbstractWebDriverSupplier implements Supplier<WebDriver, InjectWebDriver> {
-
-    @Override
-    public Class<InjectWebDriver> getAnnotationClass() {
-        return InjectWebDriver.class;
-    }
-
-    @Override
-    public Class<WebDriver> getValueType() {
-        return WebDriver.class;
-    }
 
     @Override
     public WebDriver getValue(InstanceContext<WebDriver, InjectWebDriver> instanceContext) {

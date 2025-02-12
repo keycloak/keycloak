@@ -12,16 +12,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {
 
     @Override
-    public Class<InjectOAuthClient> getAnnotationClass() {
-        return InjectOAuthClient.class;
-    }
-
-    @Override
-    public Class<OAuthClient> getValueType() {
-        return OAuthClient.class;
-    }
-
-    @Override
     public OAuthClient getValue(InstanceContext<OAuthClient, InjectOAuthClient> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class);
         ClientConfig clientConfig = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());

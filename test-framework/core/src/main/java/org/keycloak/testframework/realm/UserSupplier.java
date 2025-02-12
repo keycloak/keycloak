@@ -16,16 +16,6 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
     private static final String USER_UUID_KEY = "userUuid";
 
     @Override
-    public Class<InjectUser> getAnnotationClass() {
-        return InjectUser.class;
-    }
-
-    @Override
-    public Class<ManagedUser> getValueType() {
-        return ManagedUser.class;
-    }
-
-    @Override
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
