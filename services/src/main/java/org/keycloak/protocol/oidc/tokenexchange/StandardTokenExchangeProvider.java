@@ -19,17 +19,18 @@
 
 package org.keycloak.protocol.oidc.tokenexchange;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.StringJoiner;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -196,13 +197,13 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         updateUserSessionFromClientAuth(targetUserSession);
 
         if (params.getAudience() != null && !targetAudienceClients.isEmpty()) {
-            clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENT_IDS, targetAudienceClients.stream().map(ClientModel::getId).toArray(String[]::new));
+            clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
         }
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
 
-        updateTokenFromAudienceParameter(responseBuilder);
+        checkRequestedAudiences(responseBuilder);
 
         if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.getAccessToken().setSessionId(null);
@@ -213,7 +214,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
                 && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.generateRefreshToken();
-            responseBuilder.getRefreshToken().issuedFor(client.getClientId());
             issuedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
         } else {
             issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
@@ -240,33 +240,20 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
-    /**
-     * Update token audience. Default implementation removes the audiences, which were not provided in the "audience" parameter (in case "audience" parameter was provided)
-     *
-     * @param responseBuilder response builder
-     */
-    protected void updateTokenFromAudienceParameter(TokenManager.AccessTokenResponseBuilder responseBuilder) {
-        if (params.getAudience() != null) {
-            AccessToken newToken = responseBuilder.getAccessToken();
-            List<String> newTokenAudiences = newToken.getAudience() == null ? new ArrayList<>() : new ArrayList<>(List.of(newToken.getAudience()));
-
-            List<String> audiencesToRemove = new ArrayList<>(newTokenAudiences);
-            for (String audienceParam : params.getAudience()) {
-                boolean removed = audiencesToRemove.remove(audienceParam);
-                // TODO: Should we reject the request if some audience requested by the "audience" parameter is not available in the token?
-//                if (!removed) {
-//                    event.detail(Details.REASON, "Requested audience not available");
-//                    event.error(Errors.INVALID_REQUEST);
-//                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Requested audience not available", Response.Status.BAD_REQUEST);
-//                }
+    protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {
+        if (params.getAudience() != null && (responseBuilder.getAccessToken().getAudience() == null ||
+                responseBuilder.getAccessToken().getAudience().length < params.getAudience().size())) {
+            final Set<String> missingAudience = new HashSet<>(params.getAudience());
+            if (responseBuilder.getAccessToken().getAudience() != null) {
+                missingAudience.removeAll(Set.of(responseBuilder.getAccessToken().getAudience()));
             }
-
-            // Filter audiences from the "aud" claim and from client roles
-            for (String audienceToRemove : audiencesToRemove) {
-                newToken.getResourceAccess().remove(audienceToRemove);
+            if (!missingAudience.isEmpty()) {
+                final String missingAudienceString = CollectionUtil.join(missingAudience);
+                event.detail(Details.REASON, "Requested audience not available: " + missingAudienceString);
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "Requested audience not available: " + missingAudienceString, Response.Status.BAD_REQUEST);
             }
-            newTokenAudiences.removeAll(audiencesToRemove);
-            newToken.audience(newTokenAudiences.toArray(new String[] {}));
         }
     }
 }

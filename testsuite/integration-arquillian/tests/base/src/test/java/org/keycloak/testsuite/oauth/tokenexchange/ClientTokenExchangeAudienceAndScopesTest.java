@@ -19,15 +19,17 @@
 
 package org.keycloak.testsuite.oauth.tokenexchange;
 
-import java.util.List;
-
 import jakarta.ws.rs.core.Response;
+import java.util.Collections;
+import java.util.List;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.AccessToken;
@@ -76,10 +78,17 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
 
     @Test
     public void testUnavailableAudienceRequested() throws Exception {
-        String accessToken = resourceOwnerLogin("john", "password", List.of("target-client1"), List.of("default-scope1"));;
+        String accessToken = resourceOwnerLogin("john", "password", List.of("target-client1"), List.of("default-scope1"));
+        // request invalid client audience
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1", "invalid-client"), "requester-client", "secret", null);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+        Assert.assertEquals("Audience not found", response.getErrorDescription());
         // The "target-client3" is valid client, but unavailable to the user. Request allowed, but "target-client3" audience will not be available
-        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
-        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+        response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        Assert.assertEquals("Requested audience not available: target-client3", response.getErrorDescription());
     }
 
     @Test
@@ -90,22 +99,28 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         oauth.scope("optional-scope3");
         AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        Assert.assertEquals("Invalid scopes: optional-scope3", response.getErrorDescription());
 
         //scope that doesn't exist
         oauth.scope("bad-scope");
         response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        Assert.assertEquals("Invalid scopes: bad-scope", response.getErrorDescription());
     }
 
     @Test
     public void testScopeFilter() throws Exception {
         String accessToken = resourceOwnerLogin("john", "password", List.of("target-client1"), List.of("default-scope1"));
-        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of( "target-client2"), "requester-client", "secret", null);
-        assertAudiencesAndScopes(response, List.of(), List.of());
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client2"), "requester-client", "secret", null);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        Assert.assertEquals("Requested audience not available: target-client2", response.getErrorDescription());
 
         oauth.scope("optional-scope2");
-        response = oauth.doTokenExchange(accessToken, List.of( "target-client2"), "requester-client", "secret", null);
-        assertAudiencesAndScopes(response, List.of("target-client2"), List.of( "optional-scope2"));
+        response = oauth.doTokenExchange(accessToken, List.of("target-client2"), "requester-client", "secret", null);
+        assertAudiencesAndScopes(response, List.of("target-client2"), List.of("optional-scope2"));
 
         oauth.scope("optional-scope2");
         response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client2"), "requester-client", "secret", null);
@@ -121,6 +136,22 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         oauth.scope("optional-scope2");
         response = oauth.doTokenExchange(accessToken, List.of("target-client1"), "requester-client", "secret", null);
         assertAudiencesAndScopes(response,  List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+    }
+
+    @Test
+    public void testScopeParamIncludedAudienceIncludedRefreshToken() throws Exception {
+        String accessToken = resourceOwnerLogin("mike", "password", List.of("target-client1"), List.of("default-scope1"));
+        oauth.scope("optional-scope2");
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1"), "requester-client",
+                "secret", Collections.singletonMap(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+        Assert.assertNotNull(response.getRefreshToken());
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
     }
 
     private String resourceOwnerLogin(String username, String password, List<String> audience, List<String> scope) throws Exception {

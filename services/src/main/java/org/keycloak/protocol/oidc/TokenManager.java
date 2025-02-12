@@ -99,6 +99,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -420,6 +421,15 @@ public class TokenManager {
 
         if (refreshToken.getAuthorization() != null) {
             validation.newToken.setAuthorization(refreshToken.getAuthorization());
+        }
+
+        final Collection<String> requestedAud = (Collection<String>) refreshToken.getOtherClaims().get(Constants.REQUESTED_AUDIENCE);
+        if (requestedAud != null) {
+            validation.clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS,
+                    requestedAud.stream()
+                            .map(clientId -> session.clients().getClientByClientId(realm, clientId))
+                            .filter(Objects::nonNull)
+                            .toArray(ClientModel[]::new));
         }
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
@@ -844,13 +854,20 @@ public class TokenManager {
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
+        AccessToken accessToken = ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
                 .collect(new TokenCollector<AccessToken>(token) {
                     @Override
                     protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
                         return ((OIDCAccessTokenMapper) mapper.getValue()).transformAccessToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
                     }
                 });
+        final ClientModel[] requestedAucienceClients = clientSessionCtx.getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class);
+        if (requestedAucienceClients != null) {
+            restrictRequestedAudience(accessToken, Arrays.stream(requestedAucienceClients)
+                    .map(ClientModel::getClientId)
+                    .collect(Collectors.toSet()));
+        }
+        return accessToken;
     }
 
     public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
@@ -1160,6 +1177,7 @@ public class TokenManager {
             this.responseTokenType = formatTokenType(client, accessToken);
             return this;
         }
+
         public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
             this.refreshToken = refreshToken;
             return this;
@@ -1243,6 +1261,12 @@ public class TokenManager {
                 sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
             } else {
                 refreshToken.exp(getExpiration(false));
+            }
+            final ClientModel[] resquestedAudienceClients = clientSessionCtx.getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class);
+            if (resquestedAudienceClients != null) {
+                refreshToken.getOtherClaims().put(Constants.REQUESTED_AUDIENCE, Arrays.stream(resquestedAudienceClients)
+                        .map(ClientModel::getClientId)
+                        .collect(Collectors.toSet()));
             }
         }
 
@@ -1420,6 +1444,16 @@ public class TokenManager {
             return tokenType.toLowerCase();
         }
         return tokenType;
+    }
+
+    private AccessToken restrictRequestedAudience(AccessToken accessToken, Set<String> audience) {
+        if (accessToken.getAudience() != null) {
+            final Set<String> audienceToSet = new HashSet<>(audience);
+            audienceToSet.retainAll(Set.of(accessToken.getAudience()));
+            accessToken.audience(audienceToSet.toArray(String[]::new));
+            accessToken.getResourceAccess().keySet().removeIf(clientId -> !audienceToSet.contains(clientId));
+        }
+        return accessToken;
     }
 
     public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {
