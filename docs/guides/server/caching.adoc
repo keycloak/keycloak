@@ -310,7 +310,7 @@ To restrict unauthorized access, use a self-signed certificate for each {project
 
 {project_name} offers a zero-configuration approach to encrypting network communication between nodes.
 This feature automatically generates self-signed certificates, eliminating the need for manual certificate creation and management.
-The generated certificate and associated keys are securely stored within the database of each {project_name} instance.
+The generated certificate and associated keys are stored within the database of each {project_name} instance.
 
 To enable zero-configuration TLS encryption, set the `cache-embedded-mtls-enabled` option to true.
 It's important to note that this disables any custom certificate configurations specified using other cache-embedded-mtls-* options.
