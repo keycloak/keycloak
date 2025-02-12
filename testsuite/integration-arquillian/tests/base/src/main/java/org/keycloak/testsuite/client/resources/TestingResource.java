@@ -324,16 +324,6 @@ public interface TestingResource {
                                 @QueryParam("testMethodName") String testMethodName);
 
     @GET
-    @Path("js/keycloak.js")
-    @Produces(MediaType.TEXT_HTML_UTF_8)
-    String getJavascriptAdapter();
-
-    @GET
-    @Path("/get-javascript-testing-environment")
-    @Produces(MediaType.TEXT_HTML_UTF_8)
-    String getJavascriptTestingEnvironment();
-
-    @GET
     @Path("/list-disabled-features")
     @Produces(MediaType.APPLICATION_JSON)
     Set<Profile.Feature> listDisabledFeatures();

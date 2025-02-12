@@ -30,11 +30,6 @@
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
     <name>Auth Server Services - Testsuite Providers</name>
 
-    <properties>
-        <js-adapter.dist.path>${project.basedir}/../../../../../../js/libs/keycloak-js/lib</js-adapter.dist.path>
-        <js-adapter.target.path>${project.basedir}/target/classes/javascript</js-adapter.target.path>
-    </properties>
-
     <dependencies>
 
         <!-- Keycloak deps for tests -->
@@ -102,37 +97,5 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-
-        <plugins>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-keycloak-js</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${js-adapter.target.path}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${js-adapter.dist.path}</directory>
-                                    <includes>
-                                        <include>keycloak.js</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 </project>

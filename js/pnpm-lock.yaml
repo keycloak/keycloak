@@ -96,8 +96,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       keycloak-js:
-        specifier: workspace:*
-        version: link:../../libs/keycloak-js
+        specifier: ^26.1.2
+        version: 26.1.2
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -196,8 +196,8 @@ importers:
         specifier: ^3.10.1
         version: 3.10.1
       keycloak-js:
-        specifier: workspace:*
-        version: link:../../libs/keycloak-js
+        specifier: ^26.1.2
+        version: 26.1.2
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -369,8 +369,6 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@swc/core@1.10.15)(@types/node@22.13.1)(typescript@5.7.3)
 
-  libs/keycloak-js: {}
-
   libs/ui-shared:
     dependencies:
       '@keycloak/keycloak-admin-client':
@@ -392,8 +390,8 @@ importers:
         specifier: ^24.2.2
         version: 24.2.2(typescript@5.7.3)
       keycloak-js:
-        specifier: workspace:*
-        version: link:../keycloak-js
+        specifier: ^26.1.2
+        version: 26.1.2
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -3747,6 +3745,9 @@ packages:
   jszip@3.10.1:
     resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
 
+  keycloak-js@26.1.2:
+    resolution: {integrity: sha512-nZ26zNgZevVSo7bqeljOfFVCQ4HnPTeYIwdfIwg0uSuXgxD+zS0j1uqaypPlqU17Hu8qHlygj0u72TxPlCWmYw==}
+
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -6072,7 +6073,7 @@ snapshots:
       i18next: 24.2.2(typescript@5.7.3)
       i18next-http-backend: 3.0.2
       jszip: 3.10.1
-      keycloak-js: link:libs/keycloak-js
+      keycloak-js: 26.1.2
       lodash-es: 4.17.21
       p-debounce: 4.0.0
       react: 18.3.1
@@ -9030,6 +9031,8 @@ snapshots:
       pako: 1.0.11
       readable-stream: 2.3.8
       setimmediate: 1.0.5
+
+  keycloak-js@26.1.2: {}
 
   keyv@4.5.4:
     dependencies:

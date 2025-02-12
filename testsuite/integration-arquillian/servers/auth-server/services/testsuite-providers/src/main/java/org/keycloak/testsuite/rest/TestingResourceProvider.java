@@ -96,7 +96,6 @@ import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
-import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
@@ -863,12 +862,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
             return SerializationUtil.encodeException(t);
         }
-    }
-
-
-    @Path("/javascript")
-    public TestJavascriptResource getJavascriptResource() {
-        return new TestJavascriptResource(session);
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {

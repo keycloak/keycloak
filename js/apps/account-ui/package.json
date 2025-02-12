@@ -32,7 +32,7 @@
     "@patternfly/react-table": "^5.4.14",
     "i18next": "^24.2.2",
     "i18next-http-backend": "^3.0.2",
-    "keycloak-js": "workspace:*",
+    "keycloak-js": "^26.1.2",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

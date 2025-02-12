@@ -30,7 +30,6 @@
 # Core Clients (@keycloak/core-clients-maintainers)
 ###################################################################################################
 
-/js/libs/keycloak-js/                                       @keycloak/core-clients-maintainers
 
 ###################################################################################################
 # Cloud Native (@keycloak/cloud-native-maintainers)
