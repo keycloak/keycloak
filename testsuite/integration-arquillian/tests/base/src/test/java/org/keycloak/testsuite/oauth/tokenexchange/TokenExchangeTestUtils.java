@@ -94,6 +94,7 @@ public class TokenExchangeTestUtils {
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("different-scope-client-audience", differentScopeClient.getClientId(), null, true, false, true));
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger1", null, "legal", true, false, true));
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger2", null, "no-refresh-token", true, false, true));
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("audience-to-itself", "client-exchanger", null, true, false, true));
 
         ClientModel illegal = realm.addClient("illegal");
         illegal.setClientId("illegal");

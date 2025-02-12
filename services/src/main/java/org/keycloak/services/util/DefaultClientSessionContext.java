@@ -267,8 +267,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
 
         //remove roles that are not contained in requested audience
-        if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENT_IDS) != null) {
-            Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENT_IDS, String[].class)).collect(Collectors.toSet());
+        if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENTS) != null) {
+            final Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class))
+                    .map(ClientModel::getId)
+                    .collect(Collectors.toSet());
             clientScopeRoles.removeIf(role-> role.isClientRole() && !requestedClientIdsFromAudience.contains(role.getContainerId()));
         }
 
