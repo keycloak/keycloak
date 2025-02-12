@@ -12,13 +12,16 @@ import java.util.List;
 
 public class MigrateTest {
 
+    private static final String DIFF_COMMAND = System.getenv("DIFFTOOL");
+
     final List<Class<? extends TestRewrite>> MIGRATORS = List.of(
             AddKeycloakIntegrationTestRewrite.class,
             ChangePackageRewrite.class,
             RenameImportsRewrite.class,
             UpdateAssertsRewrite.class,
             AddManagedResourcesRewrite.class,
-            AdminEventAssertRewrite.class);
+            AdminEventAssertRewrite.class,
+            BeforeRewrite.class);
 
     Path rootPath = getRootPath();
     Path oldTestsuitePath = rootPath.resolve("testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite").toAbsolutePath();
@@ -31,8 +34,14 @@ public class MigrateTest {
     }
 
     public void migrate(String test) throws Exception {
-        Path testPath = Path.of(test).normalize().toAbsolutePath();
+        if (test.indexOf('.') != -1) {
+            test = rootPath.toString() +
+                    "/testsuite/integration-arquillian/tests/base/src/test/java/" +
+                    test.replace('.', '/') +
+                    ".java";
+        }
 
+        Path testPath = Path.of(test).normalize().toAbsolutePath();
         if (!Files.isRegularFile(testPath)) {
             testPath = oldTestsuitePath.resolve(test);
         }
@@ -51,6 +60,12 @@ public class MigrateTest {
             throw new RuntimeException("Can only migrate tests from " + oldTestsuitePath);
         }
 
+        if (!Files.isRegularFile(testPath)) {
+            throw new RuntimeException("Test file not found");
+        }
+
+        System.exit(1);
+
         List<String> content = readFileToList(testPath);
 
         for (Class<? extends TestRewrite> clazz : MIGRATORS) {
@@ -61,9 +76,11 @@ public class MigrateTest {
 
         writeFile(content, destinationPath);
 
-//        ProcessBuilder pb = new ProcessBuilder();
-//        pb.command("meld", testPath.toString(), destinationPath.toString());
-//        pb.start();
+        if (DIFF_COMMAND != null && !DIFF_COMMAND.isEmpty()) {
+            ProcessBuilder pb = new ProcessBuilder();
+            pb.command(DIFF_COMMAND, testPath.toString(), destinationPath.toString());
+            pb.start();
+        }
     }
 
     private Path getDestination(Path testPath) {
