@@ -209,7 +209,7 @@ export const SamlKeysDialog = ({
             </FormGroup>
           )}
         </Form>
-        {type && <KeyForm useFile />}
+        {type && <KeyForm useFile hasPem />}
       </FormProvider>
     </Modal>
   );
