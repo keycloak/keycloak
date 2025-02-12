@@ -37,7 +37,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -92,7 +91,7 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
         oauth.realm(TEST);
         String accessToken = getInitialAccessTokenForClientExchanger();
         {
-            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+            AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
             Assert.assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
@@ -104,7 +103,7 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
             assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
         {
-            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "legal", "secret");
+            AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "legal", "secret");
             Assert.assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
@@ -117,7 +116,7 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
         }
         {
             //exchange not allowed due the illegal client is not in the client-exchanger audience
-            OAuthClient.AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
+            AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
         }
     }
