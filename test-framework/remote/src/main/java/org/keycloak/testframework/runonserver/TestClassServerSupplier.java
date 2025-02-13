@@ -7,16 +7,6 @@ import org.keycloak.testframework.injection.Supplier;
 public class TestClassServerSupplier implements Supplier<TestClassServer, InjectTestClassServer> {
 
     @Override
-    public Class<InjectTestClassServer> getAnnotationClass() {
-        return InjectTestClassServer.class;
-    }
-
-    @Override
-    public Class<TestClassServer> getValueType() {
-        return TestClassServer.class;
-    }
-
-    @Override
     public TestClassServer getValue(InstanceContext<TestClassServer, InjectTestClassServer> instanceContext) {
         return new TestClassServer();
     }

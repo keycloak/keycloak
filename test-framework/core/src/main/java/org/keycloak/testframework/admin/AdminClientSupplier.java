@@ -18,16 +18,6 @@ import org.keycloak.testframework.realm.ManagedUser;
 public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
     @Override
-    public Class<InjectAdminClient> getAnnotationClass() {
-        return InjectAdminClient.class;
-    }
-
-    @Override
-    public Class<Keycloak> getValueType() {
-        return Keycloak.class;
-    }
-
-    @Override
     public Keycloak getValue(InstanceContext<Keycloak, InjectAdminClient> instanceContext) {
         InjectAdminClient annotation = instanceContext.getAnnotation();
 

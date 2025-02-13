@@ -12,16 +12,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
 public abstract class AbstractDatabaseSupplier implements Supplier<TestDatabase, InjectTestDatabase>, KeycloakServerConfigInterceptor<TestDatabase, InjectTestDatabase> {
 
     @Override
-    public Class<InjectTestDatabase> getAnnotationClass() {
-        return InjectTestDatabase.class;
-    }
-
-    @Override
-    public Class<TestDatabase> getValueType() {
-        return TestDatabase.class;
-    }
-
-    @Override
     public TestDatabase getValue(InstanceContext<TestDatabase, InjectTestDatabase> instanceContext) {
         TestDatabase testDatabase = getTestDatabase();
         testDatabase.start();

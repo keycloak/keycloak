@@ -16,16 +16,6 @@ import org.keycloak.testframework.server.KeycloakServer;
 public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
-    public Class<InjectRealm> getAnnotationClass() {
-        return InjectRealm.class;
-    }
-
-    @Override
-    public Class<ManagedRealm> getValueType() {
-        return ManagedRealm.class;
-    }
-
-    @Override
     public ManagedRealm getValue(InstanceContext<ManagedRealm, InjectRealm> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         Keycloak adminClient = instanceContext.getDependency(Keycloak.class, "bootstrap-client");

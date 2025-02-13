@@ -11,15 +11,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
 
 public class RemoteProvidersSupplier implements Supplier<RemoteProviders, InjectRemoteProviders>, KeycloakServerConfigInterceptor<TestDatabase, InjectTestDatabase> {
-    @Override
-    public Class<InjectRemoteProviders> getAnnotationClass() {
-        return InjectRemoteProviders.class;
-    }
-
-    @Override
-    public Class<RemoteProviders> getValueType() {
-        return RemoteProviders.class;
-    }
 
     @Override
     public RemoteProviders getValue(InstanceContext<RemoteProviders, InjectRemoteProviders> instanceContext) {

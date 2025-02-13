@@ -16,16 +16,6 @@ import org.keycloak.testframework.util.ApiUtil;
 public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
 
     @Override
-    public Class<InjectClient> getAnnotationClass() {
-        return InjectClient.class;
-    }
-
-    @Override
-    public Class<ManagedClient> getValueType() {
-        return ManagedClient.class;
-    }
-
-    @Override
     public ManagedClient getValue(InstanceContext<ManagedClient, InjectClient> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 

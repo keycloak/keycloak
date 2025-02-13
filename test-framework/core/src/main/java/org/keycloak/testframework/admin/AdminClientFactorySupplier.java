@@ -9,16 +9,6 @@ import org.keycloak.testframework.server.KeycloakServer;
 public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, InjectAdminClientFactory> {
 
     @Override
-    public Class<InjectAdminClientFactory> getAnnotationClass() {
-        return InjectAdminClientFactory.class;
-    }
-
-    @Override
-    public Class<AdminClientFactory> getValueType() {
-        return AdminClientFactory.class;
-    }
-
-    @Override
     public AdminClientFactory getValue(InstanceContext<AdminClientFactory, InjectAdminClientFactory> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         return new AdminClientFactory(server.getBaseUrl());

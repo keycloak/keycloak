@@ -15,16 +15,6 @@ import java.util.HashSet;
 public class RunOnServerSupplier implements Supplier<RunOnServerClient, InjectRunOnServer> {
 
     @Override
-    public Class<InjectRunOnServer> getAnnotationClass() {
-        return InjectRunOnServer.class;
-    }
-
-    @Override
-    public Class<RunOnServerClient> getValueType() {
-        return RunOnServerClient.class;
-    }
-
-    @Override
     public RunOnServerClient getValue(InstanceContext<RunOnServerClient, InjectRunOnServer> instanceContext) {
         HttpClient httpClient = instanceContext.getDependency(HttpClient.class);
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());

@@ -8,13 +8,8 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 public class EventsSupplier extends AbstractEventsSupplier<Events, InjectEvents> {
 
     @Override
-    public Class<InjectEvents> getAnnotationClass() {
-        return InjectEvents.class;
-    }
-
-    @Override
-    public Class<Events> getValueType() {
-        return Events.class;
+    public Events getValue(InstanceContext<Events, InjectEvents> instanceContext) {
+        return super.getValue(instanceContext);
     }
 
     @Override
