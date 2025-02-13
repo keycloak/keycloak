@@ -61,10 +61,9 @@ This dashboard shows metrics that are important when estimating the load handled
 For example, it shows the number of password validations or login flows performed by {project_name}.
 For more detail on these metrics, see the {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>.
 
-WARNING: It is necessary to enable {project_name} event metrics for this dashboard to work correctly. Proceed to the following {section} <@links.observability id="event-metrics"/> to enable them.
+NOTE:  {project_name} event metrics must be enabled for this dashboard to work correctly.  To enable them, see the {section} <@links.observability id="event-metrics"/>.
 
-A screenshot of this dashboard:
-
+.Capacity planning dashboard
 image::observability/keycloak-capacity-planning-dashboard.png[]
 
 == Import a dashboard
