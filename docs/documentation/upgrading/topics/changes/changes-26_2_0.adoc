@@ -6,7 +6,7 @@ Breaking changes are identified as requiring changes from existing users to thei
 
 The `X-Forwarded-Host` header can optionally also contain the port. In previous versions when the port was omitted from the header,
 {project_name} fell back to the actual request port. For example if {project_name} was listening on port 8080 and the request contained
-`X-Forwarded-Host: example.com` header, the resolved URL was `http://example.com:8080`.
+`X-Forwarded-Host: example.com` header, the resolved URL was `+http://example.com:8080+`.
 
 This is now changed and omitting the port results in removing it from the resolved URL. The resolved URL from the previous example
 would now be `http://example.com`.
