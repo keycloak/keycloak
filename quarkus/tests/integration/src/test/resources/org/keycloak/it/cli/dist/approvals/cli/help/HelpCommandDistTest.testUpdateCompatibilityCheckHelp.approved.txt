@@ -38,18 +38,6 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
                      Encrypts the network communication between Keycloak servers. Default: false.
---cache-embedded-mtls-key-store-file <file>
-                     The Keystore file path. The Keystore must contain the certificate to use by
-                       the TLS protocol. By default, it lookup 'cache-mtls-keystore.p12' under
-                       conf/ directory.
---cache-embedded-mtls-key-store-password <password>
-                     The password to access the Keystore.
---cache-embedded-mtls-trust-store-file <file>
-                     The Truststore file path. It should contain the trusted certificates or the
-                       Certificate Authority that signed the certificates. By default, it lookup
-                       'cache-mtls-truststore.p12' under conf/ directory.
---cache-embedded-mtls-trust-store-password <password>
-                     The password to access the Truststore.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan

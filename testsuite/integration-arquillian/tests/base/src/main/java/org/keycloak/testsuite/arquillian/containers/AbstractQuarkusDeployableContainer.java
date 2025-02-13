@@ -80,7 +80,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     protected KeycloakQuarkusConfiguration configuration;
     protected List<String> additionalBuildArgs = Collections.emptyList();
-    protected Map<String, List<String>> spis = new HashMap<String, List<String>>();
+    protected Map<String, List<String>> spis = new HashMap<>();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -237,6 +237,10 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             System.setProperty("kc.cache-remote-create-caches", "true");
         }
 
+        if (configuration.isJgroupsMtls()) {
+            commands.add("--cache-embedded-mtls-enabled=true");
+        }
+
         return commands;
     }
 
@@ -383,12 +387,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {

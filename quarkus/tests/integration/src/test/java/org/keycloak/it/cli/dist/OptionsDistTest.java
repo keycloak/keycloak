@@ -99,18 +99,11 @@ public class OptionsDistTest {
         result.assertMessage("- log-syslog-app-name: Available only when Syslog is activated.");
     }
 
-    @Test
-    @Order(7)
-    @Launch({"start", "--db=dev-file", "--cache-embedded-mtls-enabled=true", "--http-enabled=true", "--hostname-strict=false"})
-    public void testCacheEmbeddedMtlsEnabled(LaunchResult result) {
-        assertTrue(result.getOutputStream().stream().anyMatch(s -> s.contains("Property cache-embedded-mtls-key-store-file required but not specified")));
-    }
-
     // Start-dev should be executed as last tests - build is done for development mode
 
     @DryRun
     @Test
-    @Order(8)
+    @Order(7)
     @Launch({"start-dev", "--test=invalid"})
     public void testServerDoesNotStartIfValidationFailDuringReAugStartDev(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
@@ -118,7 +111,7 @@ public class OptionsDistTest {
 
     @DryRun
     @Test
-    @Order(9)
+    @Order(8)
     @Launch({"start-dev", "--log=console", "--log-file-output=json"})
     public void testServerDoesNotStartDevIfDisabledFileLogOption(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
@@ -127,7 +120,7 @@ public class OptionsDistTest {
 
     @DryRun
     @Test
-    @Order(10)
+    @Order(9)
     @Launch({"start-dev", "--log=file", "--log-file-output=json", "--log-console-color=true"})
     public void testServerStartDevIfEnabledFileLogOption(LaunchResult result) {
         assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
