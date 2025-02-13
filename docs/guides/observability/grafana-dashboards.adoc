@@ -40,7 +40,7 @@ git clone -b BRANCH_FROM_STEP_1 https://github.com/keycloak/keycloak-grafana-das
 ----
 . The dashboards are available in the directory `keycloak-grafana-dashboard/dashboards`.
 
-Below is the list of available dashboards and their purpose.
+The following sections describe the purpose of each dashboard.
 
 === Keycloak troubleshooting dashboard
 
