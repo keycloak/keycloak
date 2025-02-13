@@ -76,8 +76,7 @@ image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning 
 
 == Export a dashboard
 
-Exporting a dashboard may be useful, for example, if you want to suggest a change in our dashboard repository.
-Follow these steps to export a dashboard to JSON format.
+Exporting a dashboard to JSON format may be useful. For example, you may want to suggest a change in our dashboard repository.
 
 . Open a dashboard you would like to export.
 . Click *share* in the top left corner next to the dashboard name.
