@@ -105,6 +105,10 @@ hr {
     filter: invert(47%) sepia(88%) saturate(7486%) hue-rotate(199deg) brightness(91%) contrast(101%);
 }
 
+#kc-social-providers li {
+    padding-bottom: var(--pf-v5-global--spacer--sm);
+}
+
 @media (prefers-color-scheme: dark) {
     #kc-social-providers svg {
         filter: invert(54%) sepia(96%) saturate(2028%) hue-rotate(174deg) brightness(99%) contrast(97%);
