@@ -291,6 +291,7 @@
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
+        <module>misc/theme-verifier</module>
         <module>model</module>
         <module>util</module>
         <module>rest</module>

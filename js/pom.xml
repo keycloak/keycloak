@@ -51,6 +51,19 @@
 
         <plugins>
             <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>theme-verifier-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify-theme</id>
+                        <goals>
+                            <goal>verify-theme</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <!-- Clean child modules from parent, as we trigger the build here for parallelization. -->
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
