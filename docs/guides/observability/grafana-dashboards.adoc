@@ -77,10 +77,21 @@ image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning 
 
 Exporting a dashboard to JSON format may be useful. For example, you may want to suggest a change in our dashboard repository.
 
+++++
+<div class="grafana-share-icon">
+<style>
+.grafana-share-icon img {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+</style>
+++++
 . Open a dashboard you would like to export.
-. Click *share* in the top left corner next to the dashboard name.
+. Click *share* (image:observability/grafana-share-icon.svg[Grafana share icon]) in the top left corner next to the dashboard name.
 . Click the *Export* tab.
 . Enable *Export for sharing externally*.
 . Click either *Save to file* or *View JSON* and *Copy to Clipboard* according to where you want to store the resulting JSON.
-
+++++
+</div>
+++++
 </@tmpl.guide>
