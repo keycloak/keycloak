@@ -18,7 +18,7 @@ Keycloak provides user federation, strong authentication, user management, fine-
 
 * [Documentation](https://www.keycloak.org/documentation.html)
 * [User Mailing List](https://groups.google.com/d/forum/keycloak-user) - Mailing list for help and general questions about Keycloak
-* Join [#keycloak](https://cloud-native.slack.com/archives/C056HC17KK9), or [#keycloak-dev](https://cloud-native.slack.com/archives/C056XU905S6) on Slack for design discussions, or questions by creating an account at [https://slack.cncf.io/](https://slack.cncf.io/).
+* Join [#keycloak](https://cloud-native.slack.com/archives/C056HC17KK9) for general questions, or [#keycloak-dev](https://cloud-native.slack.com/archives/C056XU905S6) on Slack for design and development discussions, by creating an account at [https://slack.cncf.io/](https://slack.cncf.io/).
 
 
 ## Reporting Security Vulnerabilities
