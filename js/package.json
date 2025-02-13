@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@9.14.4+sha512.c8180b3fbe4e4bca02c94234717896b5529740a6cbadf19fa78254270403ea2f27d4e1d46a08a0f56c89b63dc8ebfd3ee53326da720273794e6200fcf0d184ab",
+  "packageManager": "pnpm@10.3.0+sha512.ee592eda8815a8a293c206bb0917c4bb0ff274c50def7cbc17be05ec641fc2d1b02490ce660061356bd0d126a4d7eb2ec8830e6959fb8a447571c631d5a2442d",
   "scripts": {
     "prepare": "cd .. && husky js/.husky",
     "build": "wireit"
@@ -32,7 +32,7 @@
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-compiler": "19.0.0-beta-714736e-20250131",
-    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-hooks": "~5.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "prettier": "^3.5.0",
@@ -65,6 +65,11 @@
       "moment-timezone",
       "patternfly-bootstrap-combobox",
       "patternfly-bootstrap-treeview"
+    ],
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "cypress",
+      "esbuild"
     ]
   },
   "lint-staged": {
