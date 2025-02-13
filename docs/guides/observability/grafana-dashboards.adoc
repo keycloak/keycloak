@@ -82,9 +82,9 @@ Exporting a dashboard may be useful, for example, if you want to suggest a chang
 Follow these steps to export a dashboard to JSON format.
 
 . Open a dashboard you would like to export.
-. Click the share button in the top left corner next to the name of the dashboard.
-. Change tab to *Export*.
-. Enable the option *Export for sharing externally*.
+. Click *share* in the top left corner next to the dashboard name.
+. Click the *Export* tab.
+. Enable *Export for sharing externally*.
 . Then either click on *Save to file* or click on *View JSON* and *Copy to Clipboard* depending on where you want to store the resulting JSON.
 
 </@tmpl.guide>
