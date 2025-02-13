@@ -207,7 +207,7 @@ public class HostnameV2Test extends AbstractKeycloakTest {
     }
 
     private void testFrontendAndBackendUrls(String realm, String expectedFrontendUrl, String expectedBackendUrl) {
-        OIDCConfigurationRepresentation config = oauth.doWellKnownRequest(realm);
+        OIDCConfigurationRepresentation config = oauth.realm(realm).doWellKnownRequest();
         assertEquals(expectedFrontendUrl + "/realms/" + realm, config.getIssuer());
         assertEquals(expectedFrontendUrl + "/realms/" + realm + "/protocol/openid-connect/auth", config.getAuthorizationEndpoint());
         assertEquals(expectedBackendUrl + "/realms/" + realm + "/protocol/openid-connect/token", config.getTokenEndpoint());

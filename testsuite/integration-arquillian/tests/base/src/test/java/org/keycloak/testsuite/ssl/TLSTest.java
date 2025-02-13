@@ -42,7 +42,7 @@ public class TLSTest extends AbstractTestRealmKeycloakTest {
         oauth.baseUrl(AUTH_SERVER_ROOT_WITHOUT_TLS);
 
         //when
-        OIDCConfigurationRepresentation config = oauth.doWellKnownRequest("test");
+        OIDCConfigurationRepresentation config = oauth.doWellKnownRequest();
 
         //then
         Assert.assertTrue(config.getAuthorizationEndpoint().startsWith(AUTH_SERVER_ROOT_WITHOUT_TLS));
@@ -58,13 +58,13 @@ public class TLSTest extends AbstractTestRealmKeycloakTest {
 
         // Try access "WellKnown" endpoint unsecured. It should fail
         oauth.baseUrl(AUTH_SERVER_ROOT_WITHOUT_TLS);
-        OIDCConfigurationRepresentation config = oauth.doWellKnownRequest("test");
+        OIDCConfigurationRepresentation config = oauth.doWellKnownRequest();
         Assert.assertNull(config.getAuthorizationEndpoint());
         Assert.assertEquals("HTTPS required", config.getOtherClaims().get("error_description"));
 
         // Try access "JWKS URL" unsecured. It should fail
         try {
-            JSONWebKeySet keySet = oauth.doCertsRequest("test");
+            JSONWebKeySet keySet = oauth.doCertsRequest();
             Assert.fail("This should not be successful");
         } catch (Exception e) {
             // Expected

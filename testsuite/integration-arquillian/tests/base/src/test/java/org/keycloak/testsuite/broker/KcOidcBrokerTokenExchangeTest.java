@@ -121,7 +121,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
         assertThat(tokenResponse.getIdToken(), notNullValue());
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
@@ -176,7 +176,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
             identityProviderResource.update(idpRep);
         });
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(bc.providerRealmName(), bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
         assertThat(tokenResponse.getIdToken(), notNullValue());
         String idTokenString = tokenResponse.getIdToken();
         oauth.realm(bc.providerRealmName());

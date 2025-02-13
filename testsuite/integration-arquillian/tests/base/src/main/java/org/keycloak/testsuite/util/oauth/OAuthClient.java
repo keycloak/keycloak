@@ -351,15 +351,15 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username, String password) throws Exception {
-        return doGrantAccessTokenRequest(realm, username, password, clientId, clientSecret);
+        return doGrantAccessTokenRequest(username, password, clientId, clientSecret);
     }
 
-    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String clientId, String clientSecret) throws Exception {
-        return new PasswordGrantRequest(realm, username, password, clientId, clientSecret, this).send();
+    public AccessTokenResponse doGrantAccessTokenRequest(String username, String password, String clientId, String clientSecret) throws Exception {
+        return new PasswordGrantRequest(username, password, clientId, clientSecret, this).send();
     }
 
     public PasswordGrantRequest passwordGrantRequest(String username, String password) {
-        return new PasswordGrantRequest(realm, username, password, clientId, null, this);
+        return new PasswordGrantRequest(username, password, clientId, null, this);
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
@@ -380,8 +380,8 @@ public class OAuthClient {
                 .additionalParams(additionalParams).send();
     }
 
-    public JSONWebKeySet doCertsRequest(String realm) throws Exception {
-        HttpGet get = new HttpGet(getEndpoints(realm).getJwks());
+    public JSONWebKeySet doCertsRequest() throws Exception {
+        HttpGet get = new HttpGet(getEndpoints().getJwks());
         try (CloseableHttpResponse response = httpClientManager.get().execute(get)) {
             return JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
         }
@@ -677,7 +677,7 @@ public class OAuthClient {
         return new AccessTokenResponse(httpClientManager.get().execute(post));
     }
 
-    public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
+    public OIDCConfigurationRepresentation doWellKnownRequest() {
         try {
             SimpleHttp request = SimpleHttpDefault.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
                     httpClientManager.get());
@@ -1111,11 +1111,6 @@ public class OAuthClient {
 
     public OAuthClient idTokenHint(String idTokenHint) {
         this.idTokenHint = idTokenHint;
-        return this;
-    }
-
-    public OAuthClient initiatingIDP(String initiatingIDP) {
-        this.initiatingIDP = initiatingIDP;
         return this;
     }
 
