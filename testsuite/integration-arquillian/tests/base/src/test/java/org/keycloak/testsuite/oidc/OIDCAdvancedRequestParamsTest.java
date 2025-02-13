@@ -187,7 +187,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.maxAge(null);
     }
 
@@ -1409,7 +1409,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         }
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
@@ -1449,7 +1449,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         }
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));

@@ -111,7 +111,7 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        return oauth.doAccessTokenRequest(code, "password");
+        return oauth.doAccessTokenRequest(code);
     }
 
 

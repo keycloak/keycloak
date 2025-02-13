@@ -216,7 +216,7 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void languageChangeConsentScreen() {
         // Set client, which requires consent
-        oauth.clientId("third-party");
+        oauth.client("third-party", "password");
 
         loginPage.open();
 
@@ -235,7 +235,7 @@ public class LoginPageTest extends AbstractI18NTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         // Revert client
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Test
@@ -266,7 +266,7 @@ public class LoginPageTest extends AbstractI18NTest {
         assertEquals("de", userRep.getAttributes().get("locale").get(0));
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         loginPage.open();
@@ -284,7 +284,7 @@ public class LoginPageTest extends AbstractI18NTest {
         Assert.assertNull(userRep.getAttributes());
 
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         loginPage.open();

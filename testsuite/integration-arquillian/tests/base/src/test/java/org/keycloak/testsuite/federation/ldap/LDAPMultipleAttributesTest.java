@@ -184,14 +184,14 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
     @Test
     public void ldapPortalEndToEndTest() {
         // Login as bwilson
-        oauth.clientId("ldap-portal");
+        oauth.client("ldap-portal", "password");
         oauth.redirectUri(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/ldap-portal");
 
         loginPage.open();
         loginPage.login("bwilson", "Password1");
 
         String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
@@ -210,7 +210,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         loginPage.login("jbrown", "Password1");
 
         code = new AuthorizationEndpointResponse(oauth).getCode();
-        response = oauth.doAccessTokenRequest(code, "password");
+        response = oauth.doAccessTokenRequest(code);
 
         org.keycloak.testsuite.Assert.assertEquals(200, response.getStatusCode());
         idToken = oauth.verifyIDToken(response.getIdToken());

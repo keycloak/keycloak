@@ -56,33 +56,33 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
     @Test
     public void testTokenRevocationCorsRequestWithValidUrl() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
             "password");
 
         oauth.origin(VALID_CORS_URL);
-        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
+        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token");
         assertTrue(response.isSuccess());
         assertCors(response);
 
-        isTokenDisabled(tokenResponse, "test-app2");
+        isTokenDisabled(tokenResponse);
     }
 
     @Test
     public void userTokenRevocationCorsRequestWithInvalidUrlShouldFail() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
             "password");
 
         oauth.origin(INVALID_CORS_URL);
-        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password");
+        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token");
         assertTrue(response.isSuccess());
         assertNotCors(response);
 
-        isTokenDisabled(tokenResponse, "test-app2");
+        isTokenDisabled(tokenResponse);
     }
 
     private static void assertCors(TokenRevocationResponse response) {
@@ -97,15 +97,12 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
         assertNull(response.getHeader("Access-Control-Expose-Headers"));
     }
 
-    private void isTokenDisabled(AccessTokenResponse tokenResponse, String clientId) throws IOException {
-        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, "password",
-            tokenResponse.getAccessToken());
+    private void isTokenDisabled(AccessTokenResponse tokenResponse) throws IOException {
+        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
         TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
         assertFalse(rep.isActive());
 
-        oauth.clientId(clientId);
-        AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
-            "password");
+        AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertEquals(Status.BAD_REQUEST.getStatusCode(), tokenRefreshResponse.getStatusCode());
     }
 }

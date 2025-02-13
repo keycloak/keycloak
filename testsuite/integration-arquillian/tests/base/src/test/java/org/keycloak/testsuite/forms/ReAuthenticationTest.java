@@ -312,7 +312,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
         oauth.prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
         loginPage.open();
@@ -320,7 +320,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("john-doh@localhost", "password");
 
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
@@ -345,7 +345,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("test-user@localhost", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
         //set time offset after user session expiration (10s) but before accessCodeLifespanLogin (1800s) and accessCodeLifespan (60s)
         setTimeOffset(20);
@@ -354,7 +354,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("john-doh@localhost", "password");
 
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
@@ -388,7 +388,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
 
         oauth.doLogout(response1.getRefreshToken(), "password");
@@ -397,7 +397,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
         Assert.assertNotEquals(accessToken1.getId(), accessToken2.getId());

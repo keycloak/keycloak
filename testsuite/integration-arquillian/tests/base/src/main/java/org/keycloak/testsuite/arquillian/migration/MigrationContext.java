@@ -79,8 +79,8 @@ public class MigrationContext {
             oauth.init(null);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.realm("Migration");
-            oauth.clientId("migration-test-client");
-            AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "offline-test-user", "password2");
+            oauth.client("migration-test-client", "secret");
+            AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("offline-test-user", "password2");
             return tokenResponse.getRefreshToken();
         } catch (Exception e) {
             throw new RuntimeException(e);

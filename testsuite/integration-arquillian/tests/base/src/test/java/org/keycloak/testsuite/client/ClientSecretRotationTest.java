@@ -354,20 +354,22 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String cId = createClientByAdmin(clientId);
 
         //The first login will be successful
-        oauth.clientId(clientId);
+        oauth.client(clientId, DEFAULT_SECRET);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, DEFAULT_SECRET);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), DEFAULT_SECRET);
 
         //advance 1 hour
         setTimeOffset(3601);
 
+        oauth.client(clientId, DEFAULT_SECRET);
+
         // the second login must fail
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        res = oauth.doAccessTokenRequest(code, DEFAULT_SECRET);
+        res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
     }
 
@@ -405,20 +407,21 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId, updatedSecret);
 
         //login with new secret
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME,
                 TEST_USER_PASSWORD);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, updatedSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), updatedSecret);
 
         //login with rotated secret
+        oauth.client(clientId, firstSecret);
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        res = oauth.doAccessTokenRequest(code, firstSecret);
+        res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), firstSecret);
 
@@ -477,10 +480,12 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 Time.currentTime()));
         logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));
 
+        oauth.client(clientId, firstSecret);
+
         // try to login with rotated secret (must fail)
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, firstSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), firstSecret);
 
@@ -519,10 +524,12 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientResource.toRepresentation());
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
 
+        oauth.client(clientId, firstSecret);
+
         // try to login with rotated secret (must fail)
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, firstSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), firstSecret);
 
@@ -876,14 +883,14 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     }
 
     private AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 

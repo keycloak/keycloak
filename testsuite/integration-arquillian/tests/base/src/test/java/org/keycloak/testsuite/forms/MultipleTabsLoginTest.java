@@ -408,7 +408,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             String tab1WindowHandle = util.getActualWindowHandle();
             loginSuccessAndDoRequiredActions();
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
 
             // seamless login in the second tab, user already authenticated

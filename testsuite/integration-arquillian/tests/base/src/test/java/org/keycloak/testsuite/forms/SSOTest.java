@@ -161,7 +161,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
 
         String code = new AuthorizationEndpointResponse(oauth2).getCode();
-        AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth2.doAccessTokenRequest(code);
         events.poll();
         oauth2.idTokenHint(response.getIdToken()).openLogout();
         events.expectLogout(login2.getSessionId()).assertEvent();
@@ -227,7 +227,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            tokenResponse = oauth2.doAccessTokenRequest(secondCode, "password");
+            tokenResponse = oauth2.doAccessTokenRequest(secondCode);
         } finally {
             oauth.httpClient().reset();
         }

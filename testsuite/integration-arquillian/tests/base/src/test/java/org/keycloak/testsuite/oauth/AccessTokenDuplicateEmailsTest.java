@@ -74,7 +74,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("non-duplicate-email-user", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         
@@ -89,7 +89,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("duplicate-email-user1", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         
@@ -104,7 +104,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
         oauth.doLogin("duplicate-email-user2", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         

@@ -151,7 +151,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testKeycloak5350() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("offline-client");
+        oauth.client("offline-client", "secret");
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
         oauth.doLogin(FailableHardcodedStorageProvider.username, "password");
 
@@ -166,7 +166,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);

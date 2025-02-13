@@ -606,7 +606,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     // Test logout with "consentRequired" . All of "post_logout_redirect_uri", "id_token_hint" and "state" parameters are present in the logout request
     @Test
     public void logoutConsentRequired() {
-        oauth.clientId("third-party");
+        oauth.client("third-party", "password");
         AccessTokenResponse tokenResponse = loginUser(true);
         String idTokenString = tokenResponse.getIdToken();
 
@@ -1096,7 +1096,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         events.clear();
         return tokenResponse;
     }

@@ -121,7 +121,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
         assertThat(tokenResponse.getIdToken(), notNullValue());
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
@@ -176,7 +176,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
             identityProviderResource.update(idpRep);
         });
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword(), brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
         assertThat(tokenResponse.getIdToken(), notNullValue());
         String idTokenString = tokenResponse.getIdToken();
         oauth.realm(bc.providerRealmName());
@@ -273,7 +273,8 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
         final String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, brokerApp.getSecret());
+        oauth.client(brokerApp.getClientId(), brokerApp.getSecret());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         assertThat(tokenResponse.getError(), nullValue());
         assertThat(tokenResponse.getAccessToken(), notNullValue());
 
@@ -281,7 +282,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         setTimeOffset(expires - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN);
 
-        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), brokerApp.getSecret());
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertThat(tokenResponse.getError(), nullValue());
         assertThat(tokenResponse.getAccessToken(), notNullValue());
 

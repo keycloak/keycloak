@@ -232,7 +232,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
                     log.infof("Trying to execute codeURL: %s, threadIndex: %d", codeURL, threadIndex);
 
-                    AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
+                    AccessTokenResponse resp = oauth1.doAccessTokenRequest(code);
                     if (resp.getAccessToken() != null && resp.getError() == null) {
                         codeToTokenSuccessCount.incrementAndGet();
                     } else if (resp.getAccessToken() == null && resp.getError() != null) {
@@ -399,7 +399,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             totalInvocations.incrementAndGet();
 
             // obtain access + refresh token via code-to-token flow
-            AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
+            AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code);
             Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
               200, accessRes.getStatusCode());
 

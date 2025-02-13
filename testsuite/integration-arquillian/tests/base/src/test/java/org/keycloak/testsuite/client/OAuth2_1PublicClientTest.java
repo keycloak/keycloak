@@ -144,8 +144,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // setup profiles and policies
         setupPolicyOAuth2_1PublicClientForAllClient();
 
-        oauth.clientId(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.client(clientId);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -220,7 +220,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         // authorization request - success
         setValidPkce(clientId);
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(validRedirectUri);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
@@ -236,7 +236,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // token refresh request with DPoP Proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
 
         // userinfo request with DPoP Proof - success
@@ -250,8 +250,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // revoke token with a valid DPoP proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token", null).isSuccess());
-        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, null, response.getAccessToken());
+        assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token").isSuccess());
+        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
         TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
         assertFalse(tokenMetadataRepresentation.isActive());
 
@@ -290,7 +290,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     }
 
     private void setValidPkce(String clientId) throws Exception {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         String codeVerifier = PkceUtils.generateCodeVerifier();
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
         oauth.codeChallenge(codeChallenge);

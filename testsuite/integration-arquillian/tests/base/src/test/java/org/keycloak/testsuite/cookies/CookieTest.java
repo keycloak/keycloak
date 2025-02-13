@@ -101,8 +101,8 @@ public class CookieTest extends AbstractKeycloakTest {
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
-        AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();
@@ -138,8 +138,8 @@ public class CookieTest extends AbstractKeycloakTest {
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
-        AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();

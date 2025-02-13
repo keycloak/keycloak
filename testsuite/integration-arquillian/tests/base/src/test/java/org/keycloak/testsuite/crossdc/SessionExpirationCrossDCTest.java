@@ -176,7 +176,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
         List<AccessTokenResponse> responses = new ArrayList<>();
         for (int i=0 ; i<SESSIONS_COUNT ; i++) {
-            responses.add(oauth.doGrantAccessTokenRequest("password", "login-test", "password"));
+            responses.add(oauth.doGrantAccessTokenRequest("login-test", "password"));
         }
 
         // Assert 20 sessions exists on node1 and node2 and on remote caches

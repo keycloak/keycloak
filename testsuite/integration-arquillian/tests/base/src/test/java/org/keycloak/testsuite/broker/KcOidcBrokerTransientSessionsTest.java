@@ -555,7 +555,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, CONSUMER_BROKER_APP_SECRET);
+        AccessTokenResponse tokenResponse = oauth.client(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET).doAccessTokenRequest(code);
 
         // Check that userInfo can be invoked
         var userInfoResponse = oauth.doUserInfoRequestByGet(tokenResponse);
@@ -564,7 +564,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertThat(userInfoResponse.getUserInfo().getEmail(), is(bc.getUserEmail()));
 
         // Check that tokenIntrospection can be invoked
-        var introspectionResponse = oauth.introspectAccessTokenWithClientCredential(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET, tokenResponse.getAccessToken());
+        var introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
         org.junit.Assert.assertEquals(true, jsonNode.get("active").asBoolean());
@@ -572,7 +572,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     }
 
     private EventRepresentation loginWithBrokerUsingOAuthClient(String consumerClientId) {
-        oauth.clientId(consumerClientId);
+        oauth.client(consumerClientId, CONSUMER_BROKER_APP_SECRET);
         oauth.realm(bc.consumerRealmName());
         oauth.doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         events.clear();
@@ -608,7 +608,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, CONSUMER_BROKER_APP_SECRET);
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
             String offlineTokenString = tokenResponse.getRefreshToken();

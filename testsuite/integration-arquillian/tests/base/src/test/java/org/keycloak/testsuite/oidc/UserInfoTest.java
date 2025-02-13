@@ -258,8 +258,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
         userResource.roles().clientLevel(clientUUID).add(Collections.singletonList(fooRole));
 
         // Login to the new client
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.clientId(clientId)
-                .doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.client(clientId, "password")
+                .doGrantAccessTokenRequest("test-user@localhost", "password");
 
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertNames(accessToken.getResourceAccess(clientId).getRoles(), "my.foo.role");
@@ -870,7 +870,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
-        String accessToken = oauth.doGrantAccessTokenRequest( "test-user@localhost", "password", "saml-client", "secret").getAccessToken();
+        String accessToken = oauth.client("saml-client", "secret").doGrantAccessTokenRequest( "test-user@localhost", "password").getAccessToken();
 
         // change client's protocol
         ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
@@ -1033,7 +1033,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.clientSessionState("client-session");
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         setTimeOffset(1);
 

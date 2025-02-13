@@ -170,12 +170,11 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     public String getAdminToken() throws Exception {
-        String clientId = Constants.ADMIN_CLI_CLIENT_ID;
-        return oauth.realm("master").doGrantAccessTokenRequest( "admin", "admin", clientId, null).getAccessToken();
+        return oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest( "admin", "admin").getAccessToken();
     }
 
     public AccessTokenResponse getTestToken(String password, String totp) {
-        return oauth.passwordGrantRequest("test-user@localhost", password).clientSecret("password").otp(totp).send();
+        return oauth.passwordGrantRequest("test-user@localhost", password).otp(totp).send();
     }
 
     protected void clearUserFailures() throws Exception {
@@ -833,7 +832,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         events.clear();
@@ -981,7 +980,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code ).getIdToken();
         appPage.logout(idTokenHint);
         events.clear();
     }
@@ -1008,7 +1007,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogin().assertEvent();
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
         events.clear();
     }

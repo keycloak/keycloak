@@ -109,7 +109,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // IDToken is not there
         Assert.assertEquals(200, response.getStatusCode());
@@ -132,7 +132,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingScopeOpenidInResourceOwnerPasswordCredentialRequest() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -160,7 +160,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         // Client 'more-uris-client' has 2 redirect uris. OAuth2 login without redirect_uri won't be allowed
-        oauth.clientId("more-uris-client");
+        oauth.client("more-uris-client");
         loginFormUrl = oauth.getLoginFormUrl();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.REDIRECT_URI);

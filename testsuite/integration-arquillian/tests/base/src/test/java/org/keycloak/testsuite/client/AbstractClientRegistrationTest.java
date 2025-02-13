@@ -134,7 +134,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
     protected String getToken(String clientId, String clientSecret, String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(username, password, clientId, clientSecret).getAccessToken();
+            return oauth.client(clientId, clientSecret).doGrantAccessTokenRequest(username, password).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -119,7 +119,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
             events.clear();
         }
         String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 

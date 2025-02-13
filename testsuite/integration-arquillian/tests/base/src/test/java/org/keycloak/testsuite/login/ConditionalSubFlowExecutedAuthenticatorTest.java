@@ -167,7 +167,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     private void checkAllowed(String username) {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         Assert.assertNotNull(code);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assert.assertNull(res.getError());
         Assert.assertNotNull(res.getAccessToken());
 

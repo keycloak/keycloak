@@ -39,7 +39,7 @@ public class LoginCrossDCTest extends AbstractAdminCrossDCTest {
         for (int i=0 ; i<30 ; i++) {
             AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
             String code = response1.getCode();
-            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
             Assert.assertNotNull(response2.getAccessToken());
 
             LogoutResponse logoutResponse = oauth.doLogout(response2.getRefreshToken(), "password");

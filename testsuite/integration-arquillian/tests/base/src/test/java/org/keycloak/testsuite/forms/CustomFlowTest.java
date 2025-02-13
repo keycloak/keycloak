@@ -336,7 +336,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         state.setClientId("unknown");
         testingClient.testing().updateAuthenticator(state);
 
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user", "password");
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
@@ -356,7 +356,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         // Test throwing exception from the client authenticator. No error details should be displayed
         oauth.addCustomParameter(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error");
         try {
-            response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
+            response = oauth.doGrantAccessTokenRequest("test-user", "password");
             assertEquals(400, response.getStatusCode());
             assertEquals("unauthorized_client", response.getError());
             assertEquals("Unexpected error when authenticating client", response.getErrorDescription());
@@ -368,7 +368,7 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     private void grantAccessToken(String clientId, String login) throws Exception {
 
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", login, "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(login, "password");
 
         assertEquals(200, response.getStatusCode());
 

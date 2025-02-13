@@ -618,7 +618,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             AccessTokenResponse accessTokenResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
                 oauth.httpClient().set(client);
-                accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET);
+                accessTokenResponse = oauth.doAccessTokenRequest(code);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             } finally {
@@ -977,8 +977,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
-        oauth.clientId(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -1201,7 +1201,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // send an authorization request
         oauth.scope("openid" + " " + "microprofile-jwt");
         oauth.request(request);
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.nonce(nonce);
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.openLoginForm();
@@ -1229,7 +1229,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // send a token request
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // check a token response
         assertEquals(200, response.getStatusCode());

@@ -69,7 +69,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override
@@ -145,7 +145,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -192,7 +192,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         
         oauth.codeVerifier("aZ_-.~1234567890123456789012345678901234567890123Za");
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -295,7 +295,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -323,7 +323,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -349,7 +349,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
        
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -398,7 +398,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -423,7 +423,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         // get the code and add codeVerifier
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.codeVerifier(codeVerifier);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // assert invalid code because no challenge in authorization
         assertEquals(400, response.getStatusCode());
@@ -442,14 +442,14 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
  
     private void expectSuccessfulResponseFromTokenEndpoint(String codeId, String sessionId, String code)  throws Exception {
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = Stream.of(oauth.doCertsRequest().getKeys())
+        String expectedKid = Stream.of(oauth.keys().getRealmKeys().getKeys())
                 .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
                 .map(JWK::getKeyId)
                 .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
@@ -718,7 +718,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());

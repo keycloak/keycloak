@@ -11,7 +11,7 @@ public class AuthenticationRequestAcknowledgement extends AbstractHttpResponse {
     private int expiresIn;
     private int interval;
 
-    public AuthenticationRequestAcknowledgement(CloseableHttpResponse response) throws Exception {
+    public AuthenticationRequestAcknowledgement(CloseableHttpResponse response) throws IOException {
         super(response);
     }
 

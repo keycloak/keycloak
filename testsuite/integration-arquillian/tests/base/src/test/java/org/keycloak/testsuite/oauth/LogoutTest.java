@@ -106,7 +106,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
@@ -122,7 +122,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         adminClient.realm("test").update(RealmBuilder.create().notBefore(Time.currentTime() + 1).build());
@@ -150,7 +150,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         Assert.assertFalse(loginPage.isCurrent());
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         // finally POST logout with VALID token should succeed
         LogoutResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password");
@@ -166,16 +166,16 @@ public class LogoutTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String refreshTokenString = tokenResponse.getRefreshToken();
 
-        oauth.clientId("test-app-scope");
+        oauth.client("test-app-scope", "password");
 
         // Assert logout fails with 400 when trying to use different client credentials
         LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
         assertEquals(response.getStatusCode(), 400);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Test
@@ -204,7 +204,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String idTokenString = tokenResponse.getIdToken();
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
@@ -262,7 +262,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         oauth.clientSessionState("client-session");
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         events.poll();
         String idTokenString = tokenResponse.getIdToken();
         String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
@@ -302,7 +302,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             oauth.clientSessionState("client-session");
 
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
                     .idTokenHint(idTokenString)
@@ -351,7 +351,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         oauth.clientSessionState("client-session");
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         setTimeOffset(1);
 

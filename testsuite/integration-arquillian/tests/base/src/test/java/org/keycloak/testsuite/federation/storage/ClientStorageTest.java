@@ -245,7 +245,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
      private void testBrowser(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, "password");
         String loginFormUrl = oauth.getLoginFormUrl();
         //log.info("loginFormUrl: " + loginFormUrl);
 
@@ -262,7 +262,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         Assert.assertNotNull(tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getRefreshToken());
 
@@ -456,8 +456,8 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void offlineTokenDirectGrantFlow() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("hardcoded-client");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        oauth.client("hardcoded-client", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -488,7 +488,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     public void offlineTokenDirectGrantFlowNoRefresh(String clientId) throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId(clientId);
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();

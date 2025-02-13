@@ -238,8 +238,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -317,8 +317,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -365,8 +365,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -411,8 +411,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -455,9 +455,9 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
+        oauth.client("client-exchanger", "secret");
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -503,9 +503,9 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testingClient.server().run(ClientTokenExchangeSAML2Test::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("client-exchanger");
+        oauth.client("client-exchanger", "secret");
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "bad-impersonator", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("bad-impersonator", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

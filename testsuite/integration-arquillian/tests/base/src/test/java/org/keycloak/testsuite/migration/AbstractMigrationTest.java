@@ -1010,23 +1010,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         // Try to login with password+otp after the migration
         try {
             oauth.realm(MIGRATION);
-            oauth.clientId("migration-test-client");
+            oauth.client("migration-test-client", "secret");
 
             TimeBasedOTP otpGenerator = new TimeBasedOTP("HmacSHA1", 8, 40, 1);
             String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
 
             // Try invalid password first
-            AccessTokenResponse response = oauth.passwordGrantRequest("migration-test-user", "password").clientSecret("secret").otp(otp).send();
+            AccessTokenResponse response = oauth.passwordGrantRequest("migration-test-user", "password").otp(otp).send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try invalid OTP then
-            response = oauth.passwordGrantRequest("migration-test-user", "password2").clientSecret("secret").otp("invalid").send();
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").otp("invalid").send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try successful login now
-            response = oauth.passwordGrantRequest("migration-test-user", "password2").clientSecret("secret").otp(otp).send();
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").otp(otp).send();
             Assert.assertNull(response.getError());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals("migration-test-user", accessToken.getPreferredUsername());

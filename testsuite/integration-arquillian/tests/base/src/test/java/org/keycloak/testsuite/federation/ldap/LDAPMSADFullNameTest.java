@@ -249,7 +249,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc2", "Password1", "Password1");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "Password1").getIdToken();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         loginPage.open();
