@@ -99,6 +99,18 @@ hr {
     margin-bottom: var(--pf-v5-global--spacer--md);
 }
 
+#kc-social-providers svg {
+    float: left;
+    height: var(--pf-v5-global--FontSize--xl);
+    filter: invert(47%) sepia(88%) saturate(7486%) hue-rotate(199deg) brightness(91%) contrast(101%);
+}
+
+@media (prefers-color-scheme: dark) {
+    #kc-social-providers svg {
+        filter: invert(54%) sepia(96%) saturate(2028%) hue-rotate(174deg) brightness(99%) contrast(97%);
+    }
+}
+
 @media (min-width: 768px) {
     div.pf-v5-c-login__main-header {
         grid-template-columns: 70% 30%;
