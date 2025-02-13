@@ -279,12 +279,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
           data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
-          <CodeEditor
-            readOnly
-            value={code}
-            language="json"
-            style={{ height: "8rem", overflow: "scroll" }}
-          />
+          <div style={{ height: "8rem", overflow: "scroll" }}>
+            <CodeEditor readOnly value={code} language="json" />
+          </div>
         </DisplayDialog>
       )}
       {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
