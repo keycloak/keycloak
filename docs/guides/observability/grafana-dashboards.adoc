@@ -72,7 +72,7 @@ To import a dashboard, follow these steps:
 
 . Open the dashboard page from the left Grafana menu.
 . Click *New* and *Import*.
-. Click *Upload dashboard JSON file* and pick the JSON file of the dashboard you want to import.
+. Click *Upload dashboard JSON file* and select the JSON file of the dashboard you want to import.
 . Pick your Prometheus datasource.
 . Click *Import*.
 
