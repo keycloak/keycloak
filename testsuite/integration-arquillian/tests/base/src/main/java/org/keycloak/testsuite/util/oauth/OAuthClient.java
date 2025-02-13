@@ -149,8 +149,6 @@ public class OAuthClient {
 
     private String idTokenHint;
 
-    private String initiatingIDP;
-
     private String kcAction;
 
     private StateParamProvider state;
@@ -937,9 +935,6 @@ public class OAuthClient {
         }
         if (idTokenHint != null) {
             b.queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenHint);
-        }
-        if (initiatingIDP != null) {
-            b.queryParam(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIDP);
         }
         driver.navigate().to(b.build(realm).toString());
     }
