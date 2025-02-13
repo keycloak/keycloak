@@ -7,7 +7,8 @@ public class RenameImportsRewrite extends TestRewrite {
     Map<String, String> IMPORTS = Map.of(
             "org.junit.Assert", "org.junit.jupiter.api.Assertions",
             "org.junit.Test", "org.junit.jupiter.api.Test",
-            "org.keycloak.testsuite.util.AdminEventPaths", "org.keycloak.tests.utils.admin.AdminEventPaths"
+            "org.keycloak.testsuite.util.AdminEventPaths", "org.keycloak.tests.utils.admin.AdminEventPaths",
+            "org.keycloak.testsuite.admin.ApiUtil", "org.keycloak.testframework.util.ApiUtil"
     );
 
     @Override
