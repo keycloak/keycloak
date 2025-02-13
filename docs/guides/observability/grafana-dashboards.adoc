@@ -49,9 +49,8 @@ This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboar
 On the top of the dashboard, graphs display the service level indicators as defined in <@links.observability id="keycloak-service-level-indicators"/>.
 This dashboard can be also used while troubleshooting a {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
 
-A screenshot of this dashboard:
-
-image::observability/keycloak-troubleshooting-grafana-dashboard.png[]
+.Troubleshooting dashboard
+image::observability/keycloak-troubleshooting-grafana-dashboard.png[Troubleshooting dashboard]
 
 === Keycloak capacity planning dashboard
 
