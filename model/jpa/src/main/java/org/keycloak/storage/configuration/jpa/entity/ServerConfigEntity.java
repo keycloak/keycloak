@@ -34,7 +34,7 @@ import jakarta.persistence.Version;
 public class ServerConfigEntity {
 
     @Id
-    @Column(name = "`KEY`")
+    @Column(name = "SERVER_CONFIG_KEY")
     private String key;
 
     @Column(name = "VALUE")
