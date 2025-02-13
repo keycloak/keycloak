@@ -199,4 +199,7 @@ public final class Constants {
     // Note used to store the acr values if it is matched by client policy condition
     public static final String CLIENT_POLICY_REQUESTED_ACR = "client-policy-requested-acr";
 
+    //attribute name used to set client ids from requested audience in standard token exchange
+    public static final String REQUESTED_AUDIENCE_CLIENT_IDS = "audience-client-ids";
+
 }

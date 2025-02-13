@@ -17,8 +17,8 @@
 
 package org.keycloak.services.util;
 
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -33,6 +33,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
@@ -264,6 +265,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
         // Expand (resolve composite roles)
         clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+
+        //remove roles that are not contained in requested audience
+        if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENT_IDS) != null) {
+            Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENT_IDS, String[].class)).collect(Collectors.toSet());
+            clientScopeRoles.removeIf(role-> role.isClientRole() && !requestedClientIdsFromAudience.contains(role.getContainerId()));
+        }
 
         // Check if expanded roles of clientScope has any intersection with expanded roles of user. If not, it is not permitted
         clientScopeRoles.retainAll(getUserRoles());
