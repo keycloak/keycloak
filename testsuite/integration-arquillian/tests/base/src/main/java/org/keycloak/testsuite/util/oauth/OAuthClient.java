@@ -303,16 +303,6 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
-    public CloseableHttpResponse doPreflightRequest() {
-        HttpOptions options = new HttpOptions(getEndpoints().getToken());
-        options.setHeader("Origin", "http://example.com");
-        try (CloseableHttpResponse response = httpClientManager.get().execute(options)) {
-            return response;
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-    }
-
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
         HttpPost post = new HttpPost(getEndpoints().getToken());
 
