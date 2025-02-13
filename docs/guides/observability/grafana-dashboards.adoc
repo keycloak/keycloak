@@ -47,7 +47,7 @@ Below is the list of available dashboards and their purpose.
 This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboard.json`.
 
 On the top of the dashboard, there are graphs displaying the service level indicators as defined in <@links.observability id="keycloak-service-level-indicators"/>.
-It can be also used while troubleshooting {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
+This dashboard can be also used while troubleshooting a {project_name} deployment following the <@links.observability id="metrics-for-troubleshooting"/> {section}, for example, when SLI graphs do not show expected results.
 
 A screenshot of this dashboard:
 
