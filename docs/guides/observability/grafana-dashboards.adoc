@@ -64,7 +64,7 @@ For more detail on these metrics, see the {section} <@links.observability id="me
 NOTE:  {project_name} event metrics must be enabled for this dashboard to work correctly.  To enable them, see the {section} <@links.observability id="event-metrics"/>.
 
 .Capacity planning dashboard
-image::observability/keycloak-capacity-planning-dashboard.png[]
+image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning dashboard]
 
 == Import a dashboard
 
