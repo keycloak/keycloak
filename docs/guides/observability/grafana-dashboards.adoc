@@ -16,7 +16,7 @@ This guide provides instructions on how to visualize collected {project_name} me
 * {project_name} metrics are enabled. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
 * Grafana instance is running and {project_name} metrics are collected into a Prometheus instance.
 
-== Keycloak Grafana dashboards
+== {project_name} Grafana dashboards
 
 Grafana dashboards are distributed in the form of a JSON file that is imported into a Grafana instance.
 JSON definitions of {project_name} Grafana dashboards are available in the https://github.com/keycloak/keycloak-grafana-dashboard[keycloak/keycloak-grafana-dashboard GitHub repository].
