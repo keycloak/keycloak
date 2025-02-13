@@ -216,7 +216,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         oauth.codeVerifier(codeVerifier);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         // check HoK required
         assertSuccessfulTokenResponse(tokenResponse);
@@ -300,7 +300,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a token request
         oauth.codeVerifier(codeVerifier);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         // check HoK required
         assertSuccessfulTokenResponse(tokenResponse);

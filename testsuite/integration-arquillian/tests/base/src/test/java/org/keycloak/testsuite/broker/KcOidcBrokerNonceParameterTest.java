@@ -67,7 +67,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         AuthorizationEndpointResponse authzResponse = oauth
                 .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         String code = authzResponse.getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
         
         Assert.assertEquals("123456", idToken.getNonce());
@@ -95,7 +95,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         AuthorizationEndpointResponse authzResponse = oauth
                 .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         String code = authzResponse.getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
 
         Assert.assertNull(idToken.getNonce());

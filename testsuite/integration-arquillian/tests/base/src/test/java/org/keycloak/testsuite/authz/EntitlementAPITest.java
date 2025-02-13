@@ -242,7 +242,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         // Token request
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -269,7 +269,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         // Token request
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -2001,7 +2001,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         // Token request
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         AccessToken token = toAccessToken(response.getAccessToken());
 
         assertEquals(PUBLIC_TEST_CLIENT, token.getOtherClaims().get("custom_claim"));
@@ -2027,7 +2027,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.clientId(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
 
@@ -2053,7 +2053,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.clientId(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
 

@@ -294,7 +294,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
             oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code, null);
+            return oauth.doAccessTokenRequest(code);
         });
     }
 
@@ -386,7 +386,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
             oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code, null);
+            return oauth.doAccessTokenRequest(code);
         });
 
         // Set "advanced" policy
@@ -576,7 +576,7 @@ public class FAPI1Test extends AbstractFAPITest {
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
         // Check HoK required
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());

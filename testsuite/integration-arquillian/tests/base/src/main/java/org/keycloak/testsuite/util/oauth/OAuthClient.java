@@ -303,52 +303,12 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
-    public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        HttpPost post = new HttpPost(getEndpoints().getToken());
+    public AccessTokenResponse doAccessTokenRequest(String code) {
+        return new AccessTokenRequest(code, this).send();
+    }
 
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-
-        if (origin != null) {
-            post.addHeader("Origin", origin);
-        }
-        if (code != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        }
-        if (redirectUri != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
-        }
-        if (clientId != null && password != null) {
-            String authorization = BasicAuthHelper.createHeader(clientId, password);
-            post.setHeader("Authorization", authorization);
-        } else if (clientId != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-        }
-
-        if (clientSessionState != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-        }
-
-        if (clientSessionHost != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-        }
-
-        if (codeVerifier != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
-        }
-
-        if (dpopProof != null) {
-            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        try {
-            return new AccessTokenResponse(httpClientManager.get().execute(post));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve access token", e);
-        }
+    public AccessTokenResponse doAccessTokenRequest(String code, String clientSecret) {
+        return new AccessTokenRequest(code, this).clientSecret(clientSecret).send();
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
@@ -1044,6 +1004,10 @@ public class OAuthClient {
 
     public String getResponseType() {
         return responseType;
+    }
+
+    public String getCodeVerifier() {
+        return codeVerifier;
     }
 
     public String getRegisterationsUrl() {
