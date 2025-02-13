@@ -903,15 +903,40 @@ public class SAMLEndpoint {
     }
 
     protected class ArtifactBinding extends Binding {
+
+        private boolean unencryptedSignaturesVerified = false;
+
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
+            if (unencryptedSignaturesVerified) {
+                return true;
+            }
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
             return (nl != null && nl.getLength() > 0);
         }
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+            if (unencryptedSignaturesVerified) {
+                // this is the second pass and signatures were already verified in the artifact response time
+                return;
+            }
+            if (!containsUnencryptedSignature(documentHolder)) {
+                List<ResponseType.RTChoiceType> assertions = null;
+                if (documentHolder.getSamlObject() instanceof ResponseType responseType) {
+                    assertions = responseType.getAssertions();
+                } else if (documentHolder.getSamlObject() instanceof ArtifactResponseType artifactResponseType
+                        && artifactResponseType.getAny() instanceof ResponseType responseType) {
+                    assertions = responseType.getAssertions();
+                }
+                if (assertions != null && !assertions.isEmpty() ) {
+                    // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
+                    // In that case, signature is validated on assertion element
+                    return;
+                }
+            }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
+            unencryptedSignaturesVerified = true; // mark signatures as verified
         }
 
         @Override
