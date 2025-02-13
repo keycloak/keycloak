@@ -42,7 +42,7 @@ git clone -b BRANCH_FROM_STEP_1 https://github.com/keycloak/keycloak-grafana-das
 
 The following sections describe the purpose of each dashboard.
 
-=== Keycloak troubleshooting dashboard
+=== {project_name} troubleshooting dashboard
 
 This dashboard is available in the JSON file: `keycloak-troubleshooting-dashboard.json`.
 
