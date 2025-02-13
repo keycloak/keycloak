@@ -2,7 +2,7 @@
 <#import "field.ftl" as field>
 <#import "buttons.ftl" as buttons>
 <#import "social-providers.ftl" as identityProviders>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
+<@layout.registrationLayout displayMessage=true displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
 <!-- template: login.ftl -->
 
     <#if section = "header">
@@ -16,10 +16,10 @@
                         <#assign label>
                             <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                         </#assign>
-                        <@field.input name="username" label=label autofocus=true autocomplete="username" value=login.username!'' />
+                        <@field.input name="username" label=label autofocus=true autocomplete="username" value=login.username!'' displayError=false />
                     </#if>
 
-                    <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed autofocus=usernameHidden?? autocomplete="current-password" />
+                    <@field.password name="password" label=msg("password") forgotPassword=realm.resetPasswordAllowed autofocus=usernameHidden?? autocomplete="current-password" displayError=false />
 
                     <div class="${properties.kcFormGroupClass!}">
                         <#if realm.rememberMe && !usernameHidden??>
