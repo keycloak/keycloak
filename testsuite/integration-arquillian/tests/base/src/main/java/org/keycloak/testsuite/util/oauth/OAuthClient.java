@@ -375,47 +375,9 @@ public class OAuthClient {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, List<String> targetAudiences,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        HttpPost post = new HttpPost(getEndpoints(realm).getToken());
-
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
-
-        if (targetAudiences != null) {
-            for (String audience : targetAudiences) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, audience));
-            }
-        }
-
-        if (additionalParams != null) {
-            for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
-                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-            }
-        }
-
-        if (clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.setHeader("Authorization", authorization);
-        } else {
-            parameters.add(new BasicNameValuePair("client_id", clientId));
-
-        }
-
-        if (clientSessionState != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-        }
-        if (clientSessionHost != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-        }
-        if (scope != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        return new AccessTokenResponse(httpClientManager.get().execute(post));
+        return new TokenExchangeRequest(realm, token, clientId, clientSecret, this)
+                .audience(targetAudiences)
+                .additionalParams(additionalParams).send();
     }
 
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
