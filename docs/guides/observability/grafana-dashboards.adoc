@@ -57,9 +57,9 @@ image::observability/keycloak-troubleshooting-grafana-dashboard.png[]
 
 This dashboard is available in the JSON file: `keycloak-capacity-planning-dashboard.json`.
 
-This dashboard shows metrics important when estimating the load handled by {project_name} deployment.
+This dashboard shows metrics that are important when estimating the load handled by a {project_name} deployment.
 For example, it shows the number of password validations or login flows performed by {project_name}.
-To learn more about these metrics proceed to the following {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>.
+For more detail on these metrics, see the {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>.
 
 WARNING: It is necessary to enable {project_name} event metrics for this dashboard to work correctly. Proceed to the following {section} <@links.observability id="event-metrics"/> to enable them.
 
