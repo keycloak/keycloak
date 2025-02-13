@@ -341,7 +341,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                 oauth.init(driver);
             }
 
-            final LogoutUrlBuilder builder = oauth.getEndpoints(realm)
+            final LogoutUrlBuilder builder = oauth.realm(realm).getEndpoints()
                     .getLogoutBuilder()
                     .idTokenHint(idTokenHint)
                     .clientId(clientId)

@@ -206,7 +206,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+        String expectedKid = Stream.of(oauth.doCertsRequest().getKeys())
                 .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
                 .map(JWK::getKeyId)
                 .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
@@ -325,7 +325,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(401, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);

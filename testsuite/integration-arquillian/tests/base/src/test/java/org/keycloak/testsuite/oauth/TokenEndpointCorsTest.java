@@ -1,19 +1,25 @@
 package org.keycloak.testsuite.oauth;
 
+import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpOptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -45,13 +51,11 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
 
     @Test
     public void preflightRequest() throws Exception {
-        try (CloseableHttpResponse response = oauth.doPreflightRequest()) {
-            String[] methods = response.getHeaders("Access-Control-Allow-Methods")[0].getValue().split(", ");
-            Set allowedMethods = new HashSet(Arrays.asList(methods));
+        Map<String, String> responseHeaders = getTokenEndpointPreflightResponseHeaders(oauth);
+        Set<String> allowedMethods = Arrays.stream(responseHeaders.get(Cors.ACCESS_CONTROL_ALLOW_METHODS).split(", ")).collect(Collectors.toSet());
 
-            assertEquals(2, allowedMethods.size());
-            assertTrue(allowedMethods.containsAll(Arrays.asList("POST", "OPTIONS")));
-        }
+        assertEquals(2, allowedMethods.size());
+        assertTrue(allowedMethods.containsAll(Arrays.asList("POST", "OPTIONS")));
     }
 
     @Test
@@ -146,4 +150,15 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         assertNull(response.getHeaders().get("Access-Control-Allow-Origin"));
         assertNull(response.getHeaders().get("Access-Control-Expose-Headers"));
     }
+
+    public static Map<String, String> getTokenEndpointPreflightResponseHeaders(OAuthClient oAuthClient) {
+        HttpOptions options = new HttpOptions(oAuthClient.getEndpoints().getToken());
+        options.setHeader("Origin", "http://example.com");
+        try (CloseableHttpResponse response = oAuthClient.httpClient().get().execute(options)) {
+            return Arrays.stream(response.getAllHeaders()).collect(Collectors.toMap(Header::getName, Header::getValue));
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
 }

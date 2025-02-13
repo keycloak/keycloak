@@ -870,7 +870,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
-        String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", "saml-client", "secret").getAccessToken();
+        String accessToken = oauth.doGrantAccessTokenRequest( "test-user@localhost", "password", "saml-client", "secret").getAccessToken();
 
         // change client's protocol
         ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);

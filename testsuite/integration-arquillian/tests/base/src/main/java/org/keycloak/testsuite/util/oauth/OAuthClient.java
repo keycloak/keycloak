@@ -25,7 +25,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
@@ -62,7 +61,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.DroneUtils;
@@ -109,7 +107,6 @@ public class OAuthClient {
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
     public static String APP_AUTH_ROOT;
-    static final boolean SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     static {
         updateURLs(getAuthServerContextRoot());
@@ -148,8 +145,6 @@ public class OAuthClient {
     private String postLogoutRedirectUri;
 
     private String idTokenHint;
-
-    private String initiatingIDP;
 
     private String kcAction;
 
@@ -303,62 +298,12 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
-    public CloseableHttpResponse doPreflightRequest() {
-        HttpOptions options = new HttpOptions(getEndpoints().getToken());
-        options.setHeader("Origin", "http://example.com");
-        try (CloseableHttpResponse response = httpClientManager.get().execute(options)) {
-            return response;
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+    public AccessTokenResponse doAccessTokenRequest(String code) {
+        return new AccessTokenRequest(code, this).send();
     }
 
-    public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        HttpPost post = new HttpPost(getEndpoints().getToken());
-
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-
-        if (origin != null) {
-            post.addHeader("Origin", origin);
-        }
-        if (code != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        }
-        if (redirectUri != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
-        }
-        if (clientId != null && password != null) {
-            String authorization = BasicAuthHelper.createHeader(clientId, password);
-            post.setHeader("Authorization", authorization);
-        } else if (clientId != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-        }
-
-        if (clientSessionState != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-        }
-
-        if (clientSessionHost != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-        }
-
-        if (codeVerifier != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
-        }
-
-        if (dpopProof != null) {
-            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        try {
-            return new AccessTokenResponse(httpClientManager.get().execute(post));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve access token", e);
-        }
+    public AccessTokenResponse doAccessTokenRequest(String code, String clientSecret) {
+        return new AccessTokenRequest(code, this).clientSecret(clientSecret).send();
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
@@ -401,75 +346,37 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username, String password) throws Exception {
-        return doGrantAccessTokenRequest(realm, username, password, clientId, clientSecret);
+        return doGrantAccessTokenRequest(username, password, clientId, clientSecret);
     }
 
-    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String clientId, String clientSecret) throws Exception {
-        return new PasswordGrantRequest(realm, username, password, clientId, clientSecret, this).send();
+    public AccessTokenResponse doGrantAccessTokenRequest(String username, String password, String clientId, String clientSecret) throws Exception {
+        return new PasswordGrantRequest(username, password, clientId, clientSecret, this).send();
     }
 
     public PasswordGrantRequest passwordGrantRequest(String username, String password) {
-        return new PasswordGrantRequest(realm, username, password, clientId, null, this);
+        return new PasswordGrantRequest(username, password, clientId, null, this);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+    public AccessTokenResponse doTokenExchange(String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
-        return doTokenExchange(realm, token, targetAudience, clientId, clientSecret, null);
+        return doTokenExchange(token, targetAudience, clientId, clientSecret, null);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+    public AccessTokenResponse doTokenExchange(String token, String targetAudience,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         List<String> targetAudienceList = targetAudience == null ? null : List.of(targetAudience);
-        return doTokenExchange(realm, token, targetAudienceList, clientId, clientSecret, additionalParams);
+        return doTokenExchange(token, targetAudienceList, clientId, clientSecret, additionalParams);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, List<String> targetAudiences,
+    public AccessTokenResponse doTokenExchange(String token, List<String> targetAudiences,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        HttpPost post = new HttpPost(getEndpoints(realm).getToken());
-
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
-
-        if (targetAudiences != null) {
-            for (String audience : targetAudiences) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, audience));
-            }
-        }
-
-        if (additionalParams != null) {
-            for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
-                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-            }
-        }
-
-        if (clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-            post.setHeader("Authorization", authorization);
-        } else {
-            parameters.add(new BasicNameValuePair("client_id", clientId));
-
-        }
-
-        if (clientSessionState != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
-        }
-        if (clientSessionHost != null) {
-            parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
-        }
-        if (scope != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        return new AccessTokenResponse(httpClientManager.get().execute(post));
+        return new TokenExchangeRequest(token, clientId, clientSecret, this)
+                .audience(targetAudiences)
+                .additionalParams(additionalParams).send();
     }
 
-    public JSONWebKeySet doCertsRequest(String realm) throws Exception {
-        HttpGet get = new HttpGet(getEndpoints(realm).getJwks());
+    public JSONWebKeySet doCertsRequest() throws Exception {
+        HttpGet get = new HttpGet(getEndpoints().getJwks());
         try (CloseableHttpResponse response = httpClientManager.get().execute(get)) {
             return JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
         }
@@ -765,7 +672,7 @@ public class OAuthClient {
         return new AccessTokenResponse(httpClientManager.get().execute(post));
     }
 
-    public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
+    public OIDCConfigurationRepresentation doWellKnownRequest() {
         try {
             SimpleHttp request = SimpleHttpDefault.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
                     httpClientManager.get());
@@ -970,7 +877,7 @@ public class OAuthClient {
         return clientId;
     }
 
-    public String getCurrentRequest() {
+    String getCurrentRequest() {
         int index = driver.getCurrentUrl().indexOf('?');
         if (index == -1) {
             index = driver.getCurrentUrl().indexOf('#');
@@ -981,7 +888,7 @@ public class OAuthClient {
         return driver.getCurrentUrl().substring(0, index);
     }
 
-    public URI getCurrentUri() {
+    private URI getCurrentUri() {
         try {
             return new URI(driver.getCurrentUrl());
         } catch (URISyntaxException e) {
@@ -1026,9 +933,6 @@ public class OAuthClient {
         if (idTokenHint != null) {
             b.queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenHint);
         }
-        if (initiatingIDP != null) {
-            b.queryParam(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIDP);
-        }
         driver.navigate().to(b.build(realm).toString());
     }
 
@@ -1048,12 +952,16 @@ public class OAuthClient {
         return this.getLoginFormUrl(this.baseUrl);
     }
 
-    public String getResponseMode() {
+    String getResponseMode() {
         return responseMode;
     }
 
-    public String getResponseType() {
+    String getResponseType() {
         return responseType;
+    }
+
+    String getCodeVerifier() {
+        return codeVerifier;
     }
 
     public String getRegisterationsUrl() {
@@ -1163,10 +1071,6 @@ public class OAuthClient {
         return new Endpoints(baseUrl, realm);
     }
 
-    public Endpoints getEndpoints(String realm) {
-        return new Endpoints(baseUrl, realm);
-    }
-
     public OAuthClient baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
         return this;
@@ -1195,11 +1099,6 @@ public class OAuthClient {
 
     public OAuthClient idTokenHint(String idTokenHint) {
         this.idTokenHint = idTokenHint;
-        return this;
-    }
-
-    public OAuthClient initiatingIDP(String initiatingIDP) {
-        this.initiatingIDP = initiatingIDP;
         return this;
     }
 

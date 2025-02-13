@@ -9,16 +9,14 @@ import java.io.IOException;
 
 public class PasswordGrantRequest extends AbstractHttpPostRequest<AccessTokenResponse> {
 
-    private final String realm;
     private final String username;
     private final String password;
     private final String clientId;
     private String clientSecret;
     private String otp;
 
-    PasswordGrantRequest(String realm, String username, String password, String clientId, String clientSecret, OAuthClient client) {
+    PasswordGrantRequest(String username, String password, String clientId, String clientSecret, OAuthClient client) {
         super(client);
-        this.realm = realm;
         this.username = username;
         this.password = password;
         this.clientId = clientId;
@@ -27,7 +25,7 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<AccessTokenRes
 
     @Override
     protected String getEndpoint() {
-        return client.getEndpoints(realm).getToken();
+        return client.getEndpoints().getToken();
     }
 
     public PasswordGrantRequest clientSecret(String clientSecret) {

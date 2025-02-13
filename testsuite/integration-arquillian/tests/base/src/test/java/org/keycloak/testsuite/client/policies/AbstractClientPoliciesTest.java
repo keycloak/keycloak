@@ -785,7 +785,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private String getToken(String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+            return oauth.doGrantAccessTokenRequest(username, password, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

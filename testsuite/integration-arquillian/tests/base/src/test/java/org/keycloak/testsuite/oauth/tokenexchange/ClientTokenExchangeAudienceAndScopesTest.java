@@ -63,7 +63,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
     public void test01_scopeParamIncludedWithoutAudience() throws Exception {
         String accessToken = resourceOwnerLogin();
         oauth.scope("optional-scope2");
-        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, (String) null, "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, (String) null, "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1", "target-client2"), List.of("default-scope1", "optional-scope2"));
     }
 
@@ -71,7 +71,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
     public void test02_scopeParamIncludedAudienceIncluded() throws Exception {
         String accessToken = resourceOwnerLogin();
         oauth.scope("optional-scope2");
-        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1"), "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1"), "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
     }
 
@@ -82,7 +82,7 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
         oauth.scope("optional-scope2");
 
         // The "target-client3" is valid client, but unavailable to the user. Request allowed, but "target-client3" audience will not be available
-        AccessTokenResponse response = oauth.doTokenExchange(TEST, accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
+        AccessTokenResponse response = oauth.doTokenExchange(accessToken, List.of("target-client1", "target-client3"), "requester-client", "secret", null);
         assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
     }
 

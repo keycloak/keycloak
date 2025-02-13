@@ -216,7 +216,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         setValidPkce(clientId);
         AuthorizationEndpointResponse res = oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(res.getCode(), null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(res.getCode());
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 

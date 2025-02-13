@@ -250,7 +250,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -280,7 +280,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         }
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "legal", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "legal", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -306,7 +306,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Assert.assertTrue(roles.contains("example"));
         }
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "illegal", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "illegal", "secret", params);
             Assert.assertEquals(403, response.getStatusCode());
         }
     }
@@ -329,7 +329,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -377,7 +377,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_AND_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_AND_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -423,7 +423,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         {
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_UNSIGNED_AND_UNENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_UNSIGNED_AND_UNENCRYPTED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -470,7 +470,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         // client-exchanger can impersonate from token "user" to user "impersonated-user" and to "target" client
         {
             params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -518,7 +518,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         // test that user does not have impersonator permission
         {
             params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(TEST, accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
             Assert.assertEquals(403, response.getStatusCode());
         }
     }

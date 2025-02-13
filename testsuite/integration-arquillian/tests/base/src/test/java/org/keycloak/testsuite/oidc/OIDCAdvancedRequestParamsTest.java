@@ -269,7 +269,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void promptNoneNotLogged() {
 
-        String expectedIssuer = oauth.doWellKnownRequest(oauth.getRealm()).getIssuer();
+        String expectedIssuer = oauth.doWellKnownRequest().getIssuer();
 
         // Send request with prompt=none
         driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");

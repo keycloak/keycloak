@@ -1318,7 +1318,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
         Assert.assertNotNull(token);
         try {
-            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "tokenexclient", "password").getAccessToken();
+            exchanged = oauth.doTokenExchange(token, "admin-cli", "tokenexclient", "password").getAccessToken();
         } catch (AssertionError e) {
             log.info("Error message is expected from oauth: " + e.getMessage());
         }

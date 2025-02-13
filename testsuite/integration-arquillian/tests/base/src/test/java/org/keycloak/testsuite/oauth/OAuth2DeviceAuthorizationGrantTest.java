@@ -1081,7 +1081,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     @Test
     public void ensureDeviceFlowConfigPresentWhenDeviceFlowIsEnabled() {
 
-        OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
+        OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest();
         Assert.assertNotNull("deviceAuthorizationEndpoint should be not null", oidcConfigRep.getDeviceAuthorizationEndpoint());
         Assert.assertNotNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be not null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
     }
@@ -1096,7 +1096,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         testingClient.disableFeature(Profile.Feature.DEVICE_FLOW);
 
         try {
-            OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest(REALM_NAME);
+            OIDCConfigurationRepresentation oidcConfigRep = oauth.doWellKnownRequest();
             Assert.assertNull("deviceAuthorizationEndpoint should be null", oidcConfigRep.getDeviceAuthorizationEndpoint());
             Assert.assertNull("mtlsEndpointAliases.deviceAuthorizationEndpoint should be null", oidcConfigRep.getMtlsEndpointAliases().getDeviceAuthorizationEndpoint());
 
