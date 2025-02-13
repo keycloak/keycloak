@@ -11,16 +11,14 @@ import java.util.Map;
 
 public class TokenExchangeRequest extends AbstractHttpPostRequest<AccessTokenResponse> {
 
-    private final String realm;
     private final String subjectToken;
     private String clientId;
     private String clientSecret;
     private List<String> audience;
     private Map<String, String> additionalParams;
 
-    TokenExchangeRequest(String realm, String subjectToken, String clientId, String clientSecret, OAuthClient client) {
+    TokenExchangeRequest(String subjectToken, String clientId, String clientSecret, OAuthClient client) {
         super(client);
-        this.realm = realm;
         this.subjectToken = subjectToken;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
@@ -28,7 +26,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<AccessTokenRes
 
     @Override
     protected String getEndpoint() {
-        return client.getEndpoints(realm).getToken();
+        return client.getEndpoints().getToken();
     }
 
     public TokenExchangeRequest audience(List<String> audience) {

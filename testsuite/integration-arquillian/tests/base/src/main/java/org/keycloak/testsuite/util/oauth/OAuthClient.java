@@ -362,20 +362,20 @@ public class OAuthClient {
         return new PasswordGrantRequest(username, password, clientId, null, this);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+    public AccessTokenResponse doTokenExchange(String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
-        return doTokenExchange(realm, token, targetAudience, clientId, clientSecret, null);
+        return doTokenExchange(token, targetAudience, clientId, clientSecret, null);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+    public AccessTokenResponse doTokenExchange(String token, String targetAudience,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         List<String> targetAudienceList = targetAudience == null ? null : List.of(targetAudience);
-        return doTokenExchange(realm, token, targetAudienceList, clientId, clientSecret, additionalParams);
+        return doTokenExchange(token, targetAudienceList, clientId, clientSecret, additionalParams);
     }
 
-    public AccessTokenResponse doTokenExchange(String realm, String token, List<String> targetAudiences,
+    public AccessTokenResponse doTokenExchange(String token, List<String> targetAudiences,
                                                String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        return new TokenExchangeRequest(realm, token, clientId, clientSecret, this)
+        return new TokenExchangeRequest(token, clientId, clientSecret, this)
                 .audience(targetAudiences)
                 .additionalParams(additionalParams).send();
     }
@@ -1076,10 +1076,6 @@ public class OAuthClient {
     }
 
     public Endpoints getEndpoints() {
-        return new Endpoints(baseUrl, realm);
-    }
-
-    public Endpoints getEndpoints(String realm) {
         return new Endpoints(baseUrl, realm);
     }
 

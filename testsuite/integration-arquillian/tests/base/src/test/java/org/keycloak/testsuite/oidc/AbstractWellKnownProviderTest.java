@@ -118,7 +118,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             assertEquals(oidcConfig.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
             assertEquals(oidcConfig.getTokenEndpoint(), oauth.getEndpoints().getToken());
             assertEquals(oidcConfig.getUserinfoEndpoint(), OIDCLoginProtocolService.userInfoUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
-            assertEquals(oidcConfig.getJwksUri(), oauth.getEndpoints("test").getJwks());
+            assertEquals(oidcConfig.getJwksUri(), oauth.getEndpoints().getJwks());
 
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)
