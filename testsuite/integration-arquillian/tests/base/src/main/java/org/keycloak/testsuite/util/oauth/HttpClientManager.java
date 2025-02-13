@@ -6,6 +6,8 @@ import org.keycloak.testsuite.util.MutualTLSUtils;
 
 public class HttpClientManager {
 
+    private static final boolean SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+
     private CloseableHttpClient defaultClient;
     private CloseableHttpClient customClient;
 
@@ -30,7 +32,7 @@ public class HttpClientManager {
     }
 
     public static CloseableHttpClient createDefault() {
-        if (OAuthClient.SSL_REQUIRED) {
+        if (SSL_REQUIRED) {
             String keyStorePath = System.getProperty("client.certificate.keystore");
             String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
             String trustStorePath = System.getProperty("client.truststore");

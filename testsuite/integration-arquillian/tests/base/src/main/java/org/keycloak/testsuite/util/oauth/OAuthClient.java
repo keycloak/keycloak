@@ -25,7 +25,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
@@ -62,7 +61,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.DroneUtils;
@@ -109,7 +107,6 @@ public class OAuthClient {
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
     public static String APP_AUTH_ROOT;
-    static final boolean SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     static {
         updateURLs(getAuthServerContextRoot());
@@ -880,7 +877,7 @@ public class OAuthClient {
         return clientId;
     }
 
-    public String getCurrentRequest() {
+    String getCurrentRequest() {
         int index = driver.getCurrentUrl().indexOf('?');
         if (index == -1) {
             index = driver.getCurrentUrl().indexOf('#');
@@ -891,7 +888,7 @@ public class OAuthClient {
         return driver.getCurrentUrl().substring(0, index);
     }
 
-    public URI getCurrentUri() {
+    private URI getCurrentUri() {
         try {
             return new URI(driver.getCurrentUrl());
         } catch (URISyntaxException e) {
@@ -955,15 +952,15 @@ public class OAuthClient {
         return this.getLoginFormUrl(this.baseUrl);
     }
 
-    public String getResponseMode() {
+    String getResponseMode() {
         return responseMode;
     }
 
-    public String getResponseType() {
+    String getResponseType() {
         return responseType;
     }
 
-    public String getCodeVerifier() {
+    String getCodeVerifier() {
         return codeVerifier;
     }
 
