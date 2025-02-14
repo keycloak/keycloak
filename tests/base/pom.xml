@@ -81,6 +81,10 @@
             <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.tests</groupId>
             <artifactId>keycloak-tests-utils</artifactId>
             <version>${project.version}</version>
