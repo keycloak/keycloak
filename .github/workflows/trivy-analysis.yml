@@ -18,6 +18,9 @@ jobs:
         container: [keycloak, keycloak-operator]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
         with:
