@@ -85,8 +85,11 @@ public class StartDevCommandDistTest {
         CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
 
-        cliResult.assertMessage("DEBUG [org.hibernate");
-        cliResult.assertMessage("DEBUG [org.keycloak");
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
+        cliResult.assertNoMessage("DEBUG [org.keycloak.services");
+        cliResult.assertMessage("DEBUG [org.keycloak.timer");
+        cliResult.assertNoMessage("DEBUG [org.hibernate");
+
         cliResult.assertMessage("Listening on:");
         cliResult.assertStartedDevMode();
     }
