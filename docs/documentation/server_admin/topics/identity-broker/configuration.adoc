@@ -46,6 +46,9 @@ Although each type of identity provider has its configuration options, all share
 |Account Linking Only
 |When *ON*, {project_name} links existing accounts with this provider. This provider cannot log users in, and {project_name} does not display this provider as an option on the login page.
 
+|Remember Me
+|When *ON*, {project_name} uses a persistent cookie for remembering the user session if "remember me" support is enabled for the realm.
+
 |Store Tokens
 |When *ON*, {project_name} stores tokens from the identity provider.
 

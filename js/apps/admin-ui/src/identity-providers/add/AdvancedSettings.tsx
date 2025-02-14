@@ -163,7 +163,11 @@ export const AdvancedSettings = ({
         label="hideOnLoginPage"
         fieldType="boolean"
       />
-
+      <SwitchField
+        field="config.rememberMe"
+        label="rememberMeIdp"
+        fieldType="boolean"
+      />
       {((!isSAML && !isOAuth2) || isOIDC) && (
         <FormGroupField label="filteredByClaim">
           <Controller

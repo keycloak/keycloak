@@ -570,6 +570,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                 }
 
+                if (Boolean.parseBoolean(providerConfig.getConfig().get("rememberMe"))) {
+                    authSession.setAuthNote(Details.REMEMBER_ME, "true");
+                }
+
                 federatedIdentity.setIdp(provider);
                 federatedIdentity.setAuthenticationSession(authSession);
 

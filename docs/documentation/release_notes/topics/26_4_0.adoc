@@ -21,6 +21,10 @@ This helps you to track down a warning or error message in the log to a specific
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
 
+= Identity providers now support Remember me
+
+SAML and OIDC Identity provider configurations now support the "Remember me" functionality.
+
 = HTTP Access logging
 
 {project_name} supports HTTP access logging to record details of incoming HTTP requests.
