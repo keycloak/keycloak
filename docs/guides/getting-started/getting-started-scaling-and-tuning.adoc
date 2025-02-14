@@ -83,7 +83,7 @@ spec:
           averageUtilization: 80
 ----
 
-NOTE: Scaling on memory is generally not needed with persistent sessions enabled, and should not be needed at all when using remote Infinispan. If you are using persistent sessions or remote Infinispan and you experience memory issues, it is best to fully diagnose the problem and revisit the <@links.ha id="concepts-memory-and-cpu-sizing" /> guide - adjusting the memory request/limit is preferable to horizontal scaling.
+NOTE: Scaling on memory is generally not needed with persistent sessions enabled, and should not be needed at all when using remote {jdgserver_name}. If you are using persistent sessions or remote {jdgserver_name} and you experience memory issues, it is best to fully diagnose the problem and revisit the <@links.ha id="concepts-memory-and-cpu-sizing" /> guide. Adjusting the memory request and limit is preferable to horizontal scaling.
 
 Consult the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[Kubernetes docs] for additional information, including the usage of https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/#autoscaling-on-multiple-metrics-and-custom-metrics[custom metrics].
 
