@@ -53,6 +53,15 @@ class UserPermissionsV2 extends UserPermissions {
     }
 
     @Override
+    public boolean canView() {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
+            return true;
+        }
+
+        return hasPermission((UserModel) null, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+    }
+
+    @Override
     public boolean canManage(UserModel user) {
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;

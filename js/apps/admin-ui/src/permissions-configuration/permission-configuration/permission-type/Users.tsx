@@ -8,8 +8,11 @@ import { UserSelect } from "../../../components/users/UserSelect";
 export const Users = () => {
   const { t } = useTranslation();
   const form = useFormContext();
+  const resourceIds: string[] = form.getValues("resources");
   const [isSpecificUsers, setIsSpecificUsers] = useState(
-    form.getValues("resources").length > 0,
+    resourceIds.filter((id) => {
+      return "Users" !== id;
+    }).length > 0,
   );
 
   return (

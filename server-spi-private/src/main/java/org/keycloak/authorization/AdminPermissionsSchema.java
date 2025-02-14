@@ -158,6 +158,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         return !type.equals("resource");
     }
 
+    public boolean isAdminPermissionClient(RealmModel realm, String id) {
+        return realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getId().equals(id);
+    }
+
     private boolean supportsAuthorizationSchema(KeycloakSession session, ResourceServer resourceServer) {
         RealmModel realm = session.getContext().getRealm();
 
@@ -166,10 +170,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return isAdminPermissionClient(realm, resourceServer.getId());
-    }
-
-    private boolean isAdminPermissionClient(RealmModel realm, String id) {
-        return realm.getAdminPermissionsClient() != null && realm.getAdminPermissionsClient().getId().equals(id);
     }
 
     public void throwExceptionIfAdminPermissionClient(KeycloakSession session, String id) {
@@ -182,7 +182,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         RealmModel realm = session.getContext().getRealm();
         GroupModel group = session.groups().getGroupById(realm, id);
 
-        return group == null ? null : group.getId();
+        return group == null ? GROUPS_RESOURCE_TYPE : group.getId();
     }
 
     private String resolveUser(KeycloakSession session, String id) {
@@ -193,7 +193,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             user = session.users().getUserByUsername(realm, id);
         }
 
-        return user == null ? null : user.getId();
+        return user == null ? USERS_RESOURCE_TYPE : user.getId();
     }
 
     private String resolveClient(KeycloakSession session, String id) {
@@ -204,7 +204,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             client = session.clients().getClientByClientId(realm, id);
         }
 
-        return client == null ? null : client.getId();
+        return client == null ? CLIENTS_RESOURCE_TYPE : client.getId();
     }
 
     private StoreFactory getStoreFactory(KeycloakSession session) {
@@ -306,7 +306,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         } else {
             policy.removeResource(resource);
         }
-
     }
 
     //for deletion
@@ -347,5 +346,19 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return resource.getDisplayName();
+    }
+
+    public void addUResourceTypeResource(KeycloakSession session, ResourceServer resourceServer, Policy policy, String resourceType) {
+        Resource resourceTypeResource = getResourceTypeResource(session, resourceServer, resourceType);
+
+        if (resourceTypeResource != null) {
+            Set<Resource> resources = policy.getResources();
+
+            if (resources.isEmpty()) {
+                policy.addResource(resourceTypeResource);
+            } else if (resources.size() > 1) {
+                policy.removeResource(resourceTypeResource);
+            }
+        }
     }
 }

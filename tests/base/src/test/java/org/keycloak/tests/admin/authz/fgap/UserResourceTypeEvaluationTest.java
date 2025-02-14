@@ -41,6 +41,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -209,6 +210,26 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertEquals(1, search.size());
         assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+    }
+
+    @Test
+    public void testViewUserPermissionUserMemberOfGroup() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client,"Only My Admin User Policy", myadmin.getId());
+        createPermission(client, userAlice.getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("foo");
+        try (Response response = realm.admin().groups().add(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+            // See org.keycloak.services.resources.admin.permissions.UserPermissionsV2.canView()
+            realm.admin().users().get(myadmin.getId()).joinGroup(group.getId());
+            List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+            assertEquals(1, search.size());
+            assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+        } finally {
+            realm.admin().users().get(myadmin.getId()).leaveGroup(group.getId());
+        }
     }
 
     @Test
