@@ -157,7 +157,7 @@ In particular the default startup probe timeout of 10 minutes may be too short i
 
 If your instances encounter this startup failure or if you wish to proactively prevent such a startup failure from occurring, then the startup probe timeout should be increased.
 
-With otherwise default settings, something like the following would increase the timeout to 20 minutes:
+With otherwise default settings, something like the following increases the timeout to 20 minutes:
 
 [source,yaml]
 ----
