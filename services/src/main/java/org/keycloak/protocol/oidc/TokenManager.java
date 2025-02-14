@@ -736,6 +736,10 @@ public class TokenManager {
                 return null;
             }
 
+            if (user != null && orgScope.resolveOrganizations(user, scopeParam, session).findAny().isEmpty()) {
+                return null;
+            }
+
             return orgScope.toClientScope(name, user, session);
         }
 
