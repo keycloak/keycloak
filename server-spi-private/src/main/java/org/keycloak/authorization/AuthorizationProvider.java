@@ -319,12 +319,6 @@ public final class AuthorizationProvider implements Provider {
 
                         return Optional.ofNullable(resource).map(Resource::getId).orElse(null);
                     }).filter(Objects::nonNull).collect(Collectors.toSet()));
-                } else {
-                    Resource resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(keycloakSession, resourceServer, representation.getResourceType());
-
-                    if (resource != null) {
-                        representation.setResources(Set.of(resource.getId()));
-                    }
                 }
 
                 Set<String> scopes = representation.getScopes();
@@ -353,7 +347,11 @@ public final class AuthorizationProvider implements Provider {
                     }).collect(Collectors.toSet()));
                 }
 
-                return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(resourceServer, representation));
+                Policy policy = RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(resourceServer, representation));
+
+                AdminPermissionsSchema.SCHEMA.addUResourceTypeResource(keycloakSession, resourceServer, policy, representation.getResourceType());
+
+                return policy;
             }
 
             @Override
@@ -471,17 +469,18 @@ public final class AuthorizationProvider implements Provider {
                 Resource resource = findById(null, id);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
-                List<PermissionTicket> permissions = ticketStore.findByResource(resource.getResourceServer(), resource);
+                ResourceServer resourceServer = resource.getResourceServer();
+                List<PermissionTicket> permissions = ticketStore.findByResource(resourceServer, resource);
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(resource.getResourceServer(), resource);
+                List<Policy> policies = policyStore.findByResource(resourceServer, resource);
 
                 for (Policy policyModel : policies) {
-                    if (policyModel.getResources().size() == 1) {
+                    if (policyModel.getResources().size() == 1 && !AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, resourceServer.getId())) {
                         policyStore.delete(policyModel.getId());
                     } else {
                         policyModel.removeResource(resource);
