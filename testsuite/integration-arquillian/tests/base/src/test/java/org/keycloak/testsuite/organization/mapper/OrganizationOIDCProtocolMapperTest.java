@@ -861,6 +861,53 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertScopeAndClaims(scopeName, orgA);
     }
 
+    @Test
+    public void testClaimNotMappedIfUserNotMemberWhenDefaultClientScope() {
+        OrganizationRepresentation orgARep = createOrganization("orga", true);
+        OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
+        MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
+        orgA.members().member(member.getId()).delete().close();
+
+        ClientRepresentation clientRep = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientResource client = testRealm().clients().get(clientRep.getId());
+        ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream().filter(scope -> "organization".equals(scope.getName())).findAny().orElse(null);
+        client.removeOptionalClientScope(orgScopeRep.getId());
+        client.addDefaultClientScope(orgScopeRep.getId());
+        getCleanup().addCleanup(() -> {
+            client.removeDefaultClientScope(orgScopeRep.getId());
+            client.addOptionalClientScope(orgScopeRep.getId());
+        });
+        // resolve organization based on the organization scope value
+        oauth.clientId("broker-app");
+        oauth.scope(null);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        assertThat(response.getScope(), containsString(orgScopeRep.getName()));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(orgScopeRep.getName()));
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+    }
+
+    @Test
+    public void testClaimNotMappedIfUserNotMemberWhenScopeOrgAliasRequested() {
+        OrganizationRepresentation orgARep = createOrganization("orga", true);
+        assertClaimNotMapped("organization:" + orgARep.getAlias(), orgARep, false);
+    }
+
+    @Test
+    public void testClaimNotMappedIfUserNotMemberWhenScopeOrgAllRequested() {
+        assertClaimNotMapped("organization:*", createOrganization("orga", true), false);
+    }
+
+    @Test
+    public void testClaimNotMappedIfUserNotMemberWhenScopeOrgRequested() {
+        assertClaimNotMapped("organization", createOrganization("orga", true), true);
+    }
+
     private AccessTokenResponse assertSuccessfulCodeGrant() {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
@@ -925,5 +972,25 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         }
 
         orgScopeResource.getProtocolMappers().update(orgMapper.getId(), orgMapper);
+    }
+
+    private void assertClaimNotMapped(String orgScope, OrganizationRepresentation orgARep, boolean grantScope) {
+        OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
+        MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
+        orgA.members().member(member.getId()).delete().close();
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofDays(1));
+        // resolve organization based on the organization scope value
+        oauth.clientId("broker-app");
+        oauth.scope(orgScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        assertThat(response.getScope(), grantScope ? containsString(orgScope) : not(containsString(orgScope)));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), grantScope ? containsString(orgScope) : not(containsString(orgScope)));
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
     }
 }
