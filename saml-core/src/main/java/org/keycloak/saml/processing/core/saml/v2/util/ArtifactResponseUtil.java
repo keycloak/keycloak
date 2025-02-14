@@ -1,15 +1,31 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.util.TransformerUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
@@ -43,16 +59,10 @@ public final class ArtifactResponseUtil {
      */
     static String nodeToString(Node node) {
         try {
-            // Transform stuff are not thread sage and shall be instantiated each time
-            final TransformerFactory tf = TransformerFactory.newInstance();
-            // Secure processing is enabled to avoid XXE attacks
-            tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            final Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             final StringWriter writer = new StringWriter();
-            transformer.transform(new DOMSource(node), new StreamResult(writer));
+            TransformerUtil.getTransformer().transform(new DOMSource(node), new StreamResult(writer));
             return writer.getBuffer().toString();
-        } catch (TransformerException e) {
+        } catch (ConfigurationException | TransformerException e) {
             throw new IllegalStateException("Error converting node to string", e);
         }
     }
@@ -66,8 +76,8 @@ public final class ArtifactResponseUtil {
     static Optional<Element> extractResponseElement(Document document) {
         // extract from the ArtifactResponse the embedded Response
         final NodeList responseNodeList = document.getElementsByTagNameNS(
-                "urn:oasis:names:tc:SAML:2.0:protocol",
-                "Response"
+                JBossSAMLConstants.RESPONSE__PROTOCOL.getNsUri().get(),
+                JBossSAMLConstants.RESPONSE__PROTOCOL.get()
         );
 
         // leave early if there is no embedded Response
