@@ -10,7 +10,7 @@ defaults:
 jobs:
 
   analysis:
-    name: Vulnerability scanner for nightly containers
+    name: Vulnerability scanner for containers
     runs-on: ubuntu-latest
     if: github.repository == 'keycloak/keycloak'
     strategy:
@@ -18,18 +18,28 @@ jobs:
         container: [keycloak, keycloak-operator]
       fail-fast: false
     steps:
+      - name: Extract release ID
+        id: release
+        run: echo "id=${GITHUB_REF#refs/heads/release/}" >> $GITHUB_OUTPUT
+        
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8
+        uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: quay.io/keycloak/${{ matrix.container}}:nightly
+          image-ref: quay.io/keycloak/${{ matrix.container }}:${{ steps.release.outputs.id }}
           format: sarif
           output: trivy-results.sarif
           severity: MEDIUM,CRITICAL,HIGH
           ignore-unfixed: true
+          security-checks: vuln
           timeout: 15m
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
-          category: ${{ matrix.container}}
