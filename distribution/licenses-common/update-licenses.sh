@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DIR=`dirname $0 | xargs readlink -f`
 cd $DIR/../../
