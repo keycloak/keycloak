@@ -180,7 +180,7 @@ spec:
             periodSeconds: 1
 ----
 
-Note that the usage of a relative HTTP path, an alternative management port, or require changes to the probe configuration.
+Note that the usage of a relative HTTP path, or an alternative management port, require changes to the probe configuration.
 
 === Disabling required options
 
