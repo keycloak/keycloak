@@ -3,21 +3,29 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useFormContext } from "react-hook-form";
 import { useState } from "react";
-import { ResourceTypeSelect } from "./ResourceTypeSelect";
+import { UserSelect } from "../../components/users/UserSelect";
+import { ClientSelect } from "../../components/client/ClientSelect";
 
-type PermissionTypeProps = {
+type ResourceTypeProps = {
   resourceType: string;
 };
 
-export const ResourceType = ({ resourceType }: PermissionTypeProps) => {
+const resourceTypeSelectComponents: Record<string, React.ElementType> = {
+  Users: UserSelect,
+  Clients: ClientSelect,
+};
+
+export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   const { t } = useTranslation();
   const form = useFormContext();
   const resourceIds: string[] = form.getValues("resources");
-  const [isSpecificUsers, setIsSpecificUsers] = useState(
-    resourceIds.filter((id) => {
-      return "Users" !== id;
-    }).length > 0,
+
+  const [isSpecificResources, setIsSpecificResources] = useState(
+    resourceIds.some((id) => id !== resourceType),
   );
+
+  const ResourceTypeSelectComponent =
+    resourceTypeSelectComponents[resourceType];
 
   return (
     <>
@@ -36,11 +44,11 @@ export const ResourceType = ({ resourceType }: PermissionTypeProps) => {
         <Radio
           id="allResources"
           data-testid="allResources"
-          isChecked={!isSpecificUsers}
+          isChecked={!isSpecificResources}
           name="EnforceAccessTo"
           label={t(`allResourceType`, { resourceType })}
           onChange={() => {
-            setIsSpecificUsers(false);
+            setIsSpecificResources(false);
             form.setValue("resources", []);
           }}
           className="pf-v5-u-mb-md"
@@ -48,20 +56,21 @@ export const ResourceType = ({ resourceType }: PermissionTypeProps) => {
         <Radio
           id="specificResources"
           data-testid="specificResources"
-          isChecked={isSpecificUsers}
+          isChecked={isSpecificResources}
           name="EnforceAccessTo"
           label={t(`specificResourceType`, { resourceType })}
           onChange={() => {
-            setIsSpecificUsers(true);
+            setIsSpecificResources(true);
             form.setValue("resources", []);
           }}
           className="pf-v5-u-mb-md"
         />
       </FormGroup>
-      {isSpecificUsers && (
-        <ResourceTypeSelect
+      {isSpecificResources && (
+        <ResourceTypeSelectComponent
           name="resources"
-          helpText={t("permissionUsersHelpText")}
+          label={resourceType}
+          helpText={t("resourceTypeHelpText", { resourceType })}
           defaultValue={[]}
           variant="typeaheadMulti"
         />
