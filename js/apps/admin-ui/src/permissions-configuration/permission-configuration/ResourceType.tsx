@@ -2,18 +2,24 @@ import { useTranslation } from "react-i18next";
 import { FormGroup, Radio } from "@patternfly/react-core";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useFormContext } from "react-hook-form";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import { UserSelect } from "../../components/users/UserSelect";
 import { ClientSelect } from "../../components/client/ClientSelect";
+import { GroupSelect } from "../resource-types/GroupSelect";
 
 type ResourceTypeProps = {
   resourceType: string;
 };
 
-const resourceTypeSelectComponents: Record<string, React.ElementType> = {
-  Users: UserSelect,
-  Clients: ClientSelect,
-};
+const COMPONENTS: {
+  [index: string]: (props: any) => JSX.Element;
+} = {
+  users: UserSelect,
+  clients: ClientSelect,
+  groups: GroupSelect,
+} as const;
+
+export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   const { t } = useTranslation();
@@ -24,8 +30,15 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
     resourceIds.some((id) => id !== resourceType),
   );
 
-  const ResourceTypeSelectComponent =
-    resourceTypeSelectComponents[resourceType];
+  function getComponentType() {
+    const selectedResourceType = resourceType.toLowerCase();
+    if (isValidComponentType(selectedResourceType)) {
+      return COMPONENTS[selectedResourceType];
+    }
+    return null;
+  }
+
+  const ComponentType = getComponentType();
 
   return (
     <>
@@ -66,10 +79,10 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
           className="pf-v5-u-mb-md"
         />
       </FormGroup>
-      {isSpecificResources && (
-        <ResourceTypeSelectComponent
+      {isSpecificResources && ComponentType && (
+        <ComponentType
           name="resources"
-          label={resourceType}
+          label={`${resourceType.toLowerCase()}Resources`}
           helpText={t("resourceTypeHelpText", { resourceType })}
           defaultValue={[]}
           variant="typeaheadMulti"

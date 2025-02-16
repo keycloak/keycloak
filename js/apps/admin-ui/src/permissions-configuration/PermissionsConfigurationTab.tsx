@@ -325,7 +325,7 @@ export const PermissionsConfigurationTab = ({
                                   (resource: ResourceRepresentation, index) => (
                                     <Td key={index}>
                                       <span style={{ marginLeft: "8px" }}>
-                                        {resource.displayName}
+                                        {resource.displayName || resource.name}
                                       </span>
                                     </Td>
                                   ),
