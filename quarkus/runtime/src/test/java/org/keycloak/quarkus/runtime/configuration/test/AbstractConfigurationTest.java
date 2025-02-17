@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
-import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
@@ -120,6 +118,7 @@ public abstract class AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs();
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
         Profile.reset();
+        Configuration.resetConfig();
         ConfigProviderResolver.setInstance(null);
     }
 
@@ -134,14 +133,9 @@ public abstract class AbstractConfigurationTest {
     }
 
     static protected SmallRyeConfig createConfig() {
+        Configuration.resetConfig();
         KeycloakConfigSourceProvider.reload();
-        // older versions of quarkus implicitly picked up this config, now we
-        // must set it manually
-        SmallRyeConfig config = ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
-        SmallRyeConfigProviderResolver resolver = new SmallRyeConfigProviderResolver();
-        resolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
-        ConfigProviderResolver.setInstance(resolver);
-        return config;
+        return Configuration.getConfig();
     }
 
     protected void assertConfig(String key, String expectedValue, boolean isExternal) {
