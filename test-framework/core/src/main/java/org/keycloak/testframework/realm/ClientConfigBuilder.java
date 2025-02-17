@@ -37,10 +37,31 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder name(String name) {
+        rep.setName(name);
+        return this;
+    }
+
+    public ClientConfigBuilder publicClient(boolean publicClient) {
+        rep.setPublicClient(publicClient);
+        return this;
+    }
+
     public ClientConfigBuilder redirectUris(String... redirectUris) {
         rep.setRedirectUris(Collections.combine(rep.getRedirectUris(), redirectUris));
         return this;
     }
+
+    public ClientConfigBuilder protocol(String protocol) {
+        rep.setProtocol(protocol);
+        return this;
+    }
+
+    public ClientConfigBuilder bearerOnly(boolean bearerOnly) {
+        rep.setBearerOnly(bearerOnly);
+        return this;
+    }
+
 
     public ClientConfigBuilder serviceAccount() {
         rep.setServiceAccountsEnabled(true);
