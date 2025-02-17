@@ -2,6 +2,8 @@ package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import java.util.HashMap;
+
 public class ClientConfigBuilder {
 
     private final ClientRepresentation rep;
@@ -52,6 +54,15 @@ public class ClientConfigBuilder {
 
     public ClientConfigBuilder authorizationServices() {
         rep.setAuthorizationServicesEnabled(true);
+        return this;
+    }
+
+    public ClientConfigBuilder attribute(String key, String value) {
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+
+        rep.getAttributes().put(key, value);
         return this;
     }
 
