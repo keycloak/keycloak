@@ -117,9 +117,9 @@ public class ProxyHostnameV2DistTest {
     }
 
     private void assertXForwardedHeaders() {
-        given().header("X-Forwarded-Host", "test").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:8080/admin"));
-        given().header("X-Forwarded-Host", "test").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:8443/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:123/admin"));
         given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://localhost/admin"));
         given().header("X-Forwarded-Proto", "https").header("X-Forwarded-Port", "8443").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://localhost:8443/admin"));
     }

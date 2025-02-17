@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.17.8</quarkus.version>
-        <quarkus.build.version>3.17.8</quarkus.build.version>
+        <quarkus.version>3.18.2</quarkus.version>
+        <quarkus.build.version>3.18.2</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -165,7 +165,7 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>16.1</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.3.1</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.4</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>

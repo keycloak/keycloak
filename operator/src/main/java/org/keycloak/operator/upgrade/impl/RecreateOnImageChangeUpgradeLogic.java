@@ -25,7 +25,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.upgrade.UpgradeType;
@@ -38,13 +37,13 @@ import org.keycloak.operator.upgrade.UpgradeType;
 @SuppressWarnings("ALL")
 public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
 
-    public RecreateOnImageChangeUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource dependentResource) {
-        super(context, keycloak, dependentResource);
+    public RecreateOnImageChangeUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
+        super(context, keycloak);
     }
 
     @Override
     Optional<UpdateControl<Keycloak>> onUpgrade() {
-        var currentImage = extractImage(ContextUtils.getCurrentStatefulSet(context));
+        var currentImage = extractImage(ContextUtils.getCurrentStatefulSet(context).orElseThrow());
         var desiredImage = extractImage(ContextUtils.getDesiredStatefulSet(context));
 
         if (Objects.equals(currentImage, desiredImage)) {

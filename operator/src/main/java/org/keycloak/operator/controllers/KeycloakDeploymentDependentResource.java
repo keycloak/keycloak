@@ -31,11 +31,13 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfigBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
-
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
@@ -72,6 +74,9 @@ import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeyc
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.convertTracingAttributesToString;
 
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
     public static final String POD_IP = "POD_IP";
@@ -95,23 +100,23 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public static final String OPTIMIZED_ARG = "--optimized";
 
-    Config operatorConfig;
-
-    WatchedResources watchedResources;
-
-    KeycloakDistConfigurator distConfigurator;
-
     private boolean useServiceCaCrt;
 
-    public KeycloakDeploymentDependentResource(Config operatorConfig, WatchedResources watchedResources, KeycloakDistConfigurator distConfigurator) {
+    // Do not create the deployment before the initial admin secret is created to prevent the deployment from restarting.
+    // Not using native dependsOn as the initial admin secret may not be created by the operator and might be provided by the user,
+    // in which case we want to create the deployment immediately.
+    public static class ReconcilePrecondition implements Condition<StatefulSet, Keycloak> {
+        @Override
+        public boolean isMet(DependentResource<StatefulSet, Keycloak> dependentResource, Keycloak primary, Context<Keycloak> context) {
+            return KeycloakAdminSecretDependentResource.hasCustomAdminSecret(primary)
+                    || context.getSecondaryResourcesAsStream(Secret.class)
+                    .anyMatch(s -> s.getMetadata().getName().equals(KeycloakAdminSecretDependentResource.getName(primary)));
+        }
+    }
+
+    public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
-        this.operatorConfig = operatorConfig;
-        this.watchedResources = watchedResources;
-        this.distConfigurator = distConfigurator;
         useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
-        this.configureWith(new KubernetesDependentResourceConfigBuilder<StatefulSet>()
-                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .build());
     }
 
     public void setUseServiceCaCrt(boolean useServiceCaCrt) {
@@ -120,17 +125,20 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     @Override
     public StatefulSet desired(Keycloak primary, Context<Keycloak> context) {
-        StatefulSet baseDeployment = createBaseDeployment(primary, context);
+        Config operatorConfig = ContextUtils.getOperatorConfig(context);
+        WatchedResources watchedResources = ContextUtils.getWatchedResources(context);
+ 
+        StatefulSet baseDeployment = createBaseDeployment(primary, context, operatorConfig);
         TreeSet<String> allSecrets = new TreeSet<>();
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
         Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         addTruststores(primary, baseDeployment, kcContainer, allSecrets);
-        addEnvVars(baseDeployment, primary, allSecrets);
+        addEnvVars(baseDeployment, primary, allSecrets, context);
         addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
-                .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, context.getClient()));
+                .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, context.getClient(), watchedResources));
 
         if (!allSecrets.isEmpty()) {
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
@@ -142,7 +150,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             return baseDeployment;
         }
 
-        var existingDeployment = ContextUtils.getCurrentStatefulSet(context);
+        var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElseThrow();
 
         // version 22 changed the match labels, account for older versions
         if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment, primary)) {
@@ -156,7 +164,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         };
     }
 
-    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client) {
+    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client, WatchedResources watchedResources) {
         Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
             if (configFile.getName() == null || configFile.getKey() == null) {
                 throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
@@ -236,7 +244,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getUnsupported).map(UnsupportedSpec::getPodTemplate);
     }
 
-    private StatefulSet createBaseDeployment(Keycloak keycloakCR, Context<Keycloak> context) {
+    private StatefulSet createBaseDeployment(Keycloak keycloakCR, Context<Keycloak> context, Config operatorConfig) {
         Map<String, String> labels = Utils.allInstanceLabels(keycloakCR);
         labels.put("app.kubernetes.io/component", "server");
         Map<String, String> schedulingLabels = new LinkedHashMap<>(labels);
@@ -404,7 +412,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return JGROUPS_DNS_QUERY_PARAM + KeycloakDiscoveryServiceDependentResource.getName(keycloakCR) +"." + keycloakCR.getMetadata().getNamespace();
     }
 
-    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets) {
+    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
+        var distConfigurator = ContextUtils.getDistConfigurator(context);
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
         var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);

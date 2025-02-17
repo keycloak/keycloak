@@ -120,6 +120,7 @@ public final class CRAssert {
                 .await()
                 .pollInterval(1, TimeUnit.SECONDS)
                 .timeout(Duration.ofMinutes(5))
+                .ignoreExceptions()
                 .untilAsserted(() -> client.pods()
                         .inNamespace(namespaceOf(keycloak))
                         .withLabels(Utils.allInstanceLabels(keycloak))

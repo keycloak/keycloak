@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -41,8 +40,8 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
 
     private final KeycloakUpdateJobDependentResource updateJobResource;
 
-    public AutoUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource, KeycloakUpdateJobDependentResource updateJobResource) {
-        super(context, keycloak, statefulSetResource);
+    public AutoUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakUpdateJobDependentResource updateJobResource) {
+        super(context, keycloak);
         this.updateJobResource = updateJobResource;
     }
 

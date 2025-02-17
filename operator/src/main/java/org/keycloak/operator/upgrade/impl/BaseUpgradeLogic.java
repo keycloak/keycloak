@@ -46,23 +46,21 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
 
     protected final Context<Keycloak> context;
     protected final Keycloak keycloak;
-    protected final KeycloakDeploymentDependentResource statefulSetResource;
 
-    BaseUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource) {
+    BaseUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
         this.context = context;
         this.keycloak = keycloak;
-        this.statefulSetResource = statefulSetResource;
     }
 
     @Override
     public final Optional<UpdateControl<Keycloak>> decideUpgrade() {
-        var existing = context.getSecondaryResource(StatefulSet.class);
+        var existing = ContextUtils.getCurrentStatefulSet(context);
         if (existing.isEmpty()) {
             // new deployment, no upgrade needed
             Log.debug("New deployment - skipping upgrade logic");
             return Optional.empty();
         }
-        var desiredStatefulSet = statefulSetResource.desired(keycloak, context);
+        var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
         var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpgradeLogic::containerNotFound);
         var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpgradeLogic::containerNotFound);
 
@@ -72,9 +70,6 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
             return Optional.empty();
         }
 
-        // store in context the current and desired stateful set for easy access.
-        ContextUtils.storeCurrentStatefulSet(context, existing.get());
-        ContextUtils.storeDesiredStatefulSet(context, desiredStatefulSet);
         return onUpgrade();
     }
 

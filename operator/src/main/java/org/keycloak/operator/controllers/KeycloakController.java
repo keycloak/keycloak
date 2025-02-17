@@ -21,55 +21,50 @@ import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
-
+import jakarta.inject.Inject;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.upgrade.UpgradeLogicFactory;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.inject.Inject;
-import org.keycloak.operator.upgrade.UpgradeLogicFactory;
-
-@ControllerConfiguration(
+@Workflow(
+    explicitInvocation = true,
     dependents = {
+        @Dependent(type = KeycloakDeploymentDependentResource.class, reconcilePrecondition = KeycloakDeploymentDependentResource.ReconcilePrecondition.class),
         @Dependent(type = KeycloakAdminSecretDependentResource.class, reconcilePrecondition = KeycloakAdminSecretDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
-        @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
-        @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
+        @Dependent(type = KeycloakServiceDependentResource.class),
+        @Dependent(type = KeycloakDiscoveryServiceDependentResource.class),
         @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class)
     })
-public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
+public class KeycloakController implements Reconciler<Keycloak> {
 
     public static final String OPENSHIFT_DEFAULT = "openshift-default";
 
@@ -85,32 +80,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Inject
     UpgradeLogicFactory upgradeLogicFactory;
 
-    volatile KeycloakDeploymentDependentResource deploymentDependentResource;
-    volatile KeycloakUpdateJobDependentResource updateJobDependentResource;
+    @Inject
+    KeycloakUpdateJobDependentResource updateJobDependentResource;
 
     @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        var namespaces = context.getControllerConfiguration().getNamespaces();
-
-        InformerConfiguration<Service> servicesIC = InformerConfiguration
-                .from(Service.class)
-                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespaces)
-                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
-                .build();
-
-        EventSource servicesEvent = new InformerEventSource<>(servicesIC, context);
-
-        Map<String, EventSource> sources = new HashMap<>();
-        sources.put("serviceSource", servicesEvent);
-
-        this.deploymentDependentResource = new KeycloakDeploymentDependentResource(config, watchedResources, distConfigurator);
-        sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, this.deploymentDependentResource));
-
-        updateJobDependentResource = new KeycloakUpdateJobDependentResource(config);
-        sources.putAll(EventSourceInitializer.nameEventSourcesFromDependentResource(context, updateJobDependentResource));
-
-        return sources;
+    public List<EventSource<?, Keycloak>> prepareEventSources(EventSourceContext<Keycloak> context) {
+        return EventSourceUtils.dependentEventSources(context, updateJobDependentResource);
     }
 
     @Override
@@ -141,10 +116,25 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         }
 
         if (modifiedSpec) {
-            return UpdateControl.updateResource(kc);
+            // just patch spec using SSA, nothing more
+            Keycloak patchedKc = new KeycloakBuilder()
+                    .withNewMetadata()
+                        .withName(kc.getMetadata().getName())
+                        .withNamespace(kc.getMetadata().getNamespace())
+                    .endMetadata()
+                    .withSpec(kc.getSpec())
+                    .build();
+            return UpdateControl.patchResource(patchedKc);
         }
 
-        var upgradeLogicControl = upgradeLogicFactory.create(kc, context, deploymentDependentResource, updateJobDependentResource)
+        var existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
+        ContextUtils.storeOperatorConfig(context, config);
+        ContextUtils.storeWatchedResources(context, watchedResources);
+        ContextUtils.storeDistConfigurator(context, distConfigurator);
+        ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
+        ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
+
+        var upgradeLogicControl = upgradeLogicFactory.create(kc, context)
                 .decideUpgrade();
         if (upgradeLogicControl.isPresent()) {
             Log.debug("--- Reconciliation interrupted due to upgrade logic");
@@ -152,11 +142,11 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         }
 
         // after the spec has possibly been updated, reconcile the StatefulSet
-        this.deploymentDependentResource.reconcile(kc, context);
+        context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
-        updateStatus(kc, context.getSecondaryResource(StatefulSet.class).orElse(null), statusAggregator, context);
+        updateStatus(kc, existingDeployment, statusAggregator, context);
         var status = statusAggregator.build();
 
         Log.debug("--- Reconciliation finished successfully");
@@ -167,7 +157,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         }
         else {
             kc.setStatus(status);
-            updateControl = UpdateControl.updateStatus(kc);
+            updateControl = UpdateControl.patchStatus(kc);
         }
 
         var statefulSet = context.getSecondaryResource(StatefulSet.class);
@@ -190,7 +180,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         kc.setStatus(status);
 
-        return ErrorStatusUpdateControl.updateStatus(kc);
+        return ErrorStatusUpdateControl.patchStatus(kc);
     }
 
     public static Optional<String> generateOpenshiftHostname(Keycloak keycloak, Context<Keycloak> context) {
