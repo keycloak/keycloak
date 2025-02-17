@@ -20,6 +20,7 @@ package org.keycloak.admin.client.resource;
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -38,6 +39,10 @@ public interface OrganizationMembersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     Response addMember(String userId);
+
+    @Path("{member-id}")
+    @DELETE
+    Response removeMember(@PathParam("member-id") String memberId);
 
     /**
      * Return all members in the organization.

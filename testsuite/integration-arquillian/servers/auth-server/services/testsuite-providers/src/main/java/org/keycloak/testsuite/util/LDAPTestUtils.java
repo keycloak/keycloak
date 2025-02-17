@@ -458,6 +458,17 @@ public class LDAPTestUtils {
         }
     }
 
+    public static LDAPObject getLdapGroupByName(KeycloakSession session, RealmModel realm, String mapperName, String groupName) {
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+        ComponentModel mapperModel = getSubcomponentByName(realm, ldapModel, mapperName);
+        LDAPStorageProvider ldapProvider = getLdapProvider(session, ldapModel);
+        if (GroupLDAPStorageMapperFactory.PROVIDER_ID.equals(mapperModel.getProviderId())) {
+            return getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName(groupName);
+        } else {
+            return getRoleMapper(mapperModel, ldapProvider, realm).loadLDAPRoleByName(groupName);
+        }
+    }
+
     public static LDAPObject updateLDAPGroup(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, LDAPObject ldapObject) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, "groupsMapper");
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
