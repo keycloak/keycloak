@@ -34,6 +34,10 @@ To ensure consistency and quality across translations, please adhere to the foll
 - Translate text accurately, ensuring that the meaning is preserved.
 - Weblate will pushe translations as a pull request to the [Keycloak repository](https://github.com/keycloak/keycloak) at least once a day. A maintainer for that language has the ability to approve or decline that translation.
 
+#### Spanish translations
+
+- Use the formal "usted" form instead of the informal "vos or tu" (i.e., avoid tuteo), ensuring a more formal tone.
+
 ### Supported translations
 
 Keycloak already supports a lot of translations. 
