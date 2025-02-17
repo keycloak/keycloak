@@ -52,6 +52,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder adminUrl(String adminUrl) {
+        rep.setAdminUrl(adminUrl);
+        return this;
+    }
+
     public ClientConfigBuilder protocol(String protocol) {
         rep.setProtocol(protocol);
         return this;
