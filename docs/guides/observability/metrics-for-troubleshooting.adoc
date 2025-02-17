@@ -39,6 +39,11 @@ Troubleshooting the database itself is out of scope.
 You should always confirm the configuration change by conducting a performance test comparing the metrics in question for the old and the new configuration.
 ====
 
+[NOTE]
+====
+Grafana dashboards for the metrics below can be found in <@links.observability id="grafana-dashboards"/> {section}.
+====
+
 == List of {project_name} key metrics
 
 * <@links.observability id="metrics-for-troubleshooting-keycloak"/>
