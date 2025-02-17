@@ -266,8 +266,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(axe-core@4.10.2)(cypress@14.0.3)
       cypress-split:
-        specifier: ^1.24.10
-        version: 1.24.10(@babel/core@7.26.8)
+        specifier: ^1.24.13
+        version: 1.24.13(@babel/core@7.26.8)
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0
@@ -652,6 +652,11 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  '@babel/parser@7.26.9':
+    resolution: {integrity: sha512-81NWa1njQblgZbQHxWHpxxCzNsa3ZwvFqpUg7P+NNUU6f3UU2jBEg4OlF/J6rl8+PQGh1q6/zWScd001YwcA5A==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
   '@babel/plugin-proposal-private-methods@7.18.6':
     resolution: {integrity: sha512-nutsvktDItsNn4rpGItSNV2sz1XwS+nfU0Rg8aCx3W3NOKVzdMjJRu0O5OkgDp3ZGICSTbgRpxZoWsxoKRvbeA==}
     engines: {node: '>=6.9.0'}
@@ -679,6 +684,10 @@ packages:
 
   '@babel/types@7.26.8':
     resolution: {integrity: sha512-eUuWapzEGWFEpHFxgEaBG8e3n6S8L3MSu0oda755rOfabWPnh0Our1AozNFVUxGFIhbKgd1ksprsoDGMinTOTA==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/types@7.26.9':
+    resolution: {integrity: sha512-Y3IR1cRnOxOCDvMmNiym7XpXQ93iGDDPHx+Zj+NM+rg0fBaShfQLkg+hKPaZCEvg5N/LeCo4+Rj/i3FuJsIQaw==}
     engines: {node: '>=6.9.0'}
 
   '@colors/colors@1.5.0':
@@ -2398,8 +2407,8 @@ packages:
       axe-core: ^3 || ^4
       cypress: ^10 || ^11 || ^12 || ^13 || ^14
 
-  cypress-split@1.24.10:
-    resolution: {integrity: sha512-8OPOWmOznR/+0sczoKnfDvLYN19u5jnbHYHBLI56ay55OE8WRSSJ64V8Lp/zTY+2+vGuLoplR1vyiApKGKFTPA==}
+  cypress-split@1.24.13:
+    resolution: {integrity: sha512-vu3CHfnXFLUKFWvpEeVo2IQNJe8661ZdtAr9EYySLxaqs1H3I3yNDmQklEv3wF/ZDdQKa0r1crka8Umy2w8BsQ==}
     hasBin: true
 
   cypress@14.0.3:
@@ -2959,13 +2968,13 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  find-cypress-specs@1.47.3:
-    resolution: {integrity: sha512-IBC4VcjbRgesJKty9iBmp+V/RFoN609tfb/mO2vV6L3ZTaVLiHX+n2ubSPPjA5tYD4AS3O2GKKetvaTaVxDMFw==}
+  find-cypress-specs@1.47.7:
+    resolution: {integrity: sha512-l44j22oQRBcgP79Fj9MMMGUQ3T0950sHRB1yOncGdZAqZKjykBLf/sn0u7sGcUf76+pgknsA5n2ehVIHoMqOuA==}
     engines: {node: '>=18'}
     hasBin: true
 
-  find-test-names@1.29.4:
-    resolution: {integrity: sha512-dpZsHkCyTQKlR6qzid09f/CQ4zGtdRwjMYHlTrmXx3qlzhrxRvxE7lRSFuaiqP0e+rbUcLy6juB6Bq9ohrnEMg==}
+  find-test-names@1.29.5:
+    resolution: {integrity: sha512-PsD3qx5miZKhT/766UGAgmApU8NwGAqUKPwIRVOuYgjKHOvWzL5OYbHJIhKC0nVvhVedIOvH1SwJG/Df8EN/8w==}
     hasBin: true
 
   find-up@5.0.0:
@@ -3531,6 +3540,7 @@ packages:
 
   jquery@3.4.1:
     resolution: {integrity: sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==}
+    deprecated: This version is deprecated. Please upgrade to the latest version or find support at https://www.herodevs.com/support/jquery-nes.
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4543,8 +4553,8 @@ packages:
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
 
-  spec-change@1.11.12:
-    resolution: {integrity: sha512-FZiKyaVZOm03q4yNVJ3wjSpnopwKOHbkjaF6lhM5Xmog6BfZPRz0WzpEiyVv2h9Y29eGz57JdTuGPN7S4A1YVw==}
+  spec-change@1.11.14:
+    resolution: {integrity: sha512-l+eXn3FUH2z+Jqc1yuFIYxzLhqH7ICFCs7DWnwiQfchzfVkhHsDP2kHRQRll+pnoGyDbcze/r5VdpOfHXMzu1Q==}
     hasBin: true
 
   sprintf-js@1.0.3:
@@ -5503,6 +5513,10 @@ snapshots:
     dependencies:
       '@babel/types': 7.26.8
 
+  '@babel/parser@7.26.9':
+    dependencies:
+      '@babel/types': 7.26.9
+
   '@babel/plugin-proposal-private-methods@7.18.6(@babel/core@7.26.8)':
     dependencies:
       '@babel/core': 7.26.8
@@ -5539,6 +5553,11 @@ snapshots:
       - supports-color
 
   '@babel/types@7.26.8':
+    dependencies:
+      '@babel/helper-string-parser': 7.25.9
+      '@babel/helper-validator-identifier': 7.25.9
+
+  '@babel/types@7.26.9':
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
@@ -6732,7 +6751,7 @@ snapshots:
 
   '@vue/compiler-sfc@3.5.13':
     dependencies:
-      '@babel/parser': 7.26.8
+      '@babel/parser': 7.26.9
       '@vue/compiler-core': 3.5.13
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-ssr': 3.5.13
@@ -7235,14 +7254,14 @@ snapshots:
       axe-core: 4.10.2
       cypress: 14.0.3
 
-  cypress-split@1.24.10(@babel/core@7.26.8):
+  cypress-split@1.24.13(@babel/core@7.26.8):
     dependencies:
       '@actions/core': 1.11.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.4.0(supports-color@8.1.1)
       fast-shuffle: 6.1.1
-      find-cypress-specs: 1.47.3(@babel/core@7.26.8)
+      find-cypress-specs: 1.47.7(@babel/core@7.26.8)
       globby: 11.1.0
       humanize-duration: 3.32.1
     transitivePeerDependencies:
@@ -8029,27 +8048,27 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  find-cypress-specs@1.47.3(@babel/core@7.26.8):
+  find-cypress-specs@1.47.7(@babel/core@7.26.8):
     dependencies:
       '@actions/core': 1.11.1
       arg: 5.0.2
       console.table: 0.10.0
       debug: 4.4.0(supports-color@8.1.1)
-      find-test-names: 1.29.4(@babel/core@7.26.8)
+      find-test-names: 1.29.5(@babel/core@7.26.8)
       globby: 11.1.0
       minimatch: 3.1.2
       pluralize: 8.0.0
       require-and-forget: 1.0.1
       shelljs: 0.8.5
-      spec-change: 1.11.12
+      spec-change: 1.11.14
       tsx: 4.19.2
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
 
-  find-test-names@1.29.4(@babel/core@7.26.8):
+  find-test-names@1.29.5(@babel/core@7.26.8):
     dependencies:
-      '@babel/parser': 7.26.8
+      '@babel/parser': 7.26.9
       '@babel/plugin-syntax-jsx': 7.25.9(@babel/core@7.26.8)
       acorn-walk: 8.3.4
       debug: 4.4.0(supports-color@8.1.1)
@@ -9052,7 +9071,7 @@ snapshots:
 
   node-source-walk@7.0.1:
     dependencies:
-      '@babel/parser': 7.26.8
+      '@babel/parser': 7.26.9
 
   normalize-path@3.0.0: {}
 
@@ -9759,7 +9778,7 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  spec-change@1.11.12:
+  spec-change@1.11.14:
     dependencies:
       arg: 5.0.2
       debug: 4.4.0(supports-color@8.1.1)
