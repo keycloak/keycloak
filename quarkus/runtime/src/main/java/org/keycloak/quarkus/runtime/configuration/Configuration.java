@@ -23,10 +23,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -42,6 +42,8 @@ public final class Configuration {
     public static final char OPTION_PART_SEPARATOR_CHAR = '-';
     public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
     public static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
+
+    private static SmallRyeConfig config;
 
     private Configuration() {
 
@@ -74,7 +76,14 @@ public final class Configuration {
     }
 
     public static synchronized SmallRyeConfig getConfig() {
-        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
+        if (config == null) {
+            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+        }
+        return config;
+    }
+
+    public static void resetConfig() {
+        config = null;
     }
 
     /**
