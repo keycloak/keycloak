@@ -6,7 +6,6 @@
 <@tmpl.guide
 title="Enabling {project_name} Event Metrics"
 summary="Learn how to enable and use {project_name} Event Metrics"
-preview="true"
 includedOptions="metrics-enabled event-metrics-user-*">
 
 Event metrics can provide admins an overview of the different activities in a {project_name} instance.
@@ -21,11 +20,11 @@ If you have multiple instances running in a cluster, you will need to collect th
 
 == Enable event metrics
 
-To start collecting metrics, enable the feature `user-event-metrics`, enable metrics, and enable the metrics for user events.
+To start collecting event metrics, enable metrics, and enable the metrics for user events.
 
 The following shows the required startup parameters:
 
-<@kc.start parameters="--features=user-event-metrics --metrics-enabled=true --event-metrics-user-enabled=true ..."/>
+<@kc.start parameters="--metrics-enabled=true --event-metrics-user-enabled=true ..."/>
 
 By default, there is a separate metric for each realm.
 To break down the metric by client and identity provider, you can add those metrics dimension using the configuration option `event-metrics-user-tags`.

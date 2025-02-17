@@ -190,7 +190,7 @@ public class HelpCommandDistTest {
         // normalize the output to prevent changes around the feature toggles or events to mark the output to differ
         String output = cliResult.getOutput()
                 .replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>")
-                .replaceAll("(create a metric. Possible values are:)[^.]{30,}.(Available|only|when|user|event|metrics|are|enabled.| )*", "$1<...>");
+                .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.(Available|only|when|user|event|metrics|are|enabled.| )*", "$1<...>");
 
         String osName = System.getProperty("os.name");
         if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
