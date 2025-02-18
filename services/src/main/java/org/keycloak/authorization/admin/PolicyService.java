@@ -69,6 +69,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -204,6 +205,7 @@ public class PolicyService {
     public Response findAll(@QueryParam("policyId") String id,
                             @QueryParam("name") String name,
                             @QueryParam("type") String type,
+                            @QueryParam("resourceType") String resourceType,
                             @QueryParam("resource") String resource,
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
@@ -283,6 +285,10 @@ public class PolicyService {
 
         if (permission != null) {
             search.put(Policy.FilterOption.PERMISSION, new String[] {permission.toString()});
+        }
+
+        if (StringUtil.isNotBlank(resourceType)) {
+            search.put(Policy.FilterOption.CONFIG, new String[] {"defaultResourceType", resourceType});
         }
 
         return Response.ok(

@@ -115,7 +115,7 @@ export const SearchDropdown = ({
           )}
           {type !== "resource" && (
             <SelectControl
-              name={type !== "adminPermission" ? "type" : "type"}
+              name={type !== "adminPermission" ? "type" : "resourceType"}
               label={type !== "adminPermission" ? t("type") : t("resourceType")}
               controller={{
                 defaultValue: "",
