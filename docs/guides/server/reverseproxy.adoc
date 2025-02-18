@@ -28,7 +28,7 @@ You only need to proxy port `8443` (or `8080`) even when you use different host 
 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
 
-* By default if the option is not specified, no reverse proxy headers are parsed.
+* By default if the option is not specified, no reverse proxy headers are parsed. This should be used when no proxy is in use or with https passthrough.
 * `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
@@ -38,7 +38,7 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded"/>
 
-WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Do not use `forwarded` or `xforwarded` with https passthrough. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 
 Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
 If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
@@ -146,7 +146,7 @@ For example:
 
 == PROXY Protocol
 
-The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client. The value cannot `true` when using the `proxy-headers` option.
 
 This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
 
