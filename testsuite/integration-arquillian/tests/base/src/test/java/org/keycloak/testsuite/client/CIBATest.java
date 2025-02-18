@@ -297,7 +297,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(503)));
 
             // user Token Request
-            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, response.getAuthReqId());
+            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, "invalid");
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
             assertThat(tokenRes.getErrorDescription(), is(equalTo("Invalid Auth Req ID")));
@@ -2787,7 +2787,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     private String doIntrospectAccessTokenWithClientCredential(AccessTokenResponse tokenRes, String username) throws IOException {
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getAccessToken());
+        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
         assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
@@ -2799,7 +2799,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getRefreshToken());
+        tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getRefreshToken());
         jsonNode = objectMapper.readTree(tokenResponse);
         assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
         assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
@@ -2810,7 +2810,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuer())));
         events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.introspectAccessTokenWithClientCredential(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, tokenRes.getIdToken());
+        tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getIdToken());
         jsonNode = objectMapper.readTree(tokenResponse);
         assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
         assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));

@@ -256,7 +256,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    private void login(String clientId) {
       // Login with default client, despite what has been supplied into this method.
       oauth.httpClient().reset();
-      oauth.clientId(clientId)
+      oauth.client(clientId)
         .doLogin(USER, PASSWORD);
    }
 

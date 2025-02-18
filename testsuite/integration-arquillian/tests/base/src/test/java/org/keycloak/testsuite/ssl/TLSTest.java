@@ -64,7 +64,7 @@ public class TLSTest extends AbstractTestRealmKeycloakTest {
 
         // Try access "JWKS URL" unsecured. It should fail
         try {
-            JSONWebKeySet keySet = oauth.doCertsRequest();
+            JSONWebKeySet keySet = oauth.keys().getRealmKeys();
             Assert.fail("This should not be successful");
         } catch (Exception e) {
             // Expected

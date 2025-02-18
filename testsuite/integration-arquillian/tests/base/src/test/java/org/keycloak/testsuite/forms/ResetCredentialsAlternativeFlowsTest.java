@@ -350,7 +350,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             loginPage.open();
             loginPage.login("login-test", "password");
             String code = new AuthorizationEndpointResponse(oauth).getCode();
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             String customOtpLabel = "my-original-otp-label";
 

@@ -28,8 +28,8 @@ public class AuthorizationEndpointResponse {
 
     public AuthorizationEndpointResponse(OAuthClient client) {
         boolean fragment;
-        String responseMode = client.getResponseMode();
-        String responseType = client.getResponseType();
+        String responseMode = client.config().getResponseMode();
+        String responseType = client.config().getResponseType();
         if (responseMode == null || "jwt".equals(responseMode)) {
             try {
                 fragment = responseType != null && OIDCResponseType.parse(responseType).isImplicitOrHybridFlow();

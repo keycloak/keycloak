@@ -123,7 +123,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
 
         // enable user profile unmanaged attributes
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
@@ -170,7 +170,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             response.close();
         }
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
@@ -241,7 +241,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getAddress());
@@ -351,7 +351,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNull(idToken.getAddress());
             assertNull(idToken.getOtherClaims().get("home_phone"));
@@ -383,7 +383,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         app.getProtocolMappers().createMapper(createHardcodedClaim("iat-hardcoded", "iat", "123", "long", true, false, true)).close();
 
         // login
-        AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
         // assert mappers work as expected
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
@@ -463,7 +463,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             oauth.scope(SCOPE_PROFILE);
 
             AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin("test-user@localhost", "password");
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
 
             assertTrue(tokenResponse.getScope().contains("profile"));
 
@@ -510,7 +510,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             oauth.scope(SCOPE_PROFILE);
 
             AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin("test-user@localhost", "password");
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
 
             assertTrue(tokenResponse.getScope().contains("profile"));
 
@@ -543,7 +543,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             Object empty = idToken.getOtherClaims().get("empty");
@@ -571,7 +571,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         events.clear();
 
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNull(idToken.getAddress());
             assertNull(idToken.getOtherClaims().get("empty"));
@@ -595,7 +595,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        AccessTokenResponse response = browserLogin("test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -648,7 +648,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         resp.close();
 
         try {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             // Assert roles are not on their original positions
@@ -691,7 +691,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         testApp.removeDefaultClientScope(rolesScope.getId());
 
         try {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             // Assert web origins are not in the token
@@ -731,7 +731,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        AccessTokenResponse response = browserLogin("test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -776,7 +776,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        AccessTokenResponse response = browserLogin("test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -821,8 +821,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         UserResource level2GroupUser = ApiUtil.findUserByUsernameId(adminClient.realm("test"), "level2GroupUser");
         level2GroupUser.joinGroup(level2Group2.getId());
 
-        oauth.clientId(clientId);
-        AccessTokenResponse response = browserLogin("password", "level2GroupUser", "password");
+        oauth.client(clientId, "password");
+        AccessTokenResponse response = browserLogin("level2GroupUser", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled AND it is filled only once
@@ -851,7 +851,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+        AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -888,12 +888,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
 
         String oldRedirectUri = oauth.getRedirectUri();
         oauth.redirectUri(UriUtils.getOrigin(oldRedirectUri) + "/test-app-authz");
 
-        AccessTokenResponse response = browserLogin("secret", "rich.roles@redhat.com", "password");
+        AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // revert redirect_uri
@@ -928,8 +928,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
-        oauth.clientId(clientId);
-        AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+        oauth.client(clientId, "password");
+        AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -962,8 +962,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
-        oauth.clientId(clientId);
-        AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+        oauth.client(clientId, "password");
+        AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -998,8 +998,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
-        oauth.clientId(clientId);
-        AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+        oauth.client(clientId, "password");
+        AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -1036,8 +1036,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             protocolMappers.add(realmMapper, clientMapper).update();
 
             // Login user
-            oauth.clientId(clientId);
-            AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+            oauth.client(clientId, "password");
+            AccessTokenResponse response = browserLogin("rich.roles@redhat.com", "password");
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
             // Verify attribute is filled
@@ -1080,7 +1080,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1120,7 +1120,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1161,7 +1161,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1200,7 +1200,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1235,7 +1235,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1271,7 +1271,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1314,7 +1314,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1359,7 +1359,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1406,7 +1406,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1457,7 +1457,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1506,7 +1506,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1555,7 +1555,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1609,7 +1609,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         try {
             // test it
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getOtherClaims());
@@ -1690,7 +1690,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // check that the hardcoded mappers are in the three responses
         try {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             // check hardcoded roles in access token
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -1746,7 +1746,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // check that the role mappers are executed in the three responses
         try {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
 
             // check mapped roles are in access token and not the original ones
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -1806,7 +1806,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         oauth.scope("openid dyn-scope-with-mapper:value");
-        AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        AccessTokenResponse response = browserLogin("test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
@@ -1833,9 +1833,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertThat(actualRoleString, is(in(expectedRoles)));
     }
 
-    private AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
+    private AccessTokenResponse browserLogin(String username, String password) {
         AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
-        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
+        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
     }
 
 }

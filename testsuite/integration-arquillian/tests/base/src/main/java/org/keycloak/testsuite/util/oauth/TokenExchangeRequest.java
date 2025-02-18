@@ -3,25 +3,20 @@ package org.keycloak.testsuite.util.oauth;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class TokenExchangeRequest extends AbstractHttpPostRequest<AccessTokenResponse> {
+public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeRequest, AccessTokenResponse> {
 
     private final String subjectToken;
-    private String clientId;
-    private String clientSecret;
     private List<String> audience;
     private Map<String, String> additionalParams;
 
-    TokenExchangeRequest(String subjectToken, String clientId, String clientSecret, OAuthClient client) {
+    TokenExchangeRequest(String subjectToken, OAuthClient client) {
         super(client);
         this.subjectToken = subjectToken;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
     }
 
     @Override
@@ -42,8 +37,6 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<AccessTokenRes
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
-        authorization(clientId, clientSecret);
-
         parameter(OAuth2Constants.SUBJECT_TOKEN, subjectToken);
         parameter(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
 
@@ -58,7 +51,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<AccessTokenRes
         parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
         parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
 
-        parameter(OAuth2Constants.SCOPE, client.getScope());
+        parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
     }
 
     @Override

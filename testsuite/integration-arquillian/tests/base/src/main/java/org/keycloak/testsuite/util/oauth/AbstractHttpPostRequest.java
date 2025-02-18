@@ -15,9 +15,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class AbstractHttpPostRequest<R> {
+public abstract class AbstractHttpPostRequest<T, R> {
 
     protected final OAuthClient client;
+
+    protected String clientId;
+
+    protected String clientSecret;
 
     protected HttpPost post;
 
@@ -34,15 +38,13 @@ public abstract class AbstractHttpPostRequest<R> {
     public R send() {
         post = new HttpPost(getEndpoint());
         header("Accept", getAccept());
-        header("Origin", client.getOrigin());
-
-        if (client.getRequestHeaders() != null) {
-            client.getRequestHeaders().forEach(this::header);
-        }
+        header("Origin", client.config().getOrigin());
 
         if (client.getCustomParameters() != null) {
             client.getCustomParameters().forEach(this::parameter);
         }
+
+        authorization();
 
         initRequest();
 
@@ -54,6 +56,18 @@ public abstract class AbstractHttpPostRequest<R> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public T client(String clientId) {
+        this.clientId = clientId;
+        this.clientSecret = null;
+        return (T) this;
+    }
+
+    public T client(String clientId, String clientSecret) {
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+        return (T) this;
     }
 
     protected void header(String name, String value) {
@@ -68,9 +82,12 @@ public abstract class AbstractHttpPostRequest<R> {
         }
     }
 
-    protected void authorization(String clientId, String clientSecret) {
+    private void authorization() {
+        String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
+        String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
+
         if (clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             header("Authorization", authorization);
         } else {
             parameter("client_id", clientId);
@@ -78,10 +95,11 @@ public abstract class AbstractHttpPostRequest<R> {
     }
 
     protected void scope() {
-        String scopeParam = client.isOpenid() ? TokenUtil.attachOIDCScope(client.getScope()) : client.getScope();
-        if (scopeParam != null && !scopeParam.isEmpty()) {
-            parameter(OAuth2Constants.SCOPE, scopeParam);
-        }
+        scope(true);
+    }
+
+    protected void scope(boolean attachOpenidIfNull) {
+        parameter(OAuth2Constants.SCOPE, client.config().getScope(attachOpenidIfNull));
     }
 
     protected String getAccept() {

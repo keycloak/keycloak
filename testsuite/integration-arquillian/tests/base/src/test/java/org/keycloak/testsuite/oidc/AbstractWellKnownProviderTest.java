@@ -244,7 +244,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
     @Test
     public void testIssuerMatches() throws Exception {
         AuthorizationEndpointResponse authzResp = oauth.doLogin("test-user@localhost", "password");
-        AccessTokenResponse response = oauth.doAccessTokenRequest(authzResp.getCode(), "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(authzResp.getCode());
         assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 

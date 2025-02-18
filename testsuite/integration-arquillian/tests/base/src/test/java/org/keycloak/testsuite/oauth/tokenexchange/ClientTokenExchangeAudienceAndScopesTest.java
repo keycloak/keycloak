@@ -156,10 +156,10 @@ public class ClientTokenExchangeAudienceAndScopesTest extends AbstractKeycloakTe
 
     private String resourceOwnerLogin(String username, String password, List<String> audience, List<String> scope) throws Exception {
         oauth.realm(TEST);
-        oauth.clientId("requester-client");
+        oauth.client("requester-client", "secret");
         oauth.scope(null);
         oauth.openid(false);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", username, password);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(username, password);
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         assertAudiences(token, audience);

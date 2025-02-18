@@ -389,10 +389,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         // all bellow grouped from a single Other device
         oauth.setBrowserHeader("User-Agent", null);
-        oauth.clientId("confidential-client-0");
-        oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
-        oauth.clientId("confidential-client-1");
-        oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+        oauth.client("confidential-client-0", "secret");
+        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        oauth.client("confidential-client-1", "secret");
+        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
 
         List<DeviceRepresentation> devices = getAllDevices();
         assertEquals(2, devices.size());
@@ -433,11 +433,11 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private AccessTokenResponse codeGrant(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        return oauth.doAccessTokenRequest(code, "password");
+        return oauth.doAccessTokenRequest(code);
     }
 
     private void joinSsoSession(String clientId) {

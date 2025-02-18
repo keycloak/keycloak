@@ -198,7 +198,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
 
-        AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
+        AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).client("broker-app", "broker-app-secret").doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
         AtomicReference<String> accessToken = (AtomicReference<String>) new AtomicReference<>(accessTokenResponse.getAccessToken());
         Client client = KeycloakTestingClient.getRestEasyClientBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
 
@@ -212,7 +212,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             testingClient.server(bc.consumerRealmName()).run(revokeReadTokenRole(username));
 
-            accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
+            accessTokenResponse = oauth.realm(bc.consumerRealmName()).client("broker-app", "broker-app-secret").doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
             accessToken.set(accessTokenResponse.getAccessToken());
 
             try (Response response = target.request().get()) {

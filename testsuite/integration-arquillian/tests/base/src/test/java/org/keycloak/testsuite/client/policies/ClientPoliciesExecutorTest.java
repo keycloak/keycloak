@@ -245,11 +245,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         clientResource.roles().create(RoleBuilder.create().name(roleAlphaName).build());
 
         // Not allowed to client authentication with clientIdAndSecret anymore. Client matches policy now
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "secret");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(400, res.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, res.getError());
         assertEquals("Configured client authentication method not allowed for client", res.getErrorDescription());
@@ -285,7 +285,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         });
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("invalid response_type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
@@ -298,7 +298,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -321,7 +321,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         sessionId = loginEvent.getSessionId();
         codeId = loginEvent.getDetails().get(Details.CODE_ID);
         code = new AuthorizationEndpointResponse(oauth).getCode();
-        res = oauth.doAccessTokenRequest(code, clientSecret);
+        res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -335,7 +335,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String jwsResponse = authzResponse.getResponse();
         AuthorizationResponseToken responseObject = oauth.verifyAuthorizationResponseToken(jwsResponse);
         code = (String) responseObject.getOtherClaims().get(OAuth2Constants.CODE);
-        res = oauth.doAccessTokenRequest(code, clientSecret);
+        res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
 
         // update profiles
@@ -416,7 +416,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         adminClient.realm(REALM_NAME).clients().get(cId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals("invalid response_type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
@@ -442,7 +442,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // confirm an access token not returned
         Assert.assertNull(new AuthorizationEndpointResponse(oauth).getAccessToken());
 
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 

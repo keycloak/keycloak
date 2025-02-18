@@ -321,9 +321,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation publicClient = create();
 
         // Login to public client
-        oauth.clientId(publicClient.getClientId());
+        oauth.client(publicClient.getClientId(), publicClient.getClientSecret());
         AuthorizationEndpointResponse loginResponse = oauth.doLogin("test-user@localhost", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), publicClient.getClientSecret());
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertEquals("test-user", accessToken.getPreferredUsername());
         Assert.assertEquals("test-user@localhost", accessToken.getEmail());
@@ -337,10 +337,10 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation pairwiseClient = createPairwise();
         Assert.assertEquals("pairwise", pairwiseClient.getSubjectType());
         // Login to pairwise client
-        oauth.clientId(pairwiseClient.getClientId());
+        oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret());
         oauth.openLoginForm();
         loginResponse = new AuthorizationEndpointResponse(oauth);
-        accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), pairwiseClient.getClientSecret());
+        accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
 
         // Assert token payloads don't contain more than one "sub"
         String accessTokenPayload = getPayload(accessTokenResponse.getAccessToken());
@@ -418,7 +418,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Login to pairwise client
         AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
-        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(pairwiseClient.getClientId(), pairwiseClient.getClientSecret(), accessTokenResponse.getAccessToken());
+        String introspectionResponse = oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret()).doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
@@ -434,17 +434,16 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation pairwiseClient = createPairwise();
 
         // Login to pairwise client
-        oauth.clientId(pairwiseClient.getClientId());
-        oauth.clientId(pairwiseClient.getClientId());
+        oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret());
         AuthorizationEndpointResponse loginResponse = oauth.doLogin("delete-me@localhost", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), pairwiseClient.getClientSecret());
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
 
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         // Delete user
         adminClient.realm(REALM_NAME).users().delete(userId);
 
-        AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+        AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         assertEquals(400, refreshTokenResponse.getStatusCode());
         assertEquals("invalid_grant", refreshTokenResponse.getError());
         assertNull(refreshTokenResponse.getAccessToken());
@@ -460,16 +459,15 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation pairwiseClient = createPairwise();
 
         // Login to pairwise client
-        oauth.clientId(pairwiseClient.getClientId());
-        oauth.clientId(pairwiseClient.getClientId());
+        oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret());
         AuthorizationEndpointResponse loginResponse = oauth.doLogin("disable-me@localhost", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), pairwiseClient.getClientSecret());
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         try {
             UserManager.realm(adminClient.realm(REALM_NAME)).username("disable-me@localhost").enabled(false);
 
-            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
             assertEquals(400, refreshTokenResponse.getStatusCode());
             assertEquals("invalid_grant", refreshTokenResponse.getError());
             assertNull(refreshTokenResponse.getAccessToken());
@@ -481,9 +479,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     }
 
     private AccessTokenResponse login(OIDCClientRepresentation client, String username, String password) {
-        oauth.clientId(client.getClientId());
+        oauth.client(client.getClientId(), client.getClientSecret());
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(username, password);
-        return oauth.doAccessTokenRequest(loginResponse.getCode(), client.getClientSecret());
+        return oauth.doAccessTokenRequest(loginResponse.getCode());
     }
 
     private String getPayload(String token) {

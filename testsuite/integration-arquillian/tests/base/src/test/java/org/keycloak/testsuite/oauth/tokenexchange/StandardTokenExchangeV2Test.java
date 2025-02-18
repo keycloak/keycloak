@@ -74,8 +74,8 @@ public class StandardTokenExchangeV2Test extends AbstractStandardTokenExchangeTe
 
     @Override
     protected String getInitialAccessTokenForClientExchanger() throws Exception {
-        oauth.clientId("client-exchanger");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        oauth.client("client-exchanger", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

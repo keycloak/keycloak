@@ -53,7 +53,7 @@ public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void before() {
         client = HttpClientBuilder.create().build();
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
         executor = (JavascriptExecutor) driver;
     }
 

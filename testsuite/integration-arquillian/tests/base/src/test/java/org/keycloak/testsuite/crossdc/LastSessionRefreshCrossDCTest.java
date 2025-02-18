@@ -76,7 +76,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         // Login
         AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
         String code = response1.getCode();
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         Assert.assertNotNull(tokenResponse.getAccessToken());
         String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
         String refreshToken1 = tokenResponse.getRefreshToken();
@@ -156,7 +156,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             // Login
             AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
             String code = response1.getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             Assert.assertNotNull(tokenResponse.getAccessToken());
             String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
             String refreshToken1 = tokenResponse.getRefreshToken();
@@ -286,7 +286,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
         String code = response1.getCode();
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         Assert.assertNotNull(tokenResponse.getAccessToken());
         String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
         String refreshToken1 = tokenResponse.getRefreshToken();

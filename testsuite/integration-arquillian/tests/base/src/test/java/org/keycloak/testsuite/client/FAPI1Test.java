@@ -456,7 +456,7 @@ public class FAPI1Test extends AbstractFAPITest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check nonce and redirectUri
-        oauth.clientId("foo");
+        oauth.client("foo");
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
@@ -551,7 +551,7 @@ public class FAPI1Test extends AbstractFAPITest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check nonce and redirectUri
-        oauth.clientId("foo");
+        oauth.client("foo");
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
@@ -588,7 +588,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
     private void checkPKCEWithS256RequiredDuringLogin(String clientId) {
         // Check PKCE required - login without PKCE should fail
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.openLoginForm();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: code_challenge_method");
 

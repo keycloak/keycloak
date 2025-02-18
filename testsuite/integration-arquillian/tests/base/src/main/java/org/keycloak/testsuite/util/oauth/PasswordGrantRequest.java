@@ -7,30 +7,21 @@ import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 
-public class PasswordGrantRequest extends AbstractHttpPostRequest<AccessTokenResponse> {
+public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantRequest, AccessTokenResponse> {
 
     private final String username;
     private final String password;
-    private final String clientId;
-    private String clientSecret;
     private String otp;
 
-    PasswordGrantRequest(String username, String password, String clientId, String clientSecret, OAuthClient client) {
+    PasswordGrantRequest(String username, String password, OAuthClient client) {
         super(client);
         this.username = username;
         this.password = password;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
     }
 
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getToken();
-    }
-
-    public PasswordGrantRequest clientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
-        return this;
     }
 
     public PasswordGrantRequest otp(String otp) {
@@ -45,8 +36,6 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<AccessTokenRes
         parameter("username", username);
         parameter("password", password);
         parameter("otp", otp);
-
-        authorization(clientId, clientSecret);
 
         parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
         parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());

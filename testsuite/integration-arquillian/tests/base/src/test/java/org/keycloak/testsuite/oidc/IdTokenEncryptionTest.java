@@ -93,7 +93,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.maxAge(null);
     }
 
@@ -214,7 +214,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             // get id token
             AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
             String code = response.getCode();
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             // parse JWE and JOSE Header
             String jweStr = tokenResponse.getIdToken();
@@ -310,7 +310,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
             // get id token but failed
             AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-            AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode(), "password");
+            AccessTokenResponse atr = oauth.doAccessTokenRequest(response.getCode());
             Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, atr.getError());
             Assert.assertEquals("can not get encryption KEK", atr.getErrorDescription());
 

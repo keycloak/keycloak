@@ -93,9 +93,9 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
     private void testOfflineTokenMigration(OfflineTokenConverter offlineTokenConverter) throws Exception {
         // Send request to obtain offline token
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
 
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         String offlineTokenString = tokenResponse.getRefreshToken();
 

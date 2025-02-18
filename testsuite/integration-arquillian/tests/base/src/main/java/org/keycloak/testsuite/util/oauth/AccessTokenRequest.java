@@ -7,10 +7,9 @@ import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 
-public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenResponse> {
+public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRequest, AccessTokenResponse> {
 
     private final String code;
-    private String clientSecret;
 
     AccessTokenRequest(String code, OAuthClient client) {
         super(client);
@@ -22,15 +21,8 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRespo
         return client.getEndpoints().getToken();
     }
 
-    public AccessTokenRequest clientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
-        return this;
-    }
-
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
-
-        authorization(client.getClientId(), clientSecret);
 
         parameter(OAuth2Constants.CODE, code);
         parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());

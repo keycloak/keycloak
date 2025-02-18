@@ -47,7 +47,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String loginUser = "john-doh@localhost";
         String loginPassword = "password";
         String clientSecret = "password";
-        
+
     	String expectedScope = "openid profile email";
     	
         oauth.doLogin(loginUser, loginPassword);
@@ -123,7 +123,6 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     public void failTokenNotExistingScope() throws Exception {
         String loginUser = "john-doh@localhost";
         String loginPassword = "password";
-        String clientSecret = "password";
 
         ClientsResource clients = realmsResouce().realm("test").clients();
         ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
@@ -139,19 +138,19 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.openid(false);
         oauth.scope("user phone");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
         
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope("user");
-        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
 
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope(null);
-        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
 
         assertNotNull(response.getAccessToken());
 
@@ -221,7 +220,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     }
     
     private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope, String clientSecret) throws Exception {
-    	AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+    	AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
         log.info("expectedScopes = " + expectedScope);
         log.info("receivedScopes = " + response.getScope());

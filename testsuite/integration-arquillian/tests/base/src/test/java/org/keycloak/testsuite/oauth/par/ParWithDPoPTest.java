@@ -1074,13 +1074,13 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
     }
 
     private AccessTokenResponse sentTokenRequest(String clientId, String clientSecret, String code, String dpopProofEncoded) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.dpopProof(dpopProofEncoded);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         // ----- Token Request -----
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         // revert
-        oauth.clientId(null);
+        oauth.client(null);
         oauth.dpopProof(null);
         oauth.redirectUri(null);
         return res;

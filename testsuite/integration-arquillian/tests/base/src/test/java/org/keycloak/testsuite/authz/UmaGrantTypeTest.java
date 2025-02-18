@@ -582,8 +582,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertNotNull(introspectionResponse);
         assertNotNull(introspectionResponse.getPermissions());
 
-        oauth.realm("authz-test");
-        String introspectHttpResponse = oauth.introspectTokenWithClientCredential("resource-server-test", "secret", "requesting_party_token", rpt);
+        oauth.realm("authz-test").client("resource-server-test", "secret");
+        String introspectHttpResponse = oauth.doIntrospectionRequest(rpt, "requesting_party_token");
 
         Map jsonNode = JsonSerialization.readValue(introspectHttpResponse, Map.class);
 
@@ -628,11 +628,11 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private String getIdToken(String username, String password) {
         oauth.realm("authz-test");
-        oauth.clientId("test-app");
+        oauth.client("test-app");
         oauth.openLoginForm();
         AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
         String code = resp.getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code, password);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         return response.getIdToken();
     }
 }

@@ -221,11 +221,11 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     @Test
     public void testAppCompositeUser() throws Exception {
         oauth.realm("test");
-        oauth.clientId("APP_COMPOSITE_APPLICATION");
+        oauth.client("APP_COMPOSITE_APPLICATION", "password");
         oauth.doLogin("APP_COMPOSITE_USER", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 
@@ -248,11 +248,11 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     @Test
     public void testRealmAppCompositeUser() throws Exception {
         oauth.realm("test");
-        oauth.clientId("APP_ROLE_APPLICATION");
+        oauth.client("APP_ROLE_APPLICATION", "password");
         oauth.doLogin("REALM_APP_COMPOSITE_USER", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 
@@ -272,11 +272,11 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     @Test
     public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
         oauth.realm("test");
-        oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
+        oauth.client("REALM_COMPOSITE_1_APPLICATION", "password");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 
@@ -297,11 +297,11 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     @Test
     public void testRealmOnlyWithUserCompositeAppRole() throws Exception {
         oauth.realm("test");
-        oauth.clientId("REALM_ROLE_1_APPLICATION");
+        oauth.client("REALM_ROLE_1_APPLICATION", "password");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 
@@ -314,18 +314,18 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
     @Test
     public void testRealmOnlyWithUserRoleAppComposite() throws Exception {
         oauth.realm("test");
-        oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
+        oauth.client("REALM_COMPOSITE_1_APPLICATION", "password");
         oauth.doLogin("REALM_ROLE_1_USER", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
 
@@ -338,7 +338,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 

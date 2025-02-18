@@ -444,8 +444,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         }
 
         // Get admin access token, no matter it's master realm's admin
-        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).doGrantAccessTokenRequest(
-                AuthRealm.ADMIN, AuthRealm.ADMIN, "admin-cli", null);
+        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).client("admin-cli").doGrantAccessTokenRequest(
+                AuthRealm.ADMIN, AuthRealm.ADMIN);
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         final String url = suiteContext.getAuthServerInfo().getContextRoot()
