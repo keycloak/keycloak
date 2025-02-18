@@ -1,7 +1,27 @@
-### Basics
+## Basics
 
 When migrating tests use the remote server mode as this will make it much quicker to run tests than having to start/stop
 Keycloak when you run the test from the IDE.
+
+You can use the Migration utility to replace the boilerplate code. The `migrate.sh` script is in the `migration-util`
+module. You can use it to perform the manual steps described in the following sections.
+
+The script compiles and packages the utility classes and runs them through a given test:
+
+```shell
+  ./migrate.sh <test>
+```
+
+The `<test>` can either be the absolute path to the test in the old testsuite, or a sub-package-in-testsuite/TheTest.
+For example:
+- `admin/authentication/RequiredActionsTest.java`
+- `admin/authentication/RequiredActionsTest`
+- `admin.authentication.RequiredActionsTest.java`
+- `admin.authentication.RequiredActionsTest`
+- `/home/user/keycloak/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/admin/authentication/RequiredActionsTest.java`
+
+
+### Manual migrating
 
 Add `@KeycloakIntegrationTest` to the class.
 

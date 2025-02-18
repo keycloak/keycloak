@@ -34,12 +34,13 @@ public class MigrateTest {
     }
 
     public void migrate(String test) throws Exception {
-        if (test.indexOf('.') != -1) {
-            test = rootPath.toString() +
-                    "/testsuite/integration-arquillian/tests/base/src/test/java/" +
-                    test.replace('.', '/') +
-                    ".java";
+        if (test.endsWith(".java")) {
+            test = test.split("\\.java")[0];
         }
+        if (test.indexOf('.') != -1) {
+            test = test.replace('.', '/');
+        }
+        test += ".java";
 
         Path testPath = Path.of(test).normalize().toAbsolutePath();
         if (!Files.isRegularFile(testPath)) {
@@ -63,8 +64,6 @@ public class MigrateTest {
         if (!Files.isRegularFile(testPath)) {
             throw new RuntimeException("Test file not found");
         }
-
-        System.exit(1);
 
         List<String> content = readFileToList(testPath);
 
