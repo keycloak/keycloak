@@ -110,12 +110,13 @@ export const ImportKeyDialog = ({
                   }
                   onFileInputChange={(_, file) => {
                     if (!file) return;
+
                     const reader = new FileReader();
                     reader.onload = (event) => {
                       const fileContent = event.target?.result as string;
                       let decodedContent = fileContent;
 
-                      if (fileContent.startsWith("data:")) {
+                      if (fileContent.toLowerCase().startsWith("data:")) {
                         const base64Data = fileContent.split(",")[1];
                         decodedContent = atob(base64Data);
                       }
