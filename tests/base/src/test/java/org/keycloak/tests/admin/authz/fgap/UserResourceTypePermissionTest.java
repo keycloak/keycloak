@@ -207,6 +207,24 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         permissionResources = permission.resources();
         assertThat(permissionResources.size(), is(1));
         assertThat(permissionResources.get(0).getName(), is(AdminPermissionsSchema.USERS.getType()));
+
+        representation.setResources(Set.of(userAlice.getId()));
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size() + 1));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(userAlice.getId()));
+
+        createUserPermission(userAlice, userBob);
+
+        representation.setResources(Set.of());
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size() + 2));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(AdminPermissionsSchema.USERS.getType()));
     }
 
     private ScopePermissionRepresentation createUserPermission(ManagedUser... users) {
