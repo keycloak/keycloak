@@ -110,7 +110,6 @@ export const ImportKeyDialog = ({
                   }
                   onFileInputChange={(_, file) => {
                     if (!file) return;
-
                     const reader = new FileReader();
                     reader.onload = (event) => {
                       const fileContent = event.target?.result as string;
