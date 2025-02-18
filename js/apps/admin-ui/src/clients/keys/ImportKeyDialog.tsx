@@ -101,7 +101,7 @@ export const ImportKeyDialog = ({
             <Controller
               name="file"
               control={control}
-              defaultValue={{ filename: "" }}
+              defaultValue={{ value: "", filename: "" }}
               render={({ field }) => (
                 <FileUpload
                   id="importFile"
@@ -110,9 +110,20 @@ export const ImportKeyDialog = ({
                   onTextChange={(value) =>
                     field.onChange({ ...field.value, value })
                   }
-                  onFileInputChange={(_, file) =>
-                    field.onChange({ ...field.value, filename: file.name })
-                  }
+                  onFileInputChange={(_, file) => {
+                    if (!file) return;
+
+                    field.onChange({ filename: file.name, value: "" });
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      field.onChange({
+                        filename: file.name,
+                        value: event.target?.result,
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
                 />
               )}
             />
