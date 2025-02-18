@@ -305,7 +305,7 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(CheckMultipleDatasourcesBuildStep.class)
     void checkMultipleDatasourcesUseXA(TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
-        if (transactionManagerConfig.unsafeMultipleLastResources
+        if (transactionManagerConfig.unsafeMultipleLastResources()
                 .orElse(UnsafeMultipleLastResourcesMode.DEFAULT) != UnsafeMultipleLastResourcesMode.FAIL) {
             return;
         }

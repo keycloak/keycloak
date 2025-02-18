@@ -17,21 +17,23 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-
 import io.quarkus.runtime.configuration.ConfigUtils;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
-
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
@@ -75,15 +77,46 @@ public final class Configuration {
                 .isPresent();
     }
 
+    private static final AtomicReference<Boolean> configInitInProgress = new AtomicReference<>(false);
+    private static SmallRyeConfig defaultConfig;
+
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
-            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+            if (Environment.isRebuildCheck() || Environment.isRebuild()) {
+                return config = getDefaultConfig();
+            }
+
+            if (configInitInProgress.get()) {
+                // When additional mapping is set for SmallRyeConfigBuilder, certain validations are executed which loops to the Keycloak configuration
+                // Return empty config for these validations
+                return getDefaultConfig();
+            }
+
+            try {
+                configInitInProgress.set(true);
+                config = ConfigUtils.emptyConfigBuilder()
+                        .addDiscoveredSources()
+                        .withMapping(VertxHttpConfig.class)
+                        .withMapping(VertxHttpBuildTimeConfig.class)
+                        .build();
+            } finally {
+                configInitInProgress.set(false);
+            }
         }
         return config;
     }
 
+    private static SmallRyeConfig getDefaultConfig() {
+        if (defaultConfig == null) {
+            defaultConfig = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+        }
+        return defaultConfig;
+    }
+
     public static void resetConfig() {
         config = null;
+        defaultConfig = null;
+        configInitInProgress.set(false);
     }
 
     /**

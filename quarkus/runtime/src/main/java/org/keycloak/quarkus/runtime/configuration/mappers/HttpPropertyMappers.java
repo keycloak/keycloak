@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.runtime.util.ClassPathUtils;
 import io.quarkus.vertx.http.runtime.CertificateConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
@@ -17,9 +18,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HttpPropertyMappers {
@@ -138,36 +140,17 @@ public final class HttpPropertyMappers {
     }
 
     public static void validateConfig() {
-        boolean enabled = isHttpEnabled(Configuration.getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
-        Optional<String> certFile = Configuration.getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
-        Optional<String> keystoreFile = Configuration.getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
+        boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
+        Optional<String> certFile = getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
+        Optional<String> keystoreFile = getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
         if (!enabled && certFile.isEmpty() && keystoreFile.isEmpty()) {
             throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
 
-        CertificateConfig config = new CertificateConfig();
-
-        config.trustStoreFile = Configuration.getOptionalValue(QUARKUS_HTTPS_TRUST_STORE_FILE).map(Paths::get);
-        config.trustStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_PASSWORD.getKey());
-        config.trustStoreFileType = Configuration.getOptionalValue(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE);
-        config.trustStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-provider");
-        config.trustStoreCertAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.trust-store-cert-alias");
-        config.trustStoreFiles = Optional.empty();
-
-        config.keyStoreFile = keystoreFile.map(Paths::get);
-        config.keyStorePassword = Configuration.getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_PASSWORD.getKey());
-        config.keyStoreFileType = Configuration.getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE);
-        config.keyStoreProvider = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-provider");
-        config.keyStoreAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias");
-        config.keyStoreAliasPassword = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password");
-        config.keyStoreAliasPasswordKey = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password-key");
-        config.keyStoreKeyAlias = Configuration.getOptionalValue("quarkus.http.ssl.certificate.key-store-key-alias");
-        
-        config.keyFiles = Configuration.getOptionalValue(QUARKUS_HTTPS_CERT_KEY_FILES).map(Paths::get).map(List::of);
-        config.files = certFile.map(Paths::get).map(List::of);
+        CertificateConfig config = Configuration.getConfig().getConfigMapping(VertxHttpConfig.class).ssl().certificate();
 
         try {
-            TlsUtils.computeTrustOptions(config, config.trustStorePassword);
+            TlsUtils.computeTrustOptions(config, getOptionalKcValue(HttpOptions.HTTPS_TRUST_STORE_PASSWORD));
         } catch (IOException e) {
             throw new PropertyException("Failed to load 'https-trust-store' material: " + e.getClass().getSimpleName() + " " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {
@@ -179,7 +162,7 @@ public final class HttpPropertyMappers {
         }
 
         try {
-            TlsUtils.computeKeyStoreOptions(config, config.keyStorePassword, config.keyStoreAliasPassword);
+            TlsUtils.computeKeyStoreOptions(config, getOptionalKcValue(HttpOptions.HTTPS_KEY_STORE_PASSWORD), getOptionalValue("quarkus.http.ssl.certificate.key-store-alias-password"));
         } catch (IOException e) {
             throw new PropertyException("Failed to load 'https-key-' material: " + e.getClass().getSimpleName() + " " + e.getMessage(), e);
         } catch (IllegalArgumentException e) {
