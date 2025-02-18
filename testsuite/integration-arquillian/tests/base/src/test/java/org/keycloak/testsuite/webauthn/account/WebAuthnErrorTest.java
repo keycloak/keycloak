@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
-import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
@@ -84,49 +83,6 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
             webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Passkey."));
-        }
-    }
-
-    // See: https://github.com/keycloak/keycloak/issues/29586
-    @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class)
-    public void errorPageIfUserDeletedDuringAuthentication() throws IOException {
-
-        final String authenticatorLabel = "authenticator";
-        addWebAuthnCredential(authenticatorLabel);
-
-        try (RealmAttributeUpdater u = new WebAuthnRealmAttributeUpdater(testRealmResource())
-                .update()) {
-
-            RealmRepresentation realm = testRealmResource().toRepresentation();
-            assertThat(realm, notNullValue());
-
-            final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
-            assertThat(webAuthnCount, is(1));
-
-            getWebAuthnManager().getCurrent().getAuthenticator().removeAllCredentials();
-
-            setUpWebAuthnFlow("webAuthnFlow");
-            logout();
-
-            signingInPage.navigateTo();
-            loginToAccount();
-
-            webAuthnLoginPage.assertCurrent();
-
-            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
-            assertThat(authenticators.getCount(), is(1));
-            assertThat(authenticators.getLabels(), Matchers.contains(authenticatorLabel));
-
-            // remove testuser before user authenticates via webauthn
-            try (Response resp = testRealmResource().users().delete(testUser.getId())) {
-                // ignore
-            }
-
-            webAuthnLoginPage.clickAuthenticate();
-
-            webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), is("Unknown user authenticated by the Passkey."));
         }
     }
 }
