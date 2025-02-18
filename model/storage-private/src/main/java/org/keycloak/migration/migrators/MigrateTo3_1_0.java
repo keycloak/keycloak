@@ -44,6 +44,7 @@ public class MigrateTo3_1_0 implements Migration {
 
             Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
             browserSecurityHeaders.put("xRobotsTag", "none");
+            browserSecurityHeaders.put("xXSSProtection", "1; mode=block");
 
             realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
         }

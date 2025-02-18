@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
+import java.util.HashMap;
 
 public class MigrateTo26_2_0 implements Migration {
 
@@ -49,7 +50,7 @@ public class MigrateTo26_2_0 implements Migration {
 
     private void migrateRealm(RealmModel realm) {
         // Removes _browser_header.xXSSProtection attribute
-        var headers = realm.getBrowserSecurityHeaders();
+        var headers = new HashMap<>(realm.getBrowserSecurityHeaders());
         headers.remove("xXSSProtection");
         realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(headers));
     }
