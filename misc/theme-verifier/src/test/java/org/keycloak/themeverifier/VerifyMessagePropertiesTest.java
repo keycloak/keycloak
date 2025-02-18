@@ -29,8 +29,26 @@ class VerifyMessagePropertiesTest {
 
     @Test
     void verifyDuplicateKeysDetected() throws MojoExecutionException {
-        List<String> verify = getFile("duplicate_keys.properties").verify();
-        MatcherAssert.assertThat(verify, Matchers.contains(Matchers.containsString("Duplicate keys in file")));
+        List<String> verify = getFile("duplicateKeys_en.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Duplicate keys in file")));
+    }
+
+    @Test
+    void verifyIllegalHtmlTagDetected() throws MojoExecutionException {
+        List<String> verify = getFile("illegalHtmlTag_en.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Illegal HTML")));
+    }
+
+    @Test
+    void verifyNoHtmlAllowed() throws MojoExecutionException {
+        List<String> verify = getFile("noHtml_de.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Illegal HTML")));
+    }
+
+    @Test
+    void verifyNoChangedAnchors() throws MojoExecutionException {
+        List<String> verify = getFile("changedAnchor_de.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Didn't find anchor tag")));
     }
 
     private static VerifyMessageProperties getFile(String fixture) {
