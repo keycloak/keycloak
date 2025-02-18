@@ -14,6 +14,7 @@ export enum Feature {
   Organizations = "ORGANIZATION",
   OpenId4VCI = "OID4VC_VCI",
   QuickTheme = "QUICK_THEME",
+  StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
 }
 
 export default function useIsFeatureEnabled() {
