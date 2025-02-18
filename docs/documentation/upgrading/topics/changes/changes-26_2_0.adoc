@@ -13,9 +13,3 @@ would now be `http://example.com`.
 
 To mitigate that, either make your reverse proxy include the port in the `X-Forwarded-Host` header or configure it to set
 the `X-Forwarded-Port` header with the desired port.
-
-= Removal of the `X-XSS-Protection` header
-
-Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
-
-We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP[Content Security Policy (CSP)].
