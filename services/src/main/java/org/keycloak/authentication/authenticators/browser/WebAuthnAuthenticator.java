@@ -195,6 +195,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         UserModel user = session.users().getUserById(context.getRealm(), userId);
 
+        if (user == null) {
+            context.getEvent()
+                    .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId);
+            setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
+            return;
+        }
+
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 credentialId,
                 authenticatorData,
