@@ -22,10 +22,8 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -41,14 +39,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.Utils;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
@@ -176,7 +167,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
         if (obj instanceof ClusterRoleBinding) {
             ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
-        } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(((RoleBinding)obj).getMetadata().getName())) {
+        } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(obj.getMetadata().getName())) {
             return null; // exclude this role since it's not present in olm
         }
         return obj;
@@ -308,8 +299,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           Method testMethod = context.getTestMethod();
           if (context.getTestStatus().getTestErrorCause() == null
                   || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException
-                  || !Stream.of(context.getTestStatus().getTestErrorCause().getStackTrace())
-                          .anyMatch(ste -> ste.getMethodName().equals(testMethod.getName())
+                  || Stream.of(context.getTestStatus().getTestErrorCause().getStackTrace())
+                          .noneMatch(ste -> ste.getMethodName().equals(testMethod.getName())
                                   && ste.getClassName().equals(testMethod.getDeclaringClass().getName()))) {
               return;
           }
@@ -323,7 +314,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }
           logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
-          k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems().stream()
+          k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems()
                   .forEach(pod -> log(k8sclient.pods().resource(pod), Pod::getStatus, false));
       } finally {
           cleanup();
@@ -378,6 +369,13 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
                                   threadDump(p);
                               });
                   }
+                  var job = k8sclient.batch().v1().jobs()
+                          .inNamespace(kc.getMetadata().getNamespace())
+                          .withName(KeycloakUpdateJobDependentResource.jobName(kc))
+                          .get();
+                  if (job != null) {
+                      Log.warnf("Keycloak Update Job \"%s\" %s", job.getMetadata().getName(), Serialization.asYaml(job.getStatus()));
+                  }
               });
   }
 
@@ -419,7 +417,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           var entry = grouped.next();
           Log.logf("Normal".equals(entry.getValue().get(0).getType()) ? Level.INFO : Level.WARN,
                   "Event last seen %s repeated %s times - %s", getTime(entry.getValue().get(0)),
-                  entry.getValue().size(), entry.getKey().stream().collect(Collectors.joining(" ")));
+                  entry.getValue().size(), String.join(" ", entry.getKey()));
       }
   }
 

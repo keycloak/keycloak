@@ -35,6 +35,7 @@ public class KeycloakStatusAggregator {
     private final KeycloakStatusCondition readyCondition = new KeycloakStatusCondition();
     private final KeycloakStatusCondition hasErrorsCondition = new KeycloakStatusCondition();
     private final KeycloakStatusCondition rollingUpdate = new KeycloakStatusCondition();
+    private final KeycloakStatusCondition updateType = new KeycloakStatusCondition();
 
     private final List<String> notReadyMessages = new ArrayList<>();
     private final List<String> errorMessages = new ArrayList<>();
@@ -71,6 +72,8 @@ public class KeycloakStatusAggregator {
         hasErrorsCondition.setType(KeycloakStatusCondition.HAS_ERRORS);
 
         rollingUpdate.setType(KeycloakStatusCondition.ROLLING_UPDATE);
+
+        updateType.setType(KeycloakStatusCondition.UPDATE_TYPE);
     }
 
     public KeycloakStatusAggregator addNotReadyMessage(String message) {
@@ -98,6 +101,12 @@ public class KeycloakStatusAggregator {
         rollingUpdate.setObservedGeneration(observedGeneration);
         rollingUpdateMessages.add(message);
         return this;
+    }
+
+    public void addUpgradeType(boolean recreate, String message) {
+        updateType.setStatus(recreate);
+        updateType.setObservedGeneration(observedGeneration);
+        updateType.setMessage(message);
     }
 
     /**
@@ -142,10 +151,11 @@ public class KeycloakStatusAggregator {
         updateConditionFromExisting(readyCondition, existingConditions, now);
         updateConditionFromExisting(hasErrorsCondition, existingConditions, now);
         updateConditionFromExisting(rollingUpdate, existingConditions, now);
+        updateConditionFromExisting(updateType, existingConditions, now);
 
         return statusBuilder
                 .withObservedGeneration(observedGeneration)
-                .withConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate))
+                .withConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate, updateType))
                 .build();
     }
 

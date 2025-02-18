@@ -134,8 +134,8 @@ public class KeycloakController implements Reconciler<Keycloak> {
         ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
         ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
 
-        var upgradeLogicControl = upgradeLogicFactory.create(kc, context)
-                .decideUpgrade();
+        var upgradeLogic = upgradeLogicFactory.create(kc, context);
+        var upgradeLogicControl = upgradeLogic.decideUpgrade();
         if (upgradeLogicControl.isPresent()) {
             Log.debug("--- Reconciliation interrupted due to upgrade logic");
             return upgradeLogicControl.get();
@@ -147,6 +147,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         updateStatus(kc, existingDeployment, statusAggregator, context);
+        upgradeLogic.updateStatus(statusAggregator);
         var status = statusAggregator.build();
 
         Log.debug("--- Reconciliation finished successfully");
