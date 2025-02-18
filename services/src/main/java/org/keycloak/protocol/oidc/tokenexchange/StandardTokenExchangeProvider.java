@@ -79,6 +79,12 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         Cors cors = context.getCors();
         EventBuilder event = context.getEvent();
 
+        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
+            event.detail(Details.REASON, "Standard token exchange is not enabled for the requested client");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Standard token exchange is not enabled for the requested client", Response.Status.BAD_REQUEST);
+        }
+
         String subjectToken = context.getParams().getSubjectToken();
         if (subjectToken == null) {
             event.detail(Details.REASON, "subject_token parameter not provided");
