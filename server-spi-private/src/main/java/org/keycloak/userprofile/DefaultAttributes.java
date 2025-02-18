@@ -162,6 +162,11 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public boolean validate(String name, Consumer<ValidationError>... listeners) {
+        RealmModel realm = session.getContext().getRealm();
+        if (UserModel.USERNAME.equals(name) && realm.isRegistrationEmailAsUsername()) {
+            return true;
+        }
+
         Entry<String, List<String>> attribute = createAttribute(name);
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
