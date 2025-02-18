@@ -49,3 +49,12 @@ using Microsoft AD, based on the `pwdLastSet` attribute.
 In order to check if a credential is local - managed by {project_name} - or federated, you can check the `federationLink` property available from both
 `CredentialRepresentation` and `CredentialModel` types. If set, the `federationLink` property holds the UUID of the component model associated with a given
 user storage provider.
+
+= Guides for metrics and Grafana dashboards
+
+In addition to the list of useful metric names link:{observablitycategory_link}[the Observability guides category] now also contains a guide on how to display these metrics in Grafana.
+link:{grafanadashboards_link}[The guide] contains two dashboards.
+
+* Keycloak troubleshooting dashboard - showing metrics related to service level indicators and troubleshooting.
+* Keycloak capacity planning dashboard - showing metrics related to estimating the load handled by Keycloak.
+
