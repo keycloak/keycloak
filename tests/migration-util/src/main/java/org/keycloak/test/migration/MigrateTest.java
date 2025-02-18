@@ -2,6 +2,7 @@ package org.keycloak.test.migration;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -80,6 +81,8 @@ public class MigrateTest {
             pb.command(DIFF_COMMAND, testPath.toString(), destinationPath.toString());
             pb.start();
         }
+
+        deleteOriginalFile(testPath);
     }
 
     private Path getDestination(Path testPath) {
@@ -102,6 +105,15 @@ public class MigrateTest {
                 bw.write(l);
                 bw.newLine();
             }
+        }
+    }
+
+    private void deleteOriginalFile(Path testPath) {
+        File testFile = testPath.toFile();
+        if (testFile.delete()) {
+            System.out.format("Old test: %s was deleted\n", testFile);
+        } else {
+            System.err.format("Failed to delete old test: %s\n", testFile);
         }
     }
 
