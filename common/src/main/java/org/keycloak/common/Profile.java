@@ -134,6 +134,8 @@ public class Profile {
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
         ROLLING_UPDATES("Rolling Updates", Type.PREVIEW),
+
+        JWT_ACCESS_TOKEN_TYPE_RFC9068("Access tokens get header type 'at+jwt'", Type.EXPERIMENTAL),
         ;
 
         private final Type type;

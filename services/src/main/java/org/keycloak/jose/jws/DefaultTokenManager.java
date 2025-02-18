@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.CekManagementProvider;
@@ -238,6 +239,10 @@ public class DefaultTokenManager implements TokenManager {
 
     private String type(TokenCategory category) {
         switch (category) {
+            case ACCESS:
+                return Profile.isFeatureEnabled(Profile.Feature.JWT_ACCESS_TOKEN_TYPE_RFC9068)
+                    ? TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN
+                    : "JWT";
             case LOGOUT:
                 return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
             default:

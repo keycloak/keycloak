@@ -78,6 +78,7 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -1485,4 +1486,27 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    @EnableFeature(value = Profile.Feature.JWT_ACCESS_TOKEN_TYPE_RFC9068, skipRestart = true)
+    public void accessTokenRequestWithRfc9068HeaderType() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals("Bearer", response.getTokenType());
+
+        JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+        assertEquals("at+jwt", header.getType());
+
+        header = new JWSInput(response.getIdToken()).getHeader();
+        assertEquals("JWT", header.getType());
+
+        header = new JWSInput(response.getRefreshToken()).getHeader();
+        assertEquals("JWT", header.getType());
+
+        oauth.verifyToken(response.getAccessToken());
+    }
 }
