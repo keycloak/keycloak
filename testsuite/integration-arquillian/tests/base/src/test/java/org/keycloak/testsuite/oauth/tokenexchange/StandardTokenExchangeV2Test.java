@@ -454,6 +454,19 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         testExchange();
         testingClient.disableFeature(Profile.Feature.DYNAMIC_SCOPES);
     }
+    
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeDisabledOnClient() throws Exception {
+        oauth.realm(TEST);
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+        {
+            AccessTokenResponse response = tokenExchange(accessToken, "disabled-requester-client", "secret", null, null);
+            org.junit.Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            org.junit.Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            org.junit.Assert.assertEquals("Standard token exchange is not enabled for the requested client", response.getErrorDescription());
+        }
+    }
 
     @Test
     public void testConsents() throws Exception {
