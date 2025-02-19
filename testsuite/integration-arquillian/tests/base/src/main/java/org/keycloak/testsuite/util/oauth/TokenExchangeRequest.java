@@ -7,16 +7,25 @@ import org.keycloak.constants.AdapterConstants;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeRequest, AccessTokenResponse> {
 
     private final String subjectToken;
+    private final String subjectTokenType;
     private List<String> audience;
     private Map<String, String> additionalParams;
 
     TokenExchangeRequest(String subjectToken, OAuthClient client) {
         super(client);
         this.subjectToken = subjectToken;
+        this.subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+    }
+
+    TokenExchangeRequest(String subjectToken, String subjectTokenType, OAuthClient client) {
+        super(client);
+        this.subjectToken = subjectToken;
+        this.subjectTokenType = subjectTokenType;
     }
 
     @Override
@@ -38,7 +47,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
         parameter(OAuth2Constants.SUBJECT_TOKEN, subjectToken);
-        parameter(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        parameter(OAuth2Constants.SUBJECT_TOKEN_TYPE, subjectTokenType != null ? subjectTokenType : OAuth2Constants.ACCESS_TOKEN_TYPE);
 
         if (audience != null) {
             audience.forEach(a -> parameter(OAuth2Constants.AUDIENCE, a));

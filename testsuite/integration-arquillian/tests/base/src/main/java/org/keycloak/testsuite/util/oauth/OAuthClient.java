@@ -318,6 +318,10 @@ public class OAuthClient {
         return new TokenExchangeRequest(subjectToken, this);
     }
 
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
+        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
+    }
+
     /**
      * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
      */
