@@ -267,7 +267,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                     forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
                 } else if (!client.equals(tokenHolder)) {
                     // confidential clients can only exchange to themselves if they are within the token audience
-                    forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
+                    forbiddenIfClientIsNotWithinTokenAudience(token);
                 }
             } else {
                 if (client.isPublicClient()) {
@@ -308,7 +308,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 
-    protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token, ClientModel tokenHolder) {
+    protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token) {
         if (token != null && !token.hasAudience(client.getClientId())) {
             event.detail(Details.REASON, "client is not within the token audience");
             event.error(Errors.NOT_ALLOWED);

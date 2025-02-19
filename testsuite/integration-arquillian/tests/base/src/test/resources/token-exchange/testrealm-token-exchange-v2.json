@@ -261,11 +261,8 @@
         "containerId" : "a11ebbaf-c0fd-46df-9fe7-64e94ac8d945",
         "attributes" : { }
       } ],
-      "invalid-requester-client" : [ ],
       "requester-client" : [ ],
       "security-admin-console" : [ ],
-      "subject-client" : [ ],
-      "admin-cli" : [ ],
       "target-client1" : [ {
         "id" : "b7eb747d-7aac-4e36-8ade-5b9875c9ed07",
         "name" : "target-client1-role",
@@ -294,7 +291,11 @@
         "containerId" : "52fbbee7-44ca-4a36-814f-95f18f632994",
         "attributes" : { }
       } ],
+      "requester-client-public" : [ ],
       "target-client3" : [ ],
+      "invalid-requester-client" : [ ],
+      "subject-client" : [ ],
+      "admin-cli" : [ ],
       "account" : [ {
         "id" : "4d92df58-f573-4dcc-9428-83c67595b0d3",
         "name" : "manage-consent",
@@ -1253,6 +1254,44 @@
     "defaultClientScopes" : [ "service_account", "acr", "default-scope1", "roles", "basic" ],
     "optionalClientScopes" : [ "optional-scope2" ]
   }, {
+    "id" : "2daeae03-ff78-4f79-8e72-1c4d443e1655",
+    "clientId" : "requester-client-public",
+    "name" : "",
+    "description" : "",
+    "rootUrl" : "",
+    "adminUrl" : "",
+    "baseUrl" : "",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "/*" ],
+    "webOrigins" : [ "/*" ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : true,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "realm_client" : "false",
+      "oidc.ciba.grant.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "frontchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "display.on.consent.screen" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "acr", "roles", "basic" ],
+    "optionalClientScopes" : [ ]
+  }, {
     "id" : "9d94d530-3335-4bb9-bea8-e9476a812473",
     "clientId" : "security-admin-console",
     "name" : "${client_security-admin-console}",
@@ -2151,6 +2190,7 @@
     "xRobotsTag" : "none",
     "xFrameOptions" : "SAMEORIGIN",
     "contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection" : "1; mode=block",
     "strictTransportSecurity" : "max-age=31536000; includeSubDomains"
   },
   "smtpServer" : { },

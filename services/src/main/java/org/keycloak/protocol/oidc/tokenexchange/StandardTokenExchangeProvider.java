@@ -128,26 +128,17 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
+
+        if (client.isPublicClient()) {
+            String errorMessage = "Public client is not allowed to exchange token";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         //reject if the requester-client is not in the audience of the subject token
         if (!client.equals(tokenHolder)) {
-            forbiddenIfClientIsNotWithinTokenAudience(token, null);
-        }
-        for (ClientModel targetClient : targetAudienceClients) {
-            boolean isClientTheAudience = targetClient.equals(client);
-            if (isClientTheAudience) {
-                if (client.isPublicClient()) {
-                    // public clients can only exchange on to themselves if they are the token holder
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                } else if (!client.equals(tokenHolder)) {
-                    // confidential clients can only exchange to themselves if they are within the token audience
-                    forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
-                }
-            } else {
-                if (client.isPublicClient()) {
-                    // public clients can not exchange tokens from other client
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                }
-            }
+            forbiddenIfClientIsNotWithinTokenAudience(token);
         }
     }
 
