@@ -17,15 +17,14 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -178,6 +177,9 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
             ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
         } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(((RoleBinding)obj).getMetadata().getName())) {
             return null; // exclude this role since it's not present in olm
+        } else if (obj instanceof Deployment) {
+            // set values useful for testing - TODO: could drive this in some way from the test/resource/application.properties
+            ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
         }
         return obj;
     });
