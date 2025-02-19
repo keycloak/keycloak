@@ -29,7 +29,6 @@ public class AdminHeadersTest {
         assertDefaultValue(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, h);
         assertDefaultValue(BrowserSecurityHeaders.X_FRAME_OPTIONS, h);
         assertDefaultValue(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, h);
-        assertDefaultValue(BrowserSecurityHeaders.X_XSS_PROTECTION, h);
         assertDefaultValue(BrowserSecurityHeaders.REFERRER_POLICY, h);
 
         response.close();
