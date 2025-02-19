@@ -290,11 +290,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response restorePeriodicTasks();
 
-    @Path("generate-audience-client-scope")
-    @POST
-    @NoCache
-    String generateAudienceClientScope(@QueryParam("realm") final String realmName, final @QueryParam("clientId") String clientId);
-
     @GET
     @Path("/uncaught-error")
     @Produces(MediaType.TEXT_HTML_UTF_8)
