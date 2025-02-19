@@ -54,7 +54,7 @@ type ComponentsProps = {
 const defaultValues: Policy = {
   name: "",
   description: "",
-  type: "aggregate",
+  type: "group",
   policies: [],
   decisionStrategy: "UNANIMOUS" as DecisionStrategy,
   logic: "POSITIVE" as Logic,
