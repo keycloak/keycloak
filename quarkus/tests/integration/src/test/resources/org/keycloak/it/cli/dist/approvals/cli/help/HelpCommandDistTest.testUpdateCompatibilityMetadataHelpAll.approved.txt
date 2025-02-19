@@ -471,18 +471,18 @@ Tracing:
                        the 'tracing-resource-attributes' property. Default: keycloak. Available
                        only when Tracing is enabled.
 
-Events (Preview):
+Events:
 
 --event-metrics-user-enabled <true|false>
-                     Preview: Create metrics based on user events. Default: false. Available only
-                       when metrics are enabled and feature user-event-metrics is enabled.
+                     Create metrics based on user events. Default: false. Available only when
+                       metrics are enabled and feature user-event-metrics is enabled.
 --event-metrics-user-events <events>
-                     Preview: Comma-separated list of events to be collected for user event
-                       metrics. Reduce the number of metrics. If empty or not set, all events
-                       create a metric. Possible values are:<...>
+                     Comma-separated list of events to be collected for user event metrics. This
+                       option can be used to reduce the number of metrics created as by default all
+                       user events create a metric. Possible values are:<...>
 --event-metrics-user-tags <tags>
-                     Preview: Comma-separated list of tags to be collected for user event metrics.
-                       By default only 'realm' is enabled to avoid a high metrics cardinality.
+                     Comma-separated list of tags to be collected for user event metrics. By
+                       default only 'realm' is enabled to avoid a high metrics cardinality.
                        Possible values are: realm, idp, clientId. Default: realm. Available only
                        when user event metrics are enabled.
 
