@@ -21,10 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.keycloak.services.messages.Messages.ORG_MEMBER_ALREADY;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +44,9 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -49,6 +54,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
+import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
@@ -58,6 +65,7 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
 
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
@@ -82,6 +90,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         Map<String, String> smtpConfig = testRealm.getSmtpServer();
         super.configureTestRealm(testRealm);
+        testRealm.setRegistrationAllowed(false);
         testRealm.setSmtpServer(smtpConfig);
     }
 
@@ -175,6 +184,48 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
         registerUser(organization, email);
 
+        List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+        assertThat(users, Matchers.not(empty()));
+        // user is a member
+        MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+        Assert.assertNotNull(member);
+        assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+        getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+
+        // authenticated to the account console
+        Assert.assertTrue(driver.getPageSource().contains("Account Management"));
+        Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+    }
+
+    @Test
+    public void testInviteNewUserRegistrationCustomRegistrationFlow() throws IOException, MessagingException {
+        String registrationFlowAlias = "custom-registration-flow";
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("newName", registrationFlowAlias);
+        testRealm().flows().copy(DefaultAuthenticationFlows.REGISTRATION_FLOW, params).close();
+        String flowId = AbstractAuthenticationTest.findFlowByAlias(registrationFlowAlias, testRealm().flows().getFlows()).getId();
+        AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
+        execution.setParentFlow(flowId);
+        execution.setAuthenticator(PushButtonAuthenticatorFactory.PROVIDER_ID);
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        testRealm().flows().addExecution(execution).close();
+        RealmRepresentation realm = testRealm().toRepresentation();
+        assertThat(realm.isRegistrationAllowed(), is(false));
+        realm.setRegistrationFlow(registrationFlowAlias);
+        testRealm().update(realm);
+        getCleanup().addCleanup(() -> {
+            realm.setRegistrationFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW);
+        });
+
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, firstName, lastName).close();
+
+        registerUser(organization, email);
+        driver.findElement(By.name("submit1")).click();
         List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
         assertThat(users, Matchers.not(empty()));
         // user is a member
