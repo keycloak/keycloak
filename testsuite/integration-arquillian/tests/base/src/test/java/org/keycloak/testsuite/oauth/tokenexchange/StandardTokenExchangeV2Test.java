@@ -208,6 +208,15 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testExchangeWithPublicClient() throws Exception {
+        String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret");
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client-public", null,  null, null);
+        org.junit.Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        org.junit.Assert.assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+        org.junit.Assert.assertEquals("Public client is not allowed to exchange token", response.getErrorDescription());
+    }
+
+    @Test
     public void testOptionalScopeParamRequestedWithoutAudience() throws Exception {
         String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret");
         oauth.scope("optional-scope2");
