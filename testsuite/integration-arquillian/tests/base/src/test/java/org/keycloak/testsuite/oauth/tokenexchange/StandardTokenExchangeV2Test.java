@@ -30,6 +30,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -39,6 +40,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -120,6 +122,49 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         AccessToken exchangedToken = verifier.parse().getToken();
         assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
         assertEquals("requester-client", exchangedToken.getIssuedFor());
+    }
+
+    @Test
+    public void testExchangeForIdToken() throws Exception {
+        oauth.realm(TEST);
+        String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret");
+
+        // Exchange request with "scope=oidc" . ID Token should be issued in addition to access-token
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class)
+                .parse().getToken();
+        assertEquals(TokenUtil.TOKEN_TYPE_BEARER, exchangedToken.getType());
+
+        Assert.assertNotNull("ID Token is null, but was expected to be present", response.getIdToken());
+        IDToken exchangedIdToken = TokenVerifier.create(response.getIdToken(), IDToken.class)
+                .parse().getToken();
+        assertEquals(TokenUtil.TOKEN_TYPE_ID, exchangedIdToken.getType());
+        assertEquals(getSessionIdFromToken(accessToken), exchangedIdToken.getSessionId());
+        assertEquals("requester-client", exchangedIdToken.getIssuedFor());
+
+        // Exchange request without "scope=oidc" . Only access-token should be issued, but not ID Token
+        oauth.openid(false);
+        oauth.scope(null);
+        response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        Assert.assertNotNull(response.getAccessToken());
+        Assert.assertNull("ID Token was present, but should not be present", response.getIdToken());
+
+        // Exchange request requesting id-token. ID Token should be issued inside "access_token" parameter (as per token-exchange specification https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response - parameter "access_token")
+        response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE));
+        assertEquals(OAuth2Constants.ID_TOKEN_TYPE, response.getIssuedTokenType());
+        assertEquals(TokenUtil.TOKEN_TYPE_NA, response.getTokenType());
+        Assert.assertNotNull(response.getAccessToken());
+        Assert.assertNull("ID Token was present, but should not be present", response.getIdToken());
+
+        exchangedIdToken = TokenVerifier.create(response.getAccessToken(), IDToken.class)
+                .parse().getToken();
+        assertEquals(TokenUtil.TOKEN_TYPE_ID, exchangedIdToken.getType());
+        assertEquals(getSessionIdFromToken(accessToken), exchangedIdToken.getSessionId());
+        assertEquals("requester-client", exchangedIdToken.getIssuedFor());
     }
 
     @Test
@@ -239,7 +284,7 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         org.junit.Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         org.junit.Assert.assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
         org.junit.Assert.assertEquals("Audience not found", response.getErrorDescription());
-        // The "target-client3" is valid client, but unavailable to the user. Request allowed, but "target-client3" audience will not be available
+        // The "target-client3" is valid client, but audience unavailable to the user. Request not allowed
         response = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client1", "target-client3"), null);
         org.junit.Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         org.junit.Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
