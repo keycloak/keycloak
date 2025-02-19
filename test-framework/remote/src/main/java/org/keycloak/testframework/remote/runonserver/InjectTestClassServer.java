@@ -1,4 +1,4 @@
-package org.keycloak.testframework.runonserver;
+package org.keycloak.testframework.remote.runonserver;
 
 import org.keycloak.testframework.injection.LifeCycle;
 
@@ -9,14 +9,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface InjectRunOnServer {
+public @interface InjectTestClassServer {
 
-    LifeCycle lifecycle() default LifeCycle.CLASS;
-
-    String ref() default "";
-
-    String realmRef() default "";
-
-    String[] permittedPackages() default "";
+    LifeCycle lifecycle() default LifeCycle.GLOBAL;
 
 }

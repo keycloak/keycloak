@@ -1,4 +1,4 @@
-package org.keycloak.testframework.runonserver;
+package org.keycloak.testframework.remote.runonserver;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;

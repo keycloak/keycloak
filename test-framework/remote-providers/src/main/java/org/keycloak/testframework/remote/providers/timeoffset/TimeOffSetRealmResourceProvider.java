@@ -1,4 +1,4 @@
-package org.keycloak.testframework.remote.providers;
+package org.keycloak.testframework.remote.providers.timeoffset;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

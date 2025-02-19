@@ -1,4 +1,4 @@
-package org.keycloak.testframework.runonserver;
+package org.keycloak.testframework.remote.runonserver;
 
 import org.apache.http.client.HttpClient;
 import org.keycloak.testframework.injection.InstanceContext;
