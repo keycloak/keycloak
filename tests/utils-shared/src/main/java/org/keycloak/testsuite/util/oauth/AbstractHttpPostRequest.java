@@ -7,7 +7,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ import java.util.List;
 
 public abstract class AbstractHttpPostRequest<T, R> {
 
-    protected final OAuthClient client;
+    protected final AbstractOAuthClient<?> client;
 
     protected String clientId;
 
@@ -27,7 +26,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected List<NameValuePair> parameters = new LinkedList<>();
 
-    public AbstractHttpPostRequest(OAuthClient client) {
+    public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
         this.client = client;
     }
 

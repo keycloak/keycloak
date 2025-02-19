@@ -87,13 +87,6 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        /*
-         * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
-         * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
-         * will fail and the clientID will always be "sample-public-client
-         * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
-         */
-        oauth.init(driver);
         oauth.openid(false);
     }
 

@@ -297,8 +297,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         // second client user login
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("john-doh@localhost", "password");
         String code2 = oauth2.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse tokenResponse2 = null;

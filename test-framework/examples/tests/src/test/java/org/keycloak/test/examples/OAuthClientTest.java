@@ -1,100 +1,93 @@
 package org.keycloak.test.examples;
 
-import com.nimbusds.oauth2.sdk.AuthorizationResponse;
-import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
-import com.nimbusds.oauth2.sdk.TokenResponse;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.oauth.nimbus.OAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.openqa.selenium.WebDriver;
-
-import java.net.URI;
-import java.net.URL;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
 
-    @InjectUser(config = OAuthUserConfig.class)
-    ManagedUser user;
-
     @InjectOAuthClient
     OAuthClient oAuthClient;
 
-    @InjectWebDriver
-    WebDriver webDriver;
+    @InjectRealm
+    ManagedRealm managedRealm;
 
-    @InjectPage
-    LoginPage loginPage;
+    @InjectClient(config = OAuthClientConfig.class)
+    ManagedClient client;
+
+    @InjectUser(config = OAuthUserConfig.class)
+    ManagedUser user;
 
     @Test
-    public void testClientCredentials() throws Exception {
-        TokenResponse tokenResponse = oAuthClient.clientCredentialGrant();
-        Assertions.assertTrue(tokenResponse.indicatesSuccess());
-        Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
+    public void testConfig() {
+        Assertions.assertEquals(managedRealm.getName(), oAuthClient.config().getRealm());
+        Assertions.assertEquals(managedRealm.getBaseUrl() + "/protocol/openid-connect/token", oAuthClient.getEndpoints().getToken());
     }
 
     @Test
-    public void testIntrospection() throws Exception {
-        AccessToken accessToken = oAuthClient.clientCredentialGrant().toSuccessResponse().getTokens().getAccessToken();
-        TokenIntrospectionResponse introspectionResponse = oAuthClient.introspection(accessToken);
-        Assertions.assertTrue(introspectionResponse.indicatesSuccess());
-        Assertions.assertNotNull(introspectionResponse.toSuccessResponse().getIssuer());
+    public void testPasswordGrant() {
+        AccessTokenResponse accessTokenResponse = oAuthClient.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+        Assertions.assertTrue(accessTokenResponse.isSuccess());
+
+        accessTokenResponse = oAuthClient.passwordGrantRequest(user.getUsername(), "invalid").send();
+        Assertions.assertFalse(accessTokenResponse.isSuccess());
+        Assertions.assertEquals("Invalid user credentials", accessTokenResponse.getErrorDescription());
     }
 
     @Test
-    public void testAuthorizationCode() throws Exception {
-        URL authorizationRequestURL = oAuthClient.authorizationRequest();
-        webDriver.navigate().to(authorizationRequestURL);
-        loginPage.fillLogin(user.getUsername(), user.getPassword());
-        loginPage.submit();
-
-        Assertions.assertEquals(1, oAuthClient.getCallbacks().size());
-
-        URI callbackUri = oAuthClient.getCallbacks().remove(0);
-
-        AuthorizationResponse authorizationResponse = AuthorizationResponse.parse(callbackUri);
-        Assertions.assertTrue(authorizationResponse.indicatesSuccess());
-        Assertions.assertNotNull(authorizationResponse.toSuccessResponse().getAuthorizationCode());
-
-        TokenResponse tokenResponse = oAuthClient.tokenRequest(authorizationResponse.toSuccessResponse().getAuthorizationCode());
-        Assertions.assertTrue(tokenResponse.indicatesSuccess());
-        Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
+    public void testClientCredential() {
+        AccessTokenResponse accessTokenResponse = oAuthClient.doClientCredentialsGrantAccessTokenRequest();
+        Assertions.assertTrue(accessTokenResponse.isSuccess());
     }
 
     @Test
-    public void testAccessTokenRevocation() throws Exception {
-        TokenResponse tokenResponse = oAuthClient.clientCredentialGrant();
-        Assertions.assertTrue(tokenResponse.indicatesSuccess());
-        Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
+    public void testRefresh() {
+        AccessTokenResponse accessTokenResponse = oAuthClient.doPasswordGrantRequest(user.getUsername(), user.getPassword());
 
-        AccessToken accessToken = tokenResponse.toSuccessResponse().getTokens().getAccessToken();
-        TokenIntrospectionResponse introspectionResponse = oAuthClient.introspection(accessToken);
-        Assertions.assertTrue(introspectionResponse.indicatesSuccess());
-        Assertions.assertNotNull(introspectionResponse.toSuccessResponse().getScope());
+        AccessTokenResponse refreshResponse = oAuthClient.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
+        Assertions.assertTrue(refreshResponse.isSuccess());
+        Assertions.assertNotEquals(accessTokenResponse.getAccessToken(), refreshResponse.getAccessToken());
+    }
 
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), oAuthClient.revokeAccessToken(accessToken).getStatusCode());
+    @Test
+    public void testRevocation() {
+        AccessTokenResponse accessTokenResponse = oAuthClient.doPasswordGrantRequest(user.getUsername(), user.getPassword());
 
-        introspectionResponse = oAuthClient.introspection(accessToken);
-        Assertions.assertTrue(introspectionResponse.indicatesSuccess());
-        Assertions.assertNull(introspectionResponse.toSuccessResponse().getScope());
+        TokenRevocationResponse tokenRevocationResponse = oAuthClient.doTokenRevoke(accessTokenResponse.getRefreshToken());
+        Assertions.assertTrue(tokenRevocationResponse.isSuccess());
+
+        AccessTokenResponse refreshResponse = oAuthClient.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
+        Assertions.assertFalse(refreshResponse.isSuccess());
+    }
+
+    public static class OAuthClientConfig implements ClientConfig {
+
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("myclient").secret("mysecret").directAccessGrants().serviceAccount();
+        }
     }
 
     public static class OAuthUserConfig implements UserConfig {
 
         @Override
         public UserConfigBuilder configure(UserConfigBuilder user) {
-            return user.name("First", "Last")
+            return user.username("myuser").name("First", "Last")
                     .email("test@local")
                     .password("password");
         }

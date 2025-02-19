@@ -7,16 +7,13 @@ import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 
-public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantRequest, AccessTokenResponse> {
+public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRequest, AccessTokenResponse> {
 
-    private final String username;
-    private final String password;
-    private String otp;
+    private final String code;
 
-    PasswordGrantRequest(String username, String password, OAuthClient client) {
+    AccessTokenRequest(String code, AbstractOAuthClient client) {
         super(client);
-        this.username = username;
-        this.password = password;
+        this.code = code;
     }
 
     @Override
@@ -24,23 +21,18 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantR
         return client.getEndpoints().getToken();
     }
 
-    public PasswordGrantRequest otp(String otp) {
-        this.otp = otp;
-        return this;
-    }
-
     protected void initRequest() {
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
+        parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
 
-        parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
-        parameter("username", username);
-        parameter("password", password);
-        parameter("otp", otp);
+        parameter(OAuth2Constants.CODE, code);
+        parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
 
         parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
         parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
 
-        scope();
+        parameter(OAuth2Constants.CODE_VERIFIER, client.getCodeVerifier());
+
+        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
     }
 
     @Override

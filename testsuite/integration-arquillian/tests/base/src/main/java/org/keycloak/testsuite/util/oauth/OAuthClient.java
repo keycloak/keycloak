@@ -28,6 +28,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.keycloak.OAuth2Constants;
@@ -91,7 +92,7 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class OAuthClient {
+public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuthClient.class);
 
@@ -124,15 +125,7 @@ public class OAuthClient {
         updateAppRootRealm("master");
     }
 
-    private HttpClientManager httpClientManager = new HttpClientManager();
-
     private KeyManager keyManager = new KeyManager(this);
-
-    private WebDriver driver;
-
-    private OAuthClientConfig config;
-
-    private String baseUrl = AUTH_SERVER_ROOT;
 
     private String idTokenHint;
 
@@ -143,40 +136,28 @@ public class OAuthClient {
 
     private String uiLocales;
 
-    private String clientSessionState;
-
-    private String clientSessionHost;
-
     private String maxAge;
 
-    // Should be param on login
     private String prompt;
 
     private String nonce;
 
-    private String request;
-
-    private String requestUri;
-
-    private String claims;
-
-    private String codeVerifier;
     private String codeChallenge;
     private String codeChallengeMethod;
-    private String dpopProof;
     private String dpopJkt;
 
-    private Map<String, String> customParameters;
-
-    public OAuthClient() {
-        init(null);
+    public OAuthClient(CloseableHttpClient httpClient, WebDriver webDriver) {
+        super(AUTH_SERVER_ROOT, httpClient, webDriver);
+        init();
     }
 
-    public void init(WebDriver driver) {
-        this.driver = driver;
+    public OAuthClient newConfig() {
+        OAuthClient newClient = new OAuthClient(httpClientManager.get(), driver);
+        newClient.init();
+        return newClient;
+    }
 
-        baseUrl = AUTH_SERVER_ROOT;
-
+    public void init() {
         config = new OAuthClientConfig()
                 .realm("test")
                 .client("test-app", "password")
@@ -282,36 +263,28 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
-    public AccessTokenRequest accessTokenRequest(String code) {
-        return new AccessTokenRequest(code, this);
-    }
-
-    public AccessTokenResponse doAccessTokenRequest(String code) {
-        return accessTokenRequest(code).send();
-    }
-
-    public IntrospectionRequest introspectionRequest(String tokenToIntrospect, String tokenType) {
-        return new IntrospectionRequest(tokenToIntrospect, tokenType, this);
+    public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
+        return new IntrospectionRequest(tokenToIntrospect, this);
     }
 
     public String doIntrospectionRequest(String tokenToIntrospect, String tokenType) {
-        return introspectionRequest(tokenToIntrospect, tokenType).send();
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint(tokenType).send();
     }
 
     public String doIntrospectionAccessTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect, "access_token").send();
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("access_token").send();
     }
 
     public String doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect, "refresh_token").send();
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
     }
 
-    public PasswordGrantRequest passwordGrantRequest(String username, String password) {
-        return new PasswordGrantRequest(username, password, this);
-    }
-
+    /**
+     * @deprecated Use {@link #doPasswordGrantRequest(String, String)}
+     */
+    @Deprecated
     public AccessTokenResponse doGrantAccessTokenRequest(String username, String password) throws Exception {
-        return new PasswordGrantRequest(username, password, this).send();
+        return doPasswordGrantRequest(username, password);
     }
 
     public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
@@ -347,14 +320,6 @@ public class OAuthClient {
                 .client(clientId, clientSecret)
                 .audience(targetAudiences)
                 .additionalParams(additionalParams).send();
-    }
-
-    public ClientCredentialsGrantRequest clientCredentialsGrantRequest() {
-        return new ClientCredentialsGrantRequest(this);
-    }
-
-    public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest() throws Exception {
-        return clientCredentialsGrantRequest().send();
     }
 
     /**
@@ -446,12 +411,8 @@ public class OAuthClient {
         }
     }
 
-    public TokenRevocationRequest tokenRevocationRequest(String token, String tokenTypeHint) {
-        return new TokenRevocationRequest(token, tokenTypeHint, this);
-    }
-
     public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint) {
-        return tokenRevocationRequest(token, tokenTypeHint).send();
+        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).send();
     }
 
     /**
@@ -459,15 +420,7 @@ public class OAuthClient {
      */
     @Deprecated
     public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret) {
-        return tokenRevocationRequest(token, tokenTypeHint).client(config.getClientId(), clientSecret).send();
-    }
-
-    public RefreshRequest refreshRequest(String refreshToken) {
-        return new RefreshRequest(refreshToken, this);
-    }
-
-    public AccessTokenResponse doRefreshTokenRequest(String refreshToken) {
-        return refreshRequest(refreshToken).send();
+        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).client(config.getClientId(), clientSecret).send();
     }
 
     /**
@@ -671,10 +624,6 @@ public class OAuthClient {
         }
     }
 
-    public HttpClientManager httpClient() {
-        return httpClientManager;
-    }
-
     // TODO Extract into separate util to verify tokens
     public AccessToken verifyToken(String token) {
         return verifyToken(token, AccessToken.class);
@@ -777,10 +726,6 @@ public class OAuthClient {
         driver.navigate().to(b.build(config.getRealm()).toString());
     }
 
-    public String getRedirectUri() {
-        return config.getRedirectUri();
-    }
-
     public String getState() {
         return state.getState();
     }
@@ -793,9 +738,6 @@ public class OAuthClient {
         return this.getLoginFormUrl(this.baseUrl);
     }
 
-    String getCodeVerifier() {
-        return codeVerifier;
-    }
 
     public String getRegisterationsUrl() {
         return this.getLoginFormUrl(this.baseUrl).replace("openid-connect/auth", "openid-connect/registrations");
@@ -900,14 +842,6 @@ public class OAuthClient {
         return Entity.form(form);
     }
 
-    public Endpoints getEndpoints() {
-        return new Endpoints(baseUrl, config.getRealm());
-    }
-
-    public OAuthClient baseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
-        return this;
-    }
 
     public OAuthClient realm(String realm) {
         config.realm(realm);
@@ -921,16 +855,6 @@ public class OAuthClient {
     @Deprecated
     public OAuthClient clientId(String clientId) {
         config.clientId(clientId);
-        return this;
-    }
-
-    public OAuthClient client(String clientId) {
-        config.client(clientId);
-        return this;
-    }
-
-    public OAuthClient client(String clientId, String clientSecret) {
-        config.client(clientId, clientSecret);
         return this;
     }
 
@@ -1037,9 +961,6 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClientConfig config() {
-        return config;
-    }
 
     public KeyManager keys() {
         return keyManager;
@@ -1047,34 +968,6 @@ public class OAuthClient {
 
     public String getRealm() {
         return config.getRealm();
-    }
-
-    String getDpopProof() {
-        return dpopProof;
-    }
-
-    String getClientSessionState() {
-        return clientSessionState;
-    }
-
-    String getRequest() {
-        return request;
-    }
-
-    String getRequestUri() {
-        return requestUri;
-    }
-
-    String getClaims() {
-        return claims;
-    }
-
-    String getClientSessionHost() {
-        return clientSessionHost;
-    }
-
-    Map<String, String> getCustomParameters() {
-        return customParameters;
     }
 
     public OAuthClient codeVerifier(String codeVerifier) {

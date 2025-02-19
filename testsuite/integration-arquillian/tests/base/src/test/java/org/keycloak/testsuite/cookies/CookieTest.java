@@ -40,6 +40,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -108,7 +109,7 @@ public class CookieTest extends AbstractKeycloakTest {
         appPage.open();
         appPage.assertCurrent();
 
-        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
+        try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(cookieName, accessToken);
             cookie.setDomain("localhost");
@@ -146,7 +147,7 @@ public class CookieTest extends AbstractKeycloakTest {
         appPage.assertCurrent();
         AccountHelper.logout(realmsResouce().realm("test"), "test-user@localhost");
 
-        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
+        try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(CookieType.IDENTITY.getName(), accessToken);
             cookie.setDomain("localhost");

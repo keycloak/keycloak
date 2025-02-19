@@ -338,7 +338,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
             if (isDifferentContext) {
                 OAuthClient.updateURLs(contextRoot);
                 OAuthClient.updateAppRootRealm(realm);
-                oauth.init(driver);
+                oauth.init();
             }
 
             final LogoutUrlBuilder builder = oauth.realm(realm).getEndpoints()
@@ -356,7 +356,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         } finally {
             if (isDifferentContext) {
                 OAuthClient.updateURLs(getAuthServerContextRoot());
-                oauth.init(driver);
+                oauth.init();
             }
         }
     }
