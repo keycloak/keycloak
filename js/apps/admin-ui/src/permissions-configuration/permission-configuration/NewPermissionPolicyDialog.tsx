@@ -75,7 +75,7 @@ const COMPONENTS: {
   role: Role,
   time: Time,
   js: JavaScript,
-  default: Aggregate,
+  default: Group,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
