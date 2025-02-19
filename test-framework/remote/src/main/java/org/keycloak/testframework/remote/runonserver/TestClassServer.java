@@ -1,4 +1,4 @@
-package org.keycloak.testframework.runonserver;
+package org.keycloak.testframework.remote.runonserver;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;

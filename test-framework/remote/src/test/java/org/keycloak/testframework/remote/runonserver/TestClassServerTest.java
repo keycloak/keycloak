@@ -1,4 +1,4 @@
-package org.keycloak.testframework.runonserver;
+package org.keycloak.testframework.remote.runonserver;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
