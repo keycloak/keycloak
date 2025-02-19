@@ -152,7 +152,7 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name="directAccessGrantsEnabled"
-                  defaultValue={true}
+                  defaultValue={false}
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
