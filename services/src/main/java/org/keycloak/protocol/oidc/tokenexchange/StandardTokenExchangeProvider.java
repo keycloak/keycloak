@@ -21,6 +21,8 @@ package org.keycloak.protocol.oidc.tokenexchange;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -126,6 +128,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
+    @Override
     protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
 
@@ -165,11 +168,13 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return scope;
     }
 
+    @Override
     protected void setClientToContext(List<ClientModel> targetAudienceClients) {
         // The client requesting exchange is set in the context
         session.getContext().setClient(client);
     }
 
+    @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
@@ -201,7 +206,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
 
         String issuedTokenType;
-        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+        if (requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE)) {
+            issuedTokenType = OAuth2Constants.ID_TOKEN_TYPE;
+        } else if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                 && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
                 && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
             responseBuilder.generateRefreshToken();
@@ -210,12 +217,21 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
 
-        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken().generateAccessTokenHash();
+        AccessTokenResponse res;
+        if (OAuth2Constants.ID_TOKEN_TYPE.equals(issuedTokenType)) {
+            // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
+            res = responseBuilder.generateIDToken().build();
+            res.setToken(res.getIdToken());
+            res.setIdToken(null);
+            res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
+        } else {
+            String scopeParam = params.getScope();
+            if (TokenUtil.isOIDCRequest(scopeParam)) {
+                responseBuilder.generateIDToken().generateAccessTokenHash();
+            }
+            res = responseBuilder.build();
         }
 
-        AccessTokenResponse res = responseBuilder.build();
         res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
 
         if (responseBuilder.getAccessToken().getAudience() != null) {
@@ -246,5 +262,26 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                         "Requested audience not available: " + missingAudienceString, Response.Status.BAD_REQUEST);
             }
         }
+    }
+
+    @Override
+    protected List<String> getSupportedOAuthResponseTokenTypes() {
+        return Arrays.asList(OAuth2Constants.ACCESS_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE);
+    }
+
+    @Override
+    protected String getRequestedTokenType() {
+        String requestedTokenType = params.getRequestedTokenType();
+        if (requestedTokenType == null) {
+            requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE; // TODO: Refresh token should not be the default one and should be supported just if enabled by the switch
+        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) &&
+                !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE) &&
+                !requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE) &&
+                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) { // TODO: SAML probably won't be supported?
+            event.detail(Details.REASON, "requested_token_type unsupported");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+        }
+        return requestedTokenType;
     }
 }
