@@ -1,5 +1,6 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
+  FormErrorText,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
@@ -29,7 +30,10 @@ export const ScopePicker = ({
 }: ScopePickerProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   const [open, setOpen] = useState(false);
   const [scopes, setScopes] = useState<ScopeRepresentation[]>();
   const [search, setSearch] = useState("");
@@ -77,44 +81,50 @@ export const ScopePicker = ({
         name="scopes"
         defaultValue={[]}
         control={control}
+        rules={isAdminPermissionsClient ? { required: t("requiredField") } : {}}
         render={({ field }) => {
           const selectedValues = field.value.map((o: Scope) => o.name);
           return (
-            <KeycloakSelect
-              toggleId="scopes"
-              variant={SelectVariant.typeaheadMulti}
-              chipGroupProps={{
-                numChips: 3,
-                expandedText: t("hide"),
-                collapsedText: t("showRemaining"),
-              }}
-              onToggle={(val) => setOpen(val)}
-              isOpen={open}
-              selections={selectedValues}
-              onFilter={(value) => {
-                setSearch(value);
-                return renderScopes(allScopes || []);
-              }}
-              onSelect={(selectedValue) => {
-                const option =
-                  typeof selectedValue === "string"
-                    ? selectedValue
-                    : (selectedValue as Scope).name;
-                const changedValue = field.value.find(
-                  (o: Scope) => o.name === option,
-                )
-                  ? field.value.filter((item: Scope) => item.name !== option)
-                  : [...field.value, { name: option }];
-                field.onChange(changedValue);
-              }}
-              onClear={() => {
-                setSearch("");
-                field.onChange([]);
-              }}
-              typeAheadAriaLabel={t("authorizationScopes")}
-            >
-              {renderScopes(allScopes || [])}
-            </KeycloakSelect>
+            <>
+              <KeycloakSelect
+                toggleId="scopes"
+                variant={SelectVariant.typeaheadMulti}
+                chipGroupProps={{
+                  numChips: 3,
+                  expandedText: t("hide"),
+                  collapsedText: t("showRemaining"),
+                }}
+                onToggle={(val) => setOpen(val)}
+                isOpen={open}
+                selections={selectedValues}
+                onFilter={(value) => {
+                  setSearch(value);
+                  return renderScopes(allScopes || []);
+                }}
+                onSelect={(selectedValue) => {
+                  const option =
+                    typeof selectedValue === "string"
+                      ? selectedValue
+                      : (selectedValue as Scope).name;
+                  const changedValue = field.value.find(
+                    (o: Scope) => o.name === option,
+                  )
+                    ? field.value.filter((item: Scope) => item.name !== option)
+                    : [...field.value, { name: option }];
+                  field.onChange(changedValue);
+                }}
+                onClear={() => {
+                  setSearch("");
+                  field.onChange([]);
+                }}
+                typeAheadAriaLabel={t("authorizationScopes")}
+              >
+                {renderScopes(allScopes || [])}
+              </KeycloakSelect>
+              {isAdminPermissionsClient && errors.scopes && (
+                <FormErrorText message={t("required")} />
+              )}
+            </>
           );
         }}
       />
