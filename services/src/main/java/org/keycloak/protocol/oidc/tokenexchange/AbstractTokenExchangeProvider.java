@@ -240,6 +240,11 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         if (targetAudienceClients.isEmpty()) {
             targetAudienceClients.add(client);
         }
+        return targetAudienceClients;
+    }
+
+    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
+        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
         for (ClientModel targetClient : targetAudienceClients) {
             if (targetClient.isConsentRequired()) {
                 event.detail(Details.REASON, "audience requires consent");
@@ -253,13 +258,6 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 event.error(Errors.CLIENT_DISABLED);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
             }
-        }
-        return targetAudienceClients;
-    }
-
-    protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
-        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
-        for (ClientModel targetClient : targetAudienceClients) {
             boolean isClientTheAudience = targetClient.equals(client);
             if (isClientTheAudience) {
                 if (client.isPublicClient()) {
