@@ -415,9 +415,9 @@ Tracing:
 Events:
 
 --event-metrics-user-events <events>
-                     Comma-separated list of events to be collected for user event metrics. Reduce
-                       the number of metrics. If empty or not set, all events create a metric.
-                       Possible values are:<...>
+                     Comma-separated list of events to be collected for user event metrics. This
+                       option can be used to reduce the number of metrics created as by default all
+                       user events create a metric. Possible values are:<...>
 --event-metrics-user-tags <tags>
                      Comma-separated list of tags to be collected for user event metrics. By
                        default only 'realm' is enabled to avoid a high metrics cardinality.

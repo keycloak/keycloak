@@ -20,7 +20,7 @@ If you have multiple instances running in a cluster, you will need to collect th
 
 == Enable event metrics
 
-To start collecting event metrics, enable metrics, and enable the metrics for user events.
+To start collecting event metrics, enable metrics and enable the metrics for user events.
 
 The following shows the required startup parameters:
 
