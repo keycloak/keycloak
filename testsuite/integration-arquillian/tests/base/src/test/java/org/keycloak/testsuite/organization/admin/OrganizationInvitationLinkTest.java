@@ -87,6 +87,13 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         driver.manage().timeouts().pageLoadTimeout(Duration.ofMinutes(1));
     }
 
+    @Before
+    public void disableSelfRegistration() {
+        RealmRepresentation representation = testRealm().toRepresentation();
+        representation.setRegistrationAllowed(false);
+        testRealm().update(representation);
+    }
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         Map<String, String> smtpConfig = testRealm.getSmtpServer();
