@@ -17,15 +17,16 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
-import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
-import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.Function;
+
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
@@ -37,15 +38,9 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Function;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.SmallRyeConfig;
 
 public abstract class AbstractConfigurationTest {
 
