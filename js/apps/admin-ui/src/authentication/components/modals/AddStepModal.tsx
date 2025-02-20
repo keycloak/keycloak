@@ -101,8 +101,6 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       .slice(first, first + max + 1);
   }, [providers, search, first, max]);
 
-  console.log("type ", type);
-
   return (
     <Modal
       variant={ModalVariant.medium}
