@@ -16,21 +16,19 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.keycloak.common.Profile;
-import org.keycloak.config.database.Database;
+import static java.util.Collections.emptySet;
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 
 import java.util.Collection;
 import java.util.HashSet;
-
-import org.keycloak.config.HealthOptions;
-import org.keycloak.config.MetricsOptions;
-
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptySet;
-import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
+import org.keycloak.common.Profile;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.database.Database;
 
 /**
  * Ignore particular artifacts based on build configuration
@@ -131,9 +129,10 @@ public class IgnoredArtifacts {
             }
         });
 
-        if (vendorsOfAllDatasources.isEmpty()) {
-            vendorsOfAllDatasources.add(Database.Vendor.H2);
-        }
+        // since the default may not be a known property name, look for it explicitly
+        Configuration.getOptionalValue("quarkus.datasource.db-kind")
+            .flatMap(Database::getVendor)
+            .ifPresent(vendorsOfAllDatasources::add);
 
         final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
                 .map(vendor -> switch (vendor) {
