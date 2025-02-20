@@ -102,3 +102,11 @@ user storage provider.
 The Keycloak outgoing link:{adminguide_email_name}[SMTP mail configuration] now supports token authentication (XOAUTH2).
 Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
 The token is gathered using Client Credentials Grant.
+
+= New client configuration for access token header type
+
+A new admin setting has been added: Clients -> Advanced -> Fine grain OpenID Connect configuration -> Use "at+jwt" as access token header type
+
+If enabled, access tokens will get header type `at+jwt` in compliance with https://datatracker.ietf.org/doc/html/rfc9068#section-2.1[rfc9068#section-2.1]. Otherwise, the access token header type will be `JWT`.
+
+This setting is turned off by default.
