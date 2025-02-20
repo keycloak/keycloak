@@ -146,7 +146,7 @@ For example:
 
 == PROXY Protocol
 
-The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client. The value cannot `true` when using the `proxy-headers` option.
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client. The value cannot be `true` when using the `proxy-headers` option.
 
 This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
 
