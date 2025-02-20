@@ -26,7 +26,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
@@ -70,6 +72,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest {
 
     private CloseableHttpClient client;
@@ -131,7 +134,8 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            assertEquals(7, oidcConfig.getGrantTypesSupported().size());
+            // TODO: Will need update once token-exchange will be supported. Also can be good to remove testGrantTypesSupportedWithStandardTokenExchange() and update/remove testGrantTypesSupportedWithLegacyTokenExchange()
+            assertEquals(8, oidcConfig.getGrantTypesSupported().size());
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
                     OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
@@ -358,15 +362,21 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
     @Test
     @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-    public void testGrantTypesSupportedWithTokenExchange() throws IOException {
+    public void testGrantTypesSupportedWithLegacyTokenExchange() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
-            assertEquals(oidcConfig.getGrantTypesSupported().size(),8);
+            assertEquals(oidcConfig.getGrantTypesSupported().size(),9);
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         } finally {
             client.close();
         }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
+    public void testGrantTypesSupportedWithStandardTokenExchange() throws IOException {
+        testGrantTypesSupportedWithLegacyTokenExchange();
     }
 
     @Test
