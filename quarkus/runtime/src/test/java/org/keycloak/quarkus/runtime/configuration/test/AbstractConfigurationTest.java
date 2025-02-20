@@ -30,6 +30,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -120,6 +121,7 @@ public abstract class AbstractConfigurationTest {
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
         Profile.reset();
         Configuration.resetConfig();
+        ExecutionExceptionHandler.resetExceptionTransformers();
     }
 
     @After

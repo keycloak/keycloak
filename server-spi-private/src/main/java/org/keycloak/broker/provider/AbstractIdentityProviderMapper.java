@@ -65,7 +65,7 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
                 if (keycloakSessionFactory != factory) {
                     keycloakSessionFactory = factory;
 
-                    LOG.infof("Registering %s", ConfigSyncEventListener.class);
+                    LOG.debugf("Registering %s", ConfigSyncEventListener.class);
                     factory.register(new ConfigSyncEventListener());
                 }
             }

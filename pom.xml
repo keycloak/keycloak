@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.18.3</quarkus.version>
-        <quarkus.build.version>3.18.3</quarkus.build.version>
+        <quarkus.version>3.19.0.CR1</quarkus.version>
+        <quarkus.build.version>3.19.0.CR1</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -176,7 +176,7 @@
         <oracledb.version>23.5</oracledb.version>
         <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
-        <oracle-jdbc.version>23.5.0.24.07</oracle-jdbc.version>
+        <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>

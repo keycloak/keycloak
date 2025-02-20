@@ -23,7 +23,6 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
-import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -69,9 +68,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConf
 
 @Recorder
 public class KeycloakRecorder {
-
-    public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
-    public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
     private static final Logger logger = Logger.getLogger(KeycloakRecorder.class);
 
@@ -169,20 +165,11 @@ public class KeycloakRecorder {
         DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
 
-    public void registerShutdownHook(ShutdownContext shutdownContext) {
-        shutdownContext.addShutdownTask(new Runnable() {
-            @Override
-            public void run() {
-                QuarkusKeycloakSessionFactory.getInstance().close();
-            }
-        });
-    }
-
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
         return new HibernateOrmIntegrationRuntimeInitListener() {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
-                InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
+                try (InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
                         AgroalDataSource.class, new DataSource() {
                             @Override public Class<? extends Annotation> annotationType() {
                                 return DataSource.class;
@@ -191,8 +178,9 @@ public class KeycloakRecorder {
                             @Override public String value() {
                                 return name;
                             }
-                        });
-                propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+                        })) {
+                    propertyCollector.accept(AvailableSettings.JAKARTA_JTA_DATASOURCE, instance.get());
+                }
             }
         };
     }
