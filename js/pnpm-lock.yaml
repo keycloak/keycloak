@@ -1243,12 +1243,6 @@ packages:
       react: ^17 || ^18
       react-dom: ^17 || ^18
 
-  '@patternfly/react-core@5.4.13':
-    resolution: {integrity: sha512-H5xw/mLBUZVnruuhV7+w8FybOICInxKaYQNqF55NbiyWesh8d4woEdmID0luFe8RADWgN6zI1BvqQYArl3AcSw==}
-    peerDependencies:
-      react: ^17 || ^18
-      react-dom: ^17 || ^18
-
   '@patternfly/react-icons@5.4.2':
     resolution: {integrity: sha512-CMQ5oHYzW6TPVTs2jpNJmP2vGCAKR/YeTPwHGO9dLkAUej1IcIxtCCWK2Fdo2UJsnBjuZihasyw2b6ehvbUm9Q==}
     peerDependencies:
@@ -6141,17 +6135,6 @@ snapshots:
   '@patternfly/patternfly@4.224.5': {}
 
   '@patternfly/patternfly@5.4.2': {}
-
-  '@patternfly/react-core@5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@patternfly/react-styles': 5.4.1
-      '@patternfly/react-tokens': 5.4.1
-      focus-trap: 7.6.2
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-dropzone: 14.3.5(react@18.3.1)
-      tslib: 2.8.1
 
   '@patternfly/react-core@5.4.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
