@@ -123,25 +123,26 @@ export const NewPermissionPolicyDialog = ({
 
   useEffect(() => {
     if (policyTypeSelector) {
+      const { name, description, decisionStrategy, logic } = form.getValues();
+
       reset({
         type: policyTypeSelector,
-        name: "",
-        description: "",
-        policies: [],
-        decisionStrategy: DecisionStrategy.UNANIMOUS,
-        logic: Logic.POSITIVE,
+        name,
+        description,
+        decisionStrategy,
+        logic,
       });
     }
-  }, [policyTypeSelector, reset]);
+  }, [policyTypeSelector, reset, form]);
 
   const save = async (policy: Policy) => {
+    const { groups, roles, policies, ...rest } = policy;
+
     const cleanedPolicy = {
-      ...policy,
-      groups: policy.groups?.filter((g) => g.id),
-      clientScopes: policy.clientScopes?.filter((c) => c.id),
-      roles: policy.roles
-        ?.filter((r) => r.id)
-        .map((r) => ({ ...r, required: r.required || false })),
+      ...rest,
+      ...(groups && groups.length > 0 && { groups }),
+      ...(roles && roles.length > 0 && { roles }),
+      ...(policies && policies.length > 0 && { policies }),
     };
 
     try {
