@@ -75,7 +75,7 @@ export const AddFlowDropdown = ({
                 setType(providerId === "form-flow" ? "form" : "basic")
               }
             >
-              {t("addStep")}
+              {t("addExecution")}
             </DropdownItem>
             <DropdownItem
               key="addCondition"

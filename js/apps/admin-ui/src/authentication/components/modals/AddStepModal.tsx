@@ -101,11 +101,17 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       .slice(first, first + max + 1);
   }, [providers, search, first, max]);
 
+  console.log("type ", type);
+
   return (
     <Modal
       variant={ModalVariant.medium}
       isOpen={true}
-      title={t("addStepTo", { name })}
+      title={
+        type == "condition"
+          ? t("addConditionTo", { name })
+          : t("addExecutionTo", { name })
+      }
       onClose={() => onSelect()}
       actions={[
         <Button
