@@ -173,7 +173,10 @@ export const NewPermissionPolicyDialog = ({
     >
       <Form
         id="createPermissionPolicy-form"
-        onSubmit={handleSubmit(save)}
+        onSubmit={(e) => {
+          e.stopPropagation();
+          handleSubmit(save)(e);
+        }}
         isHorizontal
       >
         <FormProvider {...form}>
