@@ -666,6 +666,7 @@ spec:
           saml.authnstatement: 'false'
           display.on.consent.screen: 'false'
           token.response.type.bearer.lower-case: 'false'
+          access.token.header.type.rfc9068: 'false'
           saml.onetimeuse.condition: 'false'
         authenticationFlowBindingOverrides: {}
         fullScopeAllowed: true

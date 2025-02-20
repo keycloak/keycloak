@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
@@ -213,8 +214,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
     }
 
-    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
-        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
+    public void setUseLowerCaseInTokenResponse(boolean useLowerCaseInTokenResponse) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useLowerCaseInTokenResponse));
+    }
+
+    public boolean isUseRfc9068AccessTokenHeaderType() {
+        return Boolean.parseBoolean(getAttribute(USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE, "false"));
+    }
+
+    public void setUseRfc9068AccessTokenHeaderType(boolean useRfc9068AccessTokenHeaderType) {
+        setAttribute(USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE, String.valueOf(useRfc9068AccessTokenHeaderType));
     }
 
     /**
