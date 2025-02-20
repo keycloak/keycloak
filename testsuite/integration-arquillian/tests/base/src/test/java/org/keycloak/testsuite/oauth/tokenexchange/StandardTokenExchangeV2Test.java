@@ -175,11 +175,10 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("requested_token_type unsupported", response.getErrorDescription());
 
-        //TODO: saml token type should not be supported
-        // response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE));
-        // assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-        // assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-        //assertEquals("requested_token_type unsupported", response.getErrorDescription());
+        response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("requested_token_type unsupported", response.getErrorDescription());
 
         response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, "WRONG_TOKEN_TYPE"));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
