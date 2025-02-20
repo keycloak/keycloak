@@ -13,3 +13,8 @@ would now be `http://example.com`.
 
 To mitigate that, either make your reverse proxy include the port in the `X-Forwarded-Host` header or configure it to set
 the `X-Forwarded-Port` header with the desired port.
+
+=== Changes to installing Oracle JDBC driver
+
+The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
+Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.

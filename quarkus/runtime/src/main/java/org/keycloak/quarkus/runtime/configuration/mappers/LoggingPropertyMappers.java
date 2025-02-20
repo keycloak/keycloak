@@ -45,7 +45,7 @@ public final class LoggingPropertyMappers {
                 // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
-                        .to("quarkus.log.console.json")
+                        .to("quarkus.log.console.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
@@ -112,7 +112,7 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
-                        .to("quarkus.log.file.json")
+                        .to("quarkus.log.file.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
@@ -185,7 +185,7 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
-                        .to("quarkus.log.syslog.json")
+                        .to("quarkus.log.syslog.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
@@ -199,7 +199,7 @@ public final class LoggingPropertyMappers {
     }
 
     public static boolean isConsoleJsonEnabled() {
-        return isConsoleEnabled() && Configuration.isTrue("quarkus.log.console.json");
+        return isConsoleEnabled() && Configuration.isTrue("quarkus.log.console.json.enabled");
     }
 
     public static boolean isFileEnabled() {
@@ -207,7 +207,7 @@ public final class LoggingPropertyMappers {
     }
 
     public static boolean isFileJsonEnabled() {
-        return isFileEnabled() && Configuration.isTrue("quarkus.log.file.json");
+        return isFileEnabled() && Configuration.isTrue("quarkus.log.file.json.enabled");
     }
 
     public static boolean isSyslogEnabled() {
@@ -215,7 +215,7 @@ public final class LoggingPropertyMappers {
     }
 
     public static boolean isSyslogJsonEnabled() {
-        return isSyslogEnabled() && Configuration.isTrue("quarkus.log.syslog.json");
+        return isSyslogEnabled() && Configuration.isTrue("quarkus.log.syslog.json.enabled");
     }
 
     private static BiFunction<String, ConfigSourceInterceptorContext, String> resolveLogHandler(String handler) {
