@@ -148,22 +148,28 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             expectedScopes.forEach(i -> logger.tracev("expected scope = {0}", i));
         }
 
-        boolean isDefaultScope = ClientScopesConditionFactory.DEFAULT.equals(configuration.getType());
+        switch (configuration.getType()) {
+            case ClientScopesConditionFactory.DEFAULT:
+                expectedScopes.retainAll(defaultScopes);
+                return !expectedScopes.isEmpty();
 
-        if (isDefaultScope) {
-            expectedScopes.retainAll(defaultScopes); // may change expectedScopes so that it has needed to be instantiated.
-            return expectedScopes.isEmpty() ? false : true;
-        } else {
-            explicitSpecifiedScopes.retainAll(expectedScopes);
-            explicitSpecifiedScopes.retainAll(optionalScopes);
-            if (!explicitSpecifiedScopes.isEmpty()) {
+            case ClientScopesConditionFactory.OPTIONAL:
+                explicitSpecifiedScopes.retainAll(expectedScopes);
+                explicitSpecifiedScopes.retainAll(optionalScopes);
                 if (logger.isTraceEnabled()) {
                     explicitSpecifiedScopes.forEach(i->logger.tracev("matched scope = {0}", i));
                 }
-                return true;
-            }
+                return !explicitSpecifiedScopes.isEmpty();
+
+            case ClientScopesConditionFactory.ANY:
+                explicitSpecifiedScopes.retainAll(expectedScopes);
+                explicitSpecifiedScopes.retainAll(optionalScopes);
+                expectedScopes.retainAll(defaultScopes);
+                return !expectedScopes.isEmpty() || !explicitSpecifiedScopes.isEmpty();
+
+            default:
+                return false;
         }
-        return false;
     }
 
     private Set<String> getScopesForMatching() {
@@ -171,5 +177,4 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
         if (scopes == null) return null;
         return new HashSet<>(scopes);
     }
-
 }
