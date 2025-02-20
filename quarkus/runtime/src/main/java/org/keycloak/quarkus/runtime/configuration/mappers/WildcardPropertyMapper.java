@@ -3,16 +3,17 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.config.Option;
@@ -29,14 +30,14 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private final Pattern envVarNameWildcardPattern;
     private Matcher toWildcardMatcher;
     private Pattern toWildcardPattern;
-    private final Function<Set<String>, Set<String>> wildcardKeysTransformer;
+    private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
             BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-            String description, BooleanSupplier required, String requiredWhen, Matcher fromWildcardMatcher, Function<Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
+            String description, BooleanSupplier required, String requiredWhen, Matcher fromWildcardMatcher, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
         super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null);
         this.wildcardMapFrom = wildcardMapFrom;
         this.fromWildcardMatcher = fromWildcardMatcher;
@@ -87,10 +88,17 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
                 .collect(Collectors.toSet());
 
         if (wildcardKeysTransformer != null) {
-            return wildcardKeysTransformer.apply(values);
+            return wildcardKeysTransformer.apply(null, values);
         }
 
         return values;
+    }
+
+    public Stream<String> getToFromWildcardTransformer(String value) {
+        if (wildcardKeysTransformer == null) {
+            return Stream.empty();
+        }
+        return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(toWildcardMatcher::replaceFirst);
     }
 
     /**
@@ -113,16 +121,6 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         }
 
         return Optional.empty();
-    }
-
-    public Set<String> getToWithWildcards() {
-        if (toWildcardMatcher == null) {
-            return Set.of();
-        }
-
-        return getWildcardKeys().stream()
-                .map(v -> toWildcardMatcher.replaceFirst(v))
-                .collect(Collectors.toSet());
     }
 
     /**

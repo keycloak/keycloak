@@ -29,7 +29,6 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -145,13 +144,8 @@ public final class Configuration {
         return getOptionalValue(name).map(Boolean::parseBoolean);
     }
 
-    public static String getMappedPropertyName(String key) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
-
-        if (mapper == null) {
-            return key;
-        }
-
+    public static String getMappedPropertyName(String key, PropertyMapper<?> mapper) {
+        mapper = mapper.forKey(key);
         // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
         return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
     }

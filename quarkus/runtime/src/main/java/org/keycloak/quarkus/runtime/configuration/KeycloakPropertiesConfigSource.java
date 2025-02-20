@@ -49,7 +49,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
  * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
-    
+
     public static final int PROPERTIES_FILE_ORDINAL = 475;
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
@@ -122,8 +122,9 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         public Path getConfigurationFile() {
             String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
 
-            if (filePath == null)
+            if (filePath == null) {
                 filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
+            }
 
             if (filePath == null) {
                 String homeDir = Environment.getHomeDir();
@@ -158,9 +159,11 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 String value = properties.get(k);
 
                 result.put(key, value);
-
+                // add a mapping as well - TODO: this is not generally correct for things that need transformed, but
+                // it's done here to handle the bootstrapping of the config keystore
+                // but we should consider making this logic better
                 if (mapper != null && key.charAt(0) != '%') {
-                    result.put(getMappedPropertyName(key), value);
+                    result.put(getMappedPropertyName(key, mapper), value);
                 }
             }
         });

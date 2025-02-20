@@ -16,24 +16,34 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import io.smallrye.config.ConfigSourceInterceptor;
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
-import io.smallrye.config.Priorities;
-import jakarta.annotation.Priority;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.iterators.FilterIterator;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+import io.smallrye.config.ConfigSourceInterceptor;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -76,8 +86,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         return mapper != null && mapper.isRunTime();
     }
 
-    @Override
-    public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
+    /*public Iterator<String> oldIterateNames(ConfigSourceInterceptorContext context) {
         // We need to iterate through names to get wildcard option names.
         // Additionally, wildcardValuesTransformer might also trigger iterateNames.
         // Hence we need to disable this to prevent infinite recursion.
@@ -98,6 +107,70 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
         // this could be optimized by filtering the wildcard names in the stream above
         return filterRuntime(IteratorUtils.chainedIterator(mappedWildcardNames.iterator(), context.iterateNames()));
+    }*/
+
+    @Override
+    public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
+        Iterable<String> iterable = () -> context.iterateNames();
+
+        final Set<PropertyMapper<?>> allMappers = new HashSet<>(PropertyMappers.getMappers());
+
+        boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
+
+        var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+            if (mapper == null) {
+                return Stream.of(name);
+            }
+            allMappers.remove(mapper);
+            if ((filterRuntime && mapper.isRunTime())) {
+                return Stream.empty();
+            }
+
+            if (!mapper.hasWildcard()) {
+                var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
+                if (wildCard != null) {
+                    ConfigValue value = context.proceed(name);
+                    if (value.getValue() != null) {
+                        return Stream.concat(Stream.of(name), wildCard.getToFromWildcardTransformer(value.getValue()));
+                    }
+                }
+                //return Stream.of(name);
+            }
+
+            try {
+                mapper = mapper.forKey(name);
+            } catch (NoSuchElementException e) {
+                // TODO: should the handling be clearer here
+                // wildcard does not match - happens with wildcard env entries
+                return Stream.of(name);
+            }
+
+            // there is a corner case here -1 for the reload period has no 'to' value.
+            // if that becomes an issue we could use more metadata to perform a full mapping
+            return toDistinctStream(name, mapper.getTo());
+        });
+
+        /*Set<String> values = baseStream.collect(Collectors.toCollection(HashSet::new));
+        Iterable<String> iterable1 = () -> oldIterateNames(context);
+        Set<String> values1 = StreamSupport.stream(iterable1.spliterator(), false).collect(Collectors.toCollection(HashSet::new));
+        if (!values.equals(values1)) {
+            var newOnly = new HashSet<>(values);
+            newOnly.removeAll(values1);
+            values1.removeAll(values);
+            //throw new AssertionError(newOnly + " !!! " + values1);
+        }*/
+
+        var defaultStream = allMappers.stream()
+                .filter(m -> (!filterRuntime || !m.isRunTime()) && !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                        && m.getCategory() != OptionCategory.CONFIG)
+                .flatMap(m -> toDistinctStream(m.getFrom(), m.getTo()));
+
+        return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
+    }
+
+    private static Stream<String> toDistinctStream(String... values) {
+        return Stream.of(values).filter(Objects::nonNull).distinct();
     }
 
     @Override
