@@ -63,6 +63,7 @@ public interface Details {
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
     String SCOPE = "scope";
+    String RESOURCE = "resource";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
