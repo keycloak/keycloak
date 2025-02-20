@@ -59,8 +59,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -213,9 +215,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
 
         for (int i=0 ; i<10 ; i++) {
-            OAuthClient oauth1 = new OAuthClient();
-            oauth1.init(driver);
-            oauth1.clientId("client0");
+            OAuthClient oauth1 = new OAuthClient(HttpClientUtils.createDefault(), driver);
+            oauth1.init();
+            oauth1.client("client0", "password");
 
             AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
             String code = resp.getCode();
@@ -339,8 +341,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         private final ThreadLocal<OAuthClient> oauthClient = new ThreadLocal<OAuthClient>() {
                 @Override
                 protected OAuthClient initialValue() {
-                    OAuthClient oauth1 = new OAuthClient();
-                    oauth1.init(driver);
+                    OAuthClient oauth1 = new OAuthClient(HttpClientUtils.createDefault(), driver);
 
                     // Add some randomness to state, nonce and redirectUri. Verify that login is successful and "state" and "nonce" will match
                     oauth1.stateParamHardcoded(KeycloakModelUtils.generateId());

@@ -1162,6 +1162,11 @@
                 <version>${project.version}</version>
                 <classifier>classes</classifier>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak.tests</groupId>
+                <artifactId>keycloak-tests-utils-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.keycloak</groupId>

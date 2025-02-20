@@ -24,10 +24,13 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
@@ -74,9 +77,9 @@ public class MigrationContext {
 
     private String requestOfflineToken() {
         logger.info("Requesting offline token on the old container");
-        try {
-            OAuthClient oauth = new OAuthClient();
-            oauth.init(null);
+        try (CloseableHttpClient httpClient = HttpClientUtils.createDefault()) {
+            OAuthClient oauth = new OAuthClient(httpClient, null);
+            oauth.init();
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.realm("Migration");
             oauth.client("migration-test-client", "secret");

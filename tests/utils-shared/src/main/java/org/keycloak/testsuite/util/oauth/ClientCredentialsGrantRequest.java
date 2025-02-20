@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class ClientCredentialsGrantRequest extends AbstractHttpPostRequest<ClientCredentialsGrantRequest, AccessTokenResponse> {
 
-    ClientCredentialsGrantRequest(OAuthClient client) {
+    ClientCredentialsGrantRequest(AbstractOAuthClient<?> client) {
         super(client);
     }
 

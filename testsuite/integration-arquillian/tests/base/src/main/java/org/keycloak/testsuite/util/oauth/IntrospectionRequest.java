@@ -9,19 +9,23 @@ import java.nio.charset.StandardCharsets;
 
 public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionRequest, String> {
 
-    private final String tokenType;
-    private final String tokenToIntrospect;
+    private final String token;
+    private String tokenTypeHint;
     private boolean jwtResponse = false;
 
-    IntrospectionRequest(String tokenToIntrospect, String tokenType, OAuthClient client) {
+    IntrospectionRequest(String token, OAuthClient client) {
         super(client);
-        this.tokenType = tokenType;
-        this.tokenToIntrospect = tokenToIntrospect;
+        this.token = token;
     }
 
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getIntrospection();
+    }
+
+    public IntrospectionRequest tokenTypeHint(String tokenTypeHint) {
+        this.tokenTypeHint = tokenTypeHint;
+        return this;
     }
 
     public IntrospectionRequest jwtResponse() {
@@ -30,8 +34,8 @@ public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionR
     }
 
     protected void initRequest() {
-        parameter("token", tokenToIntrospect);
-        parameter("token_type_hint", tokenType);
+        parameter("token", token);
+        parameter("token_type_hint", tokenTypeHint);
     }
 
     @Override

@@ -377,7 +377,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        String tokenResponse = oauth.introspectionRequest(accessTokenResponse.getAccessToken(), "access_token")
+        String tokenResponse = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
                 .client("confidential-cli", "secret1")
                 .jwtResponse()
                 .send();

@@ -3,7 +3,6 @@ package org.keycloak.testsuite.util.oauth;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.JsonSerialization;
 
@@ -96,10 +95,10 @@ public abstract class AbstractHttpResponse {
         return "application/json".equals(getContentType());
     }
 
-    protected void assertJsonContentType() {
+    protected void assertJsonContentType() throws IOException {
         String contentType = getContentType();
         if (contentType == null || !contentType.startsWith("application/json")) {
-            Assert.fail("Invalid content type. Status: " + getStatusCode() + ", contentType: " + contentType);
+            throw new IOException("Invalid content type retrieved. Status: " + getStatusCode() + ", contentType: " + contentType);
         }
     }
 

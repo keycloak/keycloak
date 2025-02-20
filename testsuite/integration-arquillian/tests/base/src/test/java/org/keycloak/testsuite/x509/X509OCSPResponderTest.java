@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.HttpClientManager;
@@ -111,7 +112,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
             AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
@@ -143,7 +144,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
             AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
@@ -176,7 +177,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
             oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
             AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");

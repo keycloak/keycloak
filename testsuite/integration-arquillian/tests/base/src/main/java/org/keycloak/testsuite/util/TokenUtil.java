@@ -44,8 +44,7 @@ public class TokenUtil implements TestRule {
     public TokenUtil(String username, String password) {
         this.username = username;
         this.password = password;
-        this.oauth = new OAuthClient();
-        this.oauth.init(null);
+        this.oauth = new OAuthClient(HttpClientUtils.createDefault(), null);
         this.oauth.client("direct-grant", "password");
     }
 

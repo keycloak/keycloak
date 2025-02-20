@@ -8,12 +8,16 @@ import java.io.IOException;
 public class TokenRevocationRequest extends AbstractHttpPostRequest<TokenRevocationRequest, TokenRevocationResponse> {
 
     private final String token;
-    private final String tokenTypeHint;
+    private String tokenTypeHint;
 
-    TokenRevocationRequest(String token, String tokenTypeHint, OAuthClient client) {
+    TokenRevocationRequest(String token, AbstractOAuthClient<?> client) {
         super(client);
         this.token = token;
+    }
+
+    public TokenRevocationRequest tokenTypeHint(String tokenTypeHint) {
         this.tokenTypeHint = tokenTypeHint;
+        return this;
     }
 
     @Override

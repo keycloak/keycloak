@@ -225,7 +225,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
 
-            String tokenResponse = oauth.introspectionRequest(accessToken, "access_token").jwtResponse().send();
+            String tokenResponse = oauth.introspectionRequest(accessToken).tokenTypeHint("access_token").jwtResponse().send();
             logger.debug("tokenResponse:" + tokenResponse);
             AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
             assertTokenIntrospectionResponse(introspectionResult, true, true, false);

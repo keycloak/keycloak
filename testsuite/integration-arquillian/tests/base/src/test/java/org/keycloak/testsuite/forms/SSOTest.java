@@ -134,8 +134,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation login1 = events.expectLogin().assertEvent();
 
         //OAuthClient oauth2 = new OAuthClient(driver2);
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
         oauth2.doLogin("test-user@localhost", "password");
 
@@ -214,8 +213,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         String firstCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
         // second client user login
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("john-doh@localhost", "password");
         String secondCode = oauth2.getCurrentQuery().get(OAuth2Constants.CODE);
         String[] firstCodeParts = firstCode.split("\\.");

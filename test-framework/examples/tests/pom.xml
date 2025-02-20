@@ -70,6 +70,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-oauth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-oauth-nimbus-poc</artifactId>
         </dependency>
         <dependency>
