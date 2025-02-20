@@ -55,6 +55,11 @@ export const LdapSettingsSearching = ({
           }}
         />
         <TextControl
+          name="config.relativeCreateDn.0"
+          label={t("relativeUserCreateDn")}
+          labelIcon={t("relativeUserCreateDnHelp")}
+        />
+        <TextControl
           name="config.usernameLDAPAttribute.0"
           label={t("usernameLdapAttribute")}
           labelIcon={t("usernameLdapAttributeHelp")}
