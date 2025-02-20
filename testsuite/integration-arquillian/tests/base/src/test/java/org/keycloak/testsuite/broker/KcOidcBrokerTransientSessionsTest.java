@@ -558,7 +558,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         AccessTokenResponse tokenResponse = oauth.client(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET).doAccessTokenRequest(code);
 
         // Check that userInfo can be invoked
-        var userInfoResponse = oauth.doUserInfoRequestByGet(tokenResponse);
+        var userInfoResponse = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
         assertThat(userInfoResponse.getUserInfo().getSub(), is(lwUserId));
         assertThat(userInfoResponse.getUserInfo().getPreferredUsername(), is(bc.getUserLogin()));
         assertThat(userInfoResponse.getUserInfo().getEmail(), is(bc.getUserEmail()));

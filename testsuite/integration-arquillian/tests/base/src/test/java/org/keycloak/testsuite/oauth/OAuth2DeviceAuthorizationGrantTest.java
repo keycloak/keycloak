@@ -371,7 +371,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         assertNotNull(token);
 
-        UserInfo userInfo = oauth.doUserInfoRequest(tokenString);
+        UserInfo userInfo = oauth.doUserInfoRequest(tokenString).getUserInfo();
         assertNotNull(userInfo);
         //UserInfo consists preferredUsername, email( required scopes) and phoneNumber(given optional scope)
         Assert.assertEquals("device-login", userInfo.getPreferredUsername());

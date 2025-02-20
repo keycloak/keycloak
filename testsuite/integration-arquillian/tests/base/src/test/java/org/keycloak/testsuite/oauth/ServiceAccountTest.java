@@ -513,7 +513,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         assertNull(response.getRefreshToken());
 
-        UserInfo info = oauth.doUserInfoRequest(response.getAccessToken());
+        UserInfo info = oauth.doUserInfoRequest(response.getAccessToken()).getUserInfo();
         assertEquals(200, response.getStatusCode());
         assertEquals("service-account-service-account-cl", info.getPreferredUsername());
     }
@@ -525,7 +525,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         assertNotNull(response.getRefreshToken());
 
-        UserInfo info = oauth.doUserInfoRequest(response.getAccessToken());
+        UserInfo info = oauth.doUserInfoRequest(response.getAccessToken()).getUserInfo();
         assertEquals(200, response.getStatusCode());
         assertEquals("service-account-service-account-cl-refresh-on", info.getPreferredUsername());
 

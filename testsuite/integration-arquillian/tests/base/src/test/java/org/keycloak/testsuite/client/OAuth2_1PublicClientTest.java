@@ -241,8 +241,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         // userinfo request with DPoP Proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEcEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEcEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
 
         oauth.idTokenHint(response.getIdToken()).openLogout();

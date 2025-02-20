@@ -505,30 +505,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         }
     }
 
-    // TODO Extract into request class
-    public UserInfo doUserInfoRequest(String accessToken) {
-        HttpGet get = new HttpGet(getEndpoints().getUserInfo());
-        get.setHeader("Authorization", "Bearer " + accessToken);
-        try {
-            return new UserInfoResponse(httpClientManager.get().execute(get)).getUserInfo();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    // TODO Extract into request class
-    public UserInfoResponse doUserInfoRequestByGet(AccessTokenResponse accessTokenResponse) throws Exception {
-        HttpGet get = new HttpGet(getEndpoints().getUserInfo());
-        get.setHeader("Authorization", accessTokenResponse.getTokenType() + " " + accessTokenResponse.getAccessToken());
-        if (dpopProof != null) {
-            get.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
-        }
-        try {
-            return new UserInfoResponse(httpClientManager.get().execute(get));
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
 
     // TODO Deprecate
     public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret) throws IOException {

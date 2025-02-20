@@ -70,6 +70,14 @@ public class AbstractOAuthClient<T> {
         return refreshRequest(refreshToken).send();
     }
 
+    public UserInfoRequest userInfoRequest(String accessToken) {
+        return new UserInfoRequest(accessToken, this);
+    }
+
+    public UserInfoResponse doUserInfoRequest(String accessToken) {
+        return userInfoRequest(accessToken).send();
+    }
+
     public TokenRevocationRequest tokenRevocationRequest(String token) {
         return new TokenRevocationRequest(token, this);
     }
