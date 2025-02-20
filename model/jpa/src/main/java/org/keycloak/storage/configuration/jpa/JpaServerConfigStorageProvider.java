@@ -19,6 +19,7 @@ package org.keycloak.storage.configuration.jpa;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManager;
@@ -67,7 +68,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
 
     @Override
     public String loadOrCreate(String key, Supplier<String> valueGenerator) {
-        var entity = getEntity(key, LockModeType.WRITE);
+        var entity = getEntity(key, LockModeType.OPTIMISTIC);
         if (entity != null) {
             return entity.getValue();
         }
@@ -77,6 +78,19 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
         entity.setValue(value);
         entityManager.persist(entity);
         return value;
+    }
+
+    @Override
+    public boolean replace(String key, Predicate<String> replacePredicate, Supplier<String> valueGenerator) {
+        Objects.requireNonNull(replacePredicate);
+        Objects.requireNonNull(valueGenerator);
+        var entity = getEntity(key, LockModeType.OPTIMISTIC);
+        if (entity == null || !replacePredicate.test(entity.getValue())) {
+            return false;
+        }
+        entity.setValue(valueGenerator.get());
+        entityManager.merge(entity);
+        return true;
     }
 
     @Override

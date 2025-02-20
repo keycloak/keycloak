@@ -204,7 +204,7 @@ public class HelpCommandDistTest {
 
         try {
             Approvals.verify(output);
-        } catch (AssertionError cause) {
+        } catch (Error cause) {
             if ("true".equals(System.getenv(REPLACE_EXPECTED))) {
                 try {
                     FileUtils.write(Approvals.createApprovalNamer().getApprovedFile(".txt"), output,

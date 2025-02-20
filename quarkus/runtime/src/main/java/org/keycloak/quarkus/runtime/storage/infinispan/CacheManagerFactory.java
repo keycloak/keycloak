@@ -58,6 +58,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -529,6 +530,11 @@ public class CacheManagerFactory {
 
     public static String requiredStringProperty(String propertyName) {
         return Configuration.getOptionalKcValue(propertyName).orElseThrow(() -> new RuntimeException("Property " + propertyName + " required but not specified"));
+    }
+
+    public static int requiredIntegerProperty(Option<Integer> option) {
+        return Configuration.getOptionalIntegerValue(option)
+                .orElseThrow(() -> new RuntimeException("Property '%s' required but not specified".formatted(option.getKey())));
     }
 
     private static boolean hasRemoteStore(ConfigurationBuilder builder) {
