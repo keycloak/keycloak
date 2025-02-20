@@ -18,7 +18,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.ofNullable;
 import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
@@ -45,14 +44,12 @@ import io.smallrye.config.Expressions;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.utils.StringUtil;
 
 public class PropertyMapper<T> {
@@ -336,7 +333,7 @@ public class PropertyMapper<T> {
         private String description;
         private BooleanSupplier isRequired = () -> false;
         private String requiredWhen = "";
-        private Function<Set<String>, Set<String>> wildcardKeysTransformer;
+        private BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
         private ValueMapper wildcardMapFrom;
 
         public Builder(Option<T> option) {
@@ -462,7 +459,7 @@ public class PropertyMapper<T> {
             return this;
         }
 
-        public Builder<T> wildcardKeysTransformer(Function<Set<String>, Set<String>> wildcardValuesTransformer) {
+        public Builder<T> wildcardKeysTransformer(BiFunction<String, Set<String>, Set<String>> wildcardValuesTransformer) {
             this.wildcardKeysTransformer = wildcardValuesTransformer;
             return this;
         }
@@ -593,6 +590,10 @@ public class PropertyMapper<T> {
      */
     public PropertyMapper<?> forKey(String key) {
         return this;
+    }
+
+    String getMapFrom() {
+        return mapFrom;
     }
 
 }

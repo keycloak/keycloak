@@ -45,7 +45,7 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -530,5 +530,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
             String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
             assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
         }
+    }
+
+    @Test
+    public void testDirectWildcardTo() {
+        // the mapping to for a wildcard property shouldn't be to anything
+        assertNull(Configuration.getConfigValue("quarkus.log.category.\"<categories>\".level").getValue());
     }
 }
