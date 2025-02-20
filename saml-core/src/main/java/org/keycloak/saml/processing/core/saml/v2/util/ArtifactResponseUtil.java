@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,7 @@ import java.util.Optional;
 
 /**
  * Utility class to manipulate SAML ArtifactResponse and embedded Response.
+ * @author Thibault Morin (https://tmorin.github.io)
  */
 public final class ArtifactResponseUtil {
 
