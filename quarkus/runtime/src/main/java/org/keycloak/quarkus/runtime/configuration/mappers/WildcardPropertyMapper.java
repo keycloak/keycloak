@@ -4,7 +4,6 @@ import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -12,12 +11,9 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -71,27 +67,6 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     String getFrom(String wildcardKey) {
         return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + fromWildcardMatcher.replaceFirst(wildcardKey);
-    }
-
-    @Override
-    public List<ConfigValue> getKcConfigValues() {
-        return this.getWildcardKeys().stream().map(v -> Configuration.getConfigValue(getFrom(v))).toList();
-    }
-
-    public Set<String> getWildcardKeys() {
-        // this is not optimal
-        // TODO find an efficient way to get all values that match the wildcard
-        Set<String> values = StreamSupport.stream(Configuration.getPropertyNames().spliterator(), false)
-                .map(n -> getMappedKey(n, false))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
-
-        if (wildcardKeysTransformer != null) {
-            return wildcardKeysTransformer.apply(null, values);
-        }
-
-        return values;
     }
 
     public Stream<String> getToFromWildcardTransformer(String value) {

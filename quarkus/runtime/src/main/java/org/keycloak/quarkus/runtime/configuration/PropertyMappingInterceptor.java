@@ -18,16 +18,11 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -37,7 +32,6 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -64,7 +58,6 @@ import jakarta.annotation.Priority;
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();
-    private static final ThreadLocal<Boolean> disableAdditionalNames = new ThreadLocal<>();
 
     public static void disable() {
         disable.set(true);
@@ -85,29 +78,6 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
         return mapper != null && mapper.isRunTime();
     }
-
-    /*public Iterator<String> oldIterateNames(ConfigSourceInterceptorContext context) {
-        // We need to iterate through names to get wildcard option names.
-        // Additionally, wildcardValuesTransformer might also trigger iterateNames.
-        // Hence we need to disable this to prevent infinite recursion.
-        // But we don't want to disable the whole interceptor, as wildcardValuesTransformer
-        // might still need mappers to work.
-        List<String> mappedWildcardNames = List.of();
-        if (!Boolean.TRUE.equals(disableAdditionalNames.get())) {
-            disableAdditionalNames.set(true);
-            try {
-                mappedWildcardNames = PropertyMappers.getWildcardMappers().stream()
-                        .map(WildcardPropertyMapper::getToWithWildcards)
-                        .flatMap(Set::stream)
-                        .toList();
-            } finally {
-                disableAdditionalNames.remove();
-            }
-        }
-
-        // this could be optimized by filtering the wildcard names in the stream above
-        return filterRuntime(IteratorUtils.chainedIterator(mappedWildcardNames.iterator(), context.iterateNames()));
-    }*/
 
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
@@ -135,13 +105,14 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                         return Stream.concat(Stream.of(name), wildCard.getToFromWildcardTransformer(value.getValue()));
                     }
                 }
-                //return Stream.of(name);
+                //return Stream.of(name); - if we want the previous behavior of only providing wildcardnames
             }
 
             try {
                 mapper = mapper.forKey(name);
             } catch (NoSuchElementException e) {
-                // TODO: should the handling be clearer here
+                // TODO: should the handling be clearer here - probably need to get the ConfigValue to see
+                // if it's env
                 // wildcard does not match - happens with wildcard env entries
                 return Stream.of(name);
             }
@@ -151,16 +122,8 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             return toDistinctStream(name, mapper.getTo());
         });
 
-        /*Set<String> values = baseStream.collect(Collectors.toCollection(HashSet::new));
-        Iterable<String> iterable1 = () -> oldIterateNames(context);
-        Set<String> values1 = StreamSupport.stream(iterable1.spliterator(), false).collect(Collectors.toCollection(HashSet::new));
-        if (!values.equals(values1)) {
-            var newOnly = new HashSet<>(values);
-            newOnly.removeAll(values1);
-            values1.removeAll(values);
-            //throw new AssertionError(newOnly + " !!! " + values1);
-        }*/
-
+        // TODO: this may not be necessary, but it make the names as complete as possible
+        // - if this is removed, then we need to have the IgnoredArtifacts logic look for the default
         var defaultStream = allMappers.stream()
                 .filter(m -> (!filterRuntime || !m.isRunTime()) && !m.getDefaultValue().isEmpty() && !m.hasWildcard()
                         && m.getCategory() != OptionCategory.CONFIG)

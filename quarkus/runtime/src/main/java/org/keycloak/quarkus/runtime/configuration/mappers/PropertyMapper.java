@@ -33,7 +33,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -47,7 +46,6 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.utils.StringUtil;
@@ -562,16 +560,6 @@ public class PropertyMapper<T> {
         }
         return String.format("'%s' in %s", getFrom(),
                 KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
-    }
-
-    /**
-     * Get all Keycloak config values for the mapper. A multivalued config option is a config option that
-     * has a wildcard in its name, e.g. log-level-<category>.
-     *
-     * @return a list of config values where the key is the resolved wildcard (e.g. category) and the value is the config value
-     */
-    public List<ConfigValue> getKcConfigValues() {
-        return List.of(Configuration.getConfigValue(getFrom()));
     }
 
     /**
