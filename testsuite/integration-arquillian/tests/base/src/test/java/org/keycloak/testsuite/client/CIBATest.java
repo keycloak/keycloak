@@ -2476,7 +2476,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
-            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_SCOPE));
             assertThat(response.getErrorDescription(), is("Invalid scopes: " + OAuth2Constants.SCOPE_OPENID + " " + invalidScope));
 
         } finally {
