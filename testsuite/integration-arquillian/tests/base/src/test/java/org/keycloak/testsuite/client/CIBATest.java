@@ -16,46 +16,11 @@
  */
 package org.keycloak.testsuite.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.containsString;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response.Status;
-
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
-
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
-import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
-import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
-import static org.keycloak.testsuite.Assert.assertExpiration;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -105,31 +70,60 @@ import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFa
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthenticationRequestAcknowledgement;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.CANCELLED;
+import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
+import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
+import static org.keycloak.testsuite.Assert.assertExpiration;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 /**
  * Tests for the CIBA "poll" mode and generic CIBA functionality tests
@@ -217,8 +211,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String victimClientName = "test-app-scope";
             final String attackerClientName = TEST_CLIENT_NAME;
             final String victimClientPassword = "password";
-            final String attackerClientPassword = TEST_CLIENT_PASSWORD;
-            String victimClientAuthReqId = null;
+            String victimClientAuthReqId;
             victimClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), victimClientName);
             victimClientRep = victimClientResource.toRepresentation();
             prepareCIBASettings(victimClientResource, victimClientRep);
@@ -237,7 +230,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(victimClientAuthenticationChannelReq);
 
             // attacker client Token Request
-            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(attackerClientName, attackerClientPassword, victimClientAuthReqId);
+            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(attackerClientName, TEST_CLIENT_PASSWORD, victimClientAuthReqId);
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
             assertThat(tokenRes.getErrorDescription(), is(equalTo("unauthorized client")));
@@ -998,10 +991,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String secondUserSessionCodeId = secondUserloginEvent.getDetails().get(Details.CODE_ID);
 
             // second user Token Request
-            AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(secondUsername, secondUserAuthReqId);
+            doBackchannelAuthenticationTokenRequest(secondUsername, secondUserAuthReqId);
 
             // first user Token Request
-            tokenRes = doBackchannelAuthenticationTokenRequest(firstUsername, firstUserAuthReqId);
+            doBackchannelAuthenticationTokenRequest(firstUsername, firstUserAuthReqId);
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
@@ -1016,7 +1009,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-gelb";
             final String clientName = "third-party";  // see testrealm.json : "consentRequired": true
             final String clientPassword = "password";
-            String clientAuthReqId = null;
+            String clientAuthReqId;
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientName);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
@@ -1059,8 +1052,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String secondClientName = TEST_CLIENT_NAME;
             final String firstClientPassword = "password";
             final String secondClientPassword = TEST_CLIENT_PASSWORD;
-            String firstClientAuthReqId = null;
-            String secondClientAuthReqId = null;
+            String firstClientAuthReqId;
+            String secondClientAuthReqId;
 
             firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
             assertThat(firstClientResource, notNullValue());
@@ -1117,8 +1110,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String firstClientName = "test-app-scope"; // see testrealm.json
             final String secondClientName = TEST_CLIENT_NAME;
             final String firstClientPassword = "password";
-            final String secondClientPassword = TEST_CLIENT_PASSWORD;
-            String firstClientAuthReqId = null;
+            String firstClientAuthReqId;
 
             firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
             assertThat(firstClientResource, notNullValue());
@@ -1143,7 +1135,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(firstClientAuthenticationChannelReq);
 
             // second client Token Request
-            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, firstClientAuthReqId);
+            AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(secondClientName, TEST_CLIENT_PASSWORD, firstClientAuthReqId);
             assertEquals(400, tokenRes.getStatusCode());
             assertEquals("unauthorized client", tokenRes.getErrorDescription());
         } finally {
@@ -1367,11 +1359,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testInvalidConsumptionDeviceRegistration() throws Exception {
+    public void testInvalidConsumptionDeviceRegistration() {
         try {
-            createClientDynamically("invalid-CIBA-CD", (OIDCClientRepresentation clientRep) -> {
-                clientRep.setBackchannelTokenDeliveryMode("pushpush");
-            });
+            createClientDynamically("invalid-CIBA-CD", (OIDCClientRepresentation clientRep) -> clientRep.setBackchannelTokenDeliveryMode("pushpush"));
             fail();
         } catch (ClientRegistrationException e) {
             assertEquals(ERR_MSG_CLIENT_REG_FAIL, e.getMessage());
@@ -1635,7 +1625,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience("https://example.com");
 
@@ -1650,7 +1640,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
 
@@ -1665,7 +1655,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
             requestObject.issuer(TEST_CLIENT_NAME + TEST_CLIENT_NAME);
@@ -1681,7 +1671,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
             requestObject.issuer(TEST_CLIENT_NAME);
@@ -1699,11 +1689,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
             requestObject.issuer(TEST_CLIENT_NAME);
-            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.iat((long) Time.currentTime());
             requestObject.id(null);
 
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
@@ -1717,12 +1707,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
             useRequestUri = true;
             bindingMessage = "Brno-hlavni-nadrazif";
             requestObject = createPartialAuthorizationEndpointRequestObject(username, bindingMessage);
-            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.exp(requestObject.getIat() + 300L);
             requestObject.nbf(requestObject.getIat());
             requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
             requestObject.issuer(TEST_CLIENT_NAME);
             requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
-            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.iat((long) Time.currentTime());
 
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
@@ -1748,9 +1738,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private AuthorizationEndpointRequestObject createPartialAuthorizationEndpointRequestObject(String username, String bindingMessage) throws Exception {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        requestObject.iat(Long.valueOf(Time.currentTime()));
+        requestObject.iat((long) Time.currentTime());
         requestObject.setScope("openid");
-        requestObject.setMax_age(Integer.valueOf(600));
+        requestObject.setMax_age(600);
         requestObject.setOtherClaims("custom_claim_zwei", "gelb");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), TEST_REALM_NAME), "https://example.com");
         requestObject.setLoginHint(username);
@@ -1847,7 +1837,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                     .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
+                            createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1857,7 +1847,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(roleName)))
+                                createClientRolesConditionConfig(List.of(roleName)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -1907,7 +1897,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                     .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
+                            createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1917,7 +1907,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(roleName)))
+                                createClientRolesConditionConfig(List.of(roleName)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -1968,7 +1958,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
                     .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE)))
+                            createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1976,7 +1966,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "A Primeira Politica", Boolean.TRUE)
                         .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
-                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
@@ -2168,8 +2158,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
+        ClientResource clientResource;
+        ClientRepresentation clientRep;
 
         try {
             String username = "nutzername-rot";
@@ -2242,7 +2232,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     @Test
     public void testConfidentialClientAcceptExecutorExecutor() throws Exception {
         String clientPublicId = generateSuffixedName("public-app");
-        String cidPublic = createClientByAdmin(clientPublicId, (ClientRepresentation clientRep) -> {
+        createClientByAdmin(clientPublicId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret("app-secret");
             clientRep.setStandardFlowEnabled(Boolean.TRUE);
             clientRep.setImplicitFlowEnabled(Boolean.TRUE);
@@ -2320,7 +2310,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         String clientConfidentialId = generateSuffixedName("confidential-app");
         String clientConfidentialSecret = "app-secret";
-        String cidConfidential = createClientByAdmin(clientConfidentialId, (ClientRepresentation clientRep) -> {
+        createClientByAdmin(clientConfidentialId, (ClientRepresentation clientRep) -> {
             clientRep.setSecret(clientConfidentialSecret);
             clientRep.setStandardFlowEnabled(Boolean.TRUE);
             clientRep.setImplicitFlowEnabled(Boolean.TRUE);
@@ -2339,7 +2329,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
                     .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
+                            createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2348,7 +2338,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
-                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
+                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of("microprofile-jwt")))
                     .addProfile(PROFILE_NAME)
                     .toRepresentation()
                 ).toString();
@@ -2369,7 +2359,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
                     .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
-                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
+                            createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2377,7 +2367,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
-                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
+                        createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of("microprofile-jwt")))
                     .addProfile(PROFILE_NAME)
                     .toRepresentation()
                 ).toString();
@@ -2436,7 +2426,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
             assertThat(response.getStatusCode(), is(equalTo(400)));
-            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_SCOPE));
             assertThat(response.getErrorDescription(), is("Invalid scopes: " + OAuth2Constants.SCOPE_OPENID + " " + invalidScope));
 
         } finally {
@@ -2486,8 +2476,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         }
     }
 
-    protected void registerSharedInvalidAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+    protected void registerSharedInvalidAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws IOException {
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource;
 
         // Set required signature for request_uri
         // use and set jwks_url
@@ -2556,13 +2546,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
@@ -2575,11 +2565,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private AuthorizationEndpointRequestObject createValidSharedAuthenticationRequest() throws URISyntaxException {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        requestObject.iat(Long.valueOf(Time.currentTime()));
-        requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+        requestObject.iat((long) Time.currentTime());
+        requestObject.exp(requestObject.getIat() + 300L);
         requestObject.nbf(requestObject.getIat());
         requestObject.setScope("openid");
-        requestObject.setMax_age(Integer.valueOf(600));
+        requestObject.setMax_age(600);
         requestObject.setOtherClaims("custom_claim_zwei", "gelb");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), TEST_REALM_NAME), "https://example.com");
         return requestObject;
@@ -2596,13 +2586,12 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private boolean isSymmetricSigAlg(String sigAlg) {
         if (Algorithm.HS256.equals(sigAlg)) return true;
         if (Algorithm.HS384.equals(sigAlg)) return true;
-        if (Algorithm.HS512.equals(sigAlg)) return true;
-        return false;
+        return Algorithm.HS512.equals(sigAlg);
     }
 
     protected void registerSharedAuthenticationRequest(AuthorizationEndpointRequestObject requestObject, String clientId,
             String requestedSigAlg, String sigAlg, boolean isUseRequestUri, String clientSecret, String curve) throws URISyntaxException, IOException {
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource;
 
         // Set required signature for request_uri
         // use and set jwks_url
@@ -2736,8 +2725,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private TestAuthenticationChannelRequest doAuthenticationChannelRequest(String bindingMessage) {
         // get Authentication Channel Request keycloak has done on Backchannel Authentication Endpoint from the FIFO queue of testing Authentication Channel Request API
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        TestAuthenticationChannelRequest authenticationChannelReq = oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
-        return authenticationChannelReq;
+        return oidcClientEndpointsResource.getAuthenticationChannel(bindingMessage);
     }
 
     private EventRepresentation doAuthenticationChannelCallback(TestAuthenticationChannelRequest request) throws Exception {
@@ -2863,7 +2851,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertExpiration(tokenExp, tokenIat + expiresIn);
     }
 
-    private EventRepresentation doLogoutByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
+    private EventRepresentation doLogoutByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) {
         assertTrue(oauth.doLogout(refreshToken, TEST_CLIENT_PASSWORD).isSuccess());
 
         // confirm logged out
@@ -2946,18 +2934,18 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
             long currentTime = Time.currentTime();
-            long authTime = idToken.getAuth_time().longValue();
+            long authTime = idToken.getAuth_time();
             assertTrue(startTime -5 <= authTime);
             assertTrue(authTime <= currentTime + 5);
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, isOfflineAccess);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, isOfflineAccess);
