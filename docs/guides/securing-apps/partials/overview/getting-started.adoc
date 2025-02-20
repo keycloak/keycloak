@@ -16,7 +16,7 @@ ifeval::[{project_community}==true]
 endif::[]
 
 ==== JavaScript (client-side)
-* <@links.securingapps id="javascript-adapter"/>
+* https://www.keycloak.org/securing-apps/javascript-adapter[Keycloak JS adapter]
 
 ==== Node.js (server-side)
 * https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]
