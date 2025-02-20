@@ -267,6 +267,13 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }
 
+    @Override
+    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients) {
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
     protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {
         if (params.getAudience() != null && (responseBuilder.getAccessToken().getAudience() == null ||
                 responseBuilder.getAccessToken().getAudience().length < params.getAudience().size())) {
@@ -297,7 +304,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) &&
                 !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE) &&
                 !requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) { // TODO: SAML probably won't be supported?
+                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
             event.detail(Details.REASON, "requested_token_type unsupported");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
