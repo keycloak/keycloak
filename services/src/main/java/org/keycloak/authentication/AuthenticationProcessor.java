@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.util.AcrStore;
@@ -69,6 +70,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -602,14 +604,22 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+            UriInfo uriInfo = getUriInfo();
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
-            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+            MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+            String token = queryParameters.getFirst(Constants.TOKEN);
+
+            if (StringUtil.isNotBlank(token)) {
+                uriBuilder.queryParam(Constants.TOKEN, token);
+            }
+
+            if (queryParameters.containsKey(LoginActionsService.AUTH_SESSION_ID)) {
                 uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
