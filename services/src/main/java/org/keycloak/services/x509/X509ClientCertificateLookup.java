@@ -38,4 +38,16 @@ public interface X509ClientCertificateLookup extends Provider {
      * @return
      */
     X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException;
+
+    /**
+     * Returns a client certificate, and optionally any certificates
+     * in the certificate chain, but only if the request is trusted
+     * @return
+     */
+    static X509Certificate[] getTrustedCertificateChain(X509ClientCertificateLookup lookup, HttpRequest httpRequest) throws GeneralSecurityException {
+        if (httpRequest.isProxyTrusted()) {
+            return lookup.getCertificateChain(httpRequest);
+        }
+        return null;
+    }
 }

@@ -68,7 +68,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         X509Certificate[] certs = null;
         ClientModel client = null;
         try {
-            certs = provider.getCertificateChain(context.getHttpRequest());
+            certs = X509ClientCertificateLookup.getTrustedCertificateChain(provider, context.getHttpRequest());
             String client_id = null;
             MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
             boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
@@ -162,6 +162,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         }
     }
 
+    @Override
     public String getDisplayType() {
         return "X509 Certificate";
     }
