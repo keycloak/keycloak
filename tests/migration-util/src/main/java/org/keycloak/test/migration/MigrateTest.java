@@ -2,6 +2,7 @@ package org.keycloak.test.migration;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,12 +35,13 @@ public class MigrateTest {
     }
 
     public void migrate(String test) throws Exception {
-        if (test.indexOf('.') != -1) {
-            test = rootPath.toString() +
-                    "/testsuite/integration-arquillian/tests/base/src/test/java/" +
-                    test.replace('.', '/') +
-                    ".java";
+        if (test.endsWith(".java")) {
+            test = test.split("\\.java")[0];
         }
+        if (test.indexOf('.') != -1) {
+            test = test.replace('.', '/');
+        }
+        test += ".java";
 
         Path testPath = Path.of(test).normalize().toAbsolutePath();
         if (!Files.isRegularFile(testPath)) {
@@ -64,8 +66,6 @@ public class MigrateTest {
             throw new RuntimeException("Test file not found");
         }
 
-        System.exit(1);
-
         List<String> content = readFileToList(testPath);
 
         for (Class<? extends TestRewrite> clazz : MIGRATORS) {
@@ -81,6 +81,8 @@ public class MigrateTest {
             pb.command(DIFF_COMMAND, testPath.toString(), destinationPath.toString());
             pb.start();
         }
+
+        deleteOriginalFile(testPath);
     }
 
     private Path getDestination(Path testPath) {
@@ -103,6 +105,15 @@ public class MigrateTest {
                 bw.write(l);
                 bw.newLine();
             }
+        }
+    }
+
+    private void deleteOriginalFile(Path testPath) {
+        File testFile = testPath.toFile();
+        if (testFile.delete()) {
+            System.out.format("Old test: %s was deleted\n", testFile);
+        } else {
+            System.err.format("Failed to delete old test: %s\n", testFile);
         }
     }
 
