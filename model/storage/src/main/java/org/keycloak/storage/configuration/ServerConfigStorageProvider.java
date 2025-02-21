@@ -17,7 +17,9 @@
 
 package org.keycloak.storage.configuration;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.keycloak.provider.Provider;
@@ -68,5 +70,31 @@ public interface ServerConfigStorageProvider extends Provider {
      *                              value is {@code null}.
      */
     String loadOrCreate(String key, Supplier<String> valueGenerator);
+
+    /**
+     * Same as {@code loadOrCreate(key, () -> value)}.
+     *
+     * @see #loadOrCreate(String, Supplier)
+     */
+    default String loadOrCreate(String key, String value) {
+        return loadOrCreate(key, () -> value);
+    }
+
+    /**
+     * Same as {@code replace(key, Objects.requireNonNull(expected)::equals, () -> Objects.requireNonNull(newValue))}.
+     * @see #replace(String, Predicate, Supplier)
+     */
+    default boolean replace(String key, String expected, String newValue) {
+        return replace(key, Objects.requireNonNull(expected)::equals, () -> Objects.requireNonNull(newValue));
+    }
+
+    /**
+     *
+     * @param key
+     * @param replacePredicate
+     * @param valueGenerator
+     * @return
+     */
+    boolean replace(String key, Predicate<String> replacePredicate, Supplier<String> valueGenerator);
 
 }

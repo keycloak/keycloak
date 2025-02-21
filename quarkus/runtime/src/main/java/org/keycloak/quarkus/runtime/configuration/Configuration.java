@@ -145,6 +145,14 @@ public final class Configuration {
         return getOptionalValue(name).map(Boolean::parseBoolean);
     }
 
+    public static Optional<Integer> getOptionalIntegerValue(Option<Integer> option) {
+        return getOptionalIntegerValue(option.getKey());
+    }
+
+    public static Optional<Integer> getOptionalIntegerValue(String propertyName) {
+        return getConfig().getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName), Integer.class);
+    }
+
     public static String getMappedPropertyName(String key) {
         PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 

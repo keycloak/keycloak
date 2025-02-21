@@ -29,11 +29,11 @@ abstract class BaseJGroupsTlsConfigurator implements JGroupsStackConfigurator {
 
     @Override
     public void configure(ConfigurationBuilderHolder holder, KeycloakSession session) {
-        var factory = createSocketFactory(session);
+        var factory = createSocketFactory(holder, session);
         JGroupsUtil.transportOf(holder).addProperty(JGroupsTransport.SOCKET_FACTORY, factory);
         JGroupsUtil.validateTlsAvailable(holder);
         CacheManagerFactory.logger.info("JGroups Encryption enabled (mTLS).");
     }
 
-    abstract SocketFactory createSocketFactory(KeycloakSession session);
+    abstract SocketFactory createSocketFactory(ConfigurationBuilderHolder holder, KeycloakSession session);
 }

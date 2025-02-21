@@ -33,6 +33,7 @@ import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.infinispan.module.certificates.ReloadCertificateFunction;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -101,8 +102,8 @@ import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
 import org.keycloak.models.sessions.infinispan.stream.MapEntryToKeyMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
-import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
+import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -206,7 +207,6 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 UserFullInvalidationEvent.class,
                 UserUpdatedEvent.class,
 
-
                 // sessions.infinispan.entities package
                 AuthenticatedClientSessionStore.class,
                 AuthenticatedClientSessionEntity.class,
@@ -227,6 +227,9 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 GroupAndCountCollectorSupplier.class,
                 MapEntryToKeyMapper.class,
                 SessionUnwrapMapper.class,
+
+                // infinispan.module.certificates
+                ReloadCertificateFunction.class,
         }
 )
 public interface KeycloakModelSchema extends GeneratedSchema {

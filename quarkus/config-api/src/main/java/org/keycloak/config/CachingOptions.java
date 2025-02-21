@@ -15,6 +15,7 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-store-password";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
+    public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
 
     private static final String CACHE_REMOTE_PREFIX = "cache-remote";
     public static final String CACHE_REMOTE_HOST_PROPERTY = CACHE_REMOTE_PREFIX + "-host";
@@ -100,6 +101,12 @@ public class CachingOptions {
     public static final Option<String> CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description("The password to access the Truststore.")
+            .build();
+
+    public static final Option<Integer> CACHE_EMBEDDED_MTLS_ROTATION = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY, Integer.class)
+            .category(OptionCategory.CACHE)
+            .defaultValue(30)
+            .description("Rotation period in days of automatic JGroups MTLS certificates.")
             .build();
 
     public static final Option<String> CACHE_REMOTE_HOST = new OptionBuilder<>(CACHE_REMOTE_HOST_PROPERTY, String.class)
