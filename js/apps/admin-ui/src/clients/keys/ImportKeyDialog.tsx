@@ -74,9 +74,7 @@ export const ImportKeyDialog = ({
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={toggleDialog}
         >
           {t("cancel")}
         </Button>,
@@ -101,7 +99,7 @@ export const ImportKeyDialog = ({
             <Controller
               name="file"
               control={control}
-              defaultValue={{ filename: "" }}
+              defaultValue={{ value: "", filename: "" }}
               render={({ field }) => (
                 <FileUpload
                   id="importFile"
@@ -110,9 +108,27 @@ export const ImportKeyDialog = ({
                   onTextChange={(value) =>
                     field.onChange({ ...field.value, value })
                   }
-                  onFileInputChange={(_, file) =>
-                    field.onChange({ ...field.value, filename: file.name })
-                  }
+                  onFileInputChange={(_, file) => {
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const fileContent = event.target?.result as string;
+                      let decodedContent = fileContent;
+
+                      if (fileContent.toLowerCase().startsWith("data:")) {
+                        const base64Data = fileContent.split(",")[1];
+                        decodedContent = atob(base64Data);
+                      }
+
+                      field.onChange({
+                        filename: file.name,
+                        value: decodedContent,
+                      });
+                    };
+
+                    reader.readAsText(file);
+                  }}
                 />
               )}
             />
