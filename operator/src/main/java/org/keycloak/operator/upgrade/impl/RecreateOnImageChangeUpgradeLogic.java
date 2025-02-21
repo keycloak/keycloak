@@ -47,9 +47,9 @@ public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
         var desiredImage = extractImage(ContextUtils.getDesiredStatefulSet(context));
 
         if (Objects.equals(currentImage, desiredImage)) {
-            decideRollingUpgrade();
+            decideRollingUpgrade("Image unchanged.");
         } else {
-            decideRecreateUpgrade();
+            decideRecreateUpgrade("Image changed %s -> %s".formatted(currentImage, desiredImage));
         }
         return Optional.empty();
     }

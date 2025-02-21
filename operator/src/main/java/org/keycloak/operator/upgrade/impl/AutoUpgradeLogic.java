@@ -69,7 +69,7 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         if (pod.isEmpty()) {
             // TODO some cases the pod is removed. Do we start over or use recreate update?
             Log.warn("Pod for Update Job not found.");
-            decideRecreateUpgrade();
+            decideRecreateUpgrade("The Pod running update-compatibility command not found.");
             return Optional.empty();
         }
 
@@ -99,12 +99,17 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
                 .map(AutoUpgradeLogic::exitCode);
         if (initContainerExitCode.isEmpty()) {
             Log.warn("InitContainer not found for Update Job.");
-            decideRecreateUpgrade();
+            decideRecreateUpgrade("InitContainer running update-compatibility command not found. Did it crash? Check update job for details.");
             return;
         }
         if (initContainerExitCode.get() != 0) {
+            if (initContainerExitCode.get() == 4) {
+                Log.warn("Feature 'rolling-update' not enabled.");
+                decideRecreateUpgrade("Feature 'rolling-update' not enabled.");
+                return;
+            }
             Log.warn("InitContainer unexpectedly failed for Update Job.");
-            decideRecreateUpgrade();
+            decideRecreateUpgrade("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(initContainerExitCode.get()));
             return;
         }
 
@@ -113,37 +118,37 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
                 .map(AutoUpgradeLogic::exitCode);
         if (containerExitCode.isEmpty()) {
             Log.warn("Container not found for Update Job.");
-            decideRecreateUpgrade();
+            decideRecreateUpgrade("Container running update-compatibility command not found. Did it crash?");
             return;
         }
         switch (containerExitCode.get()) {
             case 0: {
-                decideRollingUpgrade();
+                decideRollingUpgrade("Compatible changes detected.");
                 return;
             }
             case 1: {
                 Log.warn("Container has an unexpected error for Update Job");
-                decideRecreateUpgrade();
+                decideRecreateUpgrade("Unexpected update-compatibility command error. Check update job for details.");
                 return;
             }
             case 2: {
                 Log.warn("Container has an invalid arguments for Update Job.");
-                decideRecreateUpgrade();
+                decideRecreateUpgrade("Invalid arguments in update-compatibility command. Check update job for details.");
                 return;
             }
             case 3: {
                 Log.warn("Rolling Update not possible.");
-                decideRecreateUpgrade();
+                decideRecreateUpgrade("Incompatible changes detected. Check update job for details.");
                 return;
             }
             case 4: {
                 Log.warn("Feature 'rolling-update' not enabled.");
-                decideRecreateUpgrade();
+                decideRecreateUpgrade("Feature 'rolling-update' not enabled.");
                 return;
             }
             default: {
-                Log.warnf("Unexpected Update Job exit code: " + containerExitCode.get());
-                decideRecreateUpgrade();
+                Log.warnf("Unexpected Update Job exit code: %s", containerExitCode.get());
+                decideRecreateUpgrade("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(containerExitCode.get()));
             }
         }
     }

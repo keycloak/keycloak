@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 
 /**
  * An API to implement to handle Keycloak CR updates.
@@ -47,5 +48,12 @@ public interface UpgradeLogic {
      * it can proceed.
      */
     Optional<UpdateControl<Keycloak>> decideUpgrade();
+
+    /**
+     * Updates the Keycloak CR status.
+     *
+     * @param statusAggregator The {@link KeycloakStatusAggregator} to update.
+     */
+    void updateStatus(KeycloakStatusAggregator statusAggregator);
 
 }
