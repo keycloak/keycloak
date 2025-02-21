@@ -80,7 +80,7 @@ export default class FlowDetails {
 
   addSubFlow(subFlowName: string, name: string) {
     this.#clickEditDropdownForFlow(subFlowName, "Add sub-flow");
-    this.#fillSubFlowModal(subFlowName, name);
+    this.#fillFlowModal(subFlowName, name);
 
     return this;
   }
@@ -91,9 +91,17 @@ export default class FlowDetails {
     return this;
   }
 
+  #fillFlowModal(subFlowName: string, name: string) {
+    cy.get(".pf-v5-c-modal-box__title-text").contains(
+      "Add condition to " + subFlowName,
+    );
+    cy.findByTestId("name").type(name);
+    cy.findByTestId("modal-add").click();
+  }
+
   #fillSubFlowModal(subFlowName: string, name: string) {
     cy.get(".pf-v5-c-modal-box__title-text").contains(
-      "Add execution to " + subFlowName,
+      "Add sub-flow to " + subFlowName,
     );
     cy.findByTestId("name").type(name);
     cy.findByTestId("modal-add").click();
