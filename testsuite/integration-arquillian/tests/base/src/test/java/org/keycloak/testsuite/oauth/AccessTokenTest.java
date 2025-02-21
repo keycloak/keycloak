@@ -284,6 +284,28 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testTokenResponseUsingRfc9068HeaderType() throws Exception {
+        ClientsResource clients = realmsResouce().realm("test").clients();
+        ClientRepresentation client = clients.findByClientId(oauth.getClientId()).get(0);
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseJwtAsAccessTokenHeaderType(false);
+        clients.get(client.getId()).update(client);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+            JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+            assertEquals("at+jwt", header.getType());
+        } finally {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseJwtAsAccessTokenHeaderType(true);
+            clients.get(client.getId()).update(client);
+        }
+    }
+
     // KEYCLOAK-3692
     @Test
     public void accessTokenWrongCode() throws Exception {
