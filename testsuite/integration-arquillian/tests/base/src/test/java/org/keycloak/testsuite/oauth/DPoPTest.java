@@ -429,9 +429,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
             AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
             doSuccessfulUserInfoGet(response, rsaKeyPair);
 
-            // delete DPoP proof
-            oauth.dpopProof(null);
-            UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(null).send();
             assertEquals(401, userInfoResponse.getStatusCode());
             assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -446,8 +444,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
         AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
 
-        oauth.dpopProof(null);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(null).send();
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -463,8 +460,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         // invalid "htu" claim
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofRsaEncoded).send();
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -475,10 +471,10 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testMultipleUseDPoPProofOnUserInfo() throws Exception {
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
         AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
-        doSuccessfulUserInfoGet(response, rsaKeyPair);
+        String dpopProof = doSuccessfulUserInfoGet(response, rsaKeyPair);
 
         // use the same DPoP proof
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProof).send();
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -495,8 +491,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofRsaEncoded).send();
         assertEquals(401, userInfoResponse.getStatusCode());
         assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"DPoP proof and token binding verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
 
@@ -606,15 +601,13 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jkt, refreshToken.getConfirmation().getKeyThumbprint());
 
         // userinfo request without a DPoP proof - fail
-        oauth.dpopProof(null);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(null).send();
         assertEquals(401, userInfoResponse.getStatusCode());
 
         // userinfo request with a valid DPoP proof - success
         jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEcEncoded);
-        userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEcEncoded).send();
         assertEquals(200, userInfoResponse.getStatusCode());
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
 
@@ -742,13 +735,13 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         return response;
     }
 
-    private void doSuccessfulUserInfoGet(AccessTokenResponse accessTokenResponse, KeyPair rsaKeyPair) throws Exception {
+    private String doSuccessfulUserInfoGet(AccessTokenResponse accessTokenResponse, KeyPair rsaKeyPair) throws Exception {
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofRsaEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(accessTokenResponse);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(accessTokenResponse.getAccessToken()).dpop(dpopProofRsaEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
+        return dpopProofRsaEncoded;
     }
 
     private void testDPoPProofFailure(String dpopProofEncoded, String errorDescription) throws Exception {
@@ -932,8 +925,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         // userinfo access
         dpopProofEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
 
         // logout

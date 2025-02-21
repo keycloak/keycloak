@@ -6,23 +6,34 @@ import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 
-public abstract class AbstractHttpGetRequest<T, R> {
+public abstract class AbstractHttpGetRequest<R> {
 
-    protected final OAuthClient client;
+    protected final AbstractOAuthClient client;
 
-    public AbstractHttpGetRequest(OAuthClient client) {
+    private HttpGet get;
+
+    public AbstractHttpGetRequest(AbstractOAuthClient client) {
         this.client = client;
     }
 
     protected abstract String getEndpoint();
 
+    protected abstract void initRequest();
+
     public R send() {
-        HttpGet get = new HttpGet(getEndpoint());
+        get = new HttpGet(getEndpoint());
         get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        initRequest();
         try {
             return toResponse(client.httpClient().get().execute(get));
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void header(String name, String value) {
+        if (value != null) {
+            get.addHeader(name, value);
         }
     }
 

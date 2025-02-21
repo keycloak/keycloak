@@ -17,6 +17,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
@@ -53,6 +54,15 @@ public class OAuthClientTest {
     public void testClientCredential() {
         AccessTokenResponse accessTokenResponse = oAuthClient.doClientCredentialsGrantAccessTokenRequest();
         Assertions.assertTrue(accessTokenResponse.isSuccess());
+    }
+
+    @Test
+    public void testUserInfo() {
+        AccessTokenResponse accessTokenResponse = oAuthClient.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        UserInfoResponse userInfoResponse = oAuthClient.doUserInfoRequest(accessTokenResponse.getAccessToken());
+        Assertions.assertTrue(userInfoResponse.isSuccess());
+        Assertions.assertEquals(user.getUsername(), userInfoResponse.getUserInfo().getPreferredUsername());
     }
 
     @Test
