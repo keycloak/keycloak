@@ -15,15 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.tests.admin.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.junit.jupiter.api.Assertions;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.ByteArrayInputStream;
@@ -41,13 +47,14 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
+@KeycloakIntegrationTest
+public abstract class AbstractProtocolMapperTest {
 
-    protected Map<String, List<ProtocolMapperRepresentation>> builtinMappers = null;
+    @InjectAdminClient
+    Keycloak adminClient;
 
-    protected void initBuiltinMappers() {
-        builtinMappers = adminClient.serverInfo().getInfo().getBuiltinProtocolMappers();
-    }
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
     protected ProtocolMapperRepresentation makeMapper(String protocol, String name, String mapperType, Map<String, String> config) {
         ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
@@ -99,18 +106,19 @@ public abstract class AbstractProtocolMapperTest extends AbstractClientTest {
 
     protected void testAddAllBuiltinMappers(ProtocolMappersResource resource, String protocolName, String adminEventPath) {
         List<ProtocolMapperRepresentation> oldMappers = resource.getMappersPerProtocol(protocolName);
-        List<ProtocolMapperRepresentation> builtins = builtinMappers.get(protocolName);
+        List<ProtocolMapperRepresentation> builtins = adminClient.serverInfo().getInfo().getBuiltinProtocolMappers().get(protocolName);
 
         List<ProtocolMapperRepresentation> mappersToAdd = mappersToAdd(oldMappers, builtins);
 
         // This is used by admin console to add builtin mappers
         resource.createMapper(mappersToAdd);
 
-        AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, adminEventPath + "/add-models", ResourceType.PROTOCOL_MAPPER);
+        AdminEventRepresentation adminEvent = adminEvents.poll();
+        AdminEventAssertion.assertEvent(adminEvent, OperationType.CREATE, adminEventPath + "/add-models", ResourceType.PROTOCOL_MAPPER);
         try {
-            List<ProtocolMapperRepresentation> eventMappers = JsonSerialization.readValue(new ByteArrayInputStream(adminEvent.getRepresentation().getBytes()), new TypeReference<List<ProtocolMapperRepresentation>>() {
+            List<ProtocolMapperRepresentation> eventMappers = JsonSerialization.readValue(new ByteArrayInputStream(adminEvent.getRepresentation().getBytes()), new TypeReference<>() {
             });
-            Assert.assertEquals(eventMappers.size(), mappersToAdd.size());
+            Assertions.assertEquals(eventMappers.size(), mappersToAdd.size());
             for (int i=0 ; i< mappersToAdd.size() ; i++) {
                 ProtocolMapperRepresentation repExpected = mappersToAdd.get(i);
                 ProtocolMapperRepresentation repActual = eventMappers.get(i);
