@@ -386,7 +386,7 @@ export default function FlowDetails() {
                     variant="secondary"
                     onClick={() => setShowAddExecutionDialog(true)}
                   >
-                    {t("addStep")}
+                    {t("addExecution")}
                   </Button>
                 </ToolbarItem>
                 <ToolbarItem>
