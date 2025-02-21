@@ -7,6 +7,7 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  Radio,
   FormGroup,
   PageSection,
 } from "@patternfly/react-core";
@@ -57,7 +58,13 @@ export const RealmSettingsEmailTab = ({
   const authenticationEnabled = useWatch({
     control,
     name: "smtpServer.auth",
-    defaultValue: "",
+    defaultValue: realm.smtpServer?.auth || "false",
+  });
+
+  const authType = useWatch({
+    control,
+    name: "smtpServer.authType",
+    defaultValue: realm.smtpServer?.authType || "basic",
   });
 
   const testConnection = async () => {
@@ -217,16 +224,95 @@ export const RealmSettingsEmailTab = ({
                     required: t("required"),
                   }}
                 />
-                <PasswordControl
-                  name="smtpServer.password"
-                  label={t("password")}
-                  labelIcon={t("passwordHelp")}
-                  rules={{
-                    required: t("required"),
-                  }}
-                />
+                <FormGroup label={t("authenticationType")} fieldId="authType">
+                  <Controller
+                    name="smtpServer.authType"
+                    control={control}
+                    defaultValue="basic"
+                    render={({ field }) => (
+                      <>
+                        <Radio
+                          id="basicAuth"
+                          name="authType"
+                          label={t("authenticationTypeBasicAuth")}
+                          value="basic"
+                          isChecked={field.value === "basic"}
+                          onChange={() => field.onChange("basic")}
+                        />
+                        <Radio
+                          id="tokenAuth"
+                          name="authType"
+                          label={t("authenticationTypeTokenAuth")}
+                          value="token"
+                          isChecked={field.value === "token"}
+                          onChange={() => field.onChange("token")}
+                        />
+                      </>
+                    )}
+                  />
+                </FormGroup>
+                {authType === "basic" && (
+                  <PasswordControl
+                    name="smtpServer.password"
+                    label={t("password")}
+                    labelIcon={t("passwordHelp")}
+                    rules={{
+                      required: t("required"),
+                    }}
+                  />
+                )}
+                {authType === "token" && (
+                  <>
+                    <TextControl
+                      name="smtpServer.authTokenUrl"
+                      label={t("authTokenUrl")}
+                      placeholder={t("tokenTokenUrlPlaceholder")}
+                      rules={{
+                        required: t("required"),
+                      }}
+                    />
+                    <TextControl
+                      name="smtpServer.authTokenScope"
+                      label={t("authTokenScope")}
+                      placeholder={t("authTokenScopePlaceholder")}
+                      rules={{
+                        required: t("required"),
+                      }}
+                    />
+                    <TextControl
+                      name="smtpServer.authTokenClientId"
+                      label={t("authTokenClientId")}
+                      placeholder={t("authTokenClientIdPlaceholder")}
+                      rules={{
+                        required: t("required"),
+                      }}
+                    />
+                    <PasswordControl
+                      name="smtpServer.authTokenClientSecret"
+                      label={t("authTokenClientSecret")}
+                      labelIcon={t("authTokenClientSecretHelp")}
+                      rules={{
+                        required: t("required"),
+                      }}
+                    />
+                  </>
+                )}
               </>
             )}
+            <Controller
+              name="smtpServer.debug"
+              control={control}
+              defaultValue="false"
+              render={({ field }) => (
+                <Checkbox
+                  id="kc-enable-debug"
+                  data-testid="enable-debug"
+                  label={t("enableDebugSMTP")}
+                  isChecked={field.value === "true"}
+                  onChange={(_event, value) => field.onChange("" + value)}
+                />
+              )}
+            />
             {currentUser && (
               <FormGroup id="descriptionTestConnection">
                 {currentUser.email ? (
