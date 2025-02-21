@@ -96,8 +96,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       keycloak-js:
-        specifier: ^26.1.2
-        version: 26.1.2
+        specifier: ^26.2.0
+        version: 26.2.0
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -196,8 +196,8 @@ importers:
         specifier: ^3.10.1
         version: 3.10.1
       keycloak-js:
-        specifier: ^26.1.2
-        version: 26.1.2
+        specifier: ^26.2.0
+        version: 26.2.0
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -390,8 +390,8 @@ importers:
         specifier: ^24.2.2
         version: 24.2.2(typescript@5.7.3)
       keycloak-js:
-        specifier: ^26.1.2
-        version: 26.1.2
+        specifier: ^26.2.0
+        version: 26.2.0
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -3702,8 +3702,8 @@ packages:
   jszip@3.10.1:
     resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
 
-  keycloak-js@26.1.2:
-    resolution: {integrity: sha512-nZ26zNgZevVSo7bqeljOfFVCQ4HnPTeYIwdfIwg0uSuXgxD+zS0j1uqaypPlqU17Hu8qHlygj0u72TxPlCWmYw==}
+  keycloak-js@26.2.0:
+    resolution: {integrity: sha512-CrFcXTN+d6J0V/1v3Zpioys6qHNWE6yUzVVIsCUAmFn9H14GZ0vuYod+lt+SSpMgWGPuneDZBSGBAeLBFuqjsw==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -5995,7 +5995,7 @@ snapshots:
       i18next: 24.2.2(typescript@5.7.3)
       i18next-http-backend: 3.0.2
       jszip: 3.10.1
-      keycloak-js: 26.1.2
+      keycloak-js: 26.2.0
       lodash-es: 4.17.21
       p-debounce: 4.0.0
       react: 18.3.1
@@ -8902,7 +8902,7 @@ snapshots:
       readable-stream: 2.3.8
       setimmediate: 1.0.5
 
-  keycloak-js@26.1.2: {}
+  keycloak-js@26.2.0: {}
 
   keyv@4.5.4:
     dependencies:
