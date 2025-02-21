@@ -379,7 +379,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<OrganizationModel> getByMember(UserModel member) {
         throwExceptionIfObjectIsNull(member, "User");
-        TypedQuery<String> query = em.createNamedQuery("getGroupsByMember", String.class);
+
+        TypedQuery<String> query;
+        if(!member.isFederated()) {
+            query = em.createNamedQuery("getGroupsByMember", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupsByFederatedMember", String.class);
+        }
 
         query.setParameter("userId", member.getId());
 
