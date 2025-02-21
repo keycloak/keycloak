@@ -62,6 +62,8 @@ public class StartDevCommandDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("passkeys");
+        // ensure consistency with build-time properties
+        cliResult.assertNoMessage("Build time property cannot");
     }
 
     @DryRun
