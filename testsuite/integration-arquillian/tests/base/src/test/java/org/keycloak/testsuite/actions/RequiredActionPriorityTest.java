@@ -349,6 +349,8 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         /* NOTE: we don't configure VERIFY_PROFILE on the user - it's set on the session because the profile is incomplete */
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
+        // make sure no action is requested
+        oauth.kcAction(null);
         // Get a password reset link
         loginPage.open();
         loginPage.assertCurrent(TEST_REALM_NAME);
