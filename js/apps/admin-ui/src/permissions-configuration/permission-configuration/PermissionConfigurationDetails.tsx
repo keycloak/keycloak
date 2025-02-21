@@ -11,7 +11,7 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { useMemo, useState, type JSX } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -29,17 +29,9 @@ import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurati
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import { AssignedPolicies } from "./AssignedPolicies";
 import { ScopePicker } from "../../clients/authorization/ScopePicker";
-import { Users } from "./permission-type/Users";
+import { ResourceType } from "./ResourceType";
 import { sortBy } from "lodash-es";
 import { NameDescription } from "../../clients/authorization/policy/NameDescription";
-
-const COMPONENTS: {
-  [index: string]: () => JSX.Element;
-} = {
-  Users: Users,
-} as const;
-
-export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export default function PermissionConfigurationDetails() {
   const { adminClient } = useAdminClient();
@@ -225,14 +217,6 @@ export default function PermissionConfigurationDetails() {
     return <KeycloakSpinner />;
   }
 
-  function getComponentType() {
-    return isValidComponentType(resourceType)
-      ? COMPONENTS[resourceType]
-      : COMPONENTS["js"];
-  }
-
-  const ComponentType = getComponentType();
-
   return (
     <>
       <DeleteConfirm />
@@ -265,7 +249,7 @@ export default function PermissionConfigurationDetails() {
               clientId={permissionClientId}
               resourceTypeScopes={resourceTypeScopes ?? []}
             />
-            <ComponentType />
+            <ResourceType resourceType={resourceType} />
             <AssignedPolicies
               permissionClientId={permissionClientId}
               providers={providers!}

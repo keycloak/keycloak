@@ -42,11 +42,10 @@ export const ClientScope = () => {
 
   useFetch(
     () => adminClient.clientScopes.find(),
-    (scopes) => {
+    (scopes = []) => {
+      const clientScopes = getValues("clientScopes") || [];
       setSelectedScopes(
-        getValues("clientScopes").map(
-          (s) => scopes.find((c) => c.id === s.id)!,
-        ),
+        clientScopes.map((s) => scopes.find((c) => c.id === s.id)!),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },

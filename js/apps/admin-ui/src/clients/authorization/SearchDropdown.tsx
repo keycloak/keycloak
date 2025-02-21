@@ -23,11 +23,9 @@ export type SearchForm = {
   uri?: string;
   owner?: string;
   resourceType?: string;
-  policyId?: string;
 };
 
 type SearchDropdownProps = {
-  policies?: PolicyRepresentation[];
   resources?: UserRepresentation[];
   types?: PolicyRepresentation[];
   search: SearchForm;
@@ -36,7 +34,6 @@ type SearchDropdownProps = {
 };
 
 export const SearchDropdown = ({
-  policies,
   resources,
   types,
   search,
@@ -57,9 +54,6 @@ export const SearchDropdown = ({
 
   const [open, toggle] = useToggle();
   const [resourceScopes, setResourceScopes] = useState<string[]>([]);
-  const [localPolicies, setLocalPolicies] = useState<PolicyRepresentation[]>(
-    policies || [],
-  );
   const selectedType = useWatch({ control: form.control, name: "type" });
   const [key, setKey] = useState(0);
 
@@ -71,11 +65,7 @@ export const SearchDropdown = ({
   useEffect(() => {
     const type = types?.find((item) => item.type === selectedType);
     setResourceScopes(type?.scopes || []);
-
-    if (policies?.length) {
-      setLocalPolicies(policies);
-    }
-  }, [selectedType, types, policies]);
+  }, [selectedType, types]);
 
   useEffect(() => {
     reset(search);
@@ -125,7 +115,7 @@ export const SearchDropdown = ({
           )}
           {type !== "resource" && (
             <SelectControl
-              name={type !== "adminPermission" ? "type" : "type"}
+              name={type !== "adminPermission" ? "type" : "resourceType"}
               label={type !== "adminPermission" ? t("type") : t("resourceType")}
               controller={{
                 defaultValue: "",
@@ -171,21 +161,6 @@ export const SearchDropdown = ({
                   value: resourceScope!,
                 })),
               ]}
-            />
-          )}
-          {type === "adminPermission" && (
-            <SelectControl
-              name={"policyId"}
-              label={t("policy")}
-              controller={{ defaultValue: search.policyId || "" }}
-              options={
-                localPolicies
-                  ? localPolicies.map(({ id, name }) => ({
-                      key: id!,
-                      value: name!,
-                    }))
-                  : []
-              }
             />
           )}
           <ActionGroup>

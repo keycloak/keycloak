@@ -206,9 +206,9 @@ export default function PermissionsConfigurationSection() {
               </Tab>
               {hasViewUsers && (
                 <Tab
-                  id="evaluate"
-                  data-testid="permissionsEvaluate"
-                  title={<TabTitleText>{t("evaluate")}</TabTitleText>}
+                  id="evaluation"
+                  data-testid="permissionsEvaluation"
+                  title={<TabTitleText>{t("evaluation")}</TabTitleText>}
                   {...permissionsEvaluateTab}
                 >
                   <AuthorizationEvaluate

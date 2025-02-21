@@ -1,5 +1,4 @@
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   SelectControl,
   SelectVariant,
@@ -8,13 +7,18 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import type { ComponentProps } from "../dynamic/components";
+import type { ComponentProps } from "../../components/dynamic/components";
 
-type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
+type GroupsQuery = {
+  search?: string;
+  max?: number;
+};
+
+type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
 };
 
-export const ClientSelect = ({
+export const GroupSelect = ({
   name,
   label,
   helpText,
@@ -22,26 +26,19 @@ export const ClientSelect = ({
   isDisabled = false,
   required = false,
   variant = "typeahead",
-}: ClientSelectProps) => {
+}: GroupSelectProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
 
-  const [clients, setClients] = useState<ClientRepresentation[]>([]);
+  const [groups, setGroups] = useState<GroupRepresentation[]>([]);
   const [search, setSearch] = useState("");
 
   useFetch(
-    () => {
-      const params: ClientQuery = {
-        max: 20,
-      };
-      if (search) {
-        params.clientId = search;
-        params.search = true;
-      }
-      return adminClient.clients.find(params);
+    async () => {
+      const params: GroupsQuery = { max: 20, search };
+      return adminClient.groups.find(params);
     },
-    (clients) => setClients(clients),
+    setGroups,
     [search],
   );
 
@@ -62,10 +59,10 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
-      options={clients.map(({ id, clientId }) => ({
+      options={groups.map(({ id, name }) => ({
         key: id!,
-        value: clientId!,
-        label: clientId,
+        value: name!,
+        label: name,
       }))}
     />
   );
