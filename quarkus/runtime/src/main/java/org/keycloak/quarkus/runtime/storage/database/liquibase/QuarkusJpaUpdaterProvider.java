@@ -144,7 +144,7 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
             // create DEPLOYMENT_ID column if it doesn't exist
             if (!hasDeploymentIdColumn) {
-                ChangeLogHistoryService changelogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+                ChangeLogHistoryService changelogHistoryService = getChangeLogHistoryService().getChangeLogService(database);
                 changelogHistoryService.generateDeploymentId();
                 String deploymentId = changelogHistoryService.getDeploymentId();
 
@@ -281,7 +281,11 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
         liquibase.resetServices();
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+        getChangeLogHistoryService().register(new CustomChangeLogHistoryService());
+    }
+
+    private ChangeLogHistoryServiceFactory getChangeLogHistoryService() {
+        return Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class);
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {

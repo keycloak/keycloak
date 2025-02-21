@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@SuppressWarnings({"unchecked", "resource"})
 public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
 
     @Override

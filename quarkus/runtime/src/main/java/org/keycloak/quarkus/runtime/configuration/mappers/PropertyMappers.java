@@ -270,6 +270,7 @@ public final class PropertyMappers {
         }
 
         @Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
         public List<PropertyMapper<?>> get(Object key) {
             // First check if the requested option matches any wildcard mappers
             String strKey = (String) key;

@@ -24,7 +24,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.data.StatusData;
-import io.opentelemetry.sdk.trace.internal.data.ExceptionEventData;
+import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.opentelemetry.semconv.ExceptionAttributes;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
