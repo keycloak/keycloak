@@ -134,7 +134,7 @@
     "lightningcss": "^1.29.1",
     "ts-node": "^10.9.2",
     "vite": "^6.1.0",
-    "vite-plugin-checker": "^0.8.0",
+    "vite-plugin-checker": "^0.9.0",
     "vite-plugin-dts": "^4.5.0",
     "vitest": "^3.0.6"
   }
