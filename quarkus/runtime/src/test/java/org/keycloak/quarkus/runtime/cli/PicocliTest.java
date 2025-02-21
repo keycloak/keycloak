@@ -573,4 +573,11 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-output=json", "--log-syslog-json-format=ecs");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
+
+    @Test
+    public void proxyProtolNotAllowedWithProxyHeaders() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--proxy-headers=forwarded", "--proxy-protocol-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString(" protocol cannot be enabled when using the `proxy-headers` option"));
+    }
 }
