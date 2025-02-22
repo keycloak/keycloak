@@ -42,6 +42,7 @@ public class ProtocolMapperUtilsTest {
         };
 
         Assert.assertEquals("theo", ProtocolMapperUtils.getUserModelValue(useModel, "username"));
+        Assert.assertEquals("theo", ProtocolMapperUtils.getUserModelValue(useModel, "Username"));
         Assert.assertEquals("true", ProtocolMapperUtils.getUserModelValue(useModel, "emailVerified"));
         Assert.assertNull(ProtocolMapperUtils.getUserModelValue(useModel, "unknown"));
     }
