@@ -1,4 +1,5 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type { GroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   SelectControl,
   SelectVariant,
@@ -8,11 +9,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../../components/dynamic/components";
-
-type GroupsQuery = {
-  search?: string;
-  max?: number;
-};
 
 type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
@@ -29,16 +25,20 @@ export const GroupSelect = ({
 }: GroupSelectProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
   const [search, setSearch] = useState("");
 
   useFetch(
-    async () => {
-      const params: GroupsQuery = { max: 20, search };
+    () => {
+      const params: GroupQuery = {
+        max: 20,
+      };
+      if (search) {
+        params.search = search;
+      }
       return adminClient.groups.find(params);
     },
-    setGroups,
+    (groups) => setGroups(groups),
     [search],
   );
 
