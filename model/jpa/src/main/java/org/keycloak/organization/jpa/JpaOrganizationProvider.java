@@ -381,7 +381,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         throwExceptionIfObjectIsNull(member, "User");
 
         TypedQuery<String> query;
-        if(!member.isFederated()) {
+        if(StorageId.isLocalStorage(member.getId())) {
             query = em.createNamedQuery("getGroupsByMember", String.class);
         } else {
             query = em.createNamedQuery("getGroupsByFederatedMember", String.class);
