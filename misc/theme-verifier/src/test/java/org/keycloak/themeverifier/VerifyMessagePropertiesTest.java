@@ -51,6 +51,14 @@ class VerifyMessagePropertiesTest {
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Didn't find anchor tag")));
     }
 
+    @Test
+    void verifyNoExtraBlanks() throws MojoExecutionException {
+        List<String> verify = getFile("blanks_en.properties").verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Duplicate blanks")));
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("starts with a blank")));
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("ends with a blank")));
+    }
+
     private static VerifyMessageProperties getFile(String fixture) {
         URL resource = VerifyMessageProperties.class.getResource("/" + fixture);
         if (resource == null) {

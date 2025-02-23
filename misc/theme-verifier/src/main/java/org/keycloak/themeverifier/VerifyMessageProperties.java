@@ -49,6 +49,7 @@ public class VerifyMessageProperties {
             String contents = Files.readString(file.toPath());
             verifyNoDuplicateKeys(contents);
             verifySafeHtml();
+            verifyProblematicBlanks();
         } catch (IOException e) {
             throw new MojoExecutionException("Can not read file " + file, e);
         }
@@ -111,6 +112,39 @@ public class VerifyMessageProperties {
                 messages.add("Illegal HTML in key " + key + " for file " + file + ": '" + value.substring(start, value.length() - end) + "' vs. '" + sanitized.substring(start, sanitized.length() - end) + "'");
             }
 
+        });
+    }
+
+    /**
+     * Double blanks and blanks at the beginning of end of the string are difficult to translation in the translation tools and
+     * are easily missed. If a blank before or after the string is needed in the UI, add it in the HTML template.
+     */
+    private void verifyProblematicBlanks() {
+        if (!file.getName().endsWith("_en.properties")) {
+            // Only check EN original files, as the other files are checked by the translation tools
+            return;
+        }
+        PropertyResourceBundle bundle;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            bundle = new PropertyResourceBundle(fis);
+        } catch (IOException e) {
+            throw new RuntimeException("unable to read file " + file, e);
+        }
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (value.contains("  ")) {
+                messages.add("Duplicate blanks in " + key + " for file " + file + ": '" + value);
+            }
+
+            if (value.startsWith(" ")) {
+                messages.add(key + " starts with a blank in file " + file + ": '" + value);
+            }
+
+            if (value.endsWith(" ")) {
+                messages.add(key + " ends with a blank in file " + file + ": '" + value);
+            }
         });
     }
 
