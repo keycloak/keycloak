@@ -81,11 +81,11 @@ public class EmailTest extends AbstractI18NTest {
     @Test
     public void restPasswordEmail() throws MessagingException, IOException {
         String expectedBodyContent = "Someone just requested to change";
-        verifyResetPassword("Reset password", expectedBodyContent, 1);
+        verifyResetPassword("Reset password", expectedBodyContent, null, 1);
 
         changeUserLocale("en");
 
-        verifyResetPassword("Reset password", expectedBodyContent, 2);
+        verifyResetPassword("Reset password", expectedBodyContent, null, 2);
     }
 
     @Test
@@ -109,11 +109,11 @@ public class EmailTest extends AbstractI18NTest {
         getCleanup().addLocalization(Locale.GERMAN.toLanguageTag());
 
         try {
-            verifyResetPassword(subjectEn, expectedBodyContentEn, 1);
+            verifyResetPassword(subjectEn, expectedBodyContentEn, "<html lang=\"en\" dir=\"ltr\">", 1);
 
             changeUserLocale("de");
 
-            verifyResetPassword(subjectDe, expectedBodyContentDe, 2);
+            verifyResetPassword(subjectDe, expectedBodyContentDe, "<html lang=\"de\" dir=\"ltr\">", 2);
         } finally {
             // Revert
             changeUserLocale("en");
@@ -124,7 +124,7 @@ public class EmailTest extends AbstractI18NTest {
     public void restPasswordEmailGerman() throws MessagingException, IOException {
         changeUserLocale("de");
         try {
-            verifyResetPassword("Passwort zurücksetzen", "Es wurde eine Änderung", 1);
+            verifyResetPassword("Passwort zurücksetzen", "Es wurde eine Änderung", null, 1);
         } finally {
             // Revert
             changeUserLocale("en");
@@ -158,7 +158,7 @@ public class EmailTest extends AbstractI18NTest {
         }
     }
 
-    private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, int expectedMsgCount)
+    private void verifyResetPassword(String expectedSubject, String expectedTextBodyContent, String expectedHtmlBodyContent, int expectedMsgCount)
             throws MessagingException, IOException {
         loginPage.open();
         loginPage.resetPassword();
@@ -175,6 +175,11 @@ public class EmailTest extends AbstractI18NTest {
         // make sure all placeholders have been replaced
         assertThat(textBody, not(containsString("{")));
         assertThat(textBody, not(containsString("}")));
+
+        if (expectedHtmlBodyContent != null) {
+            String htmlBody = MailUtils.getBody(message).getHtml();
+            assertThat(htmlBody, containsString(expectedHtmlBodyContent));
+        }
     }
 
     //KEYCLOAK-7478
