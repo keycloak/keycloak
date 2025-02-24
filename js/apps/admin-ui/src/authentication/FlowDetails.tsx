@@ -222,7 +222,9 @@ export default function FlowDetails() {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmExecution",
+    titleKey: t("deleteConfirmExecution", {
+      name: selectedExecution?.displayName,
+    }),
     children: (
       <Trans i18nKey="deleteConfirmExecutionMessage">
         {" "}
@@ -386,7 +388,7 @@ export default function FlowDetails() {
                     variant="secondary"
                     onClick={() => setShowAddExecutionDialog(true)}
                   >
-                    {t("addStep")}
+                    {t("addExecution")}
                   </Button>
                 </ToolbarItem>
                 <ToolbarItem>

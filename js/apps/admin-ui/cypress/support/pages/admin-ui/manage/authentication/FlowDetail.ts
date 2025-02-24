@@ -60,7 +60,7 @@ export default class FlowDetails {
   }
 
   addExecution(subFlowName: string, executionTestId: string) {
-    this.#clickEditDropdownForFlow(subFlowName, "Add step");
+    this.#clickEditDropdownForFlow(subFlowName, "Add execution");
 
     cy.get(".pf-v5-c-pagination").should("exist");
     cy.findByTestId(executionTestId).click();
@@ -93,7 +93,7 @@ export default class FlowDetails {
 
   #fillSubFlowModal(subFlowName: string, name: string) {
     cy.get(".pf-v5-c-modal-box__title-text").contains(
-      "Add step to " + subFlowName,
+      "Add sub-flow to " + subFlowName,
     );
     cy.findByTestId("name").type(name);
     cy.findByTestId("modal-add").click();
