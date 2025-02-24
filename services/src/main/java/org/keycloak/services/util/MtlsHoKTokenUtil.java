@@ -36,7 +36,9 @@ public class MtlsHoKTokenUtil {
         try {
             // On Certificate Chain, first entry is considered to be client certificate.
             DERX509Base64UrlEncoded = getCertificateThumbprintInSHA256DERX509Base64UrlEncoded(certs[0]);
-            if (logger.isTraceEnabled()) dumpCertInfo(certs);
+            if (logger.isTraceEnabled()) {
+                dumpCertInfo(certs);
+            }
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             // give up issuing MTLS HoK Token
             logger.warnf("give up issuing hok token. %s", e);
@@ -75,7 +77,9 @@ public class MtlsHoKTokenUtil {
         try {
             // On Certificate Chain, first entry is considered to be client certificate.
             DERX509Base64UrlEncoded = getCertificateThumbprintInSHA256DERX509Base64UrlEncoded(certs[0]);
-            if (logger.isTraceEnabled()) dumpCertInfo(certs);
+            if (logger.isTraceEnabled()) {
+                dumpCertInfo(certs);
+            }
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             logger.warnf("client certificate exception. %s", e);
             return false;
@@ -97,7 +101,7 @@ public class MtlsHoKTokenUtil {
                 logger.errorv("\"{0}\" Spi is not available, did you forget to update the configuration?", X509ClientCertificateLookup.class);
             return null;
             }
-            X509Certificate[] certs = provider.getCertificateChain(request);
+            X509Certificate[] certs = X509ClientCertificateLookup.getTrustedCertificateChain(provider, request);
             return certs;
         } catch (GeneralSecurityException e) {
             logger.error(e.getMessage(), e);
