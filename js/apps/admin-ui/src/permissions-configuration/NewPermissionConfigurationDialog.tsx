@@ -9,7 +9,6 @@ import {
   Alert,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { isValidComponentType } from "./permission-configuration/PermissionConfigurationDetails";
 
 type NewPermissionConfigurationDialogProps = {
   resourceTypes?: ResourceTypesRepresentation[];
@@ -63,8 +62,7 @@ export const NewPermissionConfigurationDialog = ({
               >
                 <Td>{resourceType.type}</Td>
                 <Td style={{ textWrap: "wrap" }}>
-                  {isValidComponentType(resourceType.type!) &&
-                    t(`resourceType.${resourceType.type}`)}
+                  {t(`resourceType.${resourceType.type}`)}
                 </Td>
               </Tr>
             );

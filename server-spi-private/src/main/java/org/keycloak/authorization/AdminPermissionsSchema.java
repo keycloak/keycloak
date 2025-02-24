@@ -301,6 +301,8 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
                 // if there is single resource remaining delete it
                 if (policies.size() == 1 && policy.equals(policies.get(0))) {
                     authorization.getStoreFactory().getResourceStore().delete(resource.getId());
+                } else {
+                    policy.removeResource(resource);
                 }
             }
         } else {
