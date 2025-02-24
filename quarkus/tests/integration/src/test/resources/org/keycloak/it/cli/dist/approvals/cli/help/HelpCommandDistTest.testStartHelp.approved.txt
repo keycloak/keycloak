@@ -272,7 +272,8 @@ Proxy:
 --proxy-protocol-enabled <true|false>
                      Whether the server should use the HA PROXY protocol when serving requests from
                        behind a proxy. When set to true, the remote address returned will be the
-                       one from the actual connecting client. Default: false.
+                       one from the actual connecting client. Cannot be enabled when the
+                       `proxy-headers` is used. Default: false.
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.
