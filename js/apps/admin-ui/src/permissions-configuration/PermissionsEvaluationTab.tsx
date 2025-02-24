@@ -28,6 +28,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { UserSelect } from "../components/users/UserSelect";
 import { ClientSelect } from "../components/client/ClientSelect";
+import { GroupSelect } from "./resource-types/GroupSelect";
 import { FormAccess } from "../components/form/FormAccess";
 import { useAccess } from "../context/access/Access";
 import { ForbiddenSection } from "../ForbiddenSection";
@@ -56,6 +57,7 @@ type Props = {
 const COMPONENTS: Record<string, React.ElementType> = {
   users: UserSelect,
   clients: ClientSelect,
+  groups: GroupSelect,
 };
 
 export const PermissionsEvaluationTab = (props: Props) => {
