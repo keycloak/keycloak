@@ -56,6 +56,11 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
     }
 
     @Override
+    public String getShortcut() {
+        return "pc";
+    }
+
+    @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }

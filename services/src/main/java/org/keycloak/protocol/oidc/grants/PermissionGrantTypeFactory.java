@@ -36,6 +36,11 @@ public class PermissionGrantTypeFactory implements OAuth2GrantTypeFactory {
     }
 
     @Override
+    public String getShortcut() {
+        return "pg";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new PermissionGrantType();
     }
