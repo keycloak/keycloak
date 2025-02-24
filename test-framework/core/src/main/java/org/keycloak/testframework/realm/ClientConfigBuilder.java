@@ -3,6 +3,8 @@ package org.keycloak.testframework.realm;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 public class ClientConfigBuilder {
 
@@ -89,6 +91,15 @@ public class ClientConfigBuilder {
         }
 
         rep.getAttributes().put(key, value);
+        return this;
+    }
+
+    public ClientConfigBuilder defaultClientScopes(String... defaultClientScopes) {
+        if (rep.getDefaultClientScopes() == null) {
+            rep.setDefaultClientScopes(new LinkedList<>());
+        }
+
+        rep.getDefaultClientScopes().addAll(List.of(defaultClientScopes));
         return this;
     }
 
