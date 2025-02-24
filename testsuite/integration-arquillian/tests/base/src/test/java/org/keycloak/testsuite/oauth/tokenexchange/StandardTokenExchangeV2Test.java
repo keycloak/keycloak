@@ -27,21 +27,23 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
 import org.keycloak.util.TokenUtil;
@@ -56,12 +58,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
-public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
+public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -436,6 +440,10 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         assertEquals("Requested audience not available: target-client2", response.getErrorDescription());
 
         oauth.scope("optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client1"), null);
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+
+        oauth.scope("optional-scope2");
         response = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client2"), null);
         assertAudiencesAndScopes(response, List.of("target-client2"), List.of("optional-scope2"));
 
@@ -547,6 +555,40 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
             assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
             assertEquals("Scope offline_access not allowed for token exchange", response.getErrorDescription());
         }
+    }
+
+    @Test
+    public void testClientPolicies() throws Exception {
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profilo")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policy with condition on client scope optional-scope2
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, List.of("optional-scope2")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), null);
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+
+        //block token exchange request if optional-scope2 is requested
+        oauth.scope("optional-scope2");
+        response  = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client2"), null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
     }
 
     private void assertAudiences(AccessToken token, List<String> expectedAudiences) {

@@ -28,6 +28,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
@@ -40,6 +41,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
+import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 
@@ -113,6 +115,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             case BACKCHANNEL_TOKEN_RESPONSE:
                 if (isScopeMatched(((BackchannelTokenResponseContext)context).getParsedRequest())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            case TOKEN_EXCHANGE_REQUEST:
+                if (isScopeMatched(((TokenExchangeRequestContext) context).getTokenExchangeContext())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -131,6 +136,11 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
     private boolean isScopeMatched(CIBAAuthenticationRequest request) {
         if (request == null || request.getClient() == null) return false;
         return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClient().getClientId()));
+    }
+
+    private boolean isScopeMatched(TokenExchangeContext context) {
+        if (context == null) return false;
+        return isScopeMatched(context.getParams().getScope(), context.getClient());
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {
