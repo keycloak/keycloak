@@ -240,6 +240,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, val);
     }
 
+    public boolean isStandardTokenExchangeRefreshEnabled() {
+        return Boolean.parseBoolean(getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED));
+    }
+
+    public void setStandardTokenExchangeRefreshEnabled(boolean enable) {
+        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, String.valueOf(enable));
+    }
+
     public String getTlsClientAuthSubjectDn() {
         return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
      }

@@ -523,6 +523,9 @@
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
     "realmRoles" : [ "default-roles-test" ],
+    "clientRoles" : {
+      "target-client1" : [ "target-client1-role" ]
+    },
     "notBefore" : 0,
     "groups" : [ ]
   } ],
@@ -836,7 +839,7 @@
     "fullScopeAllowed" : false,
     "nodeReRegistrationTimeout" : -1,
     "defaultClientScopes" : [ "service_account", "acr", "default-scope1", "roles", "basic" ],
-    "optionalClientScopes" : [ "optional-scope2" ]
+    "optionalClientScopes" : [ "optional-scope2", "offline_access" ]
   }, {
     "id" : "2daeae03-ff78-4f79-8e72-1c4d443e1655",
     "clientId" : "requester-client-public",

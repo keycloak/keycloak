@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -205,14 +206,25 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
         if (targetUserSession == null) {
-            // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
+            // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                    requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                            ? UserSessionModel.SessionPersistenceState.PERSISTENT
+                            : UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
 
         event.session(targetUserSession);
 
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {
+            event.detail(Details.REASON, "Scope offline_access not allowed for token exchange");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Scope offline_access not allowed for token exchange", Response.Status.BAD_REQUEST);
+        }
 
         updateUserSessionFromClientAuth(targetUserSession);
 
@@ -231,20 +243,12 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             responseBuilder.getAccessToken().setSessionId(null);
         }
 
-        String issuedTokenType;
-        if (requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE)) {
-            issuedTokenType = OAuth2Constants.ID_TOKEN_TYPE;
-        } else if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
-                && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
+        if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
             responseBuilder.generateRefreshToken();
-            issuedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
-        } else {
-            issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
         }
 
         AccessTokenResponse res;
-        if (OAuth2Constants.ID_TOKEN_TYPE.equals(issuedTokenType)) {
+        if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
             // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
             res = responseBuilder.generateIDToken().build();
             res.setToken(res.getIdToken());
@@ -258,7 +262,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             res = responseBuilder.build();
         }
 
-        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
+        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
         if (responseBuilder.getAccessToken().getAudience() != null) {
             StringJoiner joiner = new StringJoiner(" ");
@@ -306,15 +310,22 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     protected String getRequestedTokenType() {
         String requestedTokenType = params.getRequestedTokenType();
         if (requestedTokenType == null) {
-            requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE; // TODO: Refresh token should not be the default one and should be supported just if enabled by the switch
-        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
-            event.detail(Details.REASON, "requested_token_type unsupported");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+            requestedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+            return requestedTokenType;
         }
-        return requestedTokenType;
+        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
+            return requestedTokenType;
+        }
+        OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                && oidcClient.isUseRefreshToken() && oidcClient.isStandardTokenExchangeRefreshEnabled()) {
+            return requestedTokenType;
+        }
+
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 }

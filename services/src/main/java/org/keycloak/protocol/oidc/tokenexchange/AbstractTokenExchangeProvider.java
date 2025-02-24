@@ -210,14 +210,17 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
-        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE) &&
-                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
-            event.detail(Details.REASON, "requested_token_type unsupported");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+            return requestedTokenType;
         }
-        return requestedTokenType;
+        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
+            return requestedTokenType;
+        }
+
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 
     protected List<ClientModel> getTargetAudienceClients() {
