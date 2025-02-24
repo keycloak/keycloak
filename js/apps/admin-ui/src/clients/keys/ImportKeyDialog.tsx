@@ -10,6 +10,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -33,6 +34,7 @@ export const ImportKeyDialog = ({
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation();
   const form = useForm<ImportFile>();
+  const [file, setFile] = useState<string>("");
   const { control, handleSubmit } = form;
 
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
@@ -104,30 +106,16 @@ export const ImportKeyDialog = ({
                 <FileUpload
                   id="importFile"
                   value={field.value.value}
-                  filename={field.value.filename}
-                  onTextChange={(value) =>
-                    field.onChange({ ...field.value, value })
-                  }
+                  filename={file}
+                  hideDefaultPreview
+                  type="text"
+                  onDataChange={(_, value) => {
+                    field.onChange({
+                      value,
+                    });
+                  }}
                   onFileInputChange={(_, file) => {
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const fileContent = event.target?.result as string;
-                      let decodedContent = fileContent;
-
-                      if (fileContent.toLowerCase().startsWith("data:")) {
-                        const base64Data = fileContent.split(",")[1];
-                        decodedContent = atob(base64Data);
-                      }
-
-                      field.onChange({
-                        filename: file.name,
-                        value: decodedContent,
-                      });
-                    };
-
-                    reader.readAsText(file);
+                    setFile(file.name);
                   }}
                 />
               )}
