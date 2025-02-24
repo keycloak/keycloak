@@ -18,6 +18,7 @@
 package org.keycloak.email.freemarker;
 
 import java.io.IOException;
+import java.text.Bidi;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -218,6 +219,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             attributes.put("locale", locale);
 
             Properties messages = theme.getEnhancedMessages(realm, locale);
+
+            String currentLanguageTag = locale.getLanguage();
+            String currentLanguage = messages.getProperty("locale_" + currentLanguageTag, currentLanguageTag);
+            boolean isLtr = new Bidi(currentLanguage, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).isLeftToRight();
+            attributes.put("ltr", isLtr);
+
             attributes.put("msg", new MessageFormatterMethod(locale, messages));
 
             attributes.put("properties", theme.getProperties());

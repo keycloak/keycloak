@@ -129,10 +129,6 @@ public class VerifyMessageProperties {
         // Unescape HTML entities, as we later also unescape HTML entities in the sanitized value
         value = org.apache.commons.text.StringEscapeUtils.unescapeHtml4(value);
 
-        if (file.getAbsolutePath().contains("email")) {
-            // TODO: move the RTL information for emails
-            value = value.replaceAll(Pattern.quote(" style=\"direction: rtl;\""), "");
-        }
         return value;
     }
 

@@ -37,12 +37,12 @@ public class LocaleBean {
     private final String currentLanguageTag;
     private final boolean rtl; // right-to-left language
     private final List<Locale> supported;
-    private static final ConcurrentHashMap<java.util.Locale, Boolean> bidiMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> bidiMap = new ConcurrentHashMap<>();
 
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
-        this.rtl = isLeftToRight(current);
+        this.rtl = isLeftToRight(this.current);
 
         Collator collator = Collator.getInstance(current);
         collator.setStrength(Collator.PRIMARY); // ignore case and accents
@@ -57,16 +57,18 @@ public class LocaleBean {
                 .collect(Collectors.toList());
     }
 
-    protected static boolean isLeftToRight(java.util.Locale current) {
+    protected static boolean isLeftToRight(String current) {
         // Some languages that are RTL have an English name in Java locales, like 'dv' aka Divehi as stated in
         // https://github.com/keycloak/keycloak/issues/33833#issuecomment-2446965307.
-        // Still, this solution seems to be good enough for now. Any exceptions would be added when those translations arise.
+        // Still, this solution seems to be good enough for now. Any exceptions would be added when those translations arise,
+        // as each localization file can contain a `locale_xx' property with the wanted translation.
+        //
         // Adding the ICU library was discarded at the time to avoid an additional dependency and due to its special license.
         // This might be reconsidered in the future if there are more scenarios.
         //
         // As the most likely alternative, a translation could in the future define RTL, its language name, and then this can be used instead.
 
-        return bidiMap.computeIfAbsent(current, l -> new Bidi(l.getLanguage(), Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).isLeftToRight());
+        return bidiMap.computeIfAbsent(current, l -> new Bidi(l, Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT).isLeftToRight());
     }
 
     public String getCurrent() {
