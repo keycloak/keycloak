@@ -530,6 +530,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
             oidcAdvancedConfigWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
         }
+
+        OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(newClient);
+        oidcAdvancedConfigWrapper.setUseJwtAsAccessTokenHeaderType(false);
     }
 
 }

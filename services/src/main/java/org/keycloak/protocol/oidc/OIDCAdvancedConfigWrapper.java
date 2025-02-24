@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_JWT_AS_ACCESS_TOKEN_HEADER_TYPE;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
@@ -212,8 +213,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
     }
 
-    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
-        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
+    public void setUseLowerCaseInTokenResponse(boolean useLowerCaseInTokenResponse) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useLowerCaseInTokenResponse));
+    }
+
+    public boolean isUseJwtAsAccessTokenHeaderType() {
+        return Boolean.parseBoolean(getAttribute(USE_JWT_AS_ACCESS_TOKEN_HEADER_TYPE, "true"));
+    }
+
+    public void setUseJwtAsAccessTokenHeaderType(boolean useJwtAsAccessTokenHeaderType) {
+        setAttribute(USE_JWT_AS_ACCESS_TOKEN_HEADER_TYPE, String.valueOf(useJwtAsAccessTokenHeaderType));
     }
 
     /**

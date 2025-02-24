@@ -171,6 +171,35 @@ export const OpenIdConnectCompatibilityModes = ({
           )}
         />
       </FormGroup>
+      <FormGroup
+        label={t("useJwtAsAccessTokenType")}
+        fieldId="useJwtAsAccessTokenType"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("useJwtAsAccessTokenTypeHelp")}
+            fieldLabelId="useJwtAsAccessTokenType"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.access.token.header.type.jwt",
+          )}
+          defaultValue="true"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="useJwtAsAccessTokenType"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("useJwtAsAccessTokenType")}
+            />
+          )}
+        />
+      </FormGroup>
       <ActionGroup>
         <Button
           variant="secondary"

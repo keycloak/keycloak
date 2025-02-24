@@ -13,3 +13,17 @@ would now be `http://example.com`.
 
 To mitigate that, either make your reverse proxy include the port in the `X-Forwarded-Host` header or configure it to set
 the `X-Forwarded-Port` header with the desired port.
+
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== New client OIDC compatibility mode for setting access token header type
+
+A new admin setting has been added: Clients -> Advanced -> OpenID Connect Compatibility Modes -> Use "JWT" as access token header type
+
+If enabled, access tokens will get header type `JWT`. Otherwise, the access token header type will be `at+jwt` in compliance with https://datatracker.ietf.org/doc/html/rfc9068#section-2.1[rfc9068#section-2.1].
+
+Existing clients will have this setting turned on, while new clients will have this setting turned off per default.
+
+This means that access tokens issued for new clients will have header type `at+jwt`, unless this compatibility setting is turned on.
