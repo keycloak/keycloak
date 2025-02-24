@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type PermissionsConfigurationTabs =
   | "permissions"
   | "policies"
-  | "evaluate";
+  | "evaluation";
 
 export type PermissionsConfigurationTabsParams = {
   realm: string;
