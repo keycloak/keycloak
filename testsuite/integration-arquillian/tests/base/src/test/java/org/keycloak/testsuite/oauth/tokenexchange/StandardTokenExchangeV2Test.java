@@ -159,10 +159,19 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
 
         response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
-        assertNotNull(response.getAccessToken());
-        assertEquals(TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
-        assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("requested_token_type unsupported", response.getErrorDescription());
+
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            assertNotNull(response.getAccessToken());
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
+            assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+        }
 
         response = tokenExchange(accessToken, "requester-client", "secret", null, Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE));
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
@@ -193,7 +202,7 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
         {
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
-            assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+            assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
             AccessToken exchangedToken = verifier.parse().getToken();
@@ -274,6 +283,7 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         AccessToken token = accessTokenVerifier.parse().getToken();
         assertNull(token.getSessionId());
         response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
         assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
         String exchangedTokenString = response.getAccessToken();
         TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
@@ -281,6 +291,24 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         assertNull(exchangedToken.getSessionId());
         assertEquals("requester-client", exchangedToken.getIssuedFor());
 
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            response = tokenExchange(accessToken, "requester-client", "secret", null,
+                    Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+            assertEquals(OAuth2Constants.REFRESH_TOKEN_TYPE, response.getIssuedTokenType());
+            assertNotNull(response.getAccessToken());
+            assertNotNull(response.getRefreshToken());
+
+            oauth.client("requester-client", "secret");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+
+            oauth.client("requester-client", "secret");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1"));
+        }
     }
 
     @Test
@@ -291,26 +319,23 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
         String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret");
         {
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
-            String exchangedTokenString = response.getAccessToken();
-            String refreshTokenString = response.getRefreshToken();
-            assertNotNull(exchangedTokenString);
-            assertNotNull(refreshTokenString);
-        }
-
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "requester-client");
-        ClientRepresentation clientRepresentation = client.toRepresentation();
-        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
-        client.update(clientRepresentation);
-
-        {
-            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+            assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             String refreshTokenString = response.getRefreshToken();
             assertNotNull(exchangedTokenString);
             assertNull(refreshTokenString);
         }
-        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
-        client.update(clientRepresentation);
+
+        try (ClientAttributeUpdater clienUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, Boolean.FALSE.toString())
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null,
+                    Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("requested_token_type unsupported", response.getErrorDescription());
+        }
     }
 
     @Test
@@ -432,19 +457,23 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
 
     @Test
     public void testScopeParamIncludedAudienceIncludedRefreshToken() throws Exception {
-        String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret");
-        oauth.scope("optional-scope2");
-        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client1"), Collections.singletonMap(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
-        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
-        assertNotNull(response.getRefreshToken());
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret");
+            oauth.scope("optional-scope2");
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), Collections.singletonMap(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+            assertNotNull(response.getRefreshToken());
 
-        oauth.client("requester-client", "secret");
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+            oauth.client("requester-client", "secret");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
 
-        oauth.client("requester-client", "secret");
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+            oauth.client("requester-client", "secret");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+        }
     }
 
     @Test
@@ -503,6 +532,20 @@ public class StandardTokenExchangeV2Test extends AbstractKeycloakTest {
             accessToken = loginWithConsents("mike", "password", "requester-client", "secret");
             response = tokenExchange(accessToken, "requester-client", "secret",  null, null);
             assertAudiencesAndScopes(response,  List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
+        }
+    }
+
+    @Test
+    public void testOfflineAccessNotAllowed() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret");
+            oauth.scope("offline_access");
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), Collections.singletonMap(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE));
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Scope offline_access not allowed for token exchange", response.getErrorDescription());
         }
     }
 

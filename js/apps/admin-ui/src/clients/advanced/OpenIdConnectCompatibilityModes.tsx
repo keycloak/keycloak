@@ -6,6 +6,7 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 type OpenIdConnectCompatibilityModesProps = {
   save: () => void;
@@ -19,7 +20,16 @@ export const OpenIdConnectCompatibilityModes = ({
   hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const { control, watch } = useFormContext();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const tokenExchangeEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.standard.token.exchange.enabled",
+    ),
+  );
+  const useRefreshTokens = watch(
+    convertAttributeNameToForm<FormFields>("attributes.use.refresh.tokens"),
+  );
   return (
     <FormAccess
       role="manage-clients"
@@ -171,6 +181,46 @@ export const OpenIdConnectCompatibilityModes = ({
           )}
         />
       </FormGroup>
+
+      {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+        <FormGroup
+          label={t("enableRefreshRequestedTokenType")}
+          fieldId="enableRefreshRequestedTokenType"
+          hasNoPaddingTop
+          labelIcon={
+            <HelpItem
+              helpText={t("enableRefreshRequestedTokenTypeHelp")}
+              fieldLabelId="enableRefreshRequestedTokenType"
+            />
+          }
+        >
+          <Controller
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.standard.token.exchange.enableRefreshRequestedTokenType",
+            )}
+            defaultValue="false"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="enableRefreshRequestedTokenType"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={
+                  field.value === "true" &&
+                  tokenExchangeEnabled?.toString() === "true" &&
+                  useRefreshTokens?.toString() === "true"
+                }
+                onChange={(_event, value) => field.onChange(value.toString())}
+                aria-label={t("enableRefreshRequestedTokenType")}
+                isDisabled={
+                  tokenExchangeEnabled?.toString() !== "true" ||
+                  useRefreshTokens?.toString() !== "true"
+                }
+              />
+            )}
+          />
+        </FormGroup>
+      )}
       <ActionGroup>
         <Button
           variant="secondary"
