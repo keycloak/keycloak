@@ -19,7 +19,7 @@
     }
   },
   "devDependencies": {
-    "@eslint/compat": "^1.2.6",
+    "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.21.0",
     "@types/node": "^22.13.4",
