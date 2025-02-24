@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.tests.admin.client;
 
+import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -36,39 +35,40 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.exportimport.ExportImportUtil;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@KeycloakIntegrationTest
 public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     private String oidcClientScopeId;
     private ProtocolMappersResource oidcMappersRsc;
     private String samlClientScopeId;
     private ProtocolMappersResource samlMappersRsc;
 
-    @Before
+    @BeforeEach
     public void init() {
         oidcClientScopeId = createClientScope("oidcMapperClient-scope", OIDCLoginProtocol.LOGIN_PROTOCOL);
         oidcMappersRsc = clientScopes().get(oidcClientScopeId).getProtocolMappers();
 
         samlClientScopeId = createClientScope("samlMapperClient-scope", SamlProtocol.LOGIN_PROTOCOL);
         samlMappersRsc = clientScopes().get(samlClientScopeId).getProtocolMappers();
-
-        super.initBuiltinMappers();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         removeClientScope(oidcClientScopeId);
         removeClientScope(samlClientScopeId);
@@ -76,8 +76,8 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     public void test01GetMappersList() {
-        assertTrue(oidcMappersRsc.getMappers().isEmpty());
-        assertTrue(samlMappersRsc.getMappers().isEmpty());
+        Assertions.assertTrue(oidcMappersRsc.getMappers().isEmpty());
+        Assertions.assertTrue(samlMappersRsc.getMappers().isEmpty());
     }
 
     @Test
@@ -107,10 +107,10 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
-        assertEquals(totalMappers + 1, samlMappersRsc.getMappers().size());
-        assertEquals(totalSamlMappers + 1, samlMappersRsc.getMappersPerProtocol("saml").size());
+        Assertions.assertEquals(totalMappers + 1, samlMappersRsc.getMappers().size());
+        Assertions.assertEquals(totalSamlMappers + 1, samlMappersRsc.getMappersPerProtocol("saml").size());
 
         ProtocolMapperRepresentation created = samlMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, created);
@@ -132,10 +132,10 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
-        assertEquals(totalMappers + 1, oidcMappersRsc.getMappers().size());
-        assertEquals(totalOidcMappers + 1, oidcMappersRsc.getMappersPerProtocol("openid-connect").size());
+        Assertions.assertEquals(totalMappers + 1, oidcMappersRsc.getMappers().size());
+        Assertions.assertEquals(totalOidcMappers + 1, oidcMappersRsc.getMappersPerProtocol("openid-connect").size());
 
         ProtocolMapperRepresentation created = oidcMappersRsc.getMapperById(createdId);//findByName(samlMappersRsc, "saml-role-name-mapper");
         assertEqualMappers(rep, created);
@@ -148,12 +148,12 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = samlMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "account.manage-account");
         rep.setId(createdId);
         samlMappersRsc.update(createdId, rep);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = samlMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
@@ -166,12 +166,12 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = oidcMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
         rep.setId(createdId);
         oidcMappersRsc.update(createdId, rep);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = oidcMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
@@ -179,9 +179,13 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     public void test08EffectiveMappers() {
-        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(testRealmResource(), "roles");
-        ProtocolMapperRepresentation audienceMapper = ExportImportUtil.findMapperByName(rolesScope.getProtocolMappers().getMappers(),
-                OIDCLoginProtocol.LOGIN_PROTOCOL, OIDCLoginProtocolFactory.AUDIENCE_RESOLVE);
+        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(managedRealm.admin(), "roles");
+        Assertions.assertNotNull(rolesScope);
+        List<ProtocolMapperRepresentation> mappers = rolesScope.getProtocolMappers().getMappers();
+        ProtocolMapperRepresentation audienceMapper = mappers.stream()
+                .filter(mapper ->
+                        mapper.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL) && mapper.getName().equals(OIDCLoginProtocolFactory.AUDIENCE_RESOLVE)
+                ).findFirst().orElseThrow();
 
         String clientScopeID = rolesScope.toRepresentation().getId();
         String protocolMapperId = audienceMapper.getId();
@@ -189,34 +193,34 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
         try {
             // Test default values available on the protocol mapper
-            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
-            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+            Assertions.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assertions.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
 
             // Update mapper to not contain default values
             audienceMapper.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
             audienceMapper.getConfig().remove(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION);
             rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
 
             // Test configuration will contain "effective values", which are the default values of particular options
             audienceMapper = rolesScope.getProtocolMappers().getMapperById(protocolMapperId);
-            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
-            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+            Assertions.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assertions.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
 
             // Override "includeInIntrospection"
             audienceMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "false");
             rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
 
             // Get mapper and check that "includeInIntrospection" is using overriden value instead of the default
             audienceMapper = rolesScope.getProtocolMappers().getMapperById(protocolMapperId);
-            Assert.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
-            Assert.assertEquals("false", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
+            Assertions.assertEquals("true", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN));
+            Assertions.assertEquals("false", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
 
         } finally {
             audienceMapper.getConfig().putAll(origConfig);
             rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
 
         }
     }
@@ -228,14 +232,14 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = samlMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         samlMappersRsc.delete(createdId);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
 
         try {
             samlMappersRsc.getMapperById(createdId);
-            Assert.fail("Not expected to find mapper");
+            Assertions.fail("Not expected to find mapper");
         } catch (NotFoundException nfe) {
             // Expected
         }
@@ -248,14 +252,14 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = oidcMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         oidcMappersRsc.delete(createdId);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
 
         try {
             oidcMappersRsc.getMapperById(createdId);
-            Assert.fail("Not expected to find mapper");
+            Assertions.fail("Not expected to find mapper");
         } catch (NotFoundException nfe) {
             // Expected
         }
@@ -263,7 +267,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
 
     private ClientScopesResource clientScopes() {
-        return testRealmResource().clientScopes();
+        return managedRealm.admin().clientScopes();
     }
 
     private String createClientScope(String clientScopeName, String protocol) {
@@ -271,17 +275,15 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
         rep.setName(clientScopeName);
         rep.setProtocol(protocol);
         Response resp = clientScopes().create(rep);
-        Assert.assertEquals(201, resp.getStatus());
-        resp.close();
         String scopeId = ApiUtil.getCreatedId(resp);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeResourcePath(scopeId), rep, ResourceType.CLIENT_SCOPE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeResourcePath(scopeId), rep, ResourceType.CLIENT_SCOPE);
 
         return scopeId;
     }
 
     private void removeClientScope(String clientScopeId) {
         clientScopes().get(clientScopeId).remove();
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeResourcePath(clientScopeId), ResourceType.CLIENT_SCOPE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientScopeResourcePath(clientScopeId), ResourceType.CLIENT_SCOPE);
     }
 }
