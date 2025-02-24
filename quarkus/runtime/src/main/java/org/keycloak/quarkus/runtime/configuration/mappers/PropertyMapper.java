@@ -98,10 +98,6 @@ public class PropertyMapper<T> {
         this.parentMapper = parentMapper;
     }
 
-    ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
-        return getConfigValue(to, context);
-    }
-
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
 
@@ -118,7 +114,7 @@ public class PropertyMapper<T> {
             // if the property we want to map depends on another one, we use the value from the other property to call the mapper
             // not getting the value directly from SmallRye Config to avoid the risk of infinite recursion when Config is initializing
             String mapFromWithPrefix = NS_KEYCLOAK_PREFIX + mapFrom;
-            config = PropertyMappers.getMapper(mapFromWithPrefix).getConfigValue(mapFromWithPrefix, context);
+            config = context.restart(mapFromWithPrefix);
             parentValue = true;
         }
 
@@ -288,7 +284,7 @@ public class PropertyMapper<T> {
         String map(String name, String value, ConfigSourceInterceptorContext context);
     }
 
-    private final class ContextWrapper implements ConfigSourceInterceptorContext {
+    private static final class ContextWrapper implements ConfigSourceInterceptorContext {
         private final ConfigSourceInterceptorContext context;
         private final ConfigValue value;
 
@@ -560,15 +556,6 @@ public class PropertyMapper<T> {
         }
         return String.format("'%s' in %s", getFrom(),
                 KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
-    }
-
-    /**
-     * Returns a new PropertyMapper tailored for the given env var key.
-     * This is currently useful in {@link WildcardPropertyMapper} where "to" and "from" fields need to include a specific
-     * wildcard key.
-     */
-    public PropertyMapper<?> forEnvKey(String key) {
-        return this;
     }
 
     /**

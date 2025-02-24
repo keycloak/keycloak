@@ -16,6 +16,7 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
@@ -85,7 +86,8 @@ public final class PropertyMappers {
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
+        if (NestedPropertyMappingInterceptor.isAtRoot() && (isRebuild() || Environment.isRebuildCheck())
+                && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
 
@@ -401,4 +403,5 @@ public final class PropertyMappers {
             operation.accept(mapper.getEnvVarFormat(), mapper);
         }
     }
+
 }

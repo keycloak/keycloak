@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -82,16 +83,27 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      * E.g. for the option "log-level-<category>" and the option name "log-level-io.quarkus",
      * the wildcard value would be "io.quarkus".
      */
-    private Optional<String> getMappedKey(String originalKey, boolean tryTo) {
-        Matcher matcher = fromWildcardPattern.matcher(originalKey);
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
+    private Optional<String> getMappedKey(String originalKey) {
+        Matcher matcher = null;
+        if (originalKey.startsWith(Picocli.ARG_PREFIX) || originalKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+            matcher = fromWildcardPattern.matcher(originalKey);
+            if (matcher.matches()) {
+                return Optional.of(matcher).map(m -> m.group(1));
+            }
         }
 
-        if (tryTo && toWildcardPattern != null) {
+        if (toWildcardPattern != null) {
             matcher = toWildcardPattern.matcher(originalKey);
             if (matcher.matches()) {
-                return Optional.of(matcher.group(1));
+                return Optional.of(matcher).map(m -> m.group(1));
+            }
+        }
+
+        if (originalKey.startsWith("KC_")) {
+            matcher = envVarNameWildcardPattern.matcher(originalKey);
+            if (matcher.matches()) {
+                // we opiniotatedly convert env var names to CLI format with dots
+                return Optional.of(matcher).map(m -> m.group(1).toLowerCase().replace("_", "."));
             }
         }
 
@@ -103,19 +115,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      * E.g. check if "log-level-io.quarkus" matches the wildcard pattern "log-level-<category>".
      */
     public boolean matchesWildcardOptionName(String name) {
-        return fromWildcardPattern.matcher(name).matches() || envVarNameWildcardPattern.matcher(name).matches()
-                || (toWildcardPattern != null && toWildcardPattern.matcher(name).matches());
-    }
-
-    @Override
-    public PropertyMapper<?> forEnvKey(String key) {
-        Matcher matcher = envVarNameWildcardPattern.matcher(key);
-        if (!matcher.matches()) {
-            throw new IllegalStateException("Env var '" + key + "' does not match the expected pattern '" + envVarNameWildcardPattern + "'");
-        }
-        String value = matcher.group(1);
-        final String wildcardValue = value.toLowerCase().replace("_", "."); // we opiniotatedly convert env var names to CLI format with dots
-        return forWildcardValue(wildcardValue);
+        return getMappedKey(name).isPresent();
     }
 
     private PropertyMapper<?> forWildcardValue(final String wildcardValue) {
@@ -126,8 +126,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     @Override
     public PropertyMapper<?> forKey(String key) {
-        final String wildcardValue = getMappedKey(key, true).orElseThrow();
-        return forWildcardValue(wildcardValue);
+        return getMappedKey(key).map(this::forWildcardValue).orElseThrow();
     }
 
 }

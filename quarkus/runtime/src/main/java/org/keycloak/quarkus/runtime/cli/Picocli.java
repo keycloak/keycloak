@@ -39,7 +39,6 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -405,11 +404,7 @@ public class Picocli {
                 if (!mapper.hasWildcard()) {
                     return; // non-wildcard options will be validated in the next pass
                 }
-                try {
-                    from = mapper.forKey(name).getFrom();
-                } catch (NoSuchElementException e) {
-                    return; // TODO: make this api better (see PropertyMappingInterceptor)
-                }
+                from = mapper.forKey(name).getFrom();
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
                         deprecatedInUse, missingOption, disabledMappers, mapper, from);
             });

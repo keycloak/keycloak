@@ -20,14 +20,13 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.collections4.iterators.FilterIterator;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -67,66 +66,49 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         disable.remove();
     }
 
-    static Iterator<String> filterRuntime(Iterator<String> iter) {
-        if (!isRebuild() && !Environment.isRebuildCheck()) {
-            return iter;
-        }
-        return new FilterIterator<>(iter, item -> !isRuntime(item));
-    }
-
-    static boolean isRuntime(String name) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-        return mapper != null && mapper.isRunTime();
-    }
-
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
         Iterable<String> iterable = () -> context.iterateNames();
 
         final Set<PropertyMapper<?>> allMappers = new HashSet<>(PropertyMappers.getMappers());
 
+        //TODO: this is still not a complete list - things like quarkus.log.console.enabled
+        // come from kc.log - but via a map from, not to.
+        // so we'd need additional logic like the getWildcardMappedFrom case for that
+
         boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
 
         var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
             PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+
             if (mapper == null) {
                 return Stream.of(name);
             }
-            allMappers.remove(mapper);
-            if ((filterRuntime && mapper.isRunTime())) {
-                return Stream.empty();
+            if (filterRuntime && mapper.getCategory() == OptionCategory.CONFIG) {
+                return Stream.of(); // advertising the keystore type causes the keystore to be used early
             }
+            allMappers.remove(mapper);
 
             if (!mapper.hasWildcard()) {
                 var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
                 if (wildCard != null) {
                     ConfigValue value = context.proceed(name);
-                    if (value.getValue() != null) {
+                    if (value != null && value.getValue() != null) {
                         return Stream.concat(Stream.of(name), wildCard.getToFromWildcardTransformer(value.getValue()));
                     }
                 }
-                //return Stream.of(name); - if we want the previous behavior of only providing wildcardnames
             }
 
-            try {
-                mapper = mapper.forKey(name);
-            } catch (NoSuchElementException e) {
-                // TODO: should the handling be clearer here - probably need to get the ConfigValue to see
-                // if it's env
-                // wildcard does not match - happens with wildcard env entries
-                return Stream.of(name);
-            }
+            mapper = mapper.forKey(name);
 
             // there is a corner case here -1 for the reload period has no 'to' value.
             // if that becomes an issue we could use more metadata to perform a full mapping
             return toDistinctStream(name, mapper.getTo());
         });
 
-        // TODO: this may not be necessary, but it make the names as complete as possible
-        // - if this is removed, then we need to have the IgnoredArtifacts logic look for the default
         var defaultStream = allMappers.stream()
-                .filter(m -> (!filterRuntime || !m.isRunTime()) && !m.getDefaultValue().isEmpty() && !m.hasWildcard()
-                        && m.getCategory() != OptionCategory.CONFIG)
+                .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                        && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
                 .flatMap(m -> toDistinctStream(m.getFrom(), m.getTo()));
 
         return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
@@ -141,6 +123,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         if (Boolean.TRUE.equals(disable.get())) {
             return context.proceed(name);
         }
-        return PropertyMappers.getValue(context, name);
+        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n);
+        return NestedPropertyMappingInterceptor.resolve(resolver, resolver, name);
     }
 }

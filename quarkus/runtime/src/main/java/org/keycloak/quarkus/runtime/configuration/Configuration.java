@@ -28,7 +28,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -150,12 +149,6 @@ public final class Configuration {
 
     public static Optional<Integer> getOptionalIntegerValue(String propertyName) {
         return getConfig().getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName), Integer.class);
-    }
-
-    public static String getMappedPropertyName(String key, PropertyMapper<?> mapper) {
-        mapper = mapper.forKey(key);
-        // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
-        return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
     }
 
     public static String toEnvVarFormat(String key) {
