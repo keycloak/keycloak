@@ -53,15 +53,15 @@ or skip this section if you want to connect to a different database for which th
 
 To install the Oracle Database driver for {project_name}:
 
-. Download the `ojdbc11` and `orai18n` JAR files from one of the following sources:
+. Download the `ojdbc17` and `orai18n` JAR files from one of the following sources:
 
 .. *Zipped JDBC driver and Companion Jars* version ${properties["oracle-jdbc.version"]} from the https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html[Oracle driver download page].
 
-.. Maven Central via `link:++https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar++[ojdbc11]` and `link:++https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar++[orai18n]`.
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc17/${properties["oracle-jdbc.version"]}/ojdbc17-${properties["oracle-jdbc.version"]}.jar++[ojdbc17]` and `link:++https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar++[orai18n]`.
 
 .. Installation media recommended by the database vendor for the specific database in use.
 
-. When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in {project_name}'s `providers` folder
+. When running the unzipped distribution: Place the `ojdbc17` and `orai18n` JAR files in {project_name}'s `providers` folder
 
 . When running containers: Build a custom {project_name} image and add the JARs in the `providers` folder. When building a custom image for the Operator, those images need to be optimized images with all build-time options of {project_name} set.
 +
@@ -70,7 +70,7 @@ A minimal Containerfile to build an image which can be used with the {project_na
 [source,dockerfile,subs="attributes+"]
 ----
 FROM quay.io/keycloak/keycloak:{containerlabel}
-ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc17/${properties["oracle-jdbc.version"]}/ojdbc17-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc17.jar
 ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
 # Setting the build parameter for the database:
 ENV KC_DB=oracle

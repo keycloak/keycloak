@@ -46,7 +46,7 @@ public class OracleTest extends BasicDatabaseTest {
         @Override
         public void accept(KeycloakDistribution distribution) {
             RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
-            rawDist.copyProvider("com.oracle.database.jdbc", "ojdbc11");
+            rawDist.copyProvider("com.oracle.database.jdbc", "ojdbc17");
             rawDist.copyProvider("com.oracle.database.nls", "orai18n");
         }
     }

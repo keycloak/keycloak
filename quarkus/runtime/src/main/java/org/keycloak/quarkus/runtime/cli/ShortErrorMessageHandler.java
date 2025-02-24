@@ -95,7 +95,7 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
         return getInvalidInputExitCode(ex, cmd);
     }
 
-    static int getInvalidInputExitCode(Exception ex, CommandLine cmd) {
+    static int getInvalidInputExitCode(Throwable ex, CommandLine cmd) {
         return cmd.getExitCodeExceptionMapper() != null
                 ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
                 : cmd.getCommandSpec().exitCodeOnInvalidInput();
