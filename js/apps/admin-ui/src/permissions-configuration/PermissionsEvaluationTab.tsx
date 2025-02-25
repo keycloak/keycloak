@@ -122,6 +122,12 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
       userId: formValues.user![0],
+      resources: [
+        {
+          name: formValues.users![0],
+          scopes: formValues.authScopes!.map((scope) => ({ name: scope })),
+        },
+      ],
       entitlements: false,
       context: {
         attributes: {},

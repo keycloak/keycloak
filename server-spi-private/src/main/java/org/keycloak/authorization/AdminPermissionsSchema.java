@@ -36,7 +36,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -105,14 +104,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         String name;
 
         switch (resourceType) {
-            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id);
-            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id);
-            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id);
+            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id).map(ClientModel::getId).orElse(resourceType);
+            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id).map(GroupModel::getId).orElse(resourceType);
+            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id).map(UserModel::getId).orElse(resourceType);
             default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
-        }
-
-        if (name == null) {
-            throw new IllegalStateException("Could not map resource object with type [" + resourceType + "] and id [" + id + "]");
         }
 
         resource = resourceStore.findByName(resourceServer, name);
@@ -178,14 +173,13 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
     }
 
-    private String resolveGroup(KeycloakSession session, String id) {
+    private Optional<GroupModel> resolveGroup(KeycloakSession session, String id) {
         RealmModel realm = session.getContext().getRealm();
-        GroupModel group = session.groups().getGroupById(realm, id);
 
-        return group == null ? GROUPS_RESOURCE_TYPE : group.getId();
+        return Optional.ofNullable(session.groups().getGroupById(realm, id));
     }
 
-    private String resolveUser(KeycloakSession session, String id) {
+    private Optional<UserModel> resolveUser(KeycloakSession session, String id) {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().getUserById(realm, id);
 
@@ -193,10 +187,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             user = session.users().getUserByUsername(realm, id);
         }
 
-        return user == null ? USERS_RESOURCE_TYPE : user.getId();
+        return Optional.ofNullable(user);
     }
 
-    private String resolveClient(KeycloakSession session, String id) {
+    private Optional<ClientModel> resolveClient(KeycloakSession session, String id) {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = session.clients().getClientById(realm, id);
 
@@ -204,7 +198,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             client = session.clients().getClientByClientId(realm, id);
         }
 
-        return client == null ? CLIENTS_RESOURCE_TYPE : client.getId();
+        return Optional.ofNullable(client);
     }
 
     private StoreFactory getStoreFactory(KeycloakSession session) {
@@ -330,24 +324,33 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         ResourceServer resourceServer = policy.getResourceServer();
 
         if (supportsAuthorizationSchema(session, resourceServer)) {
-            String resourceType = policy.getResourceType();
-
-            if (USERS.getType().equals(resourceType)) {
-                if (resource.getName().equals(USERS_RESOURCE_TYPE)) {
-                    return "All users";
-                }
-
-                UserModel user = session.users().getUserById(session.getContext().getRealm(), resource.getName());
-
-                if (user == null) {
-                    throw new ModelIllegalStateException("User not found for resource [" + resource.getId() + "]");
-                }
-
-                return user.getUsername();
-            }
+            return getResourceName(session, resourceServer, policy.getResourceType(), resource.getName());
         }
 
         return resource.getDisplayName();
+    }
+
+    public String getResourceName(KeycloakSession session, ResourceServer resourceServer, String resourceType, String resourceName) {
+        if (resourceType == null) {
+            return resourceName;
+        }
+
+        if (supportsAuthorizationSchema(session, resourceServer)) {
+            switch (resourceType) {
+                case CLIENTS_RESOURCE_TYPE -> {
+                    return resolveClient(session, resourceName).map(ClientModel::getClientId).orElse(resourceType);
+                }
+                case GROUPS_RESOURCE_TYPE -> {
+                    return resolveGroup(session, resourceName).map(GroupModel::getName).orElse(resourceType);
+                }
+                case USERS_RESOURCE_TYPE -> {
+                    return resolveUser(session, resourceName).map(UserModel::getUsername).orElse(resourceType);
+                }
+                default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
+            }
+        }
+
+        return resourceName;
     }
 
     public void addUResourceTypeResource(KeycloakSession session, ResourceServer resourceServer, Policy policy, String resourceType) {

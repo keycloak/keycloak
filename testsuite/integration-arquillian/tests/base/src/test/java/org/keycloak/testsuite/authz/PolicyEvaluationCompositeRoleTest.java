@@ -111,6 +111,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
         String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
         Map<String, String> config = new HashMap<>();
         config.put("roles", roleValues);
+        config.put("fetchRoles", Boolean.TRUE.toString());
         representation.setConfig(config);
 
         return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
