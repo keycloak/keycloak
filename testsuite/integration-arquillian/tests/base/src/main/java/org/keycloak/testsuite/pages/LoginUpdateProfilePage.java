@@ -106,7 +106,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     }
 
     public boolean isDepartmentEnabled() {
-        return departmentInput.getAttribute("readOnly") == null;
+        return departmentInput.isEnabled();
     }
 
     public boolean isCurrent() {

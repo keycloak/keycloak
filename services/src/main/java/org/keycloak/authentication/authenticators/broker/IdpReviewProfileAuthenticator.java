@@ -22,6 +22,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -60,7 +61,6 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     private static final String TERMS_FIELD ="termsAccepted";
     private boolean enabledRequiredAction= false;
     private boolean updateProfile= false;
-
     @Override
     public boolean requiresUser() {
         return false;
@@ -69,9 +69,8 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx, BrokeredIdentityContext brokerContext) {
         IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
-        AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
-        enabledRequiredAction = context.getRealm().getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()).isEnabled()  && Boolean.valueOf(authenticatorConfig.getConfig().get(IdpReviewProfileAuthenticatorFactory.TERMS_AND_CONDITIONS));
-        updateProfile = requiresUpdateProfilePage(authenticatorConfig, context, userCtx);
+        enabledRequiredAction = context.getRealm().getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()).isEnabled() && Boolean.valueOf(context.getAuthenticatorConfig().getConfig().get(IdpReviewProfileAuthenticatorFactory.TERMS_AND_CONDITIONS));
+        updateProfile = requiresUpdateProfilePage(context.getAuthenticatorConfig(), context, userCtx);
 
         if ( enabledRequiredAction || updateProfile) {
 
@@ -84,7 +83,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             // No formData for first render. The profile is rendered from userCtx
             Response challengeResponse = context.form()
                     .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
-                    .setAttribute(LoginFormsProvider.IS_UPDATE_PROFILE, updateProfile)
+                    .setAttribute(LoginFormsProvider.UPDATE_PROFILE_FIRST_LOGIN, updateProfile)
                     .setAttribute(LoginFormsProvider.TERMS_ACCEPTANCE_REQUIRED, enabledRequiredAction)
                     .setFormData(null)
                     .createUpdateProfilePage();
@@ -95,7 +94,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         }
     }
 
-    protected boolean requiresUpdateProfilePage( AuthenticatorConfigModel authenticatorConfig, AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx) {
+    protected boolean requiresUpdateProfilePage(AuthenticatorConfigModel authenticatorConfig, AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx) {
         if (Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(ENFORCE_UPDATE_PROFILE))) {
             return true;
         }
@@ -107,7 +106,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             updateProfileFirstLogin = authenticatorConfig.getConfig().get(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN);
         }
 
-        if(IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin)) {
+        if (IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin)) {
             try {
                 UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
                 profileProvider.create(UserProfileContext.IDP_REVIEW, userCtx.getAttributes()).validate();
@@ -125,12 +124,32 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         EventBuilder event = context.getEvent();
         event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        //for security reason when updateProfile is false, keep old values equal to broken data
+        if (!updateProfile) {
+            formData.put("username", Stream.of(userCtx.getUsername()).toList());
+            if (userCtx.getEmail() != null) {
+                formData.put("email", Stream.of(userCtx.getEmail()).toList());
+            } else {
+                formData.remove("email");
+            }
+            if (userCtx.getFirstName() != null) {
+                formData.put("firstName", Stream.of(userCtx.getFirstName()).toList());
+            } else {
+                formData.remove("firstName");
+            }
+            if (userCtx.getLastName() != null) {
+                formData.put("lastName", Stream.of(userCtx.getLastName()).toList());
+            }  else {
+                formData.remove("lastName");
+            }
+            userCtx.getAttributes().entrySet().stream().forEach(x -> formData.put(x.getKey(), x.getValue()));
+        }
 
         if (enabledRequiredAction && ! formData.containsKey(TERMS_FIELD)) {
             Response challengeForTerms = context.form()
                     .setErrors(Collections.singletonList(new FormMessage(TERMS_FIELD, "termsAcceptanceRequired")))
                     .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
-                    .setAttribute(LoginFormsProvider.IS_UPDATE_PROFILE, updateProfile)
+                    .setAttribute(LoginFormsProvider.UPDATE_PROFILE_FIRST_LOGIN, updateProfile)
                     .setAttribute(LoginFormsProvider.TERMS_ACCEPTANCE_REQUIRED, enabledRequiredAction)
                     .setFormData(formData)
                     .createUpdateProfilePage();
@@ -230,6 +249,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             attributes.remove(TERMS_FIELD);
             attributes.put(TermsAndConditions.USER_ATTRIBUTE, Arrays.asList(Integer.toString(Time.currentTime())));
         }
+
         UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, attributes, updatedProfile, formData.containsKey(TERMS_FIELD));
 
         try {
@@ -247,7 +267,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             Response challenge = context.form()
                     .setErrors(errors)
                     .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
-                    .setAttribute(LoginFormsProvider.IS_UPDATE_PROFILE, updateProfile)
+                    .setAttribute(LoginFormsProvider.UPDATE_PROFILE_FIRST_LOGIN, updateProfile)
                     .setAttribute(LoginFormsProvider.TERMS_ACCEPTANCE_REQUIRED, enabledRequiredAction)
                     .setFormData(formData)
                     .createUpdateProfilePage();
