@@ -50,6 +50,7 @@ import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -201,7 +202,7 @@ public class CertificateReloadManager implements Lifecycle {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(false);
             }
-            var delay = delayUntilNextRotation(crt.getCertificate().getNotBefore().toInstant());
+            var delay = delayUntilNextRotation(crt.getCertificate().getNotBefore().toInstant(), crt.getCertificate().getNotAfter().toInstant());
             logger.debugf("Next rotation in %s", delay);
             if (delay.isZero()) {
                 blockingManager.runBlocking(this::rotateCertificate, "rotate");
@@ -214,16 +215,23 @@ public class CertificateReloadManager implements Lifecycle {
     private void replaceCertificateInTransaction(KeycloakSession session) {
         var storage = session.getProvider(ServerConfigStorageProvider.class);
         var holder = certificateHolder.getCertificateInUse();
-        storage.replace(CERTIFICATE_ID, holder::isSameAlias, () -> generateSelfSignedCertificate(rotationSeconds * 2));
+        storage.replace(CERTIFICATE_ID, holder::isSameAlias, () -> generateSelfSignedCertificate(rotationSeconds * 2L));
     }
 
     private static Optional<String> loadCertificateInTransaction(KeycloakSession session) {
         return session.getProvider(ServerConfigStorageProvider.class).find(CERTIFICATE_ID);
     }
 
-    private Duration delayUntilNextRotation(Instant certificateStartInstant) {
+    private Duration delayUntilNextRotation(Instant certificateStartInstant, Instant certificateEndInstant) {
         var rotationInstant = certificateStartInstant.plus(Duration.ofSeconds(rotationSeconds));
-        var secondsLeft = certificateStartInstant.until(rotationInstant, ChronoUnit.SECONDS);
+
+        // Avoid the current certificate to expire if the old duration was shorter than the new duration
+        var rotationInstantOldCertificate = certificateStartInstant.plus(Duration.between(certificateStartInstant, certificateEndInstant).dividedBy(2));
+        if (rotationInstantOldCertificate.isBefore(rotationInstant)) {
+            rotationInstant = rotationInstantOldCertificate;
+        }
+
+        var secondsLeft = Instant.ofEpochSecond(Time.currentTime()).until(rotationInstant, ChronoUnit.SECONDS);
         return secondsLeft > 0 ? Duration.ofSeconds(secondsLeft) : Duration.ZERO;
     }
 
