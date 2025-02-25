@@ -88,6 +88,7 @@
     }
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.2",
@@ -97,7 +98,6 @@
     "@patternfly/react-table": "^5.4.16",
     "@uiw/react-textarea-code-editor": "^3.1.0",
     "admin-ui": "file:",
-    "@dagrejs/dagre": "^1.1.4",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
     "i18next": "^24.2.2",
@@ -133,7 +133,7 @@
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.29.1",
     "ts-node": "^10.9.2",
-    "vite": "^6.1.1",
+    "vite": "^6.2.0",
     "vite-plugin-checker": "^0.9.0",
     "vite-plugin-dts": "^4.5.0",
     "vitest": "^3.0.7"
