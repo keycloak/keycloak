@@ -314,6 +314,9 @@ The generated certificate and associated keys are stored within the database of 
 
 To enable zero-configuration TLS encryption, set the `cache-embedded-mtls-enabled` option to true.
 No other `cache-embedded-mtls-*` must be set to enable the zero-configuration mode.
+
+The `cache-embedded-mtls-rotation-interval-days` option (default: 30 days) configures the certificate rotation period, and the certificate's expiration duration is calculated as twice the specified interval.
+
 ====
 
 For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
