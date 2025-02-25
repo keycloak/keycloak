@@ -254,7 +254,7 @@ public class CertificateReloadManager implements Lifecycle {
     public static String generateSelfSignedCertificate(long validForSeconds) {
         var endDate = Date.from(Instant.now().plus(validForSeconds, ChronoUnit.SECONDS));
         var keyPair = KeyUtils.generateRsaKeyPair(2048);
-        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.ONE, endDate);
+        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate);
 
         logger.debugf("Created JGroups certificate. Valid until %s", certificate.getNotAfter());
 
