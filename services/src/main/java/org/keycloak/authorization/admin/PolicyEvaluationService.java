@@ -194,6 +194,13 @@ public class PolicyEvaluationService {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer, resource.getId());
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
+            } else if (resource.getName() != null) {
+                Resource resourceModel = storeFactory.getResourceStore().findByName(resourceServer, resource.getName());
+                if (resourceModel == null) {
+                    return Stream.empty();
+                }
+                return new ArrayList<>(Arrays.asList(
+                        Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
                 return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
