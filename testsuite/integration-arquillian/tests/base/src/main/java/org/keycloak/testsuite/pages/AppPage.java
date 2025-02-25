@@ -33,7 +33,6 @@ public class AppPage extends AbstractPage {
     @FindBy(id = "account")
     private WebElement accountLink;
 
-    @Override
     public void open() {
         DroneUtils.getCurrentDriver().navigate().to(OAuthClient.APP_AUTH_ROOT);
     }

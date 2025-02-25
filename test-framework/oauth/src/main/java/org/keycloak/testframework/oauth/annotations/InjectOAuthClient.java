@@ -1,5 +1,8 @@
 package org.keycloak.testframework.oauth.annotations;
 
+import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
+import org.keycloak.testframework.realm.ClientConfig;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -9,10 +12,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface InjectOAuthClient {
 
-    String realmRef() default "";
+    Class<? extends ClientConfig> config() default DefaultOAuthClientConfiguration.class;
 
-    String clientRef() default "";
-    String clientId() default "";
-    String clientSecret() default "";
+    String realmRef() default "";
 
 }

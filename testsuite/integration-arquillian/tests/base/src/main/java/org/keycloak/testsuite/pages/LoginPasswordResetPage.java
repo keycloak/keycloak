@@ -62,10 +62,6 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public String getSuccessMessage() {
         return emailSuccessMessage != null ? emailSuccessMessage.getText() : null;
     }

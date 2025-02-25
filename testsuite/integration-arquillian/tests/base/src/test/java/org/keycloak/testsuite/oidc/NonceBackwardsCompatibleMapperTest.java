@@ -164,7 +164,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());

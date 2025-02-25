@@ -156,7 +156,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             oauth.doLogin("test-user@localhost", "password");
             events.expectLogin().client("test-app").assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
@@ -171,7 +171,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         oauth.clientId("test-app");
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider() {
             @Override
             protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
@@ -231,7 +231,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             oauth.doLogin("test-user@localhost", "password");
             events.expectLogin().client(clientId).assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_client", response.getError());
@@ -252,7 +252,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .client("test-app")
                 .assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, algorithm));
 
         assertEquals(200, response.getStatusCode());
@@ -300,7 +300,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         oauth.clientId("jwt-client");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().client("jwt-client").assertEvent();
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, algorithm));
         assertThat(response.getStatusCode(), is(HttpStatus.SC_OK));
     }
@@ -315,7 +315,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .client("test-app")
                 .assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("ppassswordd", 20));
 
         // https://tools.ietf.org/html/rfc6749#section-5.2
@@ -331,7 +331,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .client("test-app")
                 .assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         String clientSignedJWT = getClientSignedJWT(CLIENT_SECRET, 20);
 
         AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
@@ -348,7 +348,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .client("test-app")
                 .assertEvent();
 
-        String code2 = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code2 = oauth.parseLoginResponse().getCode();
         response = doAccessTokenRequest(code2, clientSignedJWT);
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
                 .error("invalid_client_credentials")
@@ -384,7 +384,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         oauth.clientId("jwt-client");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().client("jwt-client").assertEvent();
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, Algorithm.HS256));
         assertThat(response.getStatusCode(), is(HttpStatus.SC_BAD_REQUEST));
 

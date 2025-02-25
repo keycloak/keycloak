@@ -118,9 +118,4 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
                 driver.findElement(By.id("registerWebAuthn")).isDisplayed();
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 }

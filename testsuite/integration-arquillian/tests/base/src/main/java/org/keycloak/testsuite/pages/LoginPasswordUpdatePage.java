@@ -59,10 +59,6 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
         return PageUtils.getPageTitle(driver).equals("Update password");
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }

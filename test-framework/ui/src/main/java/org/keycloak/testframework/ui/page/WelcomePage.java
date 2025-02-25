@@ -27,6 +27,9 @@ public class WelcomePage extends AbstractPage {
     @FindBy(css = ".pf-v5-c-login__main-header-desc")
     private WebElement welcomeDescription;
 
+    @FindBy(css = ".pf-v5-c-button")
+    private WebElement openAdminConsoleLink;
+
     public WelcomePage(WebDriver driver) {
         super(driver);
     }
@@ -45,6 +48,10 @@ public class WelcomePage extends AbstractPage {
         submitButton.click();
     }
 
+    public void clickOpenAdminConsole() {
+        openAdminConsoleLink.click();
+    }
+
     public String getWelcomeMessage() {
         return welcomeMessage.getText();
     }
@@ -57,4 +64,8 @@ public class WelcomePage extends AbstractPage {
         return pageAlert.getText();
     }
 
+    @Override
+    public String getExpectedPageId() {
+        return "welcome";
+    }
 }

@@ -612,7 +612,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             Assert.assertNull(loginResponse.getError());
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             // Check token obtaining.
             AccessTokenResponse accessTokenResponse;
@@ -751,8 +751,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         oauth.clientId(clientPublicId);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        assertEquals("invalid client access type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+        assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.parseLoginResponse().getError());
+        assertEquals("invalid client access type", oauth.parseLoginResponse().getErrorDescription());
     }
 
     @Test
@@ -1205,8 +1205,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.nonce(nonce);
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("The intent is not bound with the client", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
@@ -1219,8 +1220,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentFragment().get(OAuth2Constants.CODE);
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, true);
+        String code = oauth.parseLoginResponse().getCode();
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         JWSInput idToken = new JWSInput(authzResponse.getIdToken());
         ObjectMapper mapper = JsonSerialization.mapper;
         JsonParser parser = mapper.getFactory().createParser(idToken.readContentAsString());
@@ -1257,8 +1258,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // send an authorization request
         oauth.request(request);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
     }
 
     @Test
@@ -1322,8 +1324,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.responseType(responseType);
         oauth.nonce(nonce);
         oauth.openLoginForm();
-        assertEquals(expectedError, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals(expectedErrorDescription, oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(expectedError, authorizationEndpointResponse.getError());
+        assertEquals(expectedErrorDescription, authorizationEndpointResponse.getErrorDescription());
     }
 
 }

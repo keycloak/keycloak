@@ -1,6 +1,5 @@
 package org.keycloak.test.examples;
 
-import com.nimbusds.oauth2.sdk.GeneralException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Assertions;
@@ -11,8 +10,8 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.oauth.nimbus.OAuthClient;
-import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -20,7 +19,6 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 
-import java.io.IOException;
 import java.util.Map;
 
 @KeycloakIntegrationTest
@@ -39,8 +37,8 @@ public class EmailTest {
     OAuthClient oAuthClient;
 
     @Test
-    public void testEmail() throws GeneralException, IOException, MessagingException {
-        oAuthClient.resourceOwnerCredentialGrant(user.getUsername(), "invalid");
+    public void testEmail() throws MessagingException {
+        oAuthClient.doPasswordGrantRequest(user.getUsername(), "invalid");
 
         Map<String, String> smtpServer = realm.admin().toRepresentation().getSmtpServer();
         Assertions.assertEquals("auto@keycloak.org", smtpServer.get("from"));

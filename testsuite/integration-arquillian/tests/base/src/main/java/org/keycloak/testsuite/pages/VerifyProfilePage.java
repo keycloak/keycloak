@@ -169,9 +169,4 @@ public class VerifyProfilePage extends AbstractPage {
         return accountErrors;
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 }

@@ -28,4 +28,8 @@ public class LoginPage extends AbstractPage {
         submitButton.click();
     }
 
+    @Override
+    public String getExpectedPageId() {
+        return "login-login";
+    }
 }

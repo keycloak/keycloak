@@ -77,10 +77,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithoutOtpConfiguredExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no otp => check executed => allowed
         checkAllowed("test-user@localhost");
@@ -90,10 +87,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithoutOtpConfiguredNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no otp => check not-executed => denied
         checkDenied();
@@ -103,10 +97,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithOtpConfiguredExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("user-with-one-configured-otp", "password");
+        oauth.doLogin("user-with-one-configured-otp", "password");
 
         loginTotpPage.assertCurrent();
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
@@ -119,10 +110,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithOtpConfiguredNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("test Browser - Conditional OTP", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("user-with-two-configured-otp", "password");
+        oauth.doLogin("user-with-two-configured-otp", "password");
 
         loginTotpPage.assertCurrent();
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
@@ -135,10 +123,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithInvalidFlowExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no flow => check executed => allowed
         checkAllowed("test-user@localhost");
@@ -148,10 +133,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     public void testWithInvalidFlowNotExecuted() {
         configureConditionalSubFlowExecutedAuthenticatorInFlow("invalid flow", ConditionalSubFlowExecutedAuthenticatorFactory.CHECK_RESULT_NOT_EXECUTED);
 
-        loginPage.open();
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         // no flow => check executed => denied
         checkDenied();
@@ -165,7 +147,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
     }
 
     private void checkAllowed(String username) {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assert.assertNull(res.getError());

@@ -600,6 +600,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if (!attributes.containsKey("templateName")) {
                 attributes.put("templateName", templateName);
             }
+
+            attributes.put("pageId", templateName.substring(0, templateName.length() - 4));
+
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {

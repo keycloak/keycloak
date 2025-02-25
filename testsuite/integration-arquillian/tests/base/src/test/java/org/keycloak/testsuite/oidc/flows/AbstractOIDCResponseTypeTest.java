@@ -83,7 +83,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     public void nonceAndSessionStateMatches() {
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assert.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
@@ -99,7 +99,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     public void initialSessionStateUsedInRedirect() {
         EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
 
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assert.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
@@ -117,7 +117,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         driver.navigate().to(b.build().toURL());
 
         // Always read error from the "query"
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth, false);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         org.junit.Assert.assertTrue(errorResponse.isRedirected());
         org.junit.Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
 
@@ -136,7 +136,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         assertTrue(appPage.isCurrent());
 
         // Assert error response was sent because not logged in
-        AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
         Assert.assertNull(resp.getCode());
         Assert.assertNull(resp.getIdToken());
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
@@ -151,7 +151,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
@@ -170,7 +170,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
@@ -226,7 +226,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     private void oidcFlow(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, isFragment());
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assert.assertNotNull(authzResponse.getSessionState());
 
         JWSHeader header = null;

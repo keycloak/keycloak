@@ -553,7 +553,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         EventRepresentation loginEvent = loginWithBrokerUsingOAuthClient(CONSUMER_BROKER_APP_CLIENT_ID);
         String lwUserId = loginEvent.getUserId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.client(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET).doAccessTokenRequest(code);
 
@@ -607,7 +607,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             final String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());

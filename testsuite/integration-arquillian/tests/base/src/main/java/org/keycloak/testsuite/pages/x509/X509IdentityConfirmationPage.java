@@ -84,9 +84,4 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
         return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
-    @Override
-    public void open() {
-        oauth.openLoginForm();
-        assertCurrent();
-    }
 }

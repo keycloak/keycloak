@@ -67,7 +67,7 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
     public void loginWithNonDuplicateEmail() throws Exception {
         oauth.doLogin("non-duplicate-email-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
@@ -88,7 +88,7 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
     public void loginWithUserHavingDuplicateEmailByUsername() throws Exception {
         oauth.doLogin("duplicate-email-user1", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());

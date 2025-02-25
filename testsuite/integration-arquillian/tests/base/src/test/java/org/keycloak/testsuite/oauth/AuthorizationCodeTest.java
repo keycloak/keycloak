@@ -185,7 +185,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
@@ -372,7 +372,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
         oauth.openLoginForm();
-        response = new AuthorizationEndpointResponse(oauth);
+        response = oauth.parseLoginResponse();
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
@@ -394,8 +394,10 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.openLoginForm();
 
-        assertEquals("invalid_request", oauth.getCurrentQuery().get("error"));
-        assertEquals("duplicated parameter", oauth.getCurrentQuery().get("error_description"));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+
+        assertEquals("invalid_request", response.getError());
+        assertEquals("duplicated parameter", response.getErrorDescription());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }

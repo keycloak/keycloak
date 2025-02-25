@@ -45,11 +45,6 @@ public class SelectOrganizationPage extends LanguageComboboxAwarePage {
         return false;
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public void assertCurrent(String realm) {
         String name = getClass().getSimpleName();
         Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",

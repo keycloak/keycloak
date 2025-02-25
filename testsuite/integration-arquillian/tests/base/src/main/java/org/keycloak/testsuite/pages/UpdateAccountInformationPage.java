@@ -112,8 +112,4 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
         }
     }
 
-    @Override
-    public void open() throws Exception {
-
-    }
 }

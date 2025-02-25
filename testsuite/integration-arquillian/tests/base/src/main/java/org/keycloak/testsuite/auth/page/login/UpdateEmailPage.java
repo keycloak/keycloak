@@ -83,8 +83,4 @@ public class UpdateEmailPage extends LogoutSessionsPage {
         clickLink(submitActionButton);
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

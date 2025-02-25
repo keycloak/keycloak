@@ -229,8 +229,9 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         oauth.nonce(nonce);
         oauth.redirectUri(validRedirectUri);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("Implicit/Hybrid flow is prohibited.", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("Implicit/Hybrid flow is prohibited.", authorizationEndpointResponse.getErrorDescription());
     }
 
     private void setupPolicyOAuth2_1ConfidentialClientForAllClient() throws Exception {

@@ -36,10 +36,6 @@ public class VerifyEmailPage extends AbstractPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @Override
-    public void open() {
-    }
-
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Email verification");
     }

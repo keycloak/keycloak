@@ -338,7 +338,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
         }
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
         return oauth.doAccessTokenRequest(code);
     }
 

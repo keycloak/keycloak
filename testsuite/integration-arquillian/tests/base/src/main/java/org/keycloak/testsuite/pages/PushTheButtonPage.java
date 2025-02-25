@@ -34,11 +34,6 @@ public class PushTheButtonPage extends AbstractPage {
     private WebElement submitButton;
 
     @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean isCurrent() {
         return DroneUtils.getCurrentDriver().getTitle().equals("PushTheButton")
                 && !driver.findElements(By.name("submit1")).isEmpty();

@@ -280,7 +280,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         events.assertEmpty();
 
         // Assert error response was sent because not logged in
-        AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
         Assert.assertEquals(expectedIssuer, resp.getIssuer());
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
@@ -326,7 +326,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             assertTrue(appPage.isCurrent());
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
             Assert.assertNull(resp.getCode());
             Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
@@ -346,7 +346,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            resp = new AuthorizationEndpointResponse(oauth);
+            resp = oauth.parseLoginResponse();
             Assert.assertNotNull(resp.getCode());
             Assert.assertNull(resp.getError());
 
@@ -667,8 +667,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.responseType(null);
         oauth.openLoginForm();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that different "client_id" in the query and in the request object is disallowed
         oauth.clientId("test-app-scope");
@@ -681,8 +682,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.responseType(OAuth2Constants.CODE + " " + OAuth2Constants.ID_TOKEN);
         oauth.openLoginForm();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        oauth.responseMode("query"); // Keycloak falls back to query in this case
+        authorizationEndpointResponse = oauth.parseLoginResponse();
+        oauth.responseMode(null);
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that "client_id" and "response_type" are not mandatory in the request object
         Map<String, Object> oidcRequest = new HashMap<>();
@@ -1408,7 +1412,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
@@ -1448,7 +1452,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();

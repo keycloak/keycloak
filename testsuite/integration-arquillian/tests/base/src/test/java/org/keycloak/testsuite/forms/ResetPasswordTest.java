@@ -423,7 +423,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, tokenResponse.getStatusCode());

@@ -101,7 +101,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // IDToken is not there
@@ -186,7 +186,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
-        AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assert.assertNull(response.getError());
         Assert.assertNull(response.getCode());
         Assert.assertNull(response.getIdToken());

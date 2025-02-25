@@ -339,7 +339,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Login to pairwise client
         oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret());
         oauth.openLoginForm();
-        loginResponse = new AuthorizationEndpointResponse(oauth);
+        loginResponse = oauth.parseLoginResponse();
         accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode());
 
         // Assert token payloads don't contain more than one "sub"

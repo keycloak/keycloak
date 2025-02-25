@@ -48,9 +48,4 @@ public class ConsentPage extends AbstractPage {
     public boolean isCurrent(WebDriver driver1) {
         return PageUtils.getPageTitle(driver1).contains("Grant Access to ");
     }
-
-    @Override
-    public void open() throws Exception {
-
-    }
 }

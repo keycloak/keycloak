@@ -47,12 +47,6 @@ public class InstalledAppRedirectPage extends AbstractPage {
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement errorBox;
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException("Use method: open(code, error, errorDescription)");
-    }
-
-
     public void open(String realmName, String code, String error, String errorDescription) {
         try {
             KeycloakUriBuilder kcUriBuilder = KeycloakUriBuilder.fromUri(Urls.realmInstalledAppUrnCallback(new URI(oauth.AUTH_SERVER_ROOT), realmName));

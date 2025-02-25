@@ -442,7 +442,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(response.getCode());
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();

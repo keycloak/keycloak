@@ -64,7 +64,7 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
     public void loginWithUsername() throws Exception {
         oauth.doLogin("non-duplicate-email-user", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());

@@ -1093,7 +1093,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             grantPage.accept();
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.clientSessionState("client-session");
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

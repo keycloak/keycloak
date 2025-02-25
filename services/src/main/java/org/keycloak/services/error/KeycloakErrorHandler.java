@@ -188,6 +188,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         final var localeBean =  new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
         final var lang = realm.isInternationalizationEnabled() ? localeBean.getCurrentLanguageTag() : Locale.ENGLISH.toLanguageTag();
 
+        attributes.put("pageId", "error");
         attributes.put("statusCode", responseStatus.getStatusCode());
 
         attributes.put("realm", realm);

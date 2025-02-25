@@ -294,7 +294,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
                 .assertEvent(true);
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }
@@ -407,7 +407,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             oauth.openLoginForm();
             String tab1WindowHandle = util.getActualWindowHandle();
             loginSuccessAndDoRequiredActions();
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
 

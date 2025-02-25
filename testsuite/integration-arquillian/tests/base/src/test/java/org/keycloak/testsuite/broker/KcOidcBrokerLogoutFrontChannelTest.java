@@ -44,7 +44,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         updateAccountInformation();
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response =
             oauth
                 .realm(bc.consumerRealmName())

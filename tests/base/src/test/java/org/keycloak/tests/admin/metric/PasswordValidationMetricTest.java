@@ -1,8 +1,5 @@
 package org.keycloak.tests.admin.metric;
 
-import com.nimbusds.oauth2.sdk.AuthorizationResponse;
-import com.nimbusds.oauth2.sdk.GeneralException;
-import com.nimbusds.oauth2.sdk.TokenResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
@@ -13,8 +10,8 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.oauth.nimbus.OAuthClient;
-import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
@@ -22,14 +19,12 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
-import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,13 +49,10 @@ public class PasswordValidationMetricTest {
     @InjectWebDriver
     WebDriver webDriver;
 
-    @InjectPage
-    LoginPage loginPage;
-
     Pattern passValidationRegex = Pattern.compile("keycloak_credentials_password_hashing_validations_total\\{algorithm=\"([^\"]+)\",hashing_strength=\"([^\"]+)\",outcome=\"([^\"]+)\",realm=\"([^\"]+)\"} ([.0-9]*)");
 
     @Test
-    void testValidAndInvalidPasswordValidation() throws GeneralException, IOException {
+    void testValidAndInvalidPasswordValidation() throws IOException {
         runAuthorizationCodeFlow(user.getUsername(), "invalid_password");
         webDriver.manage().deleteAllCookies();
         runAuthorizationCodeFlow(user.getUsername(), user.getPassword());
@@ -89,25 +81,13 @@ public class PasswordValidationMetricTest {
         Assertions.assertFalse(matcher.find());
     }
 
-    private void runAuthorizationCodeFlow(String username, String password) throws GeneralException, IOException {
-        URL authorizationRequestURL = oAuthClient.authorizationRequest();
-        webDriver.navigate().to(authorizationRequestURL);
-        loginPage.fillLogin(username, password);
-        loginPage.submit();
-
-        if (oAuthClient.getCallbacks().isEmpty()) {
-            return;
+    private void runAuthorizationCodeFlow(String username, String password) {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin(username, password);
+        if (authorizationEndpointResponse.isRedirected()) {
+            AccessTokenResponse tokenResponse = oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode());
+            Assertions.assertTrue(tokenResponse.isSuccess());
+            Assertions.assertNotNull(tokenResponse.getAccessToken());
         }
-
-        URI callbackUri = oAuthClient.getCallbacks().remove(0);
-
-        AuthorizationResponse authorizationResponse = AuthorizationResponse.parse(callbackUri);
-        Assertions.assertTrue(authorizationResponse.indicatesSuccess());
-        Assertions.assertNotNull(authorizationResponse.toSuccessResponse().getAuthorizationCode());
-
-        TokenResponse tokenResponse = oAuthClient.tokenRequest(authorizationResponse.toSuccessResponse().getAuthorizationCode());
-        Assertions.assertTrue(tokenResponse.indicatesSuccess());
-        Assertions.assertNotNull(tokenResponse.toSuccessResponse().getTokens().getAccessToken());
     }
 
     public static class ServerConfigWithMetrics implements KeycloakServerConfig {

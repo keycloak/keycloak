@@ -164,7 +164,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         final String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -244,7 +244,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         System.out.println(driver.getPageSource());
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
         oauth.openLogout();
     }
 

@@ -48,6 +48,8 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
 
+        testRealm.getClients().stream().filter(c -> c.getClientId().equals("test-app")).forEach(c -> c.setDirectAccessGrantsEnabled(true));
+
         testRealm.getUsers().add(UserBuilder.create().username("test-user2").password("password").build());
     }
 
@@ -58,13 +60,13 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
 
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, 0, false, false);
 
-        oauthClient.doLogin("test-user@localhost", "invalid");
-        oauthClient.doLogin("test-user@localhost", "invalid");
-        oauthClient.doLogin("test-user@localhost", "invalid");
+        oauthClient.doPasswordGrantRequest("test-user@localhost", "invalid");
+        oauthClient.doPasswordGrantRequest("test-user@localhost", "invalid");
+        oauthClient.doPasswordGrantRequest("test-user@localhost", "invalid");
 
-        oauthClient.doLogin("test-user2", "invalid");
-        oauthClient.doLogin("test-user2", "invalid");
-        oauthClient.doLogin("nosuchuser", "invalid");
+        oauthClient.doPasswordGrantRequest("test-user2", "invalid");
+        oauthClient.doPasswordGrantRequest("test-user2", "invalid");
+        oauthClient.doPasswordGrantRequest("nosuchuser", "invalid");
 
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 2, 1, true, true);
