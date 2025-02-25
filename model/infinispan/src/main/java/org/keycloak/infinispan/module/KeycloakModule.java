@@ -32,6 +32,8 @@ public class KeycloakModule implements ModuleLifecycle {
         CertificateReloadManager crm = gcr.getComponent(BasicComponentRegistry.class)
                 .getComponent(CertificateReloadManager.class)
                 .running();
-        gcr.getCacheManager().addListener(crm);
+        if (crm != null) {
+            gcr.getCacheManager().addListener(crm);
+        }
     }
 }
