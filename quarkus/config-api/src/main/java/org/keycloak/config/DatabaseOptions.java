@@ -2,6 +2,10 @@ package org.keycloak.config;
 
 import org.keycloak.config.database.Database;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DatabaseOptions {
 
     public static final Option<String> DB_DIALECT = new OptionBuilder<>("db-dialect", String.class)
@@ -10,6 +14,11 @@ public class DatabaseOptions {
             .buildTime(true)
             .build();
 
+    /*public static final Option<String> DB_DIALECT_DATASOURCE = new OptionBuilder<>("db-<datasource>-dialect", String.class)
+            .category(OptionCategory.DATABASE)
+            //.hidden()
+            .buildTime(true)
+            .build();*/
     public static final Option<String> DB_DRIVER = new OptionBuilder<>("db-driver", String.class)
             .category(OptionCategory.DATABASE)
             .description("The fully qualified class name of the JDBC driver. If not set, a default driver is set accordingly to the chosen database.")
@@ -82,4 +91,62 @@ public class DatabaseOptions {
             .defaultValue(100)
             .description("The maximum size of the connection pool.")
             .build();
+
+    // Datasources
+    /**
+     * Options that have their sibling for a named datasource
+     * Example: for `db-dialect`, `db-<datasource>-dialect` is created
+     */
+    public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
+            DatabaseOptions.DB_DIALECT,
+            DatabaseOptions.DB_DRIVER,
+            DatabaseOptions.DB,
+            DatabaseOptions.DB_URL,
+            DatabaseOptions.DB_URL_HOST,
+            DatabaseOptions.DB_URL_DATABASE,
+            DatabaseOptions.DB_URL_PORT,
+            DatabaseOptions.DB_URL_PROPERTIES,
+            DatabaseOptions.DB_USERNAME,
+            DatabaseOptions.DB_PASSWORD,
+            DatabaseOptions.DB_SCHEMA,
+            DatabaseOptions.DB_POOL_INITIAL_SIZE,
+            DatabaseOptions.DB_POOL_MIN_SIZE,
+            DatabaseOptions.DB_POOL_MAX_SIZE
+    );
+
+    private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public static <T> Option<T> getDatasourceOption(Option<T> parentOption) {
+        if (!OPTIONS_DATASOURCES.contains(parentOption)) {
+            return null;
+        }
+
+        var key = getKeyForDatasource(parentOption);
+        Option<?> option = cachedDatasourceOptions.get(key);
+
+        if (option == null) {
+            var builder = new OptionBuilder<>(getKeyForDatasource(parentOption), parentOption.getType())
+                    .category(OptionCategory.DATABASE_DATASOURCES)
+                    .buildTime(parentOption.isBuildTime())
+                    .defaultValue(parentOption.getDefaultValue())
+                    .expectedValues(parentOption.getExpectedValues())
+                    .caseInsensitiveExpectedValues(parentOption.isCaseInsensitiveExpectedValues())
+                    .strictExpectedValues(parentOption.isStrictExpectedValues());
+
+            if (parentOption.isHidden()) {
+                builder.hidden();
+            } else {
+                builder.description("Used for named <datasource>. " + parentOption.getDescription());
+            }
+
+            option = builder.build();
+            cachedDatasourceOptions.put(key, option);
+        }
+        return (Option<T>) option;
+    }
+
+    private static String getKeyForDatasource(Option<?> option) {
+        return option.getKey().replaceFirst("db", "db-<datasource>");
+    }
 }

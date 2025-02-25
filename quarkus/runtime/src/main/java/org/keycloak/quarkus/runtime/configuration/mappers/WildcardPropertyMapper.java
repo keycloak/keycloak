@@ -65,7 +65,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     }
 
     String getTo(String wildcardKey) {
-        return toWildcardMatcher.replaceFirst(wildcardKey);
+        return toWildcardMatcher != null ? toWildcardMatcher.replaceFirst(wildcardKey) : null;
     }
 
     String getFrom(String wildcardKey) {
