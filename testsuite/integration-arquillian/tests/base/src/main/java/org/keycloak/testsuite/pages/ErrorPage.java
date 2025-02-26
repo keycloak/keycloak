@@ -56,9 +56,4 @@ public class ErrorPage extends LanguageComboboxAwarePage {
         return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equals("We are sorry...");
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 }

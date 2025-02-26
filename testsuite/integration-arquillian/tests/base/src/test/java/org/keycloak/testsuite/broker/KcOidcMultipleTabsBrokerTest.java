@@ -256,7 +256,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
             // Being redirected back to consumer and then back to client right away. Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
-            AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
             org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
             org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
         }
@@ -265,7 +265,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
     // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
     private void assertOnAppPageWithAlreadyLoggedInError() {
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         org.keycloak.testsuite.Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         org.keycloak.testsuite.Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }

@@ -17,20 +17,15 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -55,9 +50,8 @@ import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.UserInfo;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -65,25 +59,21 @@ import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.PageFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
@@ -129,22 +119,7 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     private String idTokenHint;
 
-    // Should be param on login
-    private String kcAction;
-
     private StateParamProvider state;
-
-    private String uiLocales;
-
-    private String maxAge;
-
-    private String prompt;
-
-    private String nonce;
-
-    private String codeChallenge;
-    private String codeChallengeMethod;
-    private String dpopJkt;
 
     public OAuthClient(CloseableHttpClient httpClient, WebDriver webDriver) {
         super(AUTH_SERVER_ROOT, httpClient, webDriver);
@@ -187,18 +162,18 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         this.driver = driver;
     }
 
-    public AuthorizationEndpointResponse doLogin(String username, String password) {
-        openLoginForm();
-        fillLoginForm(username, password);
+    public void openRegistrationForm() {
+        driver.navigate().to(getRegistrationFormUrl());
+    }
 
-        return new AuthorizationEndpointResponse(this);
+    public String getRegistrationFormUrl() {
+        return new RegistrationUrlBuilder(this).toString();
     }
 
     public AuthorizationEndpointResponse doSilentLogin() {
         openLoginForm();
         WaitUtils.waitForPageToLoad();
-
-        return new AuthorizationEndpointResponse(this);
+        return parseLoginResponse();
     }
 
     public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
@@ -209,19 +184,14 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         clickLink(socialButton);
         fillLoginForm(username, password);
 
-        return new AuthorizationEndpointResponse(this);
-    }
-
-    public AuthorizationEndpointResponse doLogin(UserRepresentation user) {
-
-        return doLogin(user.getUsername(), getPasswordOf(user));
+        return parseLoginResponse();
     }
 
     public AuthorizationEndpointResponse doRememberMeLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password, true);
 
-        return new AuthorizationEndpointResponse(this);
+        return parseLoginResponse();
     }
 
     public void fillLoginForm(String username, String password) {
@@ -229,38 +199,18 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     }
 
     public void fillLoginForm(String username, String password, boolean rememberMe) {
-        WaitUtils.waitForPageToLoad();
-        String src = driver.getPageSource();
-        WebElement usernameField = driver.findElement(By.name("username"));
-
-        try {
-            usernameField.clear();
-            usernameField.sendKeys(username);
-        } catch (NoSuchElementException nse) {
-            // we might have clicked on a social login icon and might need to wait for the login to appear.
-            // avoid waiting by default to avoid the delay.
-            WaitUtils.waitUntilElement(usernameField).is().present();
-            usernameField.clear();
-        } catch (Throwable t) {
-            logger.error("Unexpected page was loaded\n{}", src);
-            throw t;
-        }
-
-        WebElement passwordField = driver.findElement(By.name("password"));
-        passwordField.clear();
-        passwordField.sendKeys(password);
+        LoginPage loginPage = new LoginPage();
+        PageFactory.initElements(driver, loginPage);
 
         if (rememberMe) {
-            driver.findElement(By.id("rememberMe")).click();
+            loginPage.setRememberMe(true);
         }
 
-        driver.findElement(By.name("login")).click();
-
+        loginPage.login(username, password);
     }
 
     public void doLoginGrant(String username, String password) {
-        openLoginForm();
-        fillLoginForm(username, password);
+        doLogin(username, password);
     }
 
     public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
@@ -676,25 +626,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return config.getClientId();
     }
 
-    String getCurrentRequest() {
-        int index = driver.getCurrentUrl().indexOf('?');
-        if (index == -1) {
-            index = driver.getCurrentUrl().indexOf('#');
-            if (index == -1) {
-                index = driver.getCurrentUrl().length();
-            }
-        }
-        return driver.getCurrentUrl().substring(0, index);
-    }
-
-    public void openLoginForm() {
-        driver.navigate().to(getLoginFormUrl());
-    }
-
-    public void openRegistrationForm() {
-        driver.navigate().to(getRegistrationFormUrl());
-    }
-
     public void openLogout() {
         UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (config.getPostLogoutRedirectUri() != null) {
@@ -713,115 +644,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     public String getNonce() {
         return nonce;
     }
-
-    public String getLoginFormUrl() {
-        return this.getLoginFormUrl(this.baseUrl);
-    }
-
-
-    public String getRegisterationsUrl() {
-        return this.getLoginFormUrl(this.baseUrl).replace("openid-connect/auth", "openid-connect/registrations");
-    }
-
-    public String getLoginFormUrl(String baseUrl) {
-        UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
-        if (config.getResponseType() != null) {
-            b.queryParam(OAuth2Constants.RESPONSE_TYPE, config.getResponseType());
-        }
-        if (config.getResponseMode() != null) {
-            b.queryParam(OIDCLoginProtocol.RESPONSE_MODE_PARAM, config.getResponseMode());
-        }
-        if (config.getClientId() != null) {
-            b.queryParam(OAuth2Constants.CLIENT_ID, config.getClientId());
-        }
-        if (config.getRedirectUri() != null) {
-            b.queryParam(OAuth2Constants.REDIRECT_URI, config.getRedirectUri());
-        }
-        if (kcAction != null) {
-            b.queryParam(Constants.KC_ACTION, kcAction);
-        }
-        String state = this.state.getState();
-        if (state != null) {
-            b.queryParam(OAuth2Constants.STATE, state);
-        }
-        if (uiLocales != null) {
-            b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
-        }
-        if (nonce != null) {
-            b.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        }
-
-        String scopeParam = config.getScope();
-        if (scopeParam != null && !scopeParam.isEmpty()) {
-            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
-        }
-
-        if (maxAge != null) {
-            b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
-        }
-        if (prompt != null) {
-            b.queryParam(OIDCLoginProtocol.PROMPT_PARAM, prompt);
-        }
-        if (request != null) {
-            b.queryParam(OIDCLoginProtocol.REQUEST_PARAM, request);
-        }
-        if (requestUri != null) {
-            b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
-        }
-        if (claims != null) {
-            b.queryParam(OIDCLoginProtocol.CLAIMS_PARAM, claims);
-        }
-        if (codeChallenge != null) {
-            b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
-        }
-        if (codeChallengeMethod != null) {
-            b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }
-        if (dpopJkt != null) {
-            b.queryParam(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
-        }
-        if (customParameters != null) {
-            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
-        }
-
-        return b.build(config.getRealm()).toString();
-    }
-
-    private String getRegistrationFormUrl() {
-        UriBuilder b = OIDCLoginProtocolService.registrationsUrl(UriBuilder.fromUri(baseUrl));
-        if (config.getResponseType() != null) {
-            b.queryParam(OAuth2Constants.RESPONSE_TYPE, config.getResponseType());
-        }
-        if (config.getClientId() != null) {
-            b.queryParam(OAuth2Constants.CLIENT_ID, config.getClientId());
-        }
-        if (config.getRedirectUri() != null) {
-            b.queryParam(OAuth2Constants.REDIRECT_URI, config.getRedirectUri());
-        }
-
-        String scopeParam = config.getScope();
-        if (scopeParam != null && !scopeParam.isEmpty()) {
-            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
-        }
-
-        if (customParameters != null) {
-            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
-        }
-
-        return b.build(config.getRealm()).toString();
-    }
-
-    public Entity getLoginEntityForPOST() {
-        Form form = new Form()
-                .param(OAuth2Constants.SCOPE, config.getScope())
-                .param(OAuth2Constants.RESPONSE_TYPE, config.getResponseType())
-                .param(OAuth2Constants.CLIENT_ID, config.getClientId())
-                .param(OAuth2Constants.REDIRECT_URI, config.getRedirectUri())
-                .param(OAuth2Constants.STATE, this.state.getState());
-
-        return Entity.form(form);
-    }
-
 
     public OAuthClient realm(String realm) {
         config.realm(realm);
@@ -995,56 +817,13 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return this;
     }
 
-    public void setBrowserHeader(String name, String value) {
-        if (driver instanceof DroneHtmlUnitDriver) {
-            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
-            droneDriver.getWebClient().removeRequestHeader(name);
-            droneDriver.getWebClient().addRequestHeader(name, value);
-        }
-    }
-
     public WebDriver getDriver() {
         return driver;
-    }
-
-    private URI getCurrentUri() {
-        try {
-            return new URI(driver.getCurrentUrl());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Map<String, String> getCurrentQuery() {
-        Map<String, String> m = new HashMap<>();
-        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), StandardCharsets.UTF_8);
-        for (NameValuePair p : pairs) {
-            m.put(p.getName(), p.getValue());
-        }
-        return m;
-    }
-
-    public Map<String, String> getCurrentFragment() {
-        Map<String, String> m = new HashMap<>();
-
-        String fragment = getCurrentUri().getRawFragment();
-        List<NameValuePair> pairs = (fragment == null || fragment.isEmpty()) ? Collections.emptyList() : URLEncodedUtils.parse(fragment, StandardCharsets.UTF_8);
-
-        for (NameValuePair p : pairs) {
-            m.put(p.getName(), p.getValue());
-        }
-        return m;
     }
 
     private WebElement findSocialButton(String alias) {
         String id = "social-" + alias;
         return DroneUtils.getCurrentDriver().findElement(By.id(id));
-    }
-
-    private interface StateParamProvider {
-
-        String getState();
-
     }
 
 }

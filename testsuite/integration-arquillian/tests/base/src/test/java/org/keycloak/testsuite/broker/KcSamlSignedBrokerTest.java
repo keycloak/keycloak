@@ -150,7 +150,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         loginUser();
 
         // Logout should fail because logout response is not signed.
-        final String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        final String code = oauth.parseLoginResponse().getCode();
         final AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         final String idTokenString = tokenResponse.getIdToken();
         final String redirectUri = getAccountUrl(getProviderRoot(), bc.providerRealmName());

@@ -16,6 +16,14 @@ public class Endpoints {
         this.realm = realm;
     }
 
+    public String getAuthorization() {
+        return asString(OIDCLoginProtocolService.authUrl(getBase()));
+    }
+
+    public String getRegistration() {
+        return asString(OIDCLoginProtocolService.registrationsUrl(getBase()));
+    }
+
     public String getToken() {
         return asString(OIDCLoginProtocolService.tokenUrl(getBase()));
     }

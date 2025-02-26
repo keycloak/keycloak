@@ -102,8 +102,8 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         oauth.client(clientId, secret).doLogin(username, password);
         consentPage.assertCurrent();
         consentPage.confirm();
-        assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        assertNotNull(oauth.parseLoginResponse().getCode());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         accessTokenVerifier.parse();

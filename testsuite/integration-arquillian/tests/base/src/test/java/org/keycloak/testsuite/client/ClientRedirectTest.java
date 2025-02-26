@@ -79,7 +79,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRedirectStatusCode() {
         oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         String token = oauth.doAccessTokenRequest(code).getAccessToken();
 
         Client client = AdminClientUtil.createResteasyClient();
@@ -104,7 +104,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             oauth.doLogin("test-user@localhost", "password");
             events.expectLogin().assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
             events.poll();
 

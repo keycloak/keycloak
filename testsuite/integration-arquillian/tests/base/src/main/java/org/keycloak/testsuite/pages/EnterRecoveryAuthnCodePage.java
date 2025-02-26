@@ -50,11 +50,6 @@ public class EnterRecoveryAuthnCodePage extends LanguageComboboxAwarePage {
         return true;
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
     public String getFeedbackText() {
         return feedbackText.getText().trim();
     }

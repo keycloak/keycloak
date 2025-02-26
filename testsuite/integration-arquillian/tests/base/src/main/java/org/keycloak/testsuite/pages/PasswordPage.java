@@ -91,9 +91,4 @@ public class PasswordPage extends LanguageComboboxAwarePage {
         return true;
     }
 
-
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

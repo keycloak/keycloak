@@ -418,7 +418,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         events.expectLogin().client(clientId).assertEvent();
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.TOKEN_RESPONSE.toString(), response.getError());
@@ -443,7 +443,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
@@ -506,7 +506,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
@@ -698,7 +698,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         events.expectLogin().client(clientId).assertEvent();
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
         AccessToken token = oauth.verifyToken(response.getAccessToken());

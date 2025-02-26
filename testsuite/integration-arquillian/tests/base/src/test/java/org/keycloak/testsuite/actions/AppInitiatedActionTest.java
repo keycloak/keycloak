@@ -68,7 +68,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(appPage.isCurrent());
 
-        String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
     }
 
@@ -80,7 +80,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(appPage.isCurrent());
 
-        String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
     }
 
@@ -97,7 +97,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
             assertTrue(appPage.isCurrent());
 
-            String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+            String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
             assertEquals("error", kcActionStatus);
         } finally {
             configureTotp.setEnabled(true);

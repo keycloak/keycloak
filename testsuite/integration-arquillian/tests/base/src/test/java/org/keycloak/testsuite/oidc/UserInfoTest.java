@@ -1030,7 +1030,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     private org.keycloak.testsuite.util.oauth.AccessTokenResponse loginAndForceNewLoginPage() {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.clientSessionState("client-session");
 
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

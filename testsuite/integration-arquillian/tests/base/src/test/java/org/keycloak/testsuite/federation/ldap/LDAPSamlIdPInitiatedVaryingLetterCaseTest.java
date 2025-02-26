@@ -215,8 +215,8 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         loginPage.login(USER_NAME_LDAP, USER_PASSWORD);
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
     }

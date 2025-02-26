@@ -1018,7 +1018,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         grantPage.cancel();
 
         //click back after cancel
-        grantPage.getDriver().navigate().back();
+        driver.navigate().back();
 
         // Accept consent
         grantPage.assertCurrent();

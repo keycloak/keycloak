@@ -27,8 +27,8 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.oauth.nimbus.OAuthClient;
-import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -53,7 +53,7 @@ public class EmailEventListenerTest {
 
     @Test
     public void testFailedLoginEmailEvent() throws MessagingException {
-        oAuthClient.resourceOwnerCredentialGrant(user.getUsername(), "invalid");
+        oAuthClient.doPasswordGrantRequest(user.getUsername(), "invalid");
 
         mail.waitForIncomingEmail(1);
         MimeMessage lastReceivedMessage = mail.getLastReceivedMessage();

@@ -60,9 +60,4 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
         return authenticators;
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 }

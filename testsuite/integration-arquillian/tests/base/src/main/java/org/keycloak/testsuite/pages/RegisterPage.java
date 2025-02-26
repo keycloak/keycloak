@@ -276,12 +276,6 @@ public class RegisterPage extends LanguageComboboxAwarePage
         return passwordErrors;
     }
 
-    @Override
-    public void open() {
-        oauth.openRegistrationForm();
-        assertCurrent();
-    }
-
     public void openWithLoginHint(String loginHint) {
         oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
         assertCurrent();

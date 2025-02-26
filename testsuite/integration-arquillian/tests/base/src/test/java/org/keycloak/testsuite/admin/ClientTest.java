@@ -645,7 +645,7 @@ public class ClientTest extends AbstractAdminTest {
         oauth.redirectUri(client.getRedirectUris().get(0));
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"));
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();

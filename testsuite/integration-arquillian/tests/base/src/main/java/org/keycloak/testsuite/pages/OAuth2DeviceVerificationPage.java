@@ -127,7 +127,4 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
         return false;
     }
 
-    @Override
-    public void open() {
-    }
 }

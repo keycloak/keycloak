@@ -466,7 +466,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.redirectUri("http://localhost:8280/foo");
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
         oauth.redirectUri(null);
 
@@ -497,7 +497,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
             } else {
                 oauth.doLogin("test-user@localhost", "password");
 
-                String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+                String code = oauth.parseLoginResponse().getCode();
                 Assert.assertNotNull(code);
 
                 // Test that browser URL where Keycloak redirected user matches with the used redirectUri

@@ -1,4 +1,4 @@
-package org.keycloak.testframework.oauth.nimbus;
+package org.keycloak.testframework.oauth;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -11,13 +11,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
-class OAuthCallbackServer {
+public class TestApp {
 
     private final HttpServer httpServer;
     private final OAuthCallbackHandler callbackHandler;
     private final URI redirectionUri;
 
-    public OAuthCallbackServer() {
+    public TestApp() {
         this.callbackHandler = new OAuthCallbackHandler();
 
         try {

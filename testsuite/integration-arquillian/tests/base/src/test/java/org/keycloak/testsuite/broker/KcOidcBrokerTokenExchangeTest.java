@@ -272,7 +272,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
         final ClientRepresentation brokerApp = ApiUtil.findClientByClientId(consumerRealm, "broker-app").toRepresentation();
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
-        final String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        final String code = oauth.parseLoginResponse().getCode();
         oauth.client(brokerApp.getClientId(), brokerApp.getSecret());
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         assertThat(tokenResponse.getError(), nullValue());

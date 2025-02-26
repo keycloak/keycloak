@@ -59,7 +59,7 @@ public class OAuthDanceClientSessionExtensionTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         String clientSessionState = "1234";
         String clientSessionHost = "test-client-host";

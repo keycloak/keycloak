@@ -33,7 +33,7 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
     @Test
     public void ensureLocaleParameterIsPropagatedDuringAppInitiatedRegistration() {
 
-        var appInitiatedRegisterUrlBuilder = UriBuilder.fromUri(oauth.getRegisterationsUrl());
+        var appInitiatedRegisterUrlBuilder = UriBuilder.fromUri(oauth.getRegistrationFormUrl());
         appInitiatedRegisterUrlBuilder.queryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "en");
         var appInitiatedRegisterUrl = appInitiatedRegisterUrlBuilder.build().toString();
 

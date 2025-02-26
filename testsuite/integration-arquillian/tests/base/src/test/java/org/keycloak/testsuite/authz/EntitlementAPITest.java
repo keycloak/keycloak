@@ -241,7 +241,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -268,7 +268,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -2000,7 +2000,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         AccessToken token = toAccessToken(response.getAccessToken());
 
@@ -2026,7 +2026,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.realm("authz-test");
         oauth.clientId(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
@@ -2052,7 +2052,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.realm("authz-test");
         oauth.clientId(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());

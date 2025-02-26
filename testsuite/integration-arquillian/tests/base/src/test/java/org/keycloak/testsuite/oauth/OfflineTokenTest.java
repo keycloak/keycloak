@@ -216,7 +216,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
@@ -246,7 +246,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         final String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -299,7 +299,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .assertEvent();
         final String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         RefreshToken onlineToken = assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         events.expectCodeToToken(codeId, sessionId)
@@ -316,7 +316,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .detail(Details.REDIRECT_URI, offlineClientAppUri)
                 .assertEvent();
         AccessTokenResponse tokenOfflineResponse = oauth.doAccessTokenRequest(
-                oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+                oauth.parseLoginResponse().getCode());
         RefreshToken offlineToken = assertRefreshToken(tokenOfflineResponse, TokenUtil.TOKEN_TYPE_OFFLINE);
         events.expectCodeToToken(codeId, sessionId)
                 .client("offline-client")
@@ -750,7 +750,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         final String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         oauth.verifyToken(tokenResponse.getAccessToken());
@@ -778,7 +778,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // Need to login again now
         oauth.doLogin("test-user@localhost", "password");
-        String code2 = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code2 = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code2);
         assertEquals(200, tokenResponse2.getStatusCode());
@@ -866,7 +866,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.client("test-app", "password");
             oauth.redirectUri(APP_ROOT + "/auth");
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertRefreshToken(tokenResponse, TokenUtil.TOKEN_TYPE_REFRESH);
 
@@ -876,7 +876,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.redirectUri(offlineClientAppUri);
 
             oauth.doSilentLogin();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.doAccessTokenRequest(code);
             assertOfflineToken(tokenResponse);
 
@@ -886,7 +886,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.redirectUri(APP_ROOT + "/auth");
             oauth.openLoginForm();
 
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.doAccessTokenRequest(code);
             assertOfflineToken(tokenResponse);
 
@@ -896,7 +896,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.redirectUri(offlineClientAppUri);
             oauth.openLoginForm();
 
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.doAccessTokenRequest(code);
             assertOfflineToken(tokenResponse);
 
@@ -984,7 +984,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             final String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String offlineTokenString = tokenResponse.getRefreshToken();
@@ -1165,7 +1165,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1000);
@@ -1212,7 +1212,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
@@ -1261,7 +1261,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
@@ -1306,7 +1306,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
@@ -1349,7 +1349,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
             events.expectLogin().client("offline-client").detail(Details.REDIRECT_URI, offlineClientAppUri).assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String offlineTokenString = tokenResponse.getRefreshToken();
@@ -1394,7 +1394,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.client("offline-client", "secret1");
             oauth.redirectUri(offlineClientAppUri);
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getRefreshExpiresIn(), offlineSessionMaxLifespan);
@@ -1444,7 +1444,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.client("offline-client", "secret1");
             oauth.redirectUri(offlineClientAppUri);
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getRefreshExpiresIn(), offlineSessionIdleTimeout);
@@ -1483,7 +1483,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.client("offline-client", "secret1");
             oauth.redirectUri(offlineClientAppUri);
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             oauth.scope("openid");

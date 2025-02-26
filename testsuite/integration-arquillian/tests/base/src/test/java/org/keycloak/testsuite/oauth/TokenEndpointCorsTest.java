@@ -68,7 +68,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.origin(VALID_CORS_URL);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 

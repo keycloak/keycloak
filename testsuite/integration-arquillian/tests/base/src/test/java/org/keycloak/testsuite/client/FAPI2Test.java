@@ -185,7 +185,9 @@ public class FAPI2Test extends AbstractFAPITest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         oauth.requestUri(requestUri);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST, false, "Parameter response_type does not match");
+        oauth.responseMode("query"); // Keycloak uses some default response mode as response type is not valid
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST, "Parameter response_type does not match");
+        oauth.responseMode(null);
 
         oauth.responseType(OIDCResponseType.CODE);
 

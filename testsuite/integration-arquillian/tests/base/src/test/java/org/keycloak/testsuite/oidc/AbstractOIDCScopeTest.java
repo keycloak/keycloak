@@ -61,7 +61,7 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.client(clientId, "password").doAccessTokenRequest(code);
         Assert.assertEquals(200, response.getStatusCode());
 

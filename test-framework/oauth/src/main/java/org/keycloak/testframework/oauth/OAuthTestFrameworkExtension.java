@@ -9,7 +9,7 @@ public class OAuthTestFrameworkExtension implements TestFrameworkExtension {
 
     @Override
     public List<Supplier<?, ?>> suppliers() {
-        return List.of(new OAuthClientSupplier());
+        return List.of(new OAuthClientSupplier(), new TestAppSupplier());
     }
 
 }

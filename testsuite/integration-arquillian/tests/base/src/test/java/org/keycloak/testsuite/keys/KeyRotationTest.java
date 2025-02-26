@@ -129,7 +129,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         // Get token with keys #1
         oauth.doLogin("test-user@localhost", "password");
-        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"));
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys1.get(Algorithm.RS256), response.getAccessToken());
         assertTokenKid(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());

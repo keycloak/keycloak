@@ -94,8 +94,4 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
         return true;
     }
 
-    @Override
-    public void open() throws Exception {
-        throw new UnsupportedOperationException();
-    }
 }

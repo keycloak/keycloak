@@ -5,19 +5,28 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.Map;
 
-public class AbstractOAuthClient<T> {
+public abstract class AbstractOAuthClient<T> {
 
     protected String baseUrl;
     protected OAuthClientConfig config;
 
     protected Map<String, String> customParameters;
+    protected String codeChallenge;
+    protected String codeChallengeMethod;
     protected String codeVerifier;
     protected String clientSessionState;
     protected String clientSessionHost;
+    protected String dpopJkt;
     protected String dpopProof;
     protected String request;
     protected String requestUri;
     protected String claims;
+    protected String kcAction;
+    protected String uiLocales;
+    protected String maxAge;
+    protected String prompt;
+    protected StateParamProvider state;
+    protected String nonce;
 
     protected HttpClientManager httpClientManager;
     protected WebDriver driver;
@@ -36,6 +45,26 @@ public class AbstractOAuthClient<T> {
     public T client(String clientId, String clientSecret) {
         config.client(clientId, clientSecret);
         return (T) this;
+    }
+
+    public String getLoginFormUrl() {
+        return new LoginUrlBuilder(this).toString();
+    }
+
+    public void openLoginForm() {
+        driver.navigate().to(getLoginFormUrl());
+    }
+
+    public AuthorizationEndpointResponse doLogin(String username, String password) {
+        openLoginForm();
+        fillLoginForm(username, password);
+        return parseLoginResponse();
+    }
+
+    public abstract void fillLoginForm(String username, String password);
+
+    public AuthorizationEndpointResponse parseLoginResponse() {
+        return new AuthorizationEndpointResponse(this);
     }
 
     public PasswordGrantRequest passwordGrantRequest(String username, String password) {
@@ -120,12 +149,24 @@ public class AbstractOAuthClient<T> {
         return clientSessionHost;
     }
 
+    String getCodeChallenge() {
+        return codeChallenge;
+    }
+
+    String getCodeChallengeMethod() {
+        return codeChallengeMethod;
+    }
+
     String getCodeVerifier() {
         return codeVerifier;
     }
 
     Map<String, String> getCustomParameters() {
         return customParameters;
+    }
+
+    String getDpopJkt() {
+        return dpopJkt;
     }
 
     String getDpopProof() {
@@ -142,6 +183,36 @@ public class AbstractOAuthClient<T> {
 
     String getClaims() {
         return claims;
+    }
+
+    String getKcAction() {
+        return kcAction;
+    }
+
+    String getUiLocales() {
+        return uiLocales;
+    }
+
+    public String getState() {
+        return state != null ? state.getState() : null;
+    }
+
+    String getNonce() {
+        return nonce;
+    }
+
+    String getMaxAge() {
+        return maxAge;
+    }
+
+    String getPrompt() {
+        return prompt;
+    }
+
+    protected interface StateParamProvider {
+
+        String getState();
+
     }
 
 }

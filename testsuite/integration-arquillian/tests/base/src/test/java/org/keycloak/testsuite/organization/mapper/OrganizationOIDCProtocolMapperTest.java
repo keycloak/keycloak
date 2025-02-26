@@ -884,7 +884,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertThat(response.getScope(), containsString(orgScopeRep.getName()));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -909,7 +909,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertThat(Status.OK, is(Status.fromStatusCode(response.getStatusCode())));
         return response;
@@ -929,7 +929,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     private void assertScopeAndClaims(String orgScope, OrganizationRepresentation org) {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertThat(response.getScope(), containsString(orgScope));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -986,7 +986,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertThat(response.getScope(), grantScope ? containsString(orgScope) : not(containsString(orgScope)));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());

@@ -251,7 +251,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Assert user authenticated
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             revertFlows();
         }
@@ -349,7 +349,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Login & set up the initial OTP code for the user
             loginPage.open();
             loginPage.login("login-test", "password");
-            String code = new AuthorizationEndpointResponse(oauth).getCode();
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             String customOtpLabel = "my-original-otp-label";
@@ -447,7 +447,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Assert user authenticated
             appPage.assertCurrent();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
             Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "bwilson"));
             Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
@@ -478,7 +478,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Assert user authenticated
             appPage.assertCurrent();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
             // Verify 2nd OTP credential was successfully created too
             Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", secondOtpLabel));

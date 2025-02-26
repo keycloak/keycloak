@@ -274,7 +274,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return rememberMe.isSelected();
     }
 
-    @Override
     public void open() {
         oauth.openLoginForm();
         assertCurrent();

@@ -190,7 +190,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login("bwilson", "Password1");
 
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         Assert.assertEquals(200, response.getStatusCode());
@@ -209,7 +209,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         loginPage.open();
         loginPage.login("jbrown", "Password1");
 
-        code = new AuthorizationEndpointResponse(oauth).getCode();
+        code = oauth.parseLoginResponse().getCode();
         response = oauth.doAccessTokenRequest(code);
 
         org.keycloak.testsuite.Assert.assertEquals(200, response.getStatusCode());

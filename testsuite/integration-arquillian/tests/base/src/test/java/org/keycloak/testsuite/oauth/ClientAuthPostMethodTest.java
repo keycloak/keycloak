@@ -73,7 +73,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
 
         assertEquals(200, response.getStatusCode());

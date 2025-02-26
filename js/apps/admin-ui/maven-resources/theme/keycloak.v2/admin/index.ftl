@@ -123,7 +123,7 @@
       </#list>
     </#if>
   </head>
-  <body>
+  <body data-page-id="admin">
     <div id="app">
       <main class="container">
         <div class="keycloak__loading-container">

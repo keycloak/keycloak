@@ -196,7 +196,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
@@ -274,7 +274,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         try {
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             assertEquals(TokenUtil.TOKEN_TYPE_BEARER.toLowerCase(), response.getTokenType());
@@ -309,7 +309,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.client("test-app", "invalid").doAccessTokenRequest(code);
         assertEquals(401, response.getStatusCode());
 
@@ -325,7 +325,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(401, response.getStatusCode());
 
@@ -340,7 +340,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         //@TODO This new and was necesssary to not mess up with other tests cases
         String redirectUri = oauth.getRedirectUri();
@@ -374,7 +374,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
         testingClient.testing().removeUserSession("test", sessionId);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         assertEquals(400, tokenResponse.getStatusCode());
@@ -405,7 +405,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         loginEvent.getSessionId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         try {
             setTimeOffset(2);
@@ -439,7 +439,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         loginEvent.getSessionId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         Assert.assertEquals(200, response.getStatusCode());
         String accessToken = response.getAccessToken();
@@ -505,7 +505,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         realmResource.roles().deleteRole("tmp-role");
 
@@ -1014,7 +1014,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
@@ -1052,7 +1052,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         try {
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
 
@@ -1085,7 +1085,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
@@ -1150,7 +1150,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
             // Check access token expires in 500 seconds as specified on client
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
 
@@ -1184,7 +1184,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         try {
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan);
@@ -1230,7 +1230,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan);
@@ -1269,7 +1269,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
@@ -1377,7 +1377,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     private void validateTokenSignatureLength(int expectedLength) {
         oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         String token = response.getAccessToken();
@@ -1413,7 +1413,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
@@ -1461,7 +1461,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     public void tokenRequestParamsMoreThanOnce() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpPost post = new HttpPost(oauth.getEndpoints().getToken());

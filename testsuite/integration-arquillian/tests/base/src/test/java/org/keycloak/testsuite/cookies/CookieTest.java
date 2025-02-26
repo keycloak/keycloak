@@ -176,10 +176,7 @@ public class CookieTest extends AbstractKeycloakTest {
     public void testNoDuplicationsWhenExpiringCookies() throws IOException {
         ContainerAssume.assumeAuthServerSSL();
 
-        loginPage.open();
-        loginPage.assertCurrent();
-
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
         appPage.assertCurrent();
 
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/authenticate/");

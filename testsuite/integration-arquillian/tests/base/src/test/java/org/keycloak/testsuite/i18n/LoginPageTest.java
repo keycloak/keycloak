@@ -208,7 +208,7 @@ public class LoginPageTest extends AbstractI18NTest {
         changePasswordPage.changePassword("password", "password");
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 
@@ -232,7 +232,7 @@ public class LoginPageTest extends AbstractI18NTest {
         grantPage.accept();
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         // Revert client
         oauth.client("test-app", "password");
@@ -265,7 +265,7 @@ public class LoginPageTest extends AbstractI18NTest {
         UserRepresentation userRep = user.toRepresentation();
         assertEquals("de", userRep.getAttributes().get("locale").get(0));
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
@@ -283,7 +283,7 @@ public class LoginPageTest extends AbstractI18NTest {
         userRep = user.toRepresentation();
         Assert.assertNull(userRep.getAttributes());
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
         idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 

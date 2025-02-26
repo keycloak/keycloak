@@ -52,7 +52,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
     }
@@ -69,7 +69,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
     }
@@ -105,13 +105,13 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.scope("phone");
         oauth.doLogin(loginUser, loginPassword);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         expectSuccessfulResponseFromTokenEndpoint(code, "phone", clientSecret);
 
         oauth.openLogout();
         oauth.scope(null);
         oauth.doLogin(loginUser, loginPassword);
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
         expectSuccessfulResponseFromTokenEndpoint(code, "", clientSecret);
 
         for (ClientScopeRepresentation scope : scopes) {
@@ -171,7 +171,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
     }
@@ -200,7 +200,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
 
@@ -211,7 +211,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
 
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
 
