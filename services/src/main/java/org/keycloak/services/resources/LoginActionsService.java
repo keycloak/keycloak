@@ -328,6 +328,16 @@ public class LoginActionsService {
 
         event.event(EventType.LOGIN);
 
+        /*
+         * evaluate the locale param, in order to support locale switch for all login pages
+         * (including custom pages and "expired page", which may be shown by SessionCodeChecks done below)
+         */
+        final var requestedClient = realm.getClientByClientId(clientId);
+        final var currentAuthSession =
+                new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, requestedClient,
+                        tabId);
+        processLocaleParam(currentAuthSession);
+
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, clientData, AUTHENTICATE_PATH);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
@@ -335,8 +345,6 @@ public class LoginActionsService {
 
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
         boolean actionRequest = checks.isActionRequest();
-
-        processLocaleParam(authSession);
 
         return processAuthentication(actionRequest, execution, authSession, null);
     }
