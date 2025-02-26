@@ -1,28 +1,13 @@
-/*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.infinispan.module.certificates;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.util.Objects;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 
@@ -41,6 +26,7 @@ import javax.net.ssl.X509ExtendedTrustManager;
  */
 public class JGroupsCertificateHolder {
 
+    private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final char[] KEY_PASSWORD = "jgroups-password".toCharArray();
 
     private volatile JGroupsCertificate certificate;
@@ -56,8 +42,10 @@ public class JGroupsCertificateHolder {
 
     public static JGroupsCertificateHolder create(JGroupsCertificate certificate) throws GeneralSecurityException, IOException {
         Objects.requireNonNull(certificate);
-        var km = createKeyManager(null, certificate);
+        var km = createKeyManager(certificate);
         var tm = createTrustManager(null, certificate);
+        var crt =certificate.getCertificate();
+        logger.debugf("Using JGroups certificate (serial: %s). Valid until %s", crt.getSerialNumber(), crt.getNotAfter());
         return new JGroupsCertificateHolder(new ReloadingX509ExtendedKeyManager(km), new ReloadingX509ExtendedTrustManager(tm), certificate);
     }
 
@@ -70,7 +58,13 @@ public class JGroupsCertificateHolder {
         if (Objects.equals(certificate.getAlias(), this.certificate.getAlias())) {
             return;
         }
-        var km = createKeyManager(this.certificate, certificate);
+        var crt =certificate.getCertificate();
+        logger.debugf("Using JGroups certificate (serial: %s). Valid until %s", crt.getSerialNumber(), crt.getNotAfter());
+        if (this.certificate != null) {
+            crt = this.certificate.getCertificate();
+            logger.debugf("Old JGroups certificate (serial: %s). Valid until %s", crt.getSerialNumber(), crt.getNotAfter());
+        }
+        var km = createKeyManager(certificate);
         var tm = createTrustManager(this.certificate, certificate);
         keyManager.reload(km);
         trustManager.reload(tm);
@@ -85,13 +79,14 @@ public class JGroupsCertificateHolder {
         return trustManager;
     }
 
-    private static X509ExtendedKeyManager createKeyManager(JGroupsCertificate oldCertificate, JGroupsCertificate newCertificate) throws GeneralSecurityException, IOException {
+    public void setExceptionHandler(Runnable runnable) {
+        trustManager.setExceptionHandler(runnable);
+    }
+
+    private static X509ExtendedKeyManager createKeyManager(JGroupsCertificate newCertificate) throws GeneralSecurityException, IOException {
         var ks = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
         ks.load(null, null);
-        if (oldCertificate != null) {
-            addKeyEntry(ks, oldCertificate);
-        }
-        addKeyEntry(ks, newCertificate);
+        ks.setKeyEntry(newCertificate.getAlias(), newCertificate.getPrivateKey(), KEY_PASSWORD, new java.security.cert.Certificate[]{newCertificate.getCertificate()});
         var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, KEY_PASSWORD);
         for (KeyManager km : kmf.getKeyManagers()) {
@@ -100,10 +95,6 @@ public class JGroupsCertificateHolder {
             }
         }
         throw new GeneralSecurityException("Could not obtain an X509ExtendedKeyManager");
-    }
-
-    private static void addKeyEntry(KeyStore store, JGroupsCertificate certificate) throws KeyStoreException {
-        store.setKeyEntry(certificate.getAlias(), certificate.getPrivateKey(), KEY_PASSWORD, new java.security.cert.Certificate[]{certificate.getCertificate()});
     }
 
     private static X509ExtendedTrustManager createTrustManager(JGroupsCertificate oldCertificate, JGroupsCertificate newCertificate) throws GeneralSecurityException, IOException {

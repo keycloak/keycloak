@@ -1,20 +1,3 @@
-/*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.keycloak.infinispan.module.certificates;
 
 import java.io.IOException;
@@ -42,6 +25,7 @@ import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifier;
 import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
@@ -92,6 +76,9 @@ public class CertificateReloadManager implements Lifecycle {
     @Inject
     EmbeddedCacheManager cacheManager;
 
+    @Inject
+    CacheManagerNotifier notifier;
+
     @ComponentName(KnownComponentNames.EXPIRATION_SCHEDULED_EXECUTOR)
     @Inject
     ScheduledExecutorService scheduledExecutorService;
@@ -110,13 +97,16 @@ public class CertificateReloadManager implements Lifecycle {
     @Start
     public void start() {
         logger.debug("Starting JGroups certificate reload manager");
-        scheduleNextRotation();
+        notifier.addListener(this);
+        reloadCertificate();
+        certificateHolder.setExceptionHandler(this::onInvalidCertificate);
     }
 
     @Override
     @Stop
     public void stop() {
         logger.debug("Stopping JGroups certificate reload manager");
+        notifier.removeListener(this);
         lock.lock();
         try (lock) {
             if (scheduledFuture == null) {
@@ -185,6 +175,19 @@ public class CertificateReloadManager implements Lifecycle {
         return cacheManager.isCoordinator();
     }
 
+    // testing purpose
+    public boolean hasRotationTask() {
+        lock.lock();
+        try (lock) {
+            return scheduledFuture != null;
+        }
+    }
+
+    private void onInvalidCertificate() {
+        logger.debug("On certificate exception");
+        blockingManager.runBlocking(this::reloadCertificate, "invalid-certificate");
+    }
+
     private void onCertificateReloadResponse(Address address, Void unused, Throwable throwable) {
         if (throwable != null) {
             logger.warnf(throwable, "Node %s failed to handle JGroups certificate reload notification.", address);
@@ -195,13 +198,13 @@ public class CertificateReloadManager implements Lifecycle {
     private void scheduleNextRotation() {
         lock.lock();
         try (lock) {
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(false);
+            }
             if (!isCoordinator()) {
                 return;
             }
             var crt = certificateHolder.getCertificateInUse();
-            if (scheduledFuture != null) {
-                scheduledFuture.cancel(false);
-            }
             var delay = delayUntilNextRotation(crt.getCertificate().getNotBefore().toInstant(), crt.getCertificate().getNotAfter().toInstant());
             logger.debugf("Next rotation in %s", delay);
             if (delay.isZero()) {

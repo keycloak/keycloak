@@ -830,7 +830,7 @@ jobs:
 
       - name: Run cluster tests with mtls
         run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=RealmInvalidationClusterTest,JGroupsCertificateRotationClusterTest -Dauth.server.jgroups.mtls=true -Dkeycloak.logging.level=DEBUG -pl testsuite/integration-arquillian/tests/base
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=RealmInvalidationClusterTest,JGroupsCertificateRotationClusterTest -Dauth.server.jgroups.mtls=true -Dauth.server.quarkus.log-level=org.keycloak.infinispan.module.certificates:DEBUG -pl testsuite/integration-arquillian/tests/base
 
       - name: Upload JVM Heapdumps
         if: always()
