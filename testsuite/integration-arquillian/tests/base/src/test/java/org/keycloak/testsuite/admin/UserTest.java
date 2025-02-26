@@ -485,7 +485,7 @@ public class UserTest extends AbstractAdminTest {
         realm.users().get(userId).update(userRepresentation);
 
         oauth.realm(REALM_NAME);
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
@@ -2899,7 +2899,7 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
         oauth.realm(REALM_NAME);
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
@@ -3285,7 +3285,7 @@ public class UserTest extends AbstractAdminTest {
         getCleanup(REALM_NAME).addUserId(userId);
 
         oauth.realm(REALM_NAME);
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
@@ -3298,7 +3298,7 @@ public class UserTest extends AbstractAdminTest {
         assertTrue("Test user should have a password credential set.", passwordCredential.isPresent());
         realm.users().get(userId).removeCredential(passwordCredential.get().getId());
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should fail to log in after password was deleted.",

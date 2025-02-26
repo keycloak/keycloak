@@ -223,7 +223,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
         // open the registration form
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().register();
         registerPage.assertCurrent();
 
@@ -253,7 +253,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
 
         // open the registration form
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().register();
         registerPage.assertCurrent();
 

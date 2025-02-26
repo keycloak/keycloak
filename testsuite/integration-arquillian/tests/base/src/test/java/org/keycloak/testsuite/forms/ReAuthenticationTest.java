@@ -28,7 +28,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
@@ -376,7 +375,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        tabUtil.newTab(oauth.getLoginFormUrl());
+        tabUtil.newTab(oauth.loginForm().build());
         assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
         oauth.openLoginForm();
 

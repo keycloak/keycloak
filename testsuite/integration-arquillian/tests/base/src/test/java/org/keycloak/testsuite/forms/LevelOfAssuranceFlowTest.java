@@ -26,7 +26,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
@@ -395,9 +394,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void acrValuesQueryParameter() {
-        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
-            .queryParam("acr_values", "gold 3")
-            .build().toString());
+        oauth.loginForm().param("acr_values", "gold 3").open();
         authenticateWithUsernamePassword();
         authenticateWithTotp();
         assertLoggedInWithAcr("gold");
@@ -960,9 +957,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testClient.update(testClientRep);
 
         // Should request client to authenticate with gold, even if the client sends silver
-        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam("acr_values", "silver")
-                .build().toString());
+        oauth.loginForm().param("acr_values", "silver").open();
         authenticateWithUsernamePassword();
         authenticateWithTotp();
         assertLoggedInWithAcr("gold");
@@ -980,9 +975,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         testClient.update(testClientRep);
 
         // Should request client to authenticate with gold, even if the client sends silver
-        driver.navigate().to(UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam("acr_values", "3")
-                .build().toString());
+        oauth.loginForm().param("acr_values", "3").open();
         authenticateWithUsernamePassword();
         authenticateWithTotp();
         authenticateWithButton();

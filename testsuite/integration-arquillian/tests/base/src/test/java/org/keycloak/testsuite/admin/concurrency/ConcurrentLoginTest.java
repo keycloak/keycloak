@@ -62,7 +62,6 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -153,7 +152,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         final HttpClientContext context = HttpClientContext.create();
         CookieStore cookieStore = new BasicCookieStore();
         context.setCookieStore(cookieStore);
-        HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, context), userName, password);
+        HttpUriRequest request = handleLogin(getPageContent(oauth.loginForm().build(), httpClient, context), userName, password);
         assertThat(parseAndCloseResponse(httpClient.execute(request, context)), containsString("<title>AUTH_RESPONSE</title>"));
         return context;
     }
@@ -384,7 +383,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             final HttpClientContext templateContext = clientContexts.get(i % clientContexts.size());
             final HttpClientContext context = HttpClientContext.create();
             context.setCookieStore(templateContext.getCookieStore());
-            String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
+            String pageContent = getPageContent(oauth1.loginForm().build(), httpClient, context);
             assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
             assertThat(context.getRedirectLocations(), Matchers.notNullValue());
             assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));

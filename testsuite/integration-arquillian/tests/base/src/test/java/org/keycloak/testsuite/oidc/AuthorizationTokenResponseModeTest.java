@@ -208,8 +208,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.responseType("code id_token");
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.nonce("123456");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());
@@ -226,8 +225,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         oauth.responseType("code id_token");
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.nonce("123456");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(errorResponse.getResponse());

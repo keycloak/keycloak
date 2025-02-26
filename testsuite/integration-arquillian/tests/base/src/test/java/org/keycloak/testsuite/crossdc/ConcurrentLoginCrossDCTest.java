@@ -77,7 +77,7 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
             loginTask = new LoginTask(httpClient, userSessionId, LOGIN_TASK_DELAY_MS, LOGIN_TASK_RETRIES, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
             ));
-            HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, HttpClientContext.create()), "test-user@localhost", "password");
+            HttpUriRequest request = handleLogin(getPageContent(oauth.loginForm().build(), httpClient, HttpClientContext.create()), "test-user@localhost", "password");
             log.debug("Executing login request");
             org.junit.Assert.assertTrue(parseAndCloseResponse(httpClient.execute(request)).contains("<title>AUTH_RESPONSE</title>"));
 

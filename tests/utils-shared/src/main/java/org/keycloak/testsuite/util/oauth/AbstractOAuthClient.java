@@ -47,12 +47,12 @@ public abstract class AbstractOAuthClient<T> {
         return (T) this;
     }
 
-    public String getLoginFormUrl() {
-        return new LoginUrlBuilder(this).toString();
+    public LoginUrlBuilder loginForm() {
+        return new LoginUrlBuilder(this);
     }
 
     public void openLoginForm() {
-        driver.navigate().to(getLoginFormUrl());
+        loginForm().open();
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -62,6 +62,14 @@ public abstract class AbstractOAuthClient<T> {
     }
 
     public abstract void fillLoginForm(String username, String password);
+
+    public void openRegistrationForm() {
+        driver.navigate().to(registrationForm().build());
+    }
+
+    public RegistrationUrlBuilder registrationForm() {
+        return new RegistrationUrlBuilder(this);
+    }
 
     public AuthorizationEndpointResponse parseLoginResponse() {
         return new AuthorizationEndpointResponse(this);

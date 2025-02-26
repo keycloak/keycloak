@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.common.util.Retry;
@@ -49,7 +48,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -355,10 +353,9 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         setTimeOffset(1);
 
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-        driver.navigate().to(loginFormUri);
+        oauth.loginForm()
+                .prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .open();
 
         loginPage.assertCurrent();
 

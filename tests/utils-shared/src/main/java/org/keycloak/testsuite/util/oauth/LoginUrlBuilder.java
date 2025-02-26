@@ -4,7 +4,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LoginUrlBuilder extends AbstractUrlBuilder {
+
+    private Map<String, String> customParameters;
 
     public LoginUrlBuilder(AbstractOAuthClient<?> client) {
         super(client);
@@ -13,6 +18,24 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
     @Override
     public String getEndpoint() {
         return client.getEndpoints().getAuthorization();
+    }
+
+    public LoginUrlBuilder param(String name, String value) {
+        if (customParameters == null) {
+            customParameters = new HashMap<>();
+        }
+        customParameters.put(name, value);
+        return this;
+    }
+
+    public LoginUrlBuilder prompt(String value) {
+        param(OIDCLoginProtocol.PROMPT_PARAM, value);
+        return this;
+    }
+
+    public LoginUrlBuilder loginHint(String value) {
+        param(OIDCLoginProtocol.LOGIN_HINT_PARAM, value);
+        return this;
     }
 
     @Override
@@ -42,6 +65,10 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
         if (client.getCustomParameters() != null) {
             client.getCustomParameters().forEach(this::parameter);
+        }
+
+        if (customParameters != null) {
+            customParameters.forEach(this::replaceParameter);
         }
     }
 

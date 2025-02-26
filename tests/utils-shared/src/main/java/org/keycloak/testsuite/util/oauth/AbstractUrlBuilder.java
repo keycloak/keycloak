@@ -16,7 +16,7 @@ public abstract class AbstractUrlBuilder {
     protected abstract void initRequest();
 
     public void open() {
-        client.driver.navigate().to(toString());
+        client.driver.navigate().to(build());
     }
 
     protected void parameter(String name, String value) {
@@ -25,9 +25,16 @@ public abstract class AbstractUrlBuilder {
         }
     }
 
-    public String toString() {
+    protected void replaceParameter(String name, String value) {
+        if (value != null) {
+            uriBuilder.replaceQueryParam(name, value);
+        }
+    }
+
+    public String build() {
         uriBuilder = UriBuilder.fromUri(getEndpoint());
         initRequest();
+
         return uriBuilder.build().toString();
     }
 

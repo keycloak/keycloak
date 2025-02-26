@@ -354,9 +354,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void appInitiatedRegistrationWithBackButton() throws Exception {
         // Send request from the application directly to 'registrations'
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations"); // Should be done better way...
-        driver.navigate().to(appInitiatedRegisterUrl);
+        oauth.openRegistrationForm();
         registerPage.assertCurrent();
 
 

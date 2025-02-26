@@ -94,7 +94,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingIDToken() {
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
 
         driver.navigate().to(loginFormUrl);
@@ -143,7 +143,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testMissingRedirectUri() throws Exception {
         // OAuth2 login without redirect_uri. It will be allowed.
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.REDIRECT_URI);
 
@@ -154,7 +154,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
 
         // Client 'more-uris-client' has 2 redirect uris. OAuth2 login without redirect_uri won't be allowed
         oauth.client("more-uris-client");
-        loginFormUrl = oauth.getLoginFormUrl();
+        loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.REDIRECT_URI);
 
@@ -178,7 +178,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     public void testMissingNonceInOAuth2ImplicitFlow() throws Exception {
         oauth.responseType("token");
         oauth.nonce(null);
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
 
         driver.navigate().to(loginFormUrl);

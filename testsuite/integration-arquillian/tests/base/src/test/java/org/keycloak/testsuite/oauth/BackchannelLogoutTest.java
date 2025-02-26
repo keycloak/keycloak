@@ -836,7 +836,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         linkAccountButton.click();
 
         WaitUtils.waitForPageToLoad();
-        oauth.fillLoginForm(nbc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM, false);
+        oauth.fillLoginForm(nbc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM);
     }
 
     private String getClientId(String realm, String clientId) {

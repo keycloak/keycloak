@@ -819,8 +819,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.requestUri(IMAGINARY_REQUEST_URI);
         String state = oauth.stateParamRandom().getState();
         oauth.stateParamHardcoded(state);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -867,8 +866,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // use same redirect_uri
         state = oauth.stateParamRandom().getState();
         oauth.stateParamHardcoded(state);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -915,8 +913,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.requestUri(requestUri);
         String state = oauth.stateParamRandom().getState();
         oauth.stateParamHardcoded(state);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -980,8 +977,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.requestUri(requestUri);
         String state = oauth.stateParamRandom().getState();
         oauth.stateParamHardcoded(state);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }

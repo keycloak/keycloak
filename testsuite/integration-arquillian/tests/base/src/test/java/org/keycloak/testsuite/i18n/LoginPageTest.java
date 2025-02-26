@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.cookie.CookieType;
@@ -383,7 +382,7 @@ public class LoginPageTest extends AbstractI18NTest {
         final String realmLocalizationMessageValue = "We are really sorry...";
 
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
-        String nonExistingUrl = oauth.getLoginFormUrl().split("protocol")[0] + "incorrect-path";
+        String nonExistingUrl = oauth.loginForm().build().split("protocol")[0] + "incorrect-path";
         driver.navigate().to(nonExistingUrl);
 
         assertThat(driver.getPageSource(), containsString(realmLocalizationMessageValue));
