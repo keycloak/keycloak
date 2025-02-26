@@ -57,7 +57,10 @@ class AdminClient {
 
   async deleteRealm(realm: string) {
     await this.#login();
-    await this.#client.realms.del({ realm });
+    const foundRealm = await this.#client.realms.findOne({ realm });
+    if (foundRealm) {
+      await this.#client.realms.del({ realm });
+    }
   }
 
   async createClient(
