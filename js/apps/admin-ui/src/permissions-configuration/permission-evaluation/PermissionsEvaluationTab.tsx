@@ -46,6 +46,7 @@ interface EvaluateFormInputs
   resources?: Record<string, string>[];
   clients: string[];
   users: string[];
+  groups: string[];
   user: string[];
   resourceType?: string;
 }
@@ -120,12 +121,27 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     }
 
     const formValues = getValues();
+    const getResourceName = (resourceType: string) => {
+      switch (resourceType) {
+        case "Groups":
+          return formValues.groups?.[0];
+        case "Users":
+          return formValues.users?.[0];
+        case "Clients":
+          return formValues.clients?.[0];
+        default:
+          return undefined;
+      }
+    };
+
+    const resourceName = getResourceName(formValues.resourceType!);
+
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
       userId: formValues.user![0],
       resources: [
         {
-          name: formValues.users![0],
+          name: resourceName,
           scopes: formValues.authScopes!.map((scope) => ({ name: scope })),
         },
       ],
