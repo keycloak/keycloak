@@ -64,6 +64,8 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
@@ -243,6 +245,7 @@ public class TokenManager {
         if (oldToken.getNonce() != null) {
             clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
         }
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
 
         // recreate token.
         AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
@@ -861,9 +864,9 @@ public class TokenManager {
                         return ((OIDCAccessTokenMapper) mapper.getValue()).transformAccessToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
                     }
                 });
-        final ClientModel[] requestedAucienceClients = clientSessionCtx.getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class);
-        if (requestedAucienceClients != null) {
-            restrictRequestedAudience(accessToken, Arrays.stream(requestedAucienceClients)
+        final ClientModel[] requestedAudienceClients = clientSessionCtx.getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class);
+        if (requestedAudienceClients != null) {
+            restrictRequestedAudience(accessToken, Arrays.stream(requestedAudienceClients)
                     .map(ClientModel::getClientId)
                     .collect(Collectors.toSet()));
         }
@@ -1045,7 +1048,11 @@ public class TokenManager {
     protected AccessToken initToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                     ClientSessionContext clientSessionCtx, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
-        token.id(KeycloakModelUtils.generateId());
+
+        TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+        AccessTokenContext tokenCtx = encoder.getTokenContextFromClientSessionContext(clientSessionCtx, KeycloakModelUtils.generateId());
+        token.id(encoder.encodeTokenId(tokenCtx));
+
         token.type(formatTokenType(client, token));
         if (UserSessionModel.SessionPersistenceState.TRANSIENT.equals(userSession.getPersistenceState())) {
             token.subject(user.getId());

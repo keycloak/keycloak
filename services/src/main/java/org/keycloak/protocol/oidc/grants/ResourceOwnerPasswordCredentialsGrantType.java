@@ -31,6 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
@@ -130,6 +131,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         AuthenticationManager.setClientScopesInSession(session, authSession);
 
         ClientSessionContext clientSessionCtx = processor.attachSession();
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
