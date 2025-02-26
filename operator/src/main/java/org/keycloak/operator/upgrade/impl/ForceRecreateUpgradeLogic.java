@@ -37,7 +37,7 @@ public class ForceRecreateUpgradeLogic extends BaseUpgradeLogic {
 
     @Override
     Optional<UpdateControl<Keycloak>> onUpgrade() {
-        decideRecreateUpgrade();
+        decideRecreateUpgrade("Strategy ForceRecreate configured.");
         return Optional.empty();
     }
 }

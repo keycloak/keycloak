@@ -39,6 +39,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.upgrade.UpdateStrategy;
 import org.keycloak.operator.upgrade.impl.AutoUpgradeLogic;
 
@@ -59,6 +60,7 @@ public class UpgradeTest extends BaseOperatorTest {
     public void testImageChange(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
+        assertUnknownUpdateTypeStatus(kc);
 
         var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
         final String newImage = "quay.io/keycloak/non-existing-keycloak";
@@ -69,6 +71,20 @@ public class UpgradeTest extends BaseOperatorTest {
 
         deployKeycloak(k8sclient, kc, false);
         await(upgradeCondition);
+        switch (updateStrategy) {
+            case AUTO:
+                // Sometimes the pod disappears, and the status could be:
+                // - Unexpected update-compatibility command error.
+                // - Unexpected update-compatibility command exit code.
+                assertRecreateUpdateTypeStatus(kc, "Unexpected update-compatibility command");
+                break;
+            case FORCE_RECREATE:
+                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
+                break;
+            case RECREATE_ON_IMAGE_CHANGE:
+                assertRecreateUpdateTypeStatus(kc, "Image changed");
+                break;
+        }
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -92,6 +108,7 @@ public class UpgradeTest extends BaseOperatorTest {
     public void testCacheMaxCount(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
         deployKeycloak(k8sclient, kc, true);
+        assertUnknownUpdateTypeStatus(kc);
 
         // changing the local cache max-count should never use the recreate upgrade type
         // except if forced by the Keycloak CR.
@@ -101,8 +118,18 @@ public class UpgradeTest extends BaseOperatorTest {
                 eventuallyRollingUpgradeStatus(k8sclient, kc);
 
         deployKeycloak(k8sclient, kc, true);
-
         await(upgradeCondition);
+        switch (updateStrategy) {
+            case AUTO:
+                assertRollingUpdateTypeStatus(kc, "Compatible changes detected.");
+                break;
+            case FORCE_RECREATE:
+                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
+                break;
+            case RECREATE_ON_IMAGE_CHANGE:
+                assertRollingUpdateTypeStatus(kc, "Image unchanged");
+                break;
+        }
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -119,6 +146,7 @@ public class UpgradeTest extends BaseOperatorTest {
         // use the base image
         kc.getSpec().setImage(null);
         deployKeycloak(k8sclient, kc, true);
+        assertUnknownUpdateTypeStatus(kc);
 
         // use the optimized image, auto strategy should use a rolling upgrade
         kc.getSpec().setImage(getTestCustomImage());
@@ -127,8 +155,18 @@ public class UpgradeTest extends BaseOperatorTest {
                 eventuallyRecreateUpgradeStatus(k8sclient, kc);
 
         deployKeycloak(k8sclient, kc, true);
-
         await(upgradeCondition);
+        switch (updateStrategy) {
+            case AUTO:
+                assertRollingUpdateTypeStatus(kc, "Compatible changes detected.");
+                break;
+            case FORCE_RECREATE:
+                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
+                break;
+            case RECREATE_ON_IMAGE_CHANGE:
+                assertRecreateUpdateTypeStatus(kc, "Image changed");
+                break;
+        }
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -144,14 +182,16 @@ public class UpgradeTest extends BaseOperatorTest {
         // use the base image
         kc.getSpec().setImage(null);
         deployKeycloak(k8sclient, kc, true);
+        assertUnknownUpdateTypeStatus(kc);
 
         // let's trigger a rolling upgrade
         var upgradeCondition = eventuallyRollingUpgradeStatus(k8sclient, kc);
         kc.getSpec().setImage(getTestCustomImage());
 
         deployKeycloak(k8sclient, kc, true);
-
         await(upgradeCondition);
+        assertRollingUpdateTypeStatus(kc, "Compatible changes detected.");
+
         var job = assertUpdateJobExists(kc);
         var hash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertEquals(0, containerExitCode(job));
@@ -162,8 +202,9 @@ public class UpgradeTest extends BaseOperatorTest {
         kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
 
         deployKeycloak(k8sclient, kc, false);
-
         await(upgradeCondition);
+        assertRecreateUpdateTypeStatus(kc, "Unexpected update-compatibility command");
+
         job = assertUpdateJobExists(kc);
         var newHash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertNotEquals(hash, newHash);
@@ -189,6 +230,21 @@ public class UpgradeTest extends BaseOperatorTest {
                 .map(AutoUpgradeLogic::exitCode);
         assertTrue(maybeExitCode.isPresent());
         return maybeExitCode.get();
+    }
+
+    private void assertUnknownUpdateTypeStatus(Keycloak keycloak) {
+        var current = k8sclient.resource(keycloak).get();
+        CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.UPDATE_TYPE, null);
+    }
+
+    private void assertRecreateUpdateTypeStatus(Keycloak keycloak, String reason) {
+        var current = k8sclient.resource(keycloak).get();
+        CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.UPDATE_TYPE, true, reason);
+    }
+
+    private void assertRollingUpdateTypeStatus(Keycloak keycloak, String reason) {
+        var current = k8sclient.resource(keycloak).get();
+        CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.UPDATE_TYPE, false, reason);
     }
 
     private static Keycloak createInitialDeployment(UpdateStrategy updateStrategy) {

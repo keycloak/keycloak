@@ -64,10 +64,10 @@ public final class CRAssert {
     // ISPN000094 -> merge view
     private static final Pattern CLUSTER_SIZE_PATTERN = Pattern.compile("ISPN00009[34]: [^]]*] \\((\\d+)\\)");
 
-    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, boolean status) {
+    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status) {
         assertKeycloakStatusCondition(kc, condition, status, null);
     }
-    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, boolean status, String containedMessage) {
+    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
         Log.debugf("Asserting CR: %s, condition: %s, status: %s, message: %s", kc.getMetadata().getName(), condition, status, containedMessage);
         try {
             assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
