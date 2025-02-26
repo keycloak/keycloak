@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa.session;
 
 import jakarta.persistence.Version;
+import org.hibernate.annotations.DynamicUpdate;
 import org.keycloak.storage.jpa.KeyUtils;
 
 import jakarta.persistence.Column;
@@ -63,6 +64,7 @@ import java.io.Serializable;
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity
+@DynamicUpdate
 @IdClass(PersistentUserSessionEntity.Key.class)
 public class PersistentUserSessionEntity {
 

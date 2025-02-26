@@ -25,6 +25,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.Serializable;
 
@@ -50,6 +51,7 @@ import java.io.Serializable;
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity
+@DynamicUpdate
 @IdClass(PersistentClientSessionEntity.Key.class)
 public class PersistentClientSessionEntity {
 
