@@ -1,21 +1,15 @@
-import PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
-import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
 import { Alert, List, ListItem, Text } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
+import { sortBy } from "lodash-es";
 
 type PermissionEvaluationResultProps = {
   evaluateResult: PolicyEvaluationResponse;
-  evaluatedAllowedScopes: ScopeRepresentation[];
-  evaluatedDeniedScopes: ScopeRepresentation[];
-  evaluatedPolicies: PolicyResultRepresentation[];
 };
 
 export const PermissionEvaluationResult = ({
   evaluateResult,
-  evaluatedAllowedScopes,
-  evaluatedDeniedScopes,
-  evaluatedPolicies,
 }: PermissionEvaluationResultProps) => {
   const { t } = useTranslation();
   const alertTitle = evaluateResult?.results?.[0]?.resource?.name!;
@@ -23,6 +17,18 @@ export const PermissionEvaluationResult = ({
     evaluateResult?.status === "PERMIT" ? "success" : "warning";
   const alertMessage =
     evaluateResult?.status === "PERMIT" ? t("grantedScope") : t("deniedScope");
+
+  const evaluatedAllowedScopes = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.allowedScopes || [], "name");
+  }, [evaluateResult?.results]);
+
+  const evaluatedDeniedScopes = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.deniedScopes || [], "name");
+  }, [evaluateResult?.results]);
+
+  const evaluatedPolicies = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.policies || [], "name");
+  }, [evaluateResult?.results]);
 
   return (
     <Alert isInline variant={alertVariant} title={alertTitle} component="h6">
