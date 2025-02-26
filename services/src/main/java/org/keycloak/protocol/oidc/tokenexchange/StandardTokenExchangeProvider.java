@@ -206,77 +206,96 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
-        if (targetUserSession == null) {
+        boolean newUserSessionCreated = false;
+        if (targetUserSession == null || targetUserSession.isOffline()) {
             // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
+            // The new session created also when original session was offline (assuming we don't allow offline-access from token exchange)
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
                     clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
                     requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                             ? UserSessionModel.SessionPersistenceState.PERSISTENT
                             : UserSessionModel.SessionPersistenceState.TRANSIENT);
+            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.PERSISTENT) {
+                newUserSessionCreated = true;
+            }
         }
+        boolean newClientSessionCreated = !newUserSessionCreated && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
 
         event.session(targetUserSession);
 
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+        try {
+            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
-        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {
-            event.detail(Details.REASON, "Scope offline_access not allowed for token exchange");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    "Scope offline_access not allowed for token exchange", Response.Status.BAD_REQUEST);
-        }
-
-        updateUserSessionFromClientAuth(targetUserSession);
-
-        if (params.getAudience() != null && !targetAudienceClients.isEmpty()) {
-            clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
-        }
-
-        validateConsents(targetUser, clientSessionCtx);
-        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
-
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
-                .generateAccessToken();
-
-        checkRequestedAudiences(responseBuilder);
-
-        if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
-            responseBuilder.getAccessToken().setSessionId(null);
-        }
-
-        if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
-            responseBuilder.generateRefreshToken();
-        }
-
-        AccessTokenResponse res;
-        if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
-            // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
-            res = responseBuilder.generateIDToken().build();
-            res.setToken(res.getIdToken());
-            res.setIdToken(null);
-            res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
-        } else {
-            String scopeParam = params.getScope();
-            if (TokenUtil.isOIDCRequest(scopeParam)) {
-                responseBuilder.generateIDToken().generateAccessTokenHash();
+            if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                    && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {
+                event.detail(Details.REASON, "Scope offline_access not allowed for token exchange");
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "Scope offline_access not allowed for token exchange", Response.Status.BAD_REQUEST);
             }
-            res = responseBuilder.build();
-        }
 
-        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
+            updateUserSessionFromClientAuth(targetUserSession);
 
-        if (responseBuilder.getAccessToken().getAudience() != null) {
-            StringJoiner joiner = new StringJoiner(" ");
-            for (String s : List.of(responseBuilder.getAccessToken().getAudience())) {
-                joiner.add(s);
+            if (params.getAudience() != null && !targetAudienceClients.isEmpty()) {
+                clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
             }
-            event.detail(Details.AUDIENCE, joiner.toString());
-        }
-        event.user(targetUser);
-        event.success();
 
-        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+            validateConsents(targetUser, clientSessionCtx);
+            clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
+                    .generateAccessToken();
+
+            checkRequestedAudiences(responseBuilder);
+
+            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
+                responseBuilder.getAccessToken().setSessionId(null);
+            }
+
+            if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
+                responseBuilder.generateRefreshToken();
+            }
+
+            AccessTokenResponse res;
+            if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
+                // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
+                res = responseBuilder.generateIDToken().build();
+                res.setToken(res.getIdToken());
+                res.setIdToken(null);
+                res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
+            } else {
+                String scopeParam = params.getScope();
+                if (TokenUtil.isOIDCRequest(scopeParam)) {
+                    responseBuilder.generateIDToken().generateAccessTokenHash();
+                }
+                res = responseBuilder.build();
+            }
+
+            res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
+
+            if (responseBuilder.getAccessToken().getAudience() != null) {
+                StringJoiner joiner = new StringJoiner(" ");
+                for (String s : List.of(responseBuilder.getAccessToken().getAudience())) {
+                    joiner.add(s);
+                }
+                event.detail(Details.AUDIENCE, joiner.toString());
+            }
+            event.user(targetUser);
+            event.success();
+
+            return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+        } catch (RuntimeException e) {
+            // Cleanup client-session if created in this request
+            if (newClientSessionCreated) {
+                targetUserSession.removeAuthenticatedClientSessions(Set.of(client.getId()));
+            }
+            // Cleanup user-session if created in this request
+            if (newUserSessionCreated) {
+                session.sessions().removeUserSession(realm, targetUserSession);
+            }
+
+            throw e;
+        }
     }
 
     @Override
