@@ -37,7 +37,7 @@ public class DefaultOAuth2ResourceIndicatorResolver implements OAuth2ResourceInd
     /**
      * A resource type to denote OAuth 2.0 Resource Indicator resource definitions.
      */
-    public static final String KEYCLOAK_RESOURCE_INDICATOR_TYPE = "urn:keycloak:oauth2:resource-identifier";
+    public static final String KEYCLOAK_RESOURCE_INDICATOR_TYPE = "urn:keycloak:oauth2:resource-indicator";
 
     protected final KeycloakSession session;
 
