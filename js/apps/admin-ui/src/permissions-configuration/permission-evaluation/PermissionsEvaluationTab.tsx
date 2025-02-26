@@ -111,18 +111,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     return sortBy(resource?.scopes?.map((scope) => scope.name!) || []);
   }, [selectedResourceType, resources]);
 
-  const evaluatedAllowedScopes = useMemo(() => {
-    return sortBy(evaluateResult?.results?.[0]?.allowedScopes || [], "name");
-  }, [evaluateResult?.results]);
-
-  const evaluatedDeniedScopes = useMemo(() => {
-    return sortBy(evaluateResult?.results?.[0]?.deniedScopes || [], "name");
-  }, [evaluateResult?.results]);
-
-  const evaluatedPolicies = useMemo(() => {
-    return sortBy(evaluateResult?.results?.[0]?.policies || [], "name");
-  }, [evaluateResult?.results]);
-
   const ResourceTypeComponent =
     COMPONENTS[selectedResourceType?.toLowerCase() || ""];
 
@@ -262,12 +250,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   instructions={t("noPermissionsEvaluationResultsInstructions")}
                 />
               ) : (
-                <PermissionEvaluationResult
-                  evaluateResult={evaluateResult!}
-                  evaluatedAllowedScopes={evaluatedAllowedScopes}
-                  evaluatedDeniedScopes={evaluatedDeniedScopes}
-                  evaluatedPolicies={evaluatedPolicies}
-                />
+                <PermissionEvaluationResult evaluateResult={evaluateResult!} />
               )}
             </PanelMainBody>
           </Panel>
