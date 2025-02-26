@@ -8,9 +8,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.RealmBuilder;
-
-import java.util.HashMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -35,7 +32,7 @@ public class AuthzEndpointRequestParserTest extends AbstractTestRealmKeycloakTes
             oauth.addCustomParameter("paramkey5", "paramvalue5");
             oauth.addCustomParameter("paramkey6_too_many", "paramvalue6");
 
-            try (Response response = client.target(oauth.getLoginFormUrl()).request().get()) {
+            try (Response response = client.target(oauth.loginForm().build()).request().get()) {
 
                 assertThat(response.getStatus(), is(equalTo(200)));
                 assertThat(response, Matchers.body(containsString("Sign in")));

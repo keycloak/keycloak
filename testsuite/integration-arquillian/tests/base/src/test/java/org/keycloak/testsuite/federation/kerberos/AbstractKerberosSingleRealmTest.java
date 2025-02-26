@@ -64,7 +64,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
-        String kcLoginPageLocation = oauth.getLoginFormUrl();
+        String kcLoginPageLocation = oauth.loginForm().build();
 
         Response response = client.target(kcLoginPageLocation).request().get();
         Assert.assertEquals(401, response.getStatus());

@@ -225,9 +225,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     public void accessTokenRequestInPKCEWithoutCodeChallengeWithValidCodeChallengeMethod() throws Exception {
     	// test case : failure : A-1-7
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -243,9 +241,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : failure : A-1-8
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
     	oauth.codeChallenge("ABCDEFGabcdefg1234567ABCDEFGabcdefg1234567"); // 42
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -262,9 +258,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
     	oauth.codeChallenge("3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~123456789"); // 129
 
-    	UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -366,9 +360,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	oauth.codeChallenge(codeChallenge);
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
     	
-    	UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+    	oauth.openLoginForm();
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -612,9 +604,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             oauth.codeChallenge(codeChallenge);
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-
-            driver.navigate().to(b.build().toURL());
+            oauth.openLoginForm();
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -636,9 +626,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             String codeChallenge = generateS256CodeChallenge(codeVerifier);
             oauth.codeChallenge(codeChallenge);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-
-            driver.navigate().to(b.build().toURL());
+            oauth.openLoginForm();
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -659,9 +647,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             setPkceActivationSettings("test-app", OAuth2Constants.PKCE_METHOD_S256);
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-
-            driver.navigate().to(b.build().toURL());
+            oauth.openLoginForm();
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
@@ -683,9 +669,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             oauth.codeChallenge("invalid");
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-
-            driver.navigate().to(b.build().toURL());
+            oauth.openLoginForm();
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 

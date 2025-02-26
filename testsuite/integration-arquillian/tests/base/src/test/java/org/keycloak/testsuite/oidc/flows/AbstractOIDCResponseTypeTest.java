@@ -113,8 +113,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     @Test
     public void authorizationRequestMissingResponseType() throws IOException {
         oauth.responseType(null);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         // Always read error from the "query"
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
@@ -130,7 +129,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
     protected void validateNonceNotUsedErrorExpected() {
         oauth.nonce(null);
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
@@ -148,8 +147,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         // Disable implicit flow for client
         clientManagerBuilder().implicitFlow(false);
 
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertTrue(errorResponse.isRedirected());
@@ -167,8 +165,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         // Disable standard flow for client
         clientManagerBuilder().standardFlow(false);
 
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertTrue(errorResponse.isRedirected());
@@ -188,7 +185,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             oauth.nonce(nonce);
         }
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
@@ -206,7 +203,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             oauth.redirectUri(redirectUri);
         }
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");

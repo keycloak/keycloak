@@ -694,7 +694,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertNotEquals(refreshToken1.getOtherClaims().get(Constants.REUSE_ID), refreshToken1.getId());
 
             //login with tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
             loginEvent = events.expectLogin().assertEvent();
@@ -1242,7 +1242,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     r.setSsoSessionIdleTimeoutRememberMe(500);
                     r.setSsoSessionIdleTimeout(100);
                 }).update()) {
-            oauth.doRememberMeLogin("test-user@localhost", "password");
+            oauth.openLoginForm();
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
 
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -1642,7 +1644,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     r.setSsoSessionMaxLifespan(50);
                 }).update()) {
 
-            oauth.doRememberMeLogin("test-user@localhost", "password");
+            oauth.openLoginForm();
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
 
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -2170,9 +2174,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         processExpectedValidRefresh(sessionId, refreshTokenParsed1, refreshToken);
 
         // Open the tab with prompt=login. AuthenticationSession will be created with same ID like userSession
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
+        String loginFormUri = oauth.loginForm()
+                .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build();
         driver.navigate().to(loginFormUri);
 
         loginPage.assertCurrent();

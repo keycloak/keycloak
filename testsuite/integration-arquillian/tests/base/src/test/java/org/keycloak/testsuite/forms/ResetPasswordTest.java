@@ -891,7 +891,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.getLoginFormUrl();
+            String loginUrl = oauth.loginForm().build();
             String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
 
             driver.navigate().to(forgotPasswordUrl);
@@ -939,7 +939,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.getLoginFormUrl();
+            String loginUrl = oauth.loginForm().build();
             String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
 
             driver.navigate().to(forgotPasswordUrl);
@@ -988,7 +988,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.getLoginFormUrl();
+            String loginUrl = oauth.loginForm().build();
             String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
 
             driver.navigate().to(forgotPasswordUrl);
@@ -1431,7 +1431,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordWithLoginHint() throws IOException {
         // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-        String loginUrl = oauth.getLoginFormUrl();
+        String loginUrl = oauth.loginForm().build();
         String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
 
         driver.navigate().to(forgotPasswordUrl + "&login_hint=test");

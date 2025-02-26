@@ -268,7 +268,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
     public void testConsents() {
         oauth.realm(consumerRealmName());
         oauth.redirectUri(oauth.SERVER_ROOT + "/auth/realms/" + consumerRealmName() + "/app/auth");
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
@@ -416,7 +416,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();
@@ -426,7 +426,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
         assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
         consentPage.confirm();
 
@@ -484,7 +484,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();

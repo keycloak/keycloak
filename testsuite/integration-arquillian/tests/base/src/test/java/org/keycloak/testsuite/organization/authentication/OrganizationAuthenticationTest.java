@@ -24,7 +24,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.hamcrest.Matcher;
@@ -35,7 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -205,7 +203,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         oauth.clientId("broker-app");
         String expectedUsername = URLEncoder.encode(member.getEmail(), StandardCharsets.UTF_8);
         oauth.realm(bc.consumerRealmName());
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=" + expectedUsername);
+        oauth.loginForm().loginHint(expectedUsername).open();
         assertThat(loginPage.getUsername(), Matchers.equalTo(URLDecoder.decode(expectedUsername, StandardCharsets.UTF_8)));
 
         // continue authenticating without setting the username

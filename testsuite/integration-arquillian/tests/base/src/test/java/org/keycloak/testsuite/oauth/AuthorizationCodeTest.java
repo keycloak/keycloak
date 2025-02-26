@@ -46,7 +46,6 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -182,8 +181,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestInvalidResponseType() throws IOException {
         oauth.responseType("tokenn");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
@@ -198,7 +196,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestInvalidResponseType_testHeaders() throws IOException {
         oauth.responseType("tokenn");
         Client client = AdminClientUtil.createResteasyClient();
-        Response response = client.target(oauth.getLoginFormUrl()).request().get();
+        Response response = client.target(oauth.loginForm().build()).request().get();
 
         assertThat(response.getStatus(), is(equalTo(302)));
         String cacheControl = response.getHeaderString(HttpHeaders.CACHE_CONTROL);
@@ -212,8 +210,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType("tokenn");
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         String error = driver.findElement(By.id("error")).getText();
         String state = driver.findElement(By.id("state")).getText();
@@ -228,8 +225,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType(null);
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         String error = driver.findElement(By.id("error")).getText();
         String errorDescription = driver.findElement(By.id("error_description")).getText();

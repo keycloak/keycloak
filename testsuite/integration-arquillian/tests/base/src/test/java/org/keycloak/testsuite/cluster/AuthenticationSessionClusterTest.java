@@ -88,7 +88,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
         OAuthClient oAuthClient = oauth;
         oAuthClient.baseUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth").build("test").toString());
 
-        String testAppLoginNode1URL = oAuthClient.getLoginFormUrl();
+        String testAppLoginNode1URL = oAuthClient.loginForm().build();
 
         Set<String> visitedRoutes = new HashSet<>();
         for (int i = 0; i < 20; i++) {
@@ -112,7 +112,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
         OAuthClient oAuthClient = oauth;
         oAuthClient.baseUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth").build("test").toString());
 
-        String testAppLoginNode1URL = oAuthClient.getLoginFormUrl();
+        String testAppLoginNode1URL = oAuthClient.loginForm().build();
 
         // Disable route on backend server
         getTestingClientFor(backendNode(0)).server().run(session -> {

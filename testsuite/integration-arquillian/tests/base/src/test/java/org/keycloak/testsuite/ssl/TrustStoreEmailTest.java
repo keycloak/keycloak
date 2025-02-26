@@ -102,7 +102,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             SslMailServer.startWithSsl(privateKey);
         }
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
@@ -143,7 +143,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
         AccountHelper.logout(testRealm(), user.getUsername());
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(user.getUsername(), "password");
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
     }
@@ -158,7 +158,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(user.getUsername(), "password");
 
         events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
@@ -186,7 +186,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .setSmtpServer("host", "localhost.localdomain")
                 .update()) {
             SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             loginPage.form().login(user.getUsername(), "password");
 
             events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)

@@ -162,14 +162,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         this.driver = driver;
     }
 
-    public void openRegistrationForm() {
-        driver.navigate().to(getRegistrationFormUrl());
-    }
-
-    public String getRegistrationFormUrl() {
-        return new RegistrationUrlBuilder(this).toString();
-    }
-
     public AuthorizationEndpointResponse doSilentLogin() {
         openLoginForm();
         WaitUtils.waitForPageToLoad();
@@ -187,25 +179,9 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return parseLoginResponse();
     }
 
-    public AuthorizationEndpointResponse doRememberMeLogin(String username, String password) {
-        openLoginForm();
-        fillLoginForm(username, password, true);
-
-        return parseLoginResponse();
-    }
-
     public void fillLoginForm(String username, String password) {
-        this.fillLoginForm(username, password, false);
-    }
-
-    public void fillLoginForm(String username, String password, boolean rememberMe) {
         LoginPage loginPage = new LoginPage();
         PageFactory.initElements(driver, loginPage);
-
-        if (rememberMe) {
-            loginPage.setRememberMe(true);
-        }
-
         loginPage.login(username, password);
     }
 

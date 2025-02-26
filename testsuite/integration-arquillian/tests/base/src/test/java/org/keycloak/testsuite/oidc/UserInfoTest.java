@@ -1037,10 +1037,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         setTimeOffset(1);
 
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-        driver.navigate().to(loginFormUri);
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
 
         loginPage.assertCurrent();
 

@@ -256,7 +256,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             // check if the back channel logout succeeded
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
         }

@@ -507,8 +507,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
         driver.navigate().to(
                 currentTestProvider.equals(PAYPAL)
-                        ? oauth.getLoginFormUrl().replace("https://localhost", "https://127.0.0.1")
-                        : oauth.getLoginFormUrl()
+                        ? oauth.loginForm().build().replace("https://localhost", "https://127.0.0.1")
+                        : oauth.loginForm().build()
         );
         loginPage.clickSocial(currentTestProvider.id());
 

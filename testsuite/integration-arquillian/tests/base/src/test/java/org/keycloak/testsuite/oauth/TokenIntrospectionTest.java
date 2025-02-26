@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -61,9 +60,6 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-
-import jakarta.ws.rs.core.UriBuilder;
-import org.keycloak.utils.MediaType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -582,9 +578,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(1);
 
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
+        String loginFormUri = oauth.loginForm()
+                .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build();
         driver.navigate().to(loginFormUri);
 
         loginPage.assertCurrent();
