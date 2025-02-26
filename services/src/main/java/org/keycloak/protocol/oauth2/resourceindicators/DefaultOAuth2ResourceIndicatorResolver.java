@@ -34,7 +34,10 @@ import java.util.Set;
 
 public class DefaultOAuth2ResourceIndicatorResolver implements OAuth2ResourceIndicatorResolver {
 
-    public static final String KEYCLOAK_RESOURCE_INDICATOR_TYPE = "urn:keycloak:resource-indicator";
+    /**
+     * A resource type to denote OAuth 2.0 Resource Indicator resource definitions.
+     */
+    public static final String KEYCLOAK_RESOURCE_INDICATOR_TYPE = "urn:keycloak:oauth2:resource-identifier";
 
     protected final KeycloakSession session;
 
@@ -97,15 +100,15 @@ public class DefaultOAuth2ResourceIndicatorResolver implements OAuth2ResourceInd
         AuthorizationProvider authzProvider = session.getProvider(AuthorizationProvider.class);
         StoreFactory storeFactory = authzProvider.getStoreFactory();
 
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client);
+        ResourceServer resourceServer = lookupResourceServer(client, storeFactory);
         if (resourceServer == null) {
             // no resource server definition found for the given client
             return Collections.emptySet();
         }
 
-        List<Resource> resources = storeFactory.getResourceStore().findByType(resourceServer, KEYCLOAK_RESOURCE_INDICATOR_TYPE);
+        List<Resource> resources = getResources(storeFactory, resourceServer);
         if (CollectionUtil.isEmpty(resources)) {
-            // no resource definitiosn found for the given client / resource server
+            // no resource definitions found for the given client / resource server
             return Collections.emptySet();
         }
 
