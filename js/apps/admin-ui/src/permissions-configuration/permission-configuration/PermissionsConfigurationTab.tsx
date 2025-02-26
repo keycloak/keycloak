@@ -1,8 +1,5 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import ResourceServerRepresentation, {
-  ResourceTypesRepresentation,
-} from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
@@ -27,24 +24,23 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { useAdminClient } from "../admin-client";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useAdminClient } from "../../admin-client";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
-import { useRealm } from "../context/realm-context/RealmContext";
-import useToggle from "../utils/useToggle";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import useToggle from "../../utils/useToggle";
 import {
   SearchDropdown,
   SearchForm,
-} from "../clients/authorization/SearchDropdown";
+} from "../../clients/authorization/SearchDropdown";
+import { toCreatePermissionConfiguration } from "../routes/NewPermissionConfiguration";
+import { AuthorizationScopesDetails } from "../permission-configuration/AuthorizationScopesDetails";
+import { toPermissionConfigurationDetails } from "../routes/PermissionConfigurationDetails";
+import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
 import { NewPermissionConfigurationDialog } from "./NewPermissionConfigurationDialog";
-import { toCreatePermissionConfiguration } from "./routes/NewPermissionConfiguration";
-import "../clients/authorization/permissions.css";
-import { AuthorizationScopesDetails } from "./permission-configuration/AuthorizationScopesDetails";
-import { toPermissionConfigurationDetails } from "./routes/PermissionConfigurationDetails";
-import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 
 type PermissionsConfigurationProps = {
   clientId: string;
@@ -69,8 +65,6 @@ export const PermissionsConfigurationTab = ({
     useState<ExpandablePolicyRepresentation[]>();
   const [selectedPermission, setSelectedPermission] =
     useState<PolicyRepresentation>();
-  const [resourceServer, setResourceServer] =
-    useState<ResourceServerRepresentation>();
   const [users, setUsers] = useState<UserRepresentation[]>();
   const [search, setSearch] = useState<SearchForm>({});
   const [key, setKey] = useState(0);
@@ -78,22 +72,10 @@ export const PermissionsConfigurationTab = ({
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [newDialog, toggleDialog] = useToggle();
-  const localeSort = useLocaleSort();
-  const allResourceTypes = resourceServer?.authorizationSchema?.resourceTypes;
-
-  const resourceTypes = useMemo(() => {
-    const resourceTypes = allResourceTypes
-      ? (Object.values(allResourceTypes) as ResourceTypesRepresentation[])
-      : [];
-    return localeSort(resourceTypes, mapByKey("type"));
-  }, [allResourceTypes, localeSort]);
+  const resourceTypes = useSortedResourceTypes({ clientId });
 
   useFetch(
     async () => {
-      const resourceServer = adminClient.clients.getResourceServer({
-        id: clientId,
-      });
-
       const permissions = adminClient.clients.listPermissionScope({
         first,
         max: max + 1,
@@ -105,8 +87,10 @@ export const PermissionsConfigurationTab = ({
         realm,
       });
 
-      const [resourceServerData, permissionsData, usersData] =
-        await Promise.all([resourceServer, permissions, users]);
+      const [permissionsData, usersData] = await Promise.all([
+        permissions,
+        users,
+      ]);
 
       const processedPermissions = await Promise.all(
         permissionsData.map(async (permission) => {
@@ -136,13 +120,11 @@ export const PermissionsConfigurationTab = ({
       );
 
       return {
-        resourceServerData,
         permissionsData: processedPermissions,
         usersData,
       };
     },
     (data) => {
-      setResourceServer(data.resourceServerData);
       setPermissions(data.permissionsData as any[]);
       setUsers(data.usersData);
     },
