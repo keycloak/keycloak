@@ -51,7 +51,7 @@ public class DefaultTokenContextEncoderProviderTest {
 
     @Test
     public void testSuccessClientCredentialsToken() {
-        String tokenId = "st.tr_tt.lt_gt.cc:1234";
+        String tokenId = "trltcc:1234";
         AccessTokenContext ctx = provider.getTokenContextFromTokenId(tokenId);
         Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
         Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
@@ -63,7 +63,7 @@ public class DefaultTokenContextEncoderProviderTest {
 
     @Test
     public void testSuccessOfflineToken() {
-        String tokenId = "st.of_tt.rt_gt.ro:5678";
+        String tokenId = "ofrtro:5678";
         AccessTokenContext ctx = provider.getTokenContextFromTokenId(tokenId);
         Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.OFFLINE);
         Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
@@ -76,7 +76,7 @@ public class DefaultTokenContextEncoderProviderTest {
     @Test
     public void testIncorrectGrantType() {
         try {
-            String tokenId = "st.of_tt.rt_gt.ac:5678";
+            String tokenId = "ofrtac:5678";
             AccessTokenContext ctx = provider.getTokenContextFromTokenId(tokenId);
             Assert.fail("Not expected to success due incorrect grant type");
         } catch (RuntimeException iae) {
@@ -86,7 +86,7 @@ public class DefaultTokenContextEncoderProviderTest {
 
     @Test
     public void testUnknownGrantType() {
-        String tokenId = "st.on_tt.rt_gt.na:5678";
+        String tokenId = "onrtna:5678";
         AccessTokenContext ctx = provider.getTokenContextFromTokenId(tokenId);
         Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
         Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);

@@ -19,8 +19,6 @@
 
 package org.keycloak.protocol.oidc.encode;
 
-import java.util.Map;
-
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -33,10 +31,6 @@ import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 public class DefaultTokenContextEncoderProvider implements TokenContextEncoderProvider {
 
     public static final String UNKNOWN = "na";
-
-    public static final String SESSION_TYPE_PREFIX = "st";
-    public static final String TOKEN_TYPE_PREFIX = "tt";
-    public static final String GRANT_TYPE_PREFIX = "gt";
 
     private final KeycloakSession session;
     private final DefaultTokenContextEncoderProviderFactory factory;
@@ -74,44 +68,31 @@ public class DefaultTokenContextEncoderProvider implements TokenContextEncoderPr
         if (indexOf == -1) {
             return new AccessTokenContext(AccessTokenContext.SessionType.UNKNOWN, AccessTokenContext.TokenType.UNKNOWN, UNKNOWN, encodedTokenId);
         } else {
-            String encodedChunks = encodedTokenId.substring(0, indexOf);
+            String encodedContext = encodedTokenId.substring(0, indexOf);
             String rawId = encodedTokenId.substring(indexOf + 1);
-            String[] chunks = encodedChunks.split("_");
 
-            AccessTokenContext.SessionType st = null;
-            AccessTokenContext.TokenType tt = null;
-            String gt = null;
-
-            for (String chunk : chunks) {
-                int dotIndex = chunk.indexOf('.');
-                if (dotIndex == -1) {
-                    throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". No dot present in the chunk: " + chunk);
-                }
-                String prefix = chunk.substring(0, dotIndex);
-                String value = chunk.substring(dotIndex + 1);
-                switch (prefix) {
-                    case SESSION_TYPE_PREFIX:
-                        st = factory.getSessionTypeByShortcut(value);
-                        if (st == null) {
-                            throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + chunk + "' for session type");
-                        }
-                        break;
-                    case TOKEN_TYPE_PREFIX:
-                        tt = factory.getTokenTypeByShortcut(value);
-                        if (tt == null) {
-                            throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + chunk + "' for token type");
-                        }
-                        break;
-                    case GRANT_TYPE_PREFIX:
-                        gt = factory.getGrantTypeByShortcut(value);
-                        if (gt == null) {
-                            throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + gt + "' for grant type");
-                        }
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown prefix: " + prefix);
-                }
+            if (encodedContext.length() != 6) {
+                throw new IllegalArgumentException("Incorrect token id: '" + encodedTokenId + "'. Expected length of 6.");
             }
+
+            // First 2 chars are "sessionType", next 2 chars "tokenType", last 2 chars "grantType"
+            String stShortcut = encodedContext.substring(0, 2);
+            String ttShortcut = encodedContext.substring(2, 4);
+            String gtShortcut = encodedContext.substring(4, 6);
+
+            AccessTokenContext.SessionType st = factory.getSessionTypeByShortcut(stShortcut);
+            if (st == null) {
+                throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + stShortcut + "' for session type");
+            }
+            AccessTokenContext.TokenType tt = factory.getTokenTypeByShortcut(ttShortcut);
+            if (tt == null) {
+                throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + ttShortcut + "' for token type");
+            }
+            String gt = factory.getGrantTypeByShortcut(gtShortcut);
+            if (gt == null) {
+                throw new IllegalArgumentException("Incorrect token id: " + encodedTokenId + ". Unknown value '" + gtShortcut + "' for grant type");
+            }
+
             return new AccessTokenContext(st, tt, gt, rawId);
         }
     }
@@ -130,10 +111,10 @@ public class DefaultTokenContextEncoderProvider implements TokenContextEncoderPr
             throw new IllegalStateException("Cannot encode token with unknown grantType: " + tokenContext.getGrantType());
         }
 
-        return SESSION_TYPE_PREFIX + '.' + tokenContext.getSessionType().getShortcut() + '_' +
-                TOKEN_TYPE_PREFIX + '.' + tokenContext.getTokenType().getShortcut() + '_' +
-                GRANT_TYPE_PREFIX + '.' + grantShort + ':' +
-                tokenContext.getRawTokenId();
+        return tokenContext.getSessionType().getShortcut() +
+                tokenContext.getTokenType().getShortcut() +
+                grantShort +
+                ':' + tokenContext.getRawTokenId();
     }
 
     @Override

@@ -479,7 +479,8 @@ public class AssertEvents implements TestRule {
             protected boolean matchesSafely(String item) {
                 String[] items = item.split(":");
                 if (items.length != 2) return false;
-                if (!items[0].contains("gt." + expectedGrantShortcut)) return false;
+                // Grant type shortcut starts at character 4th char and is 2-chars long
+                if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
                 return isUUID().matches(items[1]);
             }
 
