@@ -9,7 +9,7 @@ public class JwksResponse extends AbstractHttpResponse {
 
     private JSONWebKeySet jwks;
 
-    public JwksResponse(CloseableHttpResponse response) throws IOException {
+    JwksResponse(CloseableHttpResponse response) throws IOException {
         super(response);
     }
 

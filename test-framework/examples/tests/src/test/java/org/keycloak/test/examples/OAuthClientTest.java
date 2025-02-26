@@ -2,6 +2,7 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -83,6 +84,22 @@ public class OAuthClientTest {
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         Assertions.assertFalse(refreshResponse.isSuccess());
+    }
+
+    @Test
+    public void testParseToken() {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        AccessToken accessToken = oauth.parseToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+        Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
+    }
+
+    @Test
+    public void testVerifyToken() {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+        Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
     }
 
     public static class OAuthUserConfig implements UserConfig {

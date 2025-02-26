@@ -14,10 +14,10 @@ import java.util.Map;
 
 public class KeyManager {
 
-    private final OAuthClient client;
+    private final AbstractOAuthClient<?> client;
     private final Map<String, JSONWebKeySet> publicKeys = new HashMap<>();
 
-    public KeyManager(OAuthClient client) {
+    KeyManager(AbstractOAuthClient<?>  client) {
         this.client = client;
     }
 

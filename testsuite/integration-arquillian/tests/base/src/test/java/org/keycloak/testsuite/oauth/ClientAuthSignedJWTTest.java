@@ -45,6 +45,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.security.KeyPair;
@@ -619,7 +620,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
             JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
 
-            SignatureSignerContext signer = oauth.createSigner(privateKey, null,  Algorithm.ES512);
+            SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, null,  Algorithm.ES512);
             String jws = new JWSBuilder().jsonContent(assertion).sign(signer);
 
             List<NameValuePair> parameters = new LinkedList<>();

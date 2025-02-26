@@ -175,6 +175,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -494,7 +495,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, getRealmInfoUrl());
         String kid = KeyUtils.createKeyId(publicKey);
-        SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm);
         return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
     }
 
