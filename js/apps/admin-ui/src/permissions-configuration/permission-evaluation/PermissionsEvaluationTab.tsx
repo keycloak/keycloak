@@ -25,16 +25,17 @@ import {
 import { useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
-import { UserSelect } from "../components/users/UserSelect";
-import { ClientSelect } from "../components/client/ClientSelect";
-import { GroupSelect } from "./resource-types/GroupSelect";
-import { FormAccess } from "../components/form/FormAccess";
-import { useAccess } from "../context/access/Access";
-import { ForbiddenSection } from "../ForbiddenSection";
+import { useAdminClient } from "../../admin-client";
+import { UserSelect } from "../../components/users/UserSelect";
+import { ClientSelect } from "../../components/client/ClientSelect";
+import { GroupSelect } from "../resource-types/GroupSelect";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useAccess } from "../../context/access/Access";
+import { ForbiddenSection } from "../../ForbiddenSection";
 import { BellIcon } from "@patternfly/react-icons";
 import { sortBy } from "lodash-es";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -109,6 +110,18 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     const resource = resources.find((r) => r.name === selectedResourceType);
     return sortBy(resource?.scopes?.map((scope) => scope.name!) || []);
   }, [selectedResourceType, resources]);
+
+  const evaluatedAllowedScopes = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.allowedScopes || [], "name");
+  }, [evaluateResult?.results]);
+
+  const evaluatedDeniedScopes = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.deniedScopes || [], "name");
+  }, [evaluateResult?.results]);
+
+  const evaluatedPolicies = useMemo(() => {
+    return sortBy(evaluateResult?.results?.[0]?.policies || [], "name");
+  }, [evaluateResult?.results]);
 
   const ResourceTypeComponent =
     COMPONENTS[selectedResourceType?.toLowerCase() || ""];
@@ -248,25 +261,13 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   message={t("noPermissionsEvaluationResults")}
                   instructions={t("noPermissionsEvaluationResultsInstructions")}
                 />
-              ) : !evaluateResult ||
-                Object.keys(evaluateResult).length === 0 ? (
-                <Alert
-                  isInline
-                  variant="warning"
-                  title="Warning"
-                  component="h6"
-                >
-                  <p>No evaluation results found.</p>
-                </Alert>
               ) : (
-                <Alert
-                  isInline
-                  variant="success"
-                  title="Success"
-                  component="h6"
-                >
-                  <p>Evaluation completed successfully.</p>
-                </Alert>
+                <PermissionEvaluationResult
+                  evaluateResult={evaluateResult!}
+                  evaluatedAllowedScopes={evaluatedAllowedScopes}
+                  evaluatedDeniedScopes={evaluatedDeniedScopes}
+                  evaluatedPolicies={evaluatedPolicies}
+                />
               )}
             </PanelMainBody>
           </Panel>

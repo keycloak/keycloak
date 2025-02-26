@@ -19,7 +19,7 @@ import {
 } from "@patternfly/react-core";
 import { AuthorizationPolicies } from "../clients/authorization/Policies";
 import { PermissionsConfigurationTab } from "./PermissionsConfigurationTab";
-import { PermissionsEvaluationTab } from "./PermissionsEvaluationTab";
+import { PermissionsEvaluationTab } from "./permission-evaluation/PermissionsEvaluationTab";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAccess } from "../context/access/Access";
 import { useTranslation } from "react-i18next";
