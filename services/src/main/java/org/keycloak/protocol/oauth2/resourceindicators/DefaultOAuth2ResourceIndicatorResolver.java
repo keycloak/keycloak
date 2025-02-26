@@ -120,4 +120,12 @@ public class DefaultOAuth2ResourceIndicatorResolver implements OAuth2ResourceInd
         return allowedResources;
     }
 
+    protected List<Resource> getResources(StoreFactory storeFactory, ResourceServer resourceServer) {
+        return storeFactory.getResourceStore().findByType(resourceServer, KEYCLOAK_RESOURCE_INDICATOR_TYPE);
+    }
+
+    protected ResourceServer lookupResourceServer(ClientModel client, StoreFactory storeFactory) {
+        return storeFactory.getResourceServerStore().findByClient(client);
+    }
+
 }
