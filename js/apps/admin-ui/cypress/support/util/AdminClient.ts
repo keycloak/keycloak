@@ -88,9 +88,9 @@ class AdminClient {
     return (await this.#client.clients.find({ clientId: clientName }))[0];
   }
 
-  async createGroup(groupName: string) {
+  async createGroup(groupName: string, realm: string = "master") {
     await this.#login();
-    return await this.#client.groups.create({ name: groupName });
+    return await this.#client.groups.create({ name: groupName, realm });
   }
 
   async createSubGroups(groups: string[]) {
