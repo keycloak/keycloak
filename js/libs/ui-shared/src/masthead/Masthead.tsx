@@ -54,7 +54,7 @@ type KeycloakMastheadProps = MastheadMainProps & {
   kebabDropdownItems?: ReactNode[];
   dropdownItems?: ReactNode[];
   toolbarItems?: ReactNode[];
-  toolbar: ReactNode;
+  toolbar?: ReactNode;
 };
 
 const KeycloakMasthead = ({

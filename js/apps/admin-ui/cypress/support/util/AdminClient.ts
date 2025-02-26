@@ -232,9 +232,13 @@ class AdminClient {
     });
   }
 
-  async deleteUser(username: string, ignoreNonExisting: boolean = false) {
+  async deleteUser(
+    username: string,
+    realm: string,
+    ignoreNonExisting: boolean = false,
+  ) {
     await this.#login();
-    const foundUsers = await this.#client.users.find({ username });
+    const foundUsers = await this.#client.users.find({ username, realm });
     if (foundUsers.length == 0) {
       if (ignoreNonExisting) {
         return;
@@ -243,7 +247,7 @@ class AdminClient {
       }
     }
 
-    await this.#client.users.del({ id: foundUsers[0].id! });
+    await this.#client.users.del({ id: foundUsers[0].id!, realm });
   }
 
   async createClientScope(
@@ -315,6 +319,19 @@ class AdminClient {
     await this.#login();
 
     return await this.#client.users.getProfile({ realm });
+  }
+
+  async addUserProfile(realm: string, userProfile: UserProfileConfig) {
+    await this.#login();
+    const currentProfile = await this.#client.users.getProfile({ realm });
+    await this.#client.users.updateProfile({
+      groups: [...(userProfile.groups || []), ...(currentProfile.groups || [])],
+      attributes: [
+        ...(userProfile.attributes || []),
+        ...(currentProfile.attributes || []),
+      ],
+      realm,
+    });
   }
 
   async updateUserProfile(realm: string, userProfile: UserProfileConfig) {
