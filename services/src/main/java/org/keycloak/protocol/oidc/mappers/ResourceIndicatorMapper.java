@@ -85,12 +85,18 @@ public class ResourceIndicatorMapper extends AbstractOIDCProtocolMapper implemen
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
 
-        Set<?> resourceIndicators = clientSessionCtx.getAttribute(OAuth2Constants.RESOURCE, Set.class);
-        if (resourceIndicators == null || resourceIndicators.isEmpty()) {
+        Set<?> resourceIndicatorsToAdd = clientSessionCtx.getAttribute(OAuth2Constants.RESOURCE, Set.class);
+        if (resourceIndicatorsToAdd == null || resourceIndicatorsToAdd.isEmpty()) {
             return;
         }
 
-        for (Object resourceIndicator : resourceIndicators) {
+        // remove all resource indicators that are already contained in the audience.
+        String[] audience = token.getAudience();
+        if (audience != null && audience.length > 0) {
+            resourceIndicatorsToAdd.removeAll(Set.of(audience));
+        }
+
+        for (Object resourceIndicator : resourceIndicatorsToAdd) {
             token.addAudience(String.valueOf(resourceIndicator));
         }
     }
