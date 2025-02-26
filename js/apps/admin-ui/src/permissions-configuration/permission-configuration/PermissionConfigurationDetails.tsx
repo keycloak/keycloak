@@ -29,7 +29,7 @@ import { toPermissionsConfigurationTabs } from "../routes/PermissionsConfigurati
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import { AssignedPolicies } from "./AssignedPolicies";
 import { ScopePicker } from "../../clients/authorization/ScopePicker";
-import { ResourceType } from "./ResourceType";
+import { ResourceType } from "../resource-types/ResourceType";
 import { sortBy } from "lodash-es";
 import { NameDescription } from "../../clients/authorization/policy/NameDescription";
 

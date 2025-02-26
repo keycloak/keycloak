@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { useState, type JSX } from "react";
 import { UserSelect } from "../../components/users/UserSelect";
 import { ClientSelect } from "../../components/client/ClientSelect";
-import { GroupSelect } from "../resource-types/GroupSelect";
+import { GroupSelect } from "./GroupSelect";
 
 type ResourceTypeProps = {
   resourceType: string;

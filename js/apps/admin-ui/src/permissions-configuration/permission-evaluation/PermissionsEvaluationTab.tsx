@@ -1,13 +1,11 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
-import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
+import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
 import {
   ListEmptyState,
   SelectControl,
   useAlerts,
-  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -33,9 +31,9 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { useAccess } from "../../context/access/Access";
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { BellIcon } from "@patternfly/react-icons";
-import { sortBy } from "lodash-es";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
+import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -82,11 +80,11 @@ const PermissionEvaluateContent = ({ client }: Props) => {
     },
   });
   const { control, getValues, reset, trigger } = form;
-  const [resources, setResources] = useState<ResourceRepresentation[]>([]);
   const [evaluateResult, setEvaluateResult] =
     useState<PolicyEvaluationResponse>();
   const [isAlertOpened, setIsAlertOpened] = useState(true);
   const [isEvaluated, setIsEvaluated] = useState(false);
+  const resourceTypes = useSortedResourceTypes({ clientId: client.id! });
 
   const selectedResourceType = useWatch({
     control: control,
@@ -94,19 +92,10 @@ const PermissionEvaluateContent = ({ client }: Props) => {
     defaultValue: "",
   });
 
-  useFetch(
-    () =>
-      adminClient.clients.listResources({
-        id: client.id!,
-      }),
-    (resources) => setResources(resources),
-    [],
-  );
-
   const authScopes = useMemo(() => {
-    const resource = resources.find((r) => r.name === selectedResourceType);
-    return sortBy(resource?.scopes?.map((scope) => scope.name!) || []);
-  }, [selectedResourceType, resources]);
+    const resource = resourceTypes.find((r) => r.type === selectedResourceType);
+    return resource?.scopes || [];
+  }, [selectedResourceType, resourceTypes]);
 
   const ResourceTypeComponent =
     COMPONENTS[selectedResourceType?.toLowerCase() || ""];
@@ -195,10 +184,12 @@ const PermissionEvaluateContent = ({ client }: Props) => {
                     labelIcon={t("resourceTypeSelectHelp")}
                     variant="single"
                     controller={{
-                      defaultValue: resources.length ? resources[0]?.name : "",
+                      defaultValue: resourceTypes.length
+                        ? resourceTypes[0]?.type
+                        : "",
                       rules: { required: true },
                     }}
-                    options={resources.map((resource) => resource.name!)}
+                    options={resourceTypes.map((resource) => resource.type!)}
                   />
                   {ResourceTypeComponent && (
                     <ResourceTypeComponent
