@@ -31,7 +31,7 @@
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-table": "^5.4.16",
     "i18next": "^24.2.2",
-    "i18next-http-backend": "^3.0.2",
+    "i18next-fetch-backend": "^6.0.0",
     "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",

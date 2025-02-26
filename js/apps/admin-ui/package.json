@@ -101,7 +101,7 @@
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
     "i18next": "^24.2.2",
-    "i18next-http-backend": "^3.0.2",
+    "i18next-fetch-backend": "^6.0.0",
     "jszip": "^3.10.1",
     "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
