@@ -182,6 +182,12 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             singleUseStore.put(revokedKey,  60, Collections.emptyMap());
         });
 
+        // Run again to ensure revocation can happen multiple times
+        inComittedTransaction(session -> {
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+            singleUseStore.put(revokedKey,  60, Collections.emptyMap());
+        });
+
         // simulate restart
         removeRevokedTokenFromRemoteCache(revokedKey);
         reinitializeKeycloakSessionFactory();
