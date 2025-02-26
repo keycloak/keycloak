@@ -40,14 +40,10 @@ import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
   authScopes: string[];
-  context: {
-    scopes: string[];
-  };
-  resources?: Record<string, string>[];
-  clients: string[];
-  users: string[];
-  groups: string[];
   user: string[];
+  clients: string[];
+  groups: string[];
+  users: string[];
   resourceType?: string;
 }
 
@@ -69,10 +65,10 @@ export const PermissionsEvaluationTab = (props: Props) => {
     return <ForbiddenSection permissionNeeded="view-users" />;
   }
 
-  return <AuthorizationEvaluateContent {...props} />;
+  return <PermissionEvaluateContent {...props} />;
 };
 
-const AuthorizationEvaluateContent = ({ client }: Props) => {
+const PermissionEvaluateContent = ({ client }: Props) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
   const realm = useRealm();
@@ -227,8 +223,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
             </Panel>
             <ActionGroup>
               <Button
-                data-testid="authorization-eval"
-                id="authorization-eval"
+                data-testid="permission-eval"
+                id="permission-eval"
                 className="pf-v5-u-mr-md"
                 isDisabled={!form.formState.isValid}
                 onClick={() => evaluate()}
@@ -236,8 +232,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 {t("evaluate")}
               </Button>
               <Button
-                data-testid="authorization-revert"
-                id="authorization-revert"
+                data-testid="permission-eval-revert"
+                id="permission-eval-revert"
                 className="pf-v5-u-mr-md"
                 variant="link"
                 onClick={() => {
