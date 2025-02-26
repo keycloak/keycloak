@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator;
 import org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory;
 import org.keycloak.events.Details;
@@ -52,6 +53,7 @@ import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -60,10 +62,12 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response.Status;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
@@ -72,11 +76,20 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
  */
 public class CustomFlowTest extends AbstractFlowTest {
 
+    private static final String FLOW_ALIAS_DUMMY_BROWSER_FLOW = "dummy";
+    private static final String USERNAME = "login-test";
+    private static final String PASSWORD = "password";
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setInternationalizationEnabled(true);
+        testRealm.setSupportedLocales(Set.of("en", "de"));
+        testRealm.setDefaultLocale("en");
+
         UserRepresentation user = UserBuilder.create()
-                                            .username("login-test")
+                                            .username(USERNAME)
                                             .email("login@test.com")
+                                            .password(PASSWORD)
                                             .enabled(true)
                                             .build();
         testRealm.getUsers().add(user);
@@ -97,15 +110,20 @@ public class CustomFlowTest extends AbstractFlowTest {
 
     @Before
     public void configureFlows() {
-        userId = findUser("login-test").getId();
+        userId = findUser(USERNAME).getId();
 
-        // Do this just once per class
         if (testContext.isInitialized()) {
+            // Reset to browser flow to dummy flow, in case browser flow was changed by other test
+            final var rep = testRealm().toRepresentation();
+            rep.setBrowserFlow(FLOW_ALIAS_DUMMY_BROWSER_FLOW);
+            testRealm().update(rep);
+
+            // Do further initialization just once per class
             return;
         }
 
         AuthenticationFlowRepresentation flow = FlowBuilder.create()
-                                                           .alias("dummy")
+                                                           .alias(FLOW_ALIAS_DUMMY_BROWSER_FLOW)
                                                            .description("dummy pass through flow")
                                                            .providerId("basic-flow")
                                                            .topLevel(true)
@@ -249,10 +267,92 @@ public class CustomFlowTest extends AbstractFlowTest {
         Assert.assertTrue(loginPage.isCurrent());
         loginPage.login("test-user@localhost", "password");*/
         Assert.assertTrue(termsPage.isCurrent());
+    }
 
-        // Revert dummy flow
-        rep.setBrowserFlow("dummy");
-        testRealm().update(rep);
+    @Test
+    public void customAuthenticatorLocalization() {
+        final var expectedLanguageTextEn = "English";
+        final var expectedLanguageTextDe = "Deutsch";
+        final var flowAlias = "custom-browser-flow-localization-test";
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            /*
+             * Add the custom authenticator twice: before login form and after login form, in order to check whether
+             * localization works at different positions in the flow.
+             */
+            FlowUtil.inCurrentRealm(session)
+                    .copyBrowserFlow(flowAlias)
+                    .inForms(forms -> forms
+                            .clear()
+                            .addAuthenticatorExecution(REQUIRED, ClickThroughAuthenticator.PROVIDER_ID)
+                            .addAuthenticatorExecution(REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                            .addAuthenticatorExecution(REQUIRED, ClickThroughAuthenticator.PROVIDER_ID))
+                    .defineAsBrowserFlow();
+        });
+
+        loginPage.open();
+
+        // Verify that localization works for a custom authenticator at first position (before login form)
+
+        final var termsTitleEn = "Terms and Conditions";
+        final var termsTitleDe = "Bedingungen und Konditionen";
+
+        termsPage.assertPageTitle(termsTitleEn);
+        assertEquals(expectedLanguageTextEn, termsPage.getLanguageDropdownText());
+
+        termsPage.openLanguage(expectedLanguageTextDe);
+
+        termsPage.assertPageTitle(termsTitleDe);
+        assertEquals(expectedLanguageTextDe, termsPage.getLanguageDropdownText());
+
+        termsPage.openLanguage(expectedLanguageTextEn);
+
+        termsPage.assertPageTitle(termsTitleEn);
+        assertEquals(expectedLanguageTextEn, termsPage.getLanguageDropdownText());
+
+        termsPage.acceptTerms();
+
+        // Verify that redirect to the builtin login form works fine and localization also works for this form
+
+        final var signInTitleEn = "Sign in to your account";
+        final var signInTitleDe = "Bei Ihrem Konto anmelden";
+
+        loginPage.assertPageTitle(signInTitleEn);
+        assertEquals(expectedLanguageTextEn, loginPage.getLanguageDropdownText());
+
+        loginPage.openLanguage(expectedLanguageTextDe);
+
+        loginPage.assertPageTitle(signInTitleDe);
+        assertEquals(expectedLanguageTextDe, loginPage.getLanguageDropdownText());
+
+        loginPage.openLanguage(expectedLanguageTextEn);
+
+        loginPage.assertPageTitle(signInTitleEn);
+        assertEquals(expectedLanguageTextEn, loginPage.getLanguageDropdownText());
+
+        loginPage.login(USERNAME, PASSWORD);
+
+        /*
+         * Verify that redirect to a custom authenticator works and localization works with custom authenticator at last
+         * position (after login form)
+         */
+
+        termsPage.assertPageTitle(termsTitleEn);
+        assertEquals(expectedLanguageTextEn, termsPage.getLanguageDropdownText());
+
+        termsPage.openLanguage(expectedLanguageTextDe);
+
+        termsPage.assertPageTitle(termsTitleDe);
+        assertEquals(expectedLanguageTextDe, termsPage.getLanguageDropdownText());
+
+        termsPage.openLanguage(expectedLanguageTextEn);
+
+        termsPage.assertPageTitle(termsTitleEn);
+        assertEquals(expectedLanguageTextEn, termsPage.getLanguageDropdownText());
+
+        termsPage.acceptTerms();
+
+        appPage.isCurrent();
     }
 
     @Test
@@ -299,7 +399,7 @@ public class CustomFlowTest extends AbstractFlowTest {
     @Test
     public void loginSuccess() {
         AuthenticatorState state = new AuthenticatorState();
-        state.setUsername("login-test");
+        state.setUsername(USERNAME);
         state.setClientId("test-app");
         testingClient.testing().updateAuthenticator(state);
 
@@ -308,30 +408,30 @@ public class CustomFlowTest extends AbstractFlowTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, USERNAME).assertEvent();
     }
 
     @Test
     public void grantTest() throws Exception {
         AuthenticatorState state = new AuthenticatorState();
-        state.setUsername("login-test");
+        state.setUsername(USERNAME);
         state.setClientId("test-app");
         testingClient.testing().updateAuthenticator(state);
 
-        grantAccessToken("test-app", "login-test");
+        grantAccessToken("test-app", USERNAME);
     }
 
     @Test
     public void clientAuthTest() throws Exception {
         AuthenticatorState state = new AuthenticatorState();
         state.setClientId("dummy-client");
-        state.setUsername("login-test");
+        state.setUsername(USERNAME);
         testingClient.testing().updateAuthenticator(state);
-        grantAccessToken("dummy-client", "login-test");
+        grantAccessToken("dummy-client", USERNAME);
 
         state.setClientId("test-app");
         testingClient.testing().updateAuthenticator(state);
-        grantAccessToken("test-app", "login-test");
+        grantAccessToken("test-app", USERNAME);
 
         state.setClientId("unknown");
         testingClient.testing().updateAuthenticator(state);

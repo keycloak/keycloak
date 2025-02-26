@@ -22,6 +22,10 @@ import org.junit.Assert;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -42,7 +46,15 @@ public abstract class AbstractPage {
     abstract public boolean isCurrent();
 
     public boolean isCurrent(String expectedTitle) {
-        return PageUtils.getPageTitle(driver).equals(expectedTitle);
+        return Objects.equals(getPageTitle(), expectedTitle);
+    }
+
+    public void assertPageTitle(final String expectedTitle) {
+        assertEquals(expectedTitle, getPageTitle());
+    }
+
+    private String getPageTitle() {
+        return PageUtils.getPageTitle(driver);
     }
 
     public void setDriver(WebDriver driver) {

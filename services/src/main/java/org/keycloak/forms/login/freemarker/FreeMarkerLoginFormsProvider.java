@@ -503,63 +503,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
-                UriBuilder b;
-                if (page != null) {
-                    switch (page) {
-                        case LOGIN:
-                        case LOGIN_USERNAME:
-                        case LOGIN_WEBAUTHN:
-                        case X509_CONFIRM:
-                            b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
-                            break;
-                        case REGISTER:
-                            b = UriBuilder.fromUri(Urls.realmRegisterPage(baseUri, realm.getName()));
-                            break;
-                        case LOGOUT_CONFIRM:
-                            b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
-                            break;
-                        case INFO:
-                        case ERROR:
-                            if (isDetachedAuthenticationSession()) {
-                                FormMessage formMessage = getFirstMessage();
-                                if (formMessage == null) {
-                                    throw new IllegalStateException("Not able to create info/error page with detached authentication session as no info/error message available");
-                                }
-
-                                DetachedInfoStateCookie cookie = new DetachedInfoStateChecker(session, realm).generateAndSetCookie(
-                                        formMessage.getMessage(), messageType.toString(), status == null ? null : status.getStatusCode(),
-                                        client == null ? null : client.getId(), formMessage.getParameters());
-
-                                b = UriBuilder.fromUri(Urls.loginActionsDetachedInfo(baseUri, realm.getName()))
-                                        .queryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM, cookie.getRenderedUrlState());
-                                break;
-                            }
-                        default:
-                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
-                            break;
-                    }
-                } else {
-                    b = UriBuilder.fromUri(baseUri)
-                            .path(uriInfo.getPath());
-                }
-
-                if (execution != null) {
-                    b.queryParam(Constants.EXECUTION, execution);
-                }
-
-                if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
-                    b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
-                } else {
-                    HttpRequest request = session.getContext().getHttpRequest();
-                    MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
-
-                    if (queryParameters != null && queryParameters.getFirst(Constants.TOKEN) != null) {
-                        // changing locale should forward the action token
-                        b.queryParam(Constants.TOKEN, queryParameters.getFirst(Constants.TOKEN));
-                    }
-                }
-
-                final var localeBean = new LocaleBean(realm, locale, b, messagesBundle);
+                final var localeBean = createLocaleBean(locale, messagesBundle, baseUri, page);
                 attributes.put("locale", localeBean);
 
                 lang = localeBean.getCurrentLanguageTag();
@@ -584,6 +528,105 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+    }
+
+    private LocaleBean createLocaleBean(final Locale locale, final Properties messagesBundle, final URI baseUri,
+            final LoginFormsPages page) {
+        final var uriBuilder = page != null ? createBuiltinFormLocaleUrlBuilder(baseUri, page)
+                : createCustomFormLocaleUrlBuilder(baseUri);
+        return new LocaleBean(realm, locale, uriBuilder, messagesBundle);
+    }
+
+    private UriBuilder createBuiltinFormLocaleUrlBuilder(final URI baseUri, final LoginFormsPages page) {
+        UriBuilder b;
+        switch (page) {
+            case LOGIN:
+            case LOGIN_USERNAME:
+            case LOGIN_WEBAUTHN:
+            case X509_CONFIRM:
+                b = UriBuilder.fromUri(Urls.realmLoginPage(baseUri, realm.getName()));
+                break;
+            case REGISTER:
+                b = UriBuilder.fromUri(Urls.realmRegisterPage(baseUri, realm.getName()));
+                break;
+            case LOGOUT_CONFIRM:
+                b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
+                break;
+            case INFO:
+            case ERROR:
+                if (isDetachedAuthenticationSession()) {
+                    FormMessage formMessage = getFirstMessage();
+                    if (formMessage == null) {
+                        throw new IllegalStateException(
+                                "Not able to create info/error page with detached authentication session as no info/error message available");
+                    }
+
+                    DetachedInfoStateCookie cookie = new DetachedInfoStateChecker(session, realm).generateAndSetCookie(
+                            formMessage.getMessage(), messageType.toString(),
+                            status == null ? null : status.getStatusCode(),
+                            client == null ? null : client.getId(), formMessage.getParameters());
+
+                    b = UriBuilder.fromUri(Urls.loginActionsDetachedInfo(baseUri, realm.getName()))
+                            .queryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM, cookie.getRenderedUrlState());
+                    break;
+                }
+            default:
+                b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                break;
+        }
+
+        appendCommonLoginParams(b);
+
+        return b;
+    }
+
+    private void appendCommonLoginParams(final UriBuilder b) {
+        if (execution != null) {
+            b.queryParam(Constants.EXECUTION, execution);
+        }
+
+        if (authenticationSession != null && authenticationSession.getAuthNote(Constants.KEY) != null) {
+            b.queryParam(Constants.KEY, authenticationSession.getAuthNote(Constants.KEY));
+        } else {
+            HttpRequest request = session.getContext().getHttpRequest();
+            MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
+
+            if (queryParameters != null && queryParameters.getFirst(Constants.TOKEN) != null) {
+                // changing locale should forward the action token
+                b.queryParam(Constants.TOKEN, queryParameters.getFirst(Constants.TOKEN));
+            }
+        }
+    }
+
+    private UriBuilder createCustomFormLocaleUrlBuilder(final URI baseUri) {
+        final var relativeLoginActionsBaseUri =
+                URI.create(Urls.loginActionsBase(URI.create("/")).build(realm.getName()).getPath());
+        final var relativeRequestedPathUri = URI.create(uriInfo.getPath());
+        final var isCurrentPathLoginAction = relativeRequestedPathUri.equals(relativeLoginActionsBaseUri) ||
+                !relativeLoginActionsBaseUri.relativize(relativeRequestedPathUri).equals(relativeRequestedPathUri);
+
+        if (isCurrentPathLoginAction) {
+            // for login actions, use the requested path and append common login params
+            final var uriBuilder = UriBuilder.fromUri(baseUri)
+                    .path(relativeRequestedPathUri.getPath());
+
+            /*
+             * Add the access code, if one has been created for the form, and it's not part of a required action.
+             */
+            final var accessCodeExistsAndNotInRequiredAction = accessCode != null && execution == null;
+            if (accessCodeExistsAndNotInRequiredAction) {
+                uriBuilder.queryParam(LoginActionsService.SESSION_CODE, accessCode);
+            }
+
+            appendCommonLoginParams(uriBuilder);
+
+            return uriBuilder;
+        } else {
+            /* for "non-login-actions" requests (authorization endpoint URL), use the requested path and query string */
+            return UriBuilder.fromUri(baseUri)
+                    .path(uriInfo.getPath())
+                    .replaceQuery(uriInfo.getRequestUri().getQuery());
+        }
     }
 
     /**
