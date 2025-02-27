@@ -48,8 +48,8 @@ If your deployment scripts add explicit NetworkPolicies for {project_name}, you 
 
 Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
 
-=== LDAP provider now can store new users/groups in a sub-DN of the base DN
+=== LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
 
-When adding new users and groups, the LDAP provider would always store them in the same DN configured for the searches. But in some deployments, admins want to configure a broader DN with `subtree` scope to fetch users from multiple sub-DNs, but they don't want new users or groups to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
+When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
 
-It is now possible to control where new users/groups will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group mapper. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
+It is now possible to control where new users, groups, or roles will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group and role mappers. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
