@@ -88,7 +88,7 @@ class AdminClient {
     return (await this.#client.clients.find({ clientId: clientName }))[0];
   }
 
-  async createGroup(groupName: string, realm: string = "master") {
+  async createGroup(groupName: string, realm: string = this.#client.realmName) {
     await this.#login();
     return await this.#client.groups.create({ name: groupName, realm });
   }
@@ -170,7 +170,7 @@ class AdminClient {
   async addRealmRoleToUser(
     userId: string,
     roleName: string,
-    realmName: string = "master",
+    realmName: string = this.#client.realmName,
   ) {
     await this.#login();
 
@@ -190,7 +190,7 @@ class AdminClient {
     userId: string,
     clientId: string,
     roleNames: string[],
-    realmName: string = "master",
+    realmName: string = this.#client.realmName,
   ) {
     await this.#login();
 
@@ -219,7 +219,7 @@ class AdminClient {
   async addRealmRoleToGroup(
     groupId: string,
     roleName: string,
-    realmName: string = "master",
+    realmName: string = this.#client.realmName,
   ) {
     await this.#login();
 
@@ -237,7 +237,7 @@ class AdminClient {
 
   async deleteUser(
     username: string,
-    realm: string,
+    realm: string = this.#client.realmName,
     ignoreNonExisting: boolean = false,
   ) {
     await this.#login();
@@ -285,7 +285,7 @@ class AdminClient {
   async addDefaultClientScopeInClient(
     clientScopeName: string,
     clientId: string,
-    realm: string = "master",
+    realm: string = this.#client.realmName,
   ) {
     await this.#login();
     const scope = await this.#client.clientScopes.findOneByName({
@@ -376,7 +376,7 @@ class AdminClient {
   async createClientPolicy(
     name: string,
     description: string,
-    realm: string = "master",
+    realm: string = this.#client.realmName,
   ) {
     await this.#login();
     const { policies } = await this.#client.clientPolicies.listPolicies({
@@ -388,7 +388,10 @@ class AdminClient {
     });
   }
 
-  async deleteClientPolicy(name: string, realm: string = "master") {
+  async deleteClientPolicy(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
     const { policies } = await this.#client.clientPolicies.listPolicies({
       realm,
@@ -402,7 +405,7 @@ class AdminClient {
   async createClientProfile(
     name: string,
     description: string,
-    realm: string = "master",
+    realm: string = this.#client.realmName,
   ) {
     await this.#login();
     const { profiles } = await this.#client.clientPolicies.listProfiles({
@@ -422,7 +425,7 @@ class AdminClient {
   async createIdentityProvider(
     idpDisplayName: string,
     alias: string,
-    realm: string = "master",
+    realm: string = this.#client.realmName,
   ) {
     await this.#login();
     const identityProviders =
@@ -527,7 +530,11 @@ class AdminClient {
     await this.#client.organizations.delById({ id: id! });
   }
 
-  async copyFlow(name: string, newName: string, realmName: string = "master") {
+  async copyFlow(
+    name: string,
+    newName: string,
+    realmName: string = this.#client.realmName,
+  ) {
     await this.#login();
     await this.#client.authenticationManagement.copyFlow({
       flow: name,
@@ -536,7 +543,7 @@ class AdminClient {
     });
   }
 
-  async getFlow(name: string, realmName: string = "master") {
+  async getFlow(name: string, realmName: string = this.#client.realmName) {
     await this.#login();
     const flows = await this.#client.authenticationManagement.getFlows({
       realm: realmName,
@@ -544,7 +551,7 @@ class AdminClient {
     return flows.find((flow) => flow.alias === name);
   }
 
-  async deleteFlow(name: string, realmName: string = "master") {
+  async deleteFlow(name: string, realmName: string = this.#client.realmName) {
     await this.#login();
     await this.#client.authenticationManagement.deleteFlow({
       flowId: name,
@@ -552,7 +559,7 @@ class AdminClient {
     });
   }
 
-  async deleteAllTokens(realm: string = "master") {
+  async deleteAllTokens(realm: string = this.#client.realmName) {
     await this.#login();
     const tokens = await this.#client.realms.getClientsInitialAccess({ realm });
     for (const token of tokens) {
@@ -568,7 +575,7 @@ class AdminClient {
     active: boolean,
     enabled: boolean,
     providerType: string,
-    realm: string = "master",
+    realm: string = this.#client.realmName,
   ) {
     await this.#login();
     await this.#client.components.create({

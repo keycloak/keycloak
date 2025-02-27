@@ -15,7 +15,7 @@ export async function clearAllFilters(page: Page) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
-  await page.getByRole("link", { name: itemName }).click();
+  await page.getByRole("link", { name: itemName }).first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {

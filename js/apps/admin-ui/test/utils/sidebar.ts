@@ -29,6 +29,10 @@ export async function goToGroups(page: Page) {
   await page.getByTestId("nav-item-groups").click();
 }
 
+export async function goToSessions(page: Page) {
+  await page.getByTestId("nav-item-sessions").click();
+}
+
 export async function goToEvents(page: Page) {
   await page.getByTestId("nav-item-events").click();
 }
