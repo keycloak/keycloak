@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
 
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.jgroups.util.FileWatcher;
 import org.jgroups.util.SocketFactory;
 import org.jgroups.util.TLS;
 import org.jgroups.util.TLSClientAuth;
@@ -36,7 +38,7 @@ public class FileJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
     public static final FileJGroupsTlsConfigurator INSTANCE = new FileJGroupsTlsConfigurator();
 
     @Override
-    SocketFactory createSocketFactory(KeycloakSession ignored) {
+    SocketFactory createSocketFactory(ConfigurationBuilderHolder holder, KeycloakSession ignored) {
         var tls = new TLS()
                 .enabled(true)
                 .setKeystorePath(requiredStringProperty(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY))
@@ -47,6 +49,8 @@ public class FileJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
                 .setTruststoreType("pkcs12")
                 .setClientAuth(TLSClientAuth.NEED)
                 .setProtocols(new String[]{"TLSv1.3"});
+        // listen to file changes and reloads the key and trust stores.
+        tls.setWatcher(new FileWatcher());
         return tls.createSocketFactory();
     }
 

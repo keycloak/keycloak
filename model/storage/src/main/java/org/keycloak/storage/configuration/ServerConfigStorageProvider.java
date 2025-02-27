@@ -17,7 +17,9 @@
 
 package org.keycloak.storage.configuration;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.keycloak.provider.Provider;
@@ -68,5 +70,33 @@ public interface ServerConfigStorageProvider extends Provider {
      *                              value is {@code null}.
      */
     String loadOrCreate(String key, Supplier<String> valueGenerator);
+
+    /**
+     * Same as {@code loadOrCreate(key, () -> value)}.
+     *
+     * @see #loadOrCreate(String, Supplier)
+     */
+    default String loadOrCreate(String key, String value) {
+        return loadOrCreate(key, () -> value);
+    }
+
+    /**
+     * Same as {@code replace(key, Objects.requireNonNull(expected)::equals, () -> Objects.requireNonNull(newValue))}.
+     *
+     * @see #replace(String, Predicate, Supplier)
+     */
+    default boolean replace(String key, String expected, String newValue) {
+        return replace(key, Objects.requireNonNull(expected)::equals, () -> Objects.requireNonNull(newValue));
+    }
+
+    /**
+     * Replaces the value specified by {@code key} if the {@link Predicate} return a {@code true} value.
+     *
+     * @param key              The {@code key} whose associated value is to be replaced.
+     * @param replacePredicate The {@link Predicate} to signal if the value should be replaced.
+     * @param valueGenerator   The {@link Supplier} to generate the value if it is should be replaced.
+     * @return {@code true} if the value is replaced, and {@code false} otherwise.
+     */
+    boolean replace(String key, Predicate<String> replacePredicate, Supplier<String> valueGenerator);
 
 }

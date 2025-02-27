@@ -19,41 +19,36 @@ package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.SocketFactory;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Retry;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.infinispan.module.certificates.CertificateReloadManager;
+import org.keycloak.infinispan.module.certificates.JGroupsCertificateHolder;
+import org.keycloak.infinispan.module.configuration.global.KeycloakConfigurationBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
-import org.keycloak.util.JsonSerialization;
 
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509ExtendedTrustManager;
+
+import static org.keycloak.infinispan.module.certificates.CertificateReloadManager.CERTIFICATE_ID;
+import static org.keycloak.infinispan.module.certificates.JGroupsCertificate.fromJson;
+import static org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory.requiredIntegerProperty;
 
 /**
  * JGroups mTLS configuration using certificates stored by {@link ServerConfigStorageProvider}.
  */
 public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
 
-    private static final char[] KEY_PASSWORD = "jgroups-password".toCharArray();
-    private static final String CERTIFICATE_ID = "crt_jgroups";
-    private static final String KEYSTORE_ALIAS = "jgroups";
-    private static final String JGROUPS_SUBJECT = "jgroups";
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
     private static final int STARTUP_RETRIES = 2;
@@ -66,60 +61,34 @@ public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
     }
 
     @Override
-    SocketFactory createSocketFactory(KeycloakSession session) {
+    SocketFactory createSocketFactory(ConfigurationBuilderHolder holder, KeycloakSession session) {
         var factory = session.getKeycloakSessionFactory();
-        return Retry.call(iteration -> KeycloakModelUtils.runJobInTransactionWithResult(factory, this::createSocketFactoryInTransaction), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+        var kcConfig = holder.getGlobalConfigurationBuilder().addModule(KeycloakConfigurationBuilder.class);
+        kcConfig.setKeycloakSessionFactory(factory);
+        kcConfig.setJGroupsCertificateRotation(requiredIntegerProperty(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION));
+        return Retry.call(iteration -> {
+            try {
+                var crtHolder = KeycloakModelUtils.runJobInTransactionWithResult(factory, this::createSocketFactoryInTransaction);
+                var sslContext = SSLContext.getInstance(TLS_PROTOCOL);
+                sslContext.init(new KeyManager[]{crtHolder.keyManager()}, new TrustManager[]{crtHolder.trustManager()}, null);
+                var sf = createFromContext(sslContext);
+                kcConfig.setJGroupCertificateHolder(crtHolder);
+                return sf;
+            } catch (KeyManagementException | NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }, STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
     }
 
-    private SocketFactory createSocketFactoryInTransaction(KeycloakSession session) {
+    private JGroupsCertificateHolder createSocketFactoryInTransaction(KeycloakSession session) {
         try {
+            var rotationDays = requiredIntegerProperty(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION);
             var storage = session.getProvider(ServerConfigStorageProvider.class);
-            var data = fromJson(storage.loadOrCreate(CERTIFICATE_ID, JpaJGroupsTlsConfigurator::generateSelfSignedCertificate));
-            var km = createKeyManager(data.getKeyPair(), data.getCertificate());
-            var tm = createTrustManager(data.getCertificate());
-            var sslContext = SSLContext.getInstance(TLS_PROTOCOL);
-            sslContext.init(new KeyManager[]{km}, new TrustManager[]{tm}, null);
-            return createFromContext(sslContext);
+            var data = fromJson(storage.loadOrCreate(CERTIFICATE_ID, () -> CertificateReloadManager.generateSelfSignedCertificate(rotationDays * 2L)));
+            return JGroupsCertificateHolder.create(data);
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private X509ExtendedKeyManager createKeyManager(KeyPair keyPair, X509Certificate certificate) throws GeneralSecurityException, IOException {
-        var ks = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
-        ks.load(null, null);
-        ks.setKeyEntry(KEYSTORE_ALIAS, keyPair.getPrivate(), KEY_PASSWORD, new java.security.cert.Certificate[]{certificate});
-        var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, KEY_PASSWORD);
-        for (KeyManager km : kmf.getKeyManagers()) {
-            if (km instanceof X509ExtendedKeyManager) {
-                return (X509ExtendedKeyManager) km;
-            }
-        }
-        throw new GeneralSecurityException("Could not obtain an X509ExtendedKeyManager");
-    }
-
-    private X509ExtendedTrustManager createTrustManager(X509Certificate certificate) throws GeneralSecurityException, IOException {
-        var ks = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
-        ks.load(null, null);
-        ks.setCertificateEntry(KEYSTORE_ALIAS, certificate);
-        var tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(ks);
-        for (TrustManager tm : tmf.getTrustManagers()) {
-            if (tm instanceof X509ExtendedTrustManager) {
-                return (X509ExtendedTrustManager) tm;
-            }
-        }
-        throw new GeneralSecurityException("Could not obtain an X509TrustManager");
-    }
-
-    private static String generateSelfSignedCertificate() {
-        var keyPair = KeyUtils.generateRsaKeyPair(2048);
-        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT);
-        var entity = new CertificateEntity();
-        entity.setCertificate(certificate);
-        entity.setKeyPair(keyPair);
-        return toJson(entity);
     }
 
     private static SocketFactory createFromContext(SSLContext context) {
@@ -129,22 +98,6 @@ public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
         serverParameters.setNeedClientAuth(true);
         socketFactory.setServerSocketConfigurator(socket -> ((SSLServerSocket) socket).setSSLParameters(serverParameters));
         return socketFactory;
-    }
-
-    private static String toJson(CertificateEntity entity) {
-        try {
-            return JsonSerialization.mapper.writeValueAsString(entity);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Should never happen!", e);
-        }
-    }
-
-    private static CertificateEntity fromJson(String json) {
-        try {
-            return JsonSerialization.mapper.readValue(json, CertificateEntity.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Should never happen!", e);
-        }
     }
 
 }

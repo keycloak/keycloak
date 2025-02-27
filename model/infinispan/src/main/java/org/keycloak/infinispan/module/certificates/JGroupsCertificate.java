@@ -15,21 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
+package org.keycloak.infinispan.module.certificates;
 
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * JPA entity to store the {@link X509Certificate} and {@link KeyPair}.
  */
 @SuppressWarnings("unused")
-public class CertificateEntity {
+public class JGroupsCertificate {
 
     @JsonProperty("prvKey")
     private String privateKeyPem;
@@ -40,13 +43,10 @@ public class CertificateEntity {
     @JsonProperty("crt")
     private String certificatePem;
 
-    public CertificateEntity() {
-    }
+    @JsonProperty("alias")
+    private String alias;
 
-    public CertificateEntity(String privateKeyPem, String publicKeyPem, String certificatePem) {
-        this.privateKeyPem = Objects.requireNonNull(privateKeyPem);
-        this.publicKeyPem = Objects.requireNonNull(publicKeyPem);
-        this.certificatePem = Objects.requireNonNull(certificatePem);
+    public JGroupsCertificate() {
     }
 
     public String getCertificatePem() {
@@ -71,6 +71,14 @@ public class CertificateEntity {
 
     public void setPublicKeyPem(String publicKeyPem) {
         this.publicKeyPem = publicKeyPem;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     @JsonIgnore
@@ -98,11 +106,16 @@ public class CertificateEntity {
         return new KeyPair(pub, prv);
     }
 
+    @JsonIgnore
+    public PrivateKey getPrivateKey() {
+        return PemUtils.decodePrivateKey(getPrivateKeyPem());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
 
-        CertificateEntity that = (CertificateEntity) o;
+        JGroupsCertificate that = (JGroupsCertificate) o;
         return Objects.equals(privateKeyPem, that.privateKeyPem) &&
                 Objects.equals(publicKeyPem, that.publicKeyPem) &&
                 Objects.equals(certificatePem, that.certificatePem);
@@ -114,5 +127,25 @@ public class CertificateEntity {
         result = 31 * result + Objects.hashCode(publicKeyPem);
         result = 31 * result + Objects.hashCode(certificatePem);
         return result;
+    }
+
+    public boolean isSameAlias(String jsonCertificate) {
+        return Objects.equals(alias, fromJson(jsonCertificate).getAlias());
+    }
+
+    public static String toJson(JGroupsCertificate entity) {
+        try {
+            return JsonSerialization.mapper.writeValueAsString(entity);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Should never happen!", e);
+        }
+    }
+
+    public static JGroupsCertificate fromJson(String json) {
+        try {
+            return JsonSerialization.mapper.readValue(json, JGroupsCertificate.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Should never happen!", e);
+        }
     }
 }
