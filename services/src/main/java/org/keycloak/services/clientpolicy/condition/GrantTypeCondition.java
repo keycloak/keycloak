@@ -86,7 +86,7 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
                 if (isGrantMatching(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
-                return ClientPolicyVote.NO;
+                return ClientPolicyVote.ABSTAIN;
         }
     }
 

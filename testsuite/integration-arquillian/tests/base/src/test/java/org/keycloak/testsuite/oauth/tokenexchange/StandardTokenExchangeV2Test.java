@@ -88,17 +88,12 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .getSessionId();
     }
 
-
     private String resourceOwnerLogin(String username, String password, String clientId, String secret) throws Exception {
-        return resourceOwnerLogin(username, password, clientId, secret, null);
-    }
-
-    private String resourceOwnerLogin(String username, String password, String clientId, String secret, String scope) throws Exception {
         oauth.realm(TEST);
         oauth.client(clientId, secret);
         oauth.scope(null);
         oauth.openid(false);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(username, password);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(username, password);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         accessTokenVerifier.parse();
