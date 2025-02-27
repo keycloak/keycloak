@@ -1,7 +1,4 @@
 import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import ResourceServerRepresentation, {
-  ResourceTypesRepresentation,
-} from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -32,6 +29,7 @@ import { ScopePicker } from "../../clients/authorization/ScopePicker";
 import { ResourceType } from "../resource-types/ResourceType";
 import { sortBy } from "lodash-es";
 import { NameDescription } from "../../clients/authorization/policy/NameDescription";
+import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
 
 export default function PermissionConfigurationDetails() {
   const { adminClient } = useAdminClient();
@@ -45,16 +43,18 @@ export default function PermissionConfigurationDetails() {
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [providers, setProviders] = useState<PolicyProviderRepresentation[]>();
   const [policies, setPolicies] = useState<PolicyRepresentation[]>();
-  const [adminPermissionClient, setAdminPermissionClient] =
-    useState<ResourceServerRepresentation>();
-  const resourceTypeScopes = useMemo(() => {
-    const resourceTypes =
-      adminPermissionClient?.authorizationSchema?.resourceTypes ?? {};
-    return (Object.values(resourceTypes) as ResourceTypesRepresentation[])
-      .filter((resource) => resource.type === resourceType)
-      .flatMap((resource) => resource.scopes || [])
-      .map((scope) => scope || "");
-  }, [adminPermissionClient, resourceType]);
+  const resourceTypes = useSortedResourceTypes({
+    clientId: permissionClientId,
+  });
+
+  const resourceTypeScopes = useMemo(
+    () =>
+      resourceTypes
+        .filter(({ type }) => type === resourceType)
+        .flatMap(({ scopes = [] }) => scopes)
+        .map((scope) => scope || ""),
+    [resourceTypes, resourceType],
+  );
 
   useFetch(
     async () => {
@@ -62,8 +62,7 @@ export default function PermissionConfigurationDetails() {
         return {};
       }
 
-      const [adminClientData, providers, policies] = await Promise.all([
-        adminClient.clients.getResourceServer({ id: permissionClientId }),
+      const [providers, policies] = await Promise.all([
         adminClient.clients.listPolicyProviders({ id: permissionClientId }),
         adminClient.clients.listPolicies({
           id: permissionClientId,
@@ -71,18 +70,13 @@ export default function PermissionConfigurationDetails() {
         }),
       ]);
 
-      return { adminClientData, providers, policies };
+      return { providers, policies };
     },
-    ({ adminClientData, providers, policies }) => {
-      if (!adminClientData) {
-        throw new Error(t("notFound"));
-      }
-
-      const filteredProviders = providers.filter(
+    ({ providers, policies }) => {
+      const filteredProviders = providers?.filter(
         (p) => p.type !== "resource" && p.type !== "scope",
       );
 
-      setAdminPermissionClient(adminClientData);
       setProviders(
         sortBy(
           filteredProviders,
