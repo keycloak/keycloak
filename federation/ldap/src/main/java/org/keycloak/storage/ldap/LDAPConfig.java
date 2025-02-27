@@ -82,7 +82,8 @@ public class LDAPConfig {
     public String getRelativeCreateDn() {
         String relativeCreateDn = config.getFirst(LDAPConstants.RELATIVE_CREATE_DN);
         if(relativeCreateDn != null) {
-            return relativeCreateDn + ",";
+            relativeCreateDn = relativeCreateDn.trim();
+            return relativeCreateDn.endsWith(",") ? relativeCreateDn : relativeCreateDn + ",";
         }
         return "";
     }
