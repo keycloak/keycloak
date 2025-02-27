@@ -615,8 +615,12 @@ public class TokenManager {
         return token;
     }
 
-
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        return attachAuthenticationSession(session, userSession, authSession, false);
+    }
+
+    public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession,
+            AuthenticationSessionModel authSession, boolean createTransientIfMissing) {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -625,6 +629,10 @@ public class TokenManager {
             // session exists but not active so re-start it
             clientSession.restartClientSession();
         } else if (clientSession == null) {
+            if (createTransientIfMissing && userSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
+                // create a transient session for the missing client session
+                userSession = UserSessionUtil.createTransientUserSession(session, userSession);
+            }
             clientSession = session.sessions().createClientSession(realm, client, userSession);
         }
 

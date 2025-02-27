@@ -224,7 +224,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         event.session(targetUserSession);
 
         try {
-            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+            ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession,
+                    !OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)); // create transient session if needed except for refresh
 
             if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                     && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {
@@ -243,8 +244,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             validateConsents(targetUser, clientSessionCtx);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
-                    .generateAccessToken();
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session,
+                    clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx).generateAccessToken();
 
             checkRequestedAudiences(responseBuilder);
 
