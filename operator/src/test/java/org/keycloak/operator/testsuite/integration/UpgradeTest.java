@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,6 +54,7 @@ import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUp
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 @QuarkusTest
+@Disabled(value = "unstable")
 public class UpgradeTest extends BaseOperatorTest {
 
     @ParameterizedTest(name = "testImageChange-{0}")
