@@ -55,8 +55,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         // login using another session
         configureRequiredActionsToUser("test-user@localhost");
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);;
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());

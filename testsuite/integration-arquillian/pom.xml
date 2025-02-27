@@ -523,7 +523,7 @@
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.oracle.database.jdbc</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>ojdbc11</jdbc.mvn.artifactId>
+                <jdbc.mvn.artifactId>ojdbc17</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${oracle-jdbc.version}</jdbc.mvn.version>
             </properties>
         </profile>

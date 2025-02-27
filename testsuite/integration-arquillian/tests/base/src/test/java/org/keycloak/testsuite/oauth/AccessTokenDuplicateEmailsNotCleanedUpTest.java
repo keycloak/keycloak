@@ -48,7 +48,7 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
 
     @Before
     public void clientConfiguration() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.realm("test-duplicate-emails");
 
         RealmRepresentation realmRep = new RealmRepresentation();
@@ -67,8 +67,8 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
     public void loginWithNonDuplicateEmail() throws Exception {
         oauth.doLogin("non-duplicate-email-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         
@@ -88,8 +88,8 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
     public void loginWithUserHavingDuplicateEmailByUsername() throws Exception {
         oauth.doLogin("duplicate-email-user1", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         

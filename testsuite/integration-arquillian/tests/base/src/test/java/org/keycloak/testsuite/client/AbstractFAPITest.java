@@ -62,6 +62,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -120,10 +121,6 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
                 expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
     }
 
-    protected String getParameterFromUrl(String paramName, boolean fragmentExpected) {
-        return fragmentExpected ? oauth.getCurrentFragment().get(paramName) : oauth.getCurrentQuery().get(paramName);
-    }
-
     protected String loginUserAndGetCode(String clientId, boolean fragmentResponseModeExpected) {
         oauth.clientId(clientId);
         oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
@@ -132,7 +129,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        String code = getParameterFromUrl(OAuth2Constants.CODE, fragmentResponseModeExpected);
+        String code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
         return code;
     }
@@ -145,8 +142,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        System.out.println("KKKKK response = " + oauth.getCurrentQuery().get("response"));
-        AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.getCurrentQuery().get("response"));
+        AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.parseLoginResponse().getResponse());
         String code = (String)responseToken.getOtherClaims().get("code");
         Assert.assertNotNull(code);
         return code;
@@ -179,10 +175,11 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         user.revokeConsent(clientId);
     }
 
-    protected void assertRedirectedToClientWithError(String expectedError, boolean fragmentExpected, String expectedErrorDescription) {
+    protected void assertRedirectedToClientWithError(String expectedError, String expectedErrorDescription) {
         appPage.assertCurrent();
-        assertEquals(expectedError, getParameterFromUrl(OAuth2Constants.ERROR, fragmentExpected));
-        assertEquals(expectedErrorDescription, getParameterFromUrl(OAuth2Constants.ERROR_DESCRIPTION, fragmentExpected));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(expectedError, response.getError());
+        assertEquals(expectedErrorDescription, response.getErrorDescription());
     }
 
     protected void assertBrowserWithError(String expectedError) {

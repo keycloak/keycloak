@@ -78,7 +78,7 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     public void nonceNotUsed() {
         EventRepresentation loginEvent = loginUser(null);
 
-        AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth, false);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
         for (IDToken idToken : idTokens) {
             Assert.assertNull(idToken.getNonce());

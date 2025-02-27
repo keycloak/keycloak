@@ -3,8 +3,8 @@ package org.keycloak.testframework.remote;
 import org.keycloak.testframework.TestFrameworkExtension;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.remote.timeoffset.TimeOffsetSupplier;
-import org.keycloak.testframework.runonserver.RunOnServerSupplier;
-import org.keycloak.testframework.runonserver.TestClassServerSupplier;
+import org.keycloak.testframework.remote.runonserver.RunOnServerSupplier;
+import org.keycloak.testframework.remote.runonserver.TestClassServerSupplier;
 
 import java.util.List;
 

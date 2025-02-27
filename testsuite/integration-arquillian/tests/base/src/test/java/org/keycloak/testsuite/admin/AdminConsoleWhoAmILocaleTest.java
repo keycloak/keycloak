@@ -2,13 +2,8 @@ package org.keycloak.testsuite.admin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,11 +17,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
 import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
 
 public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
@@ -43,9 +43,6 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     private static final String EXTRA_LOCALE = "zh-CN";
 
     private CloseableHttpClient client;
-
-    @Page
-    private AdminConsole adminConsole;
 
     @Before
     public void createHttpClient() throws Exception {
@@ -103,7 +100,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     }
 
     private org.keycloak.testsuite.util.oauth.AccessTokenResponse accessToken(String realmName, String username, String password) throws Exception {
-        return oauth.realm(realmName).doGrantAccessTokenRequest(username, password, ADMIN_CLI_CLIENT_ID, null);
+        return oauth.realm(realmName).client(ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest(username, password);
     }
 
     private String whoAmiUrl(String realmName) {
@@ -131,7 +128,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithoutLocale() throws Exception {
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.realm(REALM_I18N_OFF).doGrantAccessTokenRequest(USER_WITHOUT_LOCALE, PASSWORD, ADMIN_CLI_CLIENT_ID, null);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.realm(REALM_I18N_OFF).client(ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest(USER_WITHOUT_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")

@@ -807,6 +807,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     protected boolean isGroupInGroupPath(RealmModel realm, GroupModel group) {
+        if (group.getType() == GroupModel.Type.ORGANIZATION) {
+            return false; // always skip organization groups as those are internal groups.
+        }
         if (config.isTopLevelGroupsPath()) {
             return true; // any group is in the path of the top level path.
         }

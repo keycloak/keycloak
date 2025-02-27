@@ -201,7 +201,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>com.oracle.database.jdbc</groupId>
-                                    <artifactId>ojdbc11</artifactId>
+                                    <artifactId>ojdbc17</artifactId>
                                     <version>${oracle-jdbc.version}</version>
                                     <type>jar</type>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>

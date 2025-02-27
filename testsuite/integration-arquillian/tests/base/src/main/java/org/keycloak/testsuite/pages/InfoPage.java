@@ -56,11 +56,6 @@ public class InfoPage extends LanguageComboboxAwarePage {
         return DroneUtils.getCurrentDriver().getPageSource().contains("kc-info-message");
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public void clickBackToApplicationLink() {
         UIUtils.clickLink(backToApplicationLink);
     }

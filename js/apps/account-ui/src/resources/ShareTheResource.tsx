@@ -177,7 +177,7 @@ export const ShareTheResource = ({
             </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
-            <ChipGroup categoryName={t("shareWith")}>
+            <ChipGroup categoryName={t("shareWith") + " "}>
               {fields.map(
                 (field, index) =>
                   index !== fields.length - 1 && (

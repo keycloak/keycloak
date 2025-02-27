@@ -54,8 +54,8 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         try {
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).build();
@@ -85,8 +85,8 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         try {
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
                     .postLogoutRedirectUri(OAuthClient.APP_AUTH_ROOT).build();
@@ -115,8 +115,8 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         try {
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString).build();
             driver.navigate().to(logoutUrl);
@@ -148,8 +148,8 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
                 .update()) {
             oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString).build();
             driver.navigate().to(logoutUrl);

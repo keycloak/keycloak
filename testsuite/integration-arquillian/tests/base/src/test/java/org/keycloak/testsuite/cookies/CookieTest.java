@@ -40,9 +40,8 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.HttpClientManager;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.Cookie;
@@ -101,14 +100,14 @@ public class CookieTest extends AbstractKeycloakTest {
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
-        AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();
         appPage.assertCurrent();
 
-        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
+        try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(cookieName, accessToken);
             cookie.setDomain("localhost");
@@ -118,7 +117,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).getLoginFormUrl());
+            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -138,15 +137,15 @@ public class CookieTest extends AbstractKeycloakTest {
         final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
-        AuthorizationEndpointResponse codeResponse = oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
-        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode(), clientSecret);
+        AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
+        AccessTokenResponse accTokenResp = oauth.doAccessTokenRequest(codeResponse.getCode());
         String accessToken = accTokenResp.getAccessToken();
 
         appPage.open();
         appPage.assertCurrent();
         AccountHelper.logout(realmsResouce().realm("test"), "test-user@localhost");
 
-        try (CloseableHttpClient hc = HttpClientManager.createDefault()) {
+        try (CloseableHttpClient hc = HttpClientUtils.createDefault()) {
             BasicCookieStore cookieStore = new BasicCookieStore();
             BasicClientCookie cookie = new BasicClientCookie(CookieType.IDENTITY.getName(), accessToken);
             cookie.setDomain("localhost");
@@ -156,7 +155,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).getLoginFormUrl());
+            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -175,10 +174,7 @@ public class CookieTest extends AbstractKeycloakTest {
     public void testNoDuplicationsWhenExpiringCookies() throws IOException {
         ContainerAssume.assumeAuthServerSSL();
 
-        loginPage.open();
-        loginPage.assertCurrent();
-
-        loginPage.login("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
         appPage.assertCurrent();
 
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/authenticate/");

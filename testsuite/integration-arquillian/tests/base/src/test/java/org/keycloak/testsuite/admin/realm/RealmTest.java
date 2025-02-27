@@ -1017,7 +1017,7 @@ public class RealmTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
-        oauth.doLogin("user", "password");
+        oauth.doPasswordGrantRequest("user", "password");
 
         GlobalRequestResult globalRequestResult = realm.logoutAll();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "logout-all", globalRequestResult, ResourceType.REALM);
@@ -1034,7 +1034,7 @@ public class RealmTest extends AbstractAdminTest {
         setupTestAppAndUser();
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         EventRepresentation event = events.poll();
@@ -1065,8 +1065,7 @@ public class RealmTest extends AbstractAdminTest {
         System.out.println(sessionStats.size());
 
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE),
-            "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, tokenResponse.getStatusCode());
 
         sessionStats = realm.getClientSessionStats();
@@ -1153,6 +1152,7 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
         oauth.realm(REALM_NAME);
+        oauth.client("test-app", "secret");
         oauth.redirectUri(redirectUri);
 
         UserRepresentation userRep = UserBuilder.create().username("testuser").build();

@@ -46,7 +46,7 @@ public class KeyManager {
         return key;
     }
 
-    private JSONWebKeySet getRealmKeys() {
+    public JSONWebKeySet getRealmKeys() {
         try {
             return new JwksRequest(client).send();
         } catch (IOException e) {

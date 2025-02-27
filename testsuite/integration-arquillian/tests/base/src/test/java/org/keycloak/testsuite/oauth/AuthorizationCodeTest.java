@@ -46,7 +46,6 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -182,10 +181,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestInvalidResponseType() throws IOException {
         oauth.responseType("tokenn");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
@@ -198,7 +196,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestInvalidResponseType_testHeaders() throws IOException {
         oauth.responseType("tokenn");
         Client client = AdminClientUtil.createResteasyClient();
-        Response response = client.target(oauth.getLoginFormUrl()).request().get();
+        Response response = client.target(oauth.loginForm().build()).request().get();
 
         assertThat(response.getStatus(), is(equalTo(302)));
         String cacheControl = response.getHeaderString(HttpHeaders.CACHE_CONTROL);
@@ -212,8 +210,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType("tokenn");
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         String error = driver.findElement(By.id("error")).getText();
         String state = driver.findElement(By.id("state")).getText();
@@ -228,8 +225,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType(null);
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
 
         String error = driver.findElement(By.id("error")).getText();
         String errorDescription = driver.findElement(By.id("error_description")).getText();
@@ -372,7 +368,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
         oauth.openLoginForm();
-        response = new AuthorizationEndpointResponse(oauth);
+        response = oauth.parseLoginResponse();
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
@@ -394,8 +390,10 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.openLoginForm();
 
-        assertEquals("invalid_request", oauth.getCurrentQuery().get("error"));
-        assertEquals("duplicated parameter", oauth.getCurrentQuery().get("error_description"));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+
+        assertEquals("invalid_request", response.getError());
+        assertEquals("duplicated parameter", response.getErrorDescription());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }

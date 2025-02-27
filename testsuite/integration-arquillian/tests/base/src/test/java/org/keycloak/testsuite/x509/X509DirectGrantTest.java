@@ -88,8 +88,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         events.clear();
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -111,8 +111,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         events.clear();
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         events.expectLogin()
                 .user((String) null)
@@ -138,8 +138,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -155,8 +155,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(200, response.getStatusCode());
     }
@@ -170,8 +170,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(401, response.getStatusCode());
 
@@ -197,8 +197,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
             String cfgId = createConfig(directGrantExecution.getId(), cfg);
             Assert.assertNotNull(cfgId);
 
-            oauth.clientId("resource-owner");
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+            oauth.client("resource-owner", "secret");
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
             events.expectLogin()
                     .user(userId)
@@ -236,8 +236,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -257,8 +257,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(200, response.getStatusCode());
     }
@@ -277,8 +277,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         setTimeOffset(50 * 365 * 24 * 60 * 60);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         setTimeOffset(0);
 
@@ -306,10 +306,10 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
         events.clear();
 
-        oauth.clientId("resource-owner");
-        oauth.doGrantAccessTokenRequest("secret", "", "");
-        oauth.doGrantAccessTokenRequest("secret", "", "");
-        oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        oauth.doGrantAccessTokenRequest("", "");
+        oauth.doGrantAccessTokenRequest("", "");
+        oauth.doGrantAccessTokenRequest("", "");
 
         events.clear();
     }
@@ -325,8 +325,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         events.expectLogin()
                 .user(userId)
@@ -346,8 +346,8 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     private void doResourceOwnerCredentialsLogin(String clientId, String clientSecret, String login, String password) throws Exception {
 
-        oauth.clientId(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, "", "");
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest( "", "");
 
         assertEquals(200, response.getStatusCode());
 

@@ -16,7 +16,12 @@ public class JwksRequest {
     public JSONWebKeySet send() throws IOException {
         HttpGet get = new HttpGet(client.getEndpoints().getJwks());
         get.addHeader("Accept", "application/json");
-        return new JwksResponse(client.httpClient().get().execute(get)).getJwks();
+        JwksResponse response = new JwksResponse(client.httpClient().get().execute(get));
+        if (response.isSuccess()) {
+            return response.getJwks();
+        } else {
+            throw new IOException("Failed to fetch keys: " + response.getStatusCode());
+        }
     }
 
 }

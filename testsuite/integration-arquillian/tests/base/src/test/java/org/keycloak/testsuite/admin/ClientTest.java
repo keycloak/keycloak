@@ -388,12 +388,12 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClientSessions() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
         AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
 
-        AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode());
         assertEquals(200, response2.getStatusCode());
 
         ClientResource app = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -641,10 +641,11 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals("There should be no offline sessions", 0, userSessions.size());
 
         oauth.realm(REALM_NAME);
+        oauth.client("test-app", "secret");
         oauth.redirectUri(client.getRedirectUris().get(0));
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "secret");
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();

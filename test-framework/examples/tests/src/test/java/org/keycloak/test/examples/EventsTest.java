@@ -1,6 +1,5 @@
 package org.keycloak.test.examples;
 
-import com.nimbusds.oauth2.sdk.GeneralException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.EventType;
@@ -9,13 +8,11 @@ import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.oauth.nimbus.OAuthClient;
-import org.keycloak.testframework.oauth.nimbus.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-
-import java.io.IOException;
 
 @KeycloakIntegrationTest
 public class EventsTest {
@@ -34,13 +31,13 @@ public class EventsTest {
 
     @Test
     public void testFailedLogin() {
-        oAuthClient.resourceOwnerCredentialGrant("invalid", "invalid");
+        oAuthClient.doPasswordGrantRequest("invalid", "invalid");
 
         EventRepresentation event = events.poll();
         Assertions.assertEquals(EventType.LOGIN_ERROR.name(), event.getType());
         Assertions.assertEquals("invalid", event.getDetails().get("username"));
 
-        oAuthClient.resourceOwnerCredentialGrant("invalid2", "invalid");
+        oAuthClient.doPasswordGrantRequest("invalid2", "invalid");
 
         event = events.poll();
         Assertions.assertEquals(EventType.LOGIN_ERROR.name(), event.getType());
@@ -48,17 +45,17 @@ public class EventsTest {
     }
 
     @Test
-    public void testTimeOffset() throws GeneralException, IOException {
+    public void testTimeOffset() {
         timeOffSet.set(60);
 
-        oAuthClient.clientCredentialGrant();
+        oAuthClient.doClientCredentialsGrantAccessTokenRequest();
 
         Assertions.assertEquals(EventType.CLIENT_LOGIN.name(), events.poll().getType());
     }
 
     @Test
-    public void testClientLogin() throws GeneralException, IOException {
-        oAuthClient.clientCredentialGrant();
+    public void testClientLogin() {
+        oAuthClient.doClientCredentialsGrantAccessTokenRequest();
 
         Assertions.assertEquals(EventType.CLIENT_LOGIN.name(), events.poll().getType());
     }

@@ -20,7 +20,6 @@ package org.keycloak.testsuite.client;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +44,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -55,7 +54,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -144,8 +142,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // setup profiles and policies
         setupPolicyOAuth2_1PublicClientForAllClient();
 
-        oauth.clientId(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(null, TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.client(clientId);
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -220,14 +218,14 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         // authorization request - success
         setValidPkce(clientId);
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(validRedirectUri);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // token request with DPoP Proof - success
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
         String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.dpopProof(dpopProofEcEncoded);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
@@ -236,13 +234,12 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // token refresh request with DPoP Proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
 
         // userinfo request with DPoP Proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEcEncoded);
-        UserInfoResponse userInfoResponse = oauth.doUserInfoRequestByGet(response);
+        UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEcEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
 
         oauth.idTokenHint(response.getIdToken()).openLogout();
@@ -250,8 +247,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // revoke token with a valid DPoP proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token", null).isSuccess());
-        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, null, response.getAccessToken());
+        assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token").isSuccess());
+        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
         TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
         assertFalse(tokenMetadataRepresentation.isActive());
 
@@ -285,12 +282,13 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         oauth.nonce(nonce);
         oauth.redirectUri(validRedirectUri);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("Implicit/Hybrid flow is prohibited.", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("Implicit/Hybrid flow is prohibited.", authorizationEndpointResponse.getErrorDescription());
     }
 
     private void setValidPkce(String clientId) throws Exception {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         String codeVerifier = PkceUtils.generateCodeVerifier();
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
         oauth.codeChallenge(codeChallenge);

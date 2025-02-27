@@ -423,7 +423,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         grantPage.accept();
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
         testRealm().components().component(ldapModelId).remove();
@@ -457,7 +457,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("marykeycloak", "password-app");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
     }
 
@@ -467,7 +467,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("johnkeycloak", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(TEST_REALM_NAME), "johnkeycloak");
 
@@ -478,11 +478,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithDirectGrant() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "Password1");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("johnkeycloak", "Password1");
         Assert.assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
-        response = oauth.doGrantAccessTokenRequest("password", "johnkeycloak", "");
+        response = oauth.doGrantAccessTokenRequest("johnkeycloak", "");
         Assert.assertEquals(401, response.getStatusCode());
     }
 
@@ -492,7 +492,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("john@email.org", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
     @Test

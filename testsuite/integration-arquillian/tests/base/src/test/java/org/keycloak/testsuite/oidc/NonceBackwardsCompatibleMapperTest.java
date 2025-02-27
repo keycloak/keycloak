@@ -129,7 +129,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     private void testIntrospection(String accessToken, String expectedNonce, boolean expected) throws JsonProcessingException {
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password", accessToken);
+        String tokenResponse = oauth.client("test-app", "password").doIntrospectionAccessTokenRequest(accessToken);
         JsonNode nonce = new ObjectMapper().readTree(tokenResponse).get(OIDCLoginProtocol.NONCE_PARAM);
         checkNonce(expectedNonce, nonce != null? nonce.asText() : null, expected);
     }
@@ -164,8 +164,8 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         checkNonce(nonce, token.getNonce(), mapper);
@@ -178,7 +178,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
                 .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
                 .assertEvent();
 
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), loginEvent.getSessionId())
                 .detail(Details.REFRESH_TOKEN_TYPE, offlineSession? TokenUtil.TOKEN_TYPE_OFFLINE : TokenUtil.TOKEN_TYPE_REFRESH)
                 .assertEvent();

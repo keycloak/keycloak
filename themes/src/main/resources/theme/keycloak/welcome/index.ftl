@@ -37,7 +37,7 @@
       </#list>
     </#if>
   </head>
-  <body>
+  <body data-page-id="welcome">
     <div class="pf-v5-c-background-image" style="--pf-v5-c-background-image--BackgroundImage: url(${baseUrl}${resourcesPath}/background.svg)"></div>
     <div class="pf-v5-c-login">
       <div class="pf-v5-c-login__container">

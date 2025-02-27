@@ -38,6 +38,11 @@ public class TokenExchangeGrantTypeFactory implements OAuth2GrantTypeFactory, En
     }
 
     @Override
+    public String getShortcut() {
+        return "te";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new TokenExchangeGrantType();
     }

@@ -129,7 +129,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRestartCookie() {
         loginPage.open();
-        String restartCookie = loginPage.getDriver().manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
     }
 
@@ -162,7 +162,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         oauth.stateParamHardcoded(state);
 
         oauth.openLoginForm();
-        String restartCookie = loginPage.getDriver().manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
     }
 

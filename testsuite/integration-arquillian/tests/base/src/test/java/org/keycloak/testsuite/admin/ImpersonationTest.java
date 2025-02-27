@@ -233,8 +233,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         resp.close();
 
         // Open the URL for the client (will redirect to Keycloak server AuthorizationEndpoint and create authenticationSession)
-        String loginFormUrl = oauth.getLoginFormUrl();
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
         loginPage.assertCurrent();
 
         // Impersonate and get SSO cookie. Setup that cookie for webDriver
@@ -243,7 +242,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         }
 
         // Open the URL again - should be directly redirected to the app due the SSO login
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
         appPage.assertCurrent();
         //KEYCLOAK-12783
         Assert.assertEquals("/auth/realms/master/app/auth", new URL(DroneUtils.getCurrentDriver().getCurrentUrl()).getPath());

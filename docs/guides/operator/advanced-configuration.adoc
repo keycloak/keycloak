@@ -153,7 +153,7 @@ spec:
 
 The unsupported podTemplate may be used to override the default probes.
 
-In particular the default startup probe timeout of 10 minutes may be too short in scenarios where there is a long-running migration. 
+In particular the default startup probe timeout of 10 minutes may be too short in scenarios where there is a long-running migration.
 
 If your instances encounter this startup failure or if you wish to proactively prevent such a startup failure from occurring, then the startup probe timeout should be increased.
 
@@ -525,5 +525,29 @@ When the image field changes, the StatefulSet is scaled down before applying the
 |The {project_name} Operator detects if a rolling or recreate upgrade is possible.
 
 |===
+
+===== CR Statuses =====
+
+The Keycloak CR status of type `RecreateUpdateUsed` indicates the type of update strategy employed during the last update operation.
+The `lastTransitionTime` field indicates when the last update occurred.
+
+[%autowidth]
+.Condition statuses
+|===
+|Status |Description
+
+m|Unknown
+|The initial state.
+It means no update has taken place.
+
+m|False
+|The rolling update type was used in the last update.
+
+m|True
+|The recreate update type was used in the last update.
+The `message` field explains why this strategy was chosen.
+
+|===
+
 
 </@tmpl.guide>

@@ -49,6 +49,10 @@
     
     <dependencies>
         <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-utils-shared</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
             <exclusions>

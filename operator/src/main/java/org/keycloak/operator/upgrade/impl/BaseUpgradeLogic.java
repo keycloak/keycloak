@@ -20,6 +20,7 @@ package org.keycloak.operator.upgrade.impl;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.upgrade.UpgradeLogic;
 import org.keycloak.operator.upgrade.UpgradeType;
 
@@ -46,23 +48,22 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
 
     protected final Context<Keycloak> context;
     protected final Keycloak keycloak;
-    protected final KeycloakDeploymentDependentResource statefulSetResource;
+    private Consumer<KeycloakStatusAggregator> statusConsumer = unused -> {};
 
-    BaseUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource) {
+    BaseUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
         this.context = context;
         this.keycloak = keycloak;
-        this.statefulSetResource = statefulSetResource;
     }
 
     @Override
     public final Optional<UpdateControl<Keycloak>> decideUpgrade() {
-        var existing = context.getSecondaryResource(StatefulSet.class);
+        var existing = ContextUtils.getCurrentStatefulSet(context);
         if (existing.isEmpty()) {
             // new deployment, no upgrade needed
             Log.debug("New deployment - skipping upgrade logic");
             return Optional.empty();
         }
-        var desiredStatefulSet = statefulSetResource.desired(keycloak, context);
+        var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
         var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpgradeLogic::containerNotFound);
         var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpgradeLogic::containerNotFound);
 
@@ -72,10 +73,12 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
             return Optional.empty();
         }
 
-        // store in context the current and desired stateful set for easy access.
-        ContextUtils.storeCurrentStatefulSet(context, existing.get());
-        ContextUtils.storeDesiredStatefulSet(context, desiredStatefulSet);
         return onUpgrade();
+    }
+
+    @Override
+    public final void updateStatus(KeycloakStatusAggregator statusAggregator) {
+        statusConsumer.accept(statusAggregator);
     }
 
     /**
@@ -85,7 +88,7 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
      * {@link ContextUtils#getDesiredStatefulSet(Context)} to get the current and the desired {@link StatefulSet},
      * respectively.
      * <p>
-     * Use the methods {@link #decideRecreateUpgrade()} or {@link #decideRollingUpgrade()} to use one of the available
+     * Use the methods {@link #decideRecreateUpgrade(String)} or {@link #decideRollingUpgrade(String)} to use one of the available
      * upgrade logics.
      *
      * @return An {@link UpdateControl} if the reconciliation must be interrupted before updating the
@@ -93,13 +96,15 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
      */
     abstract Optional<UpdateControl<Keycloak>> onUpgrade();
 
-    void decideRollingUpgrade() {
-        Log.debug("Decided rolling upgrade type.");
+    void decideRollingUpgrade(String reason) {
+        Log.debugf("Decided rolling upgrade type. Reason: %s", reason);
+        statusConsumer = status -> status.addUpgradeType(false, reason);
         ContextUtils.storeUpgradeType(context, UpgradeType.ROLLING);
     }
 
-    void decideRecreateUpgrade() {
-        Log.debug("Decided recreate upgrade type.");
+    void decideRecreateUpgrade(String reason) {
+        Log.debugf("Decided recreate upgrade type. Reason: %s", reason);
+        statusConsumer = status -> status.addUpgradeType(true, reason);
         ContextUtils.storeUpgradeType(context, UpgradeType.RECREATE);
     }
 
@@ -129,7 +134,6 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
 
     private static Map<String, EnvVar> envVars(Container container) {
         // The operator only sets value or secrets. Any other combination is from unsupported pod template.
-        //noinspection DataFlowIssue
         return container.getEnv().stream()
                 .filter(envVar -> !envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity()));

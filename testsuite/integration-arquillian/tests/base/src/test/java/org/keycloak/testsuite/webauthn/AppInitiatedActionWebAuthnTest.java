@@ -186,8 +186,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
                 .setBrowserFlow("browser")
                 .update()) {
-            OAuthClient oauth2 = new OAuthClient();
-            oauth2.init(driver2);
+            OAuthClient oauth2 = oauth.newConfig().driver(driver2);
             oauth2.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
             event1 = events.expectLogin().assertEvent();
             assertEquals(1, testUser.getUserSessions().size());

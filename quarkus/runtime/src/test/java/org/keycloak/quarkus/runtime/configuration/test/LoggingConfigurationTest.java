@@ -88,7 +88,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.syslog.app-name", "keycloak",
                 "quarkus.log.syslog.protocol", "tcp",
                 "quarkus.log.syslog.format", DEFAULT_LOG_FORMAT,
-                "quarkus.log.syslog.json", "false"
+                "quarkus.log.syslog.json.enabled", "false"
         ));
 
         // The default max-length attribute is set in the org.jboss.logmanager.handlers.SyslogHandler if not specified in config
@@ -129,7 +129,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.syslog.app-name", "keycloak2",
                 "quarkus.log.syslog.protocol", "udp",
                 "quarkus.log.syslog.format", "some format",
-                "quarkus.log.syslog.json", "true"
+                "quarkus.log.syslog.json.enabled", "true"
         ));
     }
 
@@ -247,12 +247,43 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         ));
 
         assertExternalConfig(Map.of(
-                "quarkus.log.console.json", "true",
+                "quarkus.log.console.json.enabled", "true",
                 "quarkus.log.console.json.log-format", "ecs",
-                "quarkus.log.file.json", "true",
+                "quarkus.log.file.json.enabled", "true",
                 "quarkus.log.file.json.log-format", "ecs",
-                "quarkus.log.syslog.json", "true",
+                "quarkus.log.syslog.json.enabled", "true",
                 "quarkus.log.syslog.json.log-format", "ecs"
         ));
+    }
+
+    @Test
+    public void testWildcardCliOptionCanBeMappedToQuarkusOption() {
+        ConfigArgsConfigSource.setCliArgs("--log-level-org.keycloak=trace");
+        SmallRyeConfig config = createConfig();
+        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+    }
+
+    @Test
+    public void testWildcardEnvVarOptionCanBeMappedToQuarkusOption() {
+        putEnvVar("KC_LOG_LEVEL_IO_QUARKUS", "trace");
+        SmallRyeConfig config = createConfig();
+        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+        assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+    }
+
+    @Test
+    public void testWildcardOptionFromConfigFile() {
+        putEnvVar("SOME_CATEGORY_LOG_LEVEL", "debug");
+        SmallRyeConfig config = createConfig();
+        assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"io.k8s\".level").getValue());
+    }
+
+    @Test
+    public void testWildcardPropertiesDontMatchEnvVarsFormat() {
+        SmallRyeConfig config = createConfig();
+        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
     }
 }

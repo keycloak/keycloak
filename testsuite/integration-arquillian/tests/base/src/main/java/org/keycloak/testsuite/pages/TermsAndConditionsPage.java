@@ -41,9 +41,4 @@ public class TermsAndConditionsPage extends AbstractPage {
         cancelButton.click();
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
 }

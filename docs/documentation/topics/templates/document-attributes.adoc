@@ -70,8 +70,10 @@
 :gettingstarted_name_short: Getting Started
 :gettingstarted_link: https://www.keycloak.org/guides#getting-started
 :gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
+:grafanadashboards_link: https://www.keycloak.org/observability/grafana-dashboards
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
+:observablitycategory_link: https://www.keycloak.org/guides#observability
 :tracingguide_name: Enabling Tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
 :upgradingguide_name: Upgrading Guide

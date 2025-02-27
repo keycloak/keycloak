@@ -204,9 +204,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         assertNull(token.getNonce());
 
@@ -235,9 +235,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         assertNull(token.getNonce());
 
@@ -319,9 +319,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         String refreshTokenString = response.getRefreshToken();
 
         events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -348,9 +348,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenWithAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String accessTokenString = tokenResponse.getAccessToken();
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(accessTokenString, "password");
@@ -397,21 +397,21 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                             .password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
-            oauth.clientId("public-client");
+            oauth.client("public-client");
 
             oauth.doLogin("alice", "alice");
-            String aliceCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(aliceCode, "password");
+            String aliceCode = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(aliceCode);
             AccessToken aliceAt = oauth.verifyToken(tokenResponse.getAccessToken());
 
             setTimeOffset((int) TimeUnit.MINUTES.toSeconds(2));
 
             oauth.doLogin("bob", "bob");
-            String bobCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String bobCode = oauth.parseLoginResponse().getCode();
 
             assertNotEquals(aliceCode, bobCode);
 
-            tokenResponse = oauth.doAccessTokenRequest(bobCode, "password");
+            tokenResponse = oauth.doAccessTokenRequest(bobCode);
             String refreshToken = tokenResponse.getRefreshToken();
             tokenResponse = oauth.doRefreshTokenRequest(refreshToken, null);
             AccessToken bobAt = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -454,7 +454,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
 
             oauth.realm(realmName);
-            oauth.clientId("public-client");
+            oauth.client("public-client");
 
             oauth.openLoginForm();
 
@@ -462,7 +462,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             oauth.fillLoginForm("alice", "alice");
 
-            String aliceCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String aliceCode = oauth.parseLoginResponse().getCode();
 //            WebClient webClient = DroneHtmlUnitDriver.class.cast(driver).getWebClient();
 //            webClient.getCookieManager().clearCookies();
             driver.manage().deleteAllCookies();
@@ -487,9 +487,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void tokenRefreshWithAccessTokenShouldReturnIdTokenWithAccessTokenHash() {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String refreshToken = tokenResponse.getRefreshToken();
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshToken, "password");
@@ -507,9 +507,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
         RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
 
         events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -538,11 +538,11 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             String optionalScope = "phone address";
             oauth.scope(optionalScope);
-            AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
             AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile address phone",  refreshToken1.getScope());
 
@@ -569,9 +569,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             //scope parameter consists scope that is not part of scope refresh token => error thrown
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
             AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile",  refreshToken1.getScope());
 
@@ -600,9 +600,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.scope("roles");
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
@@ -644,9 +644,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -685,24 +685,24 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
             events.expectCodeToToken(codeId, sessionId).assertEvent();
             assertNotNull(refreshToken1.getOtherClaims().get(Constants.REUSE_ID));
             assertNotEquals(refreshToken1.getOtherClaims().get(Constants.REUSE_ID), refreshToken1.getId());
 
             //login with tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
             codeId = loginEvent.getDetails().get(Details.CODE_ID);
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse responseNew = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse responseNew = oauth.doAccessTokenRequest(code);
             RefreshToken refreshTokenNew = oauth.parseRefreshToken(responseNew.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -753,9 +753,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code);
             RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -819,9 +819,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code);
             RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -861,9 +861,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse initialResponse = oauth.doAccessTokenRequest(code);
             RefreshToken initialRefreshToken = oauth.parseRefreshToken(initialResponse.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -907,9 +907,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
 
             events.expectCodeToToken(codeId, sessionId).assertEvent();
@@ -938,7 +938,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             Assert.assertFalse(hasClientSessionForTestApp());
 
             // Introspection with the accessToken from the first authentication. This should fail
-            String introspectionResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password", response1.getAccessToken());
+            String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken());
             JsonNode jsonNode = JsonSerialization.mapper.readTree(introspectionResponse);
             Assert.assertFalse(jsonNode.get("active").asBoolean());
             events.clear();
@@ -950,9 +950,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
             codeId = loginEvent.getDetails().get(Details.CODE_ID);
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response4 = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response4 = oauth.doAccessTokenRequest(code);
             RefreshToken refreshToken4 = oauth.parseRefreshToken(response4.getRefreshToken());
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
@@ -960,7 +960,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             Assert.assertTrue(hasClientSessionForTestApp());
 
             // Introspection again with the accessToken from the very first authentication. This should fail as the access token was obtained for the old client session before SSO re-authentication
-            introspectionResponse = oauth.introspectAccessTokenWithClientCredential("test-app", "password", response1.getAccessToken());
+            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken());
             jsonNode = JsonSerialization.mapper.readTree(introspectionResponse);
             Assert.assertFalse(jsonNode.get("active").asBoolean());
 
@@ -1011,9 +1011,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         String refreshTokenString = response.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
@@ -1041,8 +1041,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         String sessionId = loginEvent.getSessionId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         events.poll();
 
@@ -1077,8 +1077,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertFalse(loginPage.isCurrent());
 
             AccessTokenResponse tokenResponse2 = null;
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            tokenResponse2 = oauth.doAccessTokenRequest(code);
 
             // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
             AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
@@ -1111,8 +1111,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertFalse(loginPage.isCurrent());
 
             AccessTokenResponse tokenResponse2 = null;
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            tokenResponse2 = oauth.doAccessTokenRequest(code);
 
             // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
             AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
@@ -1144,8 +1144,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertFalse(loginPage.isCurrent());
 
             AccessTokenResponse tokenResponse2 = null;
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            tokenResponse2 = oauth.doAccessTokenRequest(code);
 
             // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
             AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1, "password");
@@ -1173,8 +1173,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         String sessionId = loginEvent.getSessionId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         events.poll();
 
@@ -1242,14 +1242,16 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     r.setSsoSessionIdleTimeoutRememberMe(500);
                     r.setSsoSessionIdleTimeout(100);
                 }).update()) {
-            oauth.doRememberMeLogin("test-user@localhost", "password");
+            oauth.openLoginForm();
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
 
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             events.poll();
 
@@ -1320,8 +1322,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
             final String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1369,8 +1371,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1000);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1396,8 +1398,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.doSilentLogin();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            code = oauth.parseLoginResponse().getCode();
+            tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1000);
             events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
 
@@ -1435,8 +1437,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1481,8 +1483,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
             final String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1524,8 +1526,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1548,8 +1550,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.doSilentLogin();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            code = oauth.parseLoginResponse().getCode();
+            tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
             events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
 
@@ -1588,8 +1590,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 7200);
             String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
             assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
@@ -1604,8 +1606,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             oauth.doSilentLogin();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            code = oauth.parseLoginResponse().getCode();
+            tokenResponse = oauth.doAccessTokenRequest(code);
             assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3000);
             events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
 
@@ -1642,14 +1644,16 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     r.setSsoSessionMaxLifespan(50);
                 }).update()) {
 
-            oauth.doRememberMeLogin("test-user@localhost", "password");
+            oauth.openLoginForm();
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
 
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             events.poll();
 
@@ -1694,8 +1698,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
             String sessionId = loginEvent.getSessionId();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             events.poll();
 
@@ -1712,9 +1716,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             setTimeOffset(600);
 
             oauth.doSilentLogin();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            code = oauth.parseLoginResponse().getCode();
 
-            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            tokenResponse = oauth.doAccessTokenRequest(code);
             assertEquals(200, tokenResponse.getStatusCode());
             assertTrue("Invalid RefreshExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400);
 
@@ -1810,9 +1814,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         String refreshTokenString = response.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
@@ -1840,9 +1844,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         String refreshTokenString = response.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
@@ -1859,11 +1863,11 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenServiceAccount() throws Exception {
-        AccessTokenResponse response = oauth.clientId("service-account-app").doClientCredentialsGrantAccessTokenRequest("secret");
+        AccessTokenResponse response = oauth.client("service-account-app", "secret").doClientCredentialsGrantAccessTokenRequest();
 
         assertNotNull(response.getRefreshToken());
 
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         assertNotNull(response.getRefreshToken());
     }
@@ -1884,8 +1888,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             realm.update(rep);
 
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getRefreshExpiresIn(), ssoSessionMaxLifespan);
 
@@ -1926,8 +1930,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         try {
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getRefreshExpiresIn(), ssoSessionIdleTimeout);
 
@@ -1972,16 +1976,16 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         getTestingClient().testing().setTestingInfinispanTimeService();
         try {
             oauth.doLogin("test-user@localhost", "password");
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), 65);
 
             setTimeOffset(70);
 
             oauth.openLoginForm();
-            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+            code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
             assertExpiration(response2.getExpiresIn(), 65);
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
@@ -1996,9 +2000,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         String refreshTokenString = tokenResponse.getRefreshToken();
 
@@ -2094,9 +2098,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
         assertEquals(expectedAccessAlg, header.getAlgorithm().name());
@@ -2159,8 +2163,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         String sessionId = loginEvent.getSessionId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         events.poll();
 
@@ -2170,9 +2174,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         processExpectedValidRefresh(sessionId, refreshTokenParsed1, refreshToken);
 
         // Open the tab with prompt=login. AuthenticationSession will be created with same ID like userSession
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
+        String loginFormUri = oauth.loginForm()
+                .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build();
         driver.navigate().to(loginFormUri);
 
         loginPage.assertCurrent();

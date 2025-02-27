@@ -74,8 +74,8 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(0, providers.size());
 
         oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertNotNull(response.getAccessToken());
 
@@ -109,8 +109,8 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
 
             oauth.openLoginForm();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             assertNotNull(response.getAccessToken());
         }
 

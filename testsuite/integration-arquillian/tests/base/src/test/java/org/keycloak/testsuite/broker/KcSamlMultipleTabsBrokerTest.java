@@ -69,7 +69,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             Assert.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
@@ -138,7 +138,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             Assert.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
@@ -201,7 +201,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
             // Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
-            AuthorizationEndpointResponse authzResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
             org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
             org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
         }

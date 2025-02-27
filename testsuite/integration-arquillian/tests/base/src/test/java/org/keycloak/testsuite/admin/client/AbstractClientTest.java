@@ -96,24 +96,6 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         return createClient(createOidcClientRep(name));
     }
 
-    protected String createOidcBearerOnlyClient(String name) {
-        ClientRepresentation clientRep = createOidcClientRep(name);
-        clientRep.setBearerOnly(Boolean.TRUE);
-        clientRep.setPublicClient(Boolean.FALSE);
-        return createClient(clientRep);
-    }
-
-    protected String createOidcConfidentialClientWithAuthz(String name) {
-        ClientRepresentation clientRep = createOidcClientRep(name);
-        clientRep.setBearerOnly(Boolean.FALSE);
-        clientRep.setPublicClient(Boolean.FALSE);
-        clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
-        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-        String id = createClient(clientRep);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), ResourceType.AUTHORIZATION_RESOURCE_SERVER);
-        return id;
-    }
-
     protected ClientRepresentation createOidcClientRep(String name) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(name);

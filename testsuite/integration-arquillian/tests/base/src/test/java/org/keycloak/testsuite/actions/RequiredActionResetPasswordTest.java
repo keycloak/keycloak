@@ -137,8 +137,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     }
 
     private void resetPassword(boolean logoutOtherSessions) {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();

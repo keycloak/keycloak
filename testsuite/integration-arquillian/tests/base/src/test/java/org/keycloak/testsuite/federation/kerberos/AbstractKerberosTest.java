@@ -160,7 +160,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         initHttpClient(true);
         removeAllUsers();
 
-        oauth.clientId("kerberos-app");
+        oauth.client("kerberos-app", "password");
 
         ComponentRepresentation rep = getUserStorageConfiguration();
         Response resp = testRealmResource().components().add(rep);
@@ -243,7 +243,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected Response spnegoLogin(String username, String password) {
-        String kcLoginPageLocation = oauth.getLoginFormUrl();
+        String kcLoginPageLocation = oauth.loginForm().build();
 
         // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);
@@ -343,7 +343,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         }
         Assert.assertNotNull(code);
         Assert.assertNotNull(state);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         Assert.assertNotNull(response.getAccessToken());
         events.clear();
         return response;

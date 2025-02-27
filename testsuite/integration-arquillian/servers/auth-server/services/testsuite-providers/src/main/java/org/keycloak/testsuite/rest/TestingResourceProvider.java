@@ -54,11 +54,8 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
@@ -68,9 +65,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -781,42 +776,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         return Response.noContent().build();
     }
-
-
-    /**
-     * Generate new client scope for specified service client. The "Frontend" clients, who will use this client scope, will be able to
-     * send their access token to authenticate against specified service client
-     *
-     * @param clientId Client ID of service client (typically bearer-only client)
-     * @return ID of the newly generated clientScope
-     */
-    @Path("generate-audience-client-scope")
-    @POST
-    @NoCache
-    public String generateAudienceClientScope(@QueryParam("realm") final String realmName, final @QueryParam("clientId") String clientId) {
-        try {
-            RealmModel realm = getRealmByName(realmName);
-            ClientModel serviceClient = realm.getClientByClientId(clientId);
-            if (serviceClient == null) {
-                throw new NotFoundException("Referenced service client doesn't exist");
-            }
-
-            ClientScopeModel clientScopeModel = realm.addClientScope(clientId);
-            clientScopeModel.setProtocol(serviceClient.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : serviceClient.getProtocol());
-            clientScopeModel.setDisplayOnConsentScreen(true);
-            clientScopeModel.setConsentScreenText(clientId);
-            clientScopeModel.setIncludeInTokenScope(true);
-
-            // Add audience protocol mapper
-            ProtocolMapperModel audienceMapper = AudienceProtocolMapper.createClaimMapper("Audience for " + clientId, clientId, null, true, false, true);
-            clientScopeModel.addProtocolMapper(audienceMapper);
-
-            return clientScopeModel.getId();
-        } catch (ModelDuplicateException e) {
-            throw new BadRequestException("Client Scope " + clientId + " already exists");
-        }
-    }
-
 
     @POST
     @Path("/run-on-server")

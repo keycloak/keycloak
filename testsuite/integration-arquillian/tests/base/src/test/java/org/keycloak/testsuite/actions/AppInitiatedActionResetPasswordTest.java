@@ -271,8 +271,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void checkLogoutSessions() {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -304,8 +303,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void uncheckLogoutSessions() {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
 

@@ -62,7 +62,11 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
-      options={clients.map(({ clientId }) => clientId!)}
+      options={clients.map(({ id, clientId }) => ({
+        key: id!,
+        value: clientId!,
+        label: clientId,
+      }))}
     />
   );
 };

@@ -101,7 +101,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(true, client.isConsentRequired());
 
         // send a pushed authorization request
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
 
@@ -158,7 +158,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId);
 
         // without PAR request - should fail
         oauth.openLoginForm();
@@ -185,7 +185,9 @@ public class FAPI2Test extends AbstractFAPITest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         oauth.requestUri(requestUri);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST, false, "Parameter response_type does not match");
+        oauth.responseMode("query"); // Keycloak uses some default response mode as response type is not valid
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST, "Parameter response_type does not match");
+        oauth.responseMode(null);
 
         oauth.responseType(OIDCResponseType.CODE);
 
@@ -271,7 +273,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(Algorithm.PS256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getRequestObjectSignatureAlg());
 
         // Set request object and correct responseType
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.stateParamHardcoded(null);
         String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
@@ -336,7 +338,7 @@ public class FAPI2Test extends AbstractFAPITest {
         assertEquals(false, client.isFullScopeAllowed());
         assertEquals(true, client.isConsentRequired());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.stateParamHardcoded(null);
         String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
         String codeChallenge = generateS256CodeChallenge(codeVerifier);

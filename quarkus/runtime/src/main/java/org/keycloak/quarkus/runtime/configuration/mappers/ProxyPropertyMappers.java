@@ -21,6 +21,11 @@ final class ProxyPropertyMappers {
                         .build(),
                 fromOption(ProxyOptions.PROXY_PROTOCOL_ENABLED)
                         .to("quarkus.http.proxy.use-proxy-protocol")
+                        .validator(v -> {
+                            if (Boolean.parseBoolean(v) && Configuration.getOptionalKcValue(ProxyOptions.PROXY_HEADERS).isPresent()) {
+                                throw new PropertyException("proxy protocol cannot be enabled when using the `proxy-headers` option");
+                            }
+                        })
                         .build(),
                 fromOption(ProxyOptions.PROXY_FORWARDED_HOST)
                         .to("quarkus.http.proxy.enable-forwarded-host")
@@ -42,7 +47,7 @@ final class ProxyPropertyMappers {
                         .build()
         };
     }
-    
+
     private static void validateAddress(String address) {
         if (Inet.parseCidrAddress(address) != null) {
             return;

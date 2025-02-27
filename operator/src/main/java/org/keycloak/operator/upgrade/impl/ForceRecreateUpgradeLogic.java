@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.upgrade.UpgradeLogic;
 import org.keycloak.operator.upgrade.UpgradeType;
@@ -32,13 +31,13 @@ import org.keycloak.operator.upgrade.UpgradeType;
  */
 public class ForceRecreateUpgradeLogic extends BaseUpgradeLogic {
 
-    public ForceRecreateUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakDeploymentDependentResource statefulSetResource) {
-        super(context, keycloak, statefulSetResource);
+    public ForceRecreateUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
+        super(context, keycloak);
     }
 
     @Override
     Optional<UpdateControl<Keycloak>> onUpgrade() {
-        decideRecreateUpgrade();
+        decideRecreateUpgrade("Strategy ForceRecreate configured.");
         return Optional.empty();
     }
 }

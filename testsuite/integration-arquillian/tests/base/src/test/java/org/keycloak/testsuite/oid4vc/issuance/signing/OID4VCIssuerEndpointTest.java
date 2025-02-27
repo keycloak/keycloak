@@ -120,7 +120,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected String getBearerToken(OAuthClient oAuthClient) {
         AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john", "password");
-        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode(), "password").getAccessToken();
+        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
     }
 
     private ClientResource findClientByClientId(RealmResource realm, String clientId) {

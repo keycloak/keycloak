@@ -79,8 +79,8 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testRedirectStatusCode() {
         oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+        String code = oauth.parseLoginResponse().getCode();
+        String token = oauth.doAccessTokenRequest(code).getAccessToken();
 
         Client client = AdminClientUtil.createResteasyClient();
         String redirectUrl = getAuthServerRoot().toString() + "realms/test/clients/launchpad-test/redirect";
@@ -104,8 +104,8 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             oauth.doLogin("test-user@localhost", "password");
             events.expectLogin().assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            String idTokenHint = oauth.doAccessTokenRequest(code,"password").getIdToken();
+            String code = oauth.parseLoginResponse().getCode();
+            String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
             events.poll();
 
             URI logout = KeycloakUriBuilder.fromUri(suiteContext.getAuthServerInfo().getBrowserContextRoot().toURI())

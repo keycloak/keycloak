@@ -193,7 +193,7 @@ public abstract class AbstractKeycloakTest {
             afterAbstractKeycloakTestRealmImport();
         }
 
-        oauth.init(driver);
+        oauth.driver(driver).init();
     }
 
     public void reconnectAdminClient() throws Exception {

@@ -1,6 +1,7 @@
 package org.keycloak.testframework;
 
 import io.quarkus.runtime.logging.LoggingSetupRecorder;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.logging.Logger;
 import org.jboss.logmanager.LogManager;
@@ -26,7 +27,14 @@ public class LogHandler {
     }
 
     private static void initializeQuarkusLogging() {
-        ConfigProviderResolver.instance().registerConfig(Config.getConfig(), Thread.currentThread().getContextClassLoader());
+        // We do not care about Config that was created by Quarkus' TestConfigProviderResolver.
+        // Alternatively, a Customizer could be used so we could keep the Config created by Quarkus but this is not Quarkus tests,
+        // relying on Quarkus' Config is not necessary and might be fragile.
+        SmallRyeConfigProviderResolver configProviderResolver = (SmallRyeConfigProviderResolver) ConfigProviderResolver.instance();
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+
+        configProviderResolver.releaseConfig(cl);
+        ConfigProviderResolver.instance().registerConfig(Config.getConfig(), cl);
         LoggingSetupRecorder.handleFailedStart();
     }
 

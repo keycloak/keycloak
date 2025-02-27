@@ -92,7 +92,7 @@ import org.keycloak.testsuite.util.KeyUtils;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -187,7 +187,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.maxAge(null);
     }
 
@@ -272,7 +272,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         String expectedIssuer = oauth.doWellKnownRequest().getIssuer();
 
         // Send request with prompt=none
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+        oauth.loginForm().prompt("none").open();
 
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
@@ -280,7 +280,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         events.assertEmpty();
 
         // Assert error response was sent because not logged in
-        AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
         Assert.assertEquals(expectedIssuer, resp.getIssuer());
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
@@ -303,7 +303,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(10);
 
         // Assert user still logged with previous authTime
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+        oauth.loginForm().prompt("none").open();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
@@ -322,11 +322,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         try {
             // Assert error shown when trying prompt=none and consent not yet granted
-            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            oauth.loginForm().prompt("none").open();
             assertTrue(appPage.isCurrent());
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            AuthorizationEndpointResponse resp = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
             Assert.assertNull(resp.getCode());
             Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
@@ -343,10 +343,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .assertEvent();
 
             // Consent not required anymore. Login with prompt=none should success
-            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            oauth.loginForm().prompt("none").open();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            resp = new AuthorizationEndpointResponse(oauth);
+            resp = oauth.parseLoginResponse();
             Assert.assertNotNull(resp.getCode());
             Assert.assertNull(resp.getError());
 
@@ -381,7 +381,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(10);
 
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
@@ -393,7 +393,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(20);
 
         // Assert need to re-authenticate with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+        oauth.loginForm().prompt("login").open();
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
@@ -415,7 +415,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void promptCreate() {
 
         // Assert registration page with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=create");
+        oauth.loginForm().prompt("create").open();
         registerPage.assertCurrent();
     }
 
@@ -430,7 +430,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert registration page with prompt=login
         try {
-            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=create");
+            oauth.loginForm().prompt("create").open();
             errorPage.assertCurrent();
             assertTrue(errorPage.getError().contains("Registration not allowed"));
         } finally {
@@ -464,7 +464,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
 
             // Re-login without prompt=consent. The previous persistent consent was used
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -472,10 +472,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .assertEvent();
 
             // Re-login with prompt=consent.
-            String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                    .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_CONSENT)
-                    .build().toString();
-            driver.navigate().to(loginFormUri);
+            oauth.loginForm()
+                    .prompt(OIDCLoginProtocol.PROMPT_VALUE_CONSENT)
+                    .open();
 
             // Assert grant page displayed again. Will need to grant consent again
             grantPage.assertCurrent();
@@ -502,7 +501,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     // DISPLAY & OTHERS
     @Test
     public void nonSupportedParams() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar&claims_locales=fr");
+        oauth.loginForm().param("display", "popup").param("foo", "foobar").param("claims_locales", "fr").open();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
@@ -667,8 +666,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.responseType(null);
         oauth.openLoginForm();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that different "client_id" in the query and in the request object is disallowed
         oauth.clientId("test-app-scope");
@@ -681,8 +681,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.responseType(OAuth2Constants.CODE + " " + OAuth2Constants.ID_TOKEN);
         oauth.openLoginForm();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        oauth.responseMode("query"); // Keycloak falls back to query in this case
+        authorizationEndpointResponse = oauth.parseLoginResponse();
+        oauth.responseMode(null);
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that "client_id" and "response_type" are not mandatory in the request object
         Map<String, Object> oidcRequest = new HashMap<>();
@@ -1180,7 +1183,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void loginHint() {
         // Assert need to re-authenticate with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=test-user%40localhost");
+        oauth.loginForm().loginHint("test-user%40localhost").open();
 
                 loginPage.assertCurrent();
         Assert.assertEquals("test-user@localhost", loginPage.getUsername());
@@ -1202,8 +1205,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String claimsJson = JsonSerialization.writeValueAsString(claims);
 
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "="
-                + URLEncoder.encode(claimsJson, StandardCharsets.UTF_8.toString()));
+        oauth.loginForm().param(OIDCLoginProtocol.CLAIMS_PARAM, URLEncoder.encode(claimsJson, StandardCharsets.UTF_8)).open();
 
         // need to login so session id can be read from event
         loginPage.assertCurrent();
@@ -1242,7 +1244,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String request = new JWSBuilder().jsonContent(oidcRequest).none();
         
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.REQUEST_PARAM + "=" + request);
+        oauth.loginForm().param(OIDCLoginProtocol.REQUEST_PARAM, request).open();
         
         // need to login so session id can be read from event
         loginPage.assertCurrent();
@@ -1408,8 +1410,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
@@ -1448,8 +1450,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));

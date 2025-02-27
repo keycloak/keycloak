@@ -44,17 +44,17 @@
   },
   "dependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@patternfly/react-core": "^5.4.12",
+    "@patternfly/react-core": "^5.4.14",
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-styles": "^5.4.1",
-    "@patternfly/react-table": "^5.4.14",
+    "@patternfly/react-table": "^5.4.16",
     "i18next": "^24.2.2",
-    "keycloak-js": "^26.1.2",
+    "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "7.54.2",
-    "react-i18next": "^15.4.0"
+    "react-i18next": "^15.4.1"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
@@ -62,10 +62,10 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^6.1.0",
-    "vite-plugin-checker": "^0.8.0",
+    "vite": "^6.2.0",
+    "vite-plugin-checker": "^0.9.0",
     "vite-plugin-dts": "^4.5.0",
     "vite-plugin-lib-inject-css": "^2.2.1",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.7"
   }
 }

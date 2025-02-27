@@ -100,15 +100,15 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
             app.getProtocolMappers().createMapper(mapper).close();
         }
         {
-            AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
         }
     }
 
-    private AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
+    private AccessTokenResponse browserLogin(String username, String password) {
         AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
-        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
+        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
     }
 }

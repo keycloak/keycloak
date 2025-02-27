@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import org.keycloak.operator.Constants;
@@ -35,15 +35,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING, resourceDiscriminator = KeycloakServiceDependentResource.NameResourceDiscriminator.class)
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakServiceDependentResource extends CRUDKubernetesDependentResource<Service, Keycloak> {
-
-    public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
-        @Override
-        public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return Utils.getByName(Service.class, KeycloakServiceDependentResource::getServiceName, primary, context);
-        }
-    }
 
     public KeycloakServiceDependentResource() {
         super(Service.class);

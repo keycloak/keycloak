@@ -64,7 +64,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     public void spnegoNotAvailableTest() throws Exception {
         initHttpClient(false);
 
-        String kcLoginPageLocation = oauth.getLoginFormUrl();
+        String kcLoginPageLocation = oauth.loginForm().build();
 
         Response response = client.target(kcLoginPageLocation).request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -200,7 +200,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assert.assertEquals("Horatio Nelson", ldapResponse);
 
         // Assert kerberos ticket also in userinfo endpoint
-        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
+        UserInfo userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
         Assert.assertEquals(serializedGssCredential, userInfo.getOtherClaims().get(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
         // Clear USER_INFO_REQUEST event
         events.poll();
@@ -216,7 +216,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         tokenResponse = assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertFalse(token.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
-        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
+        userInfo = oauth.doUserInfoRequest(tokenResponse.getAccessToken()).getUserInfo();
         Assert.assertFalse(userInfo.getOtherClaims().containsKey(KerberosConstants.GSS_DELEGATION_CREDENTIAL));
 
         events.clear();

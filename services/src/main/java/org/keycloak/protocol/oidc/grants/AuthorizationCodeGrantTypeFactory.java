@@ -29,9 +29,16 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class AuthorizationCodeGrantTypeFactory implements OAuth2GrantTypeFactory {
 
+    public static final String GRANT_SHORTCUT = "ac";
+
     @Override
     public String getId() {
         return OAuth2Constants.AUTHORIZATION_CODE;
+    }
+
+    @Override
+    public String getShortcut() {
+        return GRANT_SHORTCUT;
     }
 
     @Override

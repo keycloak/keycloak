@@ -203,5 +203,7 @@ public final class Constants {
     public static final String REQUESTED_AUDIENCE_CLIENTS = "req-aud-clients";
     // claim used in refresh token to know the requested audience
     public static final String REQUESTED_AUDIENCE = "req-aud";
+    // Note in clientSessionContext specifying token grant type used
+    public static final String GRANT_TYPE = OAuth2Constants.GRANT_TYPE;
 
 }

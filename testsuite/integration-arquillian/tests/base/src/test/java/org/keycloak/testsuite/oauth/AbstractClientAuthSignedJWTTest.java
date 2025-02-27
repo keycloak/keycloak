@@ -223,7 +223,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .client("client2")
                 .assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT(algorithm));
 
         assertEquals(200, response.getStatusCode());
@@ -267,7 +267,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             oauth.clientId("client2");
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             clientSignedToken = createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, alg);
             AccessTokenResponse response = doAccessTokenRequest(code, clientSignedToken);
 
@@ -307,7 +307,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                     .client("client2")
                     .assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code,
                     createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, algorithm, curve));
 
@@ -444,8 +444,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         }
 
         // Get admin access token, no matter it's master realm's admin
-        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).doGrantAccessTokenRequest(
-                AuthRealm.ADMIN, AuthRealm.ADMIN, "admin-cli", null);
+        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).client("admin-cli").doGrantAccessTokenRequest(
+                AuthRealm.ADMIN, AuthRealm.ADMIN);
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         final String url = suiteContext.getAuthServerInfo().getContextRoot()
@@ -613,7 +613,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                     .client("client2")
                     .assertEvent();
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
 
             assertEquals(400, response.getStatusCode());

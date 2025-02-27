@@ -87,11 +87,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         updateAccountInformation();
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
+                .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                .doAccessTokenRequest(code, "broker-app-secret");
+                .doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
 
         String idToken = response.getIdToken();
@@ -117,11 +117,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         updateAccountInformation();
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
+                .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                .doAccessTokenRequest(code, "broker-app-secret");
+                .doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
 
         String idTokenString = response.getIdToken();
@@ -203,11 +203,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             updateAccountInformation();
 
             // Exchange code from "broker-app" client of "consumer" realm for the tokens
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                    .clientId("broker-app")
+                    .client("broker-app", "broker-app-secret")
                     .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                    .doAccessTokenRequest(code, "broker-app-secret");
+                    .doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
 
             String idTokenString = response.getIdToken();

@@ -33,6 +33,7 @@ import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -120,6 +121,7 @@ public class DescriptionConverter {
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
                 setOidcGrantEnabled(client, CibaConfig.OIDC_CIBA_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
                 setOidcGrantEnabled(client, OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.DEVICE_CODE_GRANT_TYPE));
+                setOidcGrantEnabled(client, OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
                 client.setAuthorizationServicesEnabled(oidcGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE));
                 configWrapper.setUseRefreshToken(oidcGrantTypes.contains(OAuth2Constants.REFRESH_TOKEN));
             }
@@ -132,6 +134,9 @@ public class DescriptionConverter {
         if ("none".equals(authMethod)) {
             client.setClientAuthenticatorType("none");
             client.setPublicClient(Boolean.TRUE);
+            if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
+                throw new ClientRegistrationException("Token Exchange cannot be enabled in a public client");
+            }
         } else {
             ClientAuthenticatorFactory clientAuthFactory;
             if (authMethod == null) {
@@ -532,8 +537,12 @@ public class DescriptionConverter {
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);
         }
-        if (OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseRefreshToken()) {
+        OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        if (oidcClient.isUseRefreshToken()) {
             grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
+        }
+        if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
+            grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         }
         return grantTypes;
     }

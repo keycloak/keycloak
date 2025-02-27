@@ -760,7 +760,12 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
-                                 @QueryParam(Constants.TAB_ID) String tabId) {
+                                 @QueryParam(Constants.TAB_ID) String tabId,
+                                 @QueryParam(Constants.TOKEN) String tokenString) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            preHandleActionToken(tokenString);
+        }
         return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 

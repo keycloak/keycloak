@@ -701,11 +701,11 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(String clientId, String redirectUri) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
         oauth.redirectUri(redirectUri);
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode(), "secret");
+        AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode());
         assertEquals(200, res.getStatusCode());
         oauth.doLogout(res.getRefreshToken(), "secret");
     }

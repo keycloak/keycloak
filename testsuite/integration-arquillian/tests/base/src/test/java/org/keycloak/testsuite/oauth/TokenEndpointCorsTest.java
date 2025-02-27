@@ -61,16 +61,16 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
         oauth.postLogoutRedirectUri(VALID_CORS_URL + "/realms/master/app");
 
         oauth.doLogin("test-user@localhost", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.origin(VALID_CORS_URL);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
@@ -104,13 +104,13 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // Token request
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
         // Invalid password
-        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "invalid");
+        response = oauth.doGrantAccessTokenRequest("test-user@localhost", "invalid");
 
         assertEquals(401, response.getStatusCode());
         assertCors(response);
@@ -119,22 +119,26 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenWithConfidentialClientCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
         oauth.origin(VALID_CORS_URL);
 
         // Successful token request with correct origin - cors should work
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
         assertCors(response);
 
+        oauth.client("direct-grant", "invalid");
+
         // Invalid client authentication with correct origin - cors should work
-        response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+        response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         assertEquals(401, response.getStatusCode());
         assertCors(response);
 
+        oauth.client("direct-grant", "password");
+
         // Successful token request with bad origin - cors should NOT work
         oauth.origin(INVALID_CORS_URL);
-        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
         assertNotCors(response);
     }

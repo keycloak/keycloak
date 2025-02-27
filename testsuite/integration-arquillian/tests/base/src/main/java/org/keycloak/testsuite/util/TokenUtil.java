@@ -44,9 +44,8 @@ public class TokenUtil implements TestRule {
     public TokenUtil(String username, String password) {
         this.username = username;
         this.password = password;
-        this.oauth = new OAuthClient();
-        this.oauth.init(null);
-        this.oauth.clientId("direct-grant");
+        this.oauth = new OAuthClient(HttpClientUtils.createDefault(), null);
+        this.oauth.client("direct-grant", "password");
     }
 
     @Override
@@ -70,7 +69,7 @@ public class TokenUtil implements TestRule {
 
     private void load() {
         try {
-            AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest("password", username, password);
+            AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(username, password);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }
@@ -86,7 +85,7 @@ public class TokenUtil implements TestRule {
 
     private void refresh() {
         try {
-            AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken, "password");
+            AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(refreshToken);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }

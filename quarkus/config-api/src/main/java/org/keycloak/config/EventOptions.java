@@ -21,7 +21,7 @@ public class EventOptions {
 
     public static final Option<List<String>> USER_EVENT_METRICS_EVENTS = OptionBuilder.listOptionBuilder("event-metrics-user-events", String.class)
             .category(OptionCategory.EVENTS)
-            .description("Comma-separated list of events to be collected for user event metrics. Reduce the number of metrics. If empty or not set, all events create a metric.")
+            .description("Comma-separated list of events to be collected for user event metrics. This option can be used to reduce the number of metrics created as by default all user events create a metric.")
             .buildTime(false)
             .expectedValues(sortedListOfEvents())
             .deprecatedMetadata(DeprecatedMetadata.deprecateValues("Use `remove_credential` instead of `remove_totp`, and `update_credential` instead of `update_totp` and `update_password`.", "remove_totp", "update_totp", "update_password"))

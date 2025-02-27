@@ -42,7 +42,7 @@
         <module>db-postgres</module>
         <module>email-server</module>
         <module>examples</module>
-        <module>oauth-nimbus-poc</module>
+        <module>oauth</module>
         <module>remote</module>
         <module>remote-providers</module>
         <module>ui</module>

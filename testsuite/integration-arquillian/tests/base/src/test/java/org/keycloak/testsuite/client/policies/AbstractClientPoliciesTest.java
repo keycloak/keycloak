@@ -649,7 +649,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // OAuth2 protocol operation
 
     protected void doIntrospectAccessToken(AccessTokenResponse tokenRes, String username, String clientId, String sessionId, String clientSecret) throws IOException {
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential(clientId, clientSecret, tokenRes.getAccessToken());
+        String tokenResponse = oauth.client(clientId, clientSecret).doIntrospectionAccessTokenRequest(tokenRes.getAccessToken());
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
         assertEquals(true, jsonNode.get("active").asBoolean());
         assertEquals(username, jsonNode.get("username").asText());
@@ -785,7 +785,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private String getToken(String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(username, password, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+            return oauth.client(Constants.ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest(username, password).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1304,13 +1304,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         Assert.assertNull(loginResponse.getError());
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         // Check token obtaining.
         AccessTokenResponse accessTokenResponse;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET);
+            accessTokenResponse = oauth.doAccessTokenRequest(code);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1333,8 +1333,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Check token introspection.
         String tokenResponse;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-            oauth.httpClient().set(client);
-            tokenResponse = oauth.introspectTokenWithClientCredential(TEST_CLIENT, TEST_CLIENT_SECRET, "access_token", accessTokenResponse.getAccessToken());
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET).httpClient().set(client);
+            tokenResponse = oauth.doIntrospectionRequest(accessTokenResponse.getAccessToken(), "access_token");
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1371,12 +1371,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         Assert.assertNull(loginResponse.getError());
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
 
         // Check token obtaining without certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET);
+            accessTokenResponse = oauth.doAccessTokenRequest(code);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1392,12 +1392,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         Assert.assertNull(loginResponse.getError());
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
 
         // Check token obtaining.
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET);
+            accessTokenResponse = oauth.doAccessTokenRequest(code);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1408,7 +1408,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Check token refresh with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1419,9 +1419,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // Check token revoke with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
-            assertEquals(401, oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", TEST_CLIENT_SECRET, client).getStatusCode());
+            oauth.httpClient().set(client);
+            assertEquals(401, oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", TEST_CLIENT_SECRET).getStatusCode());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
         }
 
         // Check logout without certificate
@@ -1505,14 +1508,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -1520,7 +1523,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void successfulLoginAndLogoutWithPKCE(String clientId, String clientSecret, String userName, String userPassword) throws Exception {
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         String codeVerifier = "1a345A7890123456r8901c3456789012b45K7890l23"; // 43
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
         oauth.codeChallenge(codeChallenge);
@@ -1532,10 +1535,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
@@ -1552,7 +1555,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshToken.getSessionState());
         assertEquals(clientId, refreshToken.getIssuedFor());
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, refreshResponse.getStatusCode());
         events.expectRefresh(refreshToken.getId(), sessionId).client(clientId).assertEvent();
 
@@ -1568,21 +1571,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void failLoginByNotFollowingPKCE(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, TEST_CLIENT_SECRET);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        assertEquals("Missing parameter: code_challenge_method", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("Missing parameter: code_challenge_method", response.getErrorDescription());
     }
 
     protected void failTokenRequestByNotFollowingPKCE(String clientId, String clientSecret) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, TEST_CLIENT_SECRET);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
 
         assertEquals(OAuthErrorException.INVALID_GRANT, res.getError());
         assertEquals("PKCE code verifier not specified", res.getErrorDescription());
@@ -1593,17 +1597,19 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void failLoginWithoutSecureSessionParameter(String clientId, String errorDescription) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, TEST_CLIENT_SECRET);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        assertEquals(errorDescription, oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals(errorDescription, response.getErrorDescription());
     }
 
     protected void failLoginWithoutNonce(String clientId) {
         oauth.clientId(clientId);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        assertEquals(ERR_MSG_MISSING_NONCE, oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals(ERR_MSG_MISSING_NONCE, response.getErrorDescription());
     }
 
     protected void doConfigProfileAndPolicy(ClientPoliciesUtil.ClientProfileBuilder profileBuilder,
@@ -1645,11 +1651,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void assertLoginAndLogoutStatus(String clientId, String secret, Response.Status status) {
-        oauth.clientId(clientId);
+        oauth.client(clientId, secret);
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME,
                 TEST_USER_PASSWORD);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, secret);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(status.getStatusCode()));
         oauth.doLogout(res.getRefreshToken(), secret);
     }

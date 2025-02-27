@@ -47,7 +47,4 @@ public class LoginExpiredPage extends AbstractPage {
         return PageUtils.getPageTitle(driver).equals("Page has expired");
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
 }

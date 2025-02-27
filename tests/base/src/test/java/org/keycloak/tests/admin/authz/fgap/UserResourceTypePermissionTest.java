@@ -21,6 +21,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -28,10 +30,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
@@ -173,6 +177,54 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
         } catch (Exception ex) {
             assertThat(ex, instanceOf(NotFoundException.class));
         }
+    }
+
+    @Test
+    public void testUpdatePermissionResources() {
+        AuthorizationResource authorization = client.admin().authorization();
+        ScopePermissionRepresentation representation = createAllUserPermission();
+        representation = getScopePermissionsResource(client).findByName(representation.getName());
+        assertThat(representation, notNullValue());
+        List<ResourceRepresentation> resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size()));
+        ScopePermissionResource permission = authorization.permissions().scope().findById(representation.getId());
+        List<ResourceRepresentation> permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(AdminPermissionsSchema.USERS.getType()));
+
+        representation.setResources(Set.of(userAlice.getId()));
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size() + 1));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(userAlice.getId()));
+
+        representation.setResources(Set.of());
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size()));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(AdminPermissionsSchema.USERS.getType()));
+
+        representation.setResources(Set.of(userAlice.getId()));
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size() + 1));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(userAlice.getId()));
+
+        createUserPermission(userAlice, userBob);
+
+        representation.setResources(Set.of());
+        permission.update(representation);
+        resources = authorization.resources().resources();
+        assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size() + 2));
+        permissionResources = permission.resources();
+        assertThat(permissionResources.size(), is(1));
+        assertThat(permissionResources.get(0).getName(), is(AdminPermissionsSchema.USERS.getType()));
     }
 
     private ScopePermissionRepresentation createUserPermission(ManagedUser... users) {

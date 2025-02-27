@@ -246,8 +246,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
 
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
@@ -822,8 +821,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     }
 
     private OAuthClient loginWithSecondBrowser(String identityProviderDisplayName) {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
@@ -838,7 +836,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         linkAccountButton.click();
 
         WaitUtils.waitForPageToLoad();
-        oauth.fillLoginForm(nbc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM, false);
+        oauth.fillLoginForm(nbc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM);
     }
 
     private String getClientId(String realm, String clientId) {

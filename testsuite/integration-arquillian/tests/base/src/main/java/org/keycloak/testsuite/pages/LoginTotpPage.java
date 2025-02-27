@@ -87,12 +87,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
-
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {

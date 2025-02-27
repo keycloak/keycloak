@@ -59,6 +59,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -151,7 +152,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         final HttpClientContext context = HttpClientContext.create();
         CookieStore cookieStore = new BasicCookieStore();
         context.setCookieStore(cookieStore);
-        HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, context), userName, password);
+        HttpUriRequest request = handleLogin(getPageContent(oauth.loginForm().build(), httpClient, context), userName, password);
         assertThat(parseAndCloseResponse(httpClient.execute(request, context)), containsString("<title>AUTH_RESPONSE</title>"));
         return context;
     }
@@ -213,9 +214,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
 
         for (int i=0 ; i<10 ; i++) {
-            OAuthClient oauth1 = new OAuthClient();
-            oauth1.init(driver);
-            oauth1.clientId("client0");
+            OAuthClient oauth1 = new OAuthClient(HttpClientUtils.createDefault(), driver);
+            oauth1.init();
+            oauth1.client("client0", "password");
 
             AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
             String code = resp.getCode();
@@ -232,7 +233,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
                     log.infof("Trying to execute codeURL: %s, threadIndex: %d", codeURL, threadIndex);
 
-                    AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
+                    AccessTokenResponse resp = oauth1.doAccessTokenRequest(code);
                     if (resp.getAccessToken() != null && resp.getError() == null) {
                         codeToTokenSuccessCount.incrementAndGet();
                     } else if (resp.getAccessToken() == null && resp.getError() != null) {
@@ -339,8 +340,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         private final ThreadLocal<OAuthClient> oauthClient = new ThreadLocal<OAuthClient>() {
                 @Override
                 protected OAuthClient initialValue() {
-                    OAuthClient oauth1 = new OAuthClient();
-                    oauth1.init(driver);
+                    OAuthClient oauth1 = new OAuthClient(HttpClientUtils.createDefault(), driver);
 
                     // Add some randomness to state, nonce and redirectUri. Verify that login is successful and "state" and "nonce" will match
                     oauth1.stateParamHardcoded(KeycloakModelUtils.generateId());
@@ -383,7 +383,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             final HttpClientContext templateContext = clientContexts.get(i % clientContexts.size());
             final HttpClientContext context = HttpClientContext.create();
             context.setCookieStore(templateContext.getCookieStore());
-            String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
+            String pageContent = getPageContent(oauth1.loginForm().build(), httpClient, context);
             assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
             assertThat(context.getRedirectLocations(), Matchers.notNullValue());
             assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
@@ -399,7 +399,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             totalInvocations.incrementAndGet();
 
             // obtain access + refresh token via code-to-token flow
-            AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
+            AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code);
             Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
               200, accessRes.getStatusCode());
 

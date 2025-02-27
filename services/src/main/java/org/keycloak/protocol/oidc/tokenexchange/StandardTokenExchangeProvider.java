@@ -21,10 +21,13 @@ package org.keycloak.protocol.oidc.tokenexchange;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -44,6 +47,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.grants.TokenExchangeGrantTypeFactory;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -76,6 +80,12 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         ClientConnection clientConnection = context.getClientConnection();
         Cors cors = context.getCors();
         EventBuilder event = context.getEvent();
+
+        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
+            event.detail(Details.REASON, "Standard token exchange is not enabled for the requested client");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Standard token exchange is not enabled for the requested client", Response.Status.BAD_REQUEST);
+        }
 
         String subjectToken = context.getParams().getSubjectToken();
         if (subjectToken == null) {
@@ -126,28 +136,38 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
+    @Override
     protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
+
+        if (client.isPublicClient()) {
+            String errorMessage = "Public client is not allowed to exchange token";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        for (ClientModel targetClient : targetAudienceClients) {
+            if (!targetClient.isEnabled()) {
+                event.detail(Details.REASON, "audience client disabled");
+                event.detail(Details.AUDIENCE, targetClient.getClientId());
+                event.error(Errors.CLIENT_DISABLED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
+            }
+        }
+
         //reject if the requester-client is not in the audience of the subject token
         if (!client.equals(tokenHolder)) {
-            forbiddenIfClientIsNotWithinTokenAudience(token, null);
+            forbiddenIfClientIsNotWithinTokenAudience(token);
         }
-        for (ClientModel targetClient : targetAudienceClients) {
-            boolean isClientTheAudience = targetClient.equals(client);
-            if (isClientTheAudience) {
-                if (client.isPublicClient()) {
-                    // public clients can only exchange on to themselves if they are the token holder
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                } else if (!client.equals(tokenHolder)) {
-                    // confidential clients can only exchange to themselves if they are within the token audience
-                    forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
-                }
-            } else {
-                if (client.isPublicClient()) {
-                    // public clients can not exchange tokens from other client
-                    forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
-                }
-            }
+    }
+
+    protected void validateConsents(UserModel targetUser, ClientSessionContext clientSessionCtx) {
+        if (!TokenManager.verifyConsentStillAvailable(session, targetUser, client, clientSessionCtx.getClientScopesStream())) {
+            event.detail(Details.REASON, "Missing consents for Token Exchange in client " + client.getClientId());
+            event.error(Errors.CONSENT_DENIED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
+                    "Missing consents for Token Exchange in client " + client.getClientId(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -174,31 +194,47 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         return scope;
     }
 
+    @Override
     protected void setClientToContext(List<ClientModel> targetAudienceClients) {
         // The client requesting exchange is set in the context
         session.getContext().setClient(client);
     }
 
+    @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   List<ClientModel> targetAudienceClients, String scope) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
         if (targetUserSession == null) {
-            // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
+            // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                    requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                            ? UserSessionModel.SessionPersistenceState.PERSISTENT
+                            : UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
 
         event.session(targetUserSession);
 
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {
+            event.detail(Details.REASON, "Scope offline_access not allowed for token exchange");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Scope offline_access not allowed for token exchange", Response.Status.BAD_REQUEST);
+        }
+
         updateUserSessionFromClientAuth(targetUserSession);
 
         if (params.getAudience() != null && !targetAudienceClients.isEmpty()) {
             clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, targetAudienceClients.toArray(ClientModel[]::new));
         }
+
+        validateConsents(targetUser, clientSessionCtx);
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
@@ -209,23 +245,26 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             responseBuilder.getAccessToken().setSessionId(null);
         }
 
-        String issuedTokenType;
-        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()
-                && targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
+        if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
             responseBuilder.generateRefreshToken();
-            issuedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
+        }
+
+        AccessTokenResponse res;
+        if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedTokenType)) {
+            // Using the id-token inside "access_token" parameter as per description of "access_token" parameter under https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response
+            res = responseBuilder.generateIDToken().build();
+            res.setToken(res.getIdToken());
+            res.setIdToken(null);
+            res.setTokenType(TokenUtil.TOKEN_TYPE_NA);
         } else {
-            issuedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+            String scopeParam = params.getScope();
+            if (TokenUtil.isOIDCRequest(scopeParam)) {
+                responseBuilder.generateIDToken().generateAccessTokenHash();
+            }
+            res = responseBuilder.build();
         }
 
-        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken().generateAccessTokenHash();
-        }
-
-        AccessTokenResponse res = responseBuilder.build();
-        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
+        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
         if (responseBuilder.getAccessToken().getAudience() != null) {
             StringJoiner joiner = new StringJoiner(" ");
@@ -238,6 +277,13 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         event.success();
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    @Override
+    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients) {
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 
     protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {
@@ -255,5 +301,33 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                         "Requested audience not available: " + missingAudienceString, Response.Status.BAD_REQUEST);
             }
         }
+    }
+
+    @Override
+    protected List<String> getSupportedOAuthResponseTokenTypes() {
+        return Arrays.asList(OAuth2Constants.ACCESS_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE);
+    }
+
+    @Override
+    protected String getRequestedTokenType() {
+        String requestedTokenType = params.getRequestedTokenType();
+        if (requestedTokenType == null) {
+            requestedTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+            return requestedTokenType;
+        }
+        if (requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE)
+                || requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
+            return requestedTokenType;
+        }
+        OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
+                && oidcClient.isUseRefreshToken() && oidcClient.isStandardTokenExchangeRefreshEnabled()) {
+            return requestedTokenType;
+        }
+
+        event.detail(Details.REASON, "requested_token_type unsupported");
+        event.error(Errors.INVALID_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
     }
 }

@@ -87,13 +87,6 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        /*
-         * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
-         * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
-         * will fail and the clientID will always be "sample-public-client
-         * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
-         */
-        oauth.init(driver);
         oauth.openid(false);
     }
 
@@ -101,15 +94,15 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingIDToken() {
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
 
         driver.navigate().to(loginFormUrl);
         oauth.fillLoginForm("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // IDToken is not there
         Assert.assertEquals(200, response.getStatusCode());
@@ -132,7 +125,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingScopeOpenidInResourceOwnerPasswordCredentialRequest() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -150,7 +143,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testMissingRedirectUri() throws Exception {
         // OAuth2 login without redirect_uri. It will be allowed.
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.REDIRECT_URI);
 
@@ -160,8 +153,8 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         // Client 'more-uris-client' has 2 redirect uris. OAuth2 login without redirect_uri won't be allowed
-        oauth.clientId("more-uris-client");
-        loginFormUrl = oauth.getLoginFormUrl();
+        oauth.client("more-uris-client");
+        loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.REDIRECT_URI);
 
@@ -185,7 +178,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     public void testMissingNonceInOAuth2ImplicitFlow() throws Exception {
         oauth.responseType("token");
         oauth.nonce(null);
-        String loginFormUrl = oauth.getLoginFormUrl();
+        String loginFormUrl = oauth.loginForm().build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
 
         driver.navigate().to(loginFormUrl);
@@ -193,7 +186,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
-        AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assert.assertNull(response.getError());
         Assert.assertNull(response.getCode());
         Assert.assertNull(response.getIdToken());

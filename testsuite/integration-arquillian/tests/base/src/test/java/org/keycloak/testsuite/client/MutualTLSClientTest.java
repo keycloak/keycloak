@@ -242,7 +242,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private AccessTokenResponse getAccessTokenResponse(String clientId, CloseableHttpClient closeableHttpClient) {
-      String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+      String code = oauth.parseLoginResponse().getCode();
       // Call protected endpoint with supplied client.
       try {
           oauth.httpClient().set(closeableHttpClient);
@@ -256,7 +256,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    private void login(String clientId) {
       // Login with default client, despite what has been supplied into this method.
       oauth.httpClient().reset();
-      oauth.clientId(clientId)
+      oauth.client(clientId)
         .doLogin(USER, PASSWORD);
    }
 
@@ -278,7 +278,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       HttpPost post = new HttpPost(oauth.getEndpoints().getToken() + "?client_id=" + clientId);
       List<NameValuePair> parameters = new LinkedList<>();
       parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-      parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.getCurrentQuery().get(OAuth2Constants.CODE)));
+      parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, oauth.parseLoginResponse().getCode()));
       parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
       UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
       post.setEntity(formEntity);

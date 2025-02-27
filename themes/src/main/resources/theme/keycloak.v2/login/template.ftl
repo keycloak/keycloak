@@ -108,7 +108,7 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">

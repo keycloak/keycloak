@@ -49,3 +49,17 @@ using Microsoft AD, based on the `pwdLastSet` attribute.
 In order to check if a credential is local - managed by {project_name} - or federated, you can check the `federationLink` property available from both
 `CredentialRepresentation` and `CredentialModel` types. If set, the `federationLink` property holds the UUID of the component model associated with a given
 user storage provider.
+
+= Guides for metrics and Grafana dashboards
+
+In addition to the list of useful metric names link:{observablitycategory_link}[the Observability guides category] now also contains a guide on how to display these metrics in Grafana.
+link:{grafanadashboards_link}[The guide] contains two dashboards.
+
+* Keycloak troubleshooting dashboard - showing metrics related to service level indicators and troubleshooting.
+* Keycloak capacity planning dashboard - showing metrics related to estimating the load handled by Keycloak.
+
+= Removal of the `X-XSS-Protection` header
+
+Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
+
+We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP[Content Security Policy (CSP)].

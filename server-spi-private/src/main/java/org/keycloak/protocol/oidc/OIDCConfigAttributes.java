@@ -86,6 +86,9 @@ public final class OIDCConfigAttributes {
     public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
 
     public static final String POST_LOGOUT_REDIRECT_URIS = "post.logout.redirect.uris";
+    
+    public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
+    public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
 
     private OIDCConfigAttributes() {
     }

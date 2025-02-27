@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.HttpClientManager;
@@ -85,8 +86,8 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -111,10 +112,10 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
-            oauth.clientId("resource-owner");
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+            oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
             assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
             assertEquals("invalid_request", response.getError());
@@ -143,10 +144,10 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
-            oauth.clientId("resource-owner");
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+            oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
             // now it's OK because the certificate is fixed
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
@@ -176,10 +177,10 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
         String trustStorePath = System.getProperty("client.truststore");
         String trustStorePassword = System.getProperty("client.truststore.passphrase");
-        try (CloseableHttpClient client = HttpClientManager.createHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
-            oauth.clientId("resource-owner");
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClient(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword)) {
+            oauth.client("resource-owner", "secret");
             oauth.httpClient().set(client);
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "");
+            AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
 
             // now it's OK because the certificate is fixed
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());

@@ -69,7 +69,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override
@@ -99,7 +99,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         expectSuccessfulResponseFromTokenEndpoint(codeId, sessionId, code);
     }
@@ -119,7 +119,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
         
@@ -141,11 +141,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -168,7 +168,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         oauth.codeVerifier(".234567890-234567890~234567890_234567890123");
         
@@ -188,11 +188,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
         oauth.codeVerifier("aZ_-.~1234567890123456789012345678901234567890123Za");
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -214,7 +214,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier("1234567890123456789012345678901234567890123");
         
@@ -225,11 +225,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     public void accessTokenRequestInPKCEWithoutCodeChallengeWithValidCodeChallengeMethod() throws Exception {
     	// test case : failure : A-1-7
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -243,11 +241,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	// test case : failure : A-1-8
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
     	oauth.codeChallenge("ABCDEFGabcdefg1234567ABCDEFGabcdefg1234567"); // 42
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -262,11 +258,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
     	oauth.codeChallenge("3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~3fRc92kac_keic8c7al-3ncbdoaie.DDeizlck3~123456789"); // 129
 
-    	UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+        oauth.openLoginForm();
     	
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -291,11 +285,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -319,11 +313,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -347,9 +341,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
        
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -366,11 +360,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	oauth.codeChallenge(codeChallenge);
     	oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
     	
-    	UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        
-        driver.navigate().to(b.build().toURL());
+    	oauth.openLoginForm();
     	
-        AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -394,11 +386,11 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.codeVerifier(codeVerifier);
         
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -421,9 +413,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         // get the code and add codeVerifier
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         oauth.codeVerifier(codeVerifier);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // assert invalid code because no challenge in authorization
         assertEquals(400, response.getStatusCode());
@@ -442,14 +434,14 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     }
  
     private void expectSuccessfulResponseFromTokenEndpoint(String codeId, String sessionId, String code)  throws Exception {
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         assertEquals(200, response.getStatusCode());
         assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = Stream.of(oauth.doCertsRequest().getKeys())
+        String expectedKid = Stream.of(oauth.keys().getRealmKeys().getKeys())
                 .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
                 .map(JWK::getKeyId)
                 .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
@@ -563,7 +555,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             oauth.codeVerifier(codeVerifier);
 
@@ -593,7 +585,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             oauth.codeVerifier(codeVerifier);
 
@@ -612,11 +604,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             oauth.codeChallenge(codeChallenge);
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
 
-            driver.navigate().to(b.build().toURL());
-
-            AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
             Assert.assertTrue(errorResponse.isRedirected());
             Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -636,11 +626,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             String codeChallenge = generateS256CodeChallenge(codeVerifier);
             oauth.codeChallenge(codeChallenge);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
 
-            driver.navigate().to(b.build().toURL());
-
-            AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
             Assert.assertTrue(errorResponse.isRedirected());
             Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -659,11 +647,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             setPkceActivationSettings("test-app", OAuth2Constants.PKCE_METHOD_S256);
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
 
-            driver.navigate().to(b.build().toURL());
-
-            AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
             Assert.assertTrue(errorResponse.isRedirected());
             Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -683,11 +669,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             oauth.codeChallenge("invalid");
             oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
-            UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
 
-            driver.navigate().to(b.build().toURL());
-
-            AuthorizationEndpointResponse errorResponse = new AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
             Assert.assertTrue(errorResponse.isRedirected());
             Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -716,9 +700,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
             String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
-            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());

@@ -19,19 +19,25 @@
 
 package org.keycloak.testsuite.client;
 
+import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.testsuite.Assert;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -41,6 +47,7 @@ import static org.keycloak.OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
 import static org.keycloak.OAuth2Constants.IMPLICIT;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 import static org.keycloak.OAuth2Constants.REFRESH_TOKEN;
+import static org.keycloak.OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE;
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.protocol.oidc.utils.OIDCResponseType.CODE;
 import static org.keycloak.protocol.oidc.utils.OIDCResponseType.ID_TOKEN;
@@ -81,7 +88,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN));
 
-        assertKeycloakClient(response, true, false, false, false, true, false);
+        assertKeycloakClient(response, true, false, false, false, true, false, false);
     }
 
     @Test
@@ -92,7 +99,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN));
 
-        assertKeycloakClient(response, true, false, false, false, true, false);
+        assertKeycloakClient(response, true, false, false, false, true, false, false);
     }
 
     // Limitation of Keycloak switches (Standard flow, Implicit flow) means that enabling any hybrid grant type enables also implicit flow.
@@ -106,7 +113,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         assertOIDCResponse(response, List.of(CODE, NONE, ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"),
                 List.of(AUTHORIZATION_CODE, IMPLICIT, REFRESH_TOKEN));
 
-        assertKeycloakClient(response, true, true, false, false, true, false);
+        assertKeycloakClient(response, true, true, false, false, true, false, false);
     }
 
     @Test
@@ -118,7 +125,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         assertOIDCResponse(response, Collections.emptyList(),
                 List.of(CLIENT_CREDENTIALS));
 
-        assertKeycloakClient(response, false, false, false, true, false, false);
+        assertKeycloakClient(response, false, false, false, true, false, false, false);
     }
 
     @Test
@@ -130,7 +137,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         assertOIDCResponse(response, Collections.emptyList(),
                 List.of(PASSWORD));
 
-        assertKeycloakClient(response, false, false, true, false, false, false);
+        assertKeycloakClient(response, false, false, true, false, false, false, false);
     }
 
     @Test
@@ -142,7 +149,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         assertOIDCResponse(response, Collections.emptyList(),
                 List.of(PASSWORD, CLIENT_CREDENTIALS, REFRESH_TOKEN));
 
-        assertKeycloakClient(response, false, false, true, true, true, false);
+        assertKeycloakClient(response, false, false, true, true, true, false, false);
     }
 
     @Test
@@ -153,7 +160,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE));
 
-        assertKeycloakClient(response, true, false, false, false, false, false);
+        assertKeycloakClient(response, true, false, false, false, false, false, false);
     }
 
     @Test
@@ -164,7 +171,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN));
 
-        assertKeycloakClient(response, true, false, false, false, true, false);
+        assertKeycloakClient(response, true, false, false, false, true, false, false);
     }
 
     @Test
@@ -175,7 +182,27 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, Collections.emptyList(), List.of(DEVICE_CODE_GRANT_TYPE));
 
-        assertKeycloakClient(response, false, false, false, false, false, true);
+        assertKeycloakClient(response, false, false, false, false, false, true, false);
+    }
+
+    @Test
+    public void testGrantTypeTokenExchange() throws Exception {
+        OIDCClientRepresentation clientRep = createRep(null, List.of(AUTHORIZATION_CODE, REFRESH_TOKEN, TOKEN_EXCHANGE_GRANT_TYPE));
+        clientRep.setTokenEndpointAuthMethod("none");
+
+        ClientRegistrationException clientRegistrationException = Assert.assertThrows(ClientRegistrationException.class, () -> reg.oidc().create(clientRep));
+        MatcherAssert.assertThat(clientRegistrationException.getCause(), Matchers.instanceOf(HttpErrorException.class));
+        HttpErrorException httpErrorException = (HttpErrorException) clientRegistrationException.getCause();
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), httpErrorException.getStatusLine().getStatusCode());
+        OAuth2ErrorRepresentation error = JsonSerialization.readValue(httpErrorException.getErrorResponse(), OAuth2ErrorRepresentation.class);
+        Assert.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
+
+        clientRep.setTokenEndpointAuthMethod(null);
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+
+        assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN, TOKEN_EXCHANGE_GRANT_TYPE));
+
+        assertKeycloakClient(response, true, false, false, false, true, false, true);
     }
 
     @Test
@@ -186,7 +213,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS));
 
-        assertKeycloakClient(response, true, false, true, true, true, false);
+        assertKeycloakClient(response, true, false, true, true, true, false, false);
     }
 
     // Grant type "authorization_code" added automatically because of response_type "code" .
@@ -201,7 +228,7 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
 
         assertOIDCResponse(response, List.of(CODE, NONE), List.of(AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS));
 
-        assertKeycloakClient(response, true, false, true, true, true, false);
+        assertKeycloakClient(response, true, false, true, true, true, false, false);
     }
 
     private void assertOIDCResponse(OIDCClientRepresentation response, List<String> expectedResponseTypes, List<String> expectedGrantTypes) {
@@ -228,7 +255,8 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
                                              boolean expectedDirectGrantFlow,
                                              boolean expectedServiceAccountsFlow,
                                              boolean expectedRefreshToken,
-                                             boolean expectedDeviceGrant) {
+                                             boolean expectedDeviceGrant,
+                                             boolean expectedTokenExchange) {
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertEquals("Expected standard flow: " + expectedStandardFlow + " did not match.", expectedStandardFlow, kcClient.isStandardFlowEnabled());
@@ -239,5 +267,6 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         Assert.assertFalse("Don't expect refresh token for client credentials grant enabled", config.isUseRefreshTokenForClientCredentialsGrant());
         boolean deviceEnabled = kcClient.getAttributes() != null && Boolean.parseBoolean(kcClient.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
         Assert.assertEquals("Expected device: " + expectedDeviceGrant + " did not match.", expectedDeviceGrant, deviceEnabled);
+        Assert.assertEquals("Expected Token Exchange: " + expectedTokenExchange + " did not match.", expectedTokenExchange, config.isStandardTokenExchangeEnabled());
     }
 }

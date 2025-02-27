@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.actions;
 
-import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,11 +32,9 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
     @Test
     public void ensureLocaleParameterIsPropagatedDuringAppInitiatedRegistration() {
 
-        var appInitiatedRegisterUrlBuilder = UriBuilder.fromUri(oauth.getRegisterationsUrl());
-        appInitiatedRegisterUrlBuilder.queryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "en");
-        var appInitiatedRegisterUrl = appInitiatedRegisterUrlBuilder.build().toString();
-
-        driver.navigate().to(appInitiatedRegisterUrl);
+        oauth.registrationForm()
+                .param(LocaleSelectorProvider.KC_LOCALE_PARAM, "en")
+                .open();
 
         registerPage.assertCurrent();
         registerPage.register("first", "last", "test-user@localhost", "test-user", "test","test");

@@ -256,7 +256,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             // check if the back channel logout succeeded
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
         }
@@ -606,7 +606,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     // Test logout with "consentRequired" . All of "post_logout_redirect_uri", "id_token_hint" and "state" parameters are present in the logout request
     @Test
     public void logoutConsentRequired() {
-        oauth.clientId("third-party");
+        oauth.client("third-party", "password");
         AccessTokenResponse tokenResponse = loginUser(true);
         String idTokenString = tokenResponse.getIdToken();
 
@@ -1093,10 +1093,10 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             grantPage.accept();
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
         oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         events.clear();
         return tokenResponse;
     }

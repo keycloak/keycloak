@@ -49,6 +49,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.TokenUtil;
 
@@ -245,24 +246,13 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
      private void testBrowser(String clientId) {
-        oauth.clientId(clientId);
-        String loginFormUrl = oauth.getLoginFormUrl();
-        //log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
-
-        loginPage.assertCurrent();
-
-        // Fill username+password. I am successfully authenticated
-        oauth.fillLoginForm("test-user@localhost", "password");
+        oauth.client(clientId, "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         appPage.assertCurrent();
 
         events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(response.getCode());
         Assert.assertNotNull(tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getRefreshToken());
 
@@ -456,8 +446,8 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void offlineTokenDirectGrantFlow() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("hardcoded-client");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        oauth.client("hardcoded-client", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -488,7 +478,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     public void offlineTokenDirectGrantFlowNoRefresh(String clientId) throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId(clientId);
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();

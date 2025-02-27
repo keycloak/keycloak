@@ -68,8 +68,8 @@ public class TestAppHelper {
     }
 
     public void completeLogin() {
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         refreshToken = tokenResponse.getRefreshToken();
     }
 

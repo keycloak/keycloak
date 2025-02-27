@@ -98,7 +98,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void oauthGrantAcceptTest() {
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP, "password");
         oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
@@ -106,7 +106,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         grantPage.accept();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin()
                 .client(THIRD_PARTY_APP)
@@ -115,7 +115,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String sessionId = loginEvent.getSessionId();
 
-        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
+        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
 
         String tokenString = accessToken.getAccessToken();
         Assert.assertNotNull(tokenString);
@@ -151,8 +151,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         grantPage.cancel();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.ERROR));
-        assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("access_denied", oauth.parseLoginResponse().getError());
 
         events.expectLogin()
                 .client(THIRD_PARTY_APP)
@@ -351,8 +350,8 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        String code = new AuthorizationEndpointResponse(oauth).getCode();
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
 
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
                 .client(THIRD_PARTY_APP)
@@ -529,7 +528,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin()
                 .client(THIRD_PARTY_APP)

@@ -32,12 +32,13 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DefaultManagedDependentResourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,17 +58,18 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.mockito.Mockito;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import jakarta.inject.Inject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
+import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
+import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 @QuarkusTest
 public class PodTemplateTest {
@@ -85,7 +87,7 @@ public class PodTemplateTest {
 
     @BeforeEach
     protected void setup() {
-        this.deployment = new KeycloakDeploymentDependentResource(operatorConfig, watchedResources, distConfigurator);
+        this.deployment = new KeycloakDeploymentDependentResource();
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
@@ -108,12 +110,15 @@ public class PodTemplateTest {
 
         kc.setSpec(keycloakSpecBuilder.build());
 
-        var managedDependentResourceContext = new DefaultManagedDependentResourceContext();
         //noinspection unchecked
         Context<Keycloak> context = Mockito.mock(Context.class);
-        Mockito.when(context.managedDependentResourceContext()).thenReturn(managedDependentResourceContext);
-        Mockito.when(context.getSecondaryResource(StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
-
+        ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
+        Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(existingDeployment);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OPERATOR_CONFIG_KEY, Config.class)).thenReturn(operatorConfig);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
+        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
+        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
         return deployment.desired(kc, context);
     }
 

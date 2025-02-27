@@ -210,8 +210,8 @@ public final class Database {
                 "mssql"
         ),
         ORACLE("oracle",
-                "oracle.jdbc.xa.client.OracleXADataSource",
-                "oracle.jdbc.driver.OracleDriver",
+                "oracle.jdbc.datasource.OracleXADataSource",
+                "oracle.jdbc.OracleDriver",
                 "org.hibernate.dialect.OracleDialect",
                 "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
