@@ -19,7 +19,11 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
-= Zero-configuration secure cluster communication
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Zero-configuration secure cluster communication
 
 For clustering multiple nodes, {project_name} uses distributed caches.
 Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
@@ -32,7 +36,7 @@ If you are using a custom transport stack, this default behavior can be disabled
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
 
-= Operator creates NetworkPolicies to restrict traffic
+=== Operator creates NetworkPolicies to restrict traffic
 
 The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
 
@@ -43,3 +47,9 @@ You can return to the previous behavior by disabling the creation of NetworkPoli
 If your deployment scripts add explicit NetworkPolicies for {project_name}, you should consider removing those and migrate to the new functionality provided in the Keycloak CR as a follow-up to the upgrade.
 
 Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+=== LDAP provider now can store new users/groups in a sub-DN of the base DN
+
+When adding new users and groups, the LDAP provider would always store them in the same DN configured for the searches. But in some deployments, admins want to configure a broader DN with `subtree` scope to fetch users from multiple sub-DNs, but they don't want new users or groups to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
+
+It is now possible to control where new users/groups will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group mapper. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
