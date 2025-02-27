@@ -1,6 +1,7 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -588,6 +589,26 @@ class AdminClient {
       },
       providerId: providerType,
       providerType: "org.keycloak.keys.KeyProvider",
+    });
+  }
+
+  async createUserFederation(
+    realmName: string,
+    federatedIdentity: ComponentRepresentation,
+  ) {
+    await this.#login();
+    const realm = await this.#client.realms.findOne({
+      realm: realmName,
+    });
+    if (!realm) {
+      throw new Error(`Realm ${realmName} not found`);
+    }
+
+    await this.#client.components.create({
+      realm: realmName,
+      parentId: realm.id,
+      providerType: "org.keycloak.storage.UserStorageProvider",
+      ...federatedIdentity,
     });
   }
 }
