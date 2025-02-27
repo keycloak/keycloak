@@ -1212,8 +1212,7 @@ public class TokenManager {
                 throw new IllegalStateException("accessToken not set");
             }
 
-            ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
-            boolean offlineTokenRequested = offlineAccessScope==null ? false : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
+            boolean offlineTokenRequested = clientSessionCtx.isOfflineTokenRequested();
             generateRefreshToken(offlineTokenRequested);
             refreshToken.setScope(clientSessionCtx.getScopeString(true));
             if (realm.isRevokeRefreshToken()) {

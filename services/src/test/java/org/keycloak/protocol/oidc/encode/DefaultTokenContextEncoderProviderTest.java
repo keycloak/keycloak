@@ -19,6 +19,7 @@
 
 package org.keycloak.protocol.oidc.encode;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -71,6 +73,16 @@ public class DefaultTokenContextEncoderProviderTest {
         Assert.assertEquals(ctx.getRawTokenId(), "5678");
 
         Assert.assertEquals(tokenId, provider.encodeTokenId(ctx));
+    }
+
+    @Test
+    public void testJsonSerialization() throws IOException {
+        String tokenId = "trltcc:1234";
+        AccessTokenContext ctx = provider.getTokenContextFromTokenId(tokenId);
+
+        String s = JsonSerialization.writeValueAsString(ctx);
+        AccessTokenContext deserialized = JsonSerialization.readValue(s, AccessTokenContext.class);
+        Assert.assertEquals(ctx, deserialized);
     }
 
     @Test

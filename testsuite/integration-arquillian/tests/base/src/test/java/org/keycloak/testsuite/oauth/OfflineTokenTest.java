@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,6 +46,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -261,6 +261,11 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assert.assertNull(offlineToken.getExp());
 
+        AccessTokenContext ctx = testingClient.testing("test").getTokenContext(token.getId());
+        Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.OFFLINE);
+        Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
+        Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
+
         assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
         // check only offline session is created
@@ -365,6 +370,10 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(200, response.getStatusCode());
+        AccessTokenContext ctx = testingClient.testing("test").getTokenContext(refreshedToken.getId());
+        Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.OFFLINE);
+        Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
+        Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.REFRESH_TOKEN);
 
         // Assert new refreshToken in the response
         String newRefreshToken = response.getRefreshToken();

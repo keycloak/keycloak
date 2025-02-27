@@ -29,6 +29,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -120,6 +121,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
 
         // Notes about client details
         userSession.setNote(ServiceAccountConstants.CLIENT_ID_SESSION_NOTE, client.getClientId()); // This is for backwards compatibility
