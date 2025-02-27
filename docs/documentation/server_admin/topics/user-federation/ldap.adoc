@@ -82,7 +82,7 @@ Remove users from the local database if they are not available from the user sto
 Relative User Creation DN::
 Relative DN from the `Users DN` where new users will be created. This allows users to be created in a sub-DN of the parent `Users DN` when using a `subtree` search scope. For example, if the `Users DN` is set to `ou=people,dc=myorg,dc=com` and the `Relative User Creation DN` is set to `ou=engineering`, users will be fetched from the `Users DN` and all sub-DNs, but new users will be stored in `ou=engineering,ou=people,dc=myorg,dc=com`. In other words, {project_name} concatenates the `Relative User Creation DN` with the `Users DN` (a comma is added automatically when concatenating the DNs) and uses this resulting DN to store users
 
-A similar property is also present in the `Group Mapper`, allowing groups to be added to a sub-DN of the `LDAP Groups DN` that is used to search for the groups.
+A similar property is also available in the group and role mappers, allowing groups and roles to be added to a sub-DN of the base DN that is used to search for the groups/roles.
 
 Other options::
 Hover the mouse pointer over the tooltips in the Admin Console to see more details about these options.
