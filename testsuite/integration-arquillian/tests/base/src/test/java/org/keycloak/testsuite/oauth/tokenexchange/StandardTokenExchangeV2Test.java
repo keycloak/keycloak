@@ -35,6 +35,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -59,6 +60,7 @@ import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 /**
@@ -91,7 +93,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         oauth.client(clientId, secret);
         oauth.scope(null);
         oauth.openid(false);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(username, password);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(username, password);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         accessTokenVerifier.parse();
@@ -573,6 +575,8 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
                         .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
                                 createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, List.of("optional-scope2")))
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)))
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
         ).toString();
