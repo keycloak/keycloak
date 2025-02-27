@@ -402,5 +402,5 @@ If enabled, the dark variant of the theme will be applied based on user preferen
 
 [role="_additional-resources"]
 === Additional resources for Themes
-* For the inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
+* For more inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
 * {quickstartRepo_link}[{quickstartRepo_name}] - Directory `extension` of the quickstarts repository contains some theme examples, which can be also used as an inspiration.
