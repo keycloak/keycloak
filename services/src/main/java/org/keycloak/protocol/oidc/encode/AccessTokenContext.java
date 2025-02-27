@@ -21,6 +21,9 @@ package org.keycloak.protocol.oidc.encode;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Some context info about the token
  *
@@ -66,7 +69,8 @@ public class AccessTokenContext {
         }
     }
 
-    public AccessTokenContext(SessionType sessionType, TokenType tokenType, String grantType, String rawTokenId) {
+    @JsonCreator
+    public AccessTokenContext(@JsonProperty("sessionType") SessionType sessionType, @JsonProperty("tokenType") TokenType tokenType, @JsonProperty("grantType") String grantType, @JsonProperty("rawTokenId") String rawTokenId) {
         Objects.requireNonNull(sessionType, "Null sessionType not allowed");
         Objects.requireNonNull(tokenType, "Null tokenType not allowed");
         Objects.requireNonNull(grantType, "Null grantType not allowed");
@@ -91,5 +95,22 @@ public class AccessTokenContext {
 
     public String getRawTokenId() {
         return rawTokenId;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        return obj instanceof AccessTokenContext that &&
+                sessionType == that.sessionType &&
+                tokenType == that.tokenType &&
+                Objects.equals(grantType, that.grantType) &&
+                Objects.equals(rawTokenId, that.rawTokenId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sessionType, tokenType, grantType, rawTokenId);
     }
 }

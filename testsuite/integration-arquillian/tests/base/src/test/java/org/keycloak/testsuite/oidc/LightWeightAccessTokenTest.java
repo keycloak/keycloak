@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.oidc;
 
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -42,6 +41,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -70,7 +70,6 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,7 +106,6 @@ import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWIS
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 
@@ -358,7 +356,13 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
-            assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
+            AccessToken token = oauth.verifyToken(accessToken);
+            assertAccessToken(token, true, true, true);
+
+            AccessTokenContext ctx = testingClient.testing("test").getTokenContext(token.getId());
+            Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
+            Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
+            Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
             String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);

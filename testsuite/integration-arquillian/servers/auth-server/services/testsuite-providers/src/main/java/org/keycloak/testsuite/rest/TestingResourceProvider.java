@@ -65,6 +65,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -1173,4 +1175,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
             prov.removeIncludedEvents(events.toArray(EventType[]::new));
         }
     }
+
+    @GET
+    @Path("/token-context")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AccessTokenContext getTokenContext(@QueryParam("tokenId") String tokenId) {
+        return session.getProvider(TokenContextEncoderProvider.class).getTokenContextFromTokenId(tokenId);
+    }
+
 }

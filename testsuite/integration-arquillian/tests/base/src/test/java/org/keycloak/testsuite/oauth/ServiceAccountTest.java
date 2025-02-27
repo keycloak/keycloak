@@ -19,13 +19,12 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -38,6 +37,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -58,7 +58,6 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
 import java.io.IOException;
@@ -415,6 +414,11 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         AccessToken accessToken = oauth.verifyToken(tokenString);
         Assert.assertNull(accessToken.getSessionState());
         Assert.assertNull("Refresh-Token should not be present", response.getRefreshToken());
+
+        AccessTokenContext ctx = testingClient.testing("test").getTokenContext(accessToken.getId());
+        Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
+        Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
+        Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);
 
         events.expectClientLogin()
                 .client("service-account-cl")
