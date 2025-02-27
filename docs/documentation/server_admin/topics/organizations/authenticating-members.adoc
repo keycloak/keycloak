@@ -58,7 +58,7 @@ and create an account at the realm.
 After that, the administrator can send an invitation link to the user or manually add the user as a member of an organization.
 For more details, see <<_managing_members_,Managing members>>.
 
-If the organization has an identity provider without a domain and the *Hide on login page* setting is *OFF*, users can also click
+If the organization has an identity provider without a domain and the *Hide on login page* setting is *OFF* and the *Show only for organization members* setting is *OFF*, users can also click
 the identity provider link at the identity-first login page to automatically create an account and join an organization
 once they authenticate through the identity provider.
 For more details, see <<_managing_identity_provider_,Managing identity providers>>.

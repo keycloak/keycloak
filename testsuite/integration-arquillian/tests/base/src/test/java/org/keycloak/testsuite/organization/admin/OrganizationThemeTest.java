@@ -33,7 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
+import org.keycloak.models.OrganizationModel.IdentityProviderMode;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -68,7 +68,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
     public void testOrganizationOnRegularLogin() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization("myorg", "myorg.com").getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        broker.getConfig().remove(IdentityProviderMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(broker.getAlias()).update(broker);
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("tom")
@@ -94,7 +94,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
     public void testOrganizationOnIdentityFirstLogin() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization("myorg", "myorg.com").getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        broker.getConfig().remove(IdentityProviderMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
@@ -164,7 +164,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        broker.getConfig().remove(IdentityProviderMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
@@ -198,7 +198,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
-        broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        broker.getConfig().remove(IdentityProviderMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(broker.getAlias()).update(broker);
         organization.members().addMember(user.getId()).close();
 
