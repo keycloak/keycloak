@@ -19,6 +19,8 @@
 
 package org.keycloak.testsuite.oauth.tokenexchange;
 
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -28,13 +30,24 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
@@ -42,24 +55,35 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.updaters.RoleScopeUpdater;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
@@ -226,6 +250,113 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             //exchange not allowed due the invalid client is not in the subject-client audience
             AccessTokenResponse response = tokenExchange(accessToken, "invalid-requester-client", "secret", null, null);
             assertEquals(403, response.getStatusCode());
+        }
+    }
+
+    @Test
+    public void testTransientSessionForRequester() throws Exception {
+        final RealmResource realm = adminClient.realm(TEST);
+        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+
+        oauth.realm(TEST);
+        final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+
+        oauth.scope(OAuth2Constants.SCOPE_OPENID); // add openid scope for the user-info request
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        final String exchangedTokenString = response.getAccessToken();
+        final AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
+        assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+        assertEquals("requester-client", exchangedToken.getIssuedFor());
+        assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+                AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+        // assert instrospection and user-info works
+        assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+        assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+        // assert instrospection and user-info works in 10s
+        setTimeOffset(10);
+        assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+        assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+        // assert instrospection and user-info fails with session deleted
+        realm.deleteSession(exchangedToken.getSessionId(), false);
+        assertIntrospectError(exchangedTokenString, "requester-client", "secret");
+        assertUserInfoError(exchangedTokenString, "requester-client", "secret", "invalid_token", "Session not found");
+    }
+
+    @Test
+    public void testTransientSessionWithAdminApi() throws Exception {
+        final RealmResource realm = adminClient.realm(TEST);
+
+        // create a client-scope to the requester-client that adds realm-management view-role access
+        final ClientResource client = ApiUtil.findClientByClientId(realm, Constants.REALM_MANAGEMENT_CLIENT_ID);
+        createClientScopeForRole(realm, client, AdminRoles.VIEW_REALM, "realm-management-view-scope");
+
+        // update the user and the requester-client to include the view-realm permission
+        try (RoleScopeUpdater roleScopeUpdater = UserAttributeUpdater.forUserByUsername(realm, "john")
+                .clientRoleScope(client.toRepresentation().getId())
+                .add(ApiUtil.findClientRoleByName(client, AdminRoles.VIEW_REALM).toRepresentation())
+                .update();
+            ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .addOptionalClientScope("realm-management-view-scope")
+                .update()) {
+
+            oauth.realm(TEST);
+            final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+
+            // token exchange with the realm-management-view optional scope
+            oauth.scope("realm-management-view-scope");
+            final AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), null);
+            assertAudiencesAndScopes(response, List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), List.of("realm-management-view-scope"));
+            final AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+                AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            try (Keycloak keycloak = Keycloak.getInstance(ServerURLs.getAuthServerContextRoot() + "/auth",
+                    TEST, Constants.ADMIN_CLI_CLIENT_ID, response.getAccessToken(), TLSUtils.initializeTLS())) {
+                assertEquals(TEST, keycloak.realm(TEST).toRepresentation().getRealm());
+                setTimeOffset(10);
+                assertEquals(TEST, keycloak.realm(TEST).toRepresentation().getRealm());
+                realm.deleteSession(exchangedToken.getSessionId(), false);
+                assertThrows(NotAuthorizedException.class, () -> keycloak.realm(TEST).toRepresentation().getRealm());
+            }
+        }
+    }
+
+    @Test
+    public void testTransientSessionWithAccountApi() throws Exception {
+        final RealmResource realm = adminClient.realm(TEST);
+
+        // create a client-scope for the requester-client that adds account view-profile access
+        createClientScopeForRole(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE, "account-view-profile-scope");
+
+        // update the requester-client to include the view-profile permission
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .addOptionalClientScope("account-view-profile-scope")
+                .update()) {
+
+            oauth.realm(TEST);
+            final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+
+            // token exchange with the view-profile optional scope
+            oauth.scope("account-view-profile-scope");
+            final AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID), null);
+            assertAudiencesAndScopes(response, List.of(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID), List.of("account-view-profile-scope"));
+            final AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+                AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            final String accountUrl = ServerURLs.getAuthServerContextRoot() + "/auth/realms/test/account";
+            assertEquals("john", SimpleHttpDefault.doGet(accountUrl, oauth.httpClient().get())
+                    .auth(response.getAccessToken()).asJson(UserRepresentation.class).getUsername());
+            setTimeOffset(10);
+            assertEquals("john", SimpleHttpDefault.doGet(accountUrl, oauth.httpClient().get())
+                    .auth(response.getAccessToken()).asJson(UserRepresentation.class).getUsername());
+            realm.deleteSession(exchangedToken.getSessionId(), false);
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), SimpleHttpDefault.doGet(accountUrl, oauth.httpClient().get())
+                    .auth(response.getAccessToken()).acceptJson().asResponse().getStatus());
         }
     }
 
@@ -699,4 +830,54 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertScopes(token, expectedScopes);
     }
 
+    private void createClientScopeForRole(RealmResource realm, String clientId, String clientRoleName, String clientScopeName) {
+        final ClientResource client = ApiUtil.findClientByClientId(realm, clientId);
+        createClientScopeForRole(realm, client, clientRoleName, clientScopeName);
+    }
+
+    private void createClientScopeForRole(RealmResource realm, ClientResource client, String clientRoleName, String clientScopeName) {
+        final String clientUUID = client.toRepresentation().getId();
+        final RoleRepresentation clientRole = ApiUtil.findClientRoleByName(client, clientRoleName).toRepresentation();
+
+        final ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName(clientScopeName);
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        final String clientScopeId = ApiUtil.getCreatedId(realm.clientScopes().create(clientScope));
+        getCleanup().addClientScopeId(clientScopeId);
+        realm.clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientUUID).add(List.of(clientRole));
+    }
+
+    private void assertIntrospectSuccess(String token, String clientId, String clientSecret, String userId) throws IOException {
+        String tokenResponse = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send();
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        assertTrue(rep.isActive());
+        assertEquals(userId, rep.getSubject());
+    }
+
+    private void assertIntrospectError(String token, String clientId, String clientSecret) throws IOException {
+        String tokenResponse = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send();
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        assertFalse(rep.isActive());
+    }
+
+    private void assertUserInfoSuccess(String token, String clientId, String clientSecret, String userId) {
+        UserInfoResponse userInfoResp = oauth.client(clientId, clientSecret).userInfoRequest(token).send();
+        assertEquals(Response.Status.OK.getStatusCode(), userInfoResp.getStatusCode());
+        assertEquals(userId, userInfoResp.getUserInfo().getSub());
+    }
+
+    private void assertUserInfoError(String token, String clientId, String clientSecret, String error, String errorDesciption) {
+        UserInfoResponse userInfoResp = oauth.client(clientId, clientSecret).userInfoRequest(token).send();
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), userInfoResp.getStatusCode());
+        assertEquals(String.format("Bearer realm=\"%s\", error=\"%s\", error_description=\"%s\"", TEST, error, errorDesciption),
+                userInfoResp.getHeader(HttpHeaders.WWW_AUTHENTICATE));
+    }
+
+    private void assertAccessTokenContext(String jti, AccessTokenContext.SessionType sessionType,
+            AccessTokenContext.TokenType tokenType, String grantType) {
+        AccessTokenContext ctx = testingClient.testing(TEST).getTokenContext(jti);
+        assertEquals(sessionType, ctx.getSessionType());
+        assertEquals(tokenType, ctx.getTokenType());
+        assertEquals(grantType, ctx.getGrantType());
+    }
 }
