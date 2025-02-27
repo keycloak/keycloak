@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -213,6 +214,9 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             var stack = System.getProperty("auth.server.quarkus.cluster.stack");
             if (stack != null)
                 commands.add("--cache-stack=" + stack);
+            if (Objects.equals(stack, "jdbc-ping-udp")) {
+                commands.add("--cache-embedded-mtls-enabled=false");
+            }
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());

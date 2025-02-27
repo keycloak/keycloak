@@ -84,7 +84,8 @@ public class JGroupsCertificateHolder {
     }
 
     private static X509ExtendedKeyManager createKeyManager(JGroupsCertificate newCertificate) throws GeneralSecurityException, IOException {
-        var ks = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+        KeystoreUtil.KeystoreFormat keystoreFormat = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().findFirst().orElseThrow(() -> new RuntimeException("No supported keystore types found"));
+        var ks = CryptoIntegration.getProvider().getKeyStore(keystoreFormat);
         ks.load(null, null);
         ks.setKeyEntry(newCertificate.getAlias(), newCertificate.getPrivateKey(), KEY_PASSWORD, new java.security.cert.Certificate[]{newCertificate.getCertificate()});
         var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -98,7 +99,8 @@ public class JGroupsCertificateHolder {
     }
 
     private static X509ExtendedTrustManager createTrustManager(JGroupsCertificate oldCertificate, JGroupsCertificate newCertificate) throws GeneralSecurityException, IOException {
-        var ks = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+        KeystoreUtil.KeystoreFormat keystoreFormat = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().findFirst().orElseThrow(() -> new RuntimeException("No supported keystore types found"));
+        var ks = CryptoIntegration.getProvider().getKeyStore(keystoreFormat);
         ks.load(null, null);
         if (oldCertificate != null) {
             addCertificateEntry(ks, oldCertificate);

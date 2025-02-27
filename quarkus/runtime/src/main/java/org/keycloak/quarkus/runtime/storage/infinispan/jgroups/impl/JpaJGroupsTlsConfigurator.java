@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.TimeUnit;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.jgroups.util.DefaultSocketFactory;
@@ -84,7 +85,7 @@ public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
         try {
             var rotationDays = requiredIntegerProperty(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION);
             var storage = session.getProvider(ServerConfigStorageProvider.class);
-            var data = fromJson(storage.loadOrCreate(CERTIFICATE_ID, () -> CertificateReloadManager.generateSelfSignedCertificate(rotationDays * 2L)));
+            var data = fromJson(storage.loadOrCreate(CERTIFICATE_ID, () -> CertificateReloadManager.generateSelfSignedCertificate(TimeUnit.DAYS.toSeconds(rotationDays) * 2L)));
             return JGroupsCertificateHolder.create(data);
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException(e);
