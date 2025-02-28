@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
@@ -47,7 +46,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.grants.TokenExchangeGrantTypeFactory;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -70,6 +68,49 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     public boolean supports(TokenExchangeContext context) {
+        // Subject impersonation request
+        String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);
+        if (requestedSubject != null) {
+            context.setUnsupportedReason("Parameter 'requested_subject' is not supported for standard token exchange");
+            return false;
+        }
+
+        // Internal-external token exchange
+        String requestedIssuer = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_ISSUER);
+        if (requestedIssuer != null) {
+            context.setUnsupportedReason("Parameter 'requested_issuer' is not supported for standard token exchange");
+            return false;
+        }
+
+        // External-internal token exchange
+        String subjectIssuer = context.getFormParams().getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        if (subjectIssuer != null) {
+            context.setUnsupportedReason("Parameter 'subject_issuer' is not supported for standard token exchange");
+            return false;
+        }
+
+        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
+            context.setUnsupportedReason("Standard token exchange is not enabled for the requested client");
+            return false;
+        }
+
+        String subjectToken = context.getParams().getSubjectToken();
+        if (subjectToken == null) {
+            context.setUnsupportedReason("Parameter 'subject_token' required for standard token exchange");
+            return false;
+        }
+
+        String subjectTokenType = context.getParams().getSubjectTokenType();
+        if (subjectTokenType == null) {
+            context.setUnsupportedReason("Parameter 'subject_token_type' required for standard token exchange");
+            return false;
+        }
+
+        if (!subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+            context.setUnsupportedReason("Parameter 'subject_token' supports access tokens only");
+            return false;
+        }
+
         return true;
     }
 
@@ -81,31 +122,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         Cors cors = context.getCors();
         EventBuilder event = context.getEvent();
 
-        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
-            event.detail(Details.REASON, "Standard token exchange is not enabled for the requested client");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Standard token exchange is not enabled for the requested client", Response.Status.BAD_REQUEST);
-        }
-
         String subjectToken = context.getParams().getSubjectToken();
-        if (subjectToken == null) {
-            event.detail(Details.REASON, "subject_token parameter not provided");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "subject_token parameter not provided", Response.Status.BAD_REQUEST);
-        }
-        String subjectTokenType = context.getParams().getSubjectTokenType();
-        if (subjectTokenType == null) {
-            event.detail(Details.REASON, "subject_token_type parameter not provided");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "subject_token_type parameter not provided", Response.Status.BAD_REQUEST);
-        }
-
-        if (!subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
-            event.detail(Details.REASON, "subject_token supports access tokens only");
-            event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
-
-        }
 
         AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, context.getHeaders());
         if (authResult == null) {
@@ -117,21 +134,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserModel tokenUser = authResult.getUser();
         UserSessionModel tokenSession = authResult.getSession();
         AccessToken token = authResult.getToken();
-
-
-        String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);
-        if (requestedSubject != null) {
-            event.detail(Details.REASON, "Parameter '" + OAuth2Constants.REQUESTED_SUBJECT + "' not supported for standard token exchange");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Parameter '" + OAuth2Constants.REQUESTED_SUBJECT + "' not supported for standard token exchange", Response.Status.BAD_REQUEST);
-        }
-
-        String requestedIssuer = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_ISSUER);
-        if (requestedIssuer != null) {
-            event.detail(Details.REASON, "Parameter '" + OAuth2Constants.REQUESTED_ISSUER + "' not supported for standard token exchange");
-            event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Parameter '" + OAuth2Constants.REQUESTED_ISSUER + "' not supported for standard token exchange", Response.Status.BAD_REQUEST);
-        }
 
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }

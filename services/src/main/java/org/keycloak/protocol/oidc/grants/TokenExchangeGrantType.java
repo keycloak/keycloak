@@ -23,7 +23,9 @@ import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
@@ -66,7 +68,15 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
                 .map(f -> session.getProvider(TokenExchangeProvider.class, f.getId()))
                 .filter(p -> p.supports(exchange))
                 .findFirst()
-                .orElseThrow(() -> new InternalServerErrorException("No token exchange provider available"));
+                .orElseThrow(() -> {
+                    if (exchange.getUnsupportedReason() != null) {
+                        event.detail(Details.REASON, exchange.getUnsupportedReason());
+                        event.error(Errors.INVALID_REQUEST);
+                        return new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, exchange.getUnsupportedReason(), Response.Status.BAD_REQUEST);
+                    } else {
+                        return new InternalServerErrorException("No token exchange provider available");
+                    }
+                });
 
         try {
             //trigger if there is a supported token exchange provider

@@ -26,15 +26,20 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 /**
+ * Test impersonation scenarios with both token-exchange:V1 and standard-token-exchange:V2 enabled. Impersonation requests should be handled by V1 implementation
+ *
+ * TODO: Remove this test once  standard-token-exchange supported by default. It won't be needed as SubjectImpersonationTokenExchangeV1 will have TE-v2 enabled by default
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true) // TODO: Replace with admin-fine-grained-authz V2
-public class SubjectImpersonationTokenExchangeV2Test extends AbstractSubjectImpersonationTokenExchangeTest {
+@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
+public class SubjectImpersonationTokenExchangeV1WithStandardV2EnabledTest extends AbstractSubjectImpersonationTokenExchangeTest {
 
     @Test
     @UncaughtServerErrorExpected
-    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2, skipRestart = true)
+    @DisableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
     public void checkFeatureDisabled() {
         super.checkFeatureDisabled();
     }
