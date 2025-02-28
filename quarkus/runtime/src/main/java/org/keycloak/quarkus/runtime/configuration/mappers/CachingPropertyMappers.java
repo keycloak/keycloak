@@ -25,6 +25,7 @@ final class CachingPropertyMappers {
     private static final String REMOTE_HOST_SET = "remote host is set";
     private static final String MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET = "feature '%s', '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey(), Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey());
     private static final String MULTI_SITE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
+    private static final String MULTI_SITE_FEATURE_NOT_SET = "features '%s' or '%s' are not set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
 
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
 
@@ -142,6 +143,10 @@ final class CachingPropertyMappers {
     }
 
     private static boolean cacheSetToInfinispan() {
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            return false;
+        }
+
         Optional<String> cache = getOptionalKcValue(CachingOptions.CACHE);
         if (cache.isEmpty() && !Environment.isDevMode()) {
             return true;
