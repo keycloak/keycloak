@@ -28,6 +28,6 @@ If you are not using a TCP-based transport stack, it is recommended to migrate t
 
 If you provided your own keystore and truststore to secure the TCP transport stack communication in previous releases, it is now recommended to migrate to the automatically generated ephemeral keys and certificates to benefit from the simplified setup.
 
-If you are using a custom transport stack, this default behavior can be disabled by setting the the  `cache-embedded-mtls-enabled` to `false`.
+If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
