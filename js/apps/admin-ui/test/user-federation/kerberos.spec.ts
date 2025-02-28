@@ -86,8 +86,6 @@ test.describe("User Fed Kerberos tests", () => {
     });
 
     test("Should edit existing Kerberos provider", async ({ page }) => {
-      await goToRealm(page, "master");
-      await goToRealm(page, realmName);
       await goToUserFederation(page);
       await page.getByTestId("keycloak-card-title").click();
       await expect(
