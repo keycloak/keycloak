@@ -750,9 +750,12 @@ public class Picocli {
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(getDecoratedOptionDescription(mapper))
-                        .paramLabel(mapper.getParamLabel())
                         .completionCandidates(() -> mapper.getExpectedValues().iterator())
                         .hidden(mapper.isHidden());
+
+                if (mapper.getParamLabel() != null) {
+                    optBuilder.paramLabel(mapper.getParamLabel());
+                }
 
                 if (mapper.getDefaultValue().isPresent()) {
                     optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));

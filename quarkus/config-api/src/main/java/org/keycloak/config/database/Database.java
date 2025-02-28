@@ -106,8 +106,8 @@ public final class Database {
      * @return List of aliases of databases
      */
     public static List<String> getDatabaseAliases() {
-        return DATABASES.entrySet().stream()
-                .map(Entry::getKey)
+        return DATABASES.keySet()
+                .stream()
                 .sorted()
                 .collect(Collectors.toList());
     }
