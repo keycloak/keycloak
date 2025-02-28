@@ -777,10 +777,15 @@ public class AuthenticationManagementResource {
         if (model == null) {
             session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
-
         }
+
+        List<AuthenticationExecutionInfoRepresentation> executions = new LinkedList<>();
+        int level = 0;
+        recurseExecutions(flow, executions, level);
+
         boolean updateExecution = false;
-        if (model.getPriority() != rep.getPriority()) {
+        //ignore setting of priority if element with same priority already exists
+        if (model.getPriority() != rep.getPriority() && executions.stream().noneMatch(item -> item.getPriority() == rep.getPriority())) {
             model.setPriority(rep.getPriority());
             updateExecution = true;
         }
