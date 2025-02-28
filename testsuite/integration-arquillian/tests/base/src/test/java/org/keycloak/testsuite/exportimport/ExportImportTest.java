@@ -45,10 +45,10 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -291,7 +291,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         RealmResource realmRes = adminClient.realm(TEST_REALM);
 
         //add some non-default config
-        UPConfig persistedConfig = VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
+        UPConfig persistedConfig = UserProfileUtil.setUserProfileConfiguration(realmRes, UserProfileUtil.CONFIGURATION_FOR_USER_EDIT);
 
         //export
         TestingExportImportResource exportImport = testingClient.testing().exportImport();

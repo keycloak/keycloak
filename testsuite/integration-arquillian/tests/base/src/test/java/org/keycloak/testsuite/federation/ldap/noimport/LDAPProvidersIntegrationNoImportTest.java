@@ -57,8 +57,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 
 /**
@@ -76,7 +76,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     @Before
     public void enableUserProfileUnmanagedAttributes() {
         UserProfileResource userProfileRes = testRealm().users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
 

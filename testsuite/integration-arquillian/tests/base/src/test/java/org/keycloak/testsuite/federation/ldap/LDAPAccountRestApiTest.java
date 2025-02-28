@@ -46,10 +46,10 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TokenUtil;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -175,7 +175,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     public void testUpdateProfileUnmanagedAttributes() throws IOException {
         // User profile unmanaged attributes supported
         UserProfileResource userProfileRes = testRealm().users().userProfile();
-        UPConfig origConfig = VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UPConfig origConfig = UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
 
         try {
             UserRepresentation user = getProfile();
