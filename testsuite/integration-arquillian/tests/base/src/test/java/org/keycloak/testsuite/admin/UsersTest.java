@@ -113,10 +113,18 @@ public class UsersTest extends AbstractAdminTest {
         assertThat(usersEmailVerified, is(not(empty())));
         assertThat(usersEmailVerified.get(0).getUsername(), is("user1"));
 
+        List<UserRepresentation> usersWildcardEmailVerified = realm.users().search("user*", null, null, null, emailVerified, null, true, null);
+        assertThat(usersWildcardEmailVerified, is(not(empty())));
+        assertThat(usersWildcardEmailVerified.get(0).getUsername(), is("user1"));
+
         emailVerified = false;
         List<UserRepresentation> usersEmailNotVerified = realm.users().search(null, null, null, null, emailVerified, null, null, null, true);
         assertThat(usersEmailNotVerified, is(not(empty())));
         assertThat(usersEmailNotVerified.get(0).getUsername(), is("user2"));
+
+        List<UserRepresentation> usersWildcardEmailNotVerified = realm.users().search("user*", null, null, null, emailVerified, null, null, null);
+        assertThat(usersWildcardEmailNotVerified, is(not(empty())));
+        assertThat(usersWildcardEmailNotVerified.get(0).getUsername(), is("user2"));
     }
 
     /**
@@ -133,10 +141,12 @@ public class UsersTest extends AbstractAdminTest {
         emailVerified = true;
         assertThat(realm.users().countEmailVerified(emailVerified), is(2));
         assertThat(realm.users().count(null,null,null,emailVerified,null), is(2));
+        assertThat(realm.users().count("user*", null, null, null, true, null, true, null), is(2));
 
         emailVerified = false;
         assertThat(realm.users().countEmailVerified(emailVerified), is(1));
         assertThat(realm.users().count(null,null,null,emailVerified,null), is(1));
+        assertThat(realm.users().count("user*", null, null, null, false, null, true, null), is(1));
     }
 
     @Test
@@ -355,6 +365,47 @@ public class UsersTest extends AbstractAdminTest {
         //search not specified (defaults to simply /count)
         assertThat(testRealmResource.users().count(null, null, null, null), is(0));
         assertThat(testRealmResource.users().count("", "", "", ""), is(0));
+    }
+
+    @Test
+    public void findUsersByWildcardAndCombinedAttributes() {
+        createUser(REALM_NAME, "testuser1", "password", "User1FirstName", "User1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "testuser2", "password", "User2FirstName", "User2LastName", "user2@example.com",  rep -> rep.setEmailVerified(false));
+
+        List<UserRepresentation> usersByWildcardAndEmailVerified = realm.users().search("testuser*",  null, null, null, true, null, true, null);
+        assertThat(usersByWildcardAndEmailVerified, is(not(empty())));
+        assertThat(usersByWildcardAndEmailVerified.get(0).getUsername(), is("testuser1"));
+
+        List<UserRepresentation> usersByWildcardAndEmailNotVerified = realm.users().search("testuser*", null, null, null, false, null, true, null);
+        assertThat(usersByWildcardAndEmailNotVerified, is(not(empty())));
+        assertThat(usersByWildcardAndEmailNotVerified.get(0).getUsername(), is("testuser2"));
+
+        List<UserRepresentation> usersByFirstName = realm.users().search(null,  "User1FirstName", null, null, true, null, true, null);
+        assertThat(usersByFirstName, is(not(empty())));
+        assertThat(usersByFirstName.get(0).getUsername(), is("testuser1"));
+
+        List<UserRepresentation> usersByWildcardAndFirstName = realm.users().search("testuser*",  "User2FirstName", null, null, false, null, true, null);
+        assertThat(usersByWildcardAndFirstName, is(not(empty())));
+        assertThat(usersByWildcardAndFirstName.get(0).getUsername(), is("testuser2"));
+    }
+
+    @Test
+    public void countUsersByWildcardAndCombinedAttributes() {
+        createUser(REALM_NAME, "testuser1", "password", "User1FirstName", "User1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "testuser2", "password", "User2FirstName", "User2LastName", "user2@example.com",  rep -> rep.setEmailVerified(false));
+        createUser(REALM_NAME, "testuser3", "password", "User3FirstName", "User3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+
+        Integer countByWildcardAndEmailVerified = realm.users().count("testuser*", null, null, null, true, null, true, null);
+        assertThat(countByWildcardAndEmailVerified, is(2));
+
+        Integer countByWildcardAndEmailNotVerified = realm.users().count("testuser*", null, null, null, false, null, true, null);
+        assertThat(countByWildcardAndEmailNotVerified, is(1));
+
+        Integer countByFirstAndLastName = realm.users().count(null, "User1LastName", "User1FirstName", null, null, null, null, null);
+        assertThat(countByFirstAndLastName, is(1));
+
+        Integer countByWildcardAndAttributes = realm.users().count("testuser*", "User3LastName", "User3FirstName", null, true, null, true, null);
+        assertThat(countByWildcardAndAttributes, is(1));
     }
 
     private RealmResource setupTestEnvironmentWithPermissions(boolean grp1ViewPermissions) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
