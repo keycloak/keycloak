@@ -30,11 +30,12 @@ public class ClientPolicyProvider implements PolicyProvider {
 
         for (String client : representation.getClients()) {
             ClientModel clientModel = realm.getClientById(client);
-
-            if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
-                evaluation.grant();
-                logger.debugf("Client policy %s matched with client %s and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
-                return;
+            if (clientModel != null) {
+                if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
+                    evaluation.grant();
+                    logger.debugf("Client policy %s matched with client %s and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
+                    return;
+                }
             }
         }
     }
