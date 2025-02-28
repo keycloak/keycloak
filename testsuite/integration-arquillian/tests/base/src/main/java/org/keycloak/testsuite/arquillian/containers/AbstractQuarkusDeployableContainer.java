@@ -237,10 +237,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             System.setProperty("kc.cache-remote-create-caches", "true");
         }
 
-        if (configuration.isJgroupsMtls()) {
-            commands.add("--cache-embedded-mtls-enabled=true");
-        }
-
         return commands;
     }
 
