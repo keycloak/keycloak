@@ -12,7 +12,4 @@ image:images/roles.png[]
 . Enter a *Description*.
 . Click *Save*.
 
-.Add role
-image:images/role.png[Add role]
-
 The *description* field can be localized by specifying a substitution variable with `$\{var-name}` strings. The localized value is configured to your theme within the themes property files. See the link:{developerguide_link}[{developerguide_name}] for more details.
