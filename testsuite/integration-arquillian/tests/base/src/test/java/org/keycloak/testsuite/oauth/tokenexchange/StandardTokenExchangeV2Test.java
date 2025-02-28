@@ -115,7 +115,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .getSessionId();
     }
 
-    private String resourceOwnerLogin(String username, String password, String clientId, String secret) throws Exception {
+    protected String resourceOwnerLogin(String username, String password, String clientId, String secret) throws Exception {
         return resourceOwnerLogin(username, password, clientId, secret, null);
     }
 
@@ -143,7 +143,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         return response.getAccessToken();
     }
 
-    private AccessTokenResponse tokenExchange(String subjectToken, String clientId, String secret, List<String> audience, Map<String, String> additionalParams) {
+    protected AccessTokenResponse tokenExchange(String subjectToken, String clientId, String secret, List<String> audience, Map<String, String> additionalParams) {
         return oauth.tokenExchangeRequest(subjectToken).client(clientId, secret).audience(audience).additionalParams(additionalParams).send();
     }
 

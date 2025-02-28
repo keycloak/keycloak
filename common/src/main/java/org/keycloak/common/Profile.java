@@ -75,8 +75,6 @@ public class Profile {
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.EXPERIMENTAL, 2),
-        TOKEN_EXCHANGE_FEDERATED_V2("Federated Token Exchange for external-internal and internal-external token exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
-        TOKEN_EXCHANGE_SUBJECT_IMPERSONATION_V2("Subject impersonation Token Exchange", Type.EXPERIMENTAL, 2, Feature.ADMIN_FINE_GRAINED_AUTHZ),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
