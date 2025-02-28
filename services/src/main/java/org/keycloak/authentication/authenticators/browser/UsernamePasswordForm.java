@@ -40,7 +40,6 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String password = formData.getFirst("password");
-        System.out.println("This is password" + password);
         context.getAuthenticationSession().setAuthNote("user-password", password);
         if (formData.containsKey("cancel")) {
             context.cancelLogin();
