@@ -95,7 +95,8 @@ export default class AddMapperPage {
   }
 
   addRoleToMapperForm() {
-    cy.findByTestId("add-roles").click();
+    cy.findByTestId("add-role-mapping-button").click();
+    cy.findByTestId("client-role").click();
     cy.get("[aria-label='Select row 1']").click();
     cy.findByTestId("assign").click();
     return this;

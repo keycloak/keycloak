@@ -1,11 +1,11 @@
+import SidebarPage from "../SidebarPage";
+
 const expect = chai.expect;
 export default class RoleMappingTab {
   #type = "client";
   #serviceAccountTab = "serviceAccountTab";
   #scopeTab = "scopeTab";
-  #assignEmptyRoleBtn = (type: string) =>
-    `no-roles-for-this-${type}-empty-action`;
-  #assignRoleBtn = "assignRole";
+  #assignEmptyRoleBtn = "add-role-mapping-button";
   #unAssignBtn = "unAssignRole";
   #unAssignDrpDwnBtn = '.pf-v5-c-table__action li button[role="menuitem"]';
   #assignBtn = "assign";
@@ -13,7 +13,6 @@ export default class RoleMappingTab {
   #assignedRolesTable = "assigned-roles";
   #namesColumn = "td:visible";
   #roleMappingTab = "role-mapping-tab";
-  #filterTypeDropdown = "filter-type-dropdown";
 
   constructor(type: string) {
     this.#type = type;
@@ -26,13 +25,12 @@ export default class RoleMappingTab {
 
   goToScopeTab() {
     cy.findByTestId(this.#scopeTab).click();
+    new SidebarPage().waitForPageLoad();
     return this;
   }
 
-  assignRole(notEmpty = true) {
-    cy.findByTestId(
-      notEmpty ? this.#assignEmptyRoleBtn(this.#type) : this.#assignRoleBtn,
-    ).click();
+  assignRole() {
+    cy.findByTestId(this.#assignEmptyRoleBtn).click();
     return this;
   }
 
@@ -63,9 +61,8 @@ export default class RoleMappingTab {
 
   changeRoleTypeFilter(filter: string) {
     // Invert the filter because the testid of the DropdownItem is the current filter
-    const option = filter == "roles" ? "clients" : "roles";
+    const option = filter === "roles" ? "roles-role" : "client-role";
 
-    cy.findByTestId(this.#filterTypeDropdown).click();
     cy.findByTestId(option).click();
 
     cy.get('[role="progressbar"]').should("not.exist");
