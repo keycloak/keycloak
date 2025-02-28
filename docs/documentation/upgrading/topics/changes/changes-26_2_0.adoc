@@ -18,3 +18,16 @@ the `X-Forwarded-Port` header with the desired port.
 
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
+
+= Zero-configuration secure cluster communication
+
+For clustering multiple nodes, {project_name} uses distributed caches.
+Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
+
+If you are not using a TCP-based transport stack, it is recommended to migrate to the `jdbc-ping` transport stack to benefit from the simplified configuration and enhanced security.
+
+If you provided your own keystore and truststore to secure the TCP transport stack communication in previous releases, it is now recommended to migrate to the automatically generated ephemeral keys and certificates to benefit from the simplified setup.
+
+If you are using a custom transport stack, this default behavior can be disabled by setting the the  `cache-embedded-mtls-enabled` to `false`.
+
+For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.

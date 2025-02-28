@@ -55,6 +55,7 @@ final class CachingPropertyMappers {
                         .paramLabel("file")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
+                        .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
                         .paramLabel("file")
@@ -124,12 +125,27 @@ final class CachingPropertyMappers {
         return mappers.toArray(new PropertyMapper[0]);
     }
 
+    private static boolean getDefaultMtlsEnabled() {
+        if (!cacheSetToInfinispan()) {
+            return false;
+        }
+        Optional<String> cacheStackOptional = getOptionalKcValue(CachingOptions.CACHE_STACK);
+        if (cacheStackOptional.isEmpty()) {
+            return true;
+        }
+        String cacheStack = cacheStackOptional.get();
+        return !(cacheStack.equals("udp") || cacheStack.equals("jdbc-ping-udp"));
+    }
+
     private static boolean remoteHostSet() {
         return getOptionalKcValue(CachingOptions.CACHE_REMOTE_HOST_PROPERTY).isPresent();
     }
 
     private static boolean cacheSetToInfinispan() {
         Optional<String> cache = getOptionalKcValue(CachingOptions.CACHE);
+        if (cache.isEmpty() && !Environment.isDevMode()) {
+            return true;
+        }
         return cache.isPresent() && cache.get().equals(CachingOptions.Mechanism.ispn.name());
     }
 

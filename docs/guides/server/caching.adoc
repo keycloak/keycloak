@@ -264,12 +264,12 @@ Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinis
 
 == Securing transport stacks
 
-Encryption using TLS is enabled by default for the transport stack.
-No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack, which is also the default configuration.
+Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration
+No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack.
 
 [NOTE]
 ====
-If you are using transport stack based on `UDP` or `TCP_NIO2`, proceed as follows to configure the encryption of the transport stack:
+If you are using a transport stack based on `UDP` or `TCP_NIO2`, proceed as follows to configure the encryption of the transport stack:
 
 . Set the option `cache-embedded-mtls-enabled` to `false`.
 . Follow the documentation in http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] and {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport].

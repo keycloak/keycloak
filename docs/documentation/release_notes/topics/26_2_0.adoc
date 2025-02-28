@@ -16,6 +16,15 @@ Use -1 to disable reloading. Defaults to `https-certificates-reload-period`, whi
 
 For more information, check the link:https://www.keycloak.org/server/management-interface#_tls_support[Configuring the Management Interface] guide.
 
+= Zero-configuration secure cluster communication
+
+For clustering multiple nodes, {project_name} uses distributed caches.
+Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+
+For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
 = New cache for CRLs loaded for the X.509 authenticator
 
 Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.

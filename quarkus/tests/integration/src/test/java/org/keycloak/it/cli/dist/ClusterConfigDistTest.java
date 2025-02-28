@@ -48,7 +48,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp", "--cache-embedded-mtls-enabled=false" })
+    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp"})
     void testJdbcPingTCP(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping-udp`");
@@ -112,7 +112,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
-    @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml", "--cache-embedded-mtls-enabled=false" })
+    @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
     void testCustomCacheStackInConfigFile(CLIResult result) {
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
     }
