@@ -42,6 +42,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -72,6 +73,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientScopeEvaluateResource {
 
     protected static final Logger logger = Logger.getLogger(ClientScopeEvaluateResource.class);

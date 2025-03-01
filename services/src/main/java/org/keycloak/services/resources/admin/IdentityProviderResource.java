@@ -21,6 +21,7 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -80,6 +81,7 @@ import java.util.stream.Stream;
  * @author Pedro Igor
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class IdentityProviderResource {
 
     protected static final Logger logger = Logger.getLogger(IdentityProviderResource.class);
