@@ -456,7 +456,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
             // try to refresh the token
             // this fails as client no longer has requested consent from user
-            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
             Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
             Assert.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
 

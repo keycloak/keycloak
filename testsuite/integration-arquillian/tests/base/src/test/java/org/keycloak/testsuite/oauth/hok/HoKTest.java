@@ -365,7 +365,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            response = oauth.doRefreshTokenRequest(refreshTokenString);
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -405,7 +405,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            response = oauth.doRefreshTokenRequest(refreshTokenString);
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {

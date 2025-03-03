@@ -500,7 +500,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             // Ignore
         }
 
-        AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "password");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString);
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         String offlineUserSessionId = testingClient.server().fetch((KeycloakSession session) ->
                 session.sessions().getOfflineUserSession(session.realms().getRealmByName("test"), offlineToken.getSessionState()).getId(), String.class);

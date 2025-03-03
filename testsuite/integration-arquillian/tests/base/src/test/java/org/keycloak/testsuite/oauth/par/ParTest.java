@@ -194,7 +194,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(sessionId, refreshToken.getSessionState());
             assertEquals(clientId, refreshToken.getIssuedFor());
 
-            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
             assertEquals(200, refreshResponse.getStatusCode());
 
             AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
@@ -205,7 +205,7 @@ public class ParTest extends AbstractClientPoliciesTest {
 
             // Logout
             oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
-            refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
+            refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
             assertEquals(400, refreshResponse.getStatusCode());
 
         } finally {
@@ -273,7 +273,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(sessionId, refreshToken.getSessionState());
             assertEquals(clientId, refreshToken.getIssuedFor());
 
-            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
             assertEquals(200, refreshResponse.getStatusCode());
 
             AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
@@ -284,7 +284,7 @@ public class ParTest extends AbstractClientPoliciesTest {
 
             // Logout
             oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
-            refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
+            refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
             assertEquals(400, refreshResponse.getStatusCode());
 
         } finally {
@@ -1290,7 +1290,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(sessionId, refreshToken.getSessionState());
         assertEquals(clientId, refreshToken.getIssuedFor());
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, refreshResponse.getStatusCode());
 
         AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
@@ -1301,7 +1301,7 @@ public class ParTest extends AbstractClientPoliciesTest {
 
         // Logout
         oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
-        refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), clientSecret);
+        refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
         assertEquals(400, refreshResponse.getStatusCode());
     }
 

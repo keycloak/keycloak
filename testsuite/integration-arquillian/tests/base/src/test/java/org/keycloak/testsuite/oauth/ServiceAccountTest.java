@@ -194,7 +194,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
         Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
 
-        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
@@ -236,7 +236,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
@@ -325,7 +325,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
             ClientManager.realm(adminClient.realm("test")).clientId("service-account-cl").setServiceAccountsEnabled(false);
 
-            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
             assertEquals(400, response.getStatusCode());
         }
         finally {
@@ -499,7 +499,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
         Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
 
-        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());

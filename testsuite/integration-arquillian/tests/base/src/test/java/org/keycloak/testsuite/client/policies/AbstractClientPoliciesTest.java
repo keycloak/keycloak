@@ -663,11 +663,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, String sessionId, boolean isOfflineAccess) throws IOException {
-        oauth.clientId(clientId);
-        oauth.doTokenRevoke(refreshToken, "refresh_token", clientSecret);
+        oauth.client(clientId, clientSecret);
+        oauth.doTokenRevoke(refreshToken, "refresh_token");
 
         // confirm revocation
-        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken, clientSecret);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
         assertEquals(400, tokenRes.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, tokenRes.getError());
         if (isOfflineAccess) assertEquals("Offline user session not found", tokenRes.getErrorDescription());
@@ -1323,7 +1323,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AccessTokenResponse accessTokenResponseRefreshed;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {

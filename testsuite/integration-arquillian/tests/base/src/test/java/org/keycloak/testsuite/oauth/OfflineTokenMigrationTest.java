@@ -117,7 +117,7 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
         getLogger().infof("Modified offline token: %s", modifiedOfflineToken);
 
         // Check it is possible to successfully refresh with the modified offline token
-        AccessTokenResponse response = oauth.doRefreshTokenRequest(modifiedOfflineToken, "password");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(modifiedOfflineToken);
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(200, response.getStatusCode());
     }

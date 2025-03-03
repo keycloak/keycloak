@@ -1064,7 +1064,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
             setTimeOffset(sessionMax - 60);
 
-            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
             assertEquals(200, response.getStatusCode());
 
             // Assert expiration equals session expiration
@@ -1162,7 +1162,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             client.update(clientRep);
 
             String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            response = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, response.getStatusCode());
 
             assertExpiration(response.getExpiresIn(), sessionMax);
@@ -1193,7 +1193,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             realm.update(rep);
 
             String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            response = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan - 100);
 
@@ -1202,7 +1202,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             client.update(clientRepresentation);
 
             refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            response = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan - 200);
         } finally {
@@ -1239,7 +1239,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             realm.update(rep);
 
             String refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            response = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan - 100);
 
@@ -1248,7 +1248,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             client.update(clientRepresentation);
 
             refreshToken = response.getRefreshToken();
-            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            response = oauth.doRefreshTokenRequest(refreshToken);
             assertEquals(200, response.getStatusCode());
             assertExpiration(response.getExpiresIn(), accessTokenLifespan - 200);
         } finally {
