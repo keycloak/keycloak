@@ -1315,7 +1315,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         oauth.realm("master");
         oauth.clientId("tokenexclient");
         String exchanged = null;
-        String token = oauth.doGrantAccessTokenRequest("admin", "admin").getAccessToken();
+        String token = oauth.doPasswordGrantRequest("admin", "admin").getAccessToken();
         Assert.assertNotNull(token);
         try {
             exchanged = oauth.doTokenExchange(token, "admin-cli", "tokenexclient", "password").getAccessToken();

@@ -138,19 +138,19 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.openid(false);
         oauth.scope("user phone");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
         
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope("user");
-        response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
+        response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
 
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope(null);
-        response = oauth.doGrantAccessTokenRequest(loginUser, loginPassword);
+        response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
 
         assertNotNull(response.getAccessToken());
 

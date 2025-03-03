@@ -391,7 +391,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
                 .client(providerAccountRep.getClientId())
                 .scope(OAuth2Constants.SCOPE_OPENID +" " + OAuth2Constants.SCOPE_PROFILE + " " + OAuth2Constants.OFFLINE_ACCESS)
-                .doGrantAccessTokenRequest(getUserLogin(), getUserPassword());
+                .doPasswordGrantRequest(getUserLogin(), getUserPassword());
         assertNotNull(response.getRefreshToken());
 
         log.debug("Check for Offline Token in consents");

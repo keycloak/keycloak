@@ -58,7 +58,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
         oauth.realm("test");
         oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         oauth.origin(VALID_CORS_URL);
@@ -74,7 +74,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
         oauth.realm("test");
         oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         oauth.origin(INVALID_CORS_URL);

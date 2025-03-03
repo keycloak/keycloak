@@ -344,7 +344,7 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
         try {
             oauth.clientId(clientId);
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest(user, "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(user, "password");
             assertEquals(401, response.getStatusCode());
             assertEquals("Access denied", response.getError());
             assertNull(response.getErrorDescription());

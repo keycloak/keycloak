@@ -259,7 +259,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         // Login to the new client
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.client(clientId, "password")
-                .doGrantAccessTokenRequest("test-user@localhost", "password");
+                .doPasswordGrantRequest("test-user@localhost", "password");
 
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertNames(accessToken.getResourceAccess(clientId).getRoles(), "my.foo.role");
@@ -870,7 +870,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
-        String accessToken = oauth.client("saml-client", "secret").doGrantAccessTokenRequest( "test-user@localhost", "password").getAccessToken();
+        String accessToken = oauth.client("saml-client", "secret").doPasswordGrantRequest( "test-user@localhost", "password").getAccessToken();
 
         // change client's protocol
         ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);

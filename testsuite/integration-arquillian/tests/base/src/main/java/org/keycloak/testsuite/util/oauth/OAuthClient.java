@@ -90,11 +90,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         updateAppRootRealm("master");
     }
 
-
-    private String idTokenHint;
-
-    private StateParamProvider state;
-
     public OAuthClient(CloseableHttpClient httpClient, WebDriver webDriver) {
         super(AUTH_SERVER_ROOT, httpClient, webDriver);
         init();
@@ -136,12 +131,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         this.driver = driver;
     }
 
-    public AuthorizationEndpointResponse doSilentLogin() {
-        openLoginForm();
-        WaitUtils.waitForPageToLoad();
-        return parseLoginResponse();
-    }
-
     public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
         openLoginForm();
         WaitUtils.waitForPageToLoad();
@@ -159,10 +148,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         loginPage.login(username, password);
     }
 
-    public void doLoginGrant(String username, String password) {
-        doLogin(username, password);
-    }
-
     public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
         return new IntrospectionRequest(tokenToIntrospect, this);
     }
@@ -177,14 +162,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public String doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
         return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
-    }
-
-    /**
-     * @deprecated Use {@link #doPasswordGrantRequest(String, String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doGrantAccessTokenRequest(String username, String password) throws Exception {
-        return doPasswordGrantRequest(username, password);
     }
 
     public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {

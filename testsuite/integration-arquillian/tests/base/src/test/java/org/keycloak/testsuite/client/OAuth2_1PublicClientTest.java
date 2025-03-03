@@ -143,7 +143,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1PublicClientForAllClient();
 
         oauth.client(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());

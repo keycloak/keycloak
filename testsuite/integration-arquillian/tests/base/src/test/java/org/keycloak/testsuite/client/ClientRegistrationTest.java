@@ -157,7 +157,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
 
-        String token = oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest( "admin", "admin").getAccessToken();
+        String token = oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest( "admin", "admin").getAccessToken();
         masterReg.auth(Auth.token(token));
 
         ClientRepresentation client = new ClientRepresentation();

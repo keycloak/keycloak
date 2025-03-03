@@ -579,7 +579,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         // token request with a valid DPoP proof - success
         // EC key for client alpha
-        oauth.doSilentLogin();
+        oauth.openLoginForm();
         code = oauth.parseLoginResponse().getCode();
 
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
@@ -699,7 +699,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
 
         oauth.dpopProof(dpopProofRsaEncoded);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
         assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());

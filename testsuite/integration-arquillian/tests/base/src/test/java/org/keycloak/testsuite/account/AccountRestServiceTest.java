@@ -1141,7 +1141,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplications() throws Exception {
         oauth.client("in-use-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1164,7 +1164,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsFiltered() throws Exception {
         oauth.client("in-use-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1187,11 +1187,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void listApplicationsOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         oauth.client("offline-client-without-base-url", "secret1");
-        offlineTokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1273,7 +1273,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void listApplicationsWithRootUrl() throws Exception {
         oauth.clientId("root-url-client");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
@@ -1713,7 +1713,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void revokeOfflineAccess() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("view-applications-access", "password");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
         tokenUtil = new TokenUtil("view-applications-access", "password");
@@ -1760,7 +1760,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testAudience() throws Exception {
         oauth.clientId("custom-audience");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         SimpleHttp.Response response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -1776,7 +1776,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         mapperRep.getConfig().put("included.custom.audience", "account");
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().update(mapperRep.getId(), mapperRep);
 
-        tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -1788,7 +1788,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // remove audience completely
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().delete(mapperRep.getId());
 
-        tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
         response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)

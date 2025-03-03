@@ -342,7 +342,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         addressScope.update(addressScopeRep);
 
         oauth.clientId("third-party");
-        oauth.doLoginGrant("john", "password");
+        oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
@@ -371,7 +371,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Login with optional scopes. Grant screen should have just "phone"
         oauth.scope("openid address phone");
-        oauth.doLoginGrant("john", "password");
+        oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PHONE_CONSENT_TEXT);
@@ -407,7 +407,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Login. Client should be displayed on consent screen
         oauth.clientId("third-party");
-        oauth.doLoginGrant("john", "password");
+        oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "ThirdParty permissions");
@@ -451,7 +451,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Login. ConsentTexts are empty for the client and for the "profile" scope, so it should fallback to name/clientId
         oauth.clientId("third-party");
-        oauth.doLoginGrant("john", "password");
+        oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants("profile", OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "third-party");
@@ -470,7 +470,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     public void testRefreshTokenWithConsentRequired() {
         // Login with consentRequired
         oauth.clientId("third-party");
-        oauth.doLoginGrant("john", "password");
+        oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);

@@ -85,7 +85,7 @@ public class DirectGrantFlowTest extends AbstractTestRealmKeycloakTest {
 
         // User should not be able to login as there was required action added to authenticationSession by OTPFormAuthenticator
         oauth.clientId(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(login, "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(login, "password");
 
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
