@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import jakarta.ws.rs.core.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
@@ -59,11 +62,14 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
 
 /**
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
@@ -191,16 +197,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         clientRepresentation.setClientId(clientId);
         clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         clientRepresentation.setEnabled(true);
-        clientRepresentation.setProtocolMappers(
-                List.of(
-                        getRoleMapper(clientId, "VerifiableCredential"),
-                        getUserAttributeMapper("email", "email", "VerifiableCredential"),
-                        getIdMapper("VerifiableCredential"),
-                        getStaticClaimMapper("VerifiableCredential", "VerifiableCredential"),
-                        // This is used for negative test. Shall not land into the credential
-                        getStaticClaimMapper("AnotherCredentialType", "AnotherCredentialType")
-                )
-        );
         return clientRepresentation;
     }
 
@@ -239,9 +235,50 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         componentExportRepresentation.setConfig(new MultivaluedHashMap<>(
                 Map.of(
                         "ecdsaEllipticCurveKey", List.of("P-256"),
-                        "algorithm", List.of("ES256")                        ))
-        );
+                        "algorithm", List.of("ES256"))
+        ));
         return componentExportRepresentation;
+    }
+
+    public void addProtocolMappersToClientScope(String scopeId, String scopeName, String clientId) {
+        List<ProtocolMapperRepresentation> protocolMappers = getProtocolMappers(scopeName, clientId);
+
+        if (!protocolMappers.isEmpty()) {
+            ClientScopeResource clientScopeResource = testRealm().clientScopes().get(scopeId);
+            ProtocolMappersResource protocolMappersResource = clientScopeResource.getProtocolMappers();
+
+            for (ProtocolMapperRepresentation protocolMapper : protocolMappers) {
+                Response response = protocolMappersResource.createMapper(protocolMapper);
+                if (response.getStatus() != 201) {
+                    LOGGER.errorf("Failed to create protocol mapper: {} for scope: {}", protocolMapper, scopeName);
+                }
+            }
+        }
+    }
+
+    private List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName, String clientId) {
+        final String TEST_CREDENTIAL = "test-credential";
+        final String VERIFIABLE_CREDENTIAL = "VerifiableCredential";
+
+        return switch (scopeName) {
+            case TEST_CREDENTIAL -> List.of(
+                    getRoleMapper(clientId, TEST_CREDENTIAL),
+                    getUserAttributeMapper("email", "email", TEST_CREDENTIAL),
+                    getUserAttributeMapper("firstName", "firstName", TEST_CREDENTIAL),
+                    getUserAttributeMapper("lastName", "lastName", TEST_CREDENTIAL),
+                    getJtiGeneratedIdMapper(TEST_CREDENTIAL),
+                    getStaticClaimMapper(TEST_CREDENTIAL, TEST_CREDENTIAL),
+                    getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE", TEST_CREDENTIAL),
+                    getIssuedAtTimeMapper("nbf", null, "COMPUTE", TEST_CREDENTIAL)
+            );
+            case VERIFIABLE_CREDENTIAL -> List.of(
+                    getRoleMapper(clientId, VERIFIABLE_CREDENTIAL),
+                    getUserAttributeMapper("email", "email", VERIFIABLE_CREDENTIAL),
+                    getIdMapper(VERIFIABLE_CREDENTIAL),
+                    getStaticClaimMapper(scopeName, VERIFIABLE_CREDENTIAL)
+            );
+            default -> List.of(); // No mappers for unknown scopes
+        };
     }
 
     public static ProtocolMapperRepresentation getRoleMapper(String clientId, String supportedCredentialTypes) {
