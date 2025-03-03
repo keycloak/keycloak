@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
@@ -539,5 +540,13 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testHttpTrustStoreTypeStrictFips() {
         ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
         assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+    }
+
+    @Test
+    public void testKeycloakConfQuarkusPropertyNotUsed() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
+        assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
     }
 }
