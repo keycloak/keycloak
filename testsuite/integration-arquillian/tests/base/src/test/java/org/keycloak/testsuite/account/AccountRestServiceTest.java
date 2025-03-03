@@ -75,10 +75,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
 import jakarta.ws.rs.ClientErrorException;
@@ -103,7 +103,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1865,6 +1865,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
     }
 }

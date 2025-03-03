@@ -31,7 +31,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -40,6 +39,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -92,7 +92,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     @Before
     public void configureUserProfile() {
         UserProfileResource userProfileRes = testRealmResource().users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
     private void configureRequiredActions() {

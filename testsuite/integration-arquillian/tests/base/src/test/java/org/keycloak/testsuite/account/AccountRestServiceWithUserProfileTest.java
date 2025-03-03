@@ -22,9 +22,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_ONLY;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_ONLY;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -44,7 +44,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
 /**
@@ -372,7 +372,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
     }
 
     protected UserRepresentation getUser() throws IOException {

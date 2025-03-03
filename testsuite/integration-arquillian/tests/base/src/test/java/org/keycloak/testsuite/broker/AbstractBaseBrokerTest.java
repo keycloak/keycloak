@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.broker;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -31,7 +34,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.IdpConfirmOverrideLinkPage;
@@ -47,16 +50,13 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.openqa.selenium.TimeoutException;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -190,8 +190,8 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         importRealm(consumerRealm);
         importRealm(providerRealm);
 
-        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
-        VerifyProfileTest.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
+        UserProfileUtil.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
+        UserProfileUtil.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
     }
 
     @After

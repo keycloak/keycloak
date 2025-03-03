@@ -43,13 +43,13 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
@@ -1300,7 +1300,7 @@ public class GroupTest extends AbstractGroupTest {
 
         // enable user profile unmanaged attributes
         UserProfileResource upResource = realm.users().userProfile();
-        UPConfig cfg = VerifyProfileTest.enableUnmanagedAttributes(upResource);
+        UPConfig cfg = UserProfileUtil.enableUnmanagedAttributes(upResource);
 
         GroupsResource groups = realm.groups();
         try (Response response = groups.add(GroupBuilder.create().name(groupName).build())) {

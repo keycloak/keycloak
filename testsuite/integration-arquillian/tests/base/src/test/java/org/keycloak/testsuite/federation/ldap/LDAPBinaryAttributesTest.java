@@ -42,11 +42,11 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.validate.validators.LengthValidator;
 
 import java.util.Collections;
@@ -97,7 +97,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
 
         // User profile unmanaged attributes supported
         UserProfileResource userProfileRes = testRealm().users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(userProfileRes);
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
 
