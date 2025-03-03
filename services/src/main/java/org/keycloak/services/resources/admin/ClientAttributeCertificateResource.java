@@ -20,6 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import jakarta.ws.rs.NotAcceptableException;
@@ -70,6 +71,7 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientAttributeCertificateResource {
 
     public static final String CERTIFICATE_PEM = "Certificate PEM";

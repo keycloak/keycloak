@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.events.admin.ResourceType;
@@ -45,6 +46,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientRegistrationPolicyResource {
 
     private final AdminPermissionEvaluator auth;
