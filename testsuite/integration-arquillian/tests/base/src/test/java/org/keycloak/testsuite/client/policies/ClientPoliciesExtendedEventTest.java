@@ -576,17 +576,12 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
 
-        String origClientId = oauth.getClientId();
-        oauth.clientId("service-account-app");
+        oauth.client("service-account-app", "app-secret");
         oauth.scope("offline_access");
-        try {
-            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
-            assertEquals(400, response.getStatusCode());
-            assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE.toString(), response.getError());
-            assertEquals("Exception thrown intentionally", response.getErrorDescription());
-        } finally {
-            oauth.clientId(origClientId);
-        }
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_RESPONSE.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
     }
 
     @Test

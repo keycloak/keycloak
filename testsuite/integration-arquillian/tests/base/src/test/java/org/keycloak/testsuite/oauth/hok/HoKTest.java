@@ -714,7 +714,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             // Request with HoK - success
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
                 oauth.httpClient().set(client);
-                response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+                response = oauth.doClientCredentialsGrantAccessTokenRequest();
                 assertEquals(200, response.getStatusCode());
 
                 // Success Pattern

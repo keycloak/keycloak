@@ -226,14 +226,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .additionalParams(additionalParams).send();
     }
 
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doClientCredentialsGrantAccessTokenRequest()}
-     */
-    @Deprecated
-    public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
-        return clientCredentialsGrantRequest().client(config.getClientId(), clientSecret).send();
-    }
-
     // TODO Deprecate
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
         return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, acrValues, null, null);
