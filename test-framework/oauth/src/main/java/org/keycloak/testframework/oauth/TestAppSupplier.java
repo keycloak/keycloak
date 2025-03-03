@@ -1,7 +1,7 @@
 package org.keycloak.testframework.oauth;
 
+import com.sun.net.httpserver.HttpServer;
 import org.keycloak.testframework.injection.InstanceContext;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
@@ -10,7 +10,8 @@ public class TestAppSupplier implements Supplier<TestApp, InjectTestApp> {
 
     @Override
     public TestApp getValue(InstanceContext<TestApp, InjectTestApp> instanceContext) {
-        return new TestApp();
+        HttpServer httpServer = instanceContext.getDependency(HttpServer.class);
+        return new TestApp(httpServer);
     }
 
     @Override
@@ -19,7 +20,8 @@ public class TestAppSupplier implements Supplier<TestApp, InjectTestApp> {
     }
 
     @Override
-    public LifeCycle getDefaultLifecycle() {
-        return LifeCycle.GLOBAL;
+    public void close(InstanceContext<TestApp, InjectTestApp> instanceContext) {
+        instanceContext.getValue().close();
     }
+
 }
