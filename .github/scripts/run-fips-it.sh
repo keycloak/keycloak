@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+set -x
 
 dnf install -y java-21-openjdk-devel
 fips-mode-setup --enable --no-bootcfg
