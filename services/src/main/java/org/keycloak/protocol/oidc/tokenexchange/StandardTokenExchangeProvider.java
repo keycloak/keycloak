@@ -36,6 +36,7 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
@@ -204,7 +205,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope) {
+                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
@@ -245,6 +246,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             validateConsents(targetUser, clientSessionCtx);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            //store client id and token id to use during revocation
+            clientSessionCtx.getClientSession().setNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + subjectToken.getIssuedFor(), subjectToken.getId());
 
             TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session,
                     clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx).generateAccessToken();
