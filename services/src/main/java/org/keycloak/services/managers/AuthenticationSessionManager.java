@@ -165,9 +165,19 @@ public class AuthenticationSessionManager {
         return new AuthSessionId(decodedAuthSessionId, reencoded);
     }
 
-    void reencodeAuthSessionCookie(String oldEncodedAuthSessionId, AuthSessionId newAuthSessionId, RealmModel realm) {
-        if (!oldEncodedAuthSessionId.equals(newAuthSessionId.getEncodedId())) {
-            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedAuthSessionId,
+    /**
+     * The AUTH_SESSION_ID cookie is re-encoded if it is not retrieved from the cookie
+     * or if the authSessionId has changed
+     * @param oldEncodedAuthSessionId
+     * @param newAuthSessionId
+     * @param realm
+     */
+    void reencodeAuthSessionCookie(String oldEncodedAuthSessionId, AuthSessionId newAuthSessionId,
+                                   RealmModel realm) {
+        if (oldEncodedAuthSessionId == null || !oldEncodedAuthSessionId.equals(
+                newAuthSessionId.getEncodedId())) {
+            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'",
+                    oldEncodedAuthSessionId,
                     newAuthSessionId.getEncodedId());
             setAuthSessionCookie(newAuthSessionId.getDecodedId());
         }
@@ -329,24 +339,39 @@ public class AuthenticationSessionManager {
         return decodedAuthSessionId==null ? null : getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
     }
 
+    /**
+     * The auth_session cookie is created when it can't be retrieved from the
+     * AUT_SESSION_ID cookie but we fall back to the identity cookie.
+     *
+     * Note : the AUTh_SESSION_ID cookie is a session cookie that can disappear when the browser is closed
+     *
+     * @param realm
+     * @return
+     */
     public UserSessionModel getUserSessionFromAuthenticationCookie(RealmModel realm) {
-        String oldEncodedId = getAuthSessionCookies(realm);
-
-        if (oldEncodedId == null) {
+        // PATCH : null value from the auth cookie means that the auth cookie is not present
+        // which always occurs when the browser is restarted
+        // so a null value has a meaning we have to save this state
+        String oldEncodedIdFromAuthCookie = getAuthSessionCookies(realm);
+        String currentEncodedId = "";
+        if (oldEncodedIdFromAuthCookie == null) {
             // ideally, we should not rely on auth session id to retrieve user sessions
             // in case the auth session was removed, we fall back to the identity cookie
             // we are here doing the user session lookup twice, however the second lookup is going to make sure the
             // session exists in remote caches
-            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, true);
+            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm,
+                    true);
 
             if (authResult != null && authResult.getSession() != null) {
-                oldEncodedId = authResult.getSession().getId();
+                currentEncodedId = authResult.getSession().getId();
             } else {
                 return null;
             }
+        } else {
+            currentEncodedId = oldEncodedIdFromAuthCookie;
         }
 
-        AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
+        AuthSessionId authSessionId = decodeAuthSessionId(currentEncodedId);
         String sessionId = authSessionId.getDecodedId();
 
         // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
@@ -357,7 +382,9 @@ public class AuthenticationSessionManager {
         UserSessionModel userSession = userSessionProvider.getUserSession(realm, sessionId);
 
         if (userSession != null) {
-            reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
+            // PATCH : the old id from the auth cookie can be null
+            // in this cas, we have to create the new Auth cookie
+            reencodeAuthSessionCookie(oldEncodedIdFromAuthCookie, authSessionId, realm);
             return userSession;
         } else {
             return null;
