@@ -7,9 +7,9 @@ import java.io.IOException;
 
 public class JwksRequest {
 
-    private final OAuthClient client;
+    private final AbstractOAuthClient<?> client;
 
-    public JwksRequest(OAuthClient client) {
+    JwksRequest(AbstractOAuthClient<?> client) {
         this.client = client;
     }
 

@@ -1,6 +1,11 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.RefreshToken;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Map;
@@ -28,6 +33,8 @@ public abstract class AbstractOAuthClient<T> {
     protected StateParamProvider state;
     protected String nonce;
 
+    private final KeyManager keyManager = new KeyManager(this);
+    private final TokensManager tokensManager = new TokensManager(keyManager);
     protected HttpClientManager httpClientManager;
     protected WebDriver driver;
 
@@ -123,6 +130,30 @@ public abstract class AbstractOAuthClient<T> {
         return tokenRevocationRequest(token).send();
     }
 
+    public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
+        return tokensManager.parseToken(token, clazz);
+    }
+
+    public RefreshToken parseRefreshToken(String refreshToken) {
+        return tokensManager.parseToken(refreshToken, RefreshToken.class);
+    }
+
+    public AccessToken verifyToken(String token) {
+        return tokensManager.verifyToken(token, AccessToken.class);
+    }
+
+    public IDToken verifyIDToken(String token) {
+        return tokensManager.verifyToken(token, IDToken.class);
+    }
+
+    public AuthorizationResponseToken verifyAuthorizationResponseToken(String token) {
+        return tokensManager.verifyToken(token, AuthorizationResponseToken.class);
+    }
+
+    public <J extends JsonWebToken> J verifyToken(String token, Class<J> clazz) {
+        return tokensManager.verifyToken(token, clazz);
+    }
+
     public T baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
         return (T) this;
@@ -141,8 +172,16 @@ public abstract class AbstractOAuthClient<T> {
         return httpClientManager;
     }
 
+    public KeyManager keys() {
+        return keyManager;
+    }
+
     public Endpoints getEndpoints() {
         return new Endpoints(baseUrl, config.getRealm());
+    }
+
+    public String getRealm() {
+        return config.getRealm();
     }
 
     public String getRedirectUri() {

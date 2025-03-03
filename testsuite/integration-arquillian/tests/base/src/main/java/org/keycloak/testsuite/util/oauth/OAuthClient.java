@@ -27,32 +27,16 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.TokenVerifier;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.ServerECDSASignatureSignerContext;
-import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.ClaimsRepresentation;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
@@ -62,13 +46,10 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,16 +65,10 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
  */
 public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
-    private static final Logger logger = LoggerFactory.getLogger(OAuthClient.class);
-
     public static String SERVER_ROOT;
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
     public static String APP_AUTH_ROOT;
-
-
-
-
 
     static {
         updateURLs(getAuthServerContextRoot());
@@ -115,7 +90,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         updateAppRootRealm("master");
     }
 
-    private KeyManager keyManager = new KeyManager(this);
 
     private String idTokenHint;
 
@@ -530,74 +504,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         }
     }
 
-    // TODO Extract into separate util to verify tokens
-    public AccessToken verifyToken(String token) {
-        return verifyToken(token, AccessToken.class);
-    }
-
-    public IDToken verifyIDToken(String token) {
-        return verifyToken(token, IDToken.class);
-    }
-
-    public AuthorizationResponseToken verifyAuthorizationResponseToken(String token) {
-        return verifyToken(token, AuthorizationResponseToken.class);
-    }
-
-    public RefreshToken parseRefreshToken(String refreshToken) {
-        try {
-            return new JWSInput(refreshToken).readJsonContent(RefreshToken.class);
-        } catch (Exception e) {
-            throw new RunOnServerException(e);
-        }
-    }
-
-    public <T extends JsonWebToken> T verifyToken(String token, Class<T> clazz) {
-        try {
-            TokenVerifier<T> verifier = TokenVerifier.create(token, clazz);
-            String kid = verifier.getHeader().getKeyId();
-            String algorithm = verifier.getHeader().getAlgorithm().name();
-            KeyWrapper key = keyManager.getPublicKey(algorithm, kid);
-            AsymmetricSignatureVerifierContext verifierContext;
-            switch (algorithm) {
-                case Algorithm.ES256:
-                case Algorithm.ES384:
-                case Algorithm.ES512:
-                    verifierContext = new ServerECDSASignatureVerifierContext(key);
-                    break;
-                default:
-                    verifierContext = new AsymmetricSignatureVerifierContext(key);
-            }
-            verifier.verifierContext(verifierContext);
-            verifier.verify();
-            return verifier.getToken();
-        } catch (VerificationException e) {
-            throw new RuntimeException("Failed to decode token", e);
-        }
-    }
-
-    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
-        return createSigner(privateKey, kid, algorithm, null);
-    }
-
-    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm, String curve) {
-        KeyWrapper keyWrapper = new KeyWrapper();
-        keyWrapper.setAlgorithm(algorithm);
-        keyWrapper.setKid(kid);
-        keyWrapper.setPrivateKey(privateKey);
-        keyWrapper.setCurve(curve);
-        SignatureSignerContext signer;
-        switch (algorithm) {
-            case Algorithm.ES256:
-            case Algorithm.ES384:
-            case Algorithm.ES512:
-                signer = new ServerECDSASignatureSignerContext(keyWrapper);
-                break;
-            default:
-                signer = new AsymmetricSignatureSignerContext(keyWrapper);
-        }
-        return signer;
-    }
-
     public String getClientId() {
         return config.getClientId();
     }
@@ -737,15 +643,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
             }
         }
         return this;
-    }
-
-
-    public KeyManager keys() {
-        return keyManager;
-    }
-
-    public String getRealm() {
-        return config.getRealm();
     }
 
     public OAuthClient codeVerifier(String codeVerifier) {

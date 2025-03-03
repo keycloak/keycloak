@@ -117,6 +117,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -925,7 +926,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         if (kid == null) {
             kid = KeyUtils.createKeyId(publicKey);
         }
-        SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm, curve);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm, curve);
         String ret = new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
         return ret;
     }
