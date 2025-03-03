@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-component-processor</artifactId>
+            <artifactId>infinispan-component-annotations</artifactId>
         </dependency>
     </dependencies>
 
