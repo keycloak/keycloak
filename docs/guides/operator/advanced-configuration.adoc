@@ -501,7 +501,7 @@ spec:
     enabled:
       - rolling-updates # <1>
   update:
-    strategy: RecreateOnImageChange|ForceRecreate|Auto # <2>
+    strategy: RecreateOnImageChange|Auto # <2>
 ----
 <1> Enable preview feature `rolling-updates`.
 <2> Set the desired update strategy here (Recreate in this example).
@@ -515,10 +515,6 @@ spec:
 |On image name or tag change
 |Mimics Keycloak 26.1 or older behavior.
 When the image field changes, the StatefulSet is scaled down before applying the new image.
-
-|`ForceRecreate`
-|On any configuration or image change
-|The StatefulSet is scaled down before applying the new configuration or image.
 
 |`Auto`
 |On incompatible changes

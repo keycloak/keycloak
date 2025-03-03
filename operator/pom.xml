@@ -253,6 +253,7 @@
                 </executions>
                 <configuration>
                     <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <!-- Used in KeycloakDeploymentTest#testPreconfiguredPodLabels -->
                         <OPERATOR_TEST_LABEL_EXPRESSION>my-value</OPERATOR_TEST_LABEL_EXPRESSION>
                     </systemPropertyVariables>
