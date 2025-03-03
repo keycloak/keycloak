@@ -91,7 +91,7 @@ importers:
         version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.2.2
-        version: 24.2.2(typescript@5.7.3)
+        version: 24.2.2(typescript@5.8.2)
       i18next-fetch-backend:
         specifier: ^6.0.0
         version: 6.0.0
@@ -112,7 +112,7 @@ importers:
         version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.4.1
-        version: 15.4.1(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.4.1(i18next@24.2.2(typescript@5.8.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.30.0
         version: 6.30.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -143,10 +143,10 @@ importers:
         version: 6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
         specifier: ^0.9.0
-        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
-        specifier: ^4.5.0
-        version: 4.5.0(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^4.5.1
+        version: 4.5.1(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
 
   apps/admin-ui:
     dependencies:
@@ -179,7 +179,7 @@ importers:
         version: 3.1.0(@babel/runtime@7.26.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.7.3)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.8.2)'
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -188,7 +188,7 @@ importers:
         version: 6.0.1
       i18next:
         specifier: ^24.2.2
-        version: 24.2.2(typescript@5.7.3)
+        version: 24.2.2(typescript@5.8.2)
       i18next-fetch-backend:
         specifier: ^6.0.0
         version: 6.0.0
@@ -215,7 +215,7 @@ importers:
         version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.4.1
-        version: 15.4.1(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.4.1(i18next@24.2.2(typescript@5.8.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
         specifier: ^6.30.0
         version: 6.30.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -279,16 +279,16 @@ importers:
         version: 1.29.1
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.7.3)
+        version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.8.2)
       vite:
         specifier: ^6.2.0
         version: 6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
         specifier: ^0.9.0
-        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
-        specifier: ^4.5.0
-        version: 4.5.0(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^4.5.1
+        version: 4.5.1(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vitest:
         specifier: ^3.0.7
         version: 3.0.7(@types/node@22.13.5)(jsdom@26.0.0)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
@@ -367,7 +367,7 @@ importers:
         version: 11.1.0
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.7.3)
+        version: 10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.8.2)
 
   libs/ui-shared:
     dependencies:
@@ -388,7 +388,7 @@ importers:
         version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: ^24.2.2
-        version: 24.2.2(typescript@5.7.3)
+        version: 24.2.2(typescript@5.8.2)
       keycloak-js:
         specifier: ^26.2.0
         version: 26.2.0
@@ -406,7 +406,7 @@ importers:
         version: 7.54.2(react@18.3.1)
       react-i18next:
         specifier: ^15.4.1
-        version: 15.4.1(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.4.1(i18next@24.2.2(typescript@5.8.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -428,10 +428,10 @@ importers:
         version: 6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
         specifier: ^0.9.0
-        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        version: 0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
-        specifier: ^4.5.0
-        version: 4.5.0(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^4.5.1
+        version: 4.5.1(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-lib-inject-css:
         specifier: ^2.2.1
         version: 2.2.1(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -996,8 +996,8 @@ packages:
   '@microsoft/api-extractor-model@7.30.3':
     resolution: {integrity: sha512-yEAvq0F78MmStXdqz9TTT4PZ05Xu5R8nqgwI5xmUmQjWBQ9E6R2n8HB/iZMRciG4rf9iwI2mtuQwIzDXBvHn1w==}
 
-  '@microsoft/api-extractor@7.50.1':
-    resolution: {integrity: sha512-L18vz0ARLNaBLKwWe0DdEf7eijDsb7ERZspgZK7PxclLoQrc+9hJZo8y4OVfCHxNVyxlwVywY2WdE/3pOFViLQ==}
+  '@microsoft/api-extractor@7.51.1':
+    resolution: {integrity: sha512-VoFvIeYXme8QctXDkixy1KIn750kZaFy2snAEOB3nhDFfbBcJNEcvBrpCIQIV09MqI4g9egKUkg+/12WMRC77w==}
     hasBin: true
 
   '@microsoft/tsdoc-config@0.17.1':
@@ -1732,8 +1732,8 @@ packages:
   '@vue/compiler-vue2@2.7.16':
     resolution: {integrity: sha512-qYC3Psj9S/mfu9uVi5WvNZIzq+xnXMhOwbTFKKDD7b1lhpnn71jXSFdTQ+WsIEk0ONCd7VV2IMm7ONl6tbQ86A==}
 
-  '@vue/language-core@2.2.0':
-    resolution: {integrity: sha512-O1ZZFaaBGkKbsRfnVH1ifOK1/1BUkyK+3SQsfnh6PmMmD4qJcTU8godCeA96jjDRTL6zgnK7YzCHfaUlH2r0Mw==}
+  '@vue/language-core@2.2.4':
+    resolution: {integrity: sha512-eGGdw7eWUwdIn9Fy/irJ7uavCGfgemuHQABgJ/hU1UgZFnbTg9VWeXvHQdhY+2SPQZWJqWXvRWIg67t4iWEa+Q==}
     peerDependencies:
       typescript: '*'
     peerDependenciesMeta:
@@ -1793,8 +1793,8 @@ packages:
   ajv@8.13.0:
     resolution: {integrity: sha512-PRA911Blj99jR5RMeTunVbNXMF6Lp4vZXnk5GQjcnUWUTsrXtekg/pnmFFI2u/I36Y/2bITGS30GZCXei6uNkA==}
 
-  alien-signals@0.4.14:
-    resolution: {integrity: sha512-itUAVzhczTmP2U5yX67xVpsbbOiquusbWVyA9N+sy6+r6YVbFkahXvNCeEPWEOMhwDYwbVbGHFkVL03N9I5g+Q==}
+  alien-signals@1.0.4:
+    resolution: {integrity: sha512-DJqqQD3XcsaQcQ1s+iE2jDUZmmQpXwHiR6fCAim/w87luaW+vmLY8fMlrdkmRwzaFXhkxf3rqPCR59tKVv1MDw==}
 
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
@@ -3561,8 +3561,8 @@ packages:
     resolution: {integrity: sha512-iyAZCeyD+c1gPyE9qpFu8af0Y+MRtmKOncdGoA2S5EY8iFq99dmmvkNnHiWo+pj0s7yH7l3KPIgee77tKpXPWQ==}
     engines: {node: '>=18.0.0'}
 
-  local-pkg@0.5.1:
-    resolution: {integrity: sha512-9rrA30MRRP3gBD3HTGnC6cDFpaE1kVDWxWgqWJUN0RvDNAo+Nz/9GxB+nHOH0ifbVFy0hSA1V6vFDvnx54lTEQ==}
+  local-pkg@1.1.0:
+    resolution: {integrity: sha512-xbZBuX6gYIWrlLmZG43aAVer4ocntYO09vPy9lxd6Ns8DnR4U7N+IIeDkubinqFOHHzoMlPxTxwo0jhE7oYjAw==}
     engines: {node: '>=14'}
 
   locate-path@6.0.0:
@@ -4033,6 +4033,9 @@ packages:
   qs@6.13.1:
     resolution: {integrity: sha512-EJPeIn0CYrGu+hli1xilKAPXODtJ12T0sP63Ijx2/khC2JtuaN3JyNIpvmnkmaEtha9ocbG4A4cMcr+TvqvwQg==}
     engines: {node: '>=0.6'}
+
+  quansync@0.2.7:
+    resolution: {integrity: sha512-KZDFlN9/Si3CgKHZsIfLBsrjWKFjqu9KA0zDGJEQoQzPm5HWNDEFc2mkLeYUBBOwEJtxNBSMaNLE/GlvArIEfQ==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -4681,6 +4684,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.8.2:
+    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ufo@1.5.4:
     resolution: {integrity: sha512-UsUk3byDzKd04EyoZ7U4DOlxQaD14JUKQl6/P7wiX4FNvUfm3XL246n9W5AmqwW5RSFJ27NAuM0iLscAOYUiGQ==}
 
@@ -4833,8 +4841,8 @@ packages:
       vue-tsc:
         optional: true
 
-  vite-plugin-dts@4.5.0:
-    resolution: {integrity: sha512-M1lrPTdi7gilLYRZoLmGYnl4fbPryVYsehPN9JgaxjJKTs8/f7tuAlvCCvOLB5gRDQTTKnptBcB0ACsaw2wNLw==}
+  vite-plugin-dts@4.5.1:
+    resolution: {integrity: sha512-Yo1dHT05B2nD47AVB7b0+wK1FPFpJJnUf/muRF7+tP+sbPFRhLs70TTRGwJw7NDBwAUAmSwhrD+ZPTe4P6Wv9w==}
     peerDependencies:
       typescript: '*'
       vite: '*'
@@ -5594,7 +5602,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.7.3)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.9)(@types/react@18.3.18)(typescript@5.8.2)':
     dependencies:
       '@dagrejs/dagre': 1.1.4
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
@@ -5607,7 +5615,7 @@ snapshots:
       '@uiw/react-textarea-code-editor': 3.1.0(@babel/runtime@7.26.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       file-saver: 2.0.5
       flat: 6.0.1
-      i18next: 24.2.2(typescript@5.7.3)
+      i18next: 24.2.2(typescript@5.8.2)
       i18next-fetch-backend: 6.0.0
       jszip: 3.10.1
       keycloak-js: 26.2.0
@@ -5616,7 +5624,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-hook-form: 7.54.2(react@18.3.1)
-      react-i18next: 15.4.1(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-i18next: 15.4.1(i18next@24.2.2(typescript@5.8.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom: 6.30.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.30.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -5643,7 +5651,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@microsoft/api-extractor@7.50.1(@types/node@22.13.5)':
+  '@microsoft/api-extractor@7.51.1(@types/node@22.13.5)':
     dependencies:
       '@microsoft/api-extractor-model': 7.30.3(@types/node@22.13.5)
       '@microsoft/tsdoc': 0.15.1
@@ -6366,6 +6374,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@typescript-eslint/typescript-estree@8.25.0(typescript@5.8.2)':
+    dependencies:
+      '@typescript-eslint/types': 8.25.0
+      '@typescript-eslint/visitor-keys': 8.25.0
+      debug: 4.4.0(supports-color@8.1.1)
+      fast-glob: 3.3.3
+      is-glob: 4.0.3
+      minimatch: 9.0.5
+      semver: 7.7.1
+      ts-api-utils: 2.0.1(typescript@5.8.2)
+      typescript: 5.8.2
+    transitivePeerDependencies:
+      - supports-color
+
   '@typescript-eslint/utils@8.25.0(eslint@9.21.0)(typescript@5.7.3)':
     dependencies:
       '@eslint-community/eslint-utils': 4.4.1(eslint@9.21.0)
@@ -6486,18 +6508,18 @@ snapshots:
       de-indent: 1.0.2
       he: 1.2.0
 
-  '@vue/language-core@2.2.0(typescript@5.7.3)':
+  '@vue/language-core@2.2.4(typescript@5.8.2)':
     dependencies:
       '@volar/language-core': 2.4.11
       '@vue/compiler-dom': 3.5.13
       '@vue/compiler-vue2': 2.7.16
       '@vue/shared': 3.5.13
-      alien-signals: 0.4.14
+      alien-signals: 1.0.4
       minimatch: 9.0.5
       muggle-string: 0.4.1
       path-browserify: 1.0.1
     optionalDependencies:
-      typescript: 5.7.3
+      typescript: 5.8.2
 
   '@vue/shared@3.5.13': {}
 
@@ -6549,7 +6571,7 @@ snapshots:
       require-from-string: 2.0.2
       uri-js: 4.4.1
 
-  alien-signals@0.4.14: {}
+  alien-signals@1.0.4: {}
 
   ansi-colors@4.1.3: {}
 
@@ -7167,7 +7189,7 @@ snapshots:
       commander: 12.1.0
       filing-cabinet: 5.0.3
       precinct: 12.2.0
-      typescript: 5.7.3
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -7209,16 +7231,16 @@ snapshots:
 
   detective-stylus@5.0.1: {}
 
-  detective-typescript@14.0.0(typescript@5.7.3):
+  detective-typescript@14.0.0(typescript@5.8.2):
     dependencies:
-      '@typescript-eslint/typescript-estree': 8.25.0(typescript@5.7.3)
+      '@typescript-eslint/typescript-estree': 8.25.0(typescript@5.8.2)
       ast-module-types: 6.0.1
       node-source-walk: 7.0.1
-      typescript: 5.7.3
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
-  detective-vue2@2.2.0(typescript@5.7.3):
+  detective-vue2@2.2.0(typescript@5.8.2):
     dependencies:
       '@dependents/detective-less': 5.0.1
       '@vue/compiler-sfc': 3.5.13
@@ -7226,8 +7248,8 @@ snapshots:
       detective-sass: 6.0.1
       detective-scss: 5.0.1
       detective-stylus: 5.0.1
-      detective-typescript: 14.0.0(typescript@5.7.3)
-      typescript: 5.7.3
+      detective-typescript: 14.0.0(typescript@5.8.2)
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -7721,7 +7743,7 @@ snapshots:
       sass-lookup: 6.1.0
       stylus-lookup: 6.1.0
       tsconfig-paths: 4.2.0
-      typescript: 5.7.3
+      typescript: 5.8.2
 
   fill-range@7.1.1:
     dependencies:
@@ -8095,11 +8117,11 @@ snapshots:
 
   i18next-fetch-backend@6.0.0: {}
 
-  i18next@24.2.2(typescript@5.7.3):
+  i18next@24.2.2(typescript@5.8.2):
     dependencies:
       '@babel/runtime': 7.26.9
     optionalDependencies:
-      typescript: 5.7.3
+      typescript: 5.8.2
 
   iconv-lite@0.6.3:
     dependencies:
@@ -8544,10 +8566,11 @@ snapshots:
       rfdc: 1.4.1
       wrap-ansi: 9.0.0
 
-  local-pkg@0.5.1:
+  local-pkg@1.1.0:
     dependencies:
       mlly: 1.7.4
       pkg-types: 1.3.1
+      quansync: 0.2.7
 
   locate-path@6.0.0:
     dependencies:
@@ -8967,12 +8990,12 @@ snapshots:
       detective-sass: 6.0.1
       detective-scss: 5.0.1
       detective-stylus: 5.0.1
-      detective-typescript: 14.0.0(typescript@5.7.3)
-      detective-vue2: 2.2.0(typescript@5.7.3)
+      detective-typescript: 14.0.0(typescript@5.8.2)
+      detective-vue2: 2.2.0(typescript@5.8.2)
       module-definition: 6.0.1
       node-source-walk: 7.0.1
       postcss: 8.5.3
-      typescript: 5.7.3
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -9038,6 +9061,8 @@ snapshots:
     dependencies:
       side-channel: 1.1.0
 
+  quansync@0.2.7: {}
+
   queue-microtask@1.2.3: {}
 
   quote-unquote@1.0.0: {}
@@ -9067,11 +9092,11 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.4.1(i18next@24.2.2(typescript@5.7.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-i18next@15.4.1(i18next@24.2.2(typescript@5.8.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.26.9
       html-parse-stringify: 3.0.1
-      i18next: 24.2.2(typescript@5.7.3)
+      i18next: 24.2.2(typescript@5.8.2)
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
@@ -9705,7 +9730,11 @@ snapshots:
     dependencies:
       typescript: 5.7.3
 
-  ts-node@10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.7.3):
+  ts-api-utils@2.0.1(typescript@5.8.2):
+    dependencies:
+      typescript: 5.8.2
+
+  ts-node@10.9.2(@swc/core@1.11.1)(@types/node@22.13.5)(typescript@5.8.2):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
@@ -9719,7 +9748,7 @@ snapshots:
       create-require: 1.1.1
       diff: 4.0.2
       make-error: 1.3.6
-      typescript: 5.7.3
+      typescript: 5.8.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     optionalDependencies:
@@ -9800,6 +9829,8 @@ snapshots:
       - supports-color
 
   typescript@5.7.3: {}
+
+  typescript@5.8.2: {}
 
   ufo@1.5.4: {}
 
@@ -9946,7 +9977,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
+  vite-plugin-checker@0.9.0(eslint@9.21.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
     dependencies:
       '@babel/code-frame': 7.26.2
       chokidar: 4.0.3
@@ -9961,20 +9992,20 @@ snapshots:
     optionalDependencies:
       eslint: 9.21.0
       optionator: 0.9.4
-      typescript: 5.7.3
+      typescript: 5.8.2
 
-  vite-plugin-dts@4.5.0(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
+  vite-plugin-dts@4.5.1(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
     dependencies:
-      '@microsoft/api-extractor': 7.50.1(@types/node@22.13.5)
+      '@microsoft/api-extractor': 7.51.1(@types/node@22.13.5)
       '@rollup/pluginutils': 5.1.4(rollup@4.34.8)
       '@volar/typescript': 2.4.11
-      '@vue/language-core': 2.2.0(typescript@5.7.3)
+      '@vue/language-core': 2.2.4(typescript@5.8.2)
       compare-versions: 6.1.1
       debug: 4.4.0(supports-color@8.1.1)
       kolorist: 1.8.0
-      local-pkg: 0.5.1
+      local-pkg: 1.1.0
       magic-string: 0.30.17
-      typescript: 5.7.3
+      typescript: 5.8.2
     optionalDependencies:
       vite: 6.2.0(@types/node@22.13.5)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
     transitivePeerDependencies:
