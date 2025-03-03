@@ -48,8 +48,8 @@ importers:
         specifier: 19.0.0-beta-714736e-20250131
         version: 19.0.0-beta-714736e-20250131(eslint@9.21.0)
       eslint-plugin-react-hooks:
-        specifier: ~5.0.0
-        version: 5.0.0(eslint@9.21.0)
+        specifier: ~5.2.0
+        version: 5.2.0(eslint@9.21.0)
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -2625,8 +2625,8 @@ packages:
     peerDependencies:
       eslint: '>=7'
 
-  eslint-plugin-react-hooks@5.0.0:
-    resolution: {integrity: sha512-hIOwI+5hYGpJEc4uPRmz2ulCjAGD/N13Lukkh8cLV0i2IRk/bdZDYjgLVHj+U9Z704kLIdIO6iueGvxNur0sgw==}
+  eslint-plugin-react-hooks@5.2.0:
+    resolution: {integrity: sha512-+f15FfK64YQwZdJNELETdn5ibXEUQmW1DZL6KXhNnc2heoy/sg9VJJeT7n8TlMWouzWqSWavFkIhHyIbIAEapg==}
     engines: {node: '>=10'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
@@ -7524,7 +7524,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-react-hooks@5.0.0(eslint@9.21.0):
+  eslint-plugin-react-hooks@5.2.0(eslint@9.21.0):
     dependencies:
       eslint: 9.21.0
 
