@@ -109,7 +109,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         var defaultStream = allMappers.stream()
                 .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
                         && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
-                .flatMap(m -> toDistinctStream(m.getFrom(), m.getTo()));
+                .flatMap(m -> toDistinctStream(m.getTo()));
 
         return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
     }
