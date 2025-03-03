@@ -151,6 +151,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
             }
         } else {
             responseBuilder.getAccessToken().setSessionId(null);
+            event.session((String) null);
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);

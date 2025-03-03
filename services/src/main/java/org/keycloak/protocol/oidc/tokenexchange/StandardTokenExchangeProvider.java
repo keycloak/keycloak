@@ -116,13 +116,10 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response tokenExchange() {
-        KeycloakSession session = context.getSession();
-        RealmModel realm = context.getRealm();
-        ClientConnection clientConnection = context.getClientConnection();
-        Cors cors = context.getCors();
-        EventBuilder event = context.getEvent();
 
         String subjectToken = context.getParams().getSubjectToken();
+
+        event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());
 
         AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, context.getHeaders());
         if (authResult == null) {
@@ -134,6 +131,11 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserModel tokenUser = authResult.getUser();
         UserSessionModel tokenSession = authResult.getSession();
         AccessToken token = authResult.getToken();
+
+        event.user(tokenUser);
+        event.detail(Details.USERNAME, tokenUser.getUsername());
+        event.session(tokenSession);
+        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
 
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
@@ -253,6 +255,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
                 responseBuilder.getAccessToken().setSessionId(null);
+                event.session((String) null);
             }
 
             if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
@@ -283,7 +286,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 }
                 event.detail(Details.AUDIENCE, joiner.toString());
             }
-            event.user(targetUser);
             event.success();
 
             return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
