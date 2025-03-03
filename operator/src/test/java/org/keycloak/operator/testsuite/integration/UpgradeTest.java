@@ -80,9 +80,6 @@ public class UpgradeTest extends BaseOperatorTest {
                 // - Unexpected update-compatibility command exit code.
                 assertRecreateUpdateTypeStatus(kc, "Unexpected update-compatibility command");
                 break;
-            case FORCE_RECREATE:
-                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
-                break;
             case RECREATE_ON_IMAGE_CHANGE:
                 assertRecreateUpdateTypeStatus(kc, "Image changed");
                 break;
@@ -113,20 +110,14 @@ public class UpgradeTest extends BaseOperatorTest {
         assertUnknownUpdateTypeStatus(kc);
 
         // changing the local cache max-count should never use the recreate upgrade type
-        // except if forced by the Keycloak CR.
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("cache-embedded-authorization-max-count", "10"));
-        var upgradeCondition = updateStrategy == UpdateStrategy.FORCE_RECREATE ?
-                eventuallyRecreateUpgradeStatus(k8sclient, kc) :
-                eventuallyRollingUpgradeStatus(k8sclient, kc);
+        var upgradeCondition = eventuallyRollingUpgradeStatus(k8sclient, kc);
 
         deployKeycloak(k8sclient, kc, true);
         await(upgradeCondition);
         switch (updateStrategy) {
             case AUTO:
                 assertRollingUpdateTypeStatus(kc, "Compatible changes detected.");
-                break;
-            case FORCE_RECREATE:
-                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
                 break;
             case RECREATE_ON_IMAGE_CHANGE:
                 assertRollingUpdateTypeStatus(kc, "Image unchanged");
@@ -161,9 +152,6 @@ public class UpgradeTest extends BaseOperatorTest {
         switch (updateStrategy) {
             case AUTO:
                 assertRollingUpdateTypeStatus(kc, "Compatible changes detected.");
-                break;
-            case FORCE_RECREATE:
-                assertRecreateUpdateTypeStatus(kc, "Strategy ForceRecreate configured.");
                 break;
             case RECREATE_ON_IMAGE_CHANGE:
                 assertRecreateUpdateTypeStatus(kc, "Image changed");

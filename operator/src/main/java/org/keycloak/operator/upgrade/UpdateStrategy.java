@@ -26,10 +26,6 @@ public enum UpdateStrategy {
     @JsonProperty("RecreateOnImageChange")
     RECREATE_ON_IMAGE_CHANGE,
 
-    @JsonPropertyDescription("Shutdown the Keycloak cluster before applying the new changes.")
-    @JsonProperty("ForceRecreate")
-    FORCE_RECREATE,
-
     @JsonPropertyDescription("Automatically detects if the Keycloak CR changes requires a rolling or recreate update.")
     @JsonProperty("Auto")
     AUTO
