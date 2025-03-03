@@ -69,7 +69,6 @@ public class NetworkPolicyLogicTest {
     @ValueSource(booleans = {true, false})
     public void testHttpOnly(boolean randomPort) {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        K8sUtils.enableNetworkPolicy(kc);
         K8sUtils.disableHttps(kc);
         var httpPort = K8sUtils.enableHttp(kc, randomPort);
         var mngtPort = K8sUtils.configureManagement(kc, randomPort);
@@ -83,7 +82,6 @@ public class NetworkPolicyLogicTest {
     @ValueSource(booleans = {true, false})
     public void testHttpsOnly(boolean randomPort) {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        K8sUtils.enableNetworkPolicy(kc);
         var httpsPort = K8sUtils.configureHttps(kc, randomPort);
         var mngtPort = K8sUtils.configureManagement(kc, randomPort);
         kc.getSpec().getNetworkPolicySpec().setHttpsRules(List.of(podSelectorWithMatchLabel("https", "yes!")));
@@ -96,7 +94,6 @@ public class NetworkPolicyLogicTest {
     @ValueSource(booleans = {true, false})
     public void testHttpAndHttps(boolean randomPort) {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        K8sUtils.enableNetworkPolicy(kc);
         var httpPort = K8sUtils.enableHttp(kc, randomPort);
         var httpsPort = K8sUtils.configureHttps(kc, randomPort);
         var mngtPort = K8sUtils.configureManagement(kc, randomPort);
@@ -124,7 +121,6 @@ public class NetworkPolicyLogicTest {
     @ValueSource(booleans = {true, false})
     public void testManagementDisabled(boolean legacyOption) {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        K8sUtils.enableNetworkPolicy(kc);
         disableManagement(kc, legacyOption);
         kc.getSpec().getNetworkPolicySpec().setHttpsRules(List.of(
                 ipBlock("127.0.0.1/15", "127.0.0.1/18", "127.0.0.1/19"),
@@ -138,7 +134,6 @@ public class NetworkPolicyLogicTest {
     @Test
     public void testUpdate() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        K8sUtils.enableNetworkPolicy(kc);
 
         var controller = new MockKeycloakNetworkPolicy(kc);
 

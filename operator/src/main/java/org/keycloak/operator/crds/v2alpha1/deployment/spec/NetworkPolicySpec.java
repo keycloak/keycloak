@@ -42,7 +42,7 @@ public class NetworkPolicySpec {
 
     @JsonProperty("enabled")
     @JsonPropertyDescription("Enables or disable the ingress traffic control.")
-    private boolean networkPolicyEnabled = false;
+    private boolean networkPolicyEnabled = true;
 
     @JsonProperty("http")
     @JsonPropertyDescription(RULE_DESCRIPTION)

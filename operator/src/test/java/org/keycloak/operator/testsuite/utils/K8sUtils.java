@@ -175,9 +175,9 @@ public final class K8sUtils {
                 .endSpec();
     }
 
-    public static void enableNetworkPolicy(Keycloak keycloak) {
+    public static void disableNetworkPolicy(Keycloak keycloak) {
         var builder = new NetworkPolicySpecBuilder();
-        builder.withNetworkPolicyEnabled(true);
+        builder.withNetworkPolicyEnabled(false);
         keycloak.getSpec().setNetworkPolicySpec(builder.build());
     }
 
