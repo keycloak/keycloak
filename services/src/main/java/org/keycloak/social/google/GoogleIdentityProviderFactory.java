@@ -66,7 +66,7 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
                 .label("Hosted Domain")
                 .helpText("Set 'hd' query parameter when logging in with Google. Google will list accounts only for this " +
                         "domain. Keycloak validates that the returned identity token has a claim for this domain. When '*' " +
-                        "is entered, any hosted account can be used. Comma ',' separated list of domains is supported.")
+                        "is entered, any hosted account can be used. Must be a single domain or '*'.")
                 .type(ProviderConfigProperty.STRING_TYPE).add()
                 .property().name("userIp")
                 .label("Use userIp param")
