@@ -42,7 +42,7 @@ public class NetworkPolicySpec {
 
     @JsonProperty("enabled")
     @JsonPropertyDescription("Enables or disable the ingress traffic control.")
-    private boolean networkPolicyEnabled = false;
+    private boolean networkPolicyEnabled = true;
 
     @JsonProperty("http")
     @JsonPropertyDescription(RULE_DESCRIPTION)
@@ -96,7 +96,7 @@ public class NetworkPolicySpec {
     public static boolean isNetworkPolicyEnabled(Keycloak keycloak) {
         return networkPolicySpecOf(keycloak)
                 .map(NetworkPolicySpec::isNetworkPolicyEnabled)
-                .orElse(false);
+                .orElse(true);
     }
 
     public static String networkPolicyName(Keycloak keycloak) {

@@ -382,14 +382,15 @@ NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it 
 
 For more details about tracing, see <@links.observability id="tracing" />.
 
-=== Network Policies (Preview)
+=== Network Policies
 
 NetworkPolicies allow you to specify rules for traffic flow within your cluster, and also between Pods and the outside world.
-Your cluster must use a network plugin that supports NetworkPolicy enforcement.
+Your cluster must use a network plugin that supports NetworkPolicy enforcement actually restrict the network traffic.
 
-The operator can automatically create a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
+The operator automatically creates a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
 The HTTP(S) endpoint is open to traffic from any namespace and the outside world.
-To enable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak CR, as shown in the example below.
+
+To disable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak CR, as shown in the example below.
 
 .Keycloak CR with Network Policies enabled
 [source,yaml]
@@ -400,12 +401,12 @@ metadata:
   name: example-kc
 spec:
   networkPolicy:
-    enabled: true
+    enabled: false
 ----
 
-The above example allows traffic from all sources.
+By default, traffic to the HTTP endpoints and the management endpoint is allowed from all sources.
 The Keycloak CR can be extended to include a list of rules for each of the endpoints exposed by {project_name}.
-These rules specify from where (the source) the traffic is allowed and it's possible to communicate with the {project_name} Pods.
+These rules specify from where (the source) the traffic is allowed, and it is possible to communicate with the {project_name} Pods.
 
 .Extended Network Policy configuration
 [source,yaml]

@@ -31,3 +31,15 @@ If you provided your own keystore and truststore to secure the TCP transport sta
 If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
+= Operator creates NetworkPolicies to restrict traffic
+
+The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+We expect this to be backwards compatible to existing deployment, so no additional steps are necessary at the time of the upgrade.
+You can return to the previous behavior by disabling the creation of NetworkPolicies in the Keycloak CR.
+
+If your deployment scripts add explicit NetworkPolicies for {project_name}, you should consider removing those and migrate to the new functionality provided in the Keycloak CR as a follow-up to the upgrade.
+
+Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
