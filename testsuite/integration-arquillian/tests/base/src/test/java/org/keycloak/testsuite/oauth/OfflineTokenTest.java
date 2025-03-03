@@ -512,7 +512,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
     public void offlineTokenServiceAccountFlow() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -537,7 +537,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
 
         // Now retrieve another offline token and verify that previous offline token is still valid
-        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString2 = tokenResponse.getRefreshToken();
@@ -1044,7 +1044,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
     private void offlineTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
        JWSHeader header = null;
        String idToken = tokenResponse.getIdToken();
@@ -1089,7 +1089,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), serviceAccountUserId);
 
         // Now retrieve another offline token and decode that previous offline token is still valid
-        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString2 = tokenResponse.getRefreshToken();
@@ -1116,7 +1116,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         ClientManager.realm(adminClient.realm("test")).clientId(oauth.getClientId()).addClientScope(phoneScope.getId(),false);
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS+" phone");
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         JWSHeader header = null;
         String idToken = tokenResponse.getIdToken();

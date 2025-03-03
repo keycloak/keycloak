@@ -58,8 +58,8 @@ public class ServiceAccountClientTest extends AbstractClientTest {
                 Matchers.hasItem("service_account"));
 
         // perform a login and check the claims are there
-        oauth.clientId("service-account-client");
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        oauth.client("service-account-client", "password");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals("service-account-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_HOST));
@@ -70,7 +70,7 @@ public class ServiceAccountClientTest extends AbstractClientTest {
         client.update(clientRep);
         MatcherAssert.assertThat(client.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getName).collect(Collectors.toList()),
                 Matchers.not(Matchers.hasItem(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE)));
-        response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        response = oauth.doClientCredentialsGrantAccessTokenRequest();
         Assert.assertEquals("unauthorized_client", response.getError());
 
         // re-enable sevice accounts
@@ -78,7 +78,7 @@ public class ServiceAccountClientTest extends AbstractClientTest {
         client.update(clientRep);
         MatcherAssert.assertThat(client.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getName).collect(Collectors.toList()),
                 Matchers.hasItem(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE));
-        response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        response = oauth.doClientCredentialsGrantAccessTokenRequest();
         accessToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals("service-account-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_HOST));
@@ -93,7 +93,7 @@ public class ServiceAccountClientTest extends AbstractClientTest {
         client.update(clientRep);
         MatcherAssert.assertThat(client.getDefaultClientScopes().stream().map(ClientScopeRepresentation::getName).collect(Collectors.toList()),
                 Matchers.hasItem(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE));
-        response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        response = oauth.doClientCredentialsGrantAccessTokenRequest();
         accessToken = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals("service-account-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
         Assert.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_HOST));
@@ -102,7 +102,7 @@ public class ServiceAccountClientTest extends AbstractClientTest {
         // remove the service account and client credentials should fail
         UserRepresentation serviceAccountUser = client.getServiceAccountUser();
         testRealmResource().users().delete(serviceAccountUser.getId());
-        response = oauth.doClientCredentialsGrantAccessTokenRequest("password");
+        response = oauth.doClientCredentialsGrantAccessTokenRequest();
         Assert.assertEquals("invalid_request", response.getError());
     }
 }

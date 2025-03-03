@@ -538,8 +538,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), TEST_CLIENT)
                 .setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
                 .update()) {
-            oauth.clientId(TEST_CLIENT);
-            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest(TEST_CLIENT_SECRET);
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             String accessToken = response.getAccessToken();
             logger.debug("access token:" + accessToken);
             assertBasicClaims(oauth.verifyToken(accessToken), false, false);
@@ -569,8 +569,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         masterRealm.users().get(userRep.getId()).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get(AdminRoles.ADMIN).toRepresentation()));
         try {
             oauth.realm("master");
-            oauth.clientId(transientClient.getClientId());
-            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest(transientClient.getSecret());
+            oauth.client(transientClient.getClientId(), transientClient.getSecret());
+            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
             String accessTokenString = tokenResponse.getAccessToken();
             Assert.assertNull(tokenResponse.getRefreshToken());
             AccessToken accessToken = oauth.verifyToken(accessTokenString);

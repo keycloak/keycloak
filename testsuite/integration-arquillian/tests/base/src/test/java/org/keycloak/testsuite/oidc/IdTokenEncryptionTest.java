@@ -316,7 +316,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
             // get id token but failed with client_credentials grant type
             oauth.scope("openid");
-            AccessTokenResponse responseClientCredentials = oauth.doClientCredentialsGrantAccessTokenRequest(clientRep.getSecret());
+            AccessTokenResponse responseClientCredentials = oauth.client(clientRep.getClientId(), clientRep.getSecret()).doClientCredentialsGrantAccessTokenRequest();
             Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, responseClientCredentials.getError());
             Assert.assertEquals("can not get encryption KEK", responseClientCredentials.getErrorDescription());
         } finally {

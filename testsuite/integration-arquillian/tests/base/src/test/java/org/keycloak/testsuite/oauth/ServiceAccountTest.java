@@ -163,9 +163,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Test
     public void clientCredentialsAuthSuccess() throws Exception {
-        oauth.clientId("service-account-cl-refresh-on");
+        oauth.client("service-account-cl-refresh-on", "secret1");
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(200, response.getStatusCode());
 
@@ -208,10 +208,10 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     // This is for the backwards compatibility only. By default, there won't be refresh token and hence there won't be availability for the logout
     @Test
     public void clientCredentialsLogout() throws Exception {
-        oauth.clientId("service-account-cl-refresh-on");
+        oauth.client("service-account-cl-refresh-on", "secret1");
         events.clear();
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(200, response.getStatusCode());
 
@@ -250,9 +250,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Test
     public void clientCredentialsInvalidClientCredentials() throws Exception {
-        oauth.clientId("service-account-cl");
+        oauth.client("service-account-cl", "secret2");
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret2");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(401, response.getStatusCode());
 
@@ -269,9 +269,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Test
     public void clientCredentialsDisabledServiceAccount() throws Exception {
-        oauth.clientId("service-account-disabled");
+        oauth.client("service-account-disabled", "secret1");
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(401, response.getStatusCode());
 
@@ -293,9 +293,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         ClientManager.realm(adminClient.realm("test")).clientId("service-account-cl-refresh-on").renameTo("updated-client");
 
-        oauth.clientId("updated-client");
+        oauth.client("updated-client", "secret1");
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(200, response.getStatusCode());
 
@@ -319,8 +319,8 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     @Test
     public void refreshTokenRefreshForDisabledServiceAccount() throws Exception {
         try {
-            oauth.clientId("service-account-cl");
-            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+            oauth.client("service-account-cl", "secret1");
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             assertEquals(200, response.getStatusCode());
 
             ClientManager.realm(adminClient.realm("test")).clientId("service-account-cl").setServiceAccountsEnabled(false);
@@ -465,9 +465,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     // Testing of refresh token is for backwards compatibility. By default, there won't be refresh token for the client credentials grant
     private void clientCredentialsAuthSuccessWithRefreshToken(String expectedRefreshAlg, String expectedAccessAlg) throws Exception {
-        oauth.clientId("service-account-cl-refresh-on");
+        oauth.client("service-account-cl-refresh-on", "secret1");
 
-        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
 
         assertEquals(200, response.getStatusCode());
 
