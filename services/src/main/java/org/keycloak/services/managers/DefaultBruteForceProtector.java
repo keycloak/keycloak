@@ -82,7 +82,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) && deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
-            if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
+            if (deltaTime > realm.getMaxDeltaTimeSeconds() * 1000L) {
                 userLoginFailure.clearFailures();
             }
         }
@@ -147,7 +147,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     protected UserLoginFailureModel getUserFailureModel(KeycloakSession session, RealmModel realm, String userId) {
-        if (realm == null) return null;
+        if (realm == null) {
+            return null;
+        }
         return session.loginFailures().getUserLoginFailure(realm, userId);
     }
 
@@ -175,7 +177,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     protected void success(KeycloakSession session, RealmModel realm, String userId) {
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
-        if(userLoginFailure == null) return;
+        if(userLoginFailure == null) {
+            return;
+        }
         if (logger.isDebugEnabled()) {
             UserModel model = session.users().getUserById(realm, userId);
             logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
@@ -241,7 +245,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             return true;
         }
 
-        if (!realm.isPermanentLockout()) return false;
+        if (!realm.isPermanentLockout()) {
+            return false;
+        }
 
         // recheck failures just in case we are in a race
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, user.getId());
@@ -294,6 +300,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         @Override
         public UriInfo getUri() {
             return uriInfo;
+        }
+
+        @Override
+        public boolean isProxyTrusted() {
+            return true;
         }
     }
 

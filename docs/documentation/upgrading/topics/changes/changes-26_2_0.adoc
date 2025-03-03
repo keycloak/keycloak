@@ -31,3 +31,8 @@ If you provided your own keystore and truststore to secure the TCP transport sta
 If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
+= `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
+
+Built-in X509 client certificate lookup providers will only be able to use request header values when `proxy-trusted-addresses` is unset, or the proxy is trusted. 
+
