@@ -76,14 +76,14 @@ public class CachingOptions {
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)
             .category(OptionCategory.CACHE)
-            .description("Encrypts the network communication between Keycloak servers.")
-            .defaultValue(Boolean.FALSE)
+            .description("Encrypts the network communication between Keycloak servers. If no additional parameters about a keystore and truststore are provided, ephemeral key pairs and certificates are created and rotated automatically, which is recommended for standard setups.")
+            .defaultValue(Boolean.TRUE)
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description("The Keystore file path. The Keystore must contain the certificate to use by the TLS protocol. " +
-                    "By default, it lookup 'cache-mtls-keystore.p12' under conf/ directory.")
+                    "By default, it looks up 'cache-mtls-keystore.p12' under conf/ directory.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY, String.class)

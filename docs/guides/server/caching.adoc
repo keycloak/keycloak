@@ -212,7 +212,8 @@ The CLI options `cache-remote-username` and `cache-remote-password` are optional
 If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
 
 == Transport stacks
-Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
+
+Transport stacks ensure that {project_name} nodes in a cluster communicate in a reliable fashion.
 {project_name} supports a wide range of transport stacks:
 
 <@opts.expectedValues option="cache-stack"/>
@@ -251,77 +252,39 @@ By default, {project_name} uses `239.6.7.8` as multicast address for `jgroups.mc
 
 NOTE: Use `-D<property>=<value>` to pass the properties via the `JAVA_OPTS_APPEND` environment variable or in the CLI command.
 
+// Keeping this paragraph in 26.x as stacks like `ec2` where mentioned in the 26.0 docs.
+// Should be removed for 27.0 when `jdbc-ping` is the general purpose default for everyone.
 ====
 *Additional Stacks*
 
 It is recommended to use one of the stacks available above.
 Additional stacks are provided by Infinispan, but it is outside the scope of this guide how to configure them.
-Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] for further documentation.
+Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks] for further documentation.
 ====
 
-=== Custom transport stacks
-If none of the available transport stacks are enough for your deployment, you are able to change your cache configuration file
-and define your own transport stack.
+== Securing transport stacks
 
-For more details, see {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks].
-
-.defining a custom transport stack
-[source]
-----
-<jgroups>
-    <stack name="my-encrypt-udp" extends="udp">
-    <SSL_KEY_EXCHANGE keystore_name="server.jks"
-        keystore_password="password"
-        stack.combine="INSERT_AFTER"
-        stack.position="VERIFY_SUSPECT2"/>
-        <ASYM_ENCRYPT asym_keylength="2048"
-        asym_algorithm="RSA"
-        change_key_on_coord_leave = "false"
-        change_key_on_leave = "false"
-        use_external_key_exchange = "true"
-        stack.combine="INSERT_BEFORE"
-        stack.position="pbcast.NAKACK2"/>
-    </stack>
-</jgroups>
-
-<cache-container name="keycloak">
-    <transport lock-timeout="60000" stack="my-encrypt-udp"/>
-    ...
-</cache-container>
-----
-
-By default, the value set to the `cache-stack` option has precedence over the transport stack you define in the cache configuration file.
-If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
-
-== Securing cache communication
-The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and transport stack encryption.
-
-JGroups handles all the communication between {project_name} server, and it supports Java SSL sockets for TCP communication.
-{project_name} uses CLI options to configure the TLS communication without having to create a customized JGroups stack or modifying the cache XML file.
-
-To enable TLS, `cache-embedded-mtls-enabled` must be set to `true`.
-It requires a keystore with the certificate to use: `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
-The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
-To restrict unauthorized access, use a self-signed certificate for each {project_name} deployment.
+Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration
+No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack.
 
 [NOTE]
 ====
-**Zero Configuration Encryption**
+If you are using a transport stack based on `UDP` or `TCP_NIO2`, proceed as follows to configure the encryption of the transport stack:
 
-{project_name} offers a zero-configuration approach to encrypting network communication between nodes.
-This feature automatically generates self-signed certificates, eliminating the need for manual certificate creation and management.
-The generated certificate and associated keys are stored within the database of each {project_name} instance.
-
-To enable zero-configuration TLS encryption, set the `cache-embedded-mtls-enabled` option to true.
-No other `cache-embedded-mtls-*` must be set to enable the zero-configuration mode.
-
-The `cache-embedded-mtls-rotation-interval-days` option (default: 30 days) configures the certificate rotation period, and the certificate's expiration duration is calculated as twice the specified interval.
-
+. Set the option `cache-embedded-mtls-enabled` to `false`.
+. Follow the documentation in http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] and {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport].
 ====
 
-For JGroups stacks with `UDP` or `TCP_NIO2`, see the http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] on how to set up the protocol stack.
+With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
+The keys and the certificate are stored in the database so they are available to all nodes.
+By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
+Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
-For more information about securing cache communication, see the {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport] documentation.
+=== Proving your own keys and certificates
+
+Although not recommended for standard setups, if it is essential in a specific setup, you can configure the keystore with the certificate for the transport stack manually. `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
+The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
+To restrict unauthorized access, always use a self-signed certificate for each {project_name} deployment.
 
 == Network Ports
 

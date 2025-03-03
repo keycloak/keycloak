@@ -41,7 +41,7 @@ public class CacheEmbeddedMtlsDistTest {
                 CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD,
                 CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION
         )) {
-            var result = dist.run("start-dev", "--cache=ispn", "--%s=1".formatted(option.getKey()));
+            var result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=false", "--%s=1".formatted(option.getKey()));
             result.assertError("Disabled option: '--%s'. Available only when property 'cache-embedded-mtls-enabled' is enabled".formatted(option.getKey()));
         }
     }

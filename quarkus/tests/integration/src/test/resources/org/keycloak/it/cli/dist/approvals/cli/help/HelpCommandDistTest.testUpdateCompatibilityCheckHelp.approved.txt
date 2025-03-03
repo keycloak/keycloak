@@ -37,7 +37,30 @@ Cache:
 --cache-embedded-keys-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
-                     Encrypts the network communication between Keycloak servers. Default: false.
+                     Encrypts the network communication between Keycloak servers. If no additional
+                       parameters about a keystore and truststore are provided, ephemeral key pairs
+                       and certificates are created and rotated automatically, which is recommended
+                       for standard setups. Default: true. Available only when a TCP based
+                       cache-stack is used.
+--cache-embedded-mtls-key-store-file <file>
+                     The Keystore file path. The Keystore must contain the certificate to use by
+                       the TLS protocol. By default, it looks up 'cache-mtls-keystore.p12' under
+                       conf/ directory. Available only when property 'cache-embedded-mtls-enabled'
+                       is enabled.
+--cache-embedded-mtls-key-store-password <password>
+                     The password to access the Keystore. Available only when property
+                       'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-mtls-rotation-interval-days <days>
+                     Rotation period in days of automatic JGroups MTLS certificates. Default: 30.
+                       Available only when property 'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-mtls-trust-store-file <file>
+                     The Truststore file path. It should contain the trusted certificates or the
+                       Certificate Authority that signed the certificates. By default, it lookup
+                       'cache-mtls-truststore.p12' under conf/ directory. Available only when
+                       property 'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-mtls-trust-store-password <password>
+                     The password to access the Truststore. Available only when property
+                       'cache-embedded-mtls-enabled' is enabled.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan
