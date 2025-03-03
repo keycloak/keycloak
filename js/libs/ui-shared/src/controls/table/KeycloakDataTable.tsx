@@ -548,7 +548,7 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {(loading || !noData || searching) && (
+      {(!noData || searching) && (
         <PaginatingTableToolbar
           id={id}
           count={rowLength}
@@ -619,9 +619,9 @@ export function KeycloakDataTable<T>({
               }
             />
           )}
-          {loading && <KeycloakSpinner />}
         </PaginatingTableToolbar>
       )}
+      {loading && <KeycloakSpinner />}
       {!loading && noData && !searching && emptyState}
     </>
   );
