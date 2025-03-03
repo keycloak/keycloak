@@ -125,7 +125,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     // If scope=openid is missing, IDToken won't be present
     @Test
     public void testMissingScopeOpenidInResourceOwnerPasswordCredentialRequest() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
 

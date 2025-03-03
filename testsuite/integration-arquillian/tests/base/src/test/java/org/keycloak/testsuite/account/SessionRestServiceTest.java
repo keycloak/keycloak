@@ -390,9 +390,9 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         // all bellow grouped from a single Other device
         setBrowserHeader("User-Agent", null);
         oauth.client("confidential-client-0", "secret");
-        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        oauth.doPasswordGrantRequest("test-user@localhost", "password");
         oauth.client("confidential-client-1", "secret");
-        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         List<DeviceRepresentation> devices = getAllDevices();
         assertEquals(2, devices.size());

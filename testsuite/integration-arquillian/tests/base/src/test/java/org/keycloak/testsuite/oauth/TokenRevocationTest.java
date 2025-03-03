@@ -168,7 +168,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAccessToken() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -181,7 +181,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokedAccessTokenCacheLifespan() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
@@ -198,7 +198,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testRevokeOfflineToken() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -231,7 +231,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testTokenTypeHint() throws Exception {
         // different token_type_hint
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -242,7 +242,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         // invalid token_type_hint
         oauth.client("test-app", "password");
-        tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
@@ -254,7 +254,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeTokenFromDifferentClient() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -268,7 +268,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAlreadyRevokedToken() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -286,7 +286,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeRequestParamsMoreThanOnce() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -311,9 +311,9 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     private void testRevokeSingleSession(String expectedTokenType) throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
                 "password");
-        AccessTokenResponse tokenResponse2 = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse2 = oauth.doPasswordGrantRequest("test-user@localhost",
                 "password");
 
         isTokenEnabled(tokenResponse, "test-app");

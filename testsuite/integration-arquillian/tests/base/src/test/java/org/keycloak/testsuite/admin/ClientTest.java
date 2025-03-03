@@ -388,7 +388,7 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClientSessions() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
         AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");

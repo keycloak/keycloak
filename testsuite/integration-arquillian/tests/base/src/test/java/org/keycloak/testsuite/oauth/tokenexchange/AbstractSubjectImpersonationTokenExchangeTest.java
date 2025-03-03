@@ -111,7 +111,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = tokenResponse.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -240,7 +240,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = tokenResponse.getAccessToken();
 
         try (Response response = exchangeUrl.request()
@@ -403,7 +403,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("bad-impersonator", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("bad-impersonator", "password");
         String accessToken = tokenResponse.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

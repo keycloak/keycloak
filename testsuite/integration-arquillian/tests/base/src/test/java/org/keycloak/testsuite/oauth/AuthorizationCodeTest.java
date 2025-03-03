@@ -242,7 +242,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFormPostResponseMode() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.doLoginGrant("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);
@@ -338,7 +338,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
-        oauth.doLoginGrant("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);

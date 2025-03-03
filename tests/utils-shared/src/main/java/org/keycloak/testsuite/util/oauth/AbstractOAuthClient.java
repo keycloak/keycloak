@@ -32,6 +32,7 @@ public abstract class AbstractOAuthClient<T> {
     protected String prompt;
     protected StateParamProvider state;
     protected String nonce;
+    protected String idTokenHint;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);

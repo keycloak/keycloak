@@ -127,7 +127,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
         // resource owner password credentials grant - fail
         oauth.client(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USERNAME, TEST_USERSECRET);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USERNAME, TEST_USERSECRET);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());

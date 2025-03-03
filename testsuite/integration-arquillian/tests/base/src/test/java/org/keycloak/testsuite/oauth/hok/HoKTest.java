@@ -736,7 +736,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             // Request without HoK should fail
             oauth.httpClient().set(client);
-            response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+            response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
             assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
@@ -747,7 +747,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             // Request with HoK - success
             oauth.httpClient().set(client);
-            response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+            response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
 
             // Success Pattern

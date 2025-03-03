@@ -315,7 +315,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertNotNull(onlineToken.getExp());
         // request an offline token for the same client
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.doSilentLogin();
+        oauth.openLoginForm();
         events.expectLogin()
                 .client("offline-client")
                 .detail(Details.REDIRECT_URI, offlineClientAppUri)
@@ -420,7 +420,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
     public void offlineTokenDirectGrantFlow() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -459,7 +459,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -605,7 +605,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Login with offline token now
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         events.clear();
 
@@ -644,7 +644,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Direct grant login requesting offline token
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client-2", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
@@ -697,7 +697,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
     public void offlineTokenLogout() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
@@ -715,7 +715,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         oauth.client("offline-client", "secret1");
 
         // create online session
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
         // assert refresh token
@@ -724,7 +724,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // create offline session
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        AccessTokenResponse offlineResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse offlineResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, offlineResponse.getStatusCode());
 
         // assert refresh offline token
@@ -884,7 +884,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             oauth.client("offline-client", "secret1");
             oauth.redirectUri(offlineClientAppUri);
 
-            oauth.doSilentLogin();
+            oauth.openLoginForm();
             code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.doAccessTokenRequest(code);
             assertOfflineToken(tokenResponse);

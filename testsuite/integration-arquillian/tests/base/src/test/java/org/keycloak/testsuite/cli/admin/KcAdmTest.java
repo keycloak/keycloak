@@ -609,7 +609,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         oauth.baseUrl(serverUrl);
         oauth.realm("master");
         oauth.client("admin-cli");
-        String token = oauth.doGrantAccessTokenRequest("admin", "admin").getAccessToken();
+        String token = oauth.doPasswordGrantRequest("admin", "admin").getAccessToken();
         testCRUDWithOnTheFlyAuth(serverUrl, " --token " + token, "",
                 "");
 

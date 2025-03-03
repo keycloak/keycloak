@@ -69,7 +69,7 @@ public class TokenUtil implements TestRule {
 
     private void load() {
         try {
-            AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(username, password);
+            AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(username, password);
             if (accessTokenResponse.getStatusCode() != 200) {
                 fail("Failed to get token: " + accessTokenResponse.getErrorDescription());
             }

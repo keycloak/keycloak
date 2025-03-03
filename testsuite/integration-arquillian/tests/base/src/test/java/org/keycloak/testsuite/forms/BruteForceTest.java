@@ -170,7 +170,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     public String getAdminToken() throws Exception {
-        return oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest( "admin", "admin").getAccessToken();
+        return oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest( "admin", "admin").getAccessToken();
     }
 
     public AccessTokenResponse getTestToken(String password, String totp) {

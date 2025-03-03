@@ -119,7 +119,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
     public void authorizationRequestFormPostJWTResponseMode() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.doLoginGrant("test-user@localhost", "password");
+        oauth.doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);

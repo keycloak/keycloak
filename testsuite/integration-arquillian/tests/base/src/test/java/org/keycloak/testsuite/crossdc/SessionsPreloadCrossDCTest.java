@@ -157,7 +157,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
             // Create initial brute force records
             for (int i = 0; i < SESSIONS_COUNT; i++) {
-                AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "bad-password");
+                AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "bad-password");
                 Assert.assertNull(response.getAccessToken());
                 Assert.assertNotNull(response.getError());
             }
@@ -193,7 +193,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         List<AccessTokenResponse> responses = new LinkedList<>();
 
         for (int i=0 ; i<SESSIONS_COUNT ; i++) {
-            AccessTokenResponse resp = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+            AccessTokenResponse resp = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             Assert.assertNull(resp.getError());
             Assert.assertNotNull(resp.getAccessToken());
             responses.add(resp);

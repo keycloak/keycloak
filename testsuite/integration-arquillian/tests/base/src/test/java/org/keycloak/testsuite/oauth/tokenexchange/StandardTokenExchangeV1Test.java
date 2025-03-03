@@ -83,7 +83,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
     protected String getInitialAccessTokenForClientExchanger() throws Exception {
         oauth.client("client-exchanger", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -231,7 +231,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.client("client-exchanger", "secret");
         oauth.scope("openid profile email phone");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -318,7 +318,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
         client.update(clientRepresentation);
 
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
 
         {
@@ -382,7 +382,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.client("direct-legal", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -399,7 +399,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.client("client-exchanger", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
 
         response = oauth.doTokenExchange(accessToken, List.of("target", "client-exchanger"), "client-exchanger", "secret", null);
@@ -412,7 +412,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
         oauth.realm(TEST);
         oauth.client("direct-legal", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -493,7 +493,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         // generate the first token for a public client
         oauth.realm(TEST);
         oauth.client("direct-public");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = response.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

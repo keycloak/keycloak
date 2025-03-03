@@ -257,7 +257,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
         oauth.realm(REALM_NAME);
 
         for (int i=0 ; i<count ; i++) {
-            AccessTokenResponse response = oauth.doGrantAccessTokenRequest(username, "bad-password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(username, "bad-password");
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
         }

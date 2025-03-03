@@ -478,11 +478,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithDirectGrant() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("johnkeycloak", "Password1");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("johnkeycloak", "Password1");
         Assert.assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
-        response = oauth.doGrantAccessTokenRequest("johnkeycloak", "");
+        response = oauth.doPasswordGrantRequest("johnkeycloak", "");
         Assert.assertEquals(401, response.getStatusCode());
     }
 

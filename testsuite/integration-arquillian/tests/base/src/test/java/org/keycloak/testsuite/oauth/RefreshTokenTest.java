@@ -542,7 +542,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             String optionalScope = "phone address";
             oauth.scope(optionalScope);
-            AccessTokenResponse response1 = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+            AccessTokenResponse response1 = oauth.doPasswordGrantRequest("test-user@localhost", "password");
             RefreshToken refreshToken1 = oauth.parseRefreshToken(response1.getRefreshToken());
             AbstractOIDCScopeTest.assertScopes("openid basic email roles web-origins acr profile address phone",  refreshToken1.getScope());
 
@@ -1395,7 +1395,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(1, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
 
             setTimeOffset(1600);
-            oauth.doSilentLogin();
+            oauth.openLoginForm();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
             code = oauth.parseLoginResponse().getCode();
@@ -1547,7 +1547,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(1, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
 
             setTimeOffset(4200);
-            oauth.doSilentLogin();
+            oauth.openLoginForm();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
             code = oauth.parseLoginResponse().getCode();
@@ -1603,7 +1603,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             realmResource.update(rep);
 
             setTimeOffset(4200);
-            oauth.doSilentLogin();
+            oauth.openLoginForm();
             loginEvent = events.expectLogin().assertEvent();
             sessionId = loginEvent.getSessionId();
             code = oauth.parseLoginResponse().getCode();
@@ -1715,7 +1715,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             setTimeOffset(600);
 
-            oauth.doSilentLogin();
+            oauth.openLoginForm();
             code = oauth.parseLoginResponse().getCode();
 
             tokenResponse = oauth.doAccessTokenRequest(code);
