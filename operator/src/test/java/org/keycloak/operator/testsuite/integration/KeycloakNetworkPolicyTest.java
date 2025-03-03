@@ -51,7 +51,6 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     @Test
     public void testHttpAndHttps() {
         var kc = create();
-        K8sUtils.enableNetworkPolicy(kc);
         var httpPort = K8sUtils.enableHttp(kc, false);
         var httpsPort = K8sUtils.configureHttps(kc, false);
         var mngtPort = K8sUtils.configureManagement(kc, false);
@@ -67,9 +66,19 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     }
 
     @Test
+    public void testNoNetworkPolicy() {
+        var kc = create();
+        K8sUtils.disableNetworkPolicy(kc);
+
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+        CRAssert.awaitClusterSize(k8sclient, kc, 2);
+
+        assertNull(networkPolicy(kc));
+    }
+
+    @Test
     public void testServiceConnectivity() {
         var kc = create();
-        K8sUtils.enableNetworkPolicy(kc);
         var httpsPort = K8sUtils.configureHttps(kc, false);
 
         var allowNamespace = getNewRandomNamespaceName();
@@ -128,7 +137,6 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     @Test
     public void testJGroupsConnectivity() {
         var kc = create();
-        K8sUtils.enableNetworkPolicy(kc);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
@@ -157,7 +165,6 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
     @Test
     public void testUpdate() {
         var kc = create();
-        K8sUtils.enableNetworkPolicy(kc);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         CRAssert.awaitClusterSize(k8sclient, kc, 2);
