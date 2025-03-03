@@ -886,8 +886,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertNotNull(oldOfflineToken);
 
         oauth.realm(MIGRATION);
-        oauth.clientId("migration-test-client");
-        AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
+        oauth.client("migration-test-client", "secret");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken);
 
         if (response.getError() != null) {
             String errorMessage = String.format("Error when refreshing offline token. Error: %s, Error details: %s, offline token from previous version: %s",
@@ -903,7 +903,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         String newOfflineToken1 = response.getRefreshToken();
         assertOfflineToken(newOfflineToken1);
 
-        response = oauth.doRefreshTokenRequest(newOfflineToken1, "secret");
+        response = oauth.doRefreshTokenRequest(newOfflineToken1);
         String newOfflineToken2 = response.getRefreshToken();
         assertOfflineToken(newOfflineToken2);
     }

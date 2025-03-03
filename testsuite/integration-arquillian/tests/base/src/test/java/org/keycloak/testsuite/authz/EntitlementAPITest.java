@@ -2024,7 +2024,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testRefreshTokenFromClientOtherThanAudience() throws Exception {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
@@ -2039,7 +2039,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertEquals(RESOURCE_SERVER_TEST, token.getAudience()[0]);
         assertFalse(token.getAuthorization().getPermissions().isEmpty());
 
-        accessTokenResponse = oauth.doRefreshTokenRequest(authorizationResponse.getRefreshToken(), null);
+        accessTokenResponse = oauth.doRefreshTokenRequest(authorizationResponse.getRefreshToken());
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
         token = toAccessToken(authorizationResponse.getToken());

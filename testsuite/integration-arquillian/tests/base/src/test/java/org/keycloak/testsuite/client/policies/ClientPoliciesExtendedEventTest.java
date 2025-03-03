@@ -468,7 +468,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         String refreshTokenString = res.getRefreshToken();
-        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         assertEquals(null, accessTokenResponseRefreshed.getRefreshToken());
 
@@ -481,7 +481,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         ).toString();
         updatePolicies(json);
 
-        accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(accessTokenResponseRefreshed.getRefreshToken());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
@@ -538,7 +538,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         Assert.assertEquals(404, nfe.getResponse().getStatus());
 
         String refreshTokenString = res.getRefreshToken();
-        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
         assertNull(accessTokenResponseRefreshed.getRefreshToken());
     }

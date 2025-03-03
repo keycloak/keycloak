@@ -113,7 +113,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(token.getSubject(), loginEvent.getUserId());
 
         // Refresh and assert idToken still not present
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, response.getStatusCode());
         Assert.assertNull(response.getIdToken());
 

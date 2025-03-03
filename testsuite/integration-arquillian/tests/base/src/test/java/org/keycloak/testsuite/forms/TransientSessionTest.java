@@ -71,7 +71,7 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         // Refresh will fail. There is no userSession on the server
-        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertNull(refreshedResponse.getAccessToken());
         assertNotNull(refreshedResponse.getError());
         Assert.assertEquals("Session not active", refreshedResponse.getErrorDescription());

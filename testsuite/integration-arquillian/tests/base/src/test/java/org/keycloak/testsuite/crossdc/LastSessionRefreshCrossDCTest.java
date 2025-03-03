@@ -93,7 +93,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
         // refresh token on DC1
         disableDcOnLoadBalancer(DC.SECOND);
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken2 = tokenResponse.getRefreshToken();
 
         // Assert statistics - sessions updated on both DCs and on remoteCaches too
@@ -104,12 +104,12 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         // try refresh with old token on DC2. It should fail.
         disableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
         // try refresh with new token on DC2. It should fail because client session not valid anymore
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken2, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken2);
         Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
@@ -171,7 +171,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             setTimeOffset(100);
 
             // refresh token on DC1
-            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
             String refreshToken2 = tokenResponse.getRefreshToken();
             Assert.assertNotNull(refreshToken2);
 
@@ -185,7 +185,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             setTimeOffset(110);
 
             // refresh token on DC1
-            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
             String refreshToken3 = tokenResponse.getRefreshToken();
             Assert.assertNotNull(refreshToken3);
 
@@ -301,7 +301,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(100);
 
         // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken3 = tokenResponse.getRefreshToken();
         Assert.assertNotNull(refreshToken3);
 
@@ -316,7 +316,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(110);
 
         // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken2 = tokenResponse.getRefreshToken();
         Assert.assertNotNull(refreshToken2);
 
@@ -331,7 +331,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(1728000);
 
         // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken4 = tokenResponse.getRefreshToken();
         Assert.assertNotNull(refreshToken4);
 
@@ -344,7 +344,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(2592000);
 
         // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken5 = tokenResponse.getRefreshToken();
         Assert.assertNotNull(refreshToken5);
 
@@ -357,7 +357,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(3456000);
 
         // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1);
         String refreshToken6 = tokenResponse.getRefreshToken();
         Assert.assertNotNull(refreshToken6);
 

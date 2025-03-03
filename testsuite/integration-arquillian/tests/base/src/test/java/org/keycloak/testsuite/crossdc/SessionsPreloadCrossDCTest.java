@@ -87,7 +87,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         // Assert refreshing works
         for (AccessTokenResponse resp : tokenResponses) {
-            AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken(), "password");
+            AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken());
             Assert.assertNull(newResponse.getError());
             Assert.assertNotNull(newResponse.getAccessToken());
         }
@@ -135,7 +135,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         // Assert refreshing with offline tokens work
         for (AccessTokenResponse resp : tokenResponses) {
-            AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken(), "password");
+            AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken());
             Assert.assertNull(newResponse.getError());
             Assert.assertNotNull(newResponse.getAccessToken());
         }

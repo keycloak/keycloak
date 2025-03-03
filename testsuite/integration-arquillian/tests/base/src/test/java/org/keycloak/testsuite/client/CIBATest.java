@@ -2827,7 +2827,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private AccessTokenResponse doRefreshTokenRequest(String oldRefreshToken, String username, String sessionId, boolean isOfflineAccess) {
-        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(oldRefreshToken, TEST_CLIENT_PASSWORD);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(oldRefreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
@@ -2867,7 +2867,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertTrue(oauth.doLogout(refreshToken, TEST_CLIENT_PASSWORD).isSuccess());
 
         // confirm logged out
-        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken, TEST_CLIENT_PASSWORD);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));
@@ -2881,7 +2881,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertTrue(oauth.doTokenRevoke(refreshToken, "refresh_token", TEST_CLIENT_PASSWORD).isSuccess());
 
         // confirm revocation
-        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken, TEST_CLIENT_PASSWORD);
+        AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
         if (isOfflineAccess) assertThat(tokenRes.getErrorDescription(), is(equalTo("Offline user session not found")));

@@ -196,7 +196,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
 
         // test that once user storage provider is available again we can still access the token.
-        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString, "secret");
+        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
         Assert.assertNotNull(tokenResponse.getAccessToken());
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         offlineTokenString = tokenResponse.getRefreshToken();

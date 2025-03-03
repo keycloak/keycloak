@@ -280,7 +280,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,false, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
 
         // Assert I am able to refresh
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken());
         Assert.assertNotNull(refreshResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getError());
 
@@ -299,7 +299,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(610);
 
         // Assert I am not able to refresh anymore
-        refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getRefreshToken());
         Assert.assertNotNull(refreshResponse.getError());
 
@@ -326,7 +326,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
                 true, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
 
         // Assert I am able to refresh
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken());
         Assert.assertNotNull(refreshResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getError());
 
@@ -346,7 +346,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(1210);
 
         // Assert I am not able to refresh anymore
-        refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
+        refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken());
         Assert.assertNull(refreshResponse.getRefreshToken());
         Assert.assertNotNull(refreshResponse.getError());
 
@@ -460,7 +460,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         int i1 = 0;
         for (AccessTokenResponse response : responses) {
             i1++;
-            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
             Assert.assertNotNull("Failed in iteration " + i1, refreshTokenResponse.getRefreshToken());
             Assert.assertNull("Failed in iteration " + i1, refreshTokenResponse.getError());
         }
@@ -483,7 +483,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             int j = 0;
             for (AccessTokenResponse response : responses) {
                 j++;
-                AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+                AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
                 Assert.assertNull("Failed in iteration " + j, refreshTokenResponse.getRefreshToken());
                 Assert.assertNotNull("Failed in iteration " + j, refreshTokenResponse.getError());
             }

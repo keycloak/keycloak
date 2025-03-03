@@ -213,7 +213,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenIntrospection(response.getAccessToken(), false);
 
         // Refresh token with keys #2 dropped - should fail as refresh token is signed with key #2
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());
         assertEquals("Invalid refresh token", response.getErrorDescription());
     }

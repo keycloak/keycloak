@@ -384,7 +384,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oauth.parseRefreshToken(accessTokenResponse.getRefreshToken());
 
         // Refresh token
-        AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+        AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
 
         // Verify refreshed tokens
         oauth.verifyToken(refreshTokenResponse.getAccessToken());
