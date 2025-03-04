@@ -289,6 +289,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
 
         String requestedTokenType = getRequestedTokenType();
+        event.detail(Details.REQUESTED_TOKEN_TYPE, requestedTokenType);
         List<ClientModel> targetAudienceClients = getTargetAudienceClients();
         validateAudience(token, disallowOnHolderOfTokenMismatch, targetAudienceClients);
         String scope = getRequestedScope(token, targetAudienceClients);

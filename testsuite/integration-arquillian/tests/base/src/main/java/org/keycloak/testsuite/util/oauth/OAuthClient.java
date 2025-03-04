@@ -477,6 +477,10 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return config.getClientId();
     }
 
+    public String getScope() {
+        return config.getScope();
+    }
+
     public void openLogout() {
         UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (config.getPostLogoutRedirectUri() != null) {

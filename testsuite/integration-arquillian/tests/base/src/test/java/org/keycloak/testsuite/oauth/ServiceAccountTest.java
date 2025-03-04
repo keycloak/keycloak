@@ -423,7 +423,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         events.expectClientLogin()
                 .client("service-account-cl")
                 .user(userIdCl)
-                .session(AssertEvents.isUUID())
+                .session(is(emptyOrNullString()))
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl")
                 .assertEvent();

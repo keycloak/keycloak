@@ -1783,7 +1783,7 @@
   },
   "smtpServer" : { },
   "eventsEnabled" : false,
-  "eventsListeners" : [ "jboss-logging" ],
+  "eventsListeners" : [ "jboss-logging", "event-queue" ],
   "enabledEventTypes" : [ ],
   "adminEventsEnabled" : false,
   "adminEventsDetailsEnabled" : false,
