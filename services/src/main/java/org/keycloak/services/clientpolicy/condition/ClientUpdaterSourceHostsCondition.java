@@ -75,7 +75,9 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
         case UPDATE:
         case REGISTERED:
         case UPDATED:
-            if (isHostMatched()) return ClientPolicyVote.YES;
+            if (isHostMatched()) {
+                return ClientPolicyVote.YES;
+            }
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -85,7 +87,11 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
     private boolean isHostMatched() {
         String hostAddress = session.getContext().getConnection().getRemoteAddr();
 
-        logger.tracev("Verifying remote host = {0}", hostAddress);
+        logger.tracev("Verifying remote host = {0}", session.getContext().getConnection().getRemoteHost());
+
+        if (hostAddress == null) {
+            return false;
+        }
 
         List<String> trustedHosts = getTrustedHosts();
         List<String> trustedDomains = getTrustedDomains();

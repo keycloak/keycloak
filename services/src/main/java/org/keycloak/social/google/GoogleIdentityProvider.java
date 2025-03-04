@@ -64,7 +64,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         String uri = super.getUserInfoUrl();
         if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
             ClientConnection connection = session.getContext().getConnection();
-            if (connection != null) {
+            if (connection != null && connection.getRemoteAddr() != null) {
                 uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
             }
 
@@ -81,7 +81,9 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
-        if (requestedIssuer == null) requestedIssuer = issuer;
+        if (requestedIssuer == null) {
+            requestedIssuer = issuer;
+        }
         return requestedIssuer.equals(getConfig().getAlias());
     }
 

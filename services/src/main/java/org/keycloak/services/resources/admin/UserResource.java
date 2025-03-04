@@ -281,11 +281,19 @@ public class UserResource {
     public static void updateUserFromRep(UserProfile profile, UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
         boolean removeMissingRequiredActions = isUpdateExistingUser;
 
-        if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
-        if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
-        if (rep.getCreatedTimestamp() != null && !isUpdateExistingUser) user.setCreatedTimestamp(rep.getCreatedTimestamp());
+        if (rep.isEnabled() != null) {
+            user.setEnabled(rep.isEnabled());
+        }
+        if (rep.isEmailVerified() != null) {
+            user.setEmailVerified(rep.isEmailVerified());
+        }
+        if (rep.getCreatedTimestamp() != null && !isUpdateExistingUser) {
+            user.setCreatedTimestamp(rep.getCreatedTimestamp());
+        }
 
-        if (rep.getFederationLink() != null) user.setFederationLink(rep.getFederationLink());
+        if (rep.getFederationLink() != null) {
+            user.setFederationLink(rep.getFederationLink());
+        }
 
         List<String> reqActions = rep.getRequiredActions();
 
@@ -389,7 +397,7 @@ public class UserResource {
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
@@ -673,7 +681,9 @@ public class UserResource {
     @Operation( summary = "Disable all credentials for a user of a specific type")
     public void disableCredentialType(List<String> credentialTypes) {
         auth.users().requireManage(user);
-        if (credentialTypes == null) return;
+        if (credentialTypes == null) {
+            return;
+        }
         for (String type : credentialTypes) {
             user.credentialManager().disableCredentialType(type);
 
@@ -778,8 +788,11 @@ public class UserResource {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
-            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
-            else throw new ForbiddenException();
+            if (auth.users().canQuery()) {
+                throw new NotFoundException("Credential not found");
+            } else {
+                throw new ForbiddenException();
+            }
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
@@ -798,8 +811,11 @@ public class UserResource {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
-            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
-            else throw new ForbiddenException();
+            if (auth.users().canQuery()) {
+                throw new NotFoundException("Credential not found");
+            } else {
+                throw new ForbiddenException();
+            }
         }
         user.credentialManager().updateCredentialLabel(credentialId, userLabel);
     }
@@ -833,8 +849,11 @@ public class UserResource {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
-            if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
-            else throw new ForbiddenException();
+            if (auth.users().canQuery()) {
+                throw new NotFoundException("Credential not found");
+            } else {
+                throw new ForbiddenException();
+            }
         }
         user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
