@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.ConfigSupportLevel;
+import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
@@ -15,6 +16,7 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import java.util.ArrayList;
@@ -84,7 +86,8 @@ public final class PropertyMappers {
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Environment.isRebuildCheck()) && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
+        if (NestedPropertyMappingInterceptor.isAtRoot() && (isRebuild() || Environment.isRebuildCheck())
+                && isKeycloakRuntime(name, mapper) && !name.startsWith("quarkus.log.")) {
             return ConfigValue.builder().withName(name).build();
         }
 
@@ -190,6 +193,10 @@ public final class PropertyMappers {
         return MAPPERS.getWildcardMappers();
     }
 
+    public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
+        return MAPPERS.wildcardMapFrom.get(from.getKey());
+    }
+
     public static boolean isSupported(PropertyMapper<?> mapper) {
         ConfigSupportLevel supportLevel = mapper.getCategory().getSupportLevel();
         return supportLevel.equals(ConfigSupportLevel.SUPPORTED) || supportLevel.equals(ConfigSupportLevel.DEPRECATED);
@@ -232,7 +239,9 @@ public final class PropertyMappers {
 
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
+
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
+        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
@@ -252,13 +261,22 @@ public final class PropertyMappers {
 
         public void addMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
+                if (mapper.getMapFrom() != null) {
+                    wildcardMapFrom.put(mapper.getMapFrom(), (WildcardPropertyMapper<?>) mapper);
+                }
                 wildcardMappers.add((WildcardPropertyMapper<?>)mapper);
+            } else {
+                handleMapper(mapper, this::add);
             }
-            handleMapper(mapper, this::add);
         }
 
         public void removeMapper(PropertyMapper<?> mapper) {
-            wildcardMappers.remove(mapper);
+            if (mapper.hasWildcard()) {
+                wildcardMappers.remove(mapper);
+                if (mapper.getFrom() != null) {
+                    wildcardMapFrom.remove(mapper.getMapFrom());
+                }
+            }
             handleMapper(mapper, this::remove);
         }
 
@@ -272,17 +290,23 @@ public final class PropertyMappers {
         @Override
         @SuppressWarnings({"rawtypes", "unchecked"})
         public List<PropertyMapper<?>> get(Object key) {
-            // First check if the requested option matches any wildcard mappers
+            // First check the base mappings
             String strKey = (String) key;
-            List ret = wildcardMappers.stream()
+
+            List ret = super.get(key);
+            if (ret != null) {
+                return ret;
+            }
+
+            // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
+            ret = wildcardMappers.stream()
                     .filter(m -> m.matchesWildcardOptionName(strKey))
                     .toList();
             if (!ret.isEmpty()) {
                 return ret;
             }
 
-            // If no wildcard mappers match, check for exact matches
-            return super.get(key);
+            return null;
         }
 
         @Override
@@ -295,7 +319,9 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers() {
-            if (Environment.getParsedCommand().isEmpty()) return; // do not sanitize when no command is present
+            if (Environment.getParsedCommand().isEmpty()) {
+                return; // do not sanitize when no command is present
+            }
 
             DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
 
@@ -377,4 +403,5 @@ public final class PropertyMappers {
             operation.accept(mapper.getEnvVarFormat(), mapper);
         }
     }
+
 }

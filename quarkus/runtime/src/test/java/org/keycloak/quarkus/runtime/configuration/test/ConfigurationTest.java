@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
@@ -45,7 +46,8 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -478,11 +480,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testKeystoreConfigSourcePropertyMapping() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultInterceptors()
-                .addDiscoveredSources()
-                .build();
-
+        SmallRyeConfig config = createConfig();
         assertEquals(config.getConfigValue("smallrye.config.source.keystore.kc-default.password").getValue(),config.getConfigValue("kc.config-keystore-password").getValue());
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
@@ -530,5 +528,25 @@ public class ConfigurationTest extends AbstractConfigurationTest {
             String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
             assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
         }
+    }
+
+    @Test
+    public void testDirectWildcardTo() {
+        // the mapping to for a wildcard property shouldn't be to anything
+        assertNull(Configuration.getConfigValue("quarkus.log.category.\"<categories>\".level").getValue());
+    }
+
+    @Test
+    public void testHttpTrustStoreTypeStrictFips() {
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
+        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+    }
+
+    @Test
+    public void testKeycloakConfQuarkusPropertyNotUsed() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
+        assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
     }
 }

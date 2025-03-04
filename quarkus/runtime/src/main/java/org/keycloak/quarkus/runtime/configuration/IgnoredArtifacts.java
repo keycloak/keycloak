@@ -130,11 +130,6 @@ public class IgnoredArtifacts {
             }
         });
 
-        // since the default may not be a known property name, look for it explicitly
-        Configuration.getOptionalValue("quarkus.datasource.db-kind")
-            .flatMap(Database::getVendor)
-            .ifPresent(vendorsOfAllDatasources::add);
-
         final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
                 .map(vendor -> switch (vendor) {
                     case H2 -> JDBC_H2;
