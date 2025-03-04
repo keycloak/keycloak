@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { chooseFile } from "../utils/file-chooser";
 import { selectItem } from "../utils/form";
 import { login } from "../utils/login";
@@ -61,10 +61,7 @@ test.describe("Partial import test", () => {
   });
 
   test("Displays user options after multi-realm import", async ({ page }) => {
-    await chooseFile(
-      page, //TODO move this file to here
-      "../../cypress/fixtures/partial-import-test-data/multi-realm.json",
-    );
+    await chooseFile(page, "../utils/files/multi-realm.json");
 
     await assertImportButtonDisabled(page);
 
@@ -109,10 +106,7 @@ test.describe("Partial import test", () => {
     await goToRealmSettings(page);
     await selectActionToggleItem(page, "Partial import");
 
-    await chooseFile(
-      page, //TODO move this file to here
-      "../../cypress/fixtures/partial-import-test-data/client-only.json",
-    );
+    await chooseFile(page, "../utils/files/client-only.json");
 
     await expect(page.locator("select")).not.toBeVisible();
 

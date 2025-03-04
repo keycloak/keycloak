@@ -1,6 +1,6 @@
 import { Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { goToUserFederation } from "../utils/sidebar";
 import { assertProviderCardText, assertRealmSettingsText } from "./i18n";

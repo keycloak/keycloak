@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { cancelModal } from "../utils/modal";

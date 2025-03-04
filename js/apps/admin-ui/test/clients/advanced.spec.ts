@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
 import { goToClients, goToRealm } from "../utils/sidebar";
 import { assertEmptyTable, clickTableRowItem } from "../utils/table";

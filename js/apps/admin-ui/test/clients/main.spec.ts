@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import path from "path";
 import { v4 as uuid } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { assertRequiredFieldError } from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
@@ -140,8 +140,7 @@ test.describe("Clients test", () => {
         new URL(
           path.join(
             path.dirname(import.meta.url),
-            //TODO move this file to here
-            "../../cypress/fixtures/partial-import-test-data/import-identical-client.json",
+            "../utils/files/import-identical-client.json",
           ),
         ).pathname,
       );
