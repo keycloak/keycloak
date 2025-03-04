@@ -385,7 +385,7 @@ For more details about tracing, see <@links.observability id="tracing" />.
 === Network Policies
 
 NetworkPolicies allow you to specify rules for traffic flow within your cluster, and also between Pods and the outside world.
-Your cluster must use a network plugin that supports NetworkPolicy enforcement actually restrict the network traffic.
+Your cluster must use a network plugin that supports NetworkPolicy enforcement to restrict the network traffic.
 
 The operator automatically creates a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
 The HTTP(S) endpoint is open to traffic from any namespace and the outside world.
