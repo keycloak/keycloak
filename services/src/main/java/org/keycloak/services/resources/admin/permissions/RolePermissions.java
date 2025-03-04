@@ -54,7 +54,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
-    private final ResourceStore resourceStore;
+    protected final ResourceStore resourceStore;
     private static final String RESOURCE_NAME_PREFIX = "role.resource.";
 
     public RolePermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
@@ -146,7 +146,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         return root.resourceServer(client);
     }
 
-    private boolean checkAdminRoles(RoleModel role) {
+    boolean checkAdminRoles(RoleModel role) {
         if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             if (root.admin().hasRole(role)) return true;
 
