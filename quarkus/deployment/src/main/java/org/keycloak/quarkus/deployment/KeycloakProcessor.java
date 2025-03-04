@@ -381,9 +381,18 @@ class KeycloakProcessor {
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
                 Properties properties = descriptor.getProperties();
+
+                var datasourceProperty = properties.getProperty(AvailableSettings.JAKARTA_JTA_DATASOURCE);
+                if (StringUtil.isBlank(datasourceProperty)) {
+                    datasourceProperty = properties.getProperty(AvailableSettings.DATASOURCE);
+                    if (StringUtil.isNotBlank(datasourceProperty)) {
+                        logger.warnf("You use deprecated property '%s' in your persistence.xml file. Use '%s' property instead.", AvailableSettings.DATASOURCE, AvailableSettings.JAKARTA_JTA_DATASOURCE);
+                    }
+                }
+
                 // register a listener for customizing the unit configuration at runtime
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
-                        .setInitListener(recorder.createUserDefinedUnitListener(properties.getProperty(AvailableSettings.JAKARTA_JTA_DATASOURCE))));
+                        .setInitListener(recorder.createUserDefinedUnitListener(datasourceProperty)));
                 userManagedEntities.addAll(descriptor.getManagedClassNames());
             }
         }
