@@ -299,7 +299,7 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1(@types/node@22.13.9)(rollup@4.34.9)(typescript@5.8.2)(vite@6.2.0(@types/node@22.13.9)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vitest:
-        specifier: ^3.0.6
+        specifier: ^3.0.7
         version: 3.0.7(@types/node@22.13.9)(jsdom@26.0.0)(lightningcss@1.29.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   apps/create-keycloak-theme:
