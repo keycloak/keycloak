@@ -110,6 +110,11 @@ public class Event {
         this.sessionId = maxLength(sessionId, 255);
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
@@ -134,6 +139,7 @@ public class Event {
         this.details = details;
     }
 
+    @Override
     public Event clone() {
         Event clone = new Event();
         clone.id = id;

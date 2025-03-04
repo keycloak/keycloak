@@ -85,7 +85,7 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
             }
 
             current.setOsVersion(osVersion);
-            current.setIpAddress(context.getConnection().getRemoteAddr());
+            current.setIpAddress(context.getConnection().getRemoteHost());
             current.setMobile(userAgent.toLowerCase().contains("mobile"));
 
             deviceRepresentation = current;

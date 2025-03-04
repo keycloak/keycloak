@@ -51,6 +51,11 @@ public interface UserSessionModel {
 
     String getLoginUsername();
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     String getIpAddress();
 
     String getAuthMethod();
