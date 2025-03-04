@@ -4,20 +4,26 @@ export async function goToAttributesTab(page: Page) {
   await page.getByTestId("attributesTab").click();
 }
 
-function getAttribute(page: Page, index: number, key: string) {
-  return page.locator(`input[name="attributes\\.${index}\\.${key}"]`);
+function getAttribute(
+  page: Page,
+  index: number,
+  key: string,
+  name: string = "attributes",
+) {
+  return page.locator(`input[name="${name}\\.${index}\\.${key}"]`);
 }
 
 export async function fillAttributeData(
   page: Page,
   key: string,
   value: string,
+  name: string = "attributes",
   index: number = 0,
 ) {
-  await page.getByTestId("attributes-add-row").click();
+  await page.getByTestId(`${name}-add-row`).click();
 
-  await getAttribute(page, index, "key").fill(key);
-  await getAttribute(page, index, "value").fill(value);
+  await getAttribute(page, index, "key", name).fill(key);
+  await getAttribute(page, index, "value", name).fill(value);
 }
 
 export async function deleteAttribute(page: Page, row: number) {
@@ -28,8 +34,12 @@ export async function clickAttributeSaveButton(page: Page) {
   await page.getByTestId("attributes-save").click();
 }
 
-export async function assertAttributeLength(page: Page, length: number) {
-  const rows = await page.getByTestId("attributes-key").all();
+export async function assertAttributeLength(
+  page: Page,
+  length: number,
+  name: string = "attributes",
+) {
+  const rows = await page.getByTestId(`${name}-key`).all();
   expect(rows.length).toBe(length);
 }
 
