@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { login, logout } from "../utils/login";
 import { assertAxeViolations } from "../utils/masthead";
 import { goToEvents, goToRealm } from "../utils/sidebar";

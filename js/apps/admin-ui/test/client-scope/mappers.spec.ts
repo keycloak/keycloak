@@ -14,7 +14,7 @@ import {
   goToMappersTab,
   removeMappers,
 } from "./mappers";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 
 test.describe("Mappers tab test", () => {
   const placeHolderClientScope = "Search for client scope";
