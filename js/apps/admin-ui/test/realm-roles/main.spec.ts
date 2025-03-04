@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../../cypress/support/util/AdminClient";
+import adminClient from "../utils/AdminClient";
 import { fillRoleData } from "../clients/role";
 import {
   assertAttribute,
