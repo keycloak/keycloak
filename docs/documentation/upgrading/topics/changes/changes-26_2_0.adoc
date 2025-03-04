@@ -9,7 +9,7 @@ The `X-Forwarded-Host` header can optionally also contain the port. In previous 
 `X-Forwarded-Host: example.com` header, the resolved URL was `+http://example.com:8080+`.
 
 This is now changed and omitting the port results in removing it from the resolved URL. The resolved URL from the previous example
-would now be `http://example.com`.
+would now be `+http://example.com+`.
 
 To mitigate that, either make your reverse proxy include the port in the `X-Forwarded-Host` header or configure it to set
 the `X-Forwarded-Port` header with the desired port.
