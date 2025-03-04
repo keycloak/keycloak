@@ -45,7 +45,7 @@ public class StandardTokenExchangeV2WithLegacyTokenExchangeTest extends Standard
     public void testExchangeDisabledOnClient() throws Exception {
         // When client does not have TE enabled, request is handled by V1-provider, which returns different error
         oauth.realm(TEST);
-        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret");
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
         {
             AccessTokenResponse response = tokenExchange(accessToken, "disabled-requester-client", "secret", null, null);
             org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
