@@ -159,6 +159,7 @@ const Dashboard = () => {
               <div className="pf-v5-l-grid pf-v5-u-ml-lg">
                 <div className="pf-v5-l-grid__item pf-m-12-col">
                   <Title
+                    data-testid="welcomeTitle"
                     className="pf-v5-u-font-weight-bold"
                     headingLevel="h2"
                     size="3xl"

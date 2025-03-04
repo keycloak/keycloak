@@ -246,17 +246,21 @@ function DataTable<T>({
             {index % 2 === 0 ? (
               <Tr>
                 <Td
-                  expand={{
-                    isExpanded: !!expandedRows[index],
-                    rowIndex: index,
-                    expandId: `${index}`,
-                    onToggle: (_, rowIndex, isOpen) => {
-                      onCollapse(isOpen, rowIndex);
-                      const expand = [...expandedRows];
-                      expand[index] = isOpen;
-                      setExpandedRows(expand);
-                    },
-                  }}
+                  expand={
+                    rows[index + 1].cells.length === 0
+                      ? undefined
+                      : {
+                          isExpanded: !!expandedRows[index],
+                          rowIndex: index,
+                          expandId: "expandable-row-",
+                          onToggle: (_, rowIndex, isOpen) => {
+                            onCollapse(isOpen, rowIndex);
+                            const expand = [...expandedRows];
+                            expand[index] = isOpen;
+                            setExpandedRows(expand);
+                          },
+                        }
+                  }
                 />
                 <CellRenderer
                   row={row}
@@ -571,7 +575,7 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button variant="link" onClick={refresh}>
+                <Button variant="link" onClick={refresh} data-testid="refresh">
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>

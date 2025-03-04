@@ -366,7 +366,7 @@ export default function EditUser() {
               </Tab>
               {isUnmanagedAttributesEnabled && (
                 <Tab
-                  data-testid="attributes"
+                  data-testid="attributesTab"
                   title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   {...attributesTab}
                 >
