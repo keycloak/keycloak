@@ -233,9 +233,9 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         DirContext ctx = new InitialDirContext(env);
         try {
             Attributes attrs = ctx.getAttributes("uid=" + username + ",ou=People,dc=keycloak,dc=org");
-            String cn = (String) attrs.get("cn").get();
+            String givenName = (String) attrs.get("givenName").get();
             String sn = (String) attrs.get("sn").get();
-            return cn + " " + sn;
+            return givenName + " " + sn;
         } finally {
             ctx.close();
         }
