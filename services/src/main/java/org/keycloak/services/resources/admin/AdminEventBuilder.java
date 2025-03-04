@@ -57,7 +57,7 @@ public class AdminEventBuilder {
     private EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
+        this(realm, auth, session, clientConnection.getRemoteHost(), null);
     }
 
     private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
@@ -217,7 +217,10 @@ public class AdminEventBuilder {
             sb.append("/");
             sb.append(element);
         }
-        if (pathElements.length > 0) sb.deleteCharAt(0); // remove leading '/'
+        if (pathElements.length > 0)
+         {
+            sb.deleteCharAt(0); // remove leading '/'
+        }
 
         adminEvent.setResourcePath(sb.toString());
         return this;

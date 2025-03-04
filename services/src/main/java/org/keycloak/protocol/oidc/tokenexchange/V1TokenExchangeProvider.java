@@ -55,6 +55,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         return true;
     }
 
+    @Override
     protected Response tokenExchange() {
         KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
@@ -140,7 +141,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
                 disallowOnHolderOfTokenMismatch = false;
             }
 
-            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = new UserSessionManager(session).createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
             if (tokenUser != null) {
                 tokenSession.setNote(IMPERSONATOR_ID.toString(), tokenUser.getId());
                 tokenSession.setNote(IMPERSONATOR_USERNAME.toString(), tokenUser.getUsername());
