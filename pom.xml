@@ -54,6 +54,7 @@
 
         <quarkus.version>3.19.0.CR1</quarkus.version>
         <quarkus.build.version>3.19.0.CR1</quarkus.build.version>
+        <jboss.logging.version>3.0.3.Final</jboss.logging.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -97,7 +98,8 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.14.Final</infinispan.version>
-        <protostream.plugin.version>5.0.13.Final</protostream.plugin.version>
+        <protostream.version>5.0.13.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
