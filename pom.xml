@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.19.0.CR1</quarkus.version>
-        <quarkus.build.version>3.19.0.CR1</quarkus.build.version>
+        <quarkus.version>999-SNAPSHOT</quarkus.version>
+        <quarkus.build.version>999-SNAPSHOT</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -166,7 +166,7 @@
         <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.2</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
@@ -1720,4 +1720,5 @@
             </properties>
         </profile>
     </profiles>
+<repositories>             <repository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </repository>             </repositories>
 </project>
