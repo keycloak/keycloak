@@ -7,15 +7,14 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
 public class TestClassServer {
 
     public static final String CONTEXT_PATH = "/test-classes/";
-    private final HttpServer server;
-    private final TestClassPathHandler handler;
+
+    private final HttpServer httpServer;
 
     public static final Set<String> DEFAULT_PERMITTED_PACKAGES = Set.of(
         "org.keycloak.testframework",
@@ -25,18 +24,11 @@ public class TestClassServer {
 
     private final Set<String> permittedPackages;
 
-    TestClassServer() {
+    TestClassServer(HttpServer httpServer) {
+        this.httpServer = httpServer;
         permittedPackages = new HashSet<>(DEFAULT_PERMITTED_PACKAGES);
 
-        this.handler = new TestClassPathHandler();
-
-        try {
-            server = HttpServer.create(new InetSocketAddress("localhost", 8500), 0);
-            server.createContext(CONTEXT_PATH, handler);
-            server.start();
-        } catch (IOException exp) {
-            throw new RuntimeException(exp);
-        }
+        httpServer.createContext(CONTEXT_PATH, new TestClassPathHandler());
     }
 
     public void addPermittedPackages(Set<String> permittedPackages) {
@@ -44,7 +36,7 @@ public class TestClassServer {
     }
 
     public void close() {
-        server.stop(0);
+        httpServer.removeContext(CONTEXT_PATH);
     }
 
     private class TestClassPathHandler implements HttpHandler {

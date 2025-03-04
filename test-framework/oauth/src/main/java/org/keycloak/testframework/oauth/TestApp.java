@@ -1,60 +1,50 @@
 package org.keycloak.testframework.oauth;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
 
 public class TestApp {
 
-    private final HttpServer httpServer;
-    private final OAuthCallbackHandler callbackHandler;
-    private final URI redirectionUri;
+    public static final String OAUTH_CALLBACK_PATH = "/callback/oauth";
+    public static final String K_ADMIN_PATH = "/k_admin";
 
-    public TestApp() {
-        this.callbackHandler = new OAuthCallbackHandler();
+    private final HttpServer httpServer;
+
+    private final KcAdminInvocations kcAdminInvocations;
+
+    private final String redirectionUri;
+    private final String adminUri;
+
+    public TestApp(HttpServer httpServer) {
+        this.httpServer = httpServer;
+        this.kcAdminInvocations = new KcAdminInvocations();
 
         try {
-            httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-            httpServer.createContext("/callback/oauth", callbackHandler);
-            httpServer.start();
-            redirectionUri = new URI("http://127.0.0.1:" + httpServer.getAddress().getPort() + "/callback/oauth");
+            httpServer.createContext(OAUTH_CALLBACK_PATH, new OAuthCallbackHandler());
+            httpServer.createContext(K_ADMIN_PATH, new KcAdminCallbackHandler(kcAdminInvocations));
+
+            redirectionUri = "http://127.0.0.1:" + httpServer.getAddress().getPort() + "/callback/oauth";
+            adminUri = "http://127.0.0.1:" + httpServer.getAddress().getPort() + "/k_admin";
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
     }
 
-    public URI getRedirectionUri() {
+    public String getRedirectionUri() {
         return redirectionUri;
     }
 
-    public List<URI> getCallbacks() {
-        return callbackHandler.callbacks;
+    public String getAdminUri() {
+        return adminUri;
+    }
+
+    public KcAdminInvocations kcAdmin() {
+        return kcAdminInvocations;
     }
 
     public void close() {
-        httpServer.stop(0);
-    }
-
-    static class OAuthCallbackHandler implements HttpHandler {
-
-        private List<URI> callbacks = new LinkedList<>();
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            callbacks.add(exchange.getRequestURI());
-            byte[] happydays = new String("<html><body>Happy days</body></html>").getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "text/html");
-            exchange.sendResponseHeaders(200, happydays.length);
-            exchange.getResponseBody().write(happydays);
-            exchange.getResponseBody().close();
-        }
+        httpServer.removeContext(OAUTH_CALLBACK_PATH);
+        httpServer.removeContext(K_ADMIN_PATH);
     }
 
 }

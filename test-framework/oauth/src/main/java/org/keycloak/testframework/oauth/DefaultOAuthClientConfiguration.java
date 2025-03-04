@@ -10,7 +10,6 @@ public class DefaultOAuthClientConfiguration implements ClientConfig {
         return client.clientId("test-app")
                 .serviceAccount()
                 .directAccessGrants()
-                .redirectUris("http://127.0.0.1/callback/oauth")
                 .secret("test-secret");
     }
 
