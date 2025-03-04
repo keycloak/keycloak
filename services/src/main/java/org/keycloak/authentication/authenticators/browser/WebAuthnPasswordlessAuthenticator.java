@@ -21,6 +21,8 @@ package org.keycloak.authentication.authenticators.browser;
 import java.util.Collections;
 import java.util.List;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -33,7 +35,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Authenticator for WebAuthn authentication with passwordless credential. This class is temporary and will be likely
@@ -83,6 +87,36 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
     @Override
     public boolean requiresUser() {
         return false;
+    }
+
+    @Override
+    public void action(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        if (formData.containsKey("cancel")) {
+            context.cancelLogin();
+            return;
+        }
+
+        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
+        if (StringUtil.isNotBlank(username)) {
+            // user entered a username directly, check if user exists
+            boolean validUsername = validateUsername(context, formData, username);
+            if (!validUsername) {
+                context.attempted();
+                return;
+            }
+        } else if (!formData.containsKey(WebAuthnConstants.USER_HANDLE)) {
+            // user submitted an empty form without webauthn credential selection
+            context.attempted();
+            return;
+        }
+
+        // user selected a webauthn credential, proceed with webauthn authentication
+        super.action(context);
+    }
+
+    protected boolean validateUsername(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, String username) {
+        return new UsernameForm().validateUser(context, formData);
     }
 
 }
