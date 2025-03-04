@@ -53,4 +53,4 @@ jobs:
           push: true
           tags: ghcr.io/vunetsystems/keycloak:${{ env.TAG_NAME }}
           build-args: |
-            KEYCLOAK_VERSION=${{ env.SEMVER }}
+            KEYCLOAK_VERSION=${{ env.TAG_NAME }}

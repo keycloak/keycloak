@@ -48,6 +48,8 @@ var implicitReverseMap = [
   { key: 'insights:write', value: 'insights:modifySystemResources' },
   { key: 'preferences:read', value: 'alerts:read' },
   { key: 'preferences:read', value: 'alerts:write' },
+  { key: 'preferences:read', value: 'events:read' },
+  { key: 'preferences:read', value: 'events:write' },
   { key: 'preferences:read', value: 'reports:read' },
   { key: 'preferences:read', value: 'reports:write' },
   { key: 'users:read', value: 'events:write' },
