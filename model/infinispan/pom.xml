@@ -119,6 +119,24 @@
                     <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.1/model/infinispan/proto.lock</remoteLockFiles>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.infinispan</groupId>
+                            <artifactId>infinispan-component-processor</artifactId>
+                            <version>${infinispan.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.infinispan.protostream</groupId>
+                            <artifactId>protostream-processor</artifactId>
+                            <version>${protostream.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
