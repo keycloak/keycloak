@@ -7,6 +7,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+  
 jobs:
 
   analysis:
@@ -17,6 +20,8 @@ jobs:
       matrix:
         container: [keycloak, keycloak-operator]
       fail-fast: false
+    permissions:
+      security-events: write # Required for SARIF uploads
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
