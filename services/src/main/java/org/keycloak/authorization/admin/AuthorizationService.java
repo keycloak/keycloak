@@ -22,6 +22,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
@@ -34,6 +35,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class AuthorizationService {
 
     private final AdminPermissionEvaluator auth;

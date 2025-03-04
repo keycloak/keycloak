@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.common.util.Base64;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class KeyResource {
 
     private RealmModel realm;

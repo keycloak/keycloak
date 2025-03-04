@@ -17,6 +17,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -34,6 +37,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
@@ -64,6 +68,13 @@ import java.util.Properties;
  */
 @Provider
 @Path("/admin")
+@SecurityScheme(
+        securitySchemeName = KeycloakOpenAPI.JWT_SCHEME,
+        type = SecuritySchemeType.HTTP,
+        in = SecuritySchemeIn.HEADER,
+        scheme = "bearer",
+        bearerFormat = "JWT"
+)
 public class AdminRoot {
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 

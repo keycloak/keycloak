@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -67,6 +68,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;

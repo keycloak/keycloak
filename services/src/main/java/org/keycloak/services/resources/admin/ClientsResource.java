@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -76,6 +77,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @version $Revision: 1 $
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
     protected final RealmModel realm;

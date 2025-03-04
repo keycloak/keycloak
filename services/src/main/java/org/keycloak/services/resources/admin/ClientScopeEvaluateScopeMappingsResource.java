@@ -34,6 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.ClientModel;
@@ -51,6 +52,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientScopeEvaluateScopeMappingsResource {
 
     private final KeycloakSession session;

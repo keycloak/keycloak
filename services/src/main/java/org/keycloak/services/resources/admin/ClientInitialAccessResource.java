@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.events.admin.OperationType;
@@ -56,6 +57,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class ClientInitialAccessResource {
 
     private final AdminPermissionEvaluator auth;

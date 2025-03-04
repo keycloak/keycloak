@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
@@ -55,6 +56,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class RealmLocalizationResource {
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
