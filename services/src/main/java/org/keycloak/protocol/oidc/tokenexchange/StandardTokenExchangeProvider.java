@@ -215,7 +215,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
             // The new session created also when original session was offline (assuming we don't allow offline-access from token exchange)
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                    clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
                     requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                             ? UserSessionModel.SessionPersistenceState.PERSISTENT
                             : UserSessionModel.SessionPersistenceState.TRANSIENT);

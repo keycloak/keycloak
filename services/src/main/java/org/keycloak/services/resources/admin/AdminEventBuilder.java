@@ -57,7 +57,7 @@ public class AdminEventBuilder {
     private EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
+        this(realm, auth, session, clientConnection.getRemoteHost(), null);
     }
 
     private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {

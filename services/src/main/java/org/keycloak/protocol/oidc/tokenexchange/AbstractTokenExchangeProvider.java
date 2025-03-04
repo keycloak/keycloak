@@ -391,7 +391,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         if (targetUserSession == null) {
             // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
 
         event.session(targetUserSession);
@@ -524,7 +524,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "external-exchange", false, null, null);
         externalExchangeContext.provider().exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
