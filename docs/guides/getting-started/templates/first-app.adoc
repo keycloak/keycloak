@@ -3,7 +3,7 @@
 To secure the first application, you start by registering the application with your {project_name} instance:
 
 . Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *myrealm*.
+. Click *myrealm* next to *Current realm*.
 . Click *Clients*.
 . Click *Create client*
 . Fill in the form with the following values:

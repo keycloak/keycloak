@@ -18,7 +18,7 @@ To add a storage provider, perform the following procedure:
 .User federation
 image:images/user-federation.png[User federation]
 +
-. Select the provider type card from the listed cards.
+. Choose to add a *Kerberos* or *LDAP* provider
 +
 {project_name} brings you to that provider's configuration page.
 
