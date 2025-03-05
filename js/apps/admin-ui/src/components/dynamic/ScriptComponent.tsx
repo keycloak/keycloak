@@ -1,8 +1,8 @@
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { FormGroup } from "@patternfly/react-core";
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import CodeEditor from "../form/CodeEditor";
 import type { ComponentProps } from "./components";
 
 export const ScriptComponent = ({
@@ -34,16 +34,15 @@ export const ScriptComponent = ({
         defaultValue={defaultValue}
         control={control}
         render={({ field }) => (
-          <div style={{ height: "600px", overflow: "scroll" }}>
-            <CodeEditor
-              id={name!}
-              data-testid={name}
-              readOnly={isDisabled}
-              onChange={field.onChange}
-              value={Array.isArray(field.value) ? field.value[0] : field.value}
-              language="js"
-            />
-          </div>
+          <CodeEditor
+            id={name!}
+            data-testid={name}
+            readOnly={isDisabled}
+            onChange={field.onChange}
+            value={Array.isArray(field.value) ? field.value[0] : field.value}
+            language="js"
+            height={600}
+          />
         )}
       />
     </FormGroup>

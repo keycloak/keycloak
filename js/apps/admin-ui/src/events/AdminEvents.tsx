@@ -36,19 +36,19 @@ import {
   Tr,
   cellWidth,
 } from "@patternfly/react-table";
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
+import { EventsBanners } from "../Banners";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
+import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { CellResourceLinkRenderer } from "./ResourceLinks";
-import { EventsBanners } from "../Banners";
 
 import "./events.css";
 
@@ -284,9 +284,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
           data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
-          <div style={{ height: "8rem", overflow: "scroll" }}>
-            <CodeEditor readOnly value={code} language="json" />
-          </div>
+          <CodeEditor readOnly value={code} language="json" />
         </DisplayDialog>
       )}
       {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
