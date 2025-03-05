@@ -31,10 +31,13 @@ import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -43,6 +46,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +60,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
@@ -319,6 +324,53 @@ public class LogoutTest extends AbstractKeycloakTest {
             validateLogoutToken(logoutToken);
             JWSHeader logoutTokenHeader = jwsInput.getHeader();
             assertEquals("logout+jwt", logoutTokenHeader.getType());
+        } finally {
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            clientResource.update(rep);
+        }
+    }
+
+    @Test
+    public void backChannelWithPairwiseLogout() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+
+        rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, oauth.APP_ROOT + "/admin/backchannelLogout");
+        List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+        mappers.add(ProtocolMapperUtil.createPairwiseMapper("","123456"));
+        rep.setProtocolMappers(mappers);
+
+        ClientResource clientResource = clients.get(rep.getId());
+        clientResource.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.parseLoginResponse().getCode();
+
+            oauth.clientSessionState("client-session");
+
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            AccessToken accessToken = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(AccessToken.class);
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
+                    .idTokenHint(idTokenString)
+                    .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                    .build();
+
+            try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+                MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+                MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            }
+
+            String rawLogoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
+            JWSInput jwsInput = new JWSInput(rawLogoutToken);
+            LogoutToken logoutToken = jwsInput.readJsonContent(LogoutToken.class);
+            validateLogoutToken(logoutToken);
+            JWSHeader logoutTokenHeader = jwsInput.getHeader();
+            assertEquals("logout+jwt", logoutTokenHeader.getType());
+            assertEquals(accessToken.getSubject(), logoutToken.getSubject());
         } finally {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
             clientResource.update(rep);
