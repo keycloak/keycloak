@@ -419,6 +419,16 @@ export class Clients extends Resource<{ realm?: string }> {
     queryParamKeys: ["scope"],
   });
 
+  public evaluateGenerateSamlResponse = this.makeRequest<
+    { id: string; scope: string; userId: string },
+    Record<string, unknown>
+  >({
+    method: "GET",
+    path: "/{id}/evaluate-scopes/generate-example-saml-response",
+    urlParamKeys: ["id"],
+    queryParamKeys: ["scope", "userId"],
+  });
+
   public evaluateGenerateAccessToken = this.makeRequest<
     { id: string; scope: string; userId: string },
     Record<string, unknown>
