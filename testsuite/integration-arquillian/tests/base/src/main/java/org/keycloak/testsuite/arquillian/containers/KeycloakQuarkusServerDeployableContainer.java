@@ -274,6 +274,25 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
     }
 
     @Override
+    protected void waitForReadiness() throws Exception {
+        String pattern = "(?s).*Keycloak.*on JVM.*started in.*";
+        long startTime = System.currentTimeMillis();
+        
+        while(true) {
+            if (System.currentTimeMillis() - startTime > getStartTimeout()) {
+                stop();
+                throw new IllegalStateException("Timeout [" + getStartTimeout() + "] while waiting for Quarkus server");
+            }
+            checkLiveness();
+            if(getRemoteLog().matches(pattern)) {
+                break;
+            }
+            Thread.sleep(1000);
+        }
+        log.infof("Keycloak is ready");
+    }
+
+    @Override
     public String getRemoteLog() {
         return logProcessor.getBufferedLog();
     }
