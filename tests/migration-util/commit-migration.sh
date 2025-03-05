@@ -64,9 +64,10 @@ read_commit_message() {
   COMMIT_MESSAGE=""
   read -r COMMIT_MESSAGE
   if [ -n "$COMMIT_MESSAGE" ]; then
-    while IFS= read -p "End input with CTRL+D" -r line; do
+    COMMIT_MESSAGE+=$'\n'
+    while IFS= read -r line; do
       if [ -z "$line" ]; then
-        COMMIT_MESSAGE+=$'\n\n'
+        COMMIT_MESSAGE+=$'\n'
       else
         COMMIT_MESSAGE+="$line"$'\n'
       fi
