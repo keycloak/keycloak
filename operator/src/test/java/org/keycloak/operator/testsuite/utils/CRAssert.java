@@ -288,8 +288,8 @@ public final class CRAssert {
                 .findFirst();
     }
 
-    public static CompletableFuture<List<Keycloak>> eventuallyRollingUpgradeStatus(KubernetesClient client, Keycloak keycloak) {
-        return client.resource(keycloak).informOnCondition(kcs -> {
+    public static CompletableFuture<Void> eventuallyRollingUpgradeStatus(KubernetesClient client, Keycloak keycloak, String reason) {
+        var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
             try {
                 assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.ROLLING_UPDATE, true, "Rolling out deployment update");
                 return true;
@@ -297,10 +297,19 @@ public final class CRAssert {
                 return false;
             }
         });
+        var cf2 = client.resource(keycloak).informOnCondition(kcs -> {
+            try {
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.UPDATE_TYPE, false, reason);
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        });
+        return CompletableFuture.allOf(cf1, cf2);
     }
 
-    public static CompletableFuture<List<Keycloak>> eventuallyRecreateUpgradeStatus(KubernetesClient client, Keycloak keycloak) {
-        return client.resource(keycloak).informOnCondition(kcs -> {
+    public static CompletableFuture<Void> eventuallyRecreateUpgradeStatus(KubernetesClient client, Keycloak keycloak, String reason) {
+        var cf1 = client.resource(keycloak).informOnCondition(kcs -> {
             try {
                 assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
                 return true;
@@ -308,5 +317,14 @@ public final class CRAssert {
                 return false;
             }
         });
+        var cf2 = client.resource(keycloak).informOnCondition(kcs -> {
+            try {
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.UPDATE_TYPE, true, reason);
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        });
+        return CompletableFuture.allOf(cf1, cf2);
     }
 }

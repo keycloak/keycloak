@@ -109,6 +109,12 @@ public class KeycloakStatusAggregator {
         updateType.setMessage(message);
     }
 
+    public void resetUpgradeType() {
+        updateType.setStatus(null);
+        updateType.setObservedGeneration(observedGeneration);
+        updateType.setMessage(null);
+    }
+
     /**
      * Apply non-condition changes to the status
      */
