@@ -2,6 +2,7 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -73,6 +74,12 @@ public class OAuthClientTest {
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         Assertions.assertTrue(refreshResponse.isSuccess());
         Assertions.assertNotEquals(accessTokenResponse.getAccessToken(), refreshResponse.getAccessToken());
+    }
+
+    @Test
+    public void testOpenIDConfiguration() {
+        OIDCConfigurationRepresentation oidcConfiguration = oauth.doWellKnownRequest();
+        Assertions.assertNotNull(oidcConfiguration);
     }
 
     @Test

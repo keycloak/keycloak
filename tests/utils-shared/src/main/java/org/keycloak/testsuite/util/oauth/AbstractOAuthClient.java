@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
@@ -113,6 +114,14 @@ public abstract class AbstractOAuthClient<T> {
 
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken) {
         return refreshRequest(refreshToken).send();
+    }
+
+    public OpenIDProviderConfigurationRequest wellknownRequest() {
+        return new OpenIDProviderConfigurationRequest(this);
+    }
+
+    public OIDCConfigurationRepresentation doWellKnownRequest() {
+        return wellknownRequest().send().getOidcConfiguration();
     }
 
     public UserInfoRequest userInfoRequest(String accessToken) {
