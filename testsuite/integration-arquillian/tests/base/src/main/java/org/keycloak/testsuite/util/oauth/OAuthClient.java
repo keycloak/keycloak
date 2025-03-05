@@ -367,16 +367,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return new AccessTokenResponse(httpClientManager.get().execute(post));
     }
 
-    // TODO Extract into request class
-    public OIDCConfigurationRepresentation doWellKnownRequest() {
-        try {
-            SimpleHttp request = SimpleHttpDefault.doGet(baseUrl + "/realms/" + config.getRealm() + "/.well-known/openid-configuration",
-                    httpClientManager.get());
-            return request.asJson(OIDCConfigurationRepresentation.class);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
 
 
     // TODO Deprecate
