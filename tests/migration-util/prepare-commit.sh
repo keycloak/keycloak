@@ -114,7 +114,7 @@ backup_staged_files
 # Add only the migrated test files to the git stage
 git restore --staged .
 for test_file in "${TEST_FILES[@]}"; do
-  git status --porcelain | grep -E "(testsuite/|tests/).*\b${test_file%.*}(\.java)?\b" | awk '{print $2}' | xargs -I {} git add {}
+  git status --porcelain --untracked-files=all | grep -E "(testsuite/|tests/).*\b${test_file%.*}(\.java)?\b" | awk '{print $2}' | xargs -I {} git add {}
 done
 
 # Store tests marked as deleted
@@ -135,7 +135,9 @@ else
   for test_file in "${DELETED_TESTS_PATHS[@]}"; do
     test_name=$(basename "$test_file")
     new_test_path=$(git diff --cached --name-status | grep -E "^A.*$test_name" | awk '{print $2}')
-    CREATED_TESTS_PATHS+=("$new_test_path")
+    if [ -n "$new_test_path" ]; then
+      CREATED_TESTS_PATHS+=("$new_test_path")
+    fi
   done
 
   if [ ${#DELETED_TESTS_PATHS[@]} -ne ${#CREATED_TESTS_PATHS[@]} ]; then
