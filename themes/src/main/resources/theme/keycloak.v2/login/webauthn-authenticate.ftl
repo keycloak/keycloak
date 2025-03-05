@@ -80,7 +80,7 @@
                                     </div>
                                 </li>
                             </#list>
-                        </div>
+                        </ul>
                     </#if>
                 </#if>
 
