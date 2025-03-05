@@ -17,11 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.File;
 import java.io.IOException;
-
+import java.util.Map;
+import org.keycloak.compatibility.CompatibilityResult;
+import org.keycloak.compatibility.Util;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.ServerInfo;
 import org.keycloak.util.JsonSerialization;
 import picocli.CommandLine;
 
@@ -33,6 +35,8 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
     public static final String NAME = "check";
     public static final String INPUT_OPTION_NAME = "--file";
+    public static final TypeReference<Map<String, Map<String, String>>> METADATA_TYPE_REF = new TypeReference<>() {
+    };
 
 
     @CommandLine.Option(names = {INPUT_OPTION_NAME}, paramLabel = "FILE",
@@ -42,10 +46,30 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
     @Override
     int executeAction() {
         var info = readServerInfo();
-        var result = compatibilityManager.isCompatible(info);
-        result.errorMessage().ifPresent(this::printError);
-        result.endMessage().ifPresent(this::printOut);
-        return result.exitCode();
+        var providers = loadAllProviders();
+        var idIterator = Util.mergeKeySet(info, providers)
+                .sorted()
+                .iterator();
+
+        while (idIterator.hasNext()) {
+            var id = idIterator.next();
+            var provider = providers.get(id);
+            if (provider == null) {
+                printError("[%s] Provider not found. Rolling Upgrade is not available.".formatted(id));
+                return CompatibilityResult.ExitCode.RECREATE.value();
+            }
+
+            var result = provider.isCompatible(Map.copyOf(info.getOrDefault(id, Map.of())));
+            result.endMessage().ifPresent(this::printOut);
+
+            if (Util.isNotCompatible(result)) {
+                result.errorMessage().ifPresent(this::printError);
+                return result.exitCode();
+            }
+        }
+
+        printOut("[OK] Rolling Upgrade is available.");
+        return CompatibilityResult.ExitCode.ROLLING.value();
     }
 
     @Override
@@ -75,10 +99,10 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
         validateFileIsNotDirectory(file, INPUT_OPTION_NAME);
     }
 
-    private ServerInfo readServerInfo() {
+    private Map<String, Map<String, String>> readServerInfo() {
         var file = new File(inputFile);
         try {
-            return JsonSerialization.mapper.readValue(file, ServerInfo.class);
+            return JsonSerialization.mapper.readValue(file, METADATA_TYPE_REF);
         } catch (IOException e) {
             throw new PropertyException("Unable to read file '%s'".formatted(file.getAbsolutePath()), e);
         }

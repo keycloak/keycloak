@@ -15,39 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.compatibility;
+package org.keycloak.compatibility;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The result of {@link CompatibilityManager#isCompatible(ServerInfo)}.
+ * The result of {@link CompatibilityMetadataProvider#isCompatible(Map)}.
  * <p>
- * It is composed by the exit code (to help building scripts around this tool as is is easier than parsing logs), and an
+ * It is composed by the exit code (to help building scripts around this tool as it is easier than parsing logs), and an
  * optional error message.
  */
 public interface CompatibilityResult {
-
-    int ROLLING_UPGRADE_EXIT_CODE = 0;
-    // see picocli.CommandLine.ExitCode
-    // 1 -> software error
-    // 2 -> usage error
-    int RECREATE_UPGRADE_EXIT_CODE = 3;
-    int FEATURE_DISABLED = 4;
-
-    /**
-     * The compatible {@link CompatibilityResult} implementation
-     */
-    CompatibilityResult OK = new CompatibilityResult() {
-        @Override
-        public int exitCode() {
-            return ROLLING_UPGRADE_EXIT_CODE;
-        }
-
-        @Override
-        public Optional<String> endMessage() {
-            return Optional.of("[OK] Rolling Upgrade is available.");
-        }
-    };
 
     /**
      * @return The exit code to use to signal the compatibility result.
@@ -68,4 +48,31 @@ public interface CompatibilityResult {
         return Optional.empty();
     }
 
+    static CompatibilityResult providerCompatible(String providerId) {
+        return new ProviderCompatibleResult(Objects.requireNonNull(providerId));
+    }
+
+    static CompatibilityResult incompatibleAttribute(String providerId, String attribute, String previousValue, String currentValue) {
+        return new ProviderIncompatibleResult(Objects.requireNonNull(providerId), Objects.requireNonNull(attribute),
+                previousValue, currentValue);
+    }
+
+    enum ExitCode {
+        ROLLING(0),
+        // see picocli.CommandLine.ExitCode
+        // 1 -> software error
+        // 2 -> usage error
+        RECREATE(3);
+        // 4 -> feature 'rolling-updates' disabled
+
+        final int exitCode;
+
+        ExitCode(int exitCode) {
+            this.exitCode = exitCode;
+        }
+
+        public int value() {
+            return exitCode;
+        }
+    }
 }
