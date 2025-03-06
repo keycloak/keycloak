@@ -34,14 +34,10 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
 import java.io.IOException;
@@ -54,7 +50,6 @@ import java.util.Map;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -126,17 +121,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public void setDriver(WebDriver driver) {
         this.driver = driver;
-    }
-
-    public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
-        openLoginForm();
-        WaitUtils.waitForPageToLoad();
-
-        WebElement socialButton = findSocialButton(brokerId);
-        clickLink(socialButton);
-        fillLoginForm(username, password);
-
-        return parseLoginResponse();
     }
 
     public void fillLoginForm(String username, String password) {
@@ -624,11 +608,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public WebDriver getDriver() {
         return driver;
-    }
-
-    private WebElement findSocialButton(String alias) {
-        String id = "social-" + alias;
-        return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
 
 }

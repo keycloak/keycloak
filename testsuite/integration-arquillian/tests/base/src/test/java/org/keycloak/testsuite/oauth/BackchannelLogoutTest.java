@@ -249,8 +249,9 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
-                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
-                .doLoginSocial(nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account");
+
+        doLoginSocial(oauth2, nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
 
         String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
@@ -824,8 +825,8 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
                 .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
-                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
-                .doLoginSocial(identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account");
+        doLoginSocial(oauth2, identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;
     }
 

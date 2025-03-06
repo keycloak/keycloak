@@ -487,7 +487,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         try (var c = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), CONSUMER_BROKER_APP_CLIENT_ID).setConsentRequired(true).update()) {
             oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.realm(bc.consumerRealmName());
-            oauth.doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
             events.clear();
 
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail());
@@ -572,7 +572,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     private EventRepresentation loginWithBrokerUsingOAuthClient(String consumerClientId) {
         oauth.client(consumerClientId, CONSUMER_BROKER_APP_SECRET);
         oauth.realm(bc.consumerRealmName());
-        oauth.doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         events.clear();
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), null, null);
 
