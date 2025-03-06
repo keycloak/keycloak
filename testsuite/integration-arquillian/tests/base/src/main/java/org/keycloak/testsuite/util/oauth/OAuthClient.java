@@ -265,18 +265,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         }
     }
 
-    public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint) {
-        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).send();
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doTokenRevoke(String,String)}
-     */
-    @Deprecated
-    public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret) {
-        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).client(config.getClientId(), clientSecret).send();
-    }
-
     /**
      * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doRefreshTokenRequest(String)}
      */

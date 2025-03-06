@@ -2332,7 +2332,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
         });
 
-        oauth.clientId(clientConfidentialId);
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
         oauth.scope("microprofile-jwt");
 
         // register profiles
@@ -2862,7 +2862,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
-        assertTrue(oauth.doTokenRevoke(refreshToken, "refresh_token", TEST_CLIENT_PASSWORD).isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(refreshToken).refreshToken().send().isSuccess());
 
         // confirm revocation
         AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);

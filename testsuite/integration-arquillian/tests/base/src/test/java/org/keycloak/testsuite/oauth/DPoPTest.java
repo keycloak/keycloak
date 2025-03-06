@@ -217,7 +217,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jktRsa, tokenMetadataRepresentation.getConfirmation().getKeyThumbprint());
         assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenMetadataRepresentation.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
-        oauth.doTokenRevoke(response.getAccessToken(), "access_token", TEST_CONFIDENTIAL_CLIENT_SECRET);
+        oauth.tokenRevocationRequest(response.getAccessToken()).accessToken().send();
 
         tokenMetadataRepresentation = oauth.doIntrospectionRequest(response.getAccessToken(), "access_token").asTokenMetadata();
         Assert.assertFalse(tokenMetadataRepresentation.isActive());
@@ -636,12 +636,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
         oauth.dpopProof(dpopProofRsaEncoded);
-        assertEquals(400, oauth.doTokenRevoke(encodedAccessToken, "access_token").getStatusCode());
+        assertEquals(400, oauth.tokenRevocationRequest(encodedAccessToken).accessToken().send().getStatusCode());
 
         // revoke token with a valid DPoP proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        assertTrue(oauth.doTokenRevoke(encodedAccessToken, "access_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(encodedAccessToken).accessToken().send().isSuccess());
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(encodedAccessToken);
         assertFalse(introspectionResponse.isSuccess());
         assertEquals("Client not allowed.", introspectionResponse.getErrorDescription());

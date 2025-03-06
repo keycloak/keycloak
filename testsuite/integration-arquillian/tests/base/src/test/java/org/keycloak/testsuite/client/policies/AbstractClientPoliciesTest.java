@@ -661,7 +661,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, String sessionId, boolean isOfflineAccess) throws IOException {
         oauth.client(clientId, clientSecret);
-        oauth.doTokenRevoke(refreshToken, "refresh_token");
+        oauth.tokenRevocationRequest(refreshToken).refreshToken().send();
 
         // confirm revocation
         AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
@@ -1346,7 +1346,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         CloseableHttpResponse tokenRevokeResponse;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            assertTrue(oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", TEST_CLIENT_SECRET).isSuccess());
+            assertTrue(oauth.tokenRevocationRequest(accessTokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1418,7 +1418,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Check token revoke with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            assertEquals(401, oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", TEST_CLIENT_SECRET).getStatusCode());
+            assertEquals(401, oauth.tokenRevocationRequest(accessTokenResponse.getRefreshToken()).refreshToken().send().getStatusCode());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {

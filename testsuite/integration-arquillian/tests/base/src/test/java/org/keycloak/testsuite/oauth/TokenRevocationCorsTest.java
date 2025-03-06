@@ -60,7 +60,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
             "password");
 
         oauth.origin(VALID_CORS_URL);
-        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token");
+        TokenRevocationResponse response = oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send();
         assertTrue(response.isSuccess());
         assertCors(response);
 
@@ -76,7 +76,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
             "password");
 
         oauth.origin(INVALID_CORS_URL);
-        TokenRevocationResponse response = oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token");
+        TokenRevocationResponse response = oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send();
         assertTrue(response.isSuccess());
         assertNotCors(response);
 
