@@ -24,11 +24,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -120,6 +115,12 @@ public final class Utils {
                 .map(Utils::utf8Bytes)
                 .forEachOrdered(messageDigest::update);
 
+        return new BigInteger(1, messageDigest.digest()).toString(16);
+    }
+
+    public static String hash(String value) {
+        var messageDigest = getMessageDigest();
+        messageDigest.update(utf8Bytes(value));
         return new BigInteger(1, messageDigest.digest()).toString(16);
     }
 
