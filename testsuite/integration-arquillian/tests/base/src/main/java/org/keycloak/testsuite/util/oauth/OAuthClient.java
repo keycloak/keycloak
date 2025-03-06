@@ -265,13 +265,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         }
     }
 
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doRefreshTokenRequest(String)}
-     */
-    public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String clientSecret) {
-        return refreshRequest(refreshToken).client(config.getClientId(), clientSecret).send();
-    }
-
     // TODO Extract into request class
     public DeviceAuthorizationResponse doDeviceAuthorizationRequest(String clientId, String clientSecret) throws Exception {
         HttpPost post = new HttpPost(getEndpoints().getDeviceAuthorization());
