@@ -322,6 +322,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::failValidationWhenEmptyAttributes);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAsUsernameValidation);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUsernameValidationSkippedWhenUsingEmailAsUsername);
     }
 
     private static void failValidationWhenEmptyAttributes(KeycloakSession session) {
@@ -418,6 +419,31 @@ public class UserProfileTest extends AbstractUserProfileTest {
             profile.validate();
         } catch (ValidationException ve) {
             Assert.fail("Should be OK email as username");
+        } finally {
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
+
+    private static void testUsernameValidationSkippedWhenUsingEmailAsUsername(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        provider.setConfiguration(null);
+        UserProfile profile;
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            realm.setRegistrationEmailAsUsername(true);
+            attributes.clear();
+            // Email address containing non-ASCII characters
+            attributes.put(UserModel.EMAIL, "테스트@도메인.한국");
+            attributes.put(UserModel.FIRST_NAME, "Joe");
+            attributes.put(UserModel.LAST_NAME, "Doe");
+
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+            profile.validate();
+
+        } catch (ValidationException ve) {
+            Assert.fail("Username validation should be skipped when email is used as username");
         } finally {
             realm.setRegistrationEmailAsUsername(false);
         }
