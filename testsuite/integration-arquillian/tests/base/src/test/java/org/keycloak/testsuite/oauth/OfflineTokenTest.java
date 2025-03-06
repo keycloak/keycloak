@@ -1368,9 +1368,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             assertThat(tokenResponse.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(29), lessThanOrEqualTo(30)));
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
 
-            String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+            JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asJsonNode();
             Assert.assertEquals(true, jsonNode.get("active").asBoolean());
             Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
             assertThat(jsonNode.get("exp").asInt() - getCurrentTime(),

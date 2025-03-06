@@ -444,9 +444,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     }
 
     private boolean getIntrospectionResponse(String tokenString) throws IOException {
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenString);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenString).asJsonNode();
         return jsonNode.get("active").asBoolean();
     }
 

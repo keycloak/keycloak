@@ -583,7 +583,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertNotNull(introspectionResponse.getPermissions());
 
         oauth.realm("authz-test").client("resource-server-test", "secret");
-        String introspectHttpResponse = oauth.doIntrospectionRequest(rpt, "requesting_party_token");
+        String introspectHttpResponse = oauth.doIntrospectionRequest(rpt, "requesting_party_token").getRaw();
 
         Map jsonNode = JsonSerialization.readValue(introspectHttpResponse, Map.class);
 

@@ -1,19 +1,17 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
-public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionRequest, String> {
+public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionRequest, IntrospectionResponse> {
 
     private final String token;
     private String tokenTypeHint;
     private boolean jwtResponse = false;
 
-    IntrospectionRequest(String token, OAuthClient client) {
+    IntrospectionRequest(String token, AbstractOAuthClient<?> client) {
         super(client);
         this.token = token;
     }
@@ -39,8 +37,8 @@ public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionR
     }
 
     @Override
-    protected String toResponse(CloseableHttpResponse response) throws IOException {
-        return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+    protected IntrospectionResponse toResponse(CloseableHttpResponse response) throws IOException {
+        return new IntrospectionResponse(response);
     }
 
     @Override

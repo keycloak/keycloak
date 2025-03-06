@@ -3,10 +3,12 @@ package org.keycloak.testsuite.util.oauth;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,6 +79,10 @@ public abstract class AbstractHttpResponse {
     protected <S> S asJson(Class<S> clazz) throws IOException {
         assertJsonContentType();
         return JsonSerialization.readValue(response.getEntity().getContent(), clazz);
+    }
+
+    protected String asString() throws IOException {
+        return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
     }
 
     protected abstract void parseContent() throws IOException;

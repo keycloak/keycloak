@@ -564,9 +564,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertThat(userInfoResponse.getUserInfo().getEmail(), is(bc.getUserEmail()));
 
         // Check that tokenIntrospection can be invoked
-        var introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asJsonNode();
         org.junit.Assert.assertEquals(true, jsonNode.get("active").asBoolean());
         org.junit.Assert.assertEquals(bc.getUserEmail(), jsonNode.get("email").asText());
     }

@@ -344,8 +344,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     private void isTokenEnabled(AccessTokenResponse tokenResponse, String clientId) throws IOException {
         oauth.client(clientId, "password");
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asTokenMetadata();
         assertTrue(rep.isActive());
 
         AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
@@ -363,8 +362,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     private void isAccessTokenDisabled(String accessTokenString, String clientId) throws IOException {
         // Test introspection endpoint not possible
         oauth.client(clientId, "password");
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenString);
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenString).asTokenMetadata();
         assertFalse(rep.isActive());
 
         // Test userInfo endpoint not possible

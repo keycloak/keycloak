@@ -451,9 +451,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user@localhost", "test-user@localhost");
 
             // Check that tokenIntrospection can be invoked
-            String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+            JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(accessToken).asJsonNode();
             Assert.assertEquals(true, jsonNode.get("active").asBoolean());
             Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
 
@@ -477,9 +475,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             userInfoResponse.close();
 
             // Check that tokenIntrospection can't be invoked with invalidated accessToken
-            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
-            objectMapper = new ObjectMapper();
-            jsonNode = objectMapper.readTree(introspectionResponse);
+            jsonNode = oauth.doIntrospectionAccessTokenRequest(accessToken).asJsonNode();
             Assert.assertEquals(false, jsonNode.get("active").asBoolean());
             Assert.assertNull(jsonNode.get("email"));
 

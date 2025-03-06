@@ -132,6 +132,22 @@ public abstract class AbstractOAuthClient<T> {
         return userInfoRequest(accessToken).send();
     }
 
+    public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
+        return new IntrospectionRequest(tokenToIntrospect, this);
+    }
+
+    public IntrospectionResponse doIntrospectionRequest(String tokenToIntrospect, String tokenType) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint(tokenType).send();
+    }
+
+    public IntrospectionResponse doIntrospectionAccessTokenRequest(String tokenToIntrospect) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("access_token").send();
+    }
+
+    public IntrospectionResponse doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
+    }
+
     public TokenRevocationRequest tokenRevocationRequest(String token) {
         return new TokenRevocationRequest(token, this);
     }

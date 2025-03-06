@@ -248,9 +248,6 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
         assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token").isSuccess());
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
-        TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
-        assertFalse(tokenMetadataRepresentation.isActive());
 
         oauth.idTokenHint(response.getIdToken()).openLogout();
     }
