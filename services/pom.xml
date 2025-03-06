@@ -269,7 +269,7 @@
                         <path>
                             <groupId>org.jboss.logging</groupId>
                             <artifactId>jboss-logging-processor</artifactId>
-                            <version>${jboss.logging.version}</version>
+                            <version>${jboss-logging-annotations.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
