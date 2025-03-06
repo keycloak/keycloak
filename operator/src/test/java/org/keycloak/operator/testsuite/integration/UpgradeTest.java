@@ -67,6 +67,7 @@ public class UpgradeTest extends BaseOperatorTest {
         upgradeCondition = switch (updateStrategy) {
             case AUTO -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Unexpected update-compatibility command");
             case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Image changed");
+            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, false);
@@ -91,6 +92,7 @@ public class UpgradeTest extends BaseOperatorTest {
         upgradeCondition = switch (updateStrategy) {
             case AUTO -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Compatible changes detected.");
             case RECREATE_ON_IMAGE_CHANGE -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Image unchanged");
+            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, true);
@@ -119,6 +121,7 @@ public class UpgradeTest extends BaseOperatorTest {
         upgradeCondition = switch (updateStrategy) {
             case AUTO -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Compatible changes detected.");
             case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Image changed");
+            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, true);
@@ -165,6 +168,36 @@ public class UpgradeTest extends BaseOperatorTest {
         var newHash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertNotEquals(hash, newHash);
         assertNotEquals(0, containerExitCode(job));
+    }
+
+    @Test
+    public void testExplicitStrategy() throws InterruptedException {
+        var kc = createInitialDeployment(UpdateStrategy.EXPLICIT);
+
+        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        deployKeycloak(k8sclient, kc, true);
+        await(upgradeCondition);
+
+        // update configuration, revision is updated
+        upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc, "does not match");
+        kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "10")));
+        kc.getSpec().getUpdateSpec().setRevision("1");
+        deployKeycloak(k8sclient, kc, true);
+        await(upgradeCondition);
+
+        // update configuration, revision is updated
+        upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision (1) does not match (2).");
+        kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "11")));
+        kc.getSpec().getUpdateSpec().setRevision("2");
+        deployKeycloak(k8sclient, kc, true);
+        await(upgradeCondition);
+
+        // update configuration, revision is unchanged
+        upgradeCondition = eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
+        kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "12")));
+        kc.getSpec().getUpdateSpec().setRevision("2");
+        deployKeycloak(k8sclient, kc, true);
+        await(upgradeCondition);
     }
 
     private Job assertUpdateJobExists(Keycloak keycloak) {

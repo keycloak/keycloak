@@ -272,6 +272,16 @@ public class CRSerializationTest {
         assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.upgrade.UpdateStrategy` from String \"abc\""));
     }
 
+    @Test
+    public void testUpgradeStrategyRevision() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+        var updateSpec = keycloak.getSpec().getUpdateSpec();
+        assertNotNull(updateSpec);
+        var revision = updateSpec.getRevision();
+        assertNotNull(revision);
+        assertEquals("1", revision);
+    }
+
     private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {
         assertNotNull(rules);
         assertEquals(3, rules.size());

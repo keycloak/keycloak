@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Default;
 import io.sundr.builder.annotations.Buildable;
+import java.util.Optional;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
@@ -38,6 +39,9 @@ public class UpdateSpec {
     @Default(DEFAULT_JSON)
     private UpdateStrategy strategy;
 
+    @JsonPropertyDescription("When use the Explicit strategy, the revision signals if a rolling update can be used or not.")
+    private String revision;
+
     public UpdateStrategy getStrategy() {
         return strategy;
     }
@@ -46,10 +50,24 @@ public class UpdateSpec {
         this.strategy = strategy;
     }
 
+    public String getRevision() {
+        return revision;
+    }
+
+    public void setRevision(String revision) {
+        this.revision = revision;
+    }
+
     public static UpdateStrategy getUpdateStrategy(Keycloak keycloak) {
         return CRDUtils.keycloakSpecOf(keycloak)
                 .map(KeycloakSpec::getUpdateSpec)
                 .map(UpdateSpec::getStrategy)
                 .orElse(DEFAULT);
+    }
+
+    public static Optional<String> getRevision(Keycloak keycloak) {
+        return CRDUtils.keycloakSpecOf(keycloak)
+                .map(KeycloakSpec::getUpdateSpec)
+                .map(UpdateSpec::getRevision);
     }
 }

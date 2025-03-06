@@ -18,15 +18,15 @@
 package org.keycloak.operator.upgrade;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 public enum UpdateStrategy {
 
-    @JsonPropertyDescription("Shutdown the Keycloak cluster when the image changes.")
     @JsonProperty("RecreateOnImageChange")
     RECREATE_ON_IMAGE_CHANGE,
 
-    @JsonPropertyDescription("Automatically detects if the Keycloak CR changes requires a rolling or recreate update.")
     @JsonProperty("Auto")
-    AUTO
+    AUTO,
+
+    @JsonProperty("Explicit")
+    EXPLICIT
 }
