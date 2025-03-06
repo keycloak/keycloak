@@ -220,7 +220,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
     }
 
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce) {

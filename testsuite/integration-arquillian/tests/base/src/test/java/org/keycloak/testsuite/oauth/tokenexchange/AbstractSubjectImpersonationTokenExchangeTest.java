@@ -45,7 +45,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -368,7 +367,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 ));
         org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
 
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         oauth.client("direct-public", "secret");
         authzResponse = oauth.doLogin("user", "password");
         tokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode());

@@ -237,7 +237,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client("test-app")
                 .user(userId)

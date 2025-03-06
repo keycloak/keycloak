@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oauth;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -382,13 +383,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestParamsMoreThanOnce() throws IOException {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        Map<String, String> extraParams = new HashMap<>();
 
-        oauth.addCustomParameter(OAuth2Constants.SCOPE, "read_write")
-            .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
-            .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
+        String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
+                .queryParam(OAuth2Constants.STATE, "abcdefg")
+                .queryParam(OAuth2Constants.SCOPE, "pop push").build().toString();
 
-        oauth.openLoginForm();
+        driver.navigate().to(logoutUrl);
 
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
@@ -402,13 +402,13 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        oauth.addCustomParameter(OAuth2Constants.SCOPE, "read_write")
-                .addCustomParameter(OAuth2Constants.CLIENT_ID, "client2client")
-                .addCustomParameter(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
-                .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
-                .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
+        String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
+                .queryParam(OAuth2Constants.CLIENT_ID, "client2client")
+                .queryParam(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
+                .queryParam(OAuth2Constants.STATE, "abcdefg")
+                .queryParam(OAuth2Constants.SCOPE, "pop push").build().toString();
 
-        oauth.openLoginForm();
+        driver.navigate().to(logoutUrl);
 
         assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());

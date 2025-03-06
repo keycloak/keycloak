@@ -707,6 +707,6 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         Assert.assertNotNull(response.getCode());
         AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode());
         assertEquals(200, res.getStatusCode());
-        oauth.doLogout(res.getRefreshToken(), "secret");
+        oauth.doLogout(res.getRefreshToken());
     }
 }

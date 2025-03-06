@@ -1,70 +1,63 @@
 package org.keycloak.testsuite.util.oauth;
 
-import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.managers.AuthenticationManager;
 
-public class LogoutUrlBuilder {
+public class LogoutUrlBuilder extends AbstractUrlBuilder {
 
-    private final Endpoints endpoints;
-
-    private String clientId;
-    private String idTokenHint;
-    private String redirectUri;
-    private String state;
-    private String uiLocales;
-    private String initiatingIdp;
-
-    LogoutUrlBuilder(Endpoints endpoints) {
-        this.endpoints = endpoints;
+    LogoutUrlBuilder(AbstractOAuthClient<?> client) {
+        super(client);
     }
 
-    public LogoutUrlBuilder clientId(String clientId) {
-        this.clientId = clientId;
+    @Override
+    public String getEndpoint() {
+        return client.getEndpoints().getLogout();
+    }
+
+    public LogoutUrlBuilder param(String name, String value) {
+        replaceParameter(name, value);
         return this;
     }
 
     public LogoutUrlBuilder idTokenHint(String idTokenHint) {
-        this.idTokenHint = idTokenHint;
+        replaceParameter(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
         return this;
     }
 
     public LogoutUrlBuilder postLogoutRedirectUri(String redirectUri) {
-        this.redirectUri = redirectUri;
+        replaceParameter(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
         return this;
     }
 
     public LogoutUrlBuilder state(String state) {
-        this.state = state;
+        replaceParameter(OIDCLoginProtocol.STATE_PARAM, state);
         return this;
     }
 
     public LogoutUrlBuilder uiLocales(String uiLocales) {
-        this.uiLocales = uiLocales;
+        replaceParameter(OIDCLoginProtocol.UI_LOCALES_PARAM, uiLocales);
         return this;
     }
 
     public LogoutUrlBuilder initiatingIdp(String initiatingIdp) {
-        this.initiatingIdp = initiatingIdp;
+        replaceParameter(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIdp);
         return this;
     }
 
-    public String build() {
-        UriBuilder b = OIDCLoginProtocolService.logoutUrl(endpoints.getBase());
-        setNonNull(b, OIDCLoginProtocol.CLIENT_ID_PARAM, clientId);
-        setNonNull(b, OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
-        setNonNull(b, OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
-        setNonNull(b, OIDCLoginProtocol.STATE_PARAM, state);
-        setNonNull(b, OIDCLoginProtocol.UI_LOCALES_PARAM, uiLocales);
-        setNonNull(b, AuthenticationManager.INITIATING_IDP_PARAM, initiatingIdp);
-        return endpoints.asString(b);
+    public LogoutUrlBuilder withClientId() {
+        parameter(OIDCLoginProtocol.CLIENT_ID_PARAM, client.config().getClientId());
+        return this;
     }
 
-    private void setNonNull(UriBuilder b, String name, String value) {
-        if (value != null) {
-            b.queryParam(name, value);
-        }
+    public LogoutUrlBuilder withRedirect() {
+        postLogoutRedirectUri(client.config().getPostLogoutRedirectUri());
+        return this;
+    }
+
+    @Override
+    protected void initRequest() {
+//        parameter(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, client.config().getPostLogoutRedirectUri());
+//        parameter(OIDCLoginProtocol.ID_TOKEN_HINT, client.getIdTokenHint());
     }
 
 }

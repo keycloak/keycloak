@@ -601,7 +601,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
         String refreshToken1 = accessTokenResponse.getRefreshToken();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
         events.clear();
 
         setTimeOffset(2);

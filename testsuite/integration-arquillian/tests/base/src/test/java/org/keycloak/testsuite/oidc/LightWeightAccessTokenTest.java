@@ -330,7 +330,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             deletePolicy(POLICY_NAME);
-            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            oauth.doLogout(tokenResponse.getRefreshToken());
 
             authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
@@ -397,7 +397,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             alwaysUseLightWeightAccessToken(false);
-            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            oauth.doLogout(tokenResponse.getRefreshToken());
 
             authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
@@ -458,7 +458,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             alwaysUseLightWeightAccessToken(false);
-            oauth.doLogout(tokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            oauth.doLogout(tokenResponse.getRefreshToken());
 
 
             authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);

@@ -2,13 +2,17 @@ package org.keycloak.testsuite.util.oauth;
 
 import jakarta.ws.rs.core.UriBuilder;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class AbstractUrlBuilder {
 
     protected final AbstractOAuthClient<?> client;
-    protected UriBuilder uriBuilder;
+    protected Map<String, String> params = new HashMap<>();
 
     public AbstractUrlBuilder(AbstractOAuthClient<?> client) {
         this.client = client;
+        initRequest();
     }
 
     public abstract String getEndpoint();
@@ -20,21 +24,16 @@ public abstract class AbstractUrlBuilder {
     }
 
     protected void parameter(String name, String value) {
-        if (value != null) {
-            uriBuilder.queryParam(name, value);
-        }
+        params.put(name, value);
     }
 
     protected void replaceParameter(String name, String value) {
-        if (value != null) {
-            uriBuilder.replaceQueryParam(name, value);
-        }
+        params.put(name, value);
     }
 
     public String build() {
-        uriBuilder = UriBuilder.fromUri(getEndpoint());
-        initRequest();
-
+        UriBuilder uriBuilder = UriBuilder.fromUri(getEndpoint());
+        params.entrySet().stream().filter(e -> e.getValue() != null).forEach(e -> uriBuilder.queryParam(e.getKey(), e.getValue()));
         return uriBuilder.build().toString();
     }
 

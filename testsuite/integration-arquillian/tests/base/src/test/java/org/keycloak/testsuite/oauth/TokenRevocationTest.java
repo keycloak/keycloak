@@ -273,7 +273,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        oauth.doLogout(tokenResponse.getRefreshToken(), "password");
+        oauth.doLogout(tokenResponse.getRefreshToken());
 
         isTokenDisabled(tokenResponse, "test-app");
 
