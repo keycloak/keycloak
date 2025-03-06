@@ -158,7 +158,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -179,7 +179,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             // Most of the claims should not be included in introspectionResponse as introspectionMapper was disabled
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, false, false);
@@ -201,7 +201,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true, true, false);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -223,7 +223,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
 
-            String tokenResponse = oauth.introspectionRequest(accessToken).tokenTypeHint("access_token").jwtResponse().send();
+            String tokenResponse = oauth.introspectionRequest(accessToken).tokenTypeHint("access_token").jwtResponse().send().getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             AccessToken introspectionResult = JsonSerialization.readValue(tokenResponse, AccessToken.class);
             assertTokenIntrospectionResponse(introspectionResult, true, true, false);
@@ -251,7 +251,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
             removeSession(ctx.userSessionId);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -273,7 +273,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), false, false, false);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
         } finally {
@@ -299,7 +299,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             logger.debug("exchangedTokenString:" + exchangedTokenString);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), true, true, false);
         } finally {
@@ -324,7 +324,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             logger.debug("lightweight access token:" + accessToken);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
             logger.debug("tokenResponse:" + introspectResponse);
 
@@ -365,7 +365,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + introspectResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
 
@@ -391,7 +391,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             logger.debug("lightweight access token:" + accessToken);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
             logger.debug("tokenResponse:" + introspectResponse);
 
@@ -426,7 +426,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true, true, true);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + introspectResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, false);
 
@@ -452,7 +452,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true,  false,true);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + introspectResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
 
@@ -468,7 +468,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), true, true,  true);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            introspectResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + introspectResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(introspectResponse, AccessToken.class), true, true, true);
 
@@ -492,7 +492,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             assertAccessToken(oauth.verifyToken(accessToken), false,  false,false);
 
             oauth.client(RESOURCE_SERVER_CLIENT_ID, RESOURCE_SERVER_CLIENT_PASSWORD);
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
+            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessToken).getRaw();
             logger.debug("tokenResponse:" + tokenResponse);
             assertTokenIntrospectionResponse(JsonSerialization.readValue(tokenResponse, AccessToken.class), false, true, false);
         } finally {

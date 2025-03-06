@@ -1016,15 +1016,13 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     }
 
     private void assertIntrospectSuccess(String token, String clientId, String clientSecret, String userId) throws IOException {
-        String tokenResponse = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send();
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send().asTokenMetadata();
         assertTrue(rep.isActive());
         assertEquals(userId, rep.getSubject());
     }
 
     private void assertIntrospectError(String token, String clientId, String clientSecret) throws IOException {
-        String tokenResponse = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send();
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send().asTokenMetadata();
         assertFalse(rep.isActive());
     }
 

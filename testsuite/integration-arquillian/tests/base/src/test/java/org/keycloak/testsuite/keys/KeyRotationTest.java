@@ -335,9 +335,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
     private void assertTokenIntrospection(String token, boolean expectActive) {
         try {
-            String tokenResponse = oauth.client("confidential-cli", "secret1").doIntrospectionAccessTokenRequest(token);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+            JsonNode jsonNode = oauth.client("confidential-cli", "secret1").doIntrospectionAccessTokenRequest(token).asJsonNode();
             assertEquals(expectActive, jsonNode.get("active").asBoolean());
             oauth.client("test-app", "password");
         } catch (IOException e) {

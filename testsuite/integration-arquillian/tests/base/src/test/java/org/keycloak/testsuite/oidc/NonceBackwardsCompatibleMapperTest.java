@@ -49,6 +49,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
+
 /**
  *
  * @author rmartinc
@@ -63,12 +65,12 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     @Test
-    public void testNonceWithoutMapper() throws JsonProcessingException {
+    public void testNonceWithoutMapper() throws IOException {
         testNonce(false, false);
     }
 
     @Test
-    public void testNonceWithMapper() throws JsonProcessingException {
+    public void testNonceWithMapper() throws IOException {
         ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
@@ -79,7 +81,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     @Test
-    public void testOfflineSessionNonceWithMapper() throws JsonProcessingException {
+    public void testOfflineSessionNonceWithMapper() throws IOException {
         ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
@@ -128,13 +130,12 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         }
     }
 
-    private void testIntrospection(String accessToken, String expectedNonce, boolean expected) throws JsonProcessingException {
-        String tokenResponse = oauth.client("test-app", "password").doIntrospectionAccessTokenRequest(accessToken);
-        JsonNode nonce = new ObjectMapper().readTree(tokenResponse).get(OIDCLoginProtocol.NONCE_PARAM);
+    private void testIntrospection(String accessToken, String expectedNonce, boolean expected) throws IOException {
+        JsonNode nonce = oauth.client("test-app", "password").doIntrospectionAccessTokenRequest(accessToken).asJsonNode().get(OIDCLoginProtocol.NONCE_PARAM);
         checkNonce(expectedNonce, nonce != null? nonce.asText() : null, expected);
     }
 
-    private void testNonceImplicit(boolean mapper) throws JsonProcessingException {
+    private void testNonceImplicit(boolean mapper) throws IOException {
         String nonce = KeycloakModelUtils.generateId();
         oauth.nonce(nonce);
         oauth.responseMode(OIDCResponseMode.JWT.value());
@@ -155,7 +156,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         testIntrospection(idTokenString, nonce, true);
     }
 
-    private void testNonce(boolean mapper, boolean offlineSession) throws JsonProcessingException {
+    private void testNonce(boolean mapper, boolean offlineSession) throws IOException {
         String nonce = KeycloakModelUtils.generateId();
         oauth.nonce(nonce);
         if (offlineSession) {

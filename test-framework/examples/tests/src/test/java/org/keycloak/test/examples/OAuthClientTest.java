@@ -15,8 +15,11 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+
+import java.io.IOException;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
@@ -80,6 +83,15 @@ public class OAuthClientTest {
     public void testOpenIDConfiguration() {
         OIDCConfigurationRepresentation oidcConfiguration = oauth.doWellKnownRequest();
         Assertions.assertNotNull(oidcConfiguration);
+    }
+
+    @Test
+    public void testIntrospection() throws IOException {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        Assertions.assertTrue(introspectionResponse.asTokenMetadata().isActive());
     }
 
     @Test

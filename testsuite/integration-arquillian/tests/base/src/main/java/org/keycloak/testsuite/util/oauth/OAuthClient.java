@@ -27,15 +27,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.ClaimsRepresentation;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -146,22 +143,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         LoginPage loginPage = new LoginPage();
         PageFactory.initElements(driver, loginPage);
         loginPage.login(username, password);
-    }
-
-    public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
-        return new IntrospectionRequest(tokenToIntrospect, this);
-    }
-
-    public String doIntrospectionRequest(String tokenToIntrospect, String tokenType) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint(tokenType).send();
-    }
-
-    public String doIntrospectionAccessTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint("access_token").send();
-    }
-
-    public String doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
     }
 
     public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
