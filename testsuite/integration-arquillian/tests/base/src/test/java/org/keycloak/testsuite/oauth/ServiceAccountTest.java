@@ -369,7 +369,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         AccessToken accessToken = oauth.verifyToken(tokenString);
 
         // Revoke access token
-        assertTrue(oauth.doTokenRevoke(tokenString, "access_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenString).accessToken().send().isSuccess());
 
         events.expect(EventType.REVOKE_GRANT)
                 .client("service-account-cl")
@@ -444,9 +444,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     }
 
     private boolean getIntrospectionResponse(String tokenString) throws IOException {
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenString);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenString).asJsonNode();
         return jsonNode.get("active").asBoolean();
     }
 

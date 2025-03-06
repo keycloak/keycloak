@@ -2,6 +2,7 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -14,8 +15,11 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+
+import java.io.IOException;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
@@ -73,6 +77,21 @@ public class OAuthClientTest {
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         Assertions.assertTrue(refreshResponse.isSuccess());
         Assertions.assertNotEquals(accessTokenResponse.getAccessToken(), refreshResponse.getAccessToken());
+    }
+
+    @Test
+    public void testOpenIDConfiguration() {
+        OIDCConfigurationRepresentation oidcConfiguration = oauth.doWellKnownRequest();
+        Assertions.assertNotNull(oidcConfiguration);
+    }
+
+    @Test
+    public void testIntrospection() throws IOException {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        Assertions.assertTrue(introspectionResponse.asTokenMetadata().isActive());
     }
 
     @Test

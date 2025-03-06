@@ -24,10 +24,13 @@ import org.keycloak.services.resources.admin.AdminAuth;
 
 class MgmtPermissionsV2 extends MgmtPermissions {
 
-    private GroupPermissionsV2 groupPermissions;
-    private UserPermissionsV2 userPermissions;
-
     private ClientPermissionsV2 clientPermissions;
+
+    private GroupPermissionsV2 groupPermissions;
+
+    private RolePermissionsV2 rolePermissions;
+
+    private UserPermissionsV2 userPermissions;
 
     public MgmtPermissionsV2(KeycloakSession session, RealmModel realm) {
         super(session, realm);
@@ -55,6 +58,13 @@ class MgmtPermissionsV2 extends MgmtPermissions {
         if (groupPermissions != null) return groupPermissions;
         groupPermissions = new GroupPermissionsV2(session, authz, this);
         return groupPermissions;
+    }
+
+    @Override
+    public RolePermissions roles() {
+        if (rolePermissions != null) return rolePermissions;
+        rolePermissions = new RolePermissionsV2(session, realm, authz, this);
+        return rolePermissions;
     }
 
     @Override

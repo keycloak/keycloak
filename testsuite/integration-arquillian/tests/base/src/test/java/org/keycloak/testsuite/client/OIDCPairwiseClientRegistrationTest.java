@@ -418,10 +418,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Login to pairwise client
         AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
-        String introspectionResponse = oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret()).doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        JsonNode jsonNode = oauth.client(pairwiseClient.getClientId(), pairwiseClient.getClientSecret()).doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asJsonNode();
         Assert.assertEquals(true, jsonNode.get("active").asBoolean());
         Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
     }

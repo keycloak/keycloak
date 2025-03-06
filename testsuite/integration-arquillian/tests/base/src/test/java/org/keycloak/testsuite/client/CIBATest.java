@@ -504,13 +504,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, true);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
             EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, true);
@@ -606,13 +606,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
             EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
@@ -670,13 +670,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // revoke by refresh token
             EventRepresentation logoutEvent = doTokenRevokeByRefreshToken(tokenRes.getRefreshToken(), tokenRes.getSessionState(), userId, false);
@@ -907,13 +907,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertTrue(authTime <= currentTime + 5);
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
@@ -2332,7 +2332,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
         });
 
-        oauth.clientId(clientConfidentialId);
+        oauth.client(clientConfidentialId, clientConfidentialSecret);
         oauth.scope("microprofile-jwt");
 
         // register profiles
@@ -2556,13 +2556,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, false);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, false);
@@ -2785,36 +2785,22 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
     }
 
-    private String doIntrospectAccessTokenWithClientCredential(AccessTokenResponse tokenRes, String username) throws IOException {
+    private void doIntrospectAccessTokenWithClientCredential(AccessTokenResponse tokenRes, String username) throws IOException {
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("username").asText(), is(equalTo(username)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getAccessToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getRefreshToken());
-        jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getRefreshToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuer())));
         events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        tokenResponse = oauth.doIntrospectionAccessTokenRequest(tokenRes.getIdToken());
-        jsonNode = objectMapper.readTree(tokenResponse);
-        assertThat(jsonNode.get("active").asBoolean(), is(equalTo(true)));
-        assertThat(jsonNode.get("client_id").asText(), is(equalTo(TEST_CLIENT_NAME)));
-        rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getIdToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getUserName(), is(equalTo(username)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
@@ -2822,8 +2808,6 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getPreferredUsername(), is(equalTo(username)));
         assertThat(rep.getAudience()[0], is(equalTo(rep.getIssuedFor())));
         events.expect(EventType.INTROSPECT_TOKEN).user((String) null).session(accessToken.getSessionId()).clearDetails().assertEvent();
-
-        return tokenResponse;
     }
 
     private AccessTokenResponse doRefreshTokenRequest(String oldRefreshToken, String username, String sessionId, boolean isOfflineAccess) {
@@ -2878,7 +2862,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
-        assertTrue(oauth.doTokenRevoke(refreshToken, "refresh_token", TEST_CLIENT_PASSWORD).isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(refreshToken).refreshToken().send().isSuccess());
 
         // confirm revocation
         AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);
@@ -2951,13 +2935,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertTrue(authTime <= currentTime + 5);
 
             // token introspection
-            String tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // token refresh
             tokenRes = doRefreshTokenRequest(tokenRes.getRefreshToken(), username, sessionId, isOfflineAccess);
 
             // token introspection after token refresh
-            tokenResponse = doIntrospectAccessTokenWithClientCredential(tokenRes, username);
+            doIntrospectAccessTokenWithClientCredential(tokenRes, username);
 
             // logout by refresh token
             EventRepresentation logoutEvent = doLogoutByRefreshToken(tokenRes.getRefreshToken(), sessionId, userId, isOfflineAccess);

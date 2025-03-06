@@ -27,24 +27,17 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.ClaimsRepresentation;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
 import java.io.IOException;
@@ -57,7 +50,6 @@ import java.util.Map;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -131,37 +123,10 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         this.driver = driver;
     }
 
-    public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
-        openLoginForm();
-        WaitUtils.waitForPageToLoad();
-
-        WebElement socialButton = findSocialButton(brokerId);
-        clickLink(socialButton);
-        fillLoginForm(username, password);
-
-        return parseLoginResponse();
-    }
-
     public void fillLoginForm(String username, String password) {
         LoginPage loginPage = new LoginPage();
         PageFactory.initElements(driver, loginPage);
         loginPage.login(username, password);
-    }
-
-    public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
-        return new IntrospectionRequest(tokenToIntrospect, this);
-    }
-
-    public String doIntrospectionRequest(String tokenToIntrospect, String tokenType) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint(tokenType).send();
-    }
-
-    public String doIntrospectionAccessTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint("access_token").send();
-    }
-
-    public String doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
-        return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
     }
 
     public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
@@ -284,25 +249,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         }
     }
 
-    public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint) {
-        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).send();
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doTokenRevoke(String,String)}
-     */
-    @Deprecated
-    public TokenRevocationResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret) {
-        return tokenRevocationRequest(token).tokenTypeHint(tokenTypeHint).client(config.getClientId(), clientSecret).send();
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #doRefreshTokenRequest(String)}
-     */
-    public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String clientSecret) {
-        return refreshRequest(refreshToken).client(config.getClientId(), clientSecret).send();
-    }
-
     // TODO Extract into request class
     public DeviceAuthorizationResponse doDeviceAuthorizationRequest(String clientId, String clientSecret) throws Exception {
         HttpPost post = new HttpPost(getEndpoints().getDeviceAuthorization());
@@ -367,16 +313,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return new AccessTokenResponse(httpClientManager.get().execute(post));
     }
 
-    // TODO Extract into request class
-    public OIDCConfigurationRepresentation doWellKnownRequest() {
-        try {
-            SimpleHttp request = SimpleHttpDefault.doGet(baseUrl + "/realms/" + config.getRealm() + "/.well-known/openid-configuration",
-                    httpClientManager.get());
-            return request.asJson(OIDCConfigurationRepresentation.class);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
 
 
     // TODO Deprecate
@@ -665,11 +601,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public WebDriver getDriver() {
         return driver;
-    }
-
-    private WebElement findSocialButton(String alias) {
-        String id = "social-" + alias;
-        return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
 
 }

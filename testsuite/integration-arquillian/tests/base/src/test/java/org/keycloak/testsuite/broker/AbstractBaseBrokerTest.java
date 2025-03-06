@@ -52,10 +52,14 @@ import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
+import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.support.PageFactory;
 
 import java.net.URI;
 import java.util.Collections;
@@ -254,6 +258,15 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
         loginPage.login(username, password);
+    }
+
+    protected AuthorizationEndpointResponse doLoginSocial(OAuthClient oauth, String brokerId, String username, String password) {
+        oauth.openLoginForm();
+        WaitUtils.waitForPageToLoad();
+
+        oauth.getDriver().findElement(By.id("social-" + brokerId)).click();
+        oauth.fillLoginForm(username, password);
+        return oauth.parseLoginResponse();
     }
 
     /** Logs in the IDP and updates account information */

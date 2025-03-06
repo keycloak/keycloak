@@ -938,8 +938,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             Assert.assertFalse(hasClientSessionForTestApp());
 
             // Introspection with the accessToken from the first authentication. This should fail
-            String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken());
-            JsonNode jsonNode = JsonSerialization.mapper.readTree(introspectionResponse);
+            JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken()).asJsonNode();
             Assert.assertFalse(jsonNode.get("active").asBoolean());
             events.clear();
 
@@ -960,8 +959,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             Assert.assertTrue(hasClientSessionForTestApp());
 
             // Introspection again with the accessToken from the very first authentication. This should fail as the access token was obtained for the old client session before SSO re-authentication
-            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken());
-            jsonNode = JsonSerialization.mapper.readTree(introspectionResponse);
+            jsonNode = oauth.doIntrospectionAccessTokenRequest(response1.getAccessToken()).asJsonNode();
             Assert.assertFalse(jsonNode.get("active").asBoolean());
 
             // Try userInfo with the same old access token. Should fail as well

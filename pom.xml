@@ -52,9 +52,9 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.19.0.CR1</quarkus.version>
-        <quarkus.build.version>3.19.0.CR1</quarkus.build.version>
-        <jboss.logging.version>3.0.3.Final</jboss.logging.version> <!-- keep in sync with the version used by quarkus -->
+        <quarkus.version>3.19.2</quarkus.version>
+        <quarkus.build.version>3.19.2</quarkus.build.version>
+        <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -168,7 +168,7 @@
         <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.2</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->

@@ -20,6 +20,16 @@ public class TokenRevocationRequest extends AbstractHttpPostRequest<TokenRevocat
         return this;
     }
 
+    public TokenRevocationRequest accessToken() {
+        this.tokenTypeHint = "access_token";
+        return this;
+    }
+
+    public TokenRevocationRequest refreshToken() {
+        this.tokenTypeHint = "refresh_token";
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getRevocation();

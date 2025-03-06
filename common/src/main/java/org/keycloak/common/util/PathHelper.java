@@ -40,7 +40,7 @@ public class PathHelper
    /**
     * A regex pattern that searches for a URI template parameter in the form of {*}
     */
-   public static final Pattern URI_TEMPLATE_PATTERN = Pattern.compile("(\\{([^}]+)\\})");
+   public static final Pattern URI_TEMPLATE_PATTERN = Pattern.compile("(\\{([^{}]+)\\})");
 
    public static final char openCurlyReplacement = 6;
    public static final char closeCurlyReplacement = 7;

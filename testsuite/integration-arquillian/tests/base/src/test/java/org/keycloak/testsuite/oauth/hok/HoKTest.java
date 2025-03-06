@@ -663,16 +663,15 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         // Do token introspection
         // mimic Resource Server
-        String tokenResponse;
+        TokenMetadataRepresentation rep;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             oauth.client("confidential-cli", "secret1").httpClient().set(client);
-            tokenResponse = oauth.doIntrospectionRequest(accessTokenResponse.getAccessToken(), "access_token");
+            rep = oauth.doIntrospectionRequest(accessTokenResponse.getAccessToken(), "access_token").asTokenMetadata();
         }  catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
             oauth.httpClient().reset();
         }
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
         JWSInput jws = new JWSInput(accessTokenResponse.getAccessToken());
         AccessToken at = jws.readJsonContent(AccessToken.class);
         jws = new JWSInput(accessTokenResponse.getRefreshToken());

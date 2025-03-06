@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
@@ -115,12 +116,36 @@ public abstract class AbstractOAuthClient<T> {
         return refreshRequest(refreshToken).send();
     }
 
+    public OpenIDProviderConfigurationRequest wellknownRequest() {
+        return new OpenIDProviderConfigurationRequest(this);
+    }
+
+    public OIDCConfigurationRepresentation doWellKnownRequest() {
+        return wellknownRequest().send().getOidcConfiguration();
+    }
+
     public UserInfoRequest userInfoRequest(String accessToken) {
         return new UserInfoRequest(accessToken, this);
     }
 
     public UserInfoResponse doUserInfoRequest(String accessToken) {
         return userInfoRequest(accessToken).send();
+    }
+
+    public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
+        return new IntrospectionRequest(tokenToIntrospect, this);
+    }
+
+    public IntrospectionResponse doIntrospectionRequest(String tokenToIntrospect, String tokenType) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint(tokenType).send();
+    }
+
+    public IntrospectionResponse doIntrospectionAccessTokenRequest(String tokenToIntrospect) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("access_token").send();
+    }
+
+    public IntrospectionResponse doIntrospectionRefreshTokenRequest(String tokenToIntrospect) {
+        return introspectionRequest(tokenToIntrospect).tokenTypeHint("refresh_token").send();
     }
 
     public TokenRevocationRequest tokenRevocationRequest(String token) {

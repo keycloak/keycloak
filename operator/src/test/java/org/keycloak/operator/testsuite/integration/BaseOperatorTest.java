@@ -314,6 +314,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           savePodLogs();
           // provide some helpful entries in the main log as well
           logFailedKeycloaks();
+          k8sclient.resources(Keycloak.class).list().getItems()
+                  .forEach(keycloak -> Log.infof("Keycloak '%s' status:%n%s", keycloak.getMetadata().getName(), Serialization.asYaml(keycloak.getStatus())));
           if (operatorDeployment == OperatorDeployment.remote) {
               log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }

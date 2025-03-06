@@ -210,7 +210,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         oauth.clientId("myclient");
         String bearerToken = getToken("myclient", "password", "manage-clients", "password");
-        assertTrue(oauth.doTokenRevoke(bearerToken, "access_token", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(bearerToken).accessToken().send().isSuccess());
 
         try {
             reg.auth(Auth.token(bearerToken));

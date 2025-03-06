@@ -256,7 +256,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
             org.junit.Assert.assertEquals(200, response.getStatus());
             AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
             String exchangedTokenString = accessTokenResponse.getToken();
-            JsonNode json = JsonSerialization.readValue(oauth.doIntrospectionAccessTokenRequest(exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            JsonNode json = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).asJsonNode();
             assertTrue(json.get("active").asBoolean());
             assertEquals("impersonated-user", json.get("preferred_username").asText());
             assertEquals("user", json.get("act").get("sub").asText());
@@ -276,7 +276,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
             org.junit.Assert.assertEquals(200, response.getStatus());
             AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
             String exchangedTokenString = accessTokenResponse.getToken();
-            JsonNode json = JsonSerialization.readValue(oauth.doIntrospectionAccessTokenRequest(exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            JsonNode json = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).asJsonNode();
             assertTrue(json.get("active").asBoolean());
             assertEquals("impersonated-user", json.get("preferred_username").asText());
             assertEquals("user", json.get("act").get("sub").asText());
