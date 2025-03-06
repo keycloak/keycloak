@@ -40,13 +40,13 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
 
     @Override
     public Optional<String> find(String key) {
-        return Optional.ofNullable(getEntity(key, LockModeType.READ))
+        return Optional.ofNullable(getEntity(key))
                 .map(ServerConfigEntity::getValue);
     }
 
     @Override
     public void store(String key, String value) {
-        var entity = getEntity(key, LockModeType.WRITE);
+        var entity = getEntity(key);
         if (entity == null) {
             entity = new ServerConfigEntity();
             entity.setKey(Objects.requireNonNull(key));
@@ -60,7 +60,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
 
     @Override
     public void remove(String key) {
-        var entity = getEntity(key, LockModeType.WRITE);
+        var entity = getEntity(key);
         if (entity != null) {
             entityManager.remove(entity);
         }
@@ -68,7 +68,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
 
     @Override
     public String loadOrCreate(String key, Supplier<String> valueGenerator) {
-        var entity = getEntity(key, LockModeType.OPTIMISTIC);
+        var entity = getEntity(key);
         if (entity != null) {
             return entity.getValue();
         }
@@ -84,7 +84,7 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
     public boolean replace(String key, Predicate<String> replacePredicate, Supplier<String> valueGenerator) {
         Objects.requireNonNull(replacePredicate);
         Objects.requireNonNull(valueGenerator);
-        var entity = getEntity(key, LockModeType.OPTIMISTIC);
+        var entity = getEntity(key);
         if (entity == null || !replacePredicate.test(entity.getValue())) {
             return false;
         }
@@ -98,7 +98,10 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
         //no-op
     }
 
-    private ServerConfigEntity getEntity(String key, LockModeType lockModeType) {
-        return entityManager.find(ServerConfigEntity.class, Objects.requireNonNull(key), lockModeType);
+    private ServerConfigEntity getEntity(String key) {
+        // Optimistic is enough to prevent the following scenario (copied from Javadoc):
+        // Transaction T1 reads a row. Another transaction T2 then modifies or deletes that row, before T1 has committed.
+        // Both transactions eventually commit successfully.
+        return entityManager.find(ServerConfigEntity.class, Objects.requireNonNull(key), LockModeType.OPTIMISTIC);
     }
 }

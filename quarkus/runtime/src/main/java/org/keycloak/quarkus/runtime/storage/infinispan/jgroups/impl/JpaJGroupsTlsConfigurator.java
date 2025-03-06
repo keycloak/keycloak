@@ -32,6 +32,7 @@ import org.keycloak.infinispan.module.certificates.CertificateReloadManager;
 import org.keycloak.infinispan.module.certificates.JGroupsCertificateHolder;
 import org.keycloak.infinispan.module.configuration.global.KeycloakConfigurationBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
@@ -52,8 +53,9 @@ public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
 
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
-    private static final int STARTUP_RETRIES = 2;
-    private static final int STARTUP_RETRY_SLEEP_MILLIS = 10;
+    // 2.5 seconds in the worst case. Unlikely to happen, except if the DB connection is unreliable.
+    private static final int STARTUP_RETRIES = 5;
+    private static final int STARTUP_RETRY_SLEEP_MILLIS = 500;
     public static final JpaJGroupsTlsConfigurator INSTANCE = new JpaJGroupsTlsConfigurator();
 
     @Override
@@ -65,23 +67,26 @@ public class JpaJGroupsTlsConfigurator extends BaseJGroupsTlsConfigurator {
     SocketFactory createSocketFactory(ConfigurationBuilderHolder holder, KeycloakSession session) {
         var factory = session.getKeycloakSessionFactory();
         var kcConfig = holder.getGlobalConfigurationBuilder().addModule(KeycloakConfigurationBuilder.class);
-        kcConfig.setKeycloakSessionFactory(factory);
+        var crtHolder = loadInitialCertificateWithRetry(factory);
         kcConfig.setJGroupsCertificateRotation(requiredIntegerProperty(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION));
-        return Retry.call(iteration -> {
-            try {
-                var crtHolder = KeycloakModelUtils.runJobInTransactionWithResult(factory, this::createSocketFactoryInTransaction);
-                var sslContext = SSLContext.getInstance(TLS_PROTOCOL);
-                sslContext.init(new KeyManager[]{crtHolder.keyManager()}, new TrustManager[]{crtHolder.trustManager()}, null);
-                var sf = createFromContext(sslContext);
-                kcConfig.setJGroupCertificateHolder(crtHolder);
-                return sf;
-            } catch (KeyManagementException | NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            }
-        }, STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+        kcConfig.setKeycloakSessionFactory(factory);
+        kcConfig.setJGroupCertificateHolder(crtHolder);
+
+        try {
+            var sslContext = SSLContext.getInstance(TLS_PROTOCOL);
+            sslContext.init(new KeyManager[]{crtHolder.keyManager()}, new TrustManager[]{crtHolder.trustManager()}, null);
+            return createFromContext(sslContext);
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            // we should have valid certificates and keys.
+            throw new RuntimeException(e);
+        }
     }
 
-    private JGroupsCertificateHolder createSocketFactoryInTransaction(KeycloakSession session) {
+    private static JGroupsCertificateHolder loadInitialCertificateWithRetry(KeycloakSessionFactory factory) {
+        return Retry.call(iteration -> KeycloakModelUtils.runJobInTransactionWithResult(factory, JpaJGroupsTlsConfigurator::createOrLoadCertificate), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+    }
+
+    private static JGroupsCertificateHolder createOrLoadCertificate(KeycloakSession session) {
         try {
             var rotationDays = requiredIntegerProperty(CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION);
             var storage = session.getProvider(ServerConfigStorageProvider.class);
