@@ -1604,9 +1604,9 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void listUsersById() {
-        String userId = createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        String user2Id = createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
-        createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com");
+        String userId = createUser("multiple-user-1", "multiple-user-1@example.com");
+        String user2Id = createUser("multiple-user-2", "multiple-user-@example.com");
+        createUser("multiple-user-3", "multiple-user-3@example.com");
 
         // Should return only correct users
         List<UserRepresentation> users = realm.users().listByIds(false, List.of(userId, user2Id));
