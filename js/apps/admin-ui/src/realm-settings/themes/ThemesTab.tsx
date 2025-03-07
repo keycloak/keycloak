@@ -21,6 +21,7 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  favicon?: File;
   logo?: File;
   bgimage?: File;
 };
@@ -36,13 +37,16 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
 
-    const { logo, bgimage, ...rest } = realm;
+    const { favicon, logo, bgimage, ...rest } = realm;
 
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
     const bgimageName =
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
+    if (favicon) {
+      zip.file(`theme/quick-theme/common/resources/img/favicon.ico`, favicon);
+    }
     if (logo) {
       zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
     }

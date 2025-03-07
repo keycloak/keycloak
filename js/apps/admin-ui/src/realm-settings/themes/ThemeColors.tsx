@@ -113,6 +113,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     const styles = JSON.parse(realm.attributes?.style || "{}");
     save({
       ...realm,
+      favicon: values.favicon as File,
       logo: values.logo as File,
       bgimage: values.bgimage as File,
       attributes: {
@@ -145,6 +146,9 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
         <FlexItem>
           <FormAccess isHorizontal role="manage-realm">
             <FormProvider {...form}>
+              <FormGroup label={t("favicon")}>
+                <ImageUpload name="favicon" />
+              </FormGroup>
               <FormGroup label={t("logo")}>
                 <ImageUpload
                   name="logo"
