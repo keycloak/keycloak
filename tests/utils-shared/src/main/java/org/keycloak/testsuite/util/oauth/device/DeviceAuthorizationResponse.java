@@ -1,7 +1,8 @@
-package org.keycloak.testsuite.util.oauth;
+package org.keycloak.testsuite.util.oauth.device;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 
 import java.io.IOException;
 
