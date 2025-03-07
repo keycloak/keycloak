@@ -27,6 +27,12 @@ To ensure consistency and quality across translations, please adhere to the foll
 - Maintain consistency with existing translations.
 - Translate text accurately, ensuring that the meaning is preserved.
 
+### Handling of single quotes (`'`)
+
+Whenever messages are formatted in the backend, Keycloak uses Java's MessageFormat to replace placeholders. This uses single quotes as an escape mechanism. 
+
+Therefore, use typographic quotes like `‘` and `’` (preferred), or duplicate each single quote `''` (discouraged, still used in lots of legacy places). 
+
 ### Spanish translations
 
 - Use the formal "usted" form instead of the informal "vos or tu" (i.e., avoid tuteo), ensuring a more formal tone.

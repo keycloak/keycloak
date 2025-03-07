@@ -44,6 +44,9 @@
                         <goals>
                             <goal>verify-theme</goal>
                         </goals>
+                        <configuration>
+                            <validateMessageFormatQuotes>true</validateMessageFormatQuotes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
