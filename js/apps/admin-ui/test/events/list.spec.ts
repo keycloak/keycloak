@@ -81,7 +81,6 @@ test.describe("Events tests", () => {
         eventsTestUser.userRepresentation.credentials[0].value,
         realmName,
       );
-      await goToRealm(page, realmName);
       await goToEvents(page);
     });
 

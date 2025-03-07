@@ -85,15 +85,12 @@ test.describe("Authentication test", () => {
   });
 
   test.describe("Flow details", () => {
-    let flowId: string | undefined;
     const flowName = "Copy of browser test";
 
-    test.beforeEach(async () => {
+    test.beforeEach(async ({ page }) => {
       await adminClient.copyFlow("browser", flowName, realmName);
-      flowId = (await adminClient.getFlow(flowName, realmName))!.id!;
+      await page.getByTestId("refresh").click();
     });
-
-    test.afterEach(() => adminClient.deleteFlow(flowId!, realmName));
 
     test("Should edit flow details", async ({ page }) => {
       await clickTableRowItem(page, flowName);

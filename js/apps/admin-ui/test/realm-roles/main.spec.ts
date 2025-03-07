@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
 import { fillRoleData } from "../clients/role";
+import adminClient from "../utils/AdminClient";
 import {
   assertAttribute,
   assertAttributeLength,
@@ -10,7 +10,11 @@ import {
   fillAttributeData,
   goToAttributesTab,
 } from "../utils/attributes";
-import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
+import {
+  assertRequiredFieldError,
+  clickCancelButton,
+  clickSaveButton,
+} from "../utils/form";
 import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
@@ -55,6 +59,12 @@ test.describe("Realm roles test", () => {
     await clickCreateRoleButton(page);
     await clickSaveButton(page);
     await assertRequiredFieldError(page, "name");
+
+    await fillRoleData(page, "admin");
+    await clickSaveButton(page);
+    await clickCancelButton(page);
+
+    await clickCreateRoleButton(page);
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -284,8 +294,8 @@ test.describe("Realm roles test", () => {
 
       await goToAttributesTab(page);
       await fillAttributeData(page, "one", "1");
-      await fillAttributeData(page, "two", "2", 1);
-      await fillAttributeData(page, "three", "3", 2);
+      await fillAttributeData(page, "two", "2", undefined, 1);
+      await fillAttributeData(page, "three", "3", undefined, 2);
 
       await clickAttributeSaveButton(page);
       await assertNotificationMessage(page, "The role has been saved");
@@ -299,7 +309,7 @@ test.describe("Realm roles test", () => {
       await clickTableRowItem(page, editRoleName);
       await goToAttributesTab(page);
       await fillAttributeData(page, "one", "1");
-      await fillAttributeData(page, "two", "2", 1);
+      await fillAttributeData(page, "two", "2", undefined, 1);
       await clickAttributeSaveButton(page);
 
       await deleteAttribute(page, 1);

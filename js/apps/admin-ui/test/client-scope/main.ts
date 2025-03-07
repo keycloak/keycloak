@@ -59,6 +59,7 @@ export async function fillClientScopeData(
 ) {
   await page.getByTestId("name").fill(name);
   await page.getByTestId("description").fill(description);
+  await selectItem(page, "#kc-protocol", "OpenID Connect");
 
   await getConsentScreenTextInput(page).fill(consentScreenText);
   await page.getByTestId("attributes.gui🍺order").fill(displayOrder);

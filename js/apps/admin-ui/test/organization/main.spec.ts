@@ -8,19 +8,13 @@ import {
   selectActionToggleItem,
 } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
-import {
-  goToOrganizations,
-  goToRealm,
-  goToRealmSettings,
-} from "../utils/sidebar";
+import { goToOrganizations, goToRealm } from "../utils/sidebar";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickTableRowItem,
 } from "../utils/table";
 import {
-  clickRealmSaveButton,
-  enableOrganizations,
   fillCreatePage,
   fillNameField,
   getNameField,
@@ -30,19 +24,18 @@ import {
 test.describe("Organization CRUD", () => {
   const realmName = `organization-${uuid()}`;
 
-  test.beforeAll(() => adminClient.createRealm(realmName));
+  test.beforeAll(() =>
+    adminClient.createRealm(realmName, { organizationsEnabled: true }),
+  );
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToRealm(page, realmName);
-    await goToRealmSettings(page);
-    await enableOrganizations(page);
-    await clickRealmSaveButton(page);
+    await goToOrganizations(page);
   });
 
   test("should create new organization", async ({ page }) => {
-    await goToOrganizations(page);
     await goToCreate(page);
     await assertSaveButtonIsDisabled(page);
     await fillCreatePage(page, { name: "orgName" });
@@ -61,8 +54,6 @@ test.describe("Organization CRUD", () => {
       name: "editName",
       domains: [{ name: "go.org", verified: false }],
     });
-    await goToRealm(page, realmName);
-    await goToOrganizations(page);
     await clickTableRowItem(page, "editName");
     const newValue = "newName";
     await fillNameField(page, newValue);
@@ -77,9 +68,8 @@ test.describe("Organization CRUD", () => {
     await adminClient.createOrganization({
       realm: realmName,
       name: "deleteName",
-      domains: [{ name: "go.org", verified: false }],
+      domains: [{ name: "other.org", verified: false }],
     });
-    await goToOrganizations(page);
     await clickRowKebabItem(page, "deleteName", "Delete");
     await confirmModal(page);
     await assertNotificationMessage(page, "The organization has been deleted");
@@ -89,9 +79,8 @@ test.describe("Organization CRUD", () => {
     await adminClient.createOrganization({
       realm: realmName,
       name: "deleteName2",
-      domains: [{ name: "go.org", verified: false }],
+      domains: [{ name: "acme.org", verified: false }],
     });
-    await goToOrganizations(page);
     await clickTableRowItem(page, "deleteName2");
     await selectActionToggleItem(page, "Delete");
     await confirmModal(page);
