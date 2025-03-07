@@ -127,45 +127,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         loginPage.login(username, password);
     }
 
-    public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
-        return new TokenExchangeRequest(subjectToken, this);
-    }
-
-    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
-        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, String targetAudience,
-                                               String clientId, String clientSecret) throws Exception {
-        return doTokenExchange(subjectToken, targetAudience, clientId, clientSecret, null);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, String targetAudience,
-                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        List<String> targetAudienceList = targetAudience == null ? null : List.of(targetAudience);
-        return doTokenExchange(subjectToken, targetAudienceList, clientId, clientSecret, additionalParams);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, List<String> targetAudiences,
-                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        return tokenExchangeRequest(subjectToken)
-                .client(clientId, clientSecret)
-                .audience(targetAudiences)
-                .additionalParams(additionalParams).send();
-    }
-
 
 
     public String getClientId() {

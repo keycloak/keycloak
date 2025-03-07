@@ -294,7 +294,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             String accessToken = response.getAccessToken();
             logger.debug("accessToken:" + accessToken);
             assertAccessToken(oauth.verifyToken(accessToken), true, false, false);
-            response = oauth.doTokenExchange(accessToken, null, TEST_CLIENT, TEST_CLIENT_SECRET);
+            response = oauth.doTokenExchange(accessToken);
             String exchangedTokenString = response.getAccessToken();
             logger.debug("exchangedTokenString:" + exchangedTokenString);
 

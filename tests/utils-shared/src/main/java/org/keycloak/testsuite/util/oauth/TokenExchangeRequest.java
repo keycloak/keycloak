@@ -5,9 +5,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.AdapterConstants;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeRequest, AccessTokenResponse> {
 
@@ -16,13 +16,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
     private List<String> audience;
     private Map<String, String> additionalParams;
 
-    TokenExchangeRequest(String subjectToken, OAuthClient client) {
-        super(client);
-        this.subjectToken = subjectToken;
-        this.subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
-    }
-
-    TokenExchangeRequest(String subjectToken, String subjectTokenType, OAuthClient client) {
+    TokenExchangeRequest(String subjectToken, String subjectTokenType, AbstractOAuthClient<?> client) {
         super(client);
         this.subjectToken = subjectToken;
         this.subjectTokenType = subjectTokenType;
@@ -38,6 +32,16 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         return this;
     }
 
+    public TokenExchangeRequest audience(String... audience) {
+        this.audience = Arrays.stream(audience).toList();
+        return this;
+    }
+
+    /**
+     * @deprecated Additional parameters should not be passed as a map, instead specific methods should be added
+     * for example <code>requestedTokenType(tokenType)</code>
+     */
+    @Deprecated
     public TokenExchangeRequest additionalParams(Map<String, String> additionalParams) {
         this.additionalParams = additionalParams;
         return this;
