@@ -1,11 +1,11 @@
 import { Page, expect } from "@playwright/test";
 
 function getMobileUserDropdownSelector(page: Page) {
-  return page.locator("#user-dropdown-kebab");
+  return page.getByTestId("options-kebab-toggle");
 }
 
 function getUserDropdownSelector(page: Page) {
-  return page.locator("#user-dropdown");
+  return page.getByTestId("options-toggle");
 }
 
 async function getUserDropdown(page: Page) {
@@ -13,9 +13,9 @@ async function getUserDropdown(page: Page) {
     () => document.documentElement.getBoundingClientRect().width,
   );
   if (width < 1024) {
-    return page.locator("#user-dropdown-kebab");
+    return getMobileUserDropdownSelector(page);
   } else {
-    return page.locator("#user-dropdown");
+    return getUserDropdownSelector(page);
   }
 }
 

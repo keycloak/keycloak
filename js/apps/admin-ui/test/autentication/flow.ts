@@ -27,7 +27,7 @@ export async function addExecution(
   executionTestId: string,
 ) {
   await clickEditDropdownForFlow(page, subFlowName);
-  await page.getByRole("menuitem", { name: "Add step" }).click();
+  await page.getByRole("menuitem", { name: "Add execution" }).click();
   await selectExecutionTestId(page, executionTestId);
 }
 

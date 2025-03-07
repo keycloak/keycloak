@@ -6,10 +6,6 @@ export async function goToCreate(page: Page, empty: boolean = true) {
     .click();
 }
 
-export async function enableOrganizations(page: Page) {
-  await page.getByTestId("organizationsEnabled").click({ force: true });
-}
-
 export async function fillCreatePage(
   page: Page,
   values: { name: string; domain?: string[]; description?: string },
@@ -35,8 +31,4 @@ export function getNameField(page: Page) {
 export async function fillNameField(page: Page, name: string) {
   await getNameField(page).clear();
   await getNameField(page).fill(name);
-}
-
-export async function clickRealmSaveButton(page: Page) {
-  await page.getByTestId("realmSettingsGeneralTab-save").click();
 }
