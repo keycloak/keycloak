@@ -166,41 +166,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .additionalParams(additionalParams).send();
     }
 
-    // TODO Deprecate
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues) throws Exception {
-        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, bindingMessage, acrValues, null, null);
-    }
-
-    // TODO Extract into BackchannelAuthenticationRequest, and deprecate
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String acrValues, String clientNotificationToken, Map<String, String> additionalParams) throws Exception {
-        return new BackchannelAuthenticationRequest(userid, bindingMessage, acrValues, clientNotificationToken, additionalParams, this)
-                .client(clientId, clientSecret).send();
-    }
-
-    // TODO Extract into request class
-    public int doAuthenticationChannelCallback(String requestToken, AuthenticationChannelResponse.Status authStatus) throws Exception {
-        HttpPost post = new HttpPost(getEndpoints().getBackchannelAuthenticationCallback());
-
-        String authorization = TokenUtil.TOKEN_TYPE_BEARER + " " + requestToken;
-        post.setHeader("Authorization", authorization);
-
-        post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(new AuthenticationChannelResponse(authStatus)), ContentType.APPLICATION_JSON));
-
-        try (CloseableHttpResponse response = httpClientManager.get().execute(post)) {
-            return response.getStatusLine().getStatusCode();
-        }
-    }
-
-    // TODO Deprecate
-    public AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientSecret, String authReqId) {
-        return doBackchannelAuthenticationTokenRequest(config.getClientId(), clientSecret, authReqId);
-    }
-
-    // TODO Extract into request class
-    public AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String authReqId) {
-        return new BackchannelAuthenticationTokenRequest(authReqId, this).client(clientId, clientSecret).send();
-    }
-
     // TODO Extract into request class
     public DeviceAuthorizationResponse doDeviceAuthorizationRequest(String clientId, String clientSecret) throws Exception {
         HttpPost post = new HttpPost(getEndpoints().getDeviceAuthorization());

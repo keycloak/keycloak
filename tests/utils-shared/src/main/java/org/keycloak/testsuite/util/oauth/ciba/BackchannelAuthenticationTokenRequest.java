@@ -1,9 +1,10 @@
-package org.keycloak.testsuite.util.oauth;
+package org.keycloak.testsuite.util.oauth.ciba;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.AdapterConstants;
-import org.keycloak.util.TokenUtil;
+import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
+import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.io.IOException;
 
@@ -13,7 +14,7 @@ public class BackchannelAuthenticationTokenRequest extends AbstractHttpPostReque
 
     private final String authReqId;
 
-    BackchannelAuthenticationTokenRequest(String authReqId, OAuthClient client) {
+    BackchannelAuthenticationTokenRequest(String authReqId, AbstractOAuthClient<?> client) {
         super(client);
         this.authReqId = authReqId;
     }
