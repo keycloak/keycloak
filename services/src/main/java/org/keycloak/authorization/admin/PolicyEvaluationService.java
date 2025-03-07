@@ -196,29 +196,28 @@ public class PolicyEvaluationService {
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getName() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findByName(resourceServer, resource.getName());
-                if (resourceModel == null) {
-                    return Stream.empty();
+                if (resourceModel != null) {
+                    return new ArrayList<>(Arrays.asList(
+                            Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
                 }
-                return new ArrayList<>(Arrays.asList(
-                        Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
                 return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
-            } else {
-                if (scopes.isEmpty()) {
-                    return Stream.empty();
-                }
-
-                List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
-
-                if (resources.isEmpty()) {
-                    return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
-                }
-
-
-                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
-                        scopes, authorization, request));
             }
+
+            if (scopes.isEmpty()) {
+                return Stream.empty();
+            }
+
+            List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
+
+            if (resources.isEmpty()) {
+                return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
+            }
+
+
+            return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
+                    scopes, authorization, request));
         }).collect(Collectors.toList());
     }
 
