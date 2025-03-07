@@ -8,6 +8,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
+import org.keycloak.testsuite.util.oauth.device.DeviceClient;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Map;
@@ -184,6 +185,10 @@ public abstract class AbstractOAuthClient<T> {
         return new CibaClient(this);
     }
 
+    public DeviceClient device() {
+        return new DeviceClient(this);
+    }
+
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
         return tokensManager.parseToken(token, clazz);
     }
@@ -250,15 +255,15 @@ public abstract class AbstractOAuthClient<T> {
         return clientSessionHost;
     }
 
-    String getCodeChallenge() {
+    public String getCodeChallenge() {
         return codeChallenge;
     }
 
-    String getCodeChallengeMethod() {
+    public String getCodeChallengeMethod() {
         return codeChallengeMethod;
     }
 
-    String getCodeVerifier() {
+    public String getCodeVerifier() {
         return codeVerifier;
     }
 
@@ -298,7 +303,7 @@ public abstract class AbstractOAuthClient<T> {
         return state != null ? state.getState() : null;
     }
 
-    String getNonce() {
+    public String getNonce() {
         return nonce;
     }
 
