@@ -39,6 +39,11 @@ public class DefaultJpaConnectionProvider implements JpaConnectionProvider {
     }
 
     @Override
+    public void runInBatch(Runnable runnable) {
+        PersistenceExceptionConverter.runInBatch(runnable);
+    }
+
+    @Override
     public void close() {
         logger.trace("DefaultJpaConnectionProvider close()");
         em.close();

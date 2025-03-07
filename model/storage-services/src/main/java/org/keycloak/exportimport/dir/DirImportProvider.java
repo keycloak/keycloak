@@ -19,6 +19,7 @@ package org.keycloak.exportimport.dir;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.AbstractFileBasedImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
@@ -47,6 +48,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private final Strategy strategy;
     private final KeycloakSessionFactory factory;
+    private final JpaConnectionProvider connectionProvider;
 
     private static final Logger logger = Logger.getLogger(DirImportProvider.class);
 
@@ -54,9 +56,10 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private String realmName;
 
-    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy) {
+    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy, JpaConnectionProvider connectionProvider) {
         this.factory = factory;
         this.strategy = strategy;
+        this.connectionProvider = connectionProvider;
     }
 
     public DirImportProvider withDir(String dir) {
@@ -155,30 +158,8 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
         if (realmImported.get()) {
             // Import users
-            for (final File userFile : userFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported users from %s", userFile.getAbsolutePath());
-                        }
-                    });
-                }
-            }
-            for (final File userFile : federatedUserFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
-                        }
-                    });
-                }
-            }
+            importUsers(realmName, userFiles, false);
+            importUsers(realmName, federatedUserFiles, true);
         }
 
         if (realmImported.get()) {
@@ -193,6 +174,31 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                 }
 
             });
+        }
+    }
+
+    private void importUsers(final String realmName, File[] userFiles, boolean federated) throws IOException {
+        for (final File userFile : userFiles) {
+            try (InputStream fis = parseFile(userFile)) {
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        session.getContext().setRealm(session.realms().getRealmByName(realmName));
+                        connectionProvider.runInBatch(() -> {
+                            try {
+                                if (federated) {
+                                    ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                                } else {
+                                    ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException("Error during import: " + e.getMessage(), e);
+                            }
+                        });
+                        logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
+                    }
+                });
+            }
         }
     }
 

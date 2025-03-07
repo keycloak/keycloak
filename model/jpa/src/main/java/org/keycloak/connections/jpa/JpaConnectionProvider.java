@@ -28,4 +28,7 @@ public interface JpaConnectionProvider extends Provider {
 
     EntityManager getEntityManager();
 
+    // TODO: does this need a default impl
+    void runInBatch(Runnable runnable);
+
 }
