@@ -112,7 +112,7 @@ public class FAPI2Test extends AbstractFAPITest {
         registerRequestObject(requestObject, clientId, Algorithm.PS256, false);
 
         String signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, null, signedJwt);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().signedJwt(signedJwt).send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
         oauth.requestUri(requestUri);
@@ -173,13 +173,13 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // requiring hybrid request - should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, null);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(401, pResp.getStatusCode());
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
 
         // authorization request does not match PAR request - should fail
         oauth.responseType(OIDCResponseType.CODE);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, null);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
@@ -193,7 +193,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // an additional parameter in an authorization request that does not exist in a PAR request - should fail
         oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, null);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
         oauth.stateParamRandom();
@@ -208,7 +208,7 @@ public class FAPI2Test extends AbstractFAPITest {
         // send a pushed authorization request
         oauth.stateParamHardcoded(null);
         oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, null);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
 
@@ -286,7 +286,7 @@ public class FAPI2Test extends AbstractFAPITest {
         registerRequestObject(requestObject, clientId, Algorithm.PS256, false);
 
         // send a pushed authorization request
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, null);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
@@ -353,8 +353,9 @@ public class FAPI2Test extends AbstractFAPITest {
         registerRequestObject(requestObject, clientId, Algorithm.PS256, true);
         oauth.requestUri(null);
         oauth.request(null);
+        oauth.client(clientId);
         String signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, null, signedJwt);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().signedJwt(signedJwt).send();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
 
@@ -369,7 +370,7 @@ public class FAPI2Test extends AbstractFAPITest {
 
         // send a pushed authorization request
         signedJwt = createSignedRequestToken(clientId, Algorithm.PS256);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, null, signedJwt);
+        pResp = oauth.pushedAuthorizationRequest().signedJwt(signedJwt).send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 

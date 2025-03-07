@@ -189,6 +189,14 @@ public abstract class AbstractOAuthClient<T> {
         return new DeviceClient(this);
     }
 
+    public ParRequest pushedAuthorizationRequest() {
+        return new ParRequest(this);
+    }
+
+    public ParResponse doPushedAuthorizationRequest() {
+        return pushedAuthorizationRequest().send();
+    }
+
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
         return tokensManager.parseToken(token, clazz);
     }
