@@ -245,6 +245,20 @@ public interface UsersResource {
     List<UserRepresentation> list(@QueryParam("first") Integer firstResult,
                                   @QueryParam("max") Integer maxResults);
 
+    /**
+     * Retrieves a list of users based on the provided IDs.
+     *
+     * @param briefRepresentation if true, the returned users will be in a brief format.
+     * @param ids the list of user IDs for which the representations are to be retrieved.
+     * @return a list of users matching the specified IDs. Will only return users for ids that exist.
+     * @since Keycloak 26.2
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> listByIds(
+        @QueryParam("briefRepresentation") Boolean briefRepresentation,
+        @QueryParam("ids") List<String> ids);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> list();
