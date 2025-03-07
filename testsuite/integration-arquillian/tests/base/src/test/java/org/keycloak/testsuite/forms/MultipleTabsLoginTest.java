@@ -416,7 +416,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             appPage.assertCurrent();
             events.clear();
             // logout in the second tab
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
             events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
             // re-login in the second tab
             oauth.openLoginForm();

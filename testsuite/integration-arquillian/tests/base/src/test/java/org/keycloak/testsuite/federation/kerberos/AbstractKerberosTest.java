@@ -214,8 +214,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         Assert.assertEquals(userId, token.getSubject());
         Assert.assertEquals(expectedUsername, token.getPreferredUsername());
 
-        oauth.idTokenHint(tokenResponse.getIdToken());
-
         return tokenResponse;
     }
 

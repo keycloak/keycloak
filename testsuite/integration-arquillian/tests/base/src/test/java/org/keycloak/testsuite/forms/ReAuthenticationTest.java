@@ -390,7 +390,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
 
-        oauth.doLogout(response1.getRefreshToken(), "password");
+        oauth.doLogout(response1.getRefreshToken());
 
         oauth.openLoginForm();
         loginPage.assertCurrent();

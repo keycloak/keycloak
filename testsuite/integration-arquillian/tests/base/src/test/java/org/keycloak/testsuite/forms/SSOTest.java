@@ -22,7 +22,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -40,7 +39,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
@@ -146,7 +144,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         assertNotEquals(login1.getSessionId(), login2.getSessionId());
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         events.expectLogout(login1.getSessionId()).assertEvent();
 
         oauth.openLoginForm();
@@ -162,7 +160,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         String code = oauth2.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth2.doAccessTokenRequest(code);
         events.poll();
-        oauth2.idTokenHint(response.getIdToken()).openLogout();
+        oauth2.logoutForm().idTokenHint(response.getIdToken()).withRedirect().open();
         events.expectLogout(login2.getSessionId()).assertEvent();
 
         oauth2.openLoginForm();

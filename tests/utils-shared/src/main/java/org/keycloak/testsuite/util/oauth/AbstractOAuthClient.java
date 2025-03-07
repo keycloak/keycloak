@@ -33,7 +33,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String prompt;
     protected StateParamProvider state;
     protected String nonce;
-    protected String idTokenHint;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -114,6 +113,30 @@ public abstract class AbstractOAuthClient<T> {
 
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken) {
         return refreshRequest(refreshToken).send();
+    }
+
+    public LogoutUrlBuilder logoutForm() {
+        return new LogoutUrlBuilder(this);
+    }
+
+    public void openLogoutForm() {
+        logoutForm().open();
+    }
+
+    public LogoutRequest logoutRequest(String refreshToken) {
+        return new LogoutRequest(refreshToken, this);
+    }
+
+    public LogoutResponse doLogout(String refreshToken) {
+        return logoutRequest(refreshToken).send();
+    }
+
+    public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {
+        return new BackchannelLogoutRequest(logoutToken, this);
+    }
+
+    public BackchannelLogoutResponse doBackchannelLogout(String logoutToken) {
+        return backchannelLogoutRequest(logoutToken).send();
     }
 
     public OpenIDProviderConfigurationRequest wellknownRequest() {

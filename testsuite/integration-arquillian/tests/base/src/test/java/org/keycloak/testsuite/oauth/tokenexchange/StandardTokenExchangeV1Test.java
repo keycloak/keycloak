@@ -476,9 +476,8 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String idTokenString = tokenResponse.getIdToken();
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
-                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
-        driver.navigate().to(logoutUrl);
+        oauth.logoutForm().idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).open();
         logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
         Assert.assertNotNull(logoutToken);
         AccessTokenResponse response = oauth.doTokenExchange(logoutToken, "target", "direct-legal", "secret");

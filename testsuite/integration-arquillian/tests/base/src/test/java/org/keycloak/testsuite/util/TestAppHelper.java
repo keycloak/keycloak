@@ -103,7 +103,7 @@ public class TestAppHelper {
 
     public boolean logout() {
         try {
-            return oauth.doLogout(refreshToken, "password").isSuccess();
+            return oauth.doLogout(refreshToken).isSuccess();
         } catch (RuntimeException e) {
             return false;
         }

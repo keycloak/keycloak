@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import jakarta.ws.rs.core.UriBuilder;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -30,7 +29,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -204,52 +202,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     }
 
     // TODO Extract into request class
-    public LogoutResponse doLogout(String refreshToken, String clientSecret) {
-        HttpPost post = new HttpPost(getEndpoints().getLogout());
-
-        List<NameValuePair> parameters = new LinkedList<>();
-        if (refreshToken != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
-        }
-        if (config.getClientId() != null && clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(config.getClientId(), clientSecret);
-            post.setHeader("Authorization", authorization);
-        } else if (config.getClientId() != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, config.getClientId()));
-        }
-        if (config.getOrigin() != null) {
-            post.addHeader("Origin", config.getOrigin());
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        try {
-            return new LogoutResponse(httpClientManager.get().execute(post));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // TODO Extract into request class
-    public BackchannelLogoutResponse doBackchannelLogout(String logoutToken) {
-        HttpPost post = new HttpPost(getEndpoints().getBackChannelLogout());
-        List<NameValuePair> parameters = new LinkedList<>();
-        if (logoutToken != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, logoutToken));
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-
-        try {
-            return new BackchannelLogoutResponse(httpClientManager.get().execute(post));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // TODO Extract into request class
     public DeviceAuthorizationResponse doDeviceAuthorizationRequest(String clientId, String clientSecret) throws Exception {
         HttpPost post = new HttpPost(getEndpoints().getDeviceAuthorization());
 
@@ -417,17 +369,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return config.getScope();
     }
 
-    public void openLogout() {
-        UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
-        if (config.getPostLogoutRedirectUri() != null) {
-            b.queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, config.getPostLogoutRedirectUri());
-        }
-        if (idTokenHint != null) {
-            b.queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenHint);
-        }
-        driver.navigate().to(b.build(config.getRealm()).toString());
-    }
-
     public String getState() {
         return state.getState();
     }
@@ -458,11 +399,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient postLogoutRedirectUri(String postLogoutRedirectUri) {
         config.postLogoutRedirectUri(postLogoutRedirectUri);
-        return this;
-    }
-
-    public OAuthClient idTokenHint(String idTokenHint) {
-        this.idTokenHint = idTokenHint;
         return this;
     }
 

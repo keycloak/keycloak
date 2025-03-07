@@ -39,16 +39,22 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
+import org.keycloak.protocol.oidc.mappers.LogoutTokenMapper;
 import org.keycloak.representations.LogoutToken;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
@@ -358,6 +364,16 @@ public class DefaultTokenManager implements TokenManager {
             token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, true);
         }
         token.setSubject(user.getId());
+
+        // adjust the subject in the logout token in case we have an PairwiseSubMapper
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        ProtocolMapperUtils
+            .getSortedProtocolMappers(session, clientSessionCtx)
+            .filter(mapperEntry -> mapperEntry.getValue() instanceof LogoutTokenMapper)
+            .forEach(mapperEntry -> {
+                LogoutTokenMapper mapper = (LogoutTokenMapper) mapperEntry.getValue();
+                mapper.transformLogoutToken(token, mapperEntry.getKey(), session, clientSession.getUserSession(), clientSessionCtx);
+            });
 
         return token;
     }

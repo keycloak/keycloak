@@ -206,7 +206,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         events.poll();
 
         // Logout
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         events.poll();
 
         // Remove protocolMapper

@@ -2222,7 +2222,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             LogoutResponse logoutResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
                 oauth.httpClient().set(client);
-                logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+                logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken());
             }  catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             } finally {
@@ -2848,7 +2848,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private EventRepresentation doLogoutByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
-        assertTrue(oauth.doLogout(refreshToken, TEST_CLIENT_PASSWORD).isSuccess());
+        assertTrue(oauth.doLogout(refreshToken).isSuccess());
 
         // confirm logged out
         AccessTokenResponse tokenRes = oauth.doRefreshTokenRequest(refreshToken);

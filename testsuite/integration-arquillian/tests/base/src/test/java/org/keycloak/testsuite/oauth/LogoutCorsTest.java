@@ -72,7 +72,7 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
         oauth.origin(VALID_CORS_URL);
 
-        LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
         assertTrue(response.isSuccess());
         assertCors(response);
     }
@@ -83,7 +83,7 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
         oauth.origin(INVALID_CORS_URL);
 
-        LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
         assertTrue(response.isSuccess());
         assertNotCors(response);
     }
@@ -95,12 +95,12 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // Logout with invalid refresh token
-        LogoutResponse response = oauth.doLogout("invalid-refresh-token", "password");
+        LogoutResponse response = oauth.doLogout("invalid-refresh-token");
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertCors(response);
 
         // Logout with invalid client secret
-        response = oauth.doLogout(refreshTokenString, "invalid-secret");
+        response = oauth.client(oauth.getClientId(), "invalid-secret").doLogout(refreshTokenString);
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertCors(response);
     }

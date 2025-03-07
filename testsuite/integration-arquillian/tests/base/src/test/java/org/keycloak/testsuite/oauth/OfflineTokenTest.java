@@ -703,7 +703,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(200, response.getStatusCode());
 
-        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
+        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
@@ -732,7 +732,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         assertEquals(200, offlineRefresh.getStatusCode());
 
         // logout online session
-        LogoutResponse logoutResponse = oauth.scope(null).doLogout(response.getRefreshToken(), "secret1");
+        LogoutResponse logoutResponse = oauth.scope(null).doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
 
         // assert the online session is gone
@@ -778,7 +778,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 session.sessions().getOfflineUserSession(session.realms().getRealmByName("test"), offlineToken.getSessionState()).getId(), String.class);
 
         // logout offline session
-        LogoutResponse logoutResponse = oauth.doLogout(offlineTokenString, "secret1");
+        LogoutResponse logoutResponse = oauth.doLogout(offlineTokenString);
         assertTrue(logoutResponse.isSuccess());
         events.expectLogout(offlineUserSessionId)
                 .client("offline-client")

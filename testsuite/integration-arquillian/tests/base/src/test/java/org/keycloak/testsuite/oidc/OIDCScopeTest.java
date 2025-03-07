@@ -192,7 +192,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertMicroprofile(tokens.accessToken, false);
 
         // Logout
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(idToken.getSessionState())
                 .client("test-app")
                 .user(userId)
@@ -306,7 +306,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertPhone(idToken, false);
 
         // Logout
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(idToken.getSessionState())
                 .client("test-app")
                 .user(userId)
@@ -363,7 +363,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertPhone(idToken, false);
 
         // Logout
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(idToken.getSessionState())
                 .client("third-party")
                 .user(userId)
@@ -665,7 +665,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client("test-app")
                 .user(userId)

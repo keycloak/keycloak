@@ -1063,7 +1063,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenAfterUserLogoutAndLoginAgain() {
         String refreshToken1 = loginAndForceNewLoginPage();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
         events.clear();
 
         try {

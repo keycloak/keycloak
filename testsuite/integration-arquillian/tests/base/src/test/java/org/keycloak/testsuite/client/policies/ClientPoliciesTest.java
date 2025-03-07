@@ -1253,7 +1253,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // logout
-        oauth.doLogout(response.getRefreshToken(), clientSecret);
+        oauth.doLogout(response.getRefreshToken());
         events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
 
         // create a request object with invalid claims
@@ -1348,7 +1348,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         successfulLogin(clientId, clientSecret);
 
         configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.AUTHORIZATION_REQUEST, List.of(OAuth2Constants.AUTHORIZATION_CODE));
-        oauth.openLogout();
+        oauth.openLogoutForm();
         oauth.openLoginForm();
         MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(Objects.requireNonNull(driver.getCurrentUrl())).getQuery());
         assertEquals(ClientPolicyEvent.AUTHORIZATION_REQUEST.toString(), queryParams.getFirst("error"));
