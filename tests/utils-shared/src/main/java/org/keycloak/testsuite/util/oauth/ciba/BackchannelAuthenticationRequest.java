@@ -1,9 +1,11 @@
-package org.keycloak.testsuite.util.oauth;
+package org.keycloak.testsuite.util.oauth.ciba;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
+import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 
 import java.io.IOException;
 import java.util.Map;
@@ -11,18 +13,34 @@ import java.util.Map;
 public class BackchannelAuthenticationRequest extends AbstractHttpPostRequest<BackchannelAuthenticationRequest, AuthenticationRequestAcknowledgement> {
 
     private final String userid;
-    private final String bindingMessage;
-    private final String acrValues;
-    private final String clientNotificationToken;
-    private final Map<String, String> additionalParams;
+    private String bindingMessage;
+    private String acrValues;
+    private String clientNotificationToken;
+    private Map<String, String> additionalParams;
 
-    BackchannelAuthenticationRequest(String userid, String bindingMessage, String acrValues, String clientNotificationToken, Map<String, String> additionalParams, OAuthClient client) {
+    BackchannelAuthenticationRequest(String userid, AbstractOAuthClient<?> client) {
         super(client);
         this.userid = userid;
+    }
+
+    public BackchannelAuthenticationRequest bindingMessage(String bindingMessage) {
         this.bindingMessage = bindingMessage;
+        return this;
+    }
+
+    public BackchannelAuthenticationRequest acrValues(String acrValues) {
         this.acrValues = acrValues;
+        return this;
+    }
+
+    public BackchannelAuthenticationRequest clientNotificationToken(String clientNotificationToken) {
         this.clientNotificationToken = clientNotificationToken;
+        return this;
+    }
+
+    public BackchannelAuthenticationRequest additionalParams(Map<String, String> additionalParams) {
         this.additionalParams = additionalParams;
+        return this;
     }
 
     @Override

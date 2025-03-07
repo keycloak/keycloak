@@ -7,6 +7,7 @@ import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Map;
@@ -179,6 +180,10 @@ public abstract class AbstractOAuthClient<T> {
         return tokenRevocationRequest(token).send();
     }
 
+    public CibaClient ciba() {
+        return new CibaClient(this);
+    }
+
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
         return tokensManager.parseToken(token, clazz);
     }
@@ -269,15 +274,15 @@ public abstract class AbstractOAuthClient<T> {
         return dpopProof;
     }
 
-    String getRequestUri() {
+    public String getRequestUri() {
         return requestUri;
     }
 
-    String getRequest() {
+    public String getRequest() {
         return request;
     }
 
-    String getClaims() {
+    public String getClaims() {
         return claims;
     }
 

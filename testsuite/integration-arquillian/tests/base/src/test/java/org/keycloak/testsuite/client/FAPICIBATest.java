@@ -82,7 +82,7 @@ import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
-import org.keycloak.testsuite.util.oauth.AuthenticationRequestAcknowledgement;
+import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -521,7 +521,7 @@ public class FAPICIBATest extends AbstractFAPITest {
     }
 
     private EventRepresentation doAuthenticationChannelCallback(TestAuthenticationChannelRequest request) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), SUCCEED);
         assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
         EventRepresentation representation = new EventRepresentation();
@@ -532,7 +532,7 @@ public class FAPICIBATest extends AbstractFAPITest {
     }
 
     private EventRepresentation doAuthenticationChannelCallbackCancelled(TestAuthenticationChannelRequest request) throws Exception {
-        int statusCode = oauth.doAuthenticationChannelCallback(request.getBearerToken(), CANCELLED);
+        int statusCode = oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), CANCELLED);
         assertThat(statusCode, is(equalTo(200)));
         // check login event : ignore user id and other details except for username
         EventRepresentation representation = new EventRepresentation();
