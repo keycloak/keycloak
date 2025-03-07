@@ -247,6 +247,12 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> listByIds(
+        @QueryParam("briefRepresentation") Boolean briefRepresentation,
+        @QueryParam("ids") List<String> ids);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> list();
 
     @POST
