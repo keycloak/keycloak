@@ -59,7 +59,6 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.support.PageFactory;
 
 import java.net.URI;
 import java.util.Collections;
@@ -354,18 +353,19 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
                 oauth.init();
             }
 
-            final LogoutUrlBuilder builder = oauth.realm(realm).getEndpoints()
-                    .getLogoutBuilder()
+            final LogoutUrlBuilder builder = oauth.realm(realm).logoutForm()
                     .idTokenHint(idTokenHint)
-                    .clientId(clientId)
                     .initiatingIdp(initiatingIdp);
+
+            if (clientId != null) {
+                builder.withClientId();
+            }
 
             if (redirectUri != null && (clientId != null || idTokenHint != null)) {
                 builder.postLogoutRedirectUri(encodeUrl(redirectUri));
             }
 
-            String logoutUrl = builder.build();
-            driver.navigate().to(logoutUrl);
+            builder.open();
         } finally {
             if (isDifferentContext) {
                 OAuthClient.updateURLs(getAuthServerContextRoot());

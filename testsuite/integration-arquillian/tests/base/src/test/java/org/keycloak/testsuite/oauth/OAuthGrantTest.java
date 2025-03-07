@@ -21,7 +21,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -45,7 +44,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.openqa.selenium.By;
@@ -357,8 +355,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client(THIRD_PARTY_APP)
                 .assertEvent();
 
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(res.getIdToken()).build();
-        driver.navigate().to(logoutUrl);
+        oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
         events.expectLogout(loginEvent.getSessionId()).client(THIRD_PARTY_APP).removeDetail(Details.REDIRECT_URI).assertEvent();
 

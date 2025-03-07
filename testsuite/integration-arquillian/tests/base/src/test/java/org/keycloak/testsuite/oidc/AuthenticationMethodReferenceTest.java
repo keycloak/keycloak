@@ -477,7 +477,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      */
     private void logout(String userId, Tokens tokens){
         // Logout
-        oauth.doLogout(tokens.refreshToken, CLIENT_SECRET);
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client(CLIENT_ID)
                 .user(userId)

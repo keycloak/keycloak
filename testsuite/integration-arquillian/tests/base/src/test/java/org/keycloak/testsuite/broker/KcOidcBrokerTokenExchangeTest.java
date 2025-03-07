@@ -180,9 +180,8 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
         assertThat(tokenResponse.getIdToken(), notNullValue());
         String idTokenString = tokenResponse.getIdToken();
         oauth.realm(bc.providerRealmName());
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
-                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
-        driver.navigate().to(logoutUrl);
+        oauth.logoutForm().idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).open();
         String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
         Assert.assertNotNull(logoutToken);
 

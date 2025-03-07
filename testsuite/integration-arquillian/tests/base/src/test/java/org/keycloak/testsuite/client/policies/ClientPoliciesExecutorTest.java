@@ -304,7 +304,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        oauth.doLogout(res.getRefreshToken());
         events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
 
         // update profiles
@@ -327,7 +327,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        oauth.doLogout(res.getRefreshToken());
         events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
 
         // shall allow code using response_mode jwt
@@ -348,7 +348,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         ).toString();
         updateProfiles(json);
 
-        oauth.openLogout();
+        oauth.openLogoutForm();
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN); // token response type allowed
         oauth.responseMode("jwt");
         oauth.openLoginForm();
@@ -450,7 +450,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        oauth.doLogout(res.getRefreshToken());
         events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
     }
 
@@ -770,7 +770,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.requestUri(requestUri);
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertNotNull(loginResponse.getCode());
-        oauth.openLogout();
+        oauth.openLogoutForm();
 
         requestObject.exp(null);
         oauth.requestUri(null);
@@ -1479,7 +1479,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         AccessTokenResponse response = successfulLogin(clientId, clientSecret);
 
-        oauth.idTokenHint(response.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
 
         assertTrue(driver.getPageSource().contains("Front-channel logout is not allowed for this client"));
     }

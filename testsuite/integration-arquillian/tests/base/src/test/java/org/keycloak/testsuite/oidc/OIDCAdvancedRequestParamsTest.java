@@ -1328,7 +1328,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 client.close();
             }
 
-            oauth.doLogout(accessTokenResponse.getRefreshToken(), "password");
+            oauth.doLogout(accessTokenResponse.getRefreshToken());
             events.expectLogout(accessTokenResponse.getSessionState()).client("test-app").clearDetails().assertEvent();
 
 
@@ -1412,8 +1412,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        oauth.idTokenHint(idTokenHint);
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).open();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
         oauth.doLogin("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
@@ -1452,8 +1451,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        oauth.idTokenHint(idTokenHint);
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).open();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
         oauth.doLogin("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());

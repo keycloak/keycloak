@@ -112,7 +112,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         String refreshTokenString = tokenResponse.getRefreshToken();
 
-        LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
         assertTrue(response.isSuccess());
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
@@ -131,7 +131,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         adminClient.realm("test").update(RealmBuilder.create().notBefore(Time.currentTime() + 1).build());
 
         // Logout should succeed with expired refresh token, see KEYCLOAK-3302
-        LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
         assertTrue(response.isSuccess());
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
@@ -143,7 +143,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
         String refreshToken1 = accessTokenResponse.getRefreshToken();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
 
         setTimeOffset(2);
 
@@ -156,7 +156,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         // finally POST logout with VALID token should succeed
-        LogoutResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password");
+        LogoutResponse response = oauth.doLogout(tokenResponse2.getRefreshToken());
         assertTrue(response.isSuccess());
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
@@ -175,7 +175,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         oauth.client("test-app-scope", "password");
 
         // Assert logout fails with 400 when trying to use different client credentials
-        LogoutResponse response = oauth.doLogout(refreshTokenString, "password");
+        LogoutResponse response = oauth.doLogout(refreshTokenString);
         assertEquals(response.getStatusCode(), 400);
 
         oauth.client("test-app", "password");
@@ -225,7 +225,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
+        String logoutUrl = oauth.logoutForm()
           .idTokenHint(idTokenString)
           .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
@@ -268,7 +268,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         events.poll();
         String idTokenString = tokenResponse.getIdToken();
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
+        String logoutUrl = oauth.logoutForm()
                 .idTokenHint(idTokenString)
                 .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
                 .build();
@@ -307,7 +307,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
+            String logoutUrl = oauth.logoutForm()
                     .idTokenHint(idTokenString)
                     .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
                     .build();
@@ -353,7 +353,7 @@ public class LogoutTest extends AbstractKeycloakTest {
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(AccessToken.class);
             String idTokenString = tokenResponse.getIdToken();
-            String logoutUrl = oauth.getEndpoints().getLogoutBuilder()
+            String logoutUrl = oauth.logoutForm()
                     .idTokenHint(idTokenString)
                     .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
                     .build();

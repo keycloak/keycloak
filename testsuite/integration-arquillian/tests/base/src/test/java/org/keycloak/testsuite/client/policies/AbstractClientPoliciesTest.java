@@ -572,7 +572,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-        return sendRequest(oauth.getEndpoints().getLogoutBuilder().build(), parameters);
+        return sendRequest(oauth.getEndpoints().getLogout(), parameters);
     }
 
     private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
@@ -1357,7 +1357,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         LogoutResponse logoutResponse;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1384,7 +1384,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponse.getError());
 
         // Check frontchannel logout and login.
-        driver.navigate().to(oauth.getEndpoints().getLogoutBuilder().build());
+        oauth.openLogoutForm();
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -1428,7 +1428,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Check logout without certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1439,7 +1439,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // Check logout.
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
             oauth.httpClient().set(client);
-            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET);
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
@@ -1501,7 +1501,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void successfulLoginAndLogout(String clientId, String clientSecret) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret);
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        oauth.doLogout(res.getRefreshToken());
         events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
     }
 
@@ -1590,7 +1590,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals("PKCE code verifier not specified", res.getErrorDescription());
         events.expect(EventType.CODE_TO_TOKEN_ERROR).client(clientId).session(sessionId).clearDetails().error(Errors.CODE_VERIFIER_MISSING).assertEvent();
 
-        oauth.idTokenHint(res.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(res.getIdToken()).open();
         events.expectLogout(sessionId).clearDetails().assertEvent();
     }
 
@@ -1652,9 +1652,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oauth.client(clientId, secret);
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME,
                 TEST_USER_PASSWORD);
-        String code = oauth.parseLoginResponse().getCode();
+        String code = loginResponse.getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(status.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), secret);
+        oauth.doLogout(res.getRefreshToken());
     }
 }

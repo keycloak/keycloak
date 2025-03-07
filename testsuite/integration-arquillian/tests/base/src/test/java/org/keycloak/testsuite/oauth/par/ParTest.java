@@ -204,7 +204,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedToken.getSubject());
 
             // Logout
-            oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
+            oauth.doLogout(refreshResponse.getRefreshToken());
             refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
             assertEquals(400, refreshResponse.getStatusCode());
 
@@ -283,7 +283,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedToken.getSubject());
 
             // Logout
-            oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
+            oauth.doLogout(refreshResponse.getRefreshToken());
             refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
             assertEquals(400, refreshResponse.getStatusCode());
 
@@ -656,7 +656,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(token.getScope().contains("profile"));
 
         // Logout
-        oauth.doLogout(res.getRefreshToken(), clientSecret); // same oauth instance is used so that this logout is needed to send authz request consecutively.
+        oauth.doLogout(res.getRefreshToken()); // same oauth instance is used so that this logout is needed to send authz request consecutively.
 
         // Authorization Request with request_uri of PAR #1
         // remove parameters as query strings of uri
@@ -714,7 +714,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcC2Rep.getTokenEndpointAuthMethod());
 
         // Pushed Authorization Request #1
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
         assertEquals(201, pResp.getStatusCode());
@@ -758,7 +758,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(token.getScope().contains("profile"));
 
         // Logout
-        oauth.doLogout(res.getRefreshToken(), client2Secret); // same oauth instance is used so that this logout is needed to send authz request consecutively.
+        oauth.doLogout(res.getRefreshToken()); // same oauth instance is used so that this logout is needed to send authz request consecutively.
 
         // Authorization Request with request_uri of PAR #1
         // remove parameters as query strings of uri
@@ -1300,7 +1300,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), TEST_USER_NAME).getId(), refreshedToken.getSubject());
 
         // Logout
-        oauth.doLogout(refreshResponse.getRefreshToken(), clientSecret);
+        oauth.doLogout(refreshResponse.getRefreshToken());
         refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
         assertEquals(400, refreshResponse.getStatusCode());
     }
