@@ -22,3 +22,7 @@ export async function fillKerberosForm(
 export async function clickSave(page: Page, provider: string) {
   await page.getByTestId(`${provider}-save`).click();
 }
+
+export async function clickUserFederationCard(page: Page, name: string) {
+  await page.getByRole("link", { name }).click();
+}

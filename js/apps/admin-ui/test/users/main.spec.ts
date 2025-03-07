@@ -33,9 +33,7 @@ let groupsList: string[] = [];
 test.describe("User creation", () => {
   const realmName = `users-${uuid()}`;
 
-  const itemId = "user_crud";
-  const itemIdWithGroups = "user_with_groups_crud";
-  const itemIdWithCred = "user_crud_cred";
+  const userId = `user_crud-${uuid()}`;
 
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName);
@@ -58,6 +56,8 @@ test.describe("User creation", () => {
     await goToUsers(page);
   });
 
+  test.afterEach(() => adminClient.deleteUser(userId, realmName, true));
+
   test("Go to create User page", async ({ page }) => {
     await clickAddUserButton(page);
     await expect(page).toHaveURL(/.*users\/add-user/);
@@ -67,10 +67,9 @@ test.describe("User creation", () => {
   });
 
   test("Create user test", async ({ page }) => {
-    const newItemId = `${itemId}_${uuid()}`;
     await clickAddUserButton(page);
     await fillUserForm(page, {
-      username: newItemId,
+      username: userId,
       email: `example_${uuid()}@example.com`,
     });
     await clickSaveButton(page);
@@ -91,19 +90,17 @@ test.describe("User creation", () => {
   });
 
   test("Create user with groups test", async ({ page }) => {
-    const newItemIdWithGroups = `${itemIdWithGroups}_${uuid()}`;
     await clickAddUserButton(page);
-    await fillUserForm(page, { username: newItemIdWithGroups });
+    await fillUserForm(page, { username: userId });
     await joinGroup(page, [groupsList[0]]);
     await clickSaveButton(page);
     await assertNotificationMessage(page, "The user has been created");
   });
 
   test("Create user with credentials test", async ({ page }) => {
-    const newItemIdWithCred = `${itemIdWithCred}_${uuid()}`;
     await clickAddUserButton(page);
     await fillUserForm(page, {
-      username: newItemIdWithCred,
+      username: userId,
       email: `example_${uuid()}@example.com`,
       firstName: "firstname",
       lastName: "lastname",
@@ -122,14 +119,18 @@ test.describe("User creation", () => {
 
   test.describe("Existing users", () => {
     const placeHolder = "Search user";
+    const existingUserId = `existing_user-${uuid()}`;
 
-    test.beforeAll(async () => {
-      await adminClient.createUser({ realm: realmName, username: itemId });
-    });
+    test.beforeAll(() =>
+      adminClient.createUser({
+        realm: realmName,
+        username: existingUserId,
+      }),
+    );
 
     test("Search existing user test", async ({ page }) => {
-      await searchItem(page, placeHolder, itemId);
-      await assertRowExists(page, itemId);
+      await searchItem(page, placeHolder, existingUserId);
+      await assertRowExists(page, existingUserId);
     });
 
     test("Search non-existing user test", async ({ page }) => {
@@ -138,9 +139,9 @@ test.describe("User creation", () => {
     });
 
     test("User details test", async ({ page }) => {
-      await searchItem(page, placeHolder, itemId);
-      await assertRowExists(page, itemId);
-      await clickTableRowItem(page, itemId);
+      await searchItem(page, placeHolder, existingUserId);
+      await assertRowExists(page, existingUserId);
+      await clickTableRowItem(page, existingUserId);
 
       await fillUserForm(page, {
         email: `example_${uuid()}@example.com`,
@@ -151,14 +152,14 @@ test.describe("User creation", () => {
       await assertNotificationMessage(page, "The user has been saved");
 
       await goToUsers(page);
-      await searchItem(page, placeHolder, itemId);
-      await assertRowExists(page, itemId);
+      await searchItem(page, placeHolder, existingUserId);
+      await assertRowExists(page, existingUserId);
     });
 
     const attributesName = "unmanagedAttributes";
 
     test("Select Unmanaged attributes", async ({ page }) => {
-      await clickTableRowItem(page, itemId);
+      await clickTableRowItem(page, existingUserId);
 
       await goToAttributesTab(page);
       await fillAttributeData(page, "key_test", "value_test", attributesName);
@@ -181,7 +182,7 @@ test.describe("User creation", () => {
     });
 
     test("User attributes with multiple values test", async ({ page }) => {
-      await clickTableRowItem(page, itemId);
+      await clickTableRowItem(page, existingUserId);
 
       await goToAttributesTab(page);
       await fillAttributeData(page, "key-multiple", "value1", attributesName);
@@ -198,7 +199,7 @@ test.describe("User creation", () => {
     });
 
     test("Add user to groups test", async ({ page }) => {
-      await clickTableRowItem(page, itemId);
+      await clickTableRowItem(page, existingUserId);
 
       await goToGroupTab(page);
       await joinGroup(page, groupsList, true);

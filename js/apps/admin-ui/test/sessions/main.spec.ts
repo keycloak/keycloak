@@ -143,7 +143,7 @@ test.describe("revocation", () => {
     await clickSetToNow(page);
     await assertNotificationMessage(
       page,
-      'Success! "Not before" set for realm.',
+      'Success! "Not before" set for realm',
     );
   });
 

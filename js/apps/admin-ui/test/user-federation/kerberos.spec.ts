@@ -6,7 +6,12 @@ import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
 import { goToRealm, goToUserFederation } from "../utils/sidebar";
-import { clickAddProvider, clickSave, fillKerberosForm } from "./kerberos";
+import {
+  clickAddProvider,
+  clickSave,
+  clickUserFederationCard,
+  fillKerberosForm,
+} from "./kerberos";
 
 const provider = "kerberos";
 const initCapProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -57,7 +62,7 @@ test.describe("User Fed Kerberos tests", () => {
     await clickAddProvider(page, provider);
 
     await fillKerberosForm(page, {
-      alias: firstKerberosName,
+      alias: "new-kerberos",
       config: {
         kerberosRealm: firstKerberosRealm,
         serverPrincipal: firstKerberosPrincipal,
@@ -87,7 +92,7 @@ test.describe("User Fed Kerberos tests", () => {
 
     test("Should edit existing Kerberos provider", async ({ page }) => {
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await expect(
         page.getByRole("heading", { name: "Required Settings" }),
       ).toBeVisible();
@@ -103,7 +108,7 @@ test.describe("User Fed Kerberos tests", () => {
       await assertNotificationMessage(page, savedSuccessMessage);
 
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByTestId("debug")).toBeChecked();
       await expect(
@@ -113,7 +118,7 @@ test.describe("User Fed Kerberos tests", () => {
     });
 
     test("Should set cache policy to evict_daily", async ({ page }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", dailyPolicy);
       await selectItem(page, "#kc-eviction-hour", newKerberosHour);
       await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
@@ -121,14 +126,14 @@ test.describe("User Fed Kerberos tests", () => {
 
       await assertNotificationMessage(page, savedSuccessMessage);
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(dailyPolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).not.toBeVisible();
     });
 
     test("Should set cache policy to evict_weekly", async ({ page }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", weeklyPolicy);
       await selectItem(page, "#kc-eviction-day", newKerberosDay);
       await selectItem(page, "#kc-eviction-hour", newKerberosHour);
@@ -137,14 +142,14 @@ test.describe("User Fed Kerberos tests", () => {
 
       await assertNotificationMessage(page, savedSuccessMessage);
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(weeklyPolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).not.toBeVisible();
     });
 
     test("Should set cache policy to max_lifespan", async ({ page }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", lifespanPolicy);
       for (let i = 0; i < maxLifespan; i++) {
         await page.getByTestId("kerberos-cache-lifespan").click();
@@ -153,20 +158,20 @@ test.describe("User Fed Kerberos tests", () => {
 
       await assertNotificationMessage(page, savedSuccessMessage);
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(lifespanPolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).not.toBeVisible();
     });
 
     test("Should set cache policy to no_cache", async ({ page }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", noCachePolicy);
       await clickSave(page, provider);
 
       await assertNotificationMessage(page, savedSuccessMessage);
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(noCachePolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).not.toBeVisible();
@@ -175,20 +180,20 @@ test.describe("User Fed Kerberos tests", () => {
     test("Should edit existing Kerberos provider and cancel", async ({
       page,
     }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await selectItem(page, "#kc-cache-policy", weeklyPolicy);
       await selectItem(page, "#kc-eviction-day", newKerberosDay);
       await selectItem(page, "#kc-eviction-hour", newKerberosHour);
       await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
       await page.getByTestId(`${provider}-cancel`).click();
 
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.locator("#kc-cache-policy")).toHaveText(defaultPolicy);
     });
 
     test("Should disable an existing Kerberos provider", async ({ page }) => {
-      await page.getByTestId("keycloak-card-title").click();
+      await clickUserFederationCard(page, firstKerberosName);
       await switchOff(page, "#Kerberos-switch");
       await confirmModal(page);
 
