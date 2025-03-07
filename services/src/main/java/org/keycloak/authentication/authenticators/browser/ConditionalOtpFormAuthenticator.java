@@ -25,6 +25,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -327,10 +329,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        if (!isOTPRequired(session, realm, user)) {
-            user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        } else if (user.getRequiredActionsStream().noneMatch(UserModel.RequiredAction.CONFIGURE_TOTP.name()::equals)) {
-            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+        if (isOTPRequired(session, realm, user) && !authenticationSession.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+            authenticationSession.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         }
     }
 }
