@@ -246,6 +246,13 @@ public interface UsersResource {
                                   @QueryParam("max") Integer maxResults);
 
     @GET
+    @Path("batch")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> listByIds(
+        @QueryParam("briefRepresentation") Boolean briefRepresentation,
+        @QueryParam("ids") List<String> ids);
+
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> list();
 
