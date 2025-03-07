@@ -19,6 +19,7 @@ package org.keycloak.exportimport.dir;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.AbstractFileBasedImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
@@ -47,6 +48,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private final Strategy strategy;
     private final KeycloakSessionFactory factory;
+    private final JpaConnectionProvider connectionProvider;
 
     private static final Logger logger = Logger.getLogger(DirImportProvider.class);
 
@@ -54,9 +56,10 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private String realmName;
 
-    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy) {
+    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy, JpaConnectionProvider connectionProvider) {
         this.factory = factory;
         this.strategy = strategy;
+        this.connectionProvider = connectionProvider;
     }
 
     public DirImportProvider withDir(String dir) {
@@ -161,7 +164,12 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                         @Override
                         protected void runExportImportTask(KeycloakSession session) throws IOException {
                             session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            connectionProvider.batchMode(true);
+                            try {
+                                ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            } finally {
+                                connectionProvider.batchMode(false);
+                            }
                             logger.infof("Imported users from %s", userFile.getAbsolutePath());
                         }
                     });
@@ -173,7 +181,12 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                         @Override
                         protected void runExportImportTask(KeycloakSession session) throws IOException {
                             session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            connectionProvider.batchMode(true);
+                            try {
+                                ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            } finally {
+                                connectionProvider.batchMode(false);
+                            }
                             logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
                         }
                     });

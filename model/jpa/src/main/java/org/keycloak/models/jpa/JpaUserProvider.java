@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
@@ -116,7 +117,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
-        em.flush();
+        if (!PersistenceExceptionConverter.isBatchMode()) {
+            em.flush();
+        }
         UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
@@ -172,7 +175,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
         entity.setUser(userEntity);
         em.persist(entity);
-        em.flush();
+        if (!PersistenceExceptionConverter.isBatchMode()) {
+            em.flush();
+        }
     }
 
     @Override
@@ -225,7 +230,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         consentEntity.setCreatedDate(currentTime);
         consentEntity.setLastUpdatedDate(currentTime);
         em.persist(consentEntity);
-        em.flush();
+        if (!PersistenceExceptionConverter.isBatchMode()) {
+            em.flush();
+        }
 
         updateGrantedConsentEntity(consentEntity, consent);
     }
@@ -335,7 +342,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             // Check if it's already there
             if (!grantedClientScopeEntities.contains(grantedClientScopeEntity)) {
                 em.persist(grantedClientScopeEntity);
-                em.flush();
+                if (!PersistenceExceptionConverter.isBatchMode()) {
+                    em.flush();
+                }
                 grantedClientScopeEntities.add(grantedClientScopeEntity);
             } else {
                 scopesToRemove.remove(grantedClientScopeEntity);
@@ -349,7 +358,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
-        em.flush();
+        if (!PersistenceExceptionConverter.isBatchMode()) {
+            em.flush();
+        }
     }
 
 

@@ -28,4 +28,6 @@ public interface JpaConnectionProvider extends Provider {
 
     EntityManager getEntityManager();
 
+    void batchMode(boolean batch);
+
 }

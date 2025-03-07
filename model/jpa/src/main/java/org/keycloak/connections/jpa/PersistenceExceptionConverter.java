@@ -17,6 +17,17 @@
 
 package org.keycloak.connections.jpa;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+
 import org.hibernate.exception.ConstraintViolationException;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -26,16 +37,9 @@ import org.keycloak.models.ModelIllegalStateException;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.FlushModeType;
 import jakarta.persistence.OptimisticLockException;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
+import jakarta.persistence.Query;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,6 +53,10 @@ public class PersistenceExceptionConverter implements InvocationHandler {
     private final int batchSize;
     private int changeCount = 0;
 
+    // could use weak references
+    private static Set<EntityManager> batching = new HashSet<EntityManager>();
+    private static ThreadLocal<Boolean> batchMode = new ThreadLocal<Boolean>();
+
     public static EntityManager create(KeycloakSession session, EntityManager em) {
         return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(session, em));
     }
@@ -59,11 +67,54 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         this.em = em;
     }
 
+    static void batchMode(boolean batch) {
+        Boolean batched = batchMode.get();
+        if (batch) {
+            if (Boolean.TRUE.equals(batched)) {
+                throw new IllegalStateException();
+            }
+            batchMode.set(true);
+        } else {
+            batchMode.remove();
+            if (Boolean.TRUE.equals(batched)) {
+                batching.stream().filter(EntityManager::isOpen).forEach(em -> {
+                    try {
+                        em.flush();
+                    } catch (Exception e) {
+                        throw convert(e);
+                    }
+                    em.clear();
+                });
+                batching.clear();
+            }
+        }
+    }
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        boolean batched = isBatchMode();
+        if (batched) {
+            batching.add(em);
+            // detect operations that should be optimized
+            // TODO: could log something
+            //switch (method.getName()) {
+            //case "detach", "flush" -> throw new AssertionError();
+            //}
+            switch (method.getName()) {
+            case "clear" -> throw new IllegalStateException("Cannot clear in batched mode");
+            case "close", "detach" -> em.flush();
+            }
+        }
         try {
             flushInBatchIfEnabled(method);
-            return method.invoke(em, args);
+            Object result = method.invoke(em, args);
+            if (batched && result instanceof Query query) {
+                // TODO: this should probably be done in the logic creating the queries
+                // userRoleMappingIds at least is running for user import
+                // and do not need to detect anything that isn't flushed
+                query.setFlushMode(FlushModeType.COMMIT);
+            }
+            return result;
         } catch (InvocationTargetException e) {
             throw convert(e.getCause());
         }
@@ -108,6 +159,10 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         } else {
             throw new ModelException("Database operation failed", t);
         }
+    }
+
+    public static boolean isBatchMode() {
+        return Boolean.TRUE.equals(batchMode.get());
     }
 
 }
