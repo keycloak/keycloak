@@ -227,6 +227,32 @@ public class UsersResource {
     }
 
     /**
+     * List users by id
+     *
+     * Returns a stream of user representations based on the provided user IDs.
+     *
+     * @param briefRepresentation A boolean indicating whether brief representations should be returned.
+     *                             If not provided, defaults to false.
+     * @param ids A list of user IDs for which the user representations are to be fetched.
+     * @return A stream of {@link UserRepresentation} matching the provided user IDs. Only users present in the realm
+     *         will be included in the result.
+     */
+    @GET
+    @Path("batch")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation( summary = "Get users by id Returns a stream of users")
+    public Stream<UserRepresentation> listByIds(
+        @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
+        @QueryParam("ids") final List<String> ids) {
+        UserPermissionEvaluator userPermissionEvaluator = auth.users();
+        userPermissionEvaluator.requireQuery();
+        var userModels = ids.stream().map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
+    }
+
+    /**
      * Get users
      *
      * Returns a stream of users, filtered according to query parameters.
