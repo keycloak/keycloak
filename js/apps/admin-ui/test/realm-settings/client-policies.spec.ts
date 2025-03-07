@@ -148,15 +148,6 @@ test.describe("Realm settings client policies tab tests", () => {
       );
       await cancelModal(page);
       await assertExists(page, "client-roles-condition-link");
-    });
-
-    test("Should delete client-roles condition from a client profile", async ({
-      page,
-    }) => {
-      // Add a new client-roles condition
-      await clickAddCondition(page);
-      await addClientRolesCondition(page, "client-roles");
-      await clickSaveConditionButton(page);
 
       await deleteClientRolesCondition(page, "client-roles");
       await confirmModal(page);

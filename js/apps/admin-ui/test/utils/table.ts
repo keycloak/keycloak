@@ -100,7 +100,7 @@ export async function clickSelectRow(
     const rows = await getTableData(page, tableName);
     const rowIndex = rows.findIndex((r) => r.includes(row as string));
     if (rowIndex === -1) {
-      throw new Error(`Row ${row} not found`);
+      throw new Error(`Row ${row} not found: ${rows}`);
     }
     row = rowIndex;
   }

@@ -76,7 +76,7 @@ test.describe("User Federation LDAP tests", () => {
     await clickAddProvider(page, provider);
 
     await fillLdapForm(page, {
-      name: firstLdapName,
+      name: "new-ldap",
       config: {
         vendor: [firstLdapVendor],
         connectionUrl: [connectionUrlValid],
@@ -152,7 +152,7 @@ test.describe("User Federation LDAP tests", () => {
       await clickSave(page, provider);
       await assertNotificationMessage(page, savedSuccessMessage);
       await goToUserFederation(page);
-      await page.getByTestId("keycloak-card-title").click();
+      await clickLdapCard(page, updatedLdapName);
       await expect(page.getByTestId("ldapv3-password")).toBeChecked();
       await expect(page.getByTestId("password-policy")).toBeChecked();
       await expect(page.getByTestId("trust-email")).toBeChecked();

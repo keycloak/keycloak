@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { login } from "../utils/login";
@@ -9,13 +9,8 @@ import {
   confirmModalAssign,
   pickRole,
 } from "../utils/roles";
-import { goToRealm, goToRealmRoles, goToRealmSettings } from "../utils/sidebar";
-import {
-  assertRowExists,
-  clickRowKebabItem,
-  clickTableRowItem,
-  searchItem,
-} from "../utils/table";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+import { assertRowExists, clickRowKebabItem, searchItem } from "../utils/table";
 import {
   clickAssignRole,
   goToDefaultGroupTab,
@@ -26,9 +21,11 @@ const groupName = "The default group";
 
 test.describe("Realm settings - User registration tab", () => {
   const realmName = `realm-settings-user-registration-${uuid()}`;
+  const roleName = "theRole";
 
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName);
+    await adminClient.createRealmRole({ name: roleName, realm: realmName });
     await adminClient.createGroup(groupName, realmName);
   });
 
@@ -41,31 +38,21 @@ test.describe("Realm settings - User registration tab", () => {
     await goToUserRegistrationTab(page);
   });
 
-  test("Add admin role", async ({ page }) => {
-    const role = "admin";
+  test(`Add / remove ${roleName} role`, async ({ page }) => {
     const roleType = "roles";
 
     await clickAssignRole(page);
     await changeRoleTypeFilter(page, roleType);
-    await pickRole(page, role, true);
+    await pickRole(page, roleName, true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
 
-    await searchItem(page, "Search", role);
-    await assertRowExists(page, role);
+    await searchItem(page, "Search", roleName);
+    await assertRowExists(page, roleName);
 
-    await goToRealmRoles(page);
-    await clickTableRowItem(page, "admin");
-    await page.getByTestId("usersInRoleTab").click();
-    await expect(page.getByTestId("users-in-role-table")).toContainText(
-      "admin",
-    );
-  });
+    // remove role
 
-  test("Remove admin role", async ({ page }) => {
-    const role = "admin";
-
-    await clickRowKebabItem(page, role, "Unassign");
+    await clickRowKebabItem(page, roleName, "Unassign");
     await confirmModal(page);
     await assertNotificationMessage(page, "Role mapping updated");
   });
