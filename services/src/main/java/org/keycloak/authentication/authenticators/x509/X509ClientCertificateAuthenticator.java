@@ -120,7 +120,6 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             UserModel user;
             try {
                 context.getEvent().detail(Details.USERNAME, userIdentity.toString());
-                context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
                 user = getUserIdentityToModelMapper(config).find(context, userIdentity);
             }
             catch(ModelDuplicateException e) {
@@ -166,6 +165,9 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 return;
             }
             context.setUser(user);
+            // Set real username
+            context.getEvent().detail(Details.USERNAME, user.getUsername());
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, user.getUsername());
 
             // Check whether to display the identity confirmation
             if (!config.getConfirmationPageDisallowed()) {
