@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RoleByIdResource;
@@ -29,9 +32,6 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -47,6 +47,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -135,6 +136,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
             resource.getRole(ids.get("role-a"));
             fail("Expected 404");
         } catch (NotFoundException e) {
+            // Ignore
         }
     }
 
@@ -276,8 +278,40 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         }
     }
 
-    @Test (expected = BadRequestException.class)
+    @Test(expected = BadRequestException.class)
     public void deleteDefaultRole() {
         resource.deleteRole(adminClient.realm(REALM_NAME).roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).toRepresentation().getId());
+    }
+
+    /**
+     * see KEYCLOAK-37320
+     */
+    @Test
+    public void renameRoleToNamePreviouslyCached() {
+        String roleName = "realm-role-new";
+        RoleRepresentation newRoleRepresentation = RoleBuilder.create()
+                .name(roleName)
+                .build();
+        adminClient.realm(REALM_NAME).roles().create(newRoleRepresentation);
+        RoleRepresentation roleRepresentation = adminClient.realm(REALM_NAME).roles().get(roleName).toRepresentation();
+
+        String newRoleName = "realm-role-renamed";
+        cacheMissingRoleName(newRoleName);
+
+        RoleRepresentation updatedRoleRepresentation = RoleBuilder.create()
+                .id(roleRepresentation.getId())
+                .name(newRoleName)
+                .build();
+        resource.updateRole(roleRepresentation.getId(), updatedRoleRepresentation);
+
+        try {
+            adminClient.realm(REALM_NAME).roles().get(newRoleName).toRepresentation();
+        } catch (NotFoundException e) {
+            fail("Role is incorrectly cached");
+        }
+    }
+
+    private void cacheMissingRoleName(String missingRoleName) {
+        assertThrows(NotFoundException.class, () -> adminClient.realm(REALM_NAME).roles().get(missingRoleName).toRepresentation());
     }
 }
