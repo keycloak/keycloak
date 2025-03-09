@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -285,18 +286,19 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
     }
 
     /**
-     * see KEYCLOAK-37320
+     * see #37320
      */
     @Test
     public void renameRoleToNamePreviouslyCached() {
-        String roleName = "realm-role-new";
+        String roleName = "realm-role-new-" + new Random().nextInt();
         RoleRepresentation newRoleRepresentation = RoleBuilder.create()
                 .name(roleName)
                 .build();
         adminClient.realm(REALM_NAME).roles().create(newRoleRepresentation);
         RoleRepresentation roleRepresentation = adminClient.realm(REALM_NAME).roles().get(roleName).toRepresentation();
+        getCleanup().addRoleId(roleRepresentation.getId());
 
-        String newRoleName = "realm-role-renamed";
+        String newRoleName = "realm-role-renamed-" + new Random().nextInt();
         cacheMissingRoleName(newRoleName);
 
         RoleRepresentation updatedRoleRepresentation = RoleBuilder.create()
@@ -307,6 +309,28 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
 
         try {
             adminClient.realm(REALM_NAME).roles().get(newRoleName).toRepresentation();
+        } catch (NotFoundException e) {
+            fail("Role is incorrectly cached");
+        }
+    }
+
+    /**
+     * see #37320
+     */
+    @Test
+    public void createRolePreviouslyCached() {
+        String roleName = "realm-role-new-"  + new Random().nextInt();
+        RoleRepresentation roleRepresentation = RoleBuilder.create()
+                .name(roleName)
+                .build();
+
+        cacheMissingRoleName(roleName);
+
+        adminClient.realm(REALM_NAME).roles().create(roleRepresentation);
+
+        try {
+            roleRepresentation = adminClient.realm(REALM_NAME).roles().get(roleName).toRepresentation();
+            getCleanup().addRoleId(roleRepresentation.getId());
         } catch (NotFoundException e) {
             fail("Role is incorrectly cached");
         }
