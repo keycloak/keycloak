@@ -163,6 +163,8 @@ public final class Marshalling {
     public static final int PERMISSION_TICKET_REMOVED_EVENT = 65613;
     public static final int PERMISSION_TICKET_UPDATED_EVENT = 65614;
 
+    public static final int RELOAD_CERTIFICATE_FUNCTION = 65615;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         builder.serialization()
                 .addContextInitializer(KeycloakModelSchema.INSTANCE);

@@ -37,7 +37,6 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
-import org.keycloak.util.JsonSerialization;
 
 import java.security.KeyPair;
 import java.util.Collections;
@@ -143,7 +141,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1PublicClientForAllClient();
 
         oauth.client(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -242,17 +240,14 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEcEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
 
-        oauth.idTokenHint(response.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
 
         // revoke token with a valid DPoP proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         oauth.dpopProof(dpopProofEcEncoded);
-        assertTrue(oauth.doTokenRevoke(response.getAccessToken(), "access_token").isSuccess());
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
-        TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
-        assertFalse(tokenMetadataRepresentation.isActive());
+        assertTrue(oauth.tokenRevocationRequest(response.getAccessToken()).accessToken().send().isSuccess());
 
-        oauth.idTokenHint(response.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
     }
 
     private void setupPolicyOAuth2_1PublicClientForAllClient() throws Exception {

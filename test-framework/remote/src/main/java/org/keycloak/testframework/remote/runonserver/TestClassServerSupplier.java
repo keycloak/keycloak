@@ -1,5 +1,6 @@
 package org.keycloak.testframework.remote.runonserver;
 
+import com.sun.net.httpserver.HttpServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -8,7 +9,8 @@ public class TestClassServerSupplier implements Supplier<TestClassServer, Inject
 
     @Override
     public TestClassServer getValue(InstanceContext<TestClassServer, InjectTestClassServer> instanceContext) {
-        return new TestClassServer();
+        HttpServer httpServer = instanceContext.getDependency(HttpServer.class);
+        return new TestClassServer(httpServer);
     }
 
     @Override

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -154,11 +153,9 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         final AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         final String idTokenString = tokenResponse.getIdToken();
         final String redirectUri = getAccountUrl(getProviderRoot(), bc.providerRealmName());
-        final String logoutUri = oauth.realm(bc.providerRealmName()).getEndpoints().getLogoutBuilder()
+        oauth.realm(bc.providerRealmName()).logoutForm()
             .idTokenHint(idTokenString)
-            .postLogoutRedirectUri(redirectUri).build();
-
-        driver.navigate().to(logoutUri);
+            .postLogoutRedirectUri(redirectUri).open();
 
         errorPage.assertCurrent();
     }

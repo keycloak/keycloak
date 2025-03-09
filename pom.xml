@@ -52,8 +52,9 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.19.0.CR1</quarkus.version>
-        <quarkus.build.version>3.19.0.CR1</quarkus.build.version>
+        <quarkus.version>3.19.2</quarkus.version>
+        <quarkus.build.version>3.19.2</quarkus.build.version>
+        <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -96,10 +97,9 @@
         <h2.version>2.3.230</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.13.Final</infinispan.version>
-        <!-- remove the JGroups version once it is included in an Infinispan upgrade -->
-        <jgroups.version>5.3.15.Final</jgroups.version>
-        <protostream.plugin.version>5.0.13.Final</protostream.plugin.version>
+        <infinispan.version>15.0.14.Final</infinispan.version>
+        <protostream.version>5.0.13.Final</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -168,7 +168,7 @@
         <postgresql-jdbc.version>42.7.5</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.4.1</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.2</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
@@ -312,11 +312,6 @@
                 <version>${infinispan.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jgroups</groupId>
-                <artifactId>jgroups</artifactId>
-                <version>${jgroups.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.quarkus.platform</groupId>

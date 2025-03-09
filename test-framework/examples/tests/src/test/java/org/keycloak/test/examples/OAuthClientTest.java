@@ -2,6 +2,8 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -11,10 +13,15 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+
+import java.io.IOException;
 
 @KeycloakIntegrationTest
 public class OAuthClientTest {
@@ -28,6 +35,9 @@ public class OAuthClientTest {
     @InjectUser(config = OAuthUserConfig.class)
     ManagedUser user;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @Test
     public void testConfig() {
         Assertions.assertEquals(managedRealm.getName(), oauth.config().getRealm());
@@ -38,6 +48,8 @@ public class OAuthClientTest {
     public void testLogin() {
         AuthorizationEndpointResponse response = oauth.doLogin(user.getUsername(), user.getPassword());
         Assertions.assertTrue(response.isRedirected());
+
+        oauth.logoutForm().idTokenHint(oauth.doAccessTokenRequest(response.getCode()).getIdToken()).open();
     }
 
     @Test
@@ -75,6 +87,21 @@ public class OAuthClientTest {
     }
 
     @Test
+    public void testOpenIDConfiguration() {
+        OIDCConfigurationRepresentation oidcConfiguration = oauth.doWellKnownRequest();
+        Assertions.assertNotNull(oidcConfiguration);
+    }
+
+    @Test
+    public void testIntrospection() throws IOException {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        Assertions.assertTrue(introspectionResponse.asTokenMetadata().isActive());
+    }
+
+    @Test
     public void testRevocation() {
         AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
 
@@ -83,6 +110,31 @@ public class OAuthClientTest {
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         Assertions.assertFalse(refreshResponse.isSuccess());
+    }
+
+    @Test
+    public void testParseToken() {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        AccessToken accessToken = oauth.parseToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+        Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
+    }
+
+    @Test
+    public void testVerifyToken() {
+        AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+
+        AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
+        Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
+    }
+
+    @Test
+    public void testLogout() {
+        AuthorizationEndpointResponse authzResponse = oauth.doLogin(user.getUsername(), user.getPassword());
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode());
+        oauth.logoutForm().idTokenHint(accessTokenResponse.getIdToken()).open();
+        oauth.loginForm().open();
+        Assertions.assertTrue(loginPage.isActivePage());
     }
 
     public static class OAuthUserConfig implements UserConfig {

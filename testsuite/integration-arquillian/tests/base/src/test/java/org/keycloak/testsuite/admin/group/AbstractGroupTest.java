@@ -67,7 +67,7 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
     }
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
-        AccessTokenResponse tokenResponse = oauth.client(clientId, clientSecret).doGrantAccessTokenRequest( login, "password");
+        AccessTokenResponse tokenResponse = oauth.client(clientId, clientSecret).doPasswordGrantRequest( login, "password");
 
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();

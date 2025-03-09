@@ -4,12 +4,15 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class RealmConfigBuilder {
 
@@ -128,6 +131,19 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder groups(String... groupsNames) {
         rep.setGroups(Collections.combine(rep.getGroups(), Arrays.stream(groupsNames).map(Representations::toGroup)));
+        return this;
+    }
+
+    public RealmConfigBuilder internationalizationEnabled() {
+        rep.setInternationalizationEnabled(true);
+        return this;
+    }
+
+    public RealmConfigBuilder supportedLocales(String... supportedLocales) {
+        if (rep.getSupportedLocales() == null) {
+            rep.setSupportedLocales(new HashSet<>());
+        }
+        rep.getSupportedLocales().addAll(Set.of(supportedLocales));
         return this;
     }
 

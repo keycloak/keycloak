@@ -240,7 +240,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
@@ -265,7 +265,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 
@@ -290,7 +290,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
 
-        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertEquals(200, refreshResponse.getStatusCode());
     }
 

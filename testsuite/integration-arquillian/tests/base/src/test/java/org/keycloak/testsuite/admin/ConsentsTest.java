@@ -391,7 +391,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
                 .client(providerAccountRep.getClientId())
                 .scope(OAuth2Constants.SCOPE_OPENID +" " + OAuth2Constants.SCOPE_PROFILE + " " + OAuth2Constants.OFFLINE_ACCESS)
-                .doGrantAccessTokenRequest(getUserLogin(), getUserPassword());
+                .doPasswordGrantRequest(getUserLogin(), getUserPassword());
         assertNotNull(response.getRefreshToken());
 
         log.debug("Check for Offline Token in consents");
@@ -456,7 +456,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
             // try to refresh the token
             // this fails as client no longer has requested consent from user
-            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
             Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
             Assert.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
 

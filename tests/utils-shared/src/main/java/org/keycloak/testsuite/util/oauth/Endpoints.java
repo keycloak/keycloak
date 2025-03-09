@@ -5,6 +5,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.services.resources.RealmsResource;
 
 public class Endpoints {
 
@@ -14,6 +15,10 @@ public class Endpoints {
     public Endpoints(String baseUrl, String realm) {
         this.baseUrl = baseUrl;
         this.realm = realm;
+    }
+
+    public String getOpenIDConfiguration() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/.well-known/openid-configuration"));
     }
 
     public String getAuthorization() {
@@ -53,11 +58,7 @@ public class Endpoints {
     }
 
     public String getLogout() {
-        return getLogoutBuilder().build();
-    }
-
-    public LogoutUrlBuilder getLogoutBuilder() {
-        return new LogoutUrlBuilder(this);
+        return asString(OIDCLoginProtocolService.logoutUrl(getBase()));
     }
 
     public String getBackChannelLogout() {

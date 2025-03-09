@@ -22,7 +22,6 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
@@ -383,7 +382,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(events.poll());
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         events.poll();
     }
 
@@ -478,11 +477,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithDirectGrant() throws Exception {
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("johnkeycloak", "Password1");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("johnkeycloak", "Password1");
         Assert.assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
-        response = oauth.doGrantAccessTokenRequest("johnkeycloak", "");
+        response = oauth.doPasswordGrantRequest("johnkeycloak", "");
         Assert.assertEquals(401, response.getStatusCode());
     }
 

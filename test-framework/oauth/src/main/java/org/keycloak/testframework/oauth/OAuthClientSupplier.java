@@ -29,12 +29,16 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
 
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, annotation.realmRef());
 
-        String redirectUri = testApp.getRedirectionUri().toString();
+        String redirectUri = testApp.getRedirectionUri();
 
         ClientConfig clientConfig = SupplierHelpers.getInstance(annotation.config());
         ClientRepresentation testAppClient = clientConfig.configure(ClientConfigBuilder.create())
                 .redirectUris(redirectUri)
                 .build();
+
+        if (annotation.kcAdmin()) {
+            testAppClient.setAdminUrl(testApp.getAdminUri());
+        }
 
         String clientId = testAppClient.getClientId();
         String clientSecret = testAppClient.getSecret();

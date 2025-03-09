@@ -45,7 +45,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -111,7 +110,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = tokenResponse.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
@@ -240,7 +239,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("user", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("user", "password");
         String accessToken = tokenResponse.getAccessToken();
 
         try (Response response = exchangeUrl.request()
@@ -256,7 +255,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
             org.junit.Assert.assertEquals(200, response.getStatus());
             AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
             String exchangedTokenString = accessTokenResponse.getToken();
-            JsonNode json = JsonSerialization.readValue(oauth.doIntrospectionAccessTokenRequest(exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            JsonNode json = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).asJsonNode();
             assertTrue(json.get("active").asBoolean());
             assertEquals("impersonated-user", json.get("preferred_username").asText());
             assertEquals("user", json.get("act").get("sub").asText());
@@ -276,7 +275,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
             org.junit.Assert.assertEquals(200, response.getStatus());
             AccessTokenResponse accessTokenResponse = response.readEntity(AccessTokenResponse.class);
             String exchangedTokenString = accessTokenResponse.getToken();
-            JsonNode json = JsonSerialization.readValue(oauth.doIntrospectionAccessTokenRequest(exchangedTokenString), com.fasterxml.jackson.databind.JsonNode.class);
+            JsonNode json = oauth.doIntrospectionAccessTokenRequest(exchangedTokenString).asJsonNode();
             assertTrue(json.get("active").asBoolean());
             assertEquals("impersonated-user", json.get("preferred_username").asText());
             assertEquals("user", json.get("act").get("sub").asText());
@@ -368,7 +367,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 ));
         org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
 
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         oauth.client("direct-public", "secret");
         authzResponse = oauth.doLogin("user", "password");
         tokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode());
@@ -403,7 +402,7 @@ public abstract class AbstractSubjectImpersonationTokenExchangeTest extends Abst
                 .path("protocol/openid-connect/token");
         System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("bad-impersonator", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("bad-impersonator", "password");
         String accessToken = tokenResponse.getAccessToken();
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();

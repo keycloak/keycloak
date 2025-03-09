@@ -77,6 +77,8 @@ import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -1537,7 +1539,7 @@ public class AuthenticationManager {
                     if (isSessionValid(realm, offlineUserSession)) {
                         user = offlineUserSession.getUser();
                         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-                        if (!isClientValid(offlineUserSession, client, token)) {
+                        if (!isClientValid(session, offlineUserSession, client, token)) {
                             return null;
                         }
                         context.setUserSession(offlineUserSession);
@@ -1570,7 +1572,7 @@ public class AuthenticationManager {
                 client = null;
             } else {
                 client = realm.getClientByClientId(token.getIssuedFor());
-                if (!isClientValid(userSession, client, token)) {
+                if (!isClientValid(session, userSession, client, token)) {
                     return null;
                 }
                 context.setClient(client);
@@ -1587,7 +1589,7 @@ public class AuthenticationManager {
     }
 
     // Verify client and whether clientSession exists
-    private static boolean isClientValid(UserSessionModel userSession, ClientModel client, AccessToken token) {
+    private static boolean isClientValid(KeycloakSession session, UserSessionModel userSession, ClientModel client, AccessToken token) {
         if (client == null || !client.isEnabled()) {
             logger.debugf("Identity token issued for unknown or disabled client '%s'", token.getIssuedFor());
             return false;
@@ -1602,7 +1604,9 @@ public class AuthenticationManager {
         if (userSession == null) return true;
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-        if (clientSession == null) {
+        AccessTokenContext accessTokenContext = session.getProvider(TokenContextEncoderProvider.class)
+                    .getTokenContextFromTokenId(token.getId());
+        if (clientSession == null && accessTokenContext.getSessionType() != AccessTokenContext.SessionType.TRANSIENT) {
             logger.debugf("Client session for client '%s' not present in user session '%s'", client.getClientId(), userSession.getId());
             return false;
         }

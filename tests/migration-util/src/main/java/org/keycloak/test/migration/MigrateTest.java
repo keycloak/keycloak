@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class MigrateTest {
 
@@ -34,16 +35,12 @@ public class MigrateTest {
     }
 
     public void migrate(String test) throws Exception {
-        if (test.indexOf('.') != -1) {
-            test = rootPath.toString() +
-                    "/testsuite/integration-arquillian/tests/base/src/test/java/" +
-                    test.replace('.', '/') +
-                    ".java";
+        if (!test.endsWith(".java")) {
+            test += ".java";
         }
-
         Path testPath = Path.of(test).normalize().toAbsolutePath();
         if (!Files.isRegularFile(testPath)) {
-            testPath = oldTestsuitePath.resolve(test);
+            testPath = getOldTestsuitePath(testPath);
         }
 
         Path destinationPath = getDestination(testPath);
@@ -56,15 +53,7 @@ public class MigrateTest {
         System.out.println("To:             " + destinationPath);
         System.out.println();
 
-        if (!testPath.startsWith(oldTestsuitePath.toString())) {
-            throw new RuntimeException("Can only migrate tests from " + oldTestsuitePath);
-        }
-
-        if (!Files.isRegularFile(testPath)) {
-            throw new RuntimeException("Test file not found");
-        }
-
-        System.exit(1);
+        validatePaths(testPath, destinationPath);
 
         List<String> content = readFileToList(testPath);
 
@@ -80,6 +69,43 @@ public class MigrateTest {
             ProcessBuilder pb = new ProcessBuilder();
             pb.command(DIFF_COMMAND, testPath.toString(), destinationPath.toString());
             pb.start();
+        }
+    }
+
+    private Path getOldTestsuitePath(Path testPath) throws IOException {
+        try (Stream<Path> paths = Files.walk(oldTestsuitePath)) {
+            List<Path> foundPath = paths
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().equals(testPath.getFileName().toString()))
+                    .toList();
+
+            if (foundPath.isEmpty()) {
+                throw new RuntimeException("Test file not found");
+            }
+            if (foundPath.size() != 1) {
+                throw new RuntimeException("Multiple test files found: " + foundPath);
+            }
+            return foundPath.get(0).toAbsolutePath();
+        }
+    }
+
+    private void validatePaths(Path testPath, Path destinationPath) throws IOException {
+        if (!testPath.startsWith(oldTestsuitePath.toString())) {
+            throw new RuntimeException("Can only migrate tests from " + oldTestsuitePath);
+        }
+
+        if (!Files.isRegularFile(testPath)) {
+            throw new RuntimeException("Test file not found");
+        }
+
+        if (!destinationPath.startsWith(newBaseTestPath.toString())) {
+            throw new RuntimeException("Can only migrate tests to " + newBaseTestPath);
+        }
+
+        Path destinationDir = destinationPath.resolve("..");
+        if (!Files.exists(destinationDir)) {
+            Files.createDirectories(destinationDir);
+            System.out.println("Creating a new directory: " + destinationDir);
         }
     }
 

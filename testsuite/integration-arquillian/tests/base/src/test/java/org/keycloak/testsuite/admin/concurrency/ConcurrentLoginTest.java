@@ -377,7 +377,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
             int i = sameClient ? 0 : clientIndex.getAndIncrement();
             OAuthClient oauth1 = oauthClient.get();
-            oauth1.clientId("client" + i);
+            oauth1.client("client" + i, "password");
             log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());
 
             final HttpClientContext templateContext = clientContexts.get(i % clientContexts.size());
@@ -418,7 +418,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             AtomicReference<AccessTokenResponse> refreshResRef = new AtomicReference<>();
 
             int invocationIndex = Retry.execute(() -> {
-                AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessResRef.get().getRefreshToken(), "password");
+                AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessResRef.get().getRefreshToken());
                 Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
                   200, refreshRes.getStatusCode());
 

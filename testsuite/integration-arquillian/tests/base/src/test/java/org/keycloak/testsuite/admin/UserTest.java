@@ -75,7 +75,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -96,6 +95,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.util.JsonSerialization;
@@ -200,14 +200,14 @@ public class UserTest extends AbstractAdminTest {
     public void beforeUserTest() throws IOException {
         createAppClientInRealm(REALM_NAME);
 
-        VerifyProfileTest.setUserProfileConfiguration(realm, null);
+        UserProfileUtil.setUserProfileConfiguration(realm, null);
         UPConfig upConfig = realm.users().userProfile().getConfiguration();
 
         for (String name : managedAttributes) {
             upConfig.addOrReplaceAttribute(createAttributeMetadata(name));
         }
 
-        VerifyProfileTest.setUserProfileConfiguration(realm, JsonSerialization.writeValueAsString(upConfig));
+        UserProfileUtil.setUserProfileConfiguration(realm, JsonSerialization.writeValueAsString(upConfig));
 
         assertAdminEvents.clear();
     }

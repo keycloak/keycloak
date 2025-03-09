@@ -38,7 +38,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "react-i18next": "^15.4.1",
-    "react-router-dom": "^6.29.0"
+    "react-router-dom": "^6.30.0"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
@@ -50,7 +50,7 @@
     "lightningcss": "^1.29.1",
     "vite": "^6.2.0",
     "vite-plugin-checker": "^0.9.0",
-    "vite-plugin-dts": "^4.5.0"
+    "vite-plugin-dts": "^4.5.1"
   },
   "wireit": {
     "dev": {

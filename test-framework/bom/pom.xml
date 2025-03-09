@@ -83,12 +83,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
-                <artifactId>keycloak-test-framework-oauth</artifactId>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-email-server</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>

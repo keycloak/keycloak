@@ -641,9 +641,9 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         String origClientId = oauth.getClientId();
-        oauth.clientId("service-account-app");
+        oauth.client("service-account-app", "app-secret");
         try {
-            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             assertEquals(400, response.getStatusCode());
             assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST.toString(), response.getError());
             assertEquals("Exception thrown intentionally", response.getErrorDescription());

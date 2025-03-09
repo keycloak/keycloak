@@ -146,7 +146,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app-scope");
 
         oauth.client("test-app", "password");
-        assertTrue(oauth.doTokenRevoke(tokenResponse1.getRefreshToken(), "refresh_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse1.getRefreshToken()).refreshToken().send().isSuccess());
 
         userSessions = testUser.getUserSessions();
         assertEquals(1, userSessions.size());
@@ -158,7 +158,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app-scope");
 
         // Revoke second token and assert no sessions for testUser
-        assertTrue(oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse2.getRefreshToken()).refreshToken().send().isSuccess());
 
         userSessions = testUser.getUserSessions();
         assertEquals(0, userSessions.size());
@@ -168,12 +168,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAccessToken() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getAccessToken()).accessToken().send().isSuccess());
 
         isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
     }
@@ -181,11 +181,11 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokedAccessTokenCacheLifespan() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getAccessToken()).accessToken().send().isSuccess());
 
         setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
 
@@ -198,12 +198,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testRevokeOfflineToken() throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
@@ -222,7 +222,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse2, "test-app");
 
         // Disable both offline and refresh
-        assertTrue(oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse2.getRefreshToken()).refreshToken().send().isSuccess());
 
         isTokenDisabled(tokenResponse2, "test-app");
     }
@@ -231,22 +231,22 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     public void testTokenTypeHint() throws Exception {
         // different token_type_hint
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "access_token", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).accessToken().send().isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
 
         // invalid token_type_hint
         oauth.client("test-app", "password");
-        tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "invalid_token_type_hint", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).tokenTypeHint("invalid_token_type_hint").send().isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
@@ -254,13 +254,13 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeTokenFromDifferentClient() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
         oauth.client("test-app-scope", "password");
-        assertEquals(400, oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token").getStatusCode());
+        assertEquals(400, oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().getStatusCode());
 
         isTokenEnabled(tokenResponse, "test-app");
     }
@@ -268,16 +268,16 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeAlreadyRevokedToken() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        oauth.doLogout(tokenResponse.getRefreshToken(), "password");
+        oauth.doLogout(tokenResponse.getRefreshToken());
 
         isTokenDisabled(tokenResponse, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
 
         isTokenDisabled(tokenResponse, "test-app");
     }
@@ -286,7 +286,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeRequestParamsMoreThanOnce() throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
             "password");
 
         isTokenEnabled(tokenResponse, "test-app");
@@ -311,15 +311,15 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     private void testRevokeSingleSession(String expectedTokenType) throws Exception {
         oauth.client("test-app", "password");
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost",
                 "password");
-        AccessTokenResponse tokenResponse2 = oauth.doGrantAccessTokenRequest("test-user@localhost",
+        AccessTokenResponse tokenResponse2 = oauth.doPasswordGrantRequest("test-user@localhost",
                 "password");
 
         isTokenEnabled(tokenResponse, "test-app");
         isTokenEnabled(tokenResponse2, "test-app");
 
-        assertTrue(oauth.doTokenRevoke(tokenResponse.getRefreshToken(), "refresh_token", "password").isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
 
         events.expect(EventType.REVOKE_GRANT)
                 .session(tokenResponse.getSessionState())
@@ -344,8 +344,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     private void isTokenEnabled(AccessTokenResponse tokenResponse, String clientId) throws IOException {
         oauth.client(clientId, "password");
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asTokenMetadata();
         assertTrue(rep.isActive());
 
         AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
@@ -363,8 +362,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     private void isAccessTokenDisabled(String accessTokenString, String clientId) throws IOException {
         // Test introspection endpoint not possible
         oauth.client(clientId, "password");
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenString);
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenString).asTokenMetadata();
         assertFalse(rep.isActive());
 
         // Test userInfo endpoint not possible

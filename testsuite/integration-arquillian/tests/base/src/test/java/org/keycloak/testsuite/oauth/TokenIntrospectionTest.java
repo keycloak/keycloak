@@ -57,6 +57,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -151,9 +152,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        JsonNode jsonNode = introspectionResponse.asJsonNode();
 
         assertTrue(jsonNode.get("active").asBoolean());
         assertEquals("test-user@localhost", jsonNode.get("username").asText());
@@ -166,7 +166,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(jsonNode.has("iss"));
         assertTrue(jsonNode.has("jti"));
 
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = introspectionResponse.asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -193,11 +193,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "bad_credential");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("Authentication failed.", errorRep.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+        Assert.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test
@@ -208,11 +207,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+        JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
 
-        assertTrue(jsonNode.get("active").asBoolean());
         assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
@@ -223,18 +219,6 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(jsonNode.has("iss"));
         assertTrue(jsonNode.has("jti"));
         assertTrue(jsonNode.has("typ"));
-
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
-
-        assertTrue(rep.isActive());
-        assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("sid").asText(), rep.getSessionState());
-        assertEquals(Long.valueOf(jsonNode.get("exp").asLong()), rep.getExp());
-        assertEquals(Long.valueOf(jsonNode.get("iat").asLong()), rep.getIat());
-        assertEquals(Optional.ofNullable(jsonNode.get("nbf")).map(JsonNode::asLong).orElse(null), rep.getNbf());
-        assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
-        assertEquals(jsonNode.get("jti").asText(), rep.getId());
-        assertEquals(jsonNode.get("typ").asText(), "Refresh");
     }
 
     @Test
@@ -242,7 +226,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
         String refreshToken1 = accessTokenResponse.getRefreshToken();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
         events.clear();
 
         setTimeOffset(2);
@@ -258,15 +242,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         oauth.client("confidential-cli", "secret1");
 
-        String introspectResponse = oauth.doIntrospectionRefreshTokenRequest(tokenResponse2.getRefreshToken());
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectResponse);
+        JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(tokenResponse2.getRefreshToken()).asJsonNode();
         assertTrue(jsonNode.get("active").asBoolean());
 
-        introspectResponse = oauth.doIntrospectionRefreshTokenRequest(refreshToken1);
-
-        jsonNode = objectMapper.readTree(introspectResponse);
+        jsonNode = oauth.doIntrospectionRefreshTokenRequest(refreshToken1).asJsonNode();
         assertFalse(jsonNode.get("active").asBoolean());
     }
 
@@ -277,11 +256,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("public-cli");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
-        Assert.assertEquals("Client not allowed.", errorRep.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+        Assert.assertEquals("Client not allowed.", tokenResponse.getErrorDescription());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test
@@ -289,13 +267,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         String inactiveAccessToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGSjg2R2NGM2pUYk5MT2NvNE52WmtVQ0lVbWZZQ3FvcXRPUWVNZmJoTmxFIn0.eyJqdGkiOiI5NjgxZTRlOC01NzhlLTQ3M2ItOTIwNC0yZWE5OTdhYzMwMTgiLCJleHAiOjE0NzYxMDY4NDksIm5iZiI6MCwiaWF0IjoxNDc2MTA2NTQ5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvYXV0aC9yZWFsbXMvdGVzdCIsImF1ZCI6InRlc3QtYXBwIiwic3ViIjoiZWYyYzk0NjAtZDRkYy00OTk5LWJlYmUtZWVmYWVkNmJmMGU3IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidGVzdC1hcHAiLCJhdXRoX3RpbWUiOjE0NzYxMDY1NDksInNlc3Npb25fc3RhdGUiOiI1OGY4M2MzMi03MDhkLTQzNjktODhhNC05YjI5OGRjMDY5NzgiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiI2NTYyOTVkZC1kZWNkLTQyZDAtYWJmYy0zZGJjZjJlMDE3NzIiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MTgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsidGVzdC1hcHAiOnsicm9sZXMiOlsiY3VzdG9tZXItdXNlciJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJUb20gQnJhZHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0LXVzZXJAbG9jYWxob3N0IiwiZ2l2ZW5fbmFtZSI6IlRvbSIsImZhbWlseV9uYW1lIjoiQnJhZHkiLCJlbWFpbCI6InRlc3QtdXNlckBsb2NhbGhvc3QifQ.LYU7opqZsc9e-ZmdsIhcecjHL3kQkpP13VpwO4MHMqEVNeJsZI1WOkTM5HGVAihcPfQazhaYvcik0gFTF_6ZcKzDqanjx80TGhSIrV5FoCeUrbp7w_66VKDH7ImPc8T2kICQGHh2d521WFBnvXNifw7P6AR1rGg4qrUljHdf_KU";
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(inactiveAccessToken);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
-
-        assertFalse(jsonNode.get("active").asBoolean());
-
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(inactiveAccessToken).asTokenMetadata();
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -308,13 +280,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         String inactiveAccessToken = "unsupported";
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(inactiveAccessToken);
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
-
-        assertFalse(jsonNode.get("active").asBoolean());
-
-        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(inactiveAccessToken).asTokenMetadata();
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -329,8 +295,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -353,8 +318,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             EventRepresentation loginEvent = events.expectLogin().client("no-scope").assertEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
             oauth.client("no-scope", "password");
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+            TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
             assertTrue(rep.isActive());
             assertEquals("test-user@localhost", rep.getUserName());
@@ -373,12 +337,11 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        String tokenResponse = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
+        TokenMetadataRepresentation rep = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
                 .tokenTypeHint("access_token")
                 .client("confidential-cli", "secret1")
                 .jwtResponse()
-                .send();
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+                .send().asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -412,9 +375,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertEquals(jwaAlgorithm, new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
 
             oauth.client("confidential-cli", "secret1");
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-
-            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+            TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
             assertTrue(rep.isActive());
             assertEquals("test-user@localhost", rep.getUserName());
@@ -434,11 +395,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
-        oauth.doLogout(accessTokenResponse.getRefreshToken(), "password");
+        oauth.doLogout(accessTokenResponse.getRefreshToken());
 
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -459,8 +419,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         // "Online" session still exists, but is invalid
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -472,8 +431,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("test-app", "password");
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         oauth.client("confidential-cli", "secret1");
-        tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -490,8 +448,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(1200);
 
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asTokenMetadata();
 
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
@@ -520,8 +477,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             adminClient.realm(oauth.getRealm()).users().get(loginEvent.getUserId()).update(userRep);
 
             oauth.client("confidential-cli", "secret1");
-            String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-            TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+            TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
             assertFalse(rep.isActive());
             assertNull(rep.getUserName());
@@ -541,8 +497,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -555,17 +510,15 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
      * Test covers the same scenario from different endpoints like TokenEndpoint and LogoutEndpoint.
      */
     @Test
-    public void testIntrospectWithSamlClient() throws Exception {
+    public void testIntrospectWithSamlClient() {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
         events.expectLogin().assertEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("saml-client", "secret2");
-        String tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        assertEquals(Errors.INVALID_CLIENT, rep.getOtherClaims().get("error"));
-        assertNull(rep.getSubject());
+        assertEquals(Errors.INVALID_CLIENT, introspectionResponse.getError());
     }
 
     private AccessTokenResponse loginAndForceNewLoginPage() {
@@ -595,7 +548,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         String tokenResponse = introspectAccessTokenWithDuplicateParams("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
 
         OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
@@ -651,17 +604,14 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             accessTokenResponse = oauth.doRefreshTokenRequest(oldRefreshToken);
             String newRefreshToken = accessTokenResponse.getRefreshToken();
             oauth.client("confidential-cli", "secret1");
-            String tokenResponse = oauth.doIntrospectionRefreshTokenRequest(newRefreshToken);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+            JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(newRefreshToken).asJsonNode();
             assertTrue(jsonNode.get("active").asBoolean());
 
             oauth.client("test-app", "password");
             accessTokenResponse = oauth.doRefreshTokenRequest(newRefreshToken);
 
             oauth.client("confidential-cli", "secret1");
-            tokenResponse = oauth.doIntrospectionRefreshTokenRequest(oldRefreshToken);
-            jsonNode = objectMapper.readTree(tokenResponse);
+            jsonNode = oauth.doIntrospectionRefreshTokenRequest(oldRefreshToken).asJsonNode();
             assertFalse(jsonNode.get("active").asBoolean());
         } finally {
             realm.setRevokeRefreshToken(false);
@@ -703,8 +653,6 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         accessTokenResponse = oauth.doRefreshTokenRequest(stringRefreshToken);
 
         oauth.client("confidential-cli", "secret1");
-        String tokenResponse = oauth.doIntrospectionRefreshTokenRequest(stringRefreshToken);
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readTree(tokenResponse);
+        return oauth.doIntrospectionRefreshTokenRequest(stringRefreshToken).asJsonNode();
     }
 }

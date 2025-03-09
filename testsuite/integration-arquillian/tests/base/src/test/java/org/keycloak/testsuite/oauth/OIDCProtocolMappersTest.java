@@ -53,7 +53,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -65,6 +64,7 @@ import org.keycloak.testsuite.util.UserInfoClientUtil;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -127,7 +127,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // enable user profile unmanaged attributes
         UserProfileResource upResource = adminClient.realm("test").users().userProfile();
-        VerifyProfileTest.enableUnmanagedAttributes(upResource);
+        UserProfileUtil.enableUnmanagedAttributes(upResource);
     }
 
 
@@ -320,7 +320,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(3, multiClaim.size());
             assertThat(multiClaim, containsInAnyOrder("abc", "bcd", "cde"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
         // undo mappers
@@ -359,7 +359,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("nested"));
             assertNull(idToken.getOtherClaims().get("department"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
 
@@ -417,7 +417,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         // logout
-        oauth.openLogout();
+        oauth.openLogoutForm();
 
         // undo mappers
         app = findClientByClientId(adminClient.realm("test"), "test-app");
@@ -552,7 +552,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(nulll);
 
             oauth.verifyToken(response.getAccessToken());
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
         // undo mappers
@@ -577,7 +577,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("empty"));
             assertNull(idToken.getOtherClaims().get("null"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
         events.clear();
     }

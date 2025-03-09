@@ -127,7 +127,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
         // resource owner password credentials grant - fail
         oauth.client(clientId);
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(TEST_USERNAME, TEST_USERSECRET);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USERNAME, TEST_USERSECRET);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -220,7 +220,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
     }
 
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce) {

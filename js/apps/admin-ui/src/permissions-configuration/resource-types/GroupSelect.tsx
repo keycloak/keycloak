@@ -12,6 +12,7 @@ import type { ComponentProps } from "../../components/dynamic/components";
 
 type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
+  isRequired?: boolean;
 };
 
 export const GroupSelect = ({
@@ -20,7 +21,7 @@ export const GroupSelect = ({
   helpText,
   defaultValue,
   isDisabled = false,
-  required = false,
+  isRequired,
   variant = "typeahead",
 }: GroupSelectProps) => {
   const { adminClient } = useAdminClient();
@@ -51,7 +52,7 @@ export const GroupSelect = ({
         defaultValue: defaultValue || "",
         rules: {
           required: {
-            value: required,
+            value: isRequired || false,
             message: t("required"),
           },
         },

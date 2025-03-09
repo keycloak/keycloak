@@ -183,9 +183,9 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
 
   function loader(first?: number, max?: number) {
     return adminClient.realms.findAdminEvents({
+      resourcePath,
       // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
       ...(activeFilters as any),
-      resourcePath,
       realm,
       first,
       max,
@@ -229,6 +229,10 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
       getValues(),
       (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
+
+    if (resourcePath) {
+      delete newFilters.resourcePath;
+    }
 
     setActiveFilters(newFilters);
     setKey(key + 1);

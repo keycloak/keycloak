@@ -117,6 +117,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -273,7 +274,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
             assertEquals(200, response.getStatusCode());
             oauth.verifyToken(response.getAccessToken());
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
             return clientSignedToken;
         } finally {
             // Revert jwks_url settings
@@ -444,7 +445,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         }
 
         // Get admin access token, no matter it's master realm's admin
-        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).client("admin-cli").doGrantAccessTokenRequest(
+        AccessTokenResponse accessTokenResponse = oauth.realm(AuthRealm.MASTER).client("admin-cli").doPasswordGrantRequest(
                 AuthRealm.ADMIN, AuthRealm.ADMIN);
         assertEquals(200, accessTokenResponse.getStatusCode());
 
@@ -692,7 +693,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-        return sendRequest(oauth.getEndpoints().getLogoutBuilder().build(), parameters);
+        return sendRequest(oauth.getEndpoints().getLogout(), parameters);
     }
 
     protected AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {
@@ -925,7 +926,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         if (kid == null) {
             kid = KeyUtils.createKeyId(publicKey);
         }
-        SignatureSignerContext signer = oauth.createSigner(privateKey, kid, algorithm, curve);
+        SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, kid, algorithm, curve);
         String ret = new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
         return ret;
     }

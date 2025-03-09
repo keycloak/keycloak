@@ -1050,7 +1050,7 @@ public class RealmTest extends AbstractAdminTest {
             assertAdminEvents.assertEmpty();
         }
 
-        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals("Session not active", tokenResponse.getErrorDescription());
     }

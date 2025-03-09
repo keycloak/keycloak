@@ -121,7 +121,7 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
         assertThat(tokenResponse.getIdToken(), notNullValue());
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
@@ -176,13 +176,12 @@ public abstract class KcOidcBrokerTokenExchangeTest extends AbstractInitializedB
             identityProviderResource.update(idpRep);
         });
 
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doGrantAccessTokenRequest(bc.getUserLogin(), bc.getUserPassword());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName()).client(brokerApp.getClientId(), brokerApp.getSecret()).doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
         assertThat(tokenResponse.getIdToken(), notNullValue());
         String idTokenString = tokenResponse.getIdToken();
         oauth.realm(bc.providerRealmName());
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().idTokenHint(idTokenString)
-                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
-        driver.navigate().to(logoutUrl);
+        oauth.logoutForm().idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).open();
         String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
         Assert.assertNotNull(logoutToken);
 

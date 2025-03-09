@@ -359,7 +359,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), DEFAULT_SECRET);
+        oauth.doLogout(res.getRefreshToken());
 
         //advance 1 hour
         setTimeOffset(3601);
@@ -415,7 +415,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), updatedSecret);
+        oauth.doLogout(res.getRefreshToken());
 
         //login with rotated secret
         oauth.client(clientId, firstSecret);
@@ -423,7 +423,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         code = oauth.parseLoginResponse().getCode();
         res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), firstSecret);
+        oauth.doLogout(res.getRefreshToken());
 
     }
 
@@ -487,7 +487,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), firstSecret);
+        oauth.doLogout(res.getRefreshToken());
 
     }
 
@@ -531,7 +531,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
-        oauth.doLogout(res.getRefreshToken(), firstSecret);
+        oauth.doLogout(res.getRefreshToken());
 
     }
 
@@ -878,7 +878,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     private void successfulLoginAndLogout(String clientId, String clientSecret) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret);
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        oauth.doLogout(res.getRefreshToken());
         events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
     }
 

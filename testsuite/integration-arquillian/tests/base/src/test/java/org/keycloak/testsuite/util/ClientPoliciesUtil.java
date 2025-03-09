@@ -54,6 +54,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
@@ -441,6 +442,12 @@ public final class ClientPoliciesUtil {
     public static ClientUpdaterSourceRolesCondition.Configuration createClientUpdateSourceRolesConditionConfig(List<String> roles) {
         ClientUpdaterSourceRolesCondition.Configuration config = new ClientUpdaterSourceRolesCondition.Configuration();
         config.setRoles(roles);
+        return config;
+    }
+
+    public static GrantTypeCondition.Configuration createGrantTypeConditionConfig(List<String> grantTypes) {
+        GrantTypeCondition.Configuration config = new GrantTypeCondition.Configuration();
+        config.setGrantTypes(grantTypes);
         return config;
     }
 

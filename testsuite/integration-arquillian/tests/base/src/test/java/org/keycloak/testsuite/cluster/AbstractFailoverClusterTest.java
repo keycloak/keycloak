@@ -138,8 +138,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
     }
 
     protected void logout() {
-        String logoutUrl = oauth.getEndpoints().getLogoutBuilder().build();
-        driver.navigate().to(logoutUrl);
+        oauth.openLogoutForm();
 
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();

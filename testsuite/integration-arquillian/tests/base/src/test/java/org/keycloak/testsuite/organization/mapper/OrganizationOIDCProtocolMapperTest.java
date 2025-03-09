@@ -96,7 +96,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization:*");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         assertThat(response.getScope(), containsString("organization"));
 
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
@@ -127,15 +127,15 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.clientId("test-app");
         oauth.scope("openid organization organization:org-a");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
         oauth.scope("openid organization organization:*");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
         oauth.scope("openid organization:org-a organization:*");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
@@ -149,7 +149,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
@@ -451,7 +451,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
@@ -463,7 +463,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // when attributes are added to tokens, the claim type is a json regardless of the value set in the config
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
@@ -473,7 +473,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
@@ -491,7 +491,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
@@ -503,7 +503,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // when id is added to tokens, the claim type is a json regardless of the value set in the config
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "boolean");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
@@ -514,7 +514,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         // disabling the attribute should result in no ids in the claims.
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
-        response = oauth.doGrantAccessTokenRequest(memberEmail, memberPassword);
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
@@ -532,7 +532,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization:*");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(member.getEmail(), memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
@@ -550,7 +550,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, Boolean.FALSE.toString());
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization:*");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest(member.getEmail(), memberPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));

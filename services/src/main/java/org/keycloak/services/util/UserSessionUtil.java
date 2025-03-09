@@ -17,6 +17,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -41,6 +43,22 @@ public class UserSessionUtil {
         }
 
         var userSessionProvider = session.sessions();
+
+        AccessTokenContext accessTokenContext = session.getProvider(TokenContextEncoderProvider.class).getTokenContextFromTokenId(token.getId());
+        if (accessTokenContext.getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
+            UserSessionModel userSession = userSessionProvider.getUserSession(realm, token.getSessionId());
+
+            if (AuthenticationManager.isSessionValid(realm, userSession)) {
+                checkTokenIssuedAt(realm, token, userSession, event, client);
+                return createTransientSessionForClient(session, userSession, client);
+            }
+
+            logger.debug("User session not found or expired for transient token");
+            event.session(userSession);
+            event.error(userSession == null? Errors.USER_SESSION_NOT_FOUND : Errors.SESSION_EXPIRED);
+            throw error.invalidToken(userSession == null? "Session not found" : "Session expired");
+        }
+
         UserSessionModel userSession = userSessionProvider.getUserSessionIfClientExists(realm, token.getSessionId(), false, client.getId());
         if (userSession == null) {
             // also try to resolve sessions created during token exchange when the user is impersonated
@@ -74,6 +92,31 @@ public class UserSessionUtil {
         throw error.invalidToken("Session expired");
     }
 
+    public static UserSessionModel createTransientUserSession(KeycloakSession session, UserSessionModel userSession) {
+        UserSessionModel transientSession = new UserSessionManager(session).createUserSession(userSession.getId(), userSession.getRealm(),
+                userSession.getUser(), userSession.getLoginUsername(), userSession.getIpAddress(), userSession.getAuthMethod(), userSession.isRememberMe(),
+                userSession.getBrokerSessionId(), userSession.getBrokerUserId(), UserSessionModel.SessionPersistenceState.TRANSIENT);
+        userSession.getNotes().entrySet().forEach(e -> transientSession.setNote(e.getKey(), e.getValue()));
+        return transientSession;
+    }
+
+    private static UserSessionModel attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, ClientModel client) {
+        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSession.getRealm());
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
+        authSession.setAuthenticatedUser(userSession.getUser());
+        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), userSession.getRealm().getName()));
+        AuthenticationManager.setClientScopesInSession(session, authSession);
+        TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        return userSession;
+    }
+
+    private static UserSessionModel createTransientSessionForClient(KeycloakSession session, UserSessionModel userSession, ClientModel client) {
+        UserSessionModel transientSession = createTransientUserSession(session, userSession);
+        attachAuthenticationSession(session, transientSession, client);
+        return transientSession;
+    }
+
     private static UserSessionModel createTransientSessionForClient(KeycloakSession session, RealmModel realm, AccessToken token, ClientModel client, EventBuilder event) {
         OAuth2Error error = new OAuth2Error().json(false).realm(realm);
         // create a transient session
@@ -87,13 +130,7 @@ public class UserSessionUtil {
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
                 ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         // attach an auth session for the client
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
-        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
-        authSession.setAuthenticatedUser(userSession.getUser());
-        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-        AuthenticationManager.setClientScopesInSession(session, authSession);
-        TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        attachAuthenticationSession(session, userSession, client);
         return userSession;
     }
 

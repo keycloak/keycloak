@@ -77,7 +77,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         Assert.assertNotNull(cfgId);
 
         oauth.client("resource-owner", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -116,7 +116,7 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         Assert.assertNotNull(cfgId);
 
         oauth.client("resource-owner", "secret");
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("", "");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());

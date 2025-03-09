@@ -59,7 +59,7 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         // Signal that we want userSession to be transient
         oauth.addCustomParameter(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString());
 
-        AccessTokenResponse response = oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -71,7 +71,7 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         // Refresh will fail. There is no userSession on the server
-        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertNull(refreshedResponse.getAccessToken());
         assertNotNull(refreshedResponse.getError());
         Assert.assertEquals("Session not active", refreshedResponse.getErrorDescription());

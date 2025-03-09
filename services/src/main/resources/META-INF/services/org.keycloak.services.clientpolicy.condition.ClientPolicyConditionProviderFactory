@@ -9,3 +9,4 @@ org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory
 org.keycloak.services.clientpolicy.condition.AcrConditionFactory
+org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory

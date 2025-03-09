@@ -219,14 +219,14 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         // first browser authenticates from Windows using Edge
         oauth.setDriver(firstBrowser);
-        oauth.idTokenHint(tokenResponse1.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
         tokenResponse1 = codeGrant("public-client-0");
 
         // second browser authenticates from Windows using Firefox
         oauth.setDriver(secondBrowser);
-        oauth.idTokenHint(tokenResponse2.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
         tokenResponse2 = codeGrant("public-client-0");
@@ -260,7 +260,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         // third browser authenticates from Windows using a different Windows version
         oauth.setDriver(thirdBrowser);
-        oauth.idTokenHint(tokenResponse3.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse3.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows 7) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
         setBrowserHeader("X-Forwarded-For", "192.168.10.3");
@@ -272,13 +272,13 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(2, windowsDevices.size());
 
         oauth.setDriver(firstBrowser);
-        oauth.idTokenHint(tokenResponse1.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B206 Safari/7534.48.3");
         tokenResponse1 = codeGrant("public-client-0");
 
         oauth.setDriver(secondBrowser);
-        oauth.idTokenHint(tokenResponse2.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         tokenResponse2 = codeGrant("public-client-0");
@@ -390,9 +390,9 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         // all bellow grouped from a single Other device
         setBrowserHeader("User-Agent", null);
         oauth.client("confidential-client-0", "secret");
-        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        oauth.doPasswordGrantRequest("test-user@localhost", "password");
         oauth.client("confidential-client-1", "secret");
-        oauth.doGrantAccessTokenRequest("test-user@localhost", "password");
+        oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         List<DeviceRepresentation> devices = getAllDevices();
         assertEquals(2, devices.size());

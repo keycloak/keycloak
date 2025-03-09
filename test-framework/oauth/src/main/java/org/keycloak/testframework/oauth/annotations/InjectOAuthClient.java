@@ -16,4 +16,6 @@ public @interface InjectOAuthClient {
 
     String realmRef() default "";
 
+    boolean kcAdmin() default false;
+
 }

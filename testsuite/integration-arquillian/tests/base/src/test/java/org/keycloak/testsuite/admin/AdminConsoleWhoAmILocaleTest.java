@@ -100,7 +100,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     }
 
     private org.keycloak.testsuite.util.oauth.AccessTokenResponse accessToken(String realmName, String username, String password) throws Exception {
-        return oauth.realm(realmName).client(ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest(username, password);
+        return oauth.realm(realmName).client(ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest(username, password);
     }
 
     private String whoAmiUrl(String realmName) {
@@ -128,7 +128,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
 
     @Test
     public void testLocaleRealmI18nDisabledUserWithoutLocale() throws Exception {
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.realm(REALM_I18N_OFF).client(ADMIN_CLI_CLIENT_ID).doGrantAccessTokenRequest(USER_WITHOUT_LOCALE, PASSWORD);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.realm(REALM_I18N_OFF).client(ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest(USER_WITHOUT_LOCALE, PASSWORD);
         JsonNode whoAmI = SimpleHttpDefault
             .doGet(whoAmiUrl(REALM_I18N_OFF), client)
             .header("Accept", "application/json")
@@ -137,7 +137,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_OFF, whoAmI.get("realm").asText());
         Assert.assertEquals(DEFAULT_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_OFF, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -151,7 +151,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_OFF, whoAmI.get("realm").asText());
         Assert.assertEquals(DEFAULT_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_OFF, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -165,7 +165,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_ON, whoAmI.get("realm").asText());
         Assert.assertEquals(REALM_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_ON, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_ON, whoAmI.get("realm").asText());
         Assert.assertEquals(USER_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_ON, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_ON, whoAmI.get("realm").asText());
         Assert.assertEquals(EXTRA_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_ON, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -209,7 +209,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(REALM_I18N_ON, whoAmI.get("realm").asText());
         Assert.assertEquals(EXTRA_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_ON, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -223,7 +223,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(AuthRealm.MASTER, whoAmI.get("realm").asText());
         Assert.assertEquals(DEFAULT_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(AuthRealm.MASTER, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -237,7 +237,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
         Assert.assertEquals(AuthRealm.MASTER, whoAmI.get("realm").asText());
         Assert.assertEquals(DEFAULT_LOCALE, whoAmI.get("locale").asText());
         checkRealmAccess(REALM_I18N_ON, whoAmI);
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test
@@ -260,7 +260,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
                 .asResponse()) {
             Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), res.getStatus());
         }
-        oauth.doLogout(response.getRefreshToken(), null);
+        oauth.doLogout(response.getRefreshToken());
     }
 
     @Test

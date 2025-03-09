@@ -74,6 +74,7 @@ public class PolicyEvaluationResponse {
         private List<PolicyResultRepresentation> policies;
         private DecisionEffect status;
         private List<ScopeRepresentation> allowedScopes = new ArrayList<>();
+        private List<ScopeRepresentation> deniedScopes = new ArrayList<>();
 
         public void setResource(final ResourceRepresentation resource) {
             this.resource = resource;
@@ -114,6 +115,14 @@ public class PolicyEvaluationResponse {
         public List<ScopeRepresentation> getAllowedScopes() {
             return allowedScopes;
         }
+
+        public void setDeniedScopes(List<ScopeRepresentation> deniedScopes) {
+            this.deniedScopes = deniedScopes;
+        }
+
+        public List<ScopeRepresentation> getDeniedScopes() {
+            return deniedScopes;
+        }
     }
 
     public static class PolicyResultRepresentation {
@@ -122,6 +131,7 @@ public class PolicyEvaluationResponse {
         private DecisionEffect status;
         private List<PolicyResultRepresentation> associatedPolicies;
         private Set<String> scopes = new HashSet<>();
+        private String resourceType;
 
         public PolicyRepresentation getPolicy() {
             return policy;
@@ -166,6 +176,14 @@ public class PolicyEvaluationResponse {
 
         public Set<String> getScopes() {
             return scopes;
+        }
+
+        public void setResourceType(String resourceType) {
+            this.resourceType = resourceType;
+        }
+
+        public String getResourceType() {
+            return resourceType;
         }
     }
 }

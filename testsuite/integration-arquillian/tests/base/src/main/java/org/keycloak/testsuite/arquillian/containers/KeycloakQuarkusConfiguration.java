@@ -1,12 +1,17 @@
 package org.keycloak.testsuite.arquillian.containers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mhajas
@@ -44,8 +49,6 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     private String enabledFeatures;
     private String disabledFeatures;
-
-    private boolean jgroupsMtls;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -231,13 +234,5 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public void setDisabledFeatures(String disabledFeatures) {
         this.disabledFeatures = disabledFeatures;
-    }
-
-    public boolean isJgroupsMtls() {
-        return jgroupsMtls;
-    }
-
-    public void setJgroupsMtls(boolean jgroupsMtls) {
-        this.jgroupsMtls = jgroupsMtls;
     }
 }

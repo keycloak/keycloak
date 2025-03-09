@@ -512,7 +512,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             String sessionId = loginEvent.getSessionId();
 
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
             events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
@@ -526,7 +526,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
             events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
         }
@@ -1147,7 +1147,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         String sessionId = loginEvent.getSessionId();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
@@ -1365,8 +1365,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
 
-            String logoutUrl = oauth.getEndpoints().getLogoutBuilder().build();
-            driver.navigate().to(logoutUrl);
+            oauth.openLogoutForm();
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 

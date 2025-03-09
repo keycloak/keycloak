@@ -22,11 +22,11 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.SCOPE_DEPARTMENT;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.VALIDATIONS_LENGTH;
-import static org.keycloak.testsuite.forms.VerifyProfileTest.ATTRIBUTE_DEPARTMENT;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.SCOPE_DEPARTMENT;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.VALIDATIONS_LENGTH;
+import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.ATTRIBUTE_DEPARTMENT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +39,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -53,6 +52,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -110,7 +110,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void beforeTest() {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(),null);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(),null);
     }
 
     @Test
@@ -276,11 +276,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     public void testAttributeGuiOrder() {
 
         setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}},"
-                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
+                + "{\"name\": \"lastName\"," + UserProfileUtil.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"department\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"required\":{}},"
+                + "{\"name\": \"username\", " + UserProfileUtil.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + UserProfileUtil.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\", " + UserProfileUtil.PERMISSIONS_ALL + "}"
                 + "]}");
 
         loginPage.open();
@@ -298,20 +298,20 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    public static final String UP_CONFIG_PART_INPUT_TYPES = "{\"name\": \"defaultType\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-            + "{\"name\": \"placeholderAttribute\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputTypePlaceholder\":\"Example.\"}},"
-            + "{\"name\": \"helperTexts\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputHelperTextBefore\":\"Example <b>bold text</b> before.\",\"inputHelperTextAfter\":\"Example <i>i text</i> after.\"}},"
-            + "{\"name\": \"textWithBasicAttributes\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputTypeSize\":\"35\",\"inputTypeMinlength\":\"1\",\"inputTypeMaxlength\":\"10\",\"inputTypePattern\":\".*\"}},"
-            + "{\"name\": \"html5NumberWithAttributes\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"html5-number\",\"inputTypeMin\":\"10\",\"inputTypeMax\":\"20\",\"inputTypeStep\":1}},"
-            + "{\"name\": \"textareaWithAttributes\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"textarea\",\"inputTypeCols\":\"35\",\"inputTypeRows\":\"7\",\"inputTypeMaxlength\":\"10\"}},"
-            + "{\"name\": \"selectWithoutOptions\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"select\",\"inputTypeSize\":\"5\"}},"
-            + "{\"name\": \"selectWithOptionsWithoutLabels\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\":{\"options\":{\"options\":[ \"opt1\",\"opt2\"]}}, \"annotations\":{\"inputType\":\"select\"}},"
-            + "{\"name\": \"multiselectWithOptionsAndSimpleI18nLabels\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\":{\"options\":{ \"options\":[\"totp\",\"opt2\"]}}, \"annotations\":{\"inputType\":\"multiselect\",\"inputOptionLabelsI18nPrefix\": \"loginTotp\"}},"
-            + "{\"name\": \"multiselectWithOptionsAndLabels\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\":{\"options\":{ \"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"multiselect\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}},"
-            + "{\"name\": \"selectWithOptionsFromCustomValidatorAndLabels\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\":{\"dummyOptions\":{\"options\" : [\"vopt1\",\"vopt2\",\"vopt3\"]}} ,\"annotations\":{\"inputType\":\"select\",\"inputOptionsFromValidation\":\"dummyOptions\",\"inputOptionLabels\":{\"vopt1\": \"Option 1\",\"vopt2\":\"${username}\"}}},"
-            + "{\"name\": \"selectRadiobuttons\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\" : {\"options\" : {\"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"select-radiobuttons\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}},"
-            + "{\"name\": \"selectRadiobuttonsWithOptionsFromCustomValidatorAndLabels\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\" : {\"dummyOptions\" : {\"options\" : [\"vopt1\",\"vopt2\",\"vopt3\"]}} ,\"annotations\":{\"inputType\":\"select-radiobuttons\",\"inputOptionsFromValidation\":\"dummyOptions\",\"inputOptionLabels\":{\"vopt1\": \"Option 1\",\"vopt2\":\"${username}\"}}},"
-            + "{\"name\": \"multiselectCheckboxes\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"validations\": {\"options\":{\"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"multiselect-checkboxes\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}}";
+    public static final String UP_CONFIG_PART_INPUT_TYPES = "{\"name\": \"defaultType\"," + UserProfileUtil.PERMISSIONS_ALL + "},"
+            + "{\"name\": \"placeholderAttribute\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputTypePlaceholder\":\"Example.\"}},"
+            + "{\"name\": \"helperTexts\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputHelperTextBefore\":\"Example <b>bold text</b> before.\",\"inputHelperTextAfter\":\"Example <i>i text</i> after.\"}},"
+            + "{\"name\": \"textWithBasicAttributes\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"text\",\"inputTypeSize\":\"35\",\"inputTypeMinlength\":\"1\",\"inputTypeMaxlength\":\"10\",\"inputTypePattern\":\".*\"}},"
+            + "{\"name\": \"html5NumberWithAttributes\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"html5-number\",\"inputTypeMin\":\"10\",\"inputTypeMax\":\"20\",\"inputTypeStep\":1}},"
+            + "{\"name\": \"textareaWithAttributes\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"textarea\",\"inputTypeCols\":\"35\",\"inputTypeRows\":\"7\",\"inputTypeMaxlength\":\"10\"}},"
+            + "{\"name\": \"selectWithoutOptions\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"annotations\":{\"inputType\":\"select\",\"inputTypeSize\":\"5\"}},"
+            + "{\"name\": \"selectWithOptionsWithoutLabels\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\":{\"options\":{\"options\":[ \"opt1\",\"opt2\"]}}, \"annotations\":{\"inputType\":\"select\"}},"
+            + "{\"name\": \"multiselectWithOptionsAndSimpleI18nLabels\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\":{\"options\":{ \"options\":[\"totp\",\"opt2\"]}}, \"annotations\":{\"inputType\":\"multiselect\",\"inputOptionLabelsI18nPrefix\": \"loginTotp\"}},"
+            + "{\"name\": \"multiselectWithOptionsAndLabels\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\":{\"options\":{ \"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"multiselect\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}},"
+            + "{\"name\": \"selectWithOptionsFromCustomValidatorAndLabels\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\":{\"dummyOptions\":{\"options\" : [\"vopt1\",\"vopt2\",\"vopt3\"]}} ,\"annotations\":{\"inputType\":\"select\",\"inputOptionsFromValidation\":\"dummyOptions\",\"inputOptionLabels\":{\"vopt1\": \"Option 1\",\"vopt2\":\"${username}\"}}},"
+            + "{\"name\": \"selectRadiobuttons\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\" : {\"options\" : {\"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"select-radiobuttons\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}},"
+            + "{\"name\": \"selectRadiobuttonsWithOptionsFromCustomValidatorAndLabels\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\" : {\"dummyOptions\" : {\"options\" : [\"vopt1\",\"vopt2\",\"vopt3\"]}} ,\"annotations\":{\"inputType\":\"select-radiobuttons\",\"inputOptionsFromValidation\":\"dummyOptions\",\"inputOptionLabels\":{\"vopt1\": \"Option 1\",\"vopt2\":\"${username}\"}}},"
+            + "{\"name\": \"multiselectCheckboxes\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"validations\": {\"options\":{\"options\":[\"opt1\",\"opt2\",\"opt3\"]}}, \"annotations\":{\"inputType\":\"multiselect-checkboxes\",\"inputOptionLabels\":{\"opt1\": \"Option 1\",\"opt2\":\"${username}\"}}}";
 
     @Test
     public void testAttributeInputTypes() {
@@ -399,11 +399,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     public void testAttributeGrouping() {
 
         setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"lastName\"," + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"username\", " + VerifyProfileTest.PERMISSIONS_ALL + "},"
-                + "{\"name\": \"firstName\"," + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"},"
-                + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"group\": \"contact\"}"
+                + "{\"name\": \"lastName\"," + UserProfileUtil.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\", " + UserProfileUtil.PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\"," + UserProfileUtil.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"department\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"required\":{}, \"group\": \"company\"},"
+                + "{\"name\": \"email\", " + UserProfileUtil.PERMISSIONS_ALL + ", \"group\": \"contact\"}"
                 + "], \"groups\": ["
                 + "{\"name\": \"company\", \"displayDescription\": \"Company field desc\" },"
                 + "{\"name\": \"contact\" }"
@@ -641,7 +641,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setUserProfileConfiguration(String configuration) {
-        VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
     }
 
     private UserRepresentation getUser(String userId) {
