@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -56,6 +55,16 @@ public class RoleAdapter implements RoleModel {
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
+            updated = modelSupplier.get();
+            if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+    }
+
+    protected void getDelegateForRename(String newName) {
+        if (updated == null) {
+            String containerId = getContainerId();
+            cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
+            cacheSession.registerRoleInvalidation(cached.getId(), newName, containerId);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -102,7 +111,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public void setName(String name) {
-        getDelegateForUpdate();
+        getDelegateForRename(name);
         updated.setName(name);
     }
 
