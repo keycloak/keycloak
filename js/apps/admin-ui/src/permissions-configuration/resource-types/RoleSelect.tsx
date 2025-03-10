@@ -12,6 +12,8 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../../components/role-mapping/AddRoleMappingModal";
 import { ServiceRole } from "../../components/role-mapping/RoleMapping";
+import { PermissionsConfigurationTabsParams } from "../routes/PermissionsConfigurationTabs";
+import { useParams } from "react-router-dom";
 
 type RoleSelectorProps = {
   name: string;
@@ -32,6 +34,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
   const [selectedRoles, setSelectedRoles] = useState<
     { role: any; client?: any }[]
   >([]);
+  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
     async () => {
@@ -88,7 +91,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
         variant="secondary"
         onClick={() => setIsModalOpen(true)}
       >
-        {t("addRoles")}
+        {tab !== "evaluation" ? t("addRoles") : t("selectRoles")}
       </Button>
 
       {selectedRoles.length > 0 && (
@@ -96,7 +99,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
           <Thead>
             <Tr>
               <Th>{t("roles")}</Th>
-              <Th>{t("required")}</Th>
+              <Th>{tab !== "evaluation" && t("required")}</Th>
               <Th aria-hidden="true" />
             </Tr>
           </Thead>
@@ -107,20 +110,22 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
                   <ServiceRole role={row.role} client={row.client} />
                 </Td>
                 <Td>
-                  <Controller
-                    name={`${name}.${index}.required`}
-                    control={control}
-                    defaultValue={false}
-                    render={({ field }) => (
-                      <Checkbox
-                        id="required"
-                        data-testid="standard"
-                        name="required"
-                        isChecked={field.value}
-                        onChange={field.onChange}
-                      />
-                    )}
-                  />
+                  {tab !== "evaluation" && (
+                    <Controller
+                      name={`${name}.${index}.required`}
+                      control={control}
+                      defaultValue={false}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="required"
+                          data-testid="standard"
+                          name="required"
+                          isChecked={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  )}
                 </Td>
                 <Td>
                   <Button

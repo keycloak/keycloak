@@ -24,6 +24,8 @@ import useLocaleSort from "../../utils/useLocaleSort";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
+import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
+import { useParams } from "react-router-dom";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -70,6 +72,7 @@ export const AddRoleMappingModal = ({
 
   const localeSort = useLocaleSort();
   const compareRow = ({ role: { name } }: Row) => name?.toUpperCase();
+  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   const loader = async (
     first?: number,
@@ -137,7 +140,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {t("assign")}
+          {tab !== "evaluation" ? t("assign") : t("select")}
         </Button>,
         <Button
           data-testid="cancel"
