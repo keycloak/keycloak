@@ -36,6 +36,11 @@ Check the `crl-storage` section in the link:https://www.keycloak.org/server/all-
 Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
 This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
 
+= Identity providers now support Remember me
+
+SAML and OIDC Identity provider configurations now support the "Remember me" functionality.
+
+
 = Logs support ECS format
 
 All available log handlers now support *ECS* (Elastic Common Schema) JSON format.
