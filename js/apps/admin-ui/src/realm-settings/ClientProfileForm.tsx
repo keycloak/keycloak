@@ -362,7 +362,7 @@ export default function ClientProfileForm() {
                                         />
                                         {!isGlobalProfile && (
                                           <Button
-                                            data-testid="deleteExecutor"
+                                            data-testid={`deleteExecutor-${type.id}`}
                                             variant="link"
                                             isInline
                                             icon={

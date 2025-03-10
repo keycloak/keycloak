@@ -63,6 +63,10 @@ test.describe("Organization CRUD", () => {
       await adminClient.deleteOrganization(orgName, realmName);
     });
 
+    test.beforeEach(async ({ page }) => {
+      await page.getByTestId("refresh").click();
+    });
+
     test("should modify existing organization", async ({ page }) => {
       await clickTableRowItem(page, orgName);
       const newValue = "newName";

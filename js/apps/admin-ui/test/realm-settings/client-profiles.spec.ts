@@ -103,7 +103,7 @@ test.describe("Realm settings client profiles tab tests", () => {
       await clickSaveClientProfile(page);
 
       // Delete the executor
-      await clickDeleteExecutor(page);
+      await clickDeleteExecutor(page, executorType);
       await assertNotificationMessage(
         page,
         "Success! The executor was deleted.",
