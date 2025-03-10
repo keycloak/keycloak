@@ -55,6 +55,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
     public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
 
+    private static final String FAILED_DECODE_URL="Failed to decode URL";
+
     @Override
     public Response toResponse(Throwable throwable) {
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
@@ -131,7 +133,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return Response.Status.fromStatusCode(ex.getResponse().getStatus());
         }
 
-        if (throwable instanceof JsonProcessingException || throwable instanceof ModelValidationException) {
+        if (throwable instanceof JsonProcessingException
+                || throwable instanceof ModelValidationException
+                || (throwable instanceof RuntimeException && throwable.getMessage().contains(FAILED_DECODE_URL))) {
             return Response.Status.BAD_REQUEST;
         }
 
@@ -153,7 +157,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             return OAuthErrorException.INVALID_REQUEST;
         }
 
-        if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
+        if (throwable instanceof WebApplicationException && throwable.getMessage() != null
+                || (throwable instanceof RuntimeException && throwable.getMessage().contains(FAILED_DECODE_URL))) {
             return throwable.getMessage();
         }
 
