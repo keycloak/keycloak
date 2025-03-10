@@ -147,6 +147,7 @@ import static org.junit.Assert.fail;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1178,18 +1179,18 @@ public class UserTest extends AbstractAdminTest {
 
         // run search tests
         List<UserRepresentation> searchForAllUsers =
-                realm.users().search(null, null, null, null, null, null, null, null, null, null, null);
+                realm.users().search(null, null, null, null, null, null, null, null, null, null, null,null);
         assertEquals(4, searchForAllUsers.size());
 
         List<UserRepresentation> searchByIdpAlias =
                 realm.users().search(null, null, null, null, null, identityProviderAlias1, null, null, null, null,
-                        null);
+                        null,null);
         assertEquals(2, searchByIdpAlias.size());
         assertEquals(idp1User1Username, searchByIdpAlias.get(0).getUsername());
         assertEquals(idp1User2Username, searchByIdpAlias.get(1).getUsername());
 
         List<UserRepresentation> searchByIdpUserId =
-                realm.users().search(null, null, null, null, null, null, commonIdpUserId, null, null, null, null);
+                realm.users().search(null, null, null, null, null, null, commonIdpUserId, null, null, null, null, null);
         assertEquals(2, searchByIdpUserId.size());
         assertEquals(idp1User2Username, searchByIdpUserId.get(0).getUsername());
         assertEquals(idp2UserUsername, searchByIdpUserId.get(1).getUsername());
@@ -1197,7 +1198,7 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> searchByIdpAliasAndUserId =
                 realm.users().search(null, null, null, null, null, identityProviderAlias1, idp1User1UserId, null, null,
                         null,
-                        null);
+                        null,null);
         assertEquals(1, searchByIdpAliasAndUserId.size());
         assertEquals(idp1User1Username, searchByIdpAliasAndUserId.get(0).getUsername());
     }
@@ -1245,18 +1246,18 @@ public class UserTest extends AbstractAdminTest {
 
         // run search tests
         List<UserRepresentation> searchByIdpAliasAndEnabled =
-                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, true, null);
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, true, null,null);
         assertEquals(1, searchByIdpAliasAndEnabled.size());
         assertEquals(enabledUsername, searchByIdpAliasAndEnabled.get(0).getUsername());
 
         List<UserRepresentation> searchByIdpAliasAndDisabled =
                 realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, false,
-                        null);
+                        null,null);
         assertEquals(1, searchByIdpAliasAndDisabled.size());
         assertEquals(disabledUsername, searchByIdpAliasAndDisabled.get(0).getUsername());
 
         List<UserRepresentation> searchByIdpAliasWithoutEnabledFlag =
-                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, null, null);
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, null, null, null);
         assertEquals(2, searchByIdpAliasWithoutEnabledFlag.size());
         assertEquals(disabledUsername, searchByIdpAliasWithoutEnabledFlag.get(0).getUsername());
         assertEquals(enabledUsername, searchByIdpAliasWithoutEnabledFlag.get(1).getUsername());
@@ -3845,4 +3846,5 @@ public class UserTest extends AbstractAdminTest {
         this.managedAttributes.add(name);
         return attribute;
     }
+
 }
