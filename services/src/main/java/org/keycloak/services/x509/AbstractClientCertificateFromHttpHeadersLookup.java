@@ -18,6 +18,7 @@
 
 package org.keycloak.services.x509;
 
+import org.apache.http.client.methods.HttpHead;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.PemException;
@@ -69,7 +70,9 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
 
     private static String trimDoubleQuotes(String quotedString) {
 
-        if (quotedString == null) return null;
+        if (quotedString == null) {
+            return null;
+        }
 
         int len = quotedString.length();
         if (len > 1 && quotedString.charAt(0) == '"' &&
@@ -83,7 +86,6 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
     protected abstract X509Certificate decodeCertificateFromPem(String pem) throws PemException;
 
     protected X509Certificate getCertificateFromHttpHeader(HttpRequest request, String httpHeader) throws GeneralSecurityException {
-
         String encodedCertificate = getHeaderValue(request, httpHeader);
 
         // Remove double quotes
@@ -114,27 +116,35 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
 
 
     @Override
-    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException {
+    public final X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException {
+        if (!httpRequest.isProxyTrusted()) {
+            logger.warnf("HTTP header \"%s\" is not trusted", sslClientCertHttpHeader);
+            return null;
+        }
         List<X509Certificate> chain = new ArrayList<>();
 
         // Get the client certificate
         X509Certificate cert = getCertificateFromHttpHeader(httpRequest, sslClientCertHttpHeader);
         if (cert != null) {
-            chain.add(cert);
-            // Get the certificate of the client certificate chain
-            for (int i = 0; i < certificateChainLength; i++) {
-                try {
-                    String s = String.format("%s_%s", sslCertChainHttpHeaderPrefix, i);
-                    cert = getCertificateFromHttpHeader(httpRequest, s);
-                    if (cert != null) {
-                        chain.add(cert);
-                    }
-                }
-                catch(GeneralSecurityException e) {
-                    logger.warn(e.getMessage(), e);
-                }
-            }
+            buildChain(httpRequest, chain, cert);
         }
         return chain.toArray(new X509Certificate[0]);
+    }
+
+    protected void buildChain(HttpRequest httpRequest, List<X509Certificate> chain, X509Certificate cert) {
+        chain.add(cert);
+        // Get the certificate of the client certificate chain
+        for (int i = 0; i < certificateChainLength; i++) {
+            try {
+                String s = String.format("%s_%s", sslCertChainHttpHeaderPrefix, i);
+                cert = getCertificateFromHttpHeader(httpRequest, s);
+                if (cert != null) {
+                    chain.add(cert);
+                }
+            }
+            catch(GeneralSecurityException e) {
+                logger.warn(e.getMessage(), e);
+            }
+        }
     }
 }
