@@ -17,7 +17,9 @@
 
 package org.keycloak.testsuite.util;
 
+import com.icegreen.greenmail.user.GreenMailUser;
 import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.user.TokenValidator;
 import com.icegreen.greenmail.util.ServerSetup;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.RealmModel;
