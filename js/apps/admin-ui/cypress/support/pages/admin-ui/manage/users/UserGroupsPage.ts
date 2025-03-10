@@ -5,7 +5,6 @@ const modalUtils = new ModalUtils();
 export default class UserGroupsPage {
   #userGroupsTab = "user-groups-tab";
   #noGroupsAddGroupButton = "no-groups-empty-action";
-  #addGroupButton = "add-group-button";
   #joinGroupButton = "join-button";
   #leaveGroupButton = "leave-group-button";
 
@@ -15,22 +14,7 @@ export default class UserGroupsPage {
   }
 
   toggleAddGroupModal() {
-    // This is dumb, but it's what Cypress wants, so we'll do it 🤷
-    // See: https://docs.cypress.io/guides/core-concepts/conditional-testing#Element-existence
-    cy.get("body")
-      .then(($body) => {
-        if (
-          $body.find(`[data-testid="${this.#noGroupsAddGroupButton}"]`).length
-        ) {
-          return this.#noGroupsAddGroupButton;
-        }
-
-        return this.#addGroupButton;
-      })
-      .then((buttonTestId) => {
-        cy.findByTestId(buttonTestId).click({ force: true });
-      });
-
+    cy.findByTestId(this.#noGroupsAddGroupButton).click({ force: true });
     return this;
   }
 

@@ -182,8 +182,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
 
             // get authorization response
             oauth.responseMode("jwt");
-            oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-            AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
             // parse JWE and JOSE Header
             String jweStr = response.getResponse();
@@ -279,9 +278,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
  
             // get authorization response but failed
             oauth.responseMode("jwt");
-            oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-
-            AuthorizationEndpointResponse errorResponse =  oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse errorResponse =  oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
             System.out.println(driver.getPageSource().contains("Unexpected error when handling authentication request to identity provider."));
 

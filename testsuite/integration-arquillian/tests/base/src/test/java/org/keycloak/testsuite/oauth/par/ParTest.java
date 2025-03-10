@@ -157,7 +157,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             // Pushed Authorization Request
             oauth.client(clientId, clientSecret);
             oauth.redirectUri(CLIENT_REDIRECT_URI);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             String requestUri = pResp.getRequestUri();
             assertEquals(requestUriLifespan, pResp.getExpiresIn());
@@ -168,9 +168,8 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.scope(null);
             oauth.responseType(null);
             oauth.requestUri(requestUri);
-            String state = oauth.stateParamRandom().getState();
-            oauth.stateParamHardcoded(state);
-            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            String state = "testSuccessfulSinglePar";
+            AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertEquals(state, loginResponse.getState());
             String code = loginResponse.getCode();
             String sessionId =loginResponse.getSessionState();
@@ -236,7 +235,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             // Pushed Authorization Request
             oauth.client(clientId, clientSecret);
             oauth.redirectUri(CLIENT_REDIRECT_URI);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             String requestUri = pResp.getRequestUri();
             assertEquals(requestUriLifespan, pResp.getExpiresIn());
@@ -247,9 +246,8 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.scope(null);
             oauth.responseType(null);
             oauth.requestUri(requestUri);
-            String state = oauth.stateParamRandom().getState();
-            oauth.stateParamHardcoded(state);
-            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            String state = "testSuccessfulSingleParPublicClient";
+            AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertEquals(state, loginResponse.getState());
             String code = loginResponse.getCode();
             String sessionId =loginResponse.getSessionState();
@@ -307,13 +305,13 @@ public class ParTest extends AbstractClientPoliciesTest {
                         clientRep.setRequestObjectSigningAlg(Algorithm.PS256);
                     });
 
-            oauth.clientId(clientId);
-
             OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
             String clientSecret = oidcCRep.getClientSecret();
             assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
             assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
             assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            oauth.client(clientId, clientSecret);
 
             TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
             requestObject.id(KeycloakModelUtils.generateId());
@@ -346,7 +344,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.responseType(null);
             oauth.redirectUri(null);
             oauth.scope(null);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(400, pResp.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
         } finally {
@@ -404,7 +402,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.responseType(null);
             oauth.redirectUri(null);
             oauth.scope(null);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             String requestUri = pResp.getRequestUri();
             assertEquals(requestUriLifespan, pResp.getExpiresIn());
@@ -462,7 +460,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             requestObject.setRedirectUriParam(CLIENT_REDIRECT_URI);
             requestObject.setScope("openid");
             requestObject.setNonce(KeycloakModelUtils.generateId());
-            requestObject.setState(oauth.stateParamRandom().getState());
+            requestObject.setState("testRequestParameterPrecedenceOverOtherParameters");
 
 
             byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
@@ -483,8 +481,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.responseType("code id_token");
             oauth.redirectUri("http://invalid");
             oauth.scope(null);
-            oauth.nonce("12345");
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.pushedAuthorizationRequest().nonce("12345").send();
             assertEquals(201, pResp.getStatusCode());
             String requestUri = pResp.getRequestUri();
             assertEquals(requestUriLifespan, pResp.getExpiresIn());
@@ -493,12 +490,10 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.redirectUri("http://invalid");
             oauth.responseType("invalid");
             oauth.redirectUri(null);
-            oauth.nonce("12345");
             oauth.request(null);
             oauth.requestUri(requestUri);
-            String wrongState = oauth.stateParamRandom().getState();
-            oauth.stateParamHardcoded(wrongState);
-            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            String wrongState = "wrongState";
+            AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(wrongState).nonce("12345").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertEquals(requestObject.getState(), loginResponse.getState());
             assertNotEquals(requestObject.getState(), wrongState);
 
@@ -565,8 +560,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.responseType("code id_token");
             oauth.redirectUri("http://invalid");
             oauth.scope(null);
-            oauth.nonce("12345");
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.pushedAuthorizationRequest().nonce("12345").send();
             assertEquals(201, pResp.getStatusCode());
             String requestUri = pResp.getRequestUri();
             assertEquals(requestUriLifespan, pResp.getExpiresIn());
@@ -575,12 +569,10 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.redirectUri("http://invalid");
             oauth.responseType("invalid");
             oauth.redirectUri(null);
-            oauth.nonce("12345");
             oauth.request(null);
             oauth.requestUri(requestUri);
-            String wrongState = oauth.stateParamRandom().getState();
-            oauth.stateParamHardcoded(wrongState);
-            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            String wrongState = "wrongState";
+            AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(wrongState).nonce("12345").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             assertNull(loginResponse.getState());
             assertNotEquals(requestObject.getState(), wrongState);
 
@@ -614,7 +606,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // Pushed Authorization Request #1
         oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUriOne = pResp.getRequestUri();
 
@@ -622,7 +614,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.client(clientId, clientSecret);
         oauth.scope("microprofile-jwt" + " " + "profile");
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUriTwo = pResp.getRequestUri();
 
@@ -632,9 +624,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUriTwo);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
+        String state = "testSuccessfulMultipleParBySameClient";
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
         assertEquals(state, loginResponse.getState());
         String code = loginResponse.getCode();
         String sessionId =loginResponse.getSessionState();
@@ -664,9 +655,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUriOne);
-        state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        state = "testSuccessfulMultipleParBySameClient2";
+        loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(state, loginResponse.getState());
         code = loginResponse.getCode();
         sessionId =loginResponse.getSessionState();
@@ -716,7 +706,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // Pushed Authorization Request #1
         oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUriOne = pResp.getRequestUri();
 
@@ -724,7 +714,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.client(client2Id, client2Secret);
         oauth.scope("microprofile-jwt" + " " + "profile");
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        pResp = oauth.doPushedAuthorizationRequest(client2Id, client2Secret);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUriTwo = pResp.getRequestUri();
 
@@ -734,9 +724,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUriTwo);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
+        String state = "testSuccessfulMultipleParByMultipleClients";
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
         assertEquals(state, loginResponse.getState());
         String code = loginResponse.getCode();
         String sessionId =loginResponse.getSessionState();
@@ -767,9 +756,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUriOne);
-        state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        state = "testSuccessfulMultipleParByMultipleClients2";
+        loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(state, loginResponse.getState());
         code = loginResponse.getCode();
         sessionId =loginResponse.getSessionState();
@@ -805,9 +793,9 @@ public class ParTest extends AbstractClientPoliciesTest {
 
         // Pushed Authorization Request
         // but not use issued request_uri
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
 
         // Authorization Request with request_uri of PAR
@@ -817,9 +805,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(IMAGINARY_REQUEST_URI);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        oauth.openLoginForm();
+        String state = "testFailureNotIssuedParUsed";
+        oauth.loginForm().state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -841,7 +828,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // Pushed Authorization Request
         oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
@@ -851,9 +838,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUri);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String state = "testFailureParUsedTwice";
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(state, loginResponse.getState());
         String code = loginResponse.getCode();
 
@@ -864,9 +850,8 @@ public class ParTest extends AbstractClientPoliciesTest {
 
         // Authorization Request with request_uri of PAR
         // use same redirect_uri
-        state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        oauth.openLoginForm();
+        state = "testFailureParUsedTwice2";
+        oauth.loginForm().state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -897,23 +882,22 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, attackerOidcCRep.getTokenEndpointAuthMethod());
 
         // Pushed Authorization Request
-        oauth.clientId(victimClientId);
+        oauth.client(victimClientId, victimClientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(victimClientId, victimClientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
         // used by other client
-        oauth.clientId(attackerClientId);
+        oauth.client(attackerClientId);
         oauth.redirectUri(null);
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUri);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        oauth.openLoginForm();
+        String state = "testFailureParUsedByOtherClient";
+        oauth.loginForm().state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -960,9 +944,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
         int expiresIn = pResp.getExpiresIn();
@@ -975,9 +959,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUri);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        oauth.openLoginForm();
+        String state = "testFailureParExpired";
+        oauth.loginForm().state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         Assert.assertFalse(errorResponse.isRedirected());
     }
@@ -997,9 +980,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret + "abc");
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret + "abc");
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(401, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("Authentication failed.", pResp.getErrorDescription());
@@ -1019,10 +1002,10 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         oauth.requestUri(IMAGINARY_REQUEST_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("It is not allowed to include request_uri to PAR.", pResp.getErrorDescription());
@@ -1044,9 +1027,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         });
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
     }
@@ -1065,9 +1048,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(INVALID_CORS_URL);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("Invalid parameter: redirect_uri", pResp.getErrorDescription());
@@ -1087,10 +1070,10 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         oauth.responseType(null);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("Missing parameter: response_type", pResp.getErrorDescription());
@@ -1109,10 +1092,10 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         oauth.scope("not_registered_scope");
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("Invalid scopes: openid not_registered_scope", pResp.getErrorDescription());
@@ -1135,9 +1118,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         });
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(400, pResp.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
         assertEquals("Missing parameter: code_challenge_method", pResp.getErrorDescription());
@@ -1166,7 +1149,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.client(clientId, clientSecret);
             oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
             oauth.origin(VALID_CORS_URL);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             assertCors(pResp);
             String requestUri = pResp.getRequestUri();
@@ -1199,7 +1182,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.client(clientId, clientSecret);
             oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
             oauth.origin(INVALID_CORS_URL);
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             assertNotCors(pResp);
             String requestUri = pResp.getRequestUri();
@@ -1249,9 +1232,9 @@ public class ParTest extends AbstractClientPoliciesTest {
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         // Pushed Authorization Request
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
-        ParResponse response = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse response = oauth.doPushedAuthorizationRequest();
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.PUSHED_AUTHORIZATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -1264,9 +1247,8 @@ public class ParTest extends AbstractClientPoliciesTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUri);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String state = "doNormalAuthzProcess";
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertEquals(state, loginResponse.getState());
         String code = loginResponse.getCode();
         String sessionId =loginResponse.getSessionState();

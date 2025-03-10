@@ -241,7 +241,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected Response spnegoLogin(String username, String password) {
-        String kcLoginPageLocation = oauth.loginForm().build();
+        String kcLoginPageLocation = oauth.loginForm().state("spnegoLogin").build();
 
         // Request for SPNEGO login sent with Resteasy client
         spnegoSchemeFactory.setCredentials(username, password);

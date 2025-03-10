@@ -15,32 +15,32 @@ public class LogoutUrlBuilder extends AbstractUrlBuilder {
     }
 
     public LogoutUrlBuilder param(String name, String value) {
-        replaceParameter(name, value);
+        parameter(name, value);
         return this;
     }
 
     public LogoutUrlBuilder idTokenHint(String idTokenHint) {
-        replaceParameter(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
+        parameter(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
         return this;
     }
 
     public LogoutUrlBuilder postLogoutRedirectUri(String redirectUri) {
-        replaceParameter(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
+        parameter(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
         return this;
     }
 
     public LogoutUrlBuilder state(String state) {
-        replaceParameter(OIDCLoginProtocol.STATE_PARAM, state);
+        parameter(OIDCLoginProtocol.STATE_PARAM, state);
         return this;
     }
 
     public LogoutUrlBuilder uiLocales(String uiLocales) {
-        replaceParameter(OIDCLoginProtocol.UI_LOCALES_PARAM, uiLocales);
+        parameter(OIDCLoginProtocol.UI_LOCALES_PARAM, uiLocales);
         return this;
     }
 
     public LogoutUrlBuilder initiatingIdp(String initiatingIdp) {
-        replaceParameter(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIdp);
+        parameter(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIdp);
         return this;
     }
 
@@ -56,8 +56,6 @@ public class LogoutUrlBuilder extends AbstractUrlBuilder {
 
     @Override
     protected void initRequest() {
-//        parameter(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, client.config().getPostLogoutRedirectUri());
-//        parameter(OIDCLoginProtocol.ID_TOKEN_HINT, client.getIdTokenHint());
     }
 
 }

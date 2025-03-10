@@ -60,6 +60,7 @@ public interface Details {
     String REASON = "reason";
     String GRANTED_CLIENT = "granted_client";
     String REVOKED_CLIENT = "revoked_client";
+    String TOKEN_EXCHANGE_REVOKED_CLIENTS = "token_exchange_revoked_clients";
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
     String SCOPE = "scope";

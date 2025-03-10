@@ -297,7 +297,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         try {
             setClientToContext(targetAudienceClients);
             if (getSupportedOAuthResponseTokenTypes().contains(requestedTokenType))
-                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetAudienceClients, scope);
+                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetAudienceClients, scope, token);
             else if (OAuth2Constants.SAML2_TOKEN_TYPE.equals(requestedTokenType)) {
                 return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetAudienceClients);
             }
@@ -383,7 +383,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
     }
 
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope) {
+                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
         ClientModel targetClient = getTargetClient(targetAudienceClients);
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);

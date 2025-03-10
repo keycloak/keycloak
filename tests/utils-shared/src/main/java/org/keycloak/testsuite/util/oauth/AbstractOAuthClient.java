@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
@@ -29,12 +30,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String request;
     protected String requestUri;
     protected String claims;
-    protected String kcAction;
-    protected String uiLocales;
-    protected String maxAge;
-    protected String prompt;
-    protected StateParamProvider state;
-    protected String nonce;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -181,12 +176,32 @@ public abstract class AbstractOAuthClient<T> {
         return tokenRevocationRequest(token).send();
     }
 
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
+        return tokenExchangeRequest(subjectToken, OAuth2Constants.ACCESS_TOKEN_TYPE);
+    }
+
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
+        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
+    }
+
+    public AccessTokenResponse doTokenExchange(String subjectToken) {
+        return tokenExchangeRequest(subjectToken).send();
+    }
+
     public CibaClient ciba() {
         return new CibaClient(this);
     }
 
     public DeviceClient device() {
         return new DeviceClient(this);
+    }
+
+    public ParRequest pushedAuthorizationRequest() {
+        return new ParRequest(this);
+    }
+
+    public ParResponse doPushedAuthorizationRequest() {
+        return pushedAuthorizationRequest().send();
     }
 
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
@@ -289,36 +304,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getClaims() {
         return claims;
-    }
-
-    String getKcAction() {
-        return kcAction;
-    }
-
-    String getUiLocales() {
-        return uiLocales;
-    }
-
-    public String getState() {
-        return state != null ? state.getState() : null;
-    }
-
-    public String getNonce() {
-        return nonce;
-    }
-
-    String getMaxAge() {
-        return maxAge;
-    }
-
-    String getPrompt() {
-        return prompt;
-    }
-
-    protected interface StateParamProvider {
-
-        String getState();
-
     }
 
 }

@@ -17,24 +17,11 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
@@ -42,7 +29,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -99,13 +85,8 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .postLogoutRedirectUri(APP_ROOT + "/auth")
                 .responseType(OAuth2Constants.CODE);
 
-        state = KeycloakModelUtils::generateId;
-        uiLocales = null;
         clientSessionState = null;
         clientSessionHost = null;
-        maxAge = null;
-        prompt = null;
-        nonce = null;
         request = null;
         requestUri = null;
         claims = null;
@@ -127,139 +108,7 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         loginPage.login(username, password);
     }
 
-    public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
-        return new TokenExchangeRequest(subjectToken, this);
-    }
 
-    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
-        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, String targetAudience,
-                                               String clientId, String clientSecret) throws Exception {
-        return doTokenExchange(subjectToken, targetAudience, clientId, clientSecret, null);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, String targetAudience,
-                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        List<String> targetAudienceList = targetAudience == null ? null : List.of(targetAudience);
-        return doTokenExchange(subjectToken, targetAudienceList, clientId, clientSecret, additionalParams);
-    }
-
-    /**
-     * @deprecated Set clientId and clientSecret using {@link #client(String, String)} and use {@link #tokenExchangeRequest(String)}
-     */
-    @Deprecated
-    public AccessTokenResponse doTokenExchange(String subjectToken, List<String> targetAudiences,
-                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
-        return tokenExchangeRequest(subjectToken)
-                .client(clientId, clientSecret)
-                .audience(targetAudiences)
-                .additionalParams(additionalParams).send();
-    }
-
-
-    // TODO Deprecate
-    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret) throws IOException {
-        return doPushedAuthorizationRequest(clientId, clientSecret, null);
-    }
-
-    // TODO Extract into request class
-    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, String signedJwt) throws IOException {
-        HttpPost post = new HttpPost(getEndpoints().getPushedAuthorizationRequest());
-
-        List<NameValuePair> parameters = new LinkedList<>();
-
-        if (signedJwt != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-        }
-
-        if (config.getOrigin() != null) {
-            post.addHeader("Origin", config.getOrigin());
-        }
-        if (config.getResponseType() != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, config.getResponseType()));
-        }
-        if (config.getResponseMode() != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.RESPONSE_MODE_PARAM, config.getResponseMode()));
-        }
-        if (clientId != null && clientSecret != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
-        }
-        else if (clientId != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
-        }
-        if (config.getRedirectUri() != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, config.getRedirectUri()));
-        }
-        if (kcAction != null) {
-            parameters.add(new BasicNameValuePair(Constants.KC_ACTION, kcAction));
-        }
-        // on authz request, state is putting automatically so that.
-        // if state is put here, they are not matched.
-        //String state = this.state.getState();
-        //if (state != null) {
-        //    parameters.add(new BasicNameValuePair(OAuth2Constants.STATE, state));
-        //}
-        if (uiLocales != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.UI_LOCALES_PARAM, uiLocales));
-        }
-        if (nonce != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, nonce));
-        }
-        String scopeParam = config.getScope();
-        if (scopeParam != null && !scopeParam.isEmpty()) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
-        }
-        if (maxAge != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge));
-        }
-        if (prompt != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.PROMPT_PARAM, prompt));
-        }
-        if (request != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
-        }
-        if (requestUri != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
-        }
-        if (claims != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
-        }
-        if (codeChallenge != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
-        }
-        if (codeChallengeMethod != null) {
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
-        }
-        if (customParameters != null) {
-            customParameters.keySet().stream().forEach(i -> parameters.add(new BasicNameValuePair(i, customParameters.get(i))));
-        }
-        if (dpopJkt != null) {
-            parameters.add(new BasicNameValuePair(OIDCLoginProtocol.DPOP_JKT, dpopJkt));
-        }
-        if (dpopProof != null) {
-            post.addHeader(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
-        }
-
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
-        try {
-            return new ParResponse(httpClientManager.get().execute(post));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to do PAR request", e);
-        }
-    }
 
     public String getClientId() {
         return config.getClientId();
@@ -267,14 +116,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public String getScope() {
         return config.getScope();
-    }
-
-    public String getState() {
-        return state.getState();
-    }
-
-    public String getNonce() {
-        return nonce;
     }
 
     public OAuthClient realm(String realm) {
@@ -297,26 +138,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return this;
     }
 
-    public OAuthClient postLogoutRedirectUri(String postLogoutRedirectUri) {
-        config.postLogoutRedirectUri(postLogoutRedirectUri);
-        return this;
-    }
-
-    public OAuthClient kcAction(String kcAction) {
-        this.kcAction = kcAction;
-        return this;
-    }
-
-    public OAuthClient stateParamHardcoded(String value) {
-        this.state = () -> value;
-        return this;
-    }
-
-    public OAuthClient stateParamRandom() {
-        this.state = KeycloakModelUtils::generateId;
-        return this;
-    }
-
     public OAuthClient scope(String scope) {
         config.scope(scope);
         return this;
@@ -324,11 +145,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient openid(boolean openid) {
         config.openid(openid);
-        return this;
-    }
-
-    public OAuthClient uiLocales(String uiLocales) {
-        this.uiLocales = uiLocales;
         return this;
     }
 
@@ -342,16 +158,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return this;
     }
 
-    public OAuthClient maxAge(String maxAge) {
-        this.maxAge = maxAge;
-        return this;
-    }
-
-    public OAuthClient prompt(String prompt) {
-        this.prompt = prompt;
-        return this;
-    }
-
     public OAuthClient responseType(String responseType) {
         config.responseType(responseType);
         return this;
@@ -359,11 +165,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient responseMode(String responseMode) {
         config.responseMode(responseMode);
-        return this;
-    }
-
-    public OAuthClient nonce(String nonce) {
-        this.nonce = nonce;
         return this;
     }
 

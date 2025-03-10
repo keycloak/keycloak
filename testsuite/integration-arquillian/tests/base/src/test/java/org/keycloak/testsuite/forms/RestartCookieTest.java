@@ -143,10 +143,10 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 .attribute(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, "true")
                 .build());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
         String requestUri = null;
         try {
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, "secret");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             requestUri = pResp.getRequestUri();
         }
@@ -158,10 +158,8 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         oauth.scope(null);
         oauth.responseType(null);
         oauth.requestUri(requestUri);
-        String state = oauth.stateParamRandom().getState();
-        oauth.stateParamHardcoded(state);
 
-        oauth.openLoginForm();
+        oauth.loginForm().state("testRestartCookieWithPar").open();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
     }

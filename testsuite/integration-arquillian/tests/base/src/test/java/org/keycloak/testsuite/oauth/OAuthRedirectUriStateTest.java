@@ -38,13 +38,10 @@ public class OAuthRedirectUriStateTest extends AbstractTestRealmKeycloakTest {
     public void clientConfiguration() {
         oauth.clientId("test-app");
         oauth.responseType(OIDCResponseType.CODE);
-        oauth.stateParamRandom();
     }
 
     void assertStateReflected(String state) {
-        oauth.stateParamHardcoded(state);
-
-        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state(state).doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
 
         URL url;
