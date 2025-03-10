@@ -39,6 +39,11 @@ public class DefaultJpaConnectionProvider implements JpaConnectionProvider {
     }
 
     @Override
+    public void batchMode(boolean batch) {
+        PersistenceExceptionConverter.batchMode(batch);
+    }
+
+    @Override
     public void close() {
         logger.trace("DefaultJpaConnectionProvider close()");
         em.close();
