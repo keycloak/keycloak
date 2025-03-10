@@ -278,81 +278,51 @@ public class UsersResource {
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
 
-        Stream<UserModel> userModels = Stream.empty();
-        if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                if (userModel != null) {
-                    userModels = Stream.of(userModel);
-                }
-            } else {
-                Map<String, String> attributes = new HashMap<>();
+        if (search != null && search.startsWith(SEARCH_ID_PARAMETER)) {
+            UserModel userModel =
+                    session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+            return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, Stream.ofNullable(userModel));
+        } else {
+            Map<String, String> attributes = new HashMap<>();
+            if (search != null) {
                 attributes.put(UserModel.SEARCH, search.trim());
-                if (enabled != null) {
-                    attributes.put(UserModel.ENABLED, enabled.toString());
-                }
-                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null
-                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
-                    Map<String, String> attributes = new HashMap<>();
-                    if (last != null) {
-                        attributes.put(UserModel.LAST_NAME, last);
-                    }
-                    if (first != null) {
-                        attributes.put(UserModel.FIRST_NAME, first);
-                    }
-                    if (email != null) {
-                        attributes.put(UserModel.EMAIL, email);
-                    }
-                    if (username != null) {
-                        attributes.put(UserModel.USERNAME, username);
-                    }
-                    if (emailVerified != null) {
-                        attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-                    }
-                    if (idpAlias != null) {
-                        attributes.put(UserModel.IDP_ALIAS, idpAlias);
-                    }
-                    if (idpUserId != null) {
-                        attributes.put(UserModel.IDP_USER_ID, idpUserId);
-                    }
-                    if (enabled != null) {
-                        attributes.put(UserModel.ENABLED, enabled.toString());
-                    }
-                    if (exact != null) {
-                        attributes.put(UserModel.EXACT, exact.toString());
-                    }
+            if (last != null) {
+                attributes.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                attributes.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                attributes.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                attributes.put(UserModel.USERNAME, username);
+            }
+            if (emailVerified != null) {
+                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (idpAlias != null) {
+                attributes.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                attributes.put(UserModel.IDP_USER_ID, idpUserId);
+            }
+            if (enabled != null) {
+                attributes.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (exact != null) {
+                attributes.put(UserModel.EXACT, exact.toString());
+            }
 
-                    attributes.putAll(searchAttributes);
-
-                    return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
-                } else {
-                    return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
-                }
-
-        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
+            attributes.putAll(searchAttributes);
+            return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
+                    maxResults, !attributes.isEmpty());
+        }
     }
 
     /**
      * Returns the number of users that match the given criteria.
-     * It can be called in three different ways.
-     * 1. Don't specify any criteria and pass {@code null}. The number of all
-     * users within that realm will be returned.
-     * <p>
-     * 2. If {@code search} is specified other criteria such as {@code last} will
-     * be ignored even though you set them. The {@code search} string will be
-     * matched against the first and last name, the username and the email of a
-     * user.
-     * <p>
-     * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
-     * {@code email} or {@code username} those criteria are matched against their
-     * respective fields on a user entity. Combined with a logical and.
-     *
      * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
      * @param last     last name filter
      * @param first    first name filter
@@ -366,12 +336,7 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(
-            summary = "Returns the number of users that match the given criteria.",
-            description = "It can be called in three different ways. " +
-                    "1. Don’t specify any criteria and pass {@code null}. The number of all users within that realm will be returned. <p> " +
-                    "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
-                    "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
+    @Operation(summary = "Returns the number of users that match the given criteria.")
     public Integer getUsersCount(
             @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "last name filter") @QueryParam("lastName") String last,
@@ -388,46 +353,39 @@ public class UsersResource {
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
 
-        if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
-            } else if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, search.trim());
-            } else {
-                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
+        Map<String, String> attributes = new HashMap<>();
+        if (search != null && search.startsWith(SEARCH_ID_PARAMETER)) {
+            UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+            return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+        } else {
+            if (search != null) {
+                attributes.put(UserModel.SEARCH, search.trim());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
-            Map<String, String> parameters = new HashMap<>();
             if (last != null) {
-                parameters.put(UserModel.LAST_NAME, last);
+                attributes.put(UserModel.LAST_NAME, last);
             }
             if (first != null) {
-                parameters.put(UserModel.FIRST_NAME, first);
+                attributes.put(UserModel.FIRST_NAME, first);
             }
             if (email != null) {
-                parameters.put(UserModel.EMAIL, email);
+                attributes.put(UserModel.EMAIL, email);
             }
             if (username != null) {
-                parameters.put(UserModel.USERNAME, username);
+                attributes.put(UserModel.USERNAME, username);
             }
             if (emailVerified != null) {
-                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             if (enabled != null) {
-                parameters.put(UserModel.ENABLED, enabled.toString());
+                attributes.put(UserModel.ENABLED, enabled.toString());
             }
-            parameters.putAll(searchAttributes);
+            attributes.putAll(searchAttributes);
 
             if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, parameters);
+                return attributes.isEmpty() ? session.users().getUsersCount(realm) : session.users().getUsersCount(realm, attributes);
             } else {
-                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                return session.users().getUsersCount(realm, attributes, auth.groups().getGroupIdsWithViewPermission());
             }
-        } else if (userPermissionEvaluator.canView()) {
-            return session.users().getUsersCount(realm);
-        } else {
-            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 

@@ -85,6 +85,31 @@ public interface UsersResource {
                                     @QueryParam("enabled") Boolean enabled,
                                     @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
+    /**
+     * Returns the users that can be viewed and match the given filters.
+     * If none of the filters is specified returns all users.
+     *
+     * @param search        arbitrary search string for all the fields below
+     * @param firstName     first name field of a user
+     * @param lastName      last name field of a user
+     * @param email         email field of a user
+     * @param emailVerified emailVerified field of a user
+     * @param username      username field of a user
+     * @param enabled       Boolean representing if user is enabled or not
+     * @param searchQuery   A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("search") String search,
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("emailVerified") Boolean emailVerified,
+                                    @QueryParam("username") String username,
+                                    @QueryParam("enabled") Boolean enabled,
+                                    @QueryParam("q") String searchQuery);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username,
