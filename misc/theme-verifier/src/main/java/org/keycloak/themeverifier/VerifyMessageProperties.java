@@ -38,6 +38,7 @@ public class VerifyMessageProperties {
 
     private final File file;
     private List<String> messages;
+    private boolean validateMessageFormatQuotes;
 
     public VerifyMessageProperties(File file) {
         this.file = file;
@@ -50,10 +51,37 @@ public class VerifyMessageProperties {
             verifyNoDuplicateKeys(contents);
             verifySafeHtml();
             verifyProblematicBlanks();
+            if (validateMessageFormatQuotes) {
+                verifyMessageFormatQuotes();
+            }
         } catch (IOException e) {
             throw new MojoExecutionException("Can not read file " + file, e);
         }
         return messages;
+    }
+
+    private static Pattern SINGLE_QUOTE_MIDDLE = Pattern.compile("[^']'[^']");
+    private static Pattern SINGLE_QUOTE_END = Pattern.compile("[^']'$");
+    private static Pattern SINGLE_QUOTE_START = Pattern.compile("^'[^']");
+
+    private void verifyMessageFormatQuotes() {
+        PropertyResourceBundle bundle;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            bundle = new PropertyResourceBundle(fis);
+        } catch (IOException e) {
+            throw new RuntimeException("unable to read file " + file, e);
+        }
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (SINGLE_QUOTE_START.matcher(value).find()
+            || SINGLE_QUOTE_MIDDLE.matcher(value).find()
+            || SINGLE_QUOTE_END.matcher(value).find()) {
+                messages.add("Single quotes are not allowed in message formats due to unexpected behaviors in '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
     }
 
     PolicyFactory POLICY_SOME_HTML = new org.owasp.html.HtmlPolicyBuilder()
@@ -135,7 +163,7 @@ public class VerifyMessageProperties {
             String value = bundle.getString(key);
 
             if (value.contains("  ")) {
-                messages.add("Duplicate blanks in " + key + " for file " + file + ": '" + value);
+                messages.add("Duplicate blanks in '" + key + "' for file " + file + ": '" + value);
             }
 
             if (value.startsWith(" ")) {
@@ -224,4 +252,10 @@ public class VerifyMessageProperties {
             messages.add("Duplicate keys in file '" + file.getAbsolutePath() + "': " + duplicateKeys);
         }
     }
+
+    public VerifyMessageProperties withValidateMessageFormatQuotes(boolean validateMessageFormatQuotes) {
+        this.validateMessageFormatQuotes = validateMessageFormatQuotes;
+        return this;
+    }
+
 }

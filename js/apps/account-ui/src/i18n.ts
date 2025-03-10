@@ -35,7 +35,11 @@ export const i18n = createInstance({
     parse(data: string) {
       const messages: KeyValue[] = JSON.parse(data);
 
-      return Object.fromEntries(messages.map(({ key, value }) => [key, value]));
+      return Object.fromEntries(
+        // For the values, replace all duplicated single quotes with one single quote as this might be a
+        // Situation where a translator wasn't sure if the value would be parsed by a Java MessageFormat or not.
+        messages.map(({ key, value }) => [key, value.replaceAll("''", "'")]),
+      );
     },
   },
 });
