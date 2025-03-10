@@ -553,10 +553,16 @@ class AdminClient {
 
   async deleteFlow(name: string, realmName: string = this.#client.realmName) {
     await this.#login();
-    await this.#client.authenticationManagement.deleteFlow({
-      flowId: name,
+    const flows = await this.#client.authenticationManagement.getFlows({
       realm: realmName,
     });
+    const flow = flows.find((f) => f.alias === name)!;
+    if (flow) {
+      await this.#client.authenticationManagement.deleteFlow({
+        flowId: flow.id!,
+        realm: realmName,
+      });
+    }
   }
 
   async deleteAllTokens(realm: string = this.#client.realmName) {

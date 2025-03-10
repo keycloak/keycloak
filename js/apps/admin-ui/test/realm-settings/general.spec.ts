@@ -8,6 +8,7 @@ import { confirmModal } from "../utils/modal";
 import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar";
 import {
   assertDisplayName,
+  assertFrontendURL,
   assertRequireSSL,
   clickRevertButton,
   clickSaveRealm,
@@ -27,6 +28,27 @@ test.describe("Realm settings general tab tests", () => {
     await login(page);
     await goToRealm(page, realmName);
     await goToRealmSettings(page);
+  });
+
+  test("Check Access Endpoints OpenID Endpoint Configuration link", async ({
+    page,
+  }) => {
+    const locator = page.getByRole("link", {
+      name: "OpenID Endpoint Configuration",
+    });
+
+    await expect(locator).toHaveAttribute(
+      "href",
+      `${SERVER_URL}/realms/${realmName}/.well-known/openid-configuration`,
+    );
+    await expect(locator).toHaveAttribute("target", "_blank");
+    await expect(locator).toHaveAttribute("rel", "noreferrer noopener");
+
+    const link = await page
+      .getByRole("link", { name: "OpenID Endpoint Configuration" })
+      .getAttribute("href");
+    const response = await page.request.get(link!);
+    expect(response.status()).toBe(200);
   });
 
   test("Test all general tab switches", async ({ page }) => {
@@ -76,7 +98,7 @@ test.describe("Realm settings general tab tests", () => {
 
     await goToClients(page);
     await goToRealmSettings(page);
-    await assertDisplayName(page, frontendUrl);
+    await assertFrontendURL(page, frontendUrl);
   });
 
   test("Select SSL all requests", async ({ page }) => {
@@ -88,27 +110,6 @@ test.describe("Realm settings general tab tests", () => {
     await goToClients(page);
     await goToRealmSettings(page);
     await assertRequireSSL(page, "All requests");
-  });
-
-  test("Check Access Endpoints OpenID Endpoint Configuration link", async ({
-    page,
-  }) => {
-    const locator = page.getByRole("link", {
-      name: "OpenID Endpoint Configuration",
-    });
-
-    await expect(locator).toHaveAttribute(
-      "href",
-      `${SERVER_URL}/realms/${realmName}/.well-known/openid-configuration`,
-    );
-    await expect(locator).toHaveAttribute("target", "_blank");
-    await expect(locator).toHaveAttribute("rel", "noreferrer noopener");
-
-    const link = await page
-      .getByRole("link", { name: "OpenID Endpoint Configuration" })
-      .getAttribute("href");
-    const response = await page.request.get(link!);
-    expect(response.status()).toBe(200);
   });
 
   test("Verify 'Revert' button works", async ({ page }) => {

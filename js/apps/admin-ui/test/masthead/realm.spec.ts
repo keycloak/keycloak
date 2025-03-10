@@ -21,7 +21,7 @@ import {
 const testRealmName = `Test-realm-${uuid()}`;
 const newRealmName = `New-Test-realm-${uuid()}`;
 const editedRealmName = `Edited-Test-realm-${uuid()}`;
-const testDisabledName = "Test-Disabled";
+const testDisabledName = `Test-Disabled-${uuid()}`;
 const specialCharsName = `%22-${uuid()}`;
 
 test.describe("Realm tests", () => {
