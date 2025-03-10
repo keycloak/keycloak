@@ -30,8 +30,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String request;
     protected String requestUri;
     protected String claims;
-    protected StateParamProvider state;
-    protected String nonce;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -306,20 +304,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getClaims() {
         return claims;
-    }
-
-    public String getState() {
-        return state != null ? state.getState() : null;
-    }
-
-    public String getNonce() {
-        return nonce;
-    }
-
-    protected interface StateParamProvider {
-
-        String getState();
-
     }
 
 }

@@ -88,7 +88,6 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     public void revertPolicies() throws ClientPolicyException {
         oauth.openid(true);
         oauth.responseType(OIDCResponseType.CODE);
-        oauth.nonce(null);
         oauth.codeChallenge(null);
         oauth.codeChallengeMethod(null);
         oauth.dpopProof(null);
@@ -274,9 +273,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce) {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
-        oauth.nonce(nonce);
         oauth.redirectUri(validRedirectUri);
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).open();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Implicit/Hybrid flow is prohibited.", authorizationEndpointResponse.getErrorDescription());

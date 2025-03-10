@@ -597,17 +597,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
         String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
-        oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state1").open();
         loginPage.assertCurrent();
         loginPage.login("login-test", "bad-password");
         String tab1Url = driver.getCurrentUrl();
 
         // Go to tab2 and start login with different client "root-url-client"
-        oauth.stateParamHardcoded("state2");
         oauth.redirectUri(redirectUri2);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state2").open();
         loginPage.assertCurrent();
         String tab2Url = driver.getCurrentUrl();
 
@@ -629,17 +627,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
         String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
-        oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state1").open();
         loginPage.assertCurrent();
         loginPage.login("login-test", "bad-password");
         String tab1Url = driver.getCurrentUrl();
 
         // Go to tab2 and start login with different client "root-url-client"
-        oauth.stateParamHardcoded("state2");
         oauth.redirectUri(redirectUri2);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state2").open();
         loginPage.assertCurrent();
         String tab2Url = driver.getCurrentUrl();
 

@@ -597,7 +597,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.setRedirectUriParam(oauth.getRedirectUri());
         requestObject.setScope("openid");
         String state = KeycloakModelUtils.generateId();
-        oauth.stateParamHardcoded(state);
         requestObject.setState(state);
         requestObject.setMax_age(Integer.valueOf(600));
         requestObject.setOtherClaims("custom_claim_ein", "rot");
@@ -1500,14 +1499,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     }
 
     protected void successfulLoginAndLogout(String clientId, String clientSecret) {
-        AccessTokenResponse res = successfulLogin(clientId, clientSecret);
+        successfulLoginAndLogout(clientId, clientSecret, null, null);
+    }
+
+    protected void successfulLoginAndLogout(String clientId, String clientSecret, String nonce, String state) {
+        AccessTokenResponse res = successfulLogin(clientId, clientSecret, nonce, state);
         oauth.doLogout(res.getRefreshToken());
         events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
     }
 
     protected AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
+        return successfulLogin(clientId, clientSecret, null, null);
+    }
+
+    protected AccessTokenResponse successfulLogin(String clientId, String clientSecret, String nonce, String state) {
         oauth.client(clientId, clientSecret);
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().nonce(nonce).state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -1526,9 +1533,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         String codeChallenge = generateS256CodeChallenge(codeVerifier);
         oauth.codeChallenge(codeChallenge);
         oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.nonce("bjapewiziIE083d");
 
-        oauth.doLogin(userName, userPassword);
+        oauth.loginForm().nonce("bjapewiziIE083d").doLogin(userName, userPassword);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();

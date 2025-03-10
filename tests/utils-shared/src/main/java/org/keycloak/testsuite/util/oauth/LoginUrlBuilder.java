@@ -20,6 +20,16 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder state(String state) {
+        parameter(OIDCLoginProtocol.STATE_PARAM, state);
+        return this;
+    }
+
+    public LoginUrlBuilder nonce(String nonce) {
+        parameter(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        return this;
+    }
+
     public LoginUrlBuilder prompt(String prompt) {
         parameter(OIDCLoginProtocol.PROMPT_PARAM, prompt);
         return this;
@@ -52,8 +62,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
 
-        parameter(OAuth2Constants.STATE, client.getState());
-        parameter(OIDCLoginProtocol.NONCE_PARAM, client.getNonce());
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
 
         parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
@@ -68,6 +76,12 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         if (client.getCustomParameters() != null) {
             client.getCustomParameters().forEach(this::parameter);
         }
+    }
+
+    public AuthorizationEndpointResponse doLogin(String username, String password) {
+        open();
+        client.fillLoginForm(username, password);
+        return client.parseLoginResponse();
     }
 
 }
