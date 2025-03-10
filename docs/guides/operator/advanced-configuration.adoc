@@ -502,10 +502,13 @@ spec:
     enabled:
       - rolling-updates # <1>
   update:
-    strategy: RecreateOnImageChange|Auto # <2>
+    strategy: RecreateOnImageChange|Auto|Explicit # <2>
+    revision: "abc" # <3>
 ----
 <1> Enable preview feature `rolling-updates`.
-<2> Set the desired update strategy here (Recreate in this example).
+<2> Set the desired update strategy here.
+<3> Revision value for `Explicit` strategy.
+Ignored by the other strategies.
 
 [%autowidth]
 .Possible field values
@@ -521,7 +524,33 @@ When the image field changes, the StatefulSet is scaled down before applying the
 |On incompatible changes
 |The {project_name} Operator detects if a rolling or recreate upgrade is possible.
 
+|`Explicit`
+|Only when explicit configure
+|The {project_name} Operator checks the `spec.update.revision` value.
+If it matches the previous deployment, it performs a rolling upgrade;
+otherwise, it performs a recreate upgrade.
+
 |===
+
+===== Understanding `Auto` and `Explicit` Update Strategies =====
+
+When using the `Auto` update strategy, the {project_name} Operator automatically initiates a Job to assess the feasibility of a rolling upgrade.
+This process consumes cluster resources and introduces a delay before the StatefulSet update begins.
+
+The `Explicit` update strategy delegates the upgrade decision to the user.
+The `revision` field acts as a user-controlled trigger.
+While the {project_name} Operator does not interpret the `revision` value itself, any change to the Custom Resource (CR) while the `revision` remains unchanged will prompt a rolling upgrade.
+
+[NOTE]
+====
+The {project_name} Operator automatically sets a default `revision` value based on the default container image.
+However, relying on this default is strongly discouraged.
+Users should explicitly set the `revision` field when using the `Explicit` update strategy.
+====
+
+Exercise caution when automatic Operator upgrades are enabled.
+The Operator Lifecycle Manager (OLM) may upgrade the {project_name} Operator, and if the `Explicit` update strategy is in use, this could lead to unexpected behavior or deployment failures.
+**It is highly recommended to test upgrades in a non-production environment first when using the `Explicit` update strategy.**
 
 ===== CR Statuses =====
 
