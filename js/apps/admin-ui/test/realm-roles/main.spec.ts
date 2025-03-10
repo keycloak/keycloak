@@ -254,13 +254,15 @@ test.describe("Realm roles test", () => {
     const description = "some description";
     const updateDescription = "updated description";
 
-    test.beforeAll(async () => {
+    test.beforeEach(async () => {
       await adminClient.createRealmRole({
         realm: realmName,
         name: editRoleName,
         description,
       });
     });
+
+    test.afterEach(() => adminClient.deleteRealmRole(editRoleName, realmName));
 
     test("should edit realm role details", async ({ page }) => {
       await searchItem(page, searchPlaceHolder, editRoleName);

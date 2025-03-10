@@ -417,9 +417,9 @@ class AdminClient {
     });
   }
 
-  async deleteRealmRole(name: string) {
+  async deleteRealmRole(name: string, realm: string = this.#client.realmName) {
     await this.#login();
-    return await this.#client.roles.delByName({ name });
+    return await this.#client.roles.delByName({ name, realm });
   }
 
   async createIdentityProvider(
