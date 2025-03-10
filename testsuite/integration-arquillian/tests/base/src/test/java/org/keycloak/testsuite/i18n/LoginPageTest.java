@@ -116,26 +116,23 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void uiLocalesParameter() {
-        loginPage.open();
+        oauth.loginForm().open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
         //test if cookie works
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("en de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("en de").open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("fr de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("fr de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
     }
 
@@ -144,8 +141,7 @@ public class LoginPageTest extends AbstractI18NTest {
         loginPage.open();
         assertEquals("en", loginPage.getHtmlLanguage());
 
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("de", loginPage.getHtmlLanguage());
     }
 

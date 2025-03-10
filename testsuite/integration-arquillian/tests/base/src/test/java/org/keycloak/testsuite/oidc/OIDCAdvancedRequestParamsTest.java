@@ -188,7 +188,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.client("test-app", "password");
-        oauth.maxAge(null);
     }
 
     @Override
@@ -216,11 +215,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Set time offset
         setTimeOffset(10);
 
-        // Now open login form with maxAge=1
-        oauth.maxAge("1");
-
         // Assert I need to login again through the login form. But username field is not present
-        oauth.openLoginForm();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
@@ -250,10 +246,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(10);
 
         // Now open login form with maxAge=10000
-        oauth.maxAge("10000");
+        oauth.loginForm().maxAge(10000).open();
 
         // Assert that I will be automatically logged through cookie
-        oauth.openLoginForm();
         loginEvent = events.expectLogin().assertEvent();
 
         idToken = sendTokenRequestAndGetIDToken(loginEvent);

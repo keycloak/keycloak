@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.util.TokenUtil;
 
@@ -30,12 +29,8 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
         parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
-        parameter(Constants.KC_ACTION, client.getKcAction());
-        parameter(OAuth2Constants.UI_LOCALES_PARAM, client.getUiLocales());
         parameter(OIDCLoginProtocol.NONCE_PARAM, client.getNonce());
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-        parameter(OIDCLoginProtocol.MAX_AGE_PARAM, client.getMaxAge());
-        parameter(OIDCLoginProtocol.PROMPT_PARAM, client.getPrompt());
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
         parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());

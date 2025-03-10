@@ -17,24 +17,12 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
@@ -42,7 +30,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -100,11 +87,8 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .responseType(OAuth2Constants.CODE);
 
         state = KeycloakModelUtils::generateId;
-        uiLocales = null;
         clientSessionState = null;
         clientSessionHost = null;
-        maxAge = null;
-        prompt = null;
         nonce = null;
         request = null;
         requestUri = null;
@@ -204,16 +188,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return this;
     }
 
-    public OAuthClient postLogoutRedirectUri(String postLogoutRedirectUri) {
-        config.postLogoutRedirectUri(postLogoutRedirectUri);
-        return this;
-    }
-
-    public OAuthClient kcAction(String kcAction) {
-        this.kcAction = kcAction;
-        return this;
-    }
-
     public OAuthClient stateParamHardcoded(String value) {
         this.state = () -> value;
         return this;
@@ -234,11 +208,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return this;
     }
 
-    public OAuthClient uiLocales(String uiLocales) {
-        this.uiLocales = uiLocales;
-        return this;
-    }
-
     public OAuthClient clientSessionState(String client_session_state) {
         this.clientSessionState = client_session_state;
         return this;
@@ -246,16 +215,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient clientSessionHost(String client_session_host) {
         this.clientSessionHost = client_session_host;
-        return this;
-    }
-
-    public OAuthClient maxAge(String maxAge) {
-        this.maxAge = maxAge;
-        return this;
-    }
-
-    public OAuthClient prompt(String prompt) {
-        this.prompt = prompt;
         return this;
     }
 

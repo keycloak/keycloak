@@ -438,7 +438,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             String originalTab = util.getActualWindowHandle();
 
             // open a new tab performing the passive check
-            String passiveCheckUrl = oauth.responseType("none").prompt("none").loginForm().build();
+            String passiveCheckUrl = oauth.responseType("none").loginForm().prompt("none").build();
             util.newTab(passiveCheckUrl);
             MatcherAssert.assertThat(new URL(oauth.getDriver().getCurrentUrl()).getQuery(), Matchers.containsString("error=login_required"));
 

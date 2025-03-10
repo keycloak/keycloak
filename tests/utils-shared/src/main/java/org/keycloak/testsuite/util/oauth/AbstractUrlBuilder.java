@@ -27,10 +27,6 @@ public abstract class AbstractUrlBuilder {
         params.put(name, value);
     }
 
-    protected void replaceParameter(String name, String value) {
-        params.put(name, value);
-    }
-
     public String build() {
         UriBuilder uriBuilder = UriBuilder.fromUri(getEndpoint());
         params.entrySet().stream().filter(e -> e.getValue() != null).forEach(e -> uriBuilder.queryParam(e.getKey(), e.getValue()));
