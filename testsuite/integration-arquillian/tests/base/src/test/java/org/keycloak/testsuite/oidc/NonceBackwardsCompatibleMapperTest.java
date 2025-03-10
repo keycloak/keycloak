@@ -137,10 +137,9 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     private void testNonceImplicit(boolean mapper) throws IOException {
         String nonce = KeycloakModelUtils.generateId();
-        oauth.nonce(nonce);
         oauth.responseMode(OIDCResponseMode.JWT.value());
         oauth.responseType(OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN);
-        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -158,11 +157,10 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     private void testNonce(boolean mapper, boolean offlineSession) throws IOException {
         String nonce = KeycloakModelUtils.generateId();
-        oauth.nonce(nonce);
         if (offlineSession) {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         }
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         String code = oauth.parseLoginResponse().getCode();

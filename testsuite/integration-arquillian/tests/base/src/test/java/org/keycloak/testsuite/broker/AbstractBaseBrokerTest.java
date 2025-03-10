@@ -260,7 +260,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected AuthorizationEndpointResponse doLoginSocial(OAuthClient oauth, String brokerId, String username, String password) {
-        oauth.openLoginForm();
+        return doLoginSocial(oauth, brokerId, username, password, null);
+    }
+
+    protected AuthorizationEndpointResponse doLoginSocial(OAuthClient oauth, String brokerId, String username, String password, String nonce) {
+        oauth.loginForm().nonce(nonce).open();
         WaitUtils.waitForPageToLoad();
 
         oauth.getDriver().findElement(By.id("social-" + brokerId)).click();

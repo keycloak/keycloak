@@ -19,7 +19,6 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.util.JsonSerialization;
@@ -86,10 +85,8 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .postLogoutRedirectUri(APP_ROOT + "/auth")
                 .responseType(OAuth2Constants.CODE);
 
-        state = KeycloakModelUtils::generateId;
         clientSessionState = null;
         clientSessionHost = null;
-        nonce = null;
         request = null;
         requestUri = null;
         claims = null;
@@ -160,14 +157,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         return config.getScope();
     }
 
-    public String getState() {
-        return state.getState();
-    }
-
-    public String getNonce() {
-        return nonce;
-    }
-
     public OAuthClient realm(String realm) {
         config.realm(realm);
         return this;
@@ -185,16 +174,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient redirectUri(String redirectUri) {
         config.redirectUri(redirectUri);
-        return this;
-    }
-
-    public OAuthClient stateParamHardcoded(String value) {
-        this.state = () -> value;
-        return this;
-    }
-
-    public OAuthClient stateParamRandom() {
-        this.state = KeycloakModelUtils::generateId;
         return this;
     }
 
@@ -225,11 +204,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient responseMode(String responseMode) {
         config.responseMode(responseMode);
-        return this;
-    }
-
-    public OAuthClient nonce(String nonce) {
-        this.nonce = nonce;
         return this;
     }
 

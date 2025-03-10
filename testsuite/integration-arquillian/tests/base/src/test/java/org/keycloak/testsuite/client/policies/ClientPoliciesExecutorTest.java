@@ -293,8 +293,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals("invalid response_type", authorizationEndpointResponse.getErrorDescription());
 
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        oauth.nonce("vbwe566fsfffds");
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().nonce("vbwe566fsfffds").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -316,8 +315,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         updateProfiles(json);
 
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN); // token response type allowed
-        oauth.nonce("cie8cjcwiw");
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().nonce("cie8cjcwiw").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         loginEvent = events.expectLogin().client(clientId).assertEvent();
         sessionId = loginEvent.getSessionId();
@@ -425,8 +423,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals("invalid response_type", authorizationEndpointResponse.getErrorDescription());
 
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        oauth.nonce("LIVieviDie028f");
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().nonce("LIVieviDie028f").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -634,7 +631,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setState("notmatchstate");
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().state("wrongstate").open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
@@ -856,15 +853,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.openid(true);
         failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_NONCE);
 
-        oauth.nonce("yesitisnonce");
-        successfulLoginAndLogout(clientBetaId, clientBetaSecret);
+        successfulLoginAndLogout(clientBetaId, clientBetaSecret, "yesitisnonce", "somestate");
 
         oauth.openid(false);
-        oauth.stateParamHardcoded(null);
         failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_STATE);
 
-        oauth.stateParamRandom();
-        successfulLoginAndLogout(clientBetaId, clientBetaSecret);
+        successfulLoginAndLogout(clientBetaId, clientBetaSecret, "somenonce", "somestate");
     }
 
     @Test
@@ -1512,13 +1506,13 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.client(clientBetaId, "secretBeta");
 
         // Pushed Authorization Request
-        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        ParResponse pResp = oauth.pushedAuthorizationRequest().send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         oauth.requestUri(requestUri);
         oauth.client(clientBetaId);
-        oauth.openLoginForm();
+        oauth.loginForm().state("randomstatesomething").open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
 
@@ -1529,7 +1523,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestUri = pResp.getRequestUri();
         oauth.requestUri(requestUri);
 
-        oauth.stateParamHardcoded(null);
         successfulLoginAndLogout(clientBetaId, "secretBeta");
     }
 
@@ -1562,15 +1555,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // Pushed Authorization Request without state parameter
         oauth.addCustomParameter("request", encodedRequestObject);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        ParResponse pResp = oauth.pushedAuthorizationRequest().send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         // only query parameters include state parameter
         oauth.removeCustomParameter("request");
-        oauth.stateParamHardcoded("mystate2");
         oauth.requestUri(requestUri);
-        oauth.openLoginForm();
+        oauth.loginForm().state("mystate2").open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
 
@@ -1580,7 +1572,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.requestUri(null);
         oauth.addCustomParameter("request", encodedRequestObject);
-        pResp = oauth.doPushedAuthorizationRequest();
+        pResp = oauth.pushedAuthorizationRequest().state("mystate2").send();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
 

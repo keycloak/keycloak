@@ -86,14 +86,11 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void clientConfiguration() {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(null);
-        oauth.stateParamRandom();
     }
 
     @Test
     public void authorizationRequest() throws IOException {
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-
-        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -166,8 +163,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestNoState() throws IOException {
-        oauth.stateParamHardcoded(null);
-
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
@@ -210,8 +205,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFormPostResponseModeInvalidResponseType() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType("tokenn");
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.openLoginForm();
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").open();
 
         String error = driver.findElement(By.id("error")).getText();
         String state = driver.findElement(By.id("state")).getText();
@@ -225,8 +219,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFormPostResponseModeWithoutResponseType() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType(null);
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.openLoginForm();
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").open();
 
         String error = driver.findElement(By.id("error")).getText();
         String errorDescription = driver.findElement(By.id("error_description")).getText();
@@ -242,8 +235,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);
@@ -282,14 +274,16 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             oauth.responseType(OAuth2Constants.CODE);
             final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
             oauth.redirectUri(redirectUri);
-            oauth.stateParamHardcoded(KeycloakModelUtils.generateId());
-            oauth.doLogin("test-user@localhost", "password");
+
+            String requestState = "authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri";
+
+            oauth.loginForm().state(requestState).doLogin("test-user@localhost", "password");
 
             WaitUtils.waitForPageToLoad();
             // if not properly encoded %3E would be received instead of &gt;
             Assert.assertEquals("Redirect page was not encoded", redirectUri, oauth.getDriver().getCurrentUrl());
             String state = driver.findElement(By.id("state")).getText();
-            Assert.assertEquals(oauth.getState(), state);
+            Assert.assertEquals(requestState, state);
             Assert.assertNotNull(driver.findElement(By.id("code")).getText());
 
             events.expect(EventType.LOGIN)
@@ -311,8 +305,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             oauth.responseType(OAuth2Constants.CODE);
             final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
             oauth.redirectUri(redirectUri);
-            oauth.stateParamHardcoded(KeycloakModelUtils.generateId());
-            oauth.doLogin("test-user@localhost", "password");
+
+            String requestState = "authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri";
+            oauth.loginForm().state(requestState).doLogin("test-user@localhost", "password");
 
             WaitUtils.waitForPageToLoad();
             // if not properly encoded %3E would be received instead of &gt;
@@ -322,7 +317,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             assertEquals("test-app", responseToken.getAudience()[0]);
             Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
             Assert.assertNull(responseToken.getOtherClaims().get("error"));
-            Assert.assertEquals(oauth.getState(), responseToken.getOtherClaims().get("state"));
+            Assert.assertEquals(requestState, responseToken.getOtherClaims().get("state"));
             Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
 
             events.expect(EventType.LOGIN)
@@ -338,8 +333,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-        oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().state("\"><foo>bar_baz(2)far</foo>").doLogin("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
         System.out.println(sources);
@@ -357,7 +351,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
         // Set response_mode=fragment and login
         oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
-        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept").doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
@@ -368,7 +362,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
-        oauth.openLoginForm();
+        oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept2").open();
         response = oauth.parseLoginResponse();
 
         Assert.assertNotNull(response.getCode());
@@ -382,8 +376,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestParamsMoreThanOnce() throws IOException {
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-
         String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
                 .queryParam(OAuth2Constants.STATE, "abcdefg")
                 .queryParam(OAuth2Constants.SCOPE, "pop push").build().toString();
@@ -400,8 +392,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
-        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-
         String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
                 .queryParam(OAuth2Constants.CLIENT_ID, "client2client")
                 .queryParam(OAuth2Constants.REDIRECT_URI, "https://www.example.com")

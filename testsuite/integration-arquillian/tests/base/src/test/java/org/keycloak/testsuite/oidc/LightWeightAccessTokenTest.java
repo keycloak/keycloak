@@ -149,7 +149,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenFalseIntrospectionTrueTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
@@ -170,7 +169,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenTrueIntrospectionFalseTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, false, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
@@ -192,7 +190,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenTrueIntrospectionTrueTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
@@ -213,7 +210,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void accessTokenTrueIntrospectionReturnedAsJwt() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             AccessTokenResponse response = browserLogin(TEST_USER_NAME, TEST_USER_PASSWORD).tokenResponse;
@@ -238,7 +234,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void offlineTokenTest() throws IOException {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("openid address offline_access");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
@@ -263,7 +258,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void clientCredentialTest() throws Exception {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
@@ -286,7 +280,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     public void exchangeTest() throws Exception {
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
@@ -312,12 +305,11 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setUseLightweightAccessTokenExecutor();
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
@@ -347,12 +339,11 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setUseLightweightAccessTokenExecutor();
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
@@ -379,12 +370,11 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         alwaysUseLightWeightAccessToken(true);
         ProtocolMappersResource protocolMappers = setProtocolMappers(true, true, false, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             assertAccessToken(oauth.verifyToken(accessToken), true, false, true);
@@ -414,12 +404,11 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         alwaysUseLightWeightAccessToken(true);
         ProtocolMappersResource protocolMappers = setProtocolMappers(false, true, true, false);
         try {
-            oauth.nonce("123456");
             oauth.scope("address");
 
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
-            AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
             String accessToken = tokenResponse.getAccessToken();
             logger.debug("access token:" + accessToken);
@@ -483,8 +472,6 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         removeDefaultBasicClientScope();
         alwaysUseLightWeightAccessToken(true);
         try {
-            oauth.nonce("123456");
-
             oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
             AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             String accessToken = response.getAccessToken();
@@ -886,7 +873,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private TokenResponseContext browserLogin(String username, String password) {
-        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin(username, password);
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().nonce("123456").doLogin(username, password);
         String userSessionId = authsEndpointResponse.getSessionState();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
         return new TokenResponseContext(userSessionId, tokenResponse);
