@@ -387,7 +387,8 @@ export default class ProviderPage {
         break;
 
       case this.#hcLdapRoleMapper:
-        cy.findByTestId("add-roles").click();
+        cy.findByTestId("add-role-mapping-button").click();
+        cy.findByTestId("client-role").click();
         cy.get("[aria-label='Select row 1']").click();
         cy.findByTestId("assign").click();
         break;
