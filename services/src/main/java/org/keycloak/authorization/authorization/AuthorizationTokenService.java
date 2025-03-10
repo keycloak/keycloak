@@ -314,7 +314,7 @@ public class AuthorizationTokenService {
         if (accessToken.getSessionState() == null) {
             // Create temporary (request-scoped) transient session
             UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
-            userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
+            userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteHost(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
             userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());

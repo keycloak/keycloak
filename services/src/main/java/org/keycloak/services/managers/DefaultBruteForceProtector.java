@@ -213,7 +213,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             if (success) {
                 success(s, realm, user.getId());
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteAddr(), Time.currentTimeMillis());
+                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis());
             }
         }));
     }

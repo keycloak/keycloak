@@ -64,7 +64,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         String uri = super.getUserInfoUrl();
         if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
             ClientConnection connection = session.getContext().getConnection();
-            if (connection != null) {
+            if (connection != null && connection.getRemoteAddr() != null) {
                 uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
             }
 
