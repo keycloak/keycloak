@@ -73,7 +73,7 @@ export async function assertExecutorInList(page: Page, name: string) {
   await expect(page.getByText(name)).toBeVisible();
 }
 
-export async function clickDeleteExecutor(page: Page) {
-  await page.getByTestId("deleteExecutor").click();
+export async function clickDeleteExecutor(page: Page, name: string) {
+  await page.getByTestId(`deleteExecutor-${name}`).click();
   await confirmModal(page);
 }
