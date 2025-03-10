@@ -259,15 +259,17 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
                 UserAccountControl control = getUserAccountControl(ldapUser);
-                if (enabled) {
-                    control.remove(UserAccountControl.ACCOUNTDISABLE);
-                } else {
-                    control.add(UserAccountControl.ACCOUNTDISABLE);
+
+                if (control.isAnySet()) {
+                    if (enabled) {
+                        control.remove(UserAccountControl.ACCOUNTDISABLE);
+                    } else {
+                        control.add(UserAccountControl.ACCOUNTDISABLE);
+                    }
+
+                    markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
+                    updateUserAccountControl(false, ldapUser, control);
                 }
-
-                markUpdatedAttributeInTransaction(LDAPConstants.ENABLED);
-
-                updateUserAccountControl(false, ldapUser, control);
             }
             // Always update DB
             super.setEnabled(enabled);
