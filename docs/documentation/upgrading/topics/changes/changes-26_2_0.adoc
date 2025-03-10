@@ -52,6 +52,37 @@ If your deployment scripts add explicit NetworkPolicies for {project_name}, you 
 
 Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
 
+=== Supported standard token exchange
+
+In this release, {project_name} added support for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. In the past {project_name} releases, the {project_name} supported only preview token exchange feature, which is now referred
+as link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange]. In case you used the link:{securing_apps_token_exchange_link}#_internal-token-to-internal-token-exchange[internal-internal token exchange],
+it is recommended to migrate to the new standard token exchange instead. Here are some notes, which can help to migrate to the new standard token exchange:
+
+* The feature `token-exchange-standard`, which represents the new Standard token exchange is enabled by default. It is recommended to just
+disable the `token-exchange` feature, which represents the Legacy token exchange to make sure that requests will be served by the new standard token exchange.
+
+* It is possible to have both standard and legacy token exchange enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases,
+which are supported only by legacy token exchange. Like for instance link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange]. In this case
+{project_name} will serve standard internal to internal requests preferably by the standard token exchange when the other requests will be served by the legacy token exchange. It is detected based on the
+parameters if the particular request is standard or not. For instance requests containing non-standard parameters like `requested_issuer` or `requested_subject` are considered legacy.
+
+* Standard token exchange requires to enable switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
+
+* Fine-grained admin permissions are no longer needed and no longer supported for the standard token exchange.
+
+* The most notable change regarding the behaviour of scopes and audiences is, that applied client scopes are based on the client triggering the token exchange request, rather than "target" client specified by the `audience` parameter.
+There is support for multiple values of the `audience` parameter as mentioned in the specification. The details are described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-scope[{securing_apps_token_exchange_name}].
+
+* Public clients are not allowed anymore to send the token exchange requests. Legacy token exchange supported public clients to exchanging to itself to downscope the original token. This use case can be
+instead covered by using refresh token grant as in the refresh token grant, the parameter `scope` can be actually used to downscope the refreshed access token as mentioned in
+the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification].
+
+* Exchanging access token to SAML assertion is not supported for now. In other words, it is not supported to use `requested_token_type=urn:ietf:params:oauth:token-type:saml2`.
+
+* Exchanging access token to refresh token is allowed just if explicitly enabled on the client as mentioned in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-details[{securing_apps_token_exchange_name}].
+Right now, it is not supported to request offline tokens or exchange refresh token when the subject token was issued from the offline session. It is recommended to exchange to access tokens instead of
+refresh token when possible.
+
 === LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
 
 When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
