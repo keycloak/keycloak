@@ -240,9 +240,9 @@ function RealmSettingsGeneralTabForm({
           )}
           {isOpenid4vciEnabled && (
             <DefaultSwitchControl
-              name="verifiableCredentialsEnabled"
-              label={t("verifiableCredentialsEnabled")}
-              labelIcon={t("verifiableCredentialsEnabledHelp")}
+              name="oid4VciEnabled"
+              label={t("oid4VciEnabled")}
+              labelIcon={t("oid4VciEnabledHelp")}
             />
           )}
           <SelectControl
@@ -298,7 +298,7 @@ function RealmSettingsGeneralTabForm({
                   title={t("samlIdentityProviderMetadata")}
                 />
               </StackItem>
-              {isOpenid4vciEnabled && realm.verifiableCredentialsEnabled && (
+              {isOpenid4vciEnabled && realm.oid4VciEnabled && (
                 <StackItem>
                   <FormattedLink
                     href={`${addTrailingSlash(
