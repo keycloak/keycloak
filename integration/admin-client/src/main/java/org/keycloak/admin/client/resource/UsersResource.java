@@ -69,6 +69,7 @@ public interface UsersResource {
      * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first
      *        and last name, email, enabled state, email verification state, federation link, and access.
      *        Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @param organizationId only return users that are members of the specified organization
      * @return a list of {@link UserRepresentation}
      */
     @GET
@@ -83,7 +84,8 @@ public interface UsersResource {
                                     @QueryParam("first") Integer firstResult,
                                     @QueryParam("max") Integer maxResults,
                                     @QueryParam("enabled") Boolean enabled,
-                                    @QueryParam("briefRepresentation") Boolean briefRepresentation);
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                    @QueryParam("organizationId") String organizationId);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
