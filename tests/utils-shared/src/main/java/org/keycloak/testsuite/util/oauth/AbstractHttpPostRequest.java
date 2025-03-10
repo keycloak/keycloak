@@ -81,7 +81,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
         }
     }
 
-    private void authorization() {
+    protected void authorization() {
         String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
         String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
 

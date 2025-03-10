@@ -143,10 +143,10 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 .attribute(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, "true")
                 .build());
 
-        oauth.clientId(clientId);
+        oauth.client(clientId, "secret");
         String requestUri = null;
         try {
-            ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, "secret");
+            ParResponse pResp = oauth.doPushedAuthorizationRequest();
             assertEquals(201, pResp.getStatusCode());
             requestUri = pResp.getRequestUri();
         }
