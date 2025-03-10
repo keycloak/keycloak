@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.UserResource;
@@ -49,7 +50,9 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     @Override
     public void close(InstanceContext<ManagedUser, InjectUser> instanceContext) {
-        instanceContext.getValue().admin().remove();
+        try {
+            instanceContext.getValue().admin().remove();
+        } catch (NotFoundException ex) {}
     }
 
 }

@@ -16,6 +16,9 @@
  */
 package org.keycloak.authorization;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,24 +34,32 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceType;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
 
@@ -356,18 +367,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
         if (supportsAuthorizationSchema(session, resourceServer)) {
             switch (resourceType) {
-                case CLIENTS_RESOURCE_TYPE -> {
-                    return resolveClient(session, resourceName).map(ClientModel::getClientId).orElse(resourceType);
-                }
-                case GROUPS_RESOURCE_TYPE -> {
-                    return resolveGroup(session, resourceName).map(GroupModel::getName).orElse(resourceType);
-                }
-                case ROLES_RESOURCE_TYPE -> {
-                    return resolveRole(session, resourceName).map(RoleModel::getName).orElse(resourceType);
-                }
-                case USERS_RESOURCE_TYPE -> {
-                    return resolveUser(session, resourceName).map(UserModel::getUsername).orElse(resourceType);
-                }
+                case CLIENTS_RESOURCE_TYPE -> resolveClient(session, resourceName).map(ClientModel::getClientId).orElse(resourceType);
+                case GROUPS_RESOURCE_TYPE -> resolveGroup(session, resourceName).map(GroupModel::getName).orElse(resourceType);
+                case ROLES_RESOURCE_TYPE -> resolveRole(session, resourceName).map(RoleModel::getName).orElse(resourceType);
+                case USERS_RESOURCE_TYPE -> resolveUser(session, resourceName).map(UserModel::getUsername).orElse(resourceType);
                 default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
             }
         }
@@ -386,6 +389,98 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             } else if (resources.size() > 1) {
                 policy.removeResource(resourceTypeResource);
             }
+        }
+    }
+
+    public void removeResourceObject(AuthorizationProvider authorization, ProviderEvent event) {
+        if (!isAdminPermissionsEnabled(authorization.getRealm()) || authorization.getRealm().getAdminPermissionsClient() == null) return;
+
+        String type;
+        String configKey;
+        String id;
+        if (event instanceof UserRemovedEvent userRemovedEvent) {
+            type = "user";
+            configKey = "users";
+            id = userRemovedEvent.getUser().getId();
+        } else if (event instanceof ClientRemovedEvent clientRemovedEvent) {
+            type = "client";
+            configKey = "clients";
+            id = clientRemovedEvent.getClient().getId();
+        } else if (event instanceof GroupRemovedEvent groupRemovedEvent) {
+            type = "group";
+            configKey = "groups";
+            id = groupRemovedEvent.getGroup().getId();
+        } else if (event instanceof RoleRemovedEvent roleRemovedEvent) {
+            type = "role";
+            configKey = "roles";
+            id = roleRemovedEvent.getRole().getId();
+        } else {
+            return;
+        }
+
+        ResourceServer server = authorization.getStoreFactory().getResourceServerStore().findByClient(authorization.getRealm().getAdminPermissionsClient());
+
+        Map<Policy.FilterOption, String[]> attributes = Map.of(
+                Policy.FilterOption.TYPE, new String[] {type},
+                Policy.FilterOption.CONFIG, new String[] {configKey, id}
+        );
+
+        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().find(server, attributes, null, null);
+
+        //remove objectId from policy if there is more than one, remove the policy if there is only removed objectId in the policy remaining
+        for (Policy policy : policies) {
+            String objects = policy.getConfig().get(configKey);
+            try {
+                if (event instanceof GroupRemovedEvent) {
+                    List<GroupPolicyRepresentation.GroupDefinition> groupDefinitions = new ArrayList<>(Arrays.asList(JsonSerialization.readValue(objects, GroupPolicyRepresentation.GroupDefinition[].class)));
+
+                    if (groupDefinitions.removeIf(definition -> definition.getId().equals(id))) {
+                        if (groupDefinitions.isEmpty()) {
+                            authorization.getStoreFactory().getPolicyStore().delete(policy.getId());
+                        } else {
+                            policy.putConfig("groups", JsonSerialization.writeValueAsString(groupDefinitions));
+                        }
+                    }
+                } else if (event instanceof RoleRemovedEvent) {
+                    List<RolePolicyRepresentation.RoleDefinition> roleDefinitions = new ArrayList<>(Arrays.asList(JsonSerialization.readValue(objects, RolePolicyRepresentation.RoleDefinition[].class)));
+
+                    if (roleDefinitions.removeIf(definition -> definition.getId().equals(id))) {
+                        if (roleDefinitions.isEmpty()) {
+                            authorization.getStoreFactory().getPolicyStore().delete(policy.getId());
+                        } else {
+                            policy.putConfig("roles", JsonSerialization.writeValueAsString(roleDefinitions));
+                        }
+                    }
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Set<String> ids = (Set<String>) JsonSerialization.readValue(objects, Set.class);
+                    if (ids.remove(id)) {
+                        if (ids.isEmpty()) {
+                            authorization.getStoreFactory().getPolicyStore().delete(policy.getId());
+                        } else {
+                            policy.putConfig(configKey, JsonSerialization.writeValueAsString(ids));
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException("Falied to deserialize " + configKey, ex);
+            }
+        }
+
+        Resource resource = authorization.getStoreFactory().getResourceStore().findByName(server, id);
+        if (resource != null) {
+            List<Policy> permissions = authorization.getStoreFactory().getPolicyStore().findByResource(server, resource);
+            //remove object from permission if there is more than one resource, remove the permission if there is only the removed object
+            for (Policy permission : permissions) {
+                if (permission.getResources().size() == 1) {
+                    authorization.getStoreFactory().getPolicyStore().delete(permission.getId());
+                } else {
+                    permission.removeResource(resource);
+                }
+            }
+
+            //remove the resource associated with the object
+            authorization.getStoreFactory().getResourceStore().delete(resource.getId());
         }
     }
 }
