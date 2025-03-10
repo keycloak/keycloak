@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
@@ -208,20 +207,22 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
-        boolean newUserSessionCreated = false;
         if (targetUserSession == null || targetUserSession.isOffline()) {
-            // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
-            // The new session created also when original session was offline (assuming we don't allow offline-access from token exchange)
+            // if no session is associated with the subject_token or it is offline, check no online session is needed
+            if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
+                event.detail(Details.REASON, "Refresh token not valid as requested_token_type because creating a new session is needed");
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "Refresh token not valid as requested_token_type because creating a new session is needed", Response.Status.BAD_REQUEST);
+            }
+            // create a transient session now for the token exchange
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
                     clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
-                    requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                            ? UserSessionModel.SessionPersistenceState.PERSISTENT
-                            : UserSessionModel.SessionPersistenceState.TRANSIENT);
-            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.PERSISTENT) {
-                newUserSessionCreated = true;
-            }
+                    UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
-        boolean newClientSessionCreated = !newUserSessionCreated && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
+
+        final boolean newClientSessionCreated = targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT
+                && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
 
         event.session(targetUserSession);
 
@@ -297,11 +298,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
             if (responseBuilder.getAccessToken().getAudience() != null) {
-                StringJoiner joiner = new StringJoiner(" ");
-                for (String s : List.of(responseBuilder.getAccessToken().getAudience())) {
-                    joiner.add(s);
-                }
-                event.detail(Details.AUDIENCE, joiner.toString());
+                event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
             }
             event.success();
 
@@ -310,10 +307,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             // Cleanup client-session if created in this request
             if (newClientSessionCreated) {
                 targetUserSession.removeAuthenticatedClientSessions(Set.of(client.getId()));
-            }
-            // Cleanup user-session if created in this request
-            if (newUserSessionCreated) {
-                session.sessions().removeUserSession(realm, targetUserSession);
             }
 
             throw e;
@@ -363,7 +356,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
         OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && oidcClient.isUseRefreshToken() && oidcClient.isStandardTokenExchangeRefreshEnabled()) {
+                && oidcClient.isUseRefreshToken()
+                && oidcClient.getStandardTokenExchangeRefreshEnabled() != OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO) {
             return requestedTokenType;
         }
 
