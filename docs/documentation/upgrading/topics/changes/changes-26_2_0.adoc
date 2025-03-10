@@ -19,7 +19,13 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
-= Zero-configuration secure cluster communication
+== Notable changes
+
+=== `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
+
+Built-in X.509 client certificate lookup providers now reflect the `proxy-trusted-addresses` config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or `proxy-trusted-addresses` is unset.
+
+=== Zero-configuration secure cluster communication
 
 For clustering multiple nodes, {project_name} uses distributed caches.
 Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
@@ -32,7 +38,7 @@ If you are using a custom transport stack, this default behavior can be disabled
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
 
-= Operator creates NetworkPolicies to restrict traffic
+=== Operator creates NetworkPolicies to restrict traffic
 
 The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
 

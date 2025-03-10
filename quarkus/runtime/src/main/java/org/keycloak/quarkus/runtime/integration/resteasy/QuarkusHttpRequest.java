@@ -34,8 +34,10 @@ import org.jboss.resteasy.reactive.common.util.QuarkusMultivaluedHashMap;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.core.multipart.FormData;
 import org.jboss.resteasy.reactive.server.multipart.FormValue;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.jaxrs.EmptyMultivaluedMap;
 import org.keycloak.services.FormPartValueImpl;
 
@@ -54,13 +56,17 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public String getHttpMethod() {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         return context.getMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         FormData parameters = context.getFormData();
 
         if (parameters == null || !parameters.iterator().hasNext()) {
@@ -86,7 +92,9 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public MultivaluedMap<String, FormPartValue> getMultiPartFormParameters() {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         FormData formData = context.getFormData();
 
         if (formData == null) {
@@ -122,7 +130,9 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         return context.getHttpHeaders();
     }
 
@@ -151,7 +161,16 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public UriInfo getUri() {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         return context.getUriInfo();
+    }
+
+    @Override
+    public boolean isProxyTrusted() {
+        boolean noTrustedProxies = Configuration.getOptionalKcValue(ProxyOptions.PROXY_TRUSTED_ADDRESSES).isEmpty();
+        return noTrustedProxies
+                || Boolean.parseBoolean(this.getHttpHeaders().getHeaderString("X-Forwarded-Trusted-Proxy"));
     }
 }

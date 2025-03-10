@@ -1,7 +1,6 @@
 package org.keycloak.services.x509;
 
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -32,7 +31,7 @@ import org.keycloak.common.util.PemUtils;
  * The NGINX Provider extract end user X.509 certificate send during TLS mutual authentication,
  * and forwarded in an http header.
  *
- * NGINX configuration must have : 
+ * NGINX configuration must have :
  * <code>
  * server {
  *    ...
@@ -118,32 +117,24 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
     }
 
     @Override
-    public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException {
-        List<X509Certificate> chain = new ArrayList<>();
+    protected void buildChain(HttpRequest httpRequest, List<X509Certificate> chain, X509Certificate clientCert) {
+        log.debugf("End user certificate found : Subject DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectX500Principal(), clientCert.getSerialNumber());
 
-        // Get the client certificate
-        X509Certificate clientCert = getCertificateFromHttpHeader(httpRequest, sslClientCertHttpHeader);
-
-        if (clientCert != null) {
-            log.debugf("End user certificate found : Subject DN=[%s]  SerialNumber=[%s]", clientCert.getSubjectX500Principal(), clientCert.getSerialNumber());
-
-            // Rebuilding the end user certificate chain using Keycloak Truststore
-            X509Certificate[] certChain = buildChain(clientCert);
-            if (certChain == null || certChain.length == 0) {
-                log.info("Impossible to rebuild end user cert chain : client certificate authentication will fail." );
-                chain.add(clientCert);
-            } else {
-                for (X509Certificate caCert : certChain) {
-                    chain.add(caCert);
-                    log.debugf("Rebuilded user cert chain DN : %s", caCert.getSubjectX500Principal());
-                }
+        // Rebuilding the end user certificate chain using Keycloak Truststore
+        X509Certificate[] certChain = buildChain(clientCert);
+        if (certChain == null || certChain.length == 0) {
+            log.info("Impossible to rebuild end user cert chain : client certificate authentication will fail." );
+            chain.add(clientCert);
+        } else {
+            for (X509Certificate caCert : certChain) {
+                chain.add(caCert);
+                log.debugf("Rebuilded user cert chain DN : %s", caCert.getSubjectX500Principal());
             }
         }
-        return chain.toArray(new X509Certificate[0]);
     }
 
     /**
-     *  As NGINX cannot actually send the CA Chain in http header(s), 
+     *  As NGINX cannot actually send the CA Chain in http header(s),
      *  we are rebuilding here the end user certificate chain with Keycloak truststore.
      *  <br>
      *  Please note that Keycloak truststore must contain root and intermediate CA's certificates.
