@@ -18,21 +18,22 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.Predicate;
 
 import org.keycloak.common.Profile;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityManager;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityManagerImpl;
-import org.keycloak.quarkus.runtime.compatibility.CompatibilityResult;
 import picocli.CommandLine;
 
 public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
 
-    protected final CompatibilityManager compatibilityManager = new CompatibilityManagerImpl();
+    private static final int FEATURE_DISABLED_EXIT_CODE = 4;
 
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
@@ -53,7 +54,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         Environment.updateProfile(true);
         if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
             printFeatureDisabled();
-            picocli.exit(CompatibilityResult.FEATURE_DISABLED);
+            picocli.exit(FEATURE_DISABLED_EXIT_CODE);
             return;
         }
         printPreviewWarning();
@@ -95,6 +96,22 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
 
     void printFeatureDisabled() {
         printError("Unable to use this command. The preview feature 'rolling-updates' is not enabled.");
+    }
+
+    static Map<String, CompatibilityMetadataProvider> loadAllProviders() {
+        Map<String, CompatibilityMetadataProvider> providers = new HashMap<>();
+        for (var p : ServiceLoader.load(CompatibilityMetadataProvider.class)) {
+            providers.merge(p.getId(), p, (existing, current) -> {
+                if (existing.priority() == current.priority()) {
+                    throw new IllegalArgumentException("Unable to handle two providers with the same id (%s) and priority.".formatted(existing.getId()));
+                }
+                // If a user wants to replace default providers with their own.
+                return existing.priority() < current.priority() ?
+                        current :
+                        existing;
+            });
+        }
+        return providers;
     }
 
 }
