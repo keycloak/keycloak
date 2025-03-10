@@ -29,10 +29,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String request;
     protected String requestUri;
     protected String claims;
-    protected String kcAction;
-    protected String uiLocales;
-    protected String maxAge;
-    protected String prompt;
     protected StateParamProvider state;
     protected String nonce;
 
@@ -299,28 +295,12 @@ public abstract class AbstractOAuthClient<T> {
         return claims;
     }
 
-    String getKcAction() {
-        return kcAction;
-    }
-
-    String getUiLocales() {
-        return uiLocales;
-    }
-
     public String getState() {
         return state != null ? state.getState() : null;
     }
 
     public String getNonce() {
         return nonce;
-    }
-
-    String getMaxAge() {
-        return maxAge;
-    }
-
-    String getPrompt() {
-        return prompt;
     }
 
     protected interface StateParamProvider {

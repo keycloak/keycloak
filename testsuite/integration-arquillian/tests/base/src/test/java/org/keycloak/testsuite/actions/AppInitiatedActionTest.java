@@ -62,7 +62,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void executeUnknownAction() {
-        oauth.kcAction("nosuch").openLoginForm();
+        oauth.loginForm().kcAction("nosuch").open();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -74,7 +74,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void executeUnsupportedAction() {
-        oauth.kcAction(TermsAndConditions.PROVIDER_ID).openLoginForm();
+        oauth.loginForm().kcAction(TermsAndConditions.PROVIDER_ID).open();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -91,7 +91,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
         try {
             testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", configureTotp);
 
-            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).openLoginForm();
+            oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
 
             loginPage.login("test-user@localhost", "password");
 
@@ -120,7 +120,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
             termsAndConditions.setEnabled(true);
             realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
 
-            oauth.kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).openLoginForm();
+            oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).open();
             loginPage.login("test-user@localhost", "password");
 
             // the update password should be displayed
