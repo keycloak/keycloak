@@ -200,6 +200,17 @@ The Email Event Listener sends a message to the user's email address when an eve
 * Update Credential.
 * Remove Credential.
 
+Here are the optional events you can configure:
+
+* User disabled by permanent lockout
+* User disabled by temporary lockout
+
+To enable these optional events, use the following command:
+[source,bash]
+----
+kc.[sh|bat] --spi-events-listener-email-include-events=USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR,USER_DISABLED_BY_PERMANENT_LOCKOUT
+----
+
 The following conditions need to be met for an email to be sent:
 
 * User has an email address.
