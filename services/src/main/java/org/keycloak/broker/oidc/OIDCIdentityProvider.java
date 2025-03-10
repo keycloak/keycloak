@@ -257,6 +257,38 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+    @Override
+    protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
+        BrokeredIdentityContext context = super.validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+
+        if (context != null && (OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType) ||
+            (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt()))) {
+
+            JsonWebToken parsedToken;
+            try {
+                parsedToken = validateToken(subjectToken, true);
+            } catch (IdentityBrokerException e) {
+                logger.debug("Unable to validate token for exchange", e);
+                event.detail(Details.REASON, "token validation failure");
+                event.error(Errors.INVALID_TOKEN);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+            }
+
+            boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
+
+            if (idTokenType) {
+                context.getContextData().put(VALIDATED_ID_TOKEN, parsedToken);
+            } else {
+                context.getContextData().put(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN, parsedToken);
+            }
+            context.getContextData().put(EXCHANGE_PROVIDER, getConfig().getAlias());
+            context.setIdp(this);
+            return context;
+        }
+
+        return context;
+    }
+
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
         // Don't verify audience on accessToken as it may not be there. It was verified on IDToken already
         if (getConfig().isAccessTokenJwt()) {
