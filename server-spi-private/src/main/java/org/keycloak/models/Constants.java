@@ -205,5 +205,6 @@ public final class Constants {
     public static final String REQUESTED_AUDIENCE = "req-aud";
     // Note in clientSessionContext specifying token grant type used
     public static final String GRANT_TYPE = OAuth2Constants.GRANT_TYPE;
-
+    // Note in client session to know the subject client
+    public static final String TOKEN_EXCHANGE_SUBJECT_CLIENT = "token_exchange_subject_client";
 }
