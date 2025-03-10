@@ -21,6 +21,7 @@ package org.keycloak.services.resources;
  * Class of constants relating to the OpenAPI annotations in Keycloak and the Keycloak Admin REST API
  */
 public class KeycloakOpenAPI {
+    public static final String JWT_SCHEME = "jwt";
 
     private KeycloakOpenAPI() { }
     public static class Profiles {

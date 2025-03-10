@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.component.ComponentValidationException;
@@ -53,6 +54,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
+@SecurityRequirement(name = KeycloakOpenAPI.JWT_SCHEME)
 public class UserProfileResource {
 
     protected final KeycloakSession session;
