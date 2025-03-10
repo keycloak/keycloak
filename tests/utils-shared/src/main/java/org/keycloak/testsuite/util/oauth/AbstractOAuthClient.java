@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
@@ -175,6 +176,18 @@ public abstract class AbstractOAuthClient<T> {
 
     public TokenRevocationResponse doTokenRevoke(String token) {
         return tokenRevocationRequest(token).send();
+    }
+
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
+        return tokenExchangeRequest(subjectToken, OAuth2Constants.ACCESS_TOKEN_TYPE);
+    }
+
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
+        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
+    }
+
+    public AccessTokenResponse doTokenExchange(String subjectToken) {
+        return tokenExchangeRequest(subjectToken).send();
     }
 
     public CibaClient ciba() {
