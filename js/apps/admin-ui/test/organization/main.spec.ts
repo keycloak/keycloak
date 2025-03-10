@@ -48,42 +48,49 @@ test.describe("Organization CRUD", () => {
     await assertNotificationMessage(page, "Organization successfully saved.");
   });
 
-  test("should modify existing organization", async ({ page }) => {
-    await adminClient.createOrganization({
-      realm: realmName,
-      name: "editName",
-      domains: [{ name: "go.org", verified: false }],
-    });
-    await clickTableRowItem(page, "editName");
-    const newValue = "newName";
-    await fillNameField(page, newValue);
-    await expect(getNameField(page)).toHaveValue(newValue);
-    await clickSaveButton(page);
-    await assertNotificationMessage(page, "Organization successfully saved.");
-    await goToOrganizations(page);
-    await assertRowExists(page, newValue);
-  });
+  test.describe("Existing organization", () => {
+    const orgName = `org-edit-${uuid()}`;
 
-  test("should delete from list", async ({ page }) => {
-    await adminClient.createOrganization({
-      realm: realmName,
-      name: "deleteName",
-      domains: [{ name: "other.org", verified: false }],
+    test.beforeAll(async () => {
+      await adminClient.createOrganization({
+        realm: realmName,
+        name: orgName,
+        domains: [{ name: orgName, verified: false }],
+      });
     });
-    await clickRowKebabItem(page, "deleteName", "Delete");
-    await confirmModal(page);
-    await assertNotificationMessage(page, "The organization has been deleted");
-  });
 
-  test("should delete from details page", async ({ page }) => {
-    await adminClient.createOrganization({
-      realm: realmName,
-      name: "deleteName2",
-      domains: [{ name: "acme.org", verified: false }],
+    test.afterAll(async () => {
+      await adminClient.deleteOrganization(orgName, realmName);
     });
-    await clickTableRowItem(page, "deleteName2");
-    await selectActionToggleItem(page, "Delete");
-    await confirmModal(page);
-    await assertNotificationMessage(page, "The organization has been deleted");
+
+    test("should modify existing organization", async ({ page }) => {
+      await clickTableRowItem(page, orgName);
+      const newValue = "newName";
+      await fillNameField(page, newValue);
+      await expect(getNameField(page)).toHaveValue(newValue);
+      await clickSaveButton(page);
+      await assertNotificationMessage(page, "Organization successfully saved.");
+      await goToOrganizations(page);
+      await assertRowExists(page, newValue);
+    });
+
+    test("should delete from list", async ({ page }) => {
+      await clickRowKebabItem(page, orgName, "Delete");
+      await confirmModal(page);
+      await assertNotificationMessage(
+        page,
+        "The organization has been deleted",
+      );
+    });
+
+    test("should delete from details page", async ({ page }) => {
+      await clickTableRowItem(page, orgName);
+      await selectActionToggleItem(page, "Delete");
+      await confirmModal(page);
+      await assertNotificationMessage(
+        page,
+        "The organization has been deleted",
+      );
+    });
   });
 });

@@ -524,10 +524,18 @@ class AdminClient {
     await this.#client.organizations.create(org);
   }
 
-  async deleteOrganization(name: string) {
+  async deleteOrganization(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
     await this.#login();
-    const { id } = (await this.#client.organizations.find({ search: name }))[0];
-    await this.#client.organizations.delById({ id: id! });
+    const found = await this.#client.organizations.find({
+      search: name,
+      realm,
+    });
+    if (found.length !== 0) {
+      await this.#client.organizations.delById({ id: found[0].id!, realm });
+    }
   }
 
   async copyFlow(
