@@ -378,7 +378,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Impersonate the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = Object.class))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
@@ -568,7 +568,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get consents granted by the user")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Map.class))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<Map<String, Object>> getConsents() {
@@ -1118,7 +1118,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = Long.class))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, Long> getGroupMembershipCount(@QueryParam("search") String search) {
@@ -1214,7 +1214,7 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(type = SchemaType.OBJECT, additionalProperties = String[].class))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, List<String>> getUnmanagedAttributes() {
