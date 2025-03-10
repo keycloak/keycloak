@@ -10,7 +10,7 @@ public class ParResponse extends AbstractHttpResponse {
     private String requestUri;
     private int expiresIn;
 
-    public ParResponse(CloseableHttpResponse response) throws Exception {
+    public ParResponse(CloseableHttpResponse response) throws IOException {
         super(response);
     }
 

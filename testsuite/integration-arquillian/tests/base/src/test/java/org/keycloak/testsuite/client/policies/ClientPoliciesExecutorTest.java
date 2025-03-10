@@ -753,14 +753,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         });
 
         oauth.realm(REALM_NAME);
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
 
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
 
         oauth.request(signRequestObject(requestObject));
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
@@ -775,7 +775,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject.exp(null);
         oauth.requestUri(null);
         oauth.request(signRequestObject(requestObject));
-        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        pResp = oauth.doPushedAuthorizationRequest();
         requestUri = pResp.getRequestUri();
         oauth.request(null);
         oauth.requestUri(requestUri);
@@ -786,7 +786,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject.nbf(null);
         oauth.requestUri(null);
         oauth.request(signRequestObject(requestObject));
-        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        pResp = oauth.doPushedAuthorizationRequest();
         requestUri = pResp.getRequestUri();
         oauth.request(null);
         oauth.requestUri(requestUri);
@@ -797,7 +797,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject.audience("https://www.other1.example.com/");
         oauth.request(signRequestObject(requestObject));
         oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        pResp = oauth.doPushedAuthorizationRequest();
         requestUri = pResp.getRequestUri();
         oauth.request(null);
         oauth.requestUri(requestUri);
@@ -808,7 +808,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject.setOtherClaims(OIDCLoginProtocol.REQUEST_URI_PARAM, "foo");
         oauth.request(signRequestObject(requestObject));
         oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
     }
 
@@ -1509,19 +1509,22 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
+        oauth.client(clientBetaId, "secretBeta");
+
         // Pushed Authorization Request
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         oauth.requestUri(requestUri);
-        oauth.clientId(clientBetaId);
+        oauth.client(clientBetaId);
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
 
+        oauth.client(clientBetaId, "secretBeta");
         oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
         oauth.requestUri(requestUri);
@@ -1555,9 +1558,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
+        oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+
         // Pushed Authorization Request without state parameter
         oauth.addCustomParameter("request", encodedRequestObject);
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(TEST_CLIENT, TEST_CLIENT_SECRET);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
@@ -1575,7 +1580,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.requestUri(null);
         oauth.addCustomParameter("request", encodedRequestObject);
-        pResp = oauth.doPushedAuthorizationRequest(TEST_CLIENT, TEST_CLIENT_SECRET);
+        pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
 
