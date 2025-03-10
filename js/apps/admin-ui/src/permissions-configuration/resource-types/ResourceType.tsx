@@ -3,9 +3,10 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useFormContext } from "react-hook-form";
 import { useState, type JSX } from "react";
-import { UserSelect } from "../../components/users/UserSelect";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { GroupSelect } from "./GroupSelect";
+import { UserSelect } from "../../components/users/UserSelect";
+import { RoleSelect } from "./RoleSelect";
 
 type ResourceTypeProps = {
   resourceType: string;
@@ -17,6 +18,7 @@ const COMPONENTS: {
   users: UserSelect,
   clients: ClientSelect,
   groups: GroupSelect,
+  roles: RoleSelect,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
