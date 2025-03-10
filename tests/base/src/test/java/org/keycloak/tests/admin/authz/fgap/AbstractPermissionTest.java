@@ -92,10 +92,6 @@ public abstract class AbstractPermissionTest {
             permission.setLogic(logic);
             return this;
         }
-        PermissionBuilder name(String name) {
-            permission.setName(name);
-            return this;
-        }
         PermissionBuilder resourceType(String resourceType) {
             permission.setResourceType(resourceType);
             return this;
@@ -114,35 +110,43 @@ public abstract class AbstractPermissionTest {
         }
     }
 
-    protected static UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String userId) {
-        return createUserPolicy(realm, client, name, userId, Logic.POSITIVE);
+    protected static UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String... userIds) {
+        return createUserPolicy(Logic.POSITIVE, realm, client, name, userIds);
     }
 
-    protected static UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String userId, Logic logic) {
+    protected static UserPolicyRepresentation createUserPolicy(Logic logic, ManagedRealm realm, ManagedClient client, String name, String... userIds) {
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName(name);
-        policy.addUser(userId);
+        for (String userId : userIds) {
+            policy.addUser(userId);
+        }
         policy.setLogic(logic);
         try (Response response = client.admin().authorization().policies().user().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
-                String policyId = r.clients().get(client.getId()).authorization().policies().user().findByName(name).getId();
-                r.clients().get(client.getId()).authorization().policies().user().findById(policyId).remove();
+                UserPolicyRepresentation userPolicy = r.clients().get(client.getId()).authorization().policies().user().findByName(name);
+                if (userPolicy != null) {
+                    r.clients().get(client.getId()).authorization().policies().user().findById(userPolicy.getId()).remove();
+                }
             });
         }
         return policy;
     }
 
-    protected static ClientPolicyRepresentation createClientPolicy(ManagedRealm realm, ManagedClient client, String name, String clientId) {
+    protected static ClientPolicyRepresentation createClientPolicy(ManagedRealm realm, ManagedClient client, String name, String... clientIds) {
         ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
         policy.setName(name);
-        policy.addClient(clientId);
+        for (String clientId : clientIds) {
+            policy.addClient(clientId);
+        }
         policy.setLogic(Logic.POSITIVE);
         try (Response response = client.admin().authorization().policies().client().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
-                String policyId = r.clients().get(client.getId()).authorization().policies().client().findByName(name).getId();
-                r.clients().get(client.getId()).authorization().policies().client().findById(policyId).remove();
+                ClientPolicyRepresentation clientPolicy = r.clients().get(client.getId()).authorization().policies().client().findByName(name);
+                if (clientPolicy != null) {
+                    r.clients().get(client.getId()).authorization().policies().client().findById(clientPolicy.getId()).remove();
+                }
             });
         }
         return policy;

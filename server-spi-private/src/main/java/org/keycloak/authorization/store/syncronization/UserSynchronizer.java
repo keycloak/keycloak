@@ -18,14 +18,11 @@
 package org.keycloak.authorization.store.syncronization;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -34,7 +31,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -45,6 +41,8 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
     public void synchronize(UserRemovedEvent event, KeycloakSessionFactory factory) {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
+
+        AdminPermissionsSchema.SCHEMA.removeResourceObject(authorizationProvider, event);
 
         removeFromUserPermissionTickets(event, authorizationProvider);
         removeUserResources(event, authorizationProvider);
