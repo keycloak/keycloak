@@ -51,9 +51,11 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.EventCountQuery;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEventCountQuery;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -852,6 +854,83 @@ public class RealmAdminResource {
         return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
+
+    /**
+     * Get events
+     *
+     * Returns count of events filtered by the query parameters provided
+     *
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param ipAddress IP address
+     * @param dateTo To date
+     * @param dateFrom From date
+     * @return
+     */
+    @Path("events/count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get count of all events or count the filtered events based on the URL query parameters listed here.")
+    public Map<String, Long> getEventsCount(@Parameter(description = "The types of events to return") @QueryParam("type") List<String> types,
+                                                 @Parameter(description = "App or oauth client name") @QueryParam("client") String client,
+                                                 @Parameter(description = "User id") @QueryParam("user") String user,
+                                                 @Parameter(description = "From (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp") @QueryParam("dateFrom") String dateFrom,
+                                                 @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp") @QueryParam("dateTo") String dateTo,
+                                                 @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress) {
+        auth.realm().requireViewEvents();
+
+        Long results;
+
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        EventCountQuery query = eventStore.createCountQuery().realm(realm.getId());
+
+        if (client != null) {
+            query.client(client);
+        }
+
+        if (types != null && !types.isEmpty()) {
+            EventType[] t = new EventType[types.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = EventType.valueOf(types.get(i));
+            }
+            query.type(t);
+        }
+
+        if (user != null) {
+            query.user(user);
+        }
+
+        if(dateFrom != null) {
+            try {
+                query.fromDate(DateUtil.toStartOfDay(dateFrom));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateFrom', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
+        if(dateTo != null) {
+            try {
+                query.toDate(DateUtil.toEndOfDay(dateTo));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateTo', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
+        if (ipAddress != null) {
+            query.ipAddress(ipAddress);
+        }
+
+        results = query.getCount();
+
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", results);
+
+        return map;
+    }
+
     /**
      * Get admin events
      *
@@ -961,6 +1040,101 @@ public class RealmAdminResource {
         }
 
         return query.getResultStream().map(ModelToRepresentation::toRepresentation);
+    }
+
+
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param operationTypes
+     * @param authRealm
+     * @param authClient
+     * @param authUser user id
+     * @param authIpAddress
+     * @param resourcePath
+     * @param dateTo
+     * @param dateFrom
+     * @return
+     */
+    @Path("admin-events/count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation( summary = "Get count of all admin events or count the filtered admin events based on the URL query parameters listed here.")
+    public Map<String, Long> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+                                       @Parameter(description = "user id") @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                       @QueryParam("resourcePath") String resourcePath,
+                                       @Parameter(description = "From (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp") @QueryParam("dateFrom") String dateFrom,
+                                       @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp") @QueryParam("dateTo") String dateTo,
+                                       @QueryParam("resourceTypes") List<String> resourceTypes) {
+        auth.realm().requireViewEvents();
+
+        Long results;
+
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+        AdminEventCountQuery query = eventStore.createAdminCountQuery().realm(realm.getId());
+
+        if (authRealm != null) {
+            query.authRealm(authRealm);
+        }
+
+        if (authClient != null) {
+            query.authClient(authClient);
+        }
+
+        if (authUser != null) {
+            query.authUser(authUser);
+        }
+
+        if (authIpAddress != null) {
+            query.authIpAddress(authIpAddress);
+        }
+
+        if (resourcePath != null) {
+            query.resourcePath(resourcePath);
+        }
+
+        if (operationTypes != null && !operationTypes.isEmpty()) {
+            OperationType[] t = new OperationType[operationTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = OperationType.valueOf(operationTypes.get(i));
+            }
+            query.operation(t);
+        }
+
+        if (resourceTypes != null && !resourceTypes.isEmpty()) {
+            ResourceType[] t = new ResourceType[resourceTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = ResourceType.valueOf(resourceTypes.get(i));
+            }
+            query.resourceType(t);
+        }
+
+        if(dateFrom != null) {
+            try {
+                query.fromTime(DateUtil.toStartOfDay(dateFrom));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateFrom', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
+        if(dateTo != null) {
+            try {
+                query.toTime(DateUtil.toEndOfDay(dateTo));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'dateTo', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
+        results = query.getCount();
+
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", results);
+
+        return map;
     }
 
     /**
