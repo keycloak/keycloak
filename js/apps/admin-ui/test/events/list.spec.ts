@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { login, logout } from "../utils/login";
@@ -64,7 +64,9 @@ test.describe("Events tests", () => {
   });
 
   test.describe("User events with events", () => {
-    test.beforeAll(async ({ page }) => {
+    let page: Page;
+    test.beforeAll(async ({ browser }) => {
+      page = await browser.newPage();
       await login(page);
       await goToRealm(page, realmName);
       await goToEvents(page);
@@ -72,6 +74,10 @@ test.describe("Events tests", () => {
       await enableSaveEvents(page);
 
       await logout(page);
+    });
+
+    test.afterAll(async () => {
+      await page.close();
     });
 
     test.beforeEach(async ({ page }) => {

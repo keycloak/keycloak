@@ -40,7 +40,7 @@ import {
 } from "./flow";
 
 test.describe("Authentication test", () => {
-  const realmName = `test${uuidv4()}`;
+  const realmName = `authentication-flow-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
 
@@ -92,16 +92,7 @@ test.describe("Authentication test", () => {
       await page.getByTestId("refresh").click();
     });
 
-    test("Should edit flow details", async ({ page }) => {
-      await clickTableRowItem(page, flowName);
-
-      await selectActionToggleItem(page, "Edit info");
-
-      const newName = "New flow name";
-      await fillDuplicateFlowModal(page, newName, "Other description");
-      await assertNotificationMessage(page, "Flow successfully updated");
-      await expect(page.locator(`text="${newName}"`)).toBeVisible();
-    });
+    test.afterEach(() => adminClient.deleteFlow(flowName, realmName));
 
     test("Should add a execution", async ({ page }) => {
       await clickTableRowItem(page, flowName);
@@ -182,6 +173,17 @@ test.describe("Authentication test", () => {
       await page.mouse.up();
 
       await assertNotificationMessage(page, "Flow successfully updated");
+    });
+
+    test("Should edit flow details", async ({ page }) => {
+      await clickTableRowItem(page, flowName);
+
+      await selectActionToggleItem(page, "Edit info");
+
+      const newName = "New flow name";
+      await fillDuplicateFlowModal(page, newName, "Other description");
+      await assertNotificationMessage(page, "Flow successfully updated");
+      await expect(page.locator(`text="${newName}"`)).toBeVisible();
     });
   });
 });
