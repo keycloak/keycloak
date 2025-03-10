@@ -75,7 +75,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -1086,16 +1085,14 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     private void isAccessTokenEnabled(String accessToken, String clientId, String secret) throws IOException {
         oauth.client(clientId, secret);
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessToken);
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessToken).asTokenMetadata();
         assertTrue(rep.isActive());
     }
 
     private void isAccessTokenDisabled(String accessTokenString, String clientId, String secret) throws IOException {
         // Test introspection endpoint not possible
         oauth.client(clientId, secret);
-        String introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenString);
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenString).asTokenMetadata();
         assertFalse(rep.isActive());
     }
 
