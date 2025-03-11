@@ -156,6 +156,16 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder bruteForceProtected(boolean enabled) {
+        rep.setBruteForceProtected(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder failureFactor(int count) {
+        rep.setFailureFactor(count);
+        return this;
+    }
+
     public RealmRepresentation build() {
         return rep;
     }
