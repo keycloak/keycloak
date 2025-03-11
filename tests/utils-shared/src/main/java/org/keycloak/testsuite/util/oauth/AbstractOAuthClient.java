@@ -25,8 +25,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String codeVerifier;
     protected String clientSessionState;
     protected String clientSessionHost;
-    protected String dpopJkt;
-    protected String dpopProof;
     protected String request;
     protected String requestUri;
     protected String claims;
@@ -284,14 +282,6 @@ public abstract class AbstractOAuthClient<T> {
 
     Map<String, String> getCustomParameters() {
         return customParameters;
-    }
-
-    String getDpopJkt() {
-        return dpopJkt;
-    }
-
-    String getDpopProof() {
-        return dpopProof;
     }
 
     public String getRequestUri() {

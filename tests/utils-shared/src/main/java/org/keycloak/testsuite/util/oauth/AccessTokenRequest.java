@@ -21,6 +21,11 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return client.getEndpoints().getToken();
     }
 
+    public AccessTokenRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
 
@@ -31,8 +36,6 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
 
         parameter(OAuth2Constants.CODE_VERIFIER, client.getCodeVerifier());
-
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
     }
 
     @Override

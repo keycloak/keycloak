@@ -29,9 +29,12 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantR
         return this;
     }
 
-    protected void initRequest() {
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
+    public PasswordGrantRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
 
+    protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
         parameter("username", username);
         parameter("password", password);
