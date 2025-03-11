@@ -15,56 +15,66 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.event;
+package org.keycloak.tests.admin.event;
 
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test getting and filtering login-related events.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LoginEventsTest extends AbstractEventTest {
+@KeycloakIntegrationTest
+public class LoginEventsTest {
 
-    @Before
+    @InjectRealm(config = LoginEventsRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectOAuthClient
+    OAuthClient oAuthClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServerClient;
+
+    @BeforeEach
     public void init() {
-        configRep.setEventsEnabled(true);
-        saveConfig();
-        testRealmResource().clearEvents();
-        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
+        managedRealm.admin().clearEvents();
     }
 
     private List<EventRepresentation> events() {
-        return testRealmResource().getEvents();
+        return managedRealm.admin().getEvents();
     }
 
     private void badLogin() {
-        oauth.openLoginForm();
-        loginPage.form().login("bad", "user");
+        oAuthClient.doLogin("bad", "user");
     }
 
     private void pause(int seconds) {
         try {
             Thread.sleep(seconds * 1000L);
         } catch (InterruptedException e) {
-            fail(e.getMessage());
+            Assertions.fail(e.getMessage());
         }
     }
 
@@ -72,138 +82,148 @@ public class LoginEventsTest extends AbstractEventTest {
     public void eventAttributesTest() {
         badLogin();
         List<EventRepresentation> events = events();
-        assertEquals(1, events.size());
+        Assertions.assertEquals(1, events.size());
         EventRepresentation event = events.get(0);
-        MatcherAssert.assertThat(event.getId(), AssertEvents.isUUID());
-        assertTrue(event.getTime() > 0);
-        assertNotNull(event.getIpAddress());
-        assertEquals("LOGIN_ERROR", event.getType());
-        assertEquals(realmName(), event.getRealmId());
-        assertNull(event.getUserId()); // no user for bad login
-        assertNull(event.getSessionId()); // no session for bad login
-        assertEquals("user_not_found", event.getError());
+        assertThat(event.getId(), EventMatchers.isUUID());
+        Assertions.assertTrue(event.getTime() > 0);
+        Assertions.assertNotNull(event.getIpAddress());
+        Assertions.assertEquals("LOGIN_ERROR", event.getType());
+        Assertions.assertEquals(managedRealm.getId(), event.getRealmId());
+        Assertions.assertNull(event.getUserId()); // no user for bad login
+        Assertions.assertNull(event.getSessionId()); // no session for bad login
+        Assertions.assertEquals("user_not_found", event.getError());
 
         Map<String, String> details = event.getDetails();
-        assertEquals("openid-connect", details.get("auth_method"));
-        assertEquals("code", details.get("auth_type"));
-        assertNotNull(details.get("redirect_uri"));
-        assertNotNull(details.get("code_id"));
-        assertEquals("bad", details.get("username"));
+        Assertions.assertEquals("openid-connect", details.get("auth_method"));
+        Assertions.assertEquals("code", details.get("auth_type"));
+        Assertions.assertNotNull(details.get("redirect_uri"));
+        Assertions.assertNotNull(details.get("code_id"));
+        Assertions.assertEquals("bad", details.get("username"));
     }
 
     @Test
     public void clearEventsTest() {
-        assertEquals(0, events().size());
+        Assertions.assertEquals(0, events().size());
         badLogin();
         badLogin();
-        assertEquals(2, events().size());
-        testRealmResource().clearEvents();
-        assertEquals(0, events().size());
+        Assertions.assertEquals(2, events().size());
+        managedRealm.admin().clearEvents();
+        Assertions.assertEquals(0, events().size());
     }
 
     @Test
     public void loggingOfCertainTypeTest() {
-        assertEquals(0, events().size());
-        configRep.setEnabledEventTypes(Arrays.asList("REVOKE_GRANT"));
-        saveConfig();
+        Assertions.assertEquals(0, events().size());
+        managedRealm.updateWithCleanup(r -> r.enabledEventTypes("REVOKE_GRANT"));
 
         badLogin();
-        assertEquals(0, events().size());
+        Assertions.assertEquals(0, events().size());
 
-        configRep.setEnabledEventTypes(Arrays.asList("LOGIN_ERROR"));
-        saveConfig();
+        managedRealm.updateWithCleanup(r -> r.overwriteEnabledEventTypes("LOGIN_ERROR"));
 
         badLogin();
-        assertEquals(1, events().size());
+        Assertions.assertEquals(1, events().size());
     }
 
     @Test
     public void filterTest() {
         badLogin();
         badLogin();
-        assertEquals(2, events().size());
+        Assertions.assertEquals(2, events().size());
 
-        List<EventRepresentation> filteredEvents = testRealmResource().getEvents(Arrays.asList("REVOKE_GRANT"), null, null, null, null, null, null, null);
-        assertEquals(0, filteredEvents.size());
+        List<EventRepresentation> filteredEvents = managedRealm.admin().getEvents(List.of("REVOKE_GRANT"), null, null, null, null, null, null, null);
+        Assertions.assertEquals(0, filteredEvents.size());
 
-        filteredEvents = testRealmResource().getEvents(Arrays.asList("LOGIN_ERROR"), null, null, null, null, null, null, null);
-        assertEquals(2, filteredEvents.size());
+        filteredEvents = managedRealm.admin().getEvents(List.of("LOGIN_ERROR"), null, null, null, null, null, null, null);
+        Assertions.assertEquals(2, filteredEvents.size());
     }
 
     @Test
     public void defaultMaxResults() {
-        RealmResource realm = adminClient.realms().realm("test");
-        EventRepresentation event = new EventRepresentation();
-        event.setRealmId(realm.toRepresentation().getId());
-        event.setType(EventType.LOGIN.toString());
+        String realmId = managedRealm.getId();
 
-        for (int i = 0; i < 110; i++) {
-            testingClient.testing("test").onEvent(event);
-        }
+        runOnServerClient.run(session -> {
+            EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
+            Event event = new Event();
+            event.setRealmId(realmId);
+            event.setType(EventType.LOGIN);
 
-        assertEquals(100, realm.getEvents(null, null, null, null, null, null, null, null).size());
-        assertEquals(105, realm.getEvents(null, null, null, null, null, null, 0, 105).size());
-        assertTrue(realm.getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
+            for (int i = 0; i < 110; i++) {
+                provider.onEvent(event);
+            }
+        });
+
+        Assertions.assertEquals(100, managedRealm.admin().getEvents(null, null, null, null, null, null, null, null).size());
+        Assertions.assertEquals(105, managedRealm.admin().getEvents(null, null, null, null, null, null, 0, 105).size());
+        Assertions.assertTrue(managedRealm.admin().getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
     @Test
     public void orderResultsTest() {
-        RealmResource realm = adminClient.realms().realm("test");
-        EventRepresentation firstEvent = new EventRepresentation();
-        firstEvent.setRealmId(realm.toRepresentation().getId());
-        firstEvent.setType(EventType.LOGIN.toString());
-        firstEvent.setTime(System.currentTimeMillis() - 1000);
+        String realmId = managedRealm.getId();
 
-        EventRepresentation secondEvent = new EventRepresentation();
-        secondEvent.setRealmId(realm.toRepresentation().getId());
-        secondEvent.setType(EventType.LOGOUT.toString());
-        secondEvent.setTime(System.currentTimeMillis());
+        runOnServerClient.run(session -> {
+            EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
 
-        testingClient.testing("test").onEvent(firstEvent);
-        testingClient.testing("test").onEvent(secondEvent);
+            Event firstEvent = new Event();
+            firstEvent.setRealmId(realmId);
+            firstEvent.setType(EventType.LOGIN);
+            firstEvent.setTime(System.currentTimeMillis() - 1000);
 
-        List<EventRepresentation> events = realm.getEvents(null, null, null, null, null, null, null, null, "desc");
-        assertEquals(2, events.size());
-        assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
-        assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
+            Event secondEvent = new Event();
+            secondEvent.setRealmId(realmId);
+            secondEvent.setType(EventType.LOGOUT);
+            secondEvent.setTime(System.currentTimeMillis());
 
-        events = realm.getEvents(null, null, null, null, null, null, null, null, "asc");
-        assertEquals(2, events.size());
-        assertEquals(EventType.LOGOUT.toString(), events.get(1).getType());
-        assertEquals(EventType.LOGIN.toString(), events.get(0).getType());
+            provider.onEvent(firstEvent);
+            provider.onEvent(secondEvent);
+        });
+
+        List<EventRepresentation> events = managedRealm.admin().getEvents(null, null, null, null, null, null, null, null, "desc");
+        Assertions.assertEquals(2, events.size());
+        Assertions.assertEquals(EventType.LOGOUT.toString(), events.get(0).getType());
+        Assertions.assertEquals(EventType.LOGIN.toString(), events.get(1).getType());
+
+        events = managedRealm.admin().getEvents(null, null, null, null, null, null, null, null, "asc");
+        Assertions.assertEquals(2, events.size());
+        Assertions.assertEquals(EventType.LOGOUT.toString(), events.get(1).getType());
+        Assertions.assertEquals(EventType.LOGIN.toString(), events.get(0).getType());
     }
 
 
     @Test
     public void filterByEpochTimeStamp() {
-        RealmResource realm = adminClient.realms().realm("test");
-        EventRepresentation event = new EventRepresentation();
-        event.setType(EventType.LOGIN.toString());
-        event.setRealmId(realm.toRepresentation().getId());
-
         long currentTime = System.currentTimeMillis();
+        String realmId = managedRealm.getId();
 
-        event.setTime(currentTime - 1000);
-        testingClient.testing("test").onEvent(event);
-        event.setTime(currentTime);
-        testingClient.testing("test").onEvent(event);
-        event.setTime(currentTime + 1000);
-        testingClient.testing("test").onEvent(event);
+        runOnServerClient.run(session -> {
+            EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
+            Event event = new Event();
+            event.setType(EventType.LOGIN);
+            event.setRealmId(realmId);
 
-        List<EventRepresentation> events = realm.getEvents(null, null, null, currentTime, currentTime, null, null, null, null);
-        Assert.assertEquals(1, events.size());
-        events = realm.getEvents(null, null, null, currentTime - 1000, currentTime + 1000, null, null, null, null);
-        Assert.assertEquals(3, events.size());
+            event.setTime(currentTime - 1000);
+            provider.onEvent(event);
+            event.setTime(currentTime);
+            provider.onEvent(event);
+            event.setTime(currentTime + 1000);
+            provider.onEvent(event);
+        });
+
+        List<EventRepresentation> events = managedRealm.admin().getEvents(null, null, null, currentTime, currentTime, null, null, null, null);
+        Assertions.assertEquals(1, events.size());
+        events = managedRealm.admin().getEvents(null, null, null, currentTime - 1000, currentTime + 1000, null, null, null, null);
+        Assertions.assertEquals(3, events.size());
     }
 
     @Test
     public void testErrorEventsAreNotStoredWhenDisabled() {
-        configRep.setEventsEnabled(false);
-        saveConfig();
+        managedRealm.updateWithCleanup(r -> r.eventsEnabled(false));
 
         badLogin();
-        assertEquals(0, events().size());
+        Assertions.assertEquals(0, events().size());
     }
+
 
     /*
     Removed this test because it takes too long.  The default interval for
@@ -218,4 +238,12 @@ public class LoginEventsTest extends AbstractEventTest {
         pause(900); // pause 900 seconds
         assertEquals(0, events().size());
     }**/
+
+    private static class LoginEventsRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.eventsEnabled(true);
+        }
+    }
 }
