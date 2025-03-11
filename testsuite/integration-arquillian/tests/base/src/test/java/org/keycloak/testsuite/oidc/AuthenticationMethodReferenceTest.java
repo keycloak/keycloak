@@ -184,11 +184,6 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
     public void cleanup() {
         clearAmr("browser");
 
-        // remove claims config for acr
-        ClaimsRepresentation claims = new ClaimsRepresentation();
-        claims.setIdTokenClaims(Collections.emptyMap());
-        oauth.claims(claims);
-
         // reset default browser flow
         setBrowserFlow("browser");
 

@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util.oauth;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.ClaimsRepresentation;
 
 public class LoginUrlBuilder extends AbstractUrlBuilder {
 
@@ -73,6 +74,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder claims(ClaimsRepresentation claims) {
+        parameter(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
@@ -84,7 +90,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
-        parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());
 
         if (client.getCustomParameters() != null) {
             client.getCustomParameters().forEach(this::parameter);
