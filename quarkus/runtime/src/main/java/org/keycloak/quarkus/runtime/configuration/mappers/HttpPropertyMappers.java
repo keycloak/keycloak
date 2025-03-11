@@ -28,7 +28,7 @@ public final class HttpPropertyMappers {
     private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE = "quarkus.http.ssl.certificate.key-store-file";
     private static final String QUARKUS_HTTPS_TRUST_STORE_FILE = "quarkus.http.ssl.certificate.trust-store-file";
-    private static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
+    public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
 
     private HttpPropertyMappers(){}
@@ -136,7 +136,6 @@ public final class HttpPropertyMappers {
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .mapFrom(SecurityOptions.FIPS_MODE, HttpPropertyMappers::resolveKeyStoreType)
                         .to(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)
-                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
                         .paramLabel("type")
                         .build(),
                 fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
