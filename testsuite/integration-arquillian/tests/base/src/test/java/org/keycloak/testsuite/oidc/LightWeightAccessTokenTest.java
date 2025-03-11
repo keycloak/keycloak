@@ -69,6 +69,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -495,13 +496,10 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         oauth.realm("master");
         oauth.client(Constants.ADMIN_CONSOLE_CLIENT_ID, TEST_CLIENT_SECRET);
         oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
-        PkceGenerator pkce = new PkceGenerator();
-        oauth.codeChallenge(pkce.getCodeChallenge());
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(pkce.getCodeVerifier());
+        PkceGenerator pkce = PkceGenerator.s256();
 
-        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().codeChallenge(pkce).doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authsEndpointResponse.getCode()).codeVerifier(pkce).send();
         String accessToken = tokenResponse.getAccessToken();
         logger.debug("access token:" + accessToken);
         assertBasicClaims(oauth.verifyToken(accessToken), true, true);
@@ -585,13 +583,10 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         oauth.realm("master");
         oauth.client(Constants.ADMIN_CONSOLE_CLIENT_ID, TEST_CLIENT_SECRET);
         oauth.redirectUri(OAuthClient.SERVER_ROOT + "/auth/admin/master/console");
-        PkceGenerator pkce = new PkceGenerator();
-        oauth.codeChallenge(pkce.getCodeChallenge());
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(pkce.getCodeVerifier());
+        PkceGenerator pkce = PkceGenerator.s256();
 
-        AuthorizationEndpointResponse authsEndpointResponse = oauth.doLogin("admin", "admin");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authsEndpointResponse.getCode());
+        AuthorizationEndpointResponse authsEndpointResponse = oauth.loginForm().codeChallenge(pkce).doLogin("admin", "admin");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authsEndpointResponse.getCode()).codeVerifier(pkce).send();
         String accessToken = tokenResponse.getAccessToken();
         logger.debug("access token:" + accessToken);
         assertBasicClaims(oauth.verifyToken(accessToken), false, false);

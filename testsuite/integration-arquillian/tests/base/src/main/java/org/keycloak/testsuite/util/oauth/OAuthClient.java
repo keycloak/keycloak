@@ -88,9 +88,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         request = null;
         requestUri = null;
         claims = null;
-        codeVerifier = null;
-        codeChallenge = null;
-        codeChallengeMethod = null;
         customParameters = null;
     }
 
@@ -184,21 +181,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 throw new RuntimeException(ioe);
             }
         }
-        return this;
-    }
-
-    public OAuthClient codeVerifier(String codeVerifier) {
-        this.codeVerifier = codeVerifier;
-        return this;
-    }
-
-    public OAuthClient codeChallenge(String codeChallenge) {
-        this.codeChallenge = codeChallenge;
-        return this;
-    }
-
-    public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
-        this.codeChallengeMethod = codeChallengeMethod;
         return this;
     }
 

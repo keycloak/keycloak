@@ -52,6 +52,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -253,11 +254,8 @@ public class FAPI1Test extends AbstractFAPITest {
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
+        pkceGenerator = PkceGenerator.s256();
         // Setup PKCE
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
@@ -265,7 +263,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
             String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
-            return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
+            return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
         });
     }
 
@@ -283,19 +281,14 @@ public class FAPI1Test extends AbstractFAPITest {
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
-        // Setup PKCE
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        pkceGenerator = PkceGenerator.s256();
 
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
-            oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code);
+            return oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         });
     }
 
@@ -378,22 +371,18 @@ public class FAPI1Test extends AbstractFAPITest {
         Assert.assertTrue(client.isPublicClient());
 
         // Setup PKCE and nonce
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        pkceGenerator = PkceGenerator.s256();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
-            oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code);
+            return oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         });
 
         // Set "advanced" policy
         setupPolicyFAPIAdvancedForAllClient();
 
         // Should not be possible to login anymore with public client
-        oauth.loginForm().nonce("123456").open();
+        oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
     }
 
@@ -513,7 +502,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         // Check HoK required
         String signedJwt = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
-        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, null, DefaultHttpClient::new);
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
         Assert.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
         Assert.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
 
@@ -524,7 +513,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         String signedJwt2 = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
 
-        tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt2, null, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt2, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -597,20 +586,19 @@ public class FAPI1Test extends AbstractFAPITest {
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: code_challenge_method");
 
         // Check PKCE required - login with "plain" PKCE should fail
-        oauth.codeChallenge("234567890_234567890123");
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
-        oauth.openLoginForm();
+        pkceGenerator = PkceGenerator.plain();
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Invalid parameter: code challenge method is not matching the configured one");
     }
 
     // Assumption is that clientId is already set in "oauth" client when this method is called. Also assumption is that PKCE parameters are properly set (in case PKCE required for the client)
     private void checkNonceAndStateForCurrentClientDuringLogin() {
-        oauth.openLoginForm();
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: nonce");
 
         // Check "state" required in non-OIDC request
         oauth.openid(false);
-        oauth.loginForm().nonce("123456").open();
+        oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: state");
     }
 
@@ -620,7 +608,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Check redirect_uri required
         oauth.openid(true);
         oauth.redirectUri(null);
-        oauth.openLoginForm();
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
         assertBrowserWithError("Invalid parameter: redirect_uri");
 
         // Revert redirectUri

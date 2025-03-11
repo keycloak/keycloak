@@ -55,6 +55,19 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder codeChallenge(PkceGenerator pkceGenerator) {
+        if (pkceGenerator != null) {
+            codeChallenge(pkceGenerator.getCodeChallenge(), pkceGenerator.getCodeChallengeMethod());
+        }
+        return this;
+    }
+
+    public LoginUrlBuilder codeChallenge(String codeChallenge, String codeChallengeMethod) {
+        parameter(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        return this;
+    }
+
     public LoginUrlBuilder dpopJkt(String dpopJkt) {
         parameter(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
         return this;
@@ -68,9 +81,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-
-        parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
-        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, client.getCodeChallengeMethod());
 
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
