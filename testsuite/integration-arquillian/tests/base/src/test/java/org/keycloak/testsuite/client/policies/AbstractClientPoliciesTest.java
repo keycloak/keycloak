@@ -249,6 +249,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private PkceGenerator pkceGenerator;
 
+    protected String request;
+    protected String requestUri;
+
     @Before
     public void before() throws Exception {
         setInitialAccessTokenForDynamicClientRegistration();
@@ -267,6 +270,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         revertToBuiltinProfiles();
         revertToBuiltinPolicies();
         pkceGenerator = null;
+        request = null;
+        requestUri = null;
     }
 
     protected void setupValidProfilesAndPolicies() throws Exception {
@@ -633,11 +638,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
-            oauth.request(null);
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            requestUri = TestApplicationResourceUrls.clientRequestUri();
+            request = null;
         } else {
-            oauth.requestUri(null);
-            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            request = oidcClientEndpointsResource.getOIDCRequest();
+            requestUri = null;
         }
     }
 
@@ -1518,7 +1523,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected AccessTokenResponse successfulLogin(String clientId, String clientSecret, String nonce, String state) {
         oauth.client(clientId, clientSecret);
-        oauth.loginForm().nonce(nonce).state(state).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().nonce(nonce).state(state).request(request).requestUri(requestUri).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();

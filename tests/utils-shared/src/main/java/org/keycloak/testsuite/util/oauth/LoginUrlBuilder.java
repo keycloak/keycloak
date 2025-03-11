@@ -79,6 +79,16 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder request(String request) {
+        parameter(OIDCLoginProtocol.REQUEST_PARAM, request);
+        return this;
+    }
+
+    public LoginUrlBuilder requestUri(String requestUri) {
+        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
@@ -88,8 +98,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
 
-        parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
-        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
 
         if (client.getCustomParameters() != null) {
             client.getCustomParameters().forEach(this::parameter);

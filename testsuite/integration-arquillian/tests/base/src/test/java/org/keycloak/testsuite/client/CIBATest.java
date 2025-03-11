@@ -1606,7 +1606,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).request(request).bindingMessage(bindingMessage).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: exp"));
@@ -1619,7 +1619,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: nbf"));
@@ -1633,7 +1633,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("signed authentication request's available period is long"));
@@ -1648,7 +1648,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: aud"));
@@ -1663,7 +1663,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: aud"));
@@ -1678,7 +1678,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: iss"));
@@ -1694,7 +1694,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: iss"));
@@ -1712,7 +1712,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: iat"));
@@ -1730,7 +1730,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, sigAlg, useRequestUri);
 
             // user Backchannel Authentication Request
-            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+            response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).request(request).send();
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: jti"));
@@ -2519,7 +2519,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             registerSharedAuthenticationRequest(sharedAuthenticationRequest, clientId, requestedSigAlg, sigAlg, useRequestUri, clientSecret, null);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.ciba().doBackchannelAuthenticationRequest(null);
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(null).request(request).requestUri(requestUri).send();
             assertThat(response.getStatusCode(), is(equalTo(statusCode)));
             assertThat(response.getError(), is(error));
             assertThat(response.getErrorDescription(), is(errorDescription));
@@ -2550,11 +2550,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
         oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
-            oauth.request(null);
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            requestUri = TestApplicationResourceUrls.clientRequestUri();
+            request = null;
         } else {
-            oauth.requestUri(null);
-            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            request = oidcClientEndpointsResource.getOIDCRequest();
+            requestUri = null;
         }
     }
 
@@ -2675,11 +2675,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
         }
 
         if (isUseRequestUri) {
-            oauth.request(null);
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            request = null;
+            requestUri = TestApplicationResourceUrls.clientRequestUri();
         } else {
-            oauth.requestUri(null);
-            oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+            request = oidcClientEndpointsResource.getOIDCRequest();
+            requestUri = null;
         }
     }
 
@@ -2770,7 +2770,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
     private AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String username, String bindingMessage, String clientNotificationToken, Map<String, String> additionalParameters) throws Exception {
         oauth.client(clientId, clientSecret);
-        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).clientNotificationToken(clientNotificationToken).additionalParams(additionalParameters).send();
+        AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).request(request).requestUri(requestUri).bindingMessage(bindingMessage).clientNotificationToken(clientNotificationToken).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
         return response;

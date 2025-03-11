@@ -43,6 +43,16 @@ public class BackchannelAuthenticationRequest extends AbstractHttpPostRequest<Ba
         return this;
     }
 
+    public BackchannelAuthenticationRequest request(String request) {
+        parameter(OIDCLoginProtocol.REQUEST_PARAM, request);
+        return this;
+    }
+
+    public BackchannelAuthenticationRequest requestUri(String requestUri) {
+        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getBackchannelAuthentication();
@@ -53,8 +63,6 @@ public class BackchannelAuthenticationRequest extends AbstractHttpPostRequest<Ba
         parameter(CibaGrantType.BINDING_MESSAGE, bindingMessage);
         parameter(OAuth2Constants.ACR_VALUES, acrValues);
         parameter(CibaGrantType.CLIENT_NOTIFICATION_TOKEN, clientNotificationToken);
-        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
-        parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
 
         if (additionalParams != null) {
             additionalParams.forEach(this::parameter);

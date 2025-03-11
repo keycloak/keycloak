@@ -22,8 +22,6 @@ public abstract class AbstractOAuthClient<T> {
     protected Map<String, String> customParameters;
     protected String clientSessionState;
     protected String clientSessionHost;
-    protected String request;
-    protected String requestUri;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -266,14 +264,6 @@ public abstract class AbstractOAuthClient<T> {
 
     Map<String, String> getCustomParameters() {
         return customParameters;
-    }
-
-    public String getRequestUri() {
-        return requestUri;
-    }
-
-    public String getRequest() {
-        return request;
     }
 
 }

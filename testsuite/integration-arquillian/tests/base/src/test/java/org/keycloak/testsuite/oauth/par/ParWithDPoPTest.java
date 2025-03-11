@@ -1020,7 +1020,6 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         oauth.scope(OAuth2Constants.SCOPE_OPENID);
-        oauth.request(null);
         // ----- PAR -----
         ParResponse pResp = oauth.pushedAuthorizationRequest().dpopJkt(dpopJkt).dpopProof(dpopProofEncoded).send();
         // revert
@@ -1033,15 +1032,13 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
 
     private ParResponse sendPushedAuthorizationRequestWithDpopJkt(String clientId, String clientSecret, String requestObject, String dpopProofEncoded, String dpopJkt) throws IOException {
         oauth.client(clientId, clientSecret);
-        oauth.request(requestObject);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
         // ----- PAR -----
-        ParResponse pResp = oauth.pushedAuthorizationRequest().dpopJkt(dpopJkt).dpopProof(dpopProofEncoded).send();
+        ParResponse pResp = oauth.pushedAuthorizationRequest().dpopJkt(dpopJkt).dpopProof(dpopProofEncoded).request(requestObject).send();
         // revert
         oauth.client(null);
-        oauth.request(null);
         return pResp;
     }
 
@@ -1049,16 +1046,13 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
         oauth.clientId(clientId);
-        oauth.requestUri(requestUri);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
-        oauth.request(null);
         // ----- Authorization Request -----
-        AuthorizationEndpointResponse loginResponse = oauth.loginForm().dpopJkt(dpopJkt).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).dpopJkt(dpopJkt).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         // revert
         oauth.clientId(null);
-        oauth.requestUri(null);
         return loginResponse;
     }
 
