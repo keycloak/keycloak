@@ -16,24 +16,26 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import io.smallrye.config.ConfigSourceInterceptor;
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 
-import io.smallrye.config.Priorities;
-import jakarta.annotation.Priority;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.collections4.iterators.FilterIterator;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+import io.smallrye.config.ConfigSourceInterceptor;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -54,7 +56,6 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();
-    private static final ThreadLocal<Boolean> disableAdditionalNames = new ThreadLocal<>();
 
     public static void disable() {
         disable.set(true);
@@ -64,40 +65,72 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         disable.remove();
     }
 
-    static Iterator<String> filterRuntime(Iterator<String> iter) {
-        if (!isRebuild() && !Environment.isRebuildCheck()) {
-            return iter;
-        }
-        return new FilterIterator<>(iter, item -> !isRuntime(item));
-    }
-
-    static boolean isRuntime(String name) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-        return mapper != null && mapper.isRunTime();
-    }
-
+    /**
+     * Provides a curated iteration of names based upon the mapping logic.
+     * Quarkus logic, such as config mapping, is dependent upon seeing the quarkus
+     * form of the key. We want to expose that here, rather than in the config sources
+     * because we lack a simple way to do name mapping for some sources, such as the
+     * keystore config source.
+     * <p>
+     * We currently expose:
+     * <li>anything based upon a property mapper that has a map to a quarkus property - including
+     * our kc. properties that have defaults.
+     * <li>wildcard key names for wildcard keys that map from a keycloak property (e.g. kc.log-level)
+     *
+     * We selectively exclude:
+     * <li>Config keystore properties at build time
+     */
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
-        // We need to iterate through names to get wildcard option names.
-        // Additionally, wildcardValuesTransformer might also trigger iterateNames.
-        // Hence we need to disable this to prevent infinite recursion.
-        // But we don't want to disable the whole interceptor, as wildcardValuesTransformer
-        // might still need mappers to work.
-        List<String> mappedWildcardNames = List.of();
-        if (!Boolean.TRUE.equals(disableAdditionalNames.get())) {
-            disableAdditionalNames.set(true);
-            try {
-                mappedWildcardNames = PropertyMappers.getWildcardMappers().stream()
-                        .map(WildcardPropertyMapper::getToWithWildcards)
-                        .flatMap(Set::stream)
-                        .toList();
-            } finally {
-                disableAdditionalNames.remove();
-            }
-        }
+        Iterable<String> iterable = () -> context.iterateNames();
 
-        // this could be optimized by filtering the wildcard names in the stream above
-        return filterRuntime(IteratorUtils.chainedIterator(mappedWildcardNames.iterator(), context.iterateNames()));
+        final Set<PropertyMapper<?>> allMappers = PropertyMappers.getMappers();
+
+        //TODO: this is still not a complete list - things like quarkus.log.console.enabled
+        // come from kc.log - but via a map from, not to.
+        // so we'd need additional logic like the getWildcardMappedFrom case for that
+
+        boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
+
+        var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+
+            if (mapper == null) {
+                return Stream.of(name);
+            }
+            if (filterRuntime && mapper.getCategory() == OptionCategory.CONFIG) {
+                return Stream.of(); // advertising the keystore type causes the keystore to be used early
+            }
+            allMappers.remove(mapper);
+
+            if (!mapper.hasWildcard()) {
+                var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
+                if (wildCard != null) {
+                    ConfigValue value = context.proceed(name);
+                    if (value != null && value.getValue() != null) {
+                        return Stream.concat(Stream.of(name), wildCard.getToFromWildcardTransformer(value.getValue()));
+                    }
+                }
+            }
+
+            mapper = mapper.forKey(name);
+
+            // there is a corner case here -1 for the reload period has no 'to' value.
+            // if that becomes an issue we could use more metadata to perform a full mapping
+            return toDistinctStream(name, mapper.getTo());
+        });
+
+        // include anything remaining that has a default value
+        var defaultStream = allMappers.stream()
+                .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                        && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
+                .flatMap(m -> toDistinctStream(m.getTo()));
+
+        return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
+    }
+
+    private static Stream<String> toDistinctStream(String... values) {
+        return Stream.of(values).filter(Objects::nonNull).distinct();
     }
 
     @Override
@@ -105,6 +138,10 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         if (Boolean.TRUE.equals(disable.get())) {
             return context.proceed(name);
         }
-        return PropertyMappers.getValue(context, name);
+
+        // track that we may be starting to resolve "name". There's no recursion concern here
+        // just proceed to get the value from the PropertyMappers.
+        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n);
+        return NestedPropertyMappingInterceptor.resolve(resolver, resolver, name);
     }
 }

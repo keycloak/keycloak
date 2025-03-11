@@ -77,7 +77,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         if(args == null) {
             return Collections.emptyList();
         }
-        
+
         List<String> result = new ArrayList<String>();
         boolean escaped = false;
         StringBuilder arg = new StringBuilder();
@@ -101,7 +101,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             }
         }
         result.add(arg.toString());
-        
+
         return result;
     }
 
@@ -125,20 +125,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
                 properties.put(key, value);
-
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
-
-                if (mapper != null) {
-                    mapper = mapper.forKey(key);
-
-                    String to = mapper.getTo();
-
-                    if (to != null) {
-                        properties.put(mapper.getTo(), value);
-                    }
-
-                    properties.put(mapper.getFrom(), value);
-                }
             }
         }, ignored -> {});
 

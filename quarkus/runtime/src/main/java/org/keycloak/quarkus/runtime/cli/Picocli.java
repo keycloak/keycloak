@@ -39,7 +39,6 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -382,57 +381,46 @@ public class Picocli {
             }
             if (options.includeRuntime) {
                 disabledMappers.addAll(PropertyMappers.getDisabledRuntimeMappers().values());
-            } else {
-                checkRuntimeSpiOptions(options, ignoredRunTime);
             }
 
-            for (OptionCategory category : abstractCommand.getOptionCategories()) {
-                List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
+            var categories = new HashSet<>(abstractCommand.getOptionCategories());
+
+            // first validate the advertised property names
+            // - this allows for efficient resolution of wildcard values and checking spi options
+            Configuration.getConfig().getPropertyNames().forEach(name -> {
+                if (!options.includeRuntime) {
+                    checkRuntimeSpiOptions(name, ignoredRunTime);
+                }
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+                if (mapper == null) {
+                    return; // TODO: need to look for disabled Wildcard mappers
+                }
+                if (!categories.contains(mapper.getCategory())) {
+                    return; // not of interest to this command
+                    // TODO: due to picking values up from the env and auto-builds, this probably isn't correct
+                    // - the same issue exists with the second pass
+                }
+                String from = mapper.getFrom();
+                if (!mapper.hasWildcard()) {
+                    return; // non-wildcard options will be validated in the next pass
+                }
+                from = mapper.forKey(name).getFrom();
+                validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
+                        deprecatedInUse, missingOption, disabledMappers, mapper, from);
+            });
+
+            // second pass validate any property mapper not seen in the first pass
+            // - this will catch required values, anything missing from the property names, or disabled
+            List<PropertyMapper<?>> mappers = new ArrayList<>(disabledMappers);
+            for (OptionCategory category : categories) {
                 Optional.ofNullable(PropertyMappers.getRuntimeMappers().get(category)).ifPresent(mappers::addAll);
                 Optional.ofNullable(PropertyMappers.getBuildTimeMappers().get(category)).ifPresent(mappers::addAll);
-                for (PropertyMapper<?> mapper : mappers) {
-                    mapper.getKcConfigValues().forEach(configValue -> {
-                        String configValueStr = configValue.getValue();
+            }
 
-                        // don't consider missing or anything below standard env properties
-                        if (configValueStr != null && !isUserModifiable(configValue)) {
-                            return;
-                        }
-
-                        if (disabledMappers.contains(mapper)) {
-                            if (!PropertyMappers.isDisabledMapper(mapper.getFrom())) {
-                                return; // we found enabled mapper with the same name
-                            }
-
-                            // only check build-time for a rebuild, we'll check the runtime later
-                            if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
-                                if (PropertyMapper.isCliOption(configValue)) {
-                                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                                } else {
-                                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
-                                }
-                            }
-                            return;
-                        }
-
-                        if (mapper.isRunTime() && !options.includeRuntime) {
-                            if (configValueStr != null) {
-                                ignoredRunTime.add(mapper.getFrom());
-                            }
-                            return;
-                        }
-
-                        if (configValueStr == null) {
-                            if (mapper.isRequired()) {
-                                handleRequired(missingOption, mapper);
-                            }
-                            return;
-                        }
-
-                        mapper.validate(configValue);
-
-                        mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
-                    });
+            for (PropertyMapper<?> mapper : mappers) {
+                if (!mapper.hasWildcard()) {
+                    validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
+                            deprecatedInUse, missingOption, disabledMappers, mapper, mapper.getFrom());
                 }
             }
 
@@ -462,27 +450,72 @@ public class Picocli {
         }
     }
 
+    private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,
+            final List<String> ignoredRunTime, final Set<String> disabledBuildTime, final Set<String> disabledRunTime,
+            final Set<String> deprecatedInUse, final Set<String> missingOption,
+            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper, String from) {
+        ConfigValue configValue = Configuration.getConfigValue(from);
+        String configValueStr = configValue.getValue();
+
+        // don't consider missing or anything below standard env properties
+        if (configValueStr != null && !isUserModifiable(configValue)) {
+            return;
+        }
+
+        if (disabledMappers.contains(mapper)) {
+            if (!PropertyMappers.isDisabledMapper(from)) {
+                return; // we found enabled mapper with the same name
+            }
+
+            // only check build-time for a rebuild, we'll check the runtime later
+            if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
+                if (PropertyMapper.isCliOption(configValue)) {
+                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
+                } else {
+                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
+                }
+            }
+            return;
+        }
+
+        if (mapper.isRunTime() && !options.includeRuntime) {
+            if (configValueStr != null) {
+                ignoredRunTime.add(mapper.getFrom());
+            }
+            return;
+        }
+
+        if (configValueStr == null) {
+            if (mapper.isRequired()) {
+                handleRequired(missingOption, mapper);
+            }
+            return;
+        }
+
+        mapper.validate(configValue);
+
+        mapper.getDeprecatedMetadata().ifPresent(metadata -> handleDeprecated(deprecatedInUse, mapper, configValueStr, metadata));
+    }
+
     private static boolean isUserModifiable(ConfigValue configValue) {
         // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
         // for now we won't validate these as it's not expected for the user to specify options via system properties
         return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 
-    private static void checkRuntimeSpiOptions(IncludeOptions options, final List<String> ignoredRunTime) {
-        for (String key : Configuration.getConfig().getPropertyNames()) {
-            if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
-                continue;
-            }
-            boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
+    private static void checkRuntimeSpiOptions(String key, final List<String> ignoredRunTime) {
+        if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
+            return;
+        }
+        boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
 
-            if (!buildTimeOption) {
-                ConfigValue configValue = Configuration.getConfigValue(key);
-                String configValueStr = configValue.getValue();
+        if (!buildTimeOption) {
+            ConfigValue configValue = Configuration.getConfigValue(key);
+            String configValueStr = configValue.getValue();
 
-                // don't consider missing or anything below standard env properties
-                if (configValueStr != null && isUserModifiable(configValue)) {
-                    ignoredRunTime.add(key);
-                }
+            // don't consider missing or anything below standard env properties
+            if (configValueStr != null && isUserModifiable(configValue)) {
+                ignoredRunTime.add(key);
             }
         }
     }
