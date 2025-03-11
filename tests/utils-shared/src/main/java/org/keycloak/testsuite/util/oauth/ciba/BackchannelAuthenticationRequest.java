@@ -55,7 +55,6 @@ public class BackchannelAuthenticationRequest extends AbstractHttpPostRequest<Ba
         parameter(CibaGrantType.CLIENT_NOTIFICATION_TOKEN, clientNotificationToken);
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
-        parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());
 
         if (additionalParams != null) {
             additionalParams.forEach(this::parameter);

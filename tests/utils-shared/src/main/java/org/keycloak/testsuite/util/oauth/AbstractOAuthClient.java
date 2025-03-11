@@ -24,7 +24,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String clientSessionHost;
     protected String request;
     protected String requestUri;
-    protected String claims;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -275,10 +274,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getRequest() {
         return request;
-    }
-
-    public String getClaims() {
-        return claims;
     }
 
 }

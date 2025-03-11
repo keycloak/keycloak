@@ -19,15 +19,10 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -87,7 +82,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         clientSessionHost = null;
         request = null;
         requestUri = null;
-        claims = null;
         customParameters = null;
     }
 
@@ -168,19 +162,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient requestUri(String requestUri) {
         this.requestUri = requestUri;
-        return this;
-    }
-
-    public OAuthClient claims(ClaimsRepresentation claims) {
-        if (claims == null) {
-            this.claims = null;
-        } else {
-            try {
-                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), StandardCharsets.UTF_8);
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-        }
         return this;
     }
 

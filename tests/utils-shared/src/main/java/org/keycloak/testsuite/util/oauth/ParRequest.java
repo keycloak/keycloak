@@ -65,7 +65,6 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
-        parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());
     }
 
     @Override
