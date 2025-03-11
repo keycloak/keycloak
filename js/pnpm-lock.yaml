@@ -225,10 +225,10 @@ importers:
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.10.1
-        version: 4.10.1(playwright-core@1.50.1)
+        version: 4.10.1(playwright-core@1.51.0)
       '@playwright/test':
         specifier: ^1.49.1
-        version: 1.50.1
+        version: 1.51.0
       '@testing-library/dom':
         specifier: ^10.4.0
         version: 10.4.0
@@ -4453,10 +4453,10 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.32.3
       '@ast-grep/napi-win32-x64-msvc': 0.32.3
 
-  '@axe-core/playwright@4.10.1(playwright-core@1.50.1)':
+  '@axe-core/playwright@4.10.1(playwright-core@1.51.0)':
     dependencies:
       axe-core: 4.10.2
-      playwright-core: 1.50.1
+      playwright-core: 1.51.0
 
   '@babel/code-frame@7.26.2':
     dependencies:
