@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.AdapterConstants;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -60,9 +59,6 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         if (additionalParams != null) {
             additionalParams.forEach(this::parameter);
         }
-
-        parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
-        parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
     }

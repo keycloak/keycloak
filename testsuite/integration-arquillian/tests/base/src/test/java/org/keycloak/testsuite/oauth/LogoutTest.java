@@ -17,21 +17,26 @@
 
 package org.keycloak.testsuite.oauth;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response.Status;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
@@ -45,29 +50,24 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response.Status;
-
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.oauth.LogoutResponse;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -108,8 +108,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         LogoutResponse response = oauth.doLogout(refreshTokenString);
@@ -124,8 +123,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         adminClient.realm("test").update(RealmBuilder.create().notBefore(Time.currentTime() + 1).build());
@@ -168,8 +166,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         oauth.client("test-app-scope", "password");
@@ -206,8 +203,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
         String idTokenString = tokenResponse.getIdToken();
 
         JWSHeader header = new JWSInput(tokenResponse.getAccessToken()).getHeader();
@@ -226,12 +222,12 @@ public class LogoutTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         String logoutUrl = oauth.logoutForm()
-          .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
-          .build();
+                .idTokenHint(idTokenString)
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
-          CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
             MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
@@ -263,9 +259,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        oauth.clientSessionState("client-session");
-
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
         events.poll();
         String idTokenString = tokenResponse.getIdToken();
         String logoutUrl = oauth.logoutForm()
@@ -274,7 +268,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                 .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
-                CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
             MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
@@ -303,9 +297,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             String code = oauth.parseLoginResponse().getCode();
 
-            oauth.clientSessionState("client-session");
-
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.logoutForm()
                     .idTokenHint(idTokenString)
@@ -313,7 +305,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .build();
 
             try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
-                    CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
                 MatcherAssert.assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
                 MatcherAssert.assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
             }
@@ -348,9 +340,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             String code = oauth.parseLoginResponse().getCode();
 
-            oauth.clientSessionState("client-session");
-
-            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
             AccessToken accessToken = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(AccessToken.class);
             String idTokenString = tokenResponse.getIdToken();
             String logoutUrl = oauth.logoutForm()
@@ -399,9 +389,8 @@ public class LogoutTest extends AbstractKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
-        oauth.clientSessionState("client-session");
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
 
         setTimeOffset(1);
 

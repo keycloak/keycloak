@@ -38,14 +38,16 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    public AccessTokenRequest param(String name, String value) {
+        parameter(name, value);
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
 
         parameter(OAuth2Constants.CODE, code);
         parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
-
-        parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
-        parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
     }
 
     @Override

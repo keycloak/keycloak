@@ -20,8 +20,6 @@ public abstract class AbstractOAuthClient<T> {
     protected OAuthClientConfig config;
 
     protected Map<String, String> customParameters;
-    protected String clientSessionState;
-    protected String clientSessionHost;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -252,14 +250,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getRedirectUri() {
         return config.getRedirectUri();
-    }
-
-    String getClientSessionState() {
-        return clientSessionState;
-    }
-
-    String getClientSessionHost() {
-        return clientSessionHost;
     }
 
     Map<String, String> getCustomParameters() {
