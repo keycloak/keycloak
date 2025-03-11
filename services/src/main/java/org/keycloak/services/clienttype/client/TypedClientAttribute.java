@@ -66,6 +66,7 @@ enum TypedClientExtendedAttribute implements TypedClientAttribute {
     SAML_ASSERTION_LIFESPAN("saml.assertion.lifespan", null),
     SAML_ASSERTION_SIGNATURE("saml.assertion.signature", "false"),
     SAML_AUTHNSTATEMENT("saml.authnstatement", "false"),
+    SAML_AUTHNCONTEXTCLASSREF("saml.authncontextclassref", null),
     SAML_CLIENT_SIGNATURE("saml.client.signature", "false"),
     SAML_ENCRYPT("saml.encrypt", "false"),
     SAML_ENCRYPTION_CERTIFICATE("saml.encryption.certificate", null),

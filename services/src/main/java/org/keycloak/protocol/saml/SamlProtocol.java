@@ -479,7 +479,7 @@ public class SamlProtocol implements LoginProtocol {
                 .subjectExpiration(assertionLifespan <= 0? realm.getAccessTokenLifespan() : assertionLifespan)
                 .sessionExpiration(realm.getSsoSessionMaxLifespan())
                 .requestIssuer(clientSession.getClient().getClientId())
-                .authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
+                .authMethod(samlClient.authnContextClassRef());
 
         String sessionIndex = SamlSessionUtils.getSessionIndex(clientSession);
         builder.sessionIndex(sessionIndex);

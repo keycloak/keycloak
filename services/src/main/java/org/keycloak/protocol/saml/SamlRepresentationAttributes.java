@@ -56,6 +56,12 @@ public class SamlRepresentationAttributes {
 
     }
 
+    public String getAuthnMethod() {
+        if (getAttributes() == null) return null;
+        return getAttributes().get(SamlConfigAttributes.SAML_AUTHNCONTEXTCLASSREF);
+
+    }
+
     public String getForceNameIDFormat() {
         if (getAttributes() == null) return null;
         return getAttributes().get(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE);

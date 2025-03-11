@@ -26,6 +26,9 @@ export const Toggle = ({ name, label }: ToggleProps) => {
 export const SamlConfig = () => {
   const { t } = useTranslation();
 
+  const AC_UNSPECIFIED = "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified";
+  const CLAIMS_MULTIPLEAUTHN = "http://schemas.microsoft.com/claims/multipleauthn";
+
   return (
     <FormAccess
       isHorizontal
@@ -56,6 +59,15 @@ export const SamlConfig = () => {
       <Toggle
         name={convertAttributeNameToForm("attributes.saml.authnstatement")}
         label="includeAuthnStatement"
+      />
+      <SelectControl
+        name={convertAttributeNameToForm("attributes.saml.authncontextclassref")}
+        label={t("authnContextClassRef")}
+        labelIcon={t("authnContextClassRef")}
+        controller={{
+          defaultValue: AC_UNSPECIFIED
+        }}
+        options={[AC_UNSPECIFIED, CLAIMS_MULTIPLEAUTHN]}
       />
       <Toggle
         name={convertAttributeNameToForm(

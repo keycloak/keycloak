@@ -111,6 +111,14 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, Boolean.toString(val));
     }
 
+    public String authnContextClassRef() {
+        return resolveAttribute(SamlConfigAttributes.SAML_AUTHNCONTEXTCLASSREF);
+    }
+
+    public void setAuthnContextClassRef(String val) {
+        client.setAttribute(SamlConfigAttributes.SAML_AUTHNCONTEXTCLASSREF, val);
+    }
+
     public boolean forceNameIDFormat() {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
 

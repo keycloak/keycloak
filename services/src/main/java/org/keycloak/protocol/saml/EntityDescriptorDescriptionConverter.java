@@ -186,6 +186,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, SamlProtocol.ATTRIBUTE_FALSE_VALUE); // default to false
         attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
+        attributes.put(SamlConfigAttributes.SAML_AUTHNCONTEXTCLASSREF, JBossSAMLURIConstants.AC_UNSPECIFIED.get());
         SPSSODescriptorType spDescriptorType = getSPDescriptor(entity);
         if (spDescriptorType.isWantAssertionsSigned()) {
             attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
