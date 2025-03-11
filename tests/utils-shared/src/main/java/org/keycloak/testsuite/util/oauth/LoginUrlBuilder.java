@@ -55,6 +55,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder dpopJkt(String dpopJkt) {
+        parameter(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
@@ -66,8 +71,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
         parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
         parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, client.getCodeChallengeMethod());
-
-        parameter(OIDCLoginProtocol.DPOP_JKT, client.getDpopJkt());
 
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());

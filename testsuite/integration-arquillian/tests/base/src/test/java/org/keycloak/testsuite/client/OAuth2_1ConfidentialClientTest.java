@@ -73,7 +73,6 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         oauth.responseType(OIDCResponseType.CODE);
         oauth.codeChallenge(null);
         oauth.codeChallengeMethod(null);
-        oauth.dpopProof(null);
         updatePolicies("{}");
     }
 

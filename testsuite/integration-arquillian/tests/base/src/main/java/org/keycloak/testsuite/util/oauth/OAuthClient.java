@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
@@ -93,8 +91,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         codeVerifier = null;
         codeChallenge = null;
         codeChallengeMethod = null;
-        dpopProof = null;
-        dpopJkt = null;
         customParameters = null;
     }
 
@@ -208,16 +204,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient origin(String origin) {
         config.origin(origin);
-        return this;
-    }
-
-    public OAuthClient dpopProof(String dpopProof) {
-        this.dpopProof = dpopProof;
-        return this;
-    }
-
-    public OAuthClient dpopJkt(String dpopJkt) {
-        this.dpopJkt = dpopJkt;
         return this;
     }
 
