@@ -603,6 +603,8 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
           <ListEmptyState
             message={t("emptyAdminEvents")}
             instructions={t("emptyAdminEventsInstructions")}
+            primaryActionText={t("refresh")}
+            onPrimaryAction={() => setKey(key + 1)}
           />
         }
         isSearching={Object.keys(activeFilters).length > 0}
