@@ -495,7 +495,7 @@ public class OID4VCIssuerEndpoint {
         Map<String, ClientScopeModel> clientScopes = clientModel.getClientScopes(false);
         ClientScopeModel clientScopeModel = clientScopes.get(credentialConfig.getScope());
 
-        if (clientScopeModel == null){
+        if (clientScopeModel == null) {
             throw new BadRequestException("Client scope not found for the specified scope: " + credentialConfig.getScope());
         }
 

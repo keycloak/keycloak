@@ -119,17 +119,18 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
             return;
         }
 
-        List<RoleModel> clientRoles = userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList();
-        if (clientRoles.isEmpty()) {
-            LOGGER.debugf("No roles found for client %s, skipping claim assignment.", client);
+        // Retrieve only the roles assigned to the user for this specific client
+        List<RoleModel> userRoles = userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList();
+        if (userRoles.isEmpty()) {
+            LOGGER.debugf("No roles assigned to client '%s'. Skipping claim assignment.", client);
             return;
         }
 
         // Create ClientRoleModel and convert to roles claim
-        ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(), clientRoles);
+        ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(), userRoles);
         Role rolesClaim = toRolesClaim(clientRoleModel);
         if (rolesClaim.getNames().isEmpty()) {
-            LOGGER.debugf("No role names found for client %s, skipping claim assignment.", client);
+            LOGGER.debugf("No valid role names found for client '%s'. Skipping claim assignment.", client);
             return;
         }
 
@@ -146,10 +147,12 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
                 Set<Map<String, Object>> rolesProperty = (Set<Map<String, Object>>) rawSet;
                 rolesProperty.add(modelMap);
             } else {
-                LOGGER.warnf("Incompatible types for property %s. Mapper will not set roles for client %s.", propertyName, client);
+                LOGGER.warnf("Claim '%s' contains incompatible types. Expected Set<Map<String, Object>>, found '%s'. Skipping role assignment for client '%s'.",
+                        propertyName, existingProperty.getClass().getSimpleName(), client);
             }
         } else {
-            LOGGER.warnf("Incompatible types for property %s. Mapper will not set roles for client %s.", propertyName, client);
+            LOGGER.warnf("Claim '%s' is of type '%s', expected Set. Skipping role assignment for client '%s'.",
+                    propertyName, existingProperty.getClass().getSimpleName(), client);
         }
     }
 
