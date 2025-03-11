@@ -56,7 +56,7 @@ Ensure the Keycloak and development server are running as [outlined previously](
 
 ### Running the tests
 
-You can run the tests using the interactive graphical user Visual Studio Code:
+You can run the tests using the interactive graphical user [Visual Studio Code plugin](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)
 
 Alternatively the tests can also run headless as follows:
 
