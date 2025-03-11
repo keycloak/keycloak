@@ -45,7 +45,7 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   return (
     <>
       <FormGroup
-        label={t("EnforceAccessTo")}
+        label={t("enforceAccessTo")}
         labelIcon={
           <HelpItem
             helpText={t("enforceAccessToHelpText")}

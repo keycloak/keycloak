@@ -125,7 +125,11 @@ export const AddRoleMappingModal = ({
     <Modal
       variant={ModalVariant.large}
       title={
-        isLDAPmapper ? t("assignRole") : t("assignRolesTo", { client: name })
+        tab !== "evaluation"
+          ? isLDAPmapper
+            ? t("assignRole")
+            : t("assignRolesTo", { client: name })
+          : t("selectRole")
       }
       isOpen
       onClose={onClose}

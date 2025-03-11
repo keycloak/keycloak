@@ -1,5 +1,4 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type { GroupQuery } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import {
   SelectControl,
   SelectVariant,
@@ -27,20 +26,13 @@ export const GroupSelect = ({
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
-  const [search, setSearch] = useState("");
 
   useFetch(
     () => {
-      const params: GroupQuery = {
-        max: 20,
-      };
-      if (search) {
-        params.search = search;
-      }
-      return adminClient.groups.find(params);
+      return adminClient.groups.find();
     },
     (groups) => setGroups(groups),
-    [search],
+    [],
   );
 
   return (
@@ -57,7 +49,6 @@ export const GroupSelect = ({
           },
         },
       }}
-      onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
       options={groups.map(({ id, name }) => ({
