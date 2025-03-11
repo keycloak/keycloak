@@ -27,8 +27,8 @@ importers:
         specifier: ^10.0.2
         version: 10.0.2(eslint@9.21.0)
       eslint-plugin-cypress:
-        specifier: ^4.1.0
-        version: 4.1.0(eslint@9.21.0)
+        specifier: ^4.2.0
+        version: 4.2.0(eslint@9.21.0)
       eslint-plugin-lodash:
         specifier: ^8.0.0
         version: 8.0.0(eslint@9.21.0)
@@ -931,6 +931,7 @@ packages:
   '@faker-js/faker@9.5.1':
     resolution: {integrity: sha512-0fzMEDxkExR2cn731kpDaCCnBGBUOIXEi2S1N5l8Hltp6aPf4soTMJ+g4k8r2sI5oB+rpwIW8Uy/6jkwGpnWPg==}
     engines: {node: '>=18.0.0', npm: '>=9.0.0'}
+    deprecated: Please update to a newer version
 
   '@fastify/busboy@2.1.1':
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
@@ -2680,8 +2681,8 @@ packages:
     peerDependencies:
       eslint: '>=7.0.0'
 
-  eslint-plugin-cypress@4.1.0:
-    resolution: {integrity: sha512-JhqkMY02mw74USwK9OFhectx3YSj6Co1NgWBxlGdKvlqiAp9vdEuQqt33DKGQFvvGS/NWtduuhWXWNnU29xDSg==}
+  eslint-plugin-cypress@4.2.0:
+    resolution: {integrity: sha512-v5cyt0VYb1tEEODBJSE44PocYOwQsckyexJhCs7LtdD3FGO6D2GjnZB2s2Sts4RcxdxECTWX01nObOZRs26bQw==}
     peerDependencies:
       eslint: '>=9'
 
@@ -7631,7 +7632,7 @@ snapshots:
     dependencies:
       eslint: 9.21.0
 
-  eslint-plugin-cypress@4.1.0(eslint@9.21.0):
+  eslint-plugin-cypress@4.2.0(eslint@9.21.0):
     dependencies:
       eslint: 9.21.0
       globals: 15.15.0
