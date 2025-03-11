@@ -22,7 +22,7 @@
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.22.0",
-    "@types/node": "^22.13.9",
+    "@types/node": "^22.13.10",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-cypress": "^4.1.0",
