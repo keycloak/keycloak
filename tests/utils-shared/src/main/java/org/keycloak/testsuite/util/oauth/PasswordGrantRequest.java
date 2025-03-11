@@ -34,6 +34,11 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantR
         return this;
     }
 
+    public PasswordGrantRequest param(String name, String value) {
+        parameter(name, value);
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
         parameter("username", username);

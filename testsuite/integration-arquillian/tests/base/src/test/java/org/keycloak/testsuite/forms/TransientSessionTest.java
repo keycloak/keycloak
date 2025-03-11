@@ -57,9 +57,9 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("direct-grant", "password");
 
         // Signal that we want userSession to be transient
-        oauth.addCustomParameter(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString());
-
-        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        AccessTokenResponse response = oauth.passwordGrantRequest("test-user@localhost", "password")
+                .param(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString())
+                .send();
 
         assertEquals(200, response.getStatusCode());
 

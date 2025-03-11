@@ -12,14 +12,11 @@ import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Map;
-
 public abstract class AbstractOAuthClient<T> {
 
     protected String baseUrl;
     protected OAuthClientConfig config;
 
-    protected Map<String, String> customParameters;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -250,10 +247,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getRedirectUri() {
         return config.getRedirectUri();
-    }
-
-    Map<String, String> getCustomParameters() {
-        return customParameters;
     }
 
 }

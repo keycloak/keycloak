@@ -42,10 +42,6 @@ public abstract class AbstractHttpPostRequest<T, R> {
         post.addHeader("Accept", getAccept());
         post.addHeader("Origin", client.config().getOrigin());
 
-        if (client.getCustomParameters() != null) {
-            client.getCustomParameters().forEach(this::parameter);
-        }
-
         authorization();
 
         initRequest();

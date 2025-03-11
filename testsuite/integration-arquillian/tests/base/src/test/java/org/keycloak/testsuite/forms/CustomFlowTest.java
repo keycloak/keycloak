@@ -354,15 +354,10 @@ public class CustomFlowTest extends AbstractFlowTest {
         testingClient.testing().updateAuthenticator(state);
 
         // Test throwing exception from the client authenticator. No error details should be displayed
-        oauth.addCustomParameter(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error");
-        try {
-            response = oauth.doPasswordGrantRequest("test-user", "password");
-            assertEquals(400, response.getStatusCode());
-            assertEquals("unauthorized_client", response.getError());
-            assertEquals("Unexpected error when authenticating client", response.getErrorDescription());
-        } finally {
-            oauth.removeCustomParameter(PassThroughClientAuthenticator.TEST_ERROR_PARAM);
-        }
+        response = oauth.passwordGrantRequest("test-user", "password").param(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error").send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals("unauthorized_client", response.getError());
+        assertEquals("Unexpected error when authenticating client", response.getErrorDescription());
     }
 
 

@@ -97,11 +97,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-
-
-        if (client.getCustomParameters() != null) {
-            client.getCustomParameters().forEach(this::parameter);
-        }
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {

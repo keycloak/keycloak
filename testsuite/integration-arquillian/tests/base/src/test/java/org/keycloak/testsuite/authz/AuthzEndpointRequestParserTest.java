@@ -25,14 +25,15 @@ public class AuthzEndpointRequestParserTest extends AbstractTestRealmKeycloakTes
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
 
-            oauth.addCustomParameter("paramkey1_too_long", RandomStringUtils.random(2000 + 1));
-            oauth.addCustomParameter("paramkey2", "paramvalue2");
-            oauth.addCustomParameter("paramkey3", "paramvalue3");
-            oauth.addCustomParameter("paramkey4", "paramvalue4");
-            oauth.addCustomParameter("paramkey5", "paramvalue5");
-            oauth.addCustomParameter("paramkey6_too_many", "paramvalue6");
+            String loginUrl = oauth.loginForm()
+                    .param("paramkey1_too_long", RandomStringUtils.random(2000 + 1))
+                    .param("paramkey2", "paramvalue2")
+                    .param("paramkey3", "paramvalue3")
+                    .param("paramkey4", "paramvalue4")
+                    .param("paramkey5", "paramvalue5")
+                    .param("paramkey6_too_many", "paramvalue6").build();
 
-            try (Response response = client.target(oauth.loginForm().build()).request().get()) {
+            try (Response response = client.target(loginUrl).request().get()) {
 
                 assertThat(response.getStatus(), is(equalTo(200)));
                 assertThat(response, Matchers.body(containsString("Sign in")));
