@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
@@ -18,9 +19,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -52,6 +55,39 @@ public class RoleResourceTypePermissionTest extends AbstractPermissionTest {
         for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
             permissions.findById(permission.getId()).remove();
         }
+    }
+
+    @Test
+    public void testCreateResourceTypePermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation expected = createAllPermission(client, AdminPermissionsSchema.ROLES_RESOURCE_TYPE, onlyMyAdminUserPolicy, AdminPermissionsSchema.ROLES.getScopes());
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        assertEquals(1, result.size());
+        ScopePermissionRepresentation permissionRep = result.get(0);
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        assertEquals(expected.getName(), permissionRep.getName());
+        assertEquals(AdminPermissionsSchema.ROLES.getScopes().size(), permission.scopes().size());
+        assertEquals(1, permission.associatedPolicies().size());
+        assertEquals(1, permission.resources().size());
+        assertEquals(AdminPermissionsSchema.ROLES_RESOURCE_TYPE, permission.resources().get(0).getDisplayName());
+    }
+
+    @Test
+    public void testCreateResourceObjectPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        RoleRepresentation role = realm.admin().roles().list().get(0);
+        ScopePermissionRepresentation expected = createPermission(client, role.getId(), AdminPermissionsSchema.ROLES_RESOURCE_TYPE, AdminPermissionsSchema.ROLES.getScopes(), onlyMyAdminUserPolicy);
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        assertEquals(1, result.size());
+        ScopePermissionRepresentation permissionRep = result.get(0);
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        assertEquals(expected.getName(), permissionRep.getName());
+        assertEquals(AdminPermissionsSchema.ROLES.getScopes().size(), permission.scopes().size());
+        assertEquals(1, permission.associatedPolicies().size());
+        assertEquals(1, permission.resources().size());
+        assertEquals(role.getName(), permission.resources().get(0).getDisplayName());
     }
 
     @Test
