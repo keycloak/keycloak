@@ -25,13 +25,9 @@ public abstract class AbstractOAuthClient<T> {
     protected String codeVerifier;
     protected String clientSessionState;
     protected String clientSessionHost;
-    protected String dpopJkt;
-    protected String dpopProof;
     protected String request;
     protected String requestUri;
     protected String claims;
-    protected StateParamProvider state;
-    protected String nonce;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -288,14 +284,6 @@ public abstract class AbstractOAuthClient<T> {
         return customParameters;
     }
 
-    String getDpopJkt() {
-        return dpopJkt;
-    }
-
-    String getDpopProof() {
-        return dpopProof;
-    }
-
     public String getRequestUri() {
         return requestUri;
     }
@@ -306,20 +294,6 @@ public abstract class AbstractOAuthClient<T> {
 
     public String getClaims() {
         return claims;
-    }
-
-    public String getState() {
-        return state != null ? state.getState() : null;
-    }
-
-    public String getNonce() {
-        return nonce;
-    }
-
-    protected interface StateParamProvider {
-
-        String getState();
-
     }
 
 }

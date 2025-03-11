@@ -177,8 +177,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testMissingNonceInOAuth2ImplicitFlow() throws Exception {
         oauth.responseType("token");
-        oauth.nonce(null);
-        String loginFormUrl = oauth.loginForm().build();
+        String loginFormUrl = oauth.loginForm().nonce(null).build();
         loginFormUrl = ActionURIUtils.removeQueryParamFromURI(loginFormUrl, OAuth2Constants.SCOPE);
 
         driver.navigate().to(loginFormUrl);

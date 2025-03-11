@@ -121,9 +121,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
                 expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
     }
 
-    protected String loginUserAndGetCode(String clientId, boolean fragmentResponseModeExpected) {
+    protected String loginUserAndGetCode(String clientId, String nonce, boolean fragmentResponseModeExpected) {
         oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        oauth.loginForm().nonce(nonce).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
@@ -134,9 +134,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         return code;
     }
 
-    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId) {
+    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId, String nonce) {
         oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        oauth.loginForm().nonce(nonce).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);

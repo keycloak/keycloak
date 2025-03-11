@@ -21,6 +21,8 @@ Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://w
 
 == Notable changes
 
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
 === `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
 
 Built-in X.509 client certificate lookup providers now reflect the `proxy-trusted-addresses` config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or `proxy-trusted-addresses` is unset.
@@ -49,3 +51,9 @@ You can return to the previous behavior by disabling the creation of NetworkPoli
 If your deployment scripts add explicit NetworkPolicies for {project_name}, you should consider removing those and migrate to the new functionality provided in the Keycloak CR as a follow-up to the upgrade.
 
 Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+=== LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
+
+When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
+
+It is now possible to control where new users, groups, or roles will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group and role mappers. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]

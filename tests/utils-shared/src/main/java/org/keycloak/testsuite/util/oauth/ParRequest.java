@@ -24,20 +24,37 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest nonce(String nonce) {
+        parameter(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        return this;
+    }
+
+    public ParRequest state(String state) {
+        parameter(OIDCLoginProtocol.STATE_PARAM, state);
+        return this;
+    }
+
+    public ParRequest dpopJkt(String dpopJkt) {
+        parameter(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
+        return this;
+    }
+
+    public ParRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
         parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
-        parameter(OIDCLoginProtocol.NONCE_PARAM, client.getNonce());
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
         parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
         parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
         parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());
         parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
         parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, client.getCodeChallengeMethod());
-        parameter(OIDCLoginProtocol.DPOP_JKT, client.getDpopJkt());
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
     }
 
     @Override
