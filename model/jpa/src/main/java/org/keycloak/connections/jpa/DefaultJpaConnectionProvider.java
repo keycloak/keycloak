@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.jpa;
 
+import java.util.function.Consumer;
+
 import org.jboss.logging.Logger;
 
 import jakarta.persistence.EntityManager;
@@ -39,8 +41,8 @@ public class DefaultJpaConnectionProvider implements JpaConnectionProvider {
     }
 
     @Override
-    public void runInBatch(Runnable runnable) {
-        PersistenceExceptionConverter.runInBatch(runnable);
+    public void runInBatch(Consumer<BatchControl> consumer) {
+        PersistenceExceptionConverter.runInBatch(consumer);
     }
 
     @Override

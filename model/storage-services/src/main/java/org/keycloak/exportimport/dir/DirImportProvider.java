@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.services.managers.RealmManager;
 
 /**
@@ -158,8 +160,21 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
         if (realmImported.get()) {
             // Import users
-            importUsers(realmName, userFiles, false);
-            importUsers(realmName, federatedUserFiles, true);
+            connectionProvider.runInBatch(batchControl -> {
+                AtomicInteger userCount = new AtomicInteger();
+                Runnable onUserAdded = () -> {
+                    // TODO: determine what a good number is here
+                    // There actually doesn't seem to be much difference with setting this
+                    // higher - the important part is to clear the contexts - which could be even more optimal
+                    // as detaching just users and their children
+                    if (userCount.incrementAndGet() % 64 == 0) {
+                        batchControl.flush();
+                        batchControl.clear();
+                    }
+                };
+                importUsers(realmName, userFiles, false, onUserAdded);
+                importUsers(realmName, federatedUserFiles, true, onUserAdded);
+            });
         }
 
         if (realmImported.get()) {
@@ -177,27 +192,19 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         }
     }
 
-    private void importUsers(final String realmName, File[] userFiles, boolean federated) throws IOException {
+    private void importUsers(final String realmName, File[] userFiles, boolean federated, Runnable onUserCreated) {
         for (final File userFile : userFiles) {
             try (InputStream fis = parseFile(userFile)) {
                 KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                        connectionProvider.runInBatch(() -> {
-                            try {
-                                if (federated) {
-                                    ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                                } else {
-                                    ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException("Error during import: " + e.getMessage(), e);
-                            }
-                        });
+                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, onUserCreated);
                         logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
                     }
                 });
+            } catch (IOException e) {
+                throw new RuntimeException("Error during import: " + e.getMessage(), e);
             }
         }
     }

@@ -24,11 +24,14 @@ import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.hibernate.exception.ConstraintViolationException;
+import org.keycloak.connections.jpa.JpaConnectionProvider.BatchControl;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -53,7 +56,25 @@ public class PersistenceExceptionConverter implements InvocationHandler {
     private final int batchSize;
     private int changeCount = 0;
 
-    private static ThreadLocal<Set<EntityManager>> batchMode = new ThreadLocal<Set<EntityManager>>();
+    private static final ThreadLocal<Set<EntityManager>> batchMode = new ThreadLocal<Set<EntityManager>>();
+
+    private static final BatchControl batchControl = new BatchControl() {
+
+        @Override
+        public void flush() {
+            PersistenceExceptionConverter.flush(getManagers());
+        }
+
+        private static Set<EntityManager> getManagers() {
+            return Optional.ofNullable(batchMode.get()).orElseThrow();
+        }
+
+        @Override
+        public void clear() {
+            getManagers().forEach(EntityManager::clear);
+        }
+
+    };
 
     public static EntityManager create(KeycloakSession session, EntityManager em) {
         return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(session, em));
@@ -65,7 +86,7 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         this.em = em;
     }
 
-    static void runInBatch(Runnable runnable) {
+    static void runInBatch(Consumer<BatchControl> consumer) {
         var batchedManagers = batchMode.get();
         if (batchedManagers == null) {
             batchedManagers = new HashSet<EntityManager>();
@@ -75,18 +96,22 @@ public class PersistenceExceptionConverter implements InvocationHandler {
             throw new IllegalStateException("Already Batching");
         }
         try {
-            runnable.run();
+            consumer.accept(batchControl);
         } finally {
             batchMode.remove();
-            batchedManagers.stream().filter(EntityManager::isOpen).forEach(em -> {
-                try {
-                    em.flush();
-                } catch (Exception e) {
-                    throw convert(e);
-                }
-                em.clear();
-            });
+            flush(batchedManagers);
+            batchedManagers.forEach(EntityManager::clear);
         }
+    }
+
+    private static void flush(Set<EntityManager> batchedManagers) {
+        batchedManagers.stream().filter(EntityManager::isOpen).forEach(em -> {
+            try {
+                em.flush();
+            } catch (Exception e) {
+                throw convert(e);
+            }
+        });
     }
 
     @Override
