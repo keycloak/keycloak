@@ -23,8 +23,7 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "test:integration": "playwright test",
-    "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
+    "test:integration": "playwright test"
   },
   "wireit": {
     "dev": {
@@ -81,7 +80,6 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
-    "@axe-core/playwright": "^4.10.1",
     "@keycloak/keycloak-admin-client": "workspace:*",
     "@keycloak/keycloak-ui-shared": "workspace:*",
     "@patternfly/patternfly": "^5.4.2",
@@ -108,7 +106,7 @@
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
-    "@4tw/cypress-drag-drop": "^2.3.0",
+    "@axe-core/playwright": "^4.10.1",  
     "@playwright/test": "^1.49.1",
     "@testing-library/cypress": "^10.0.3",
     "@testing-library/dom": "^10.4.0",
@@ -120,9 +118,6 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.0",
-    "cypress": "^14.1.0",
-    "cypress-axe": "^1.6.0",
-    "cypress-split": "^1.24.14",
     "jsdom": "^26.0.0",
     "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.29.2",

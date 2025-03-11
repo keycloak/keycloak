@@ -257,10 +257,6 @@ jobs:
           KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
           KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
-      - name: Start LDAP server
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &
-        working-directory: js
-
       - name: Install Playwright browsers
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
         working-directory: js
