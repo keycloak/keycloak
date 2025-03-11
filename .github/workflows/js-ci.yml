@@ -221,18 +221,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Google Chrome
-        if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-
-      - name: Install Firefox
-        if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1
-        with:
-          firefox-version: latest
-
       - uses: ./.github/actions/pnpm-setup
 
       - name: Compile Admin Client
