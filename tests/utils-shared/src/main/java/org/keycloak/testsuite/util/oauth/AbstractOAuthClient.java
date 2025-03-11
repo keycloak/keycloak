@@ -20,9 +20,6 @@ public abstract class AbstractOAuthClient<T> {
     protected OAuthClientConfig config;
 
     protected Map<String, String> customParameters;
-    protected String codeChallenge;
-    protected String codeChallengeMethod;
-    protected String codeVerifier;
     protected String clientSessionState;
     protected String clientSessionHost;
     protected String request;
@@ -266,18 +263,6 @@ public abstract class AbstractOAuthClient<T> {
 
     String getClientSessionHost() {
         return clientSessionHost;
-    }
-
-    public String getCodeChallenge() {
-        return codeChallenge;
-    }
-
-    public String getCodeChallengeMethod() {
-        return codeChallengeMethod;
-    }
-
-    public String getCodeVerifier() {
-        return codeVerifier;
     }
 
     Map<String, String> getCustomParameters() {

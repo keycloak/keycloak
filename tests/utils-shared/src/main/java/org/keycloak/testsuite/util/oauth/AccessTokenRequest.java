@@ -21,6 +21,18 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return client.getEndpoints().getToken();
     }
 
+    public AccessTokenRequest codeVerifier(PkceGenerator pkceGenerator) {
+        if (pkceGenerator != null) {
+            codeVerifier(pkceGenerator.getCodeVerifier());
+        }
+        return this;
+    }
+
+    public AccessTokenRequest codeVerifier(String codeVerifier) {
+        parameter(OAuth2Constants.CODE_VERIFIER, codeVerifier);
+        return this;
+    }
+
     public AccessTokenRequest dpopProof(String dpopProof) {
         header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         return this;
@@ -34,8 +46,6 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
 
         parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
         parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
-
-        parameter(OAuth2Constants.CODE_VERIFIER, client.getCodeVerifier());
     }
 
     @Override

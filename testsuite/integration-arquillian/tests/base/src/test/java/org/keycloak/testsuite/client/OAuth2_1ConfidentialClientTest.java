@@ -30,7 +30,6 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -43,6 +42,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 
 import java.util.Collections;
@@ -62,6 +62,8 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
     private String validRedirectUri;;
 
+    private PkceGenerator pkceGenerator;
+
     @Before
     public void setupValidateRedirectUri() {
         validRedirectUri = AssertEvents.DEFAULT_REDIRECT_URI.replace("localhost", "127.0.0.1");
@@ -71,9 +73,8 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
     public void revertPolicies() throws ClientPolicyException {
         oauth.openid(true);
         oauth.responseType(OIDCResponseType.CODE);
-        oauth.codeChallenge(null);
-        oauth.codeChallengeMethod(null);
         updatePolicies("{}");
+        pkceGenerator = null;
     }
 
     @Test
@@ -90,7 +91,8 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         // setup profiles and policies
         setupPolicyOAuth2_1ConfidentialClientForAllClient();
 
-        setValidPkce(clientId);
+        oauth.client(clientId);
+        pkceGenerator = PkceGenerator.s256();
 
         // implicit grant
         testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, generateNonce());
@@ -174,9 +176,6 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1ConfidentialClientForAllClient();
 
         oauth.redirectUri(validRedirectUri);
-        oauth.codeChallenge(null);
-        oauth.codeChallengeMethod(null);
-        oauth.codeVerifier(null);
         failLoginByNotFollowingPKCE(clientId);
     }
 
@@ -211,10 +210,11 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
         oauth.client(clientId);
         oauth.redirectUri(validRedirectUri);
-        setValidPkce(clientId);
-        AuthorizationEndpointResponse res = oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        pkceGenerator = PkceGenerator.s256();
 
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(res.getCode());
+        AuthorizationEndpointResponse res = oauth.loginForm().codeChallenge(pkceGenerator).doLogin(TEST_USERNAME, TEST_USERSECRET);
+
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(res.getCode()).codeVerifier(pkceGenerator.getCodeVerifier()).send();
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
@@ -225,7 +225,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
         oauth.redirectUri(validRedirectUri);
-        oauth.loginForm().nonce(nonce).open();
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).open();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Implicit/Hybrid flow is prohibited.", authorizationEndpointResponse.getErrorDescription());
@@ -253,15 +253,6 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         clientConfig.setPkceCodeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
         clientConfig.setUseMtlsHoKToken(true);
     };
-
-    private void setValidPkce(String clientId) throws Exception {
-        oauth.clientId(clientId);
-        String codeVerifier = PkceUtils.generateCodeVerifier();
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(codeVerifier);
-    }
 
     private String generateNonce() {
         return SecretGenerator.getInstance().randomString(16);
