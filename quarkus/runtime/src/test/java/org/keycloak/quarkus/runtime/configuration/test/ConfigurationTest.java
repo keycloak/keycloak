@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -511,6 +511,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
             expected = "/some/file";
         }
         assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
+    }
+
+    @Test
+    public void testHttpTrustStoreType() {
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
+        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
+        assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
     }
 
     @Test
