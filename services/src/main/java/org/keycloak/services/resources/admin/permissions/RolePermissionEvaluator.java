@@ -141,5 +141,10 @@ public interface RolePermissionEvaluator {
      */
     void requireView(RoleContainerModel container);
 
-    Set<String> getRolesWithPermission(String scope);
+    /**
+     * Returns the IDs of the roles that the current user can view..
+     *
+     * @return Stream of IDs of roles with view permission.
+     */
+    Set<String> getRoleIdsWithViewPermission(String scope);
 }

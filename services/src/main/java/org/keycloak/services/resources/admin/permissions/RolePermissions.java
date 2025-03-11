@@ -24,6 +24,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -55,6 +56,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
     protected final ResourceStore resourceStore;
+    protected final PolicyStore policyStore;
     private static final String RESOURCE_NAME_PREFIX = "role.resource.";
 
     public RolePermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
@@ -64,8 +66,10 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         this.root = root;
         if (authz != null) {
             resourceStore = authz.getStoreFactory().getResourceStore();
+            policyStore = authz.getStoreFactory().getPolicyStore();
         } else {
             resourceStore = null;
+            policyStore = null;
         }
     }
 
@@ -540,7 +544,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     @Override
-    public Set<String> getRolesWithPermission(String scope) {
+    public Set<String> getRoleIdsWithViewPermission(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
