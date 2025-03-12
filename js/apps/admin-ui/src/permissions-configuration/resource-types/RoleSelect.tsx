@@ -11,7 +11,7 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../../components/role-mapping/AddRoleMappingModal";
-import { ServiceRole } from "../../components/role-mapping/RoleMapping";
+import { Row, ServiceRole } from "../../components/role-mapping/RoleMapping";
 import { PermissionsConfigurationTabsParams } from "../routes/PermissionsConfigurationTabs";
 import { useParams } from "react-router-dom";
 
@@ -29,9 +29,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
   } = useFormContext<{ [key: string]: string[] }>();
   const values = getValues(name) || [];
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRoles, setSelectedRoles] = useState<
-    { role: any; client?: any }[]
-  >([]);
+  const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
   const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
