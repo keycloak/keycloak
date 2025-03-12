@@ -487,8 +487,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointRequestObject requestObject;
 
         // check whether whether request object exists
-        oauth.request(null);
-        oauth.requestUri(null);
         oauth.openLoginForm();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
@@ -507,7 +505,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setScope(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
@@ -516,7 +514,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setClientId(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
@@ -525,7 +523,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setResponseType(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
@@ -536,7 +534,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
         oauth.scope(null);
         oauth.openid(false);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Parameter 'scope' missing in the request parameters or in 'request' object", authorizationEndpointResponse.getErrorDescription());
@@ -546,7 +544,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.exp(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: exp", authorizationEndpointResponse.getErrorDescription());
@@ -555,7 +553,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.exp(Long.valueOf(0));
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request Expired", authorizationEndpointResponse.getErrorDescription());
@@ -564,7 +562,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.nbf(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: nbf", authorizationEndpointResponse.getErrorDescription());
@@ -573,7 +571,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.nbf(requestObject.getNbf() + allowedClockSkew + 10);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request not yet being processed", authorizationEndpointResponse.getErrorDescription());
@@ -588,7 +586,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.iat(requestObject.getIat() + allowedClockSkew + 10);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request issued in the future", authorizationEndpointResponse.getErrorDescription());
@@ -603,7 +601,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.exp(requestObject.getNbf() + availablePeriod.intValue() + 1);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request's available period is long", authorizationEndpointResponse.getErrorDescription());
@@ -612,7 +610,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.audience((String) null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: aud", authorizationEndpointResponse.getErrorDescription());
@@ -621,7 +619,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.audience(suiteContext.getAuthServerInfo().getContextRoot().toString());
         registerRequestObject(requestObject, clientId, Algorithm.ES256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_URI, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter in the 'request' object: aud", authorizationEndpointResponse.getErrorDescription());
@@ -631,7 +629,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setState("notmatchstate");
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.loginForm().state("wrongstate").open();
+        oauth.loginForm().state("wrongstate").request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
@@ -654,7 +652,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.nbf(null);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: nbf", authorizationEndpointResponse.getErrorDescription());
@@ -663,7 +661,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.nbf(requestObject.getNbf() + 600);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request not yet being processed", authorizationEndpointResponse.getErrorDescription());
@@ -672,7 +670,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.exp(requestObject.getNbf() + SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 1);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request's available period is long", authorizationEndpointResponse.getErrorDescription());
@@ -714,7 +712,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         registerRequestObject(requestObject, clientId, Algorithm.ES256, false);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request object not encrypted", authorizationEndpointResponse.getErrorDescription());
@@ -756,56 +754,39 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
 
-        oauth.request(signRequestObject(requestObject));
-        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        ParResponse pResp = oauth.pushedAuthorizationRequest().request(signRequestObject(requestObject)).send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         oauth.scope(null);
         oauth.responseType(null);
-        oauth.request(null);
-        oauth.requestUri(requestUri);
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         assertNotNull(loginResponse.getCode());
         oauth.openLogoutForm();
 
         requestObject.exp(null);
-        oauth.requestUri(null);
-        oauth.request(signRequestObject(requestObject));
-        pResp = oauth.doPushedAuthorizationRequest();
+        pResp = oauth.pushedAuthorizationRequest().request(signRequestObject(requestObject)).send();
         requestUri = pResp.getRequestUri();
-        oauth.request(null);
-        oauth.requestUri(requestUri);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.parseLoginResponse().getError());
 
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.nbf(null);
-        oauth.requestUri(null);
-        oauth.request(signRequestObject(requestObject));
-        pResp = oauth.doPushedAuthorizationRequest();
+        pResp = oauth.pushedAuthorizationRequest().request(signRequestObject(requestObject)).send();
         requestUri = pResp.getRequestUri();
-        oauth.request(null);
-        oauth.requestUri(requestUri);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.parseLoginResponse().getError());
 
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.audience("https://www.other1.example.com/");
-        oauth.request(signRequestObject(requestObject));
-        oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest();
+        pResp = oauth.pushedAuthorizationRequest().request(signRequestObject(requestObject)).send();
         requestUri = pResp.getRequestUri();
-        oauth.request(null);
-        oauth.requestUri(requestUri);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertEquals(OAuthErrorException.INVALID_REQUEST_URI, oauth.parseLoginResponse().getError());
 
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
         requestObject.setOtherClaims(OIDCLoginProtocol.REQUEST_URI_PARAM, "foo");
-        oauth.request(signRequestObject(requestObject));
-        oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest();
+        pResp = oauth.pushedAuthorizationRequest().request(signRequestObject(requestObject)).send();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
     }
 
@@ -1508,20 +1489,17 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // Pushed Authorization Request
         ParResponse pResp = oauth.pushedAuthorizationRequest().send();
         assertEquals(201, pResp.getStatusCode());
-        String requestUri = pResp.getRequestUri();
+        requestUri = pResp.getRequestUri();
 
-        oauth.requestUri(requestUri);
         oauth.client(clientBetaId);
-        oauth.loginForm().state("randomstatesomething").open();
+        oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
 
         oauth.client(clientBetaId, "secretBeta");
-        oauth.requestUri(null);
         pResp = oauth.doPushedAuthorizationRequest();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
-        oauth.requestUri(requestUri);
 
         successfulLoginAndLogout(clientBetaId, "secretBeta");
     }
@@ -1561,8 +1539,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // only query parameters include state parameter
         oauth.removeCustomParameter("request");
-        oauth.requestUri(requestUri);
-        oauth.loginForm().state("mystate2").open();
+        oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
 
@@ -1570,7 +1547,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oidcClientEndpointsResource.setOIDCRequest(REALM_NAME, TEST_CLIENT, oauth.getRedirectUri(), "10", "mystate2", "none");
         encodedRequestObject = oidcClientEndpointsResource.getOIDCRequest();
 
-        oauth.requestUri(null);
         oauth.addCustomParameter("request", encodedRequestObject);
         pResp = oauth.pushedAuthorizationRequest().state("mystate2").send();
         assertEquals(201, pResp.getStatusCode());
@@ -1578,7 +1554,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // both query parameters and PAR requests include state parameter
         oauth.removeCustomParameter("request");
-        oauth.requestUri(requestUri);
+        this.requestUri = requestUri;
         successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
 
     }

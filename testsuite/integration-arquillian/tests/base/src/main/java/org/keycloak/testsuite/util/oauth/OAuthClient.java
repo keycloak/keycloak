@@ -80,8 +80,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
         clientSessionState = null;
         clientSessionHost = null;
-        request = null;
-        requestUri = null;
         customParameters = null;
     }
 
@@ -152,16 +150,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient responseMode(String responseMode) {
         config.responseMode(responseMode);
-        return this;
-    }
-
-    public OAuthClient request(String request) {
-        this.request = request;
-        return this;
-    }
-
-    public OAuthClient requestUri(String requestUri) {
-        this.requestUri = requestUri;
         return this;
     }
 

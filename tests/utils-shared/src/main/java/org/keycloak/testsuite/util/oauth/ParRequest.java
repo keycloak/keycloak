@@ -57,14 +57,22 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest request(String request) {
+        parameter(OIDCLoginProtocol.REQUEST_PARAM, request);
+        return this;
+    }
+
+    public ParRequest requestUri(String requestUri) {
+        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
         parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-        parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
-        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
     }
 
     @Override

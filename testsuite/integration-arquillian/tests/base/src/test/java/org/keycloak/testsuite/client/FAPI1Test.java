@@ -457,7 +457,7 @@ public class FAPI1Test extends AbstractFAPITest {
         TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
         requestObject.nbf(null);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST_URI,"Missing parameter in the 'request' object: nbf");
 
         // Create valid request object - more extensive testing of 'request' object is in ClientPoliciesTest.testSecureRequestObjectExecutor()
@@ -466,21 +466,21 @@ public class FAPI1Test extends AbstractFAPITest {
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
 
         // Check response type
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"invalid response_type");
 
         // Add the response_Type including token. Should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"invalid response_type");
 
         // Set correct response_type for FAPI 1 Advanced
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         loginPage.assertCurrent();
 
         // Get keys of client. Will be used for client authentication and signing of request object
@@ -507,7 +507,7 @@ public class FAPI1Test extends AbstractFAPITest {
         Assert.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
 
         // Login with private-key-jwt client authentication and MTLS added to HttpClient. TokenRequest should be successful now
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
 
@@ -556,7 +556,7 @@ public class FAPI1Test extends AbstractFAPITest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         loginPage.assertCurrent();
 
         String code = loginUserAndGetCode("foo", null, true);
