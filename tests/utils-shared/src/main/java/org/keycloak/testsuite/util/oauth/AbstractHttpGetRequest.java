@@ -8,11 +8,11 @@ import java.io.IOException;
 
 public abstract class AbstractHttpGetRequest<R> {
 
-    protected final AbstractOAuthClient client;
+    protected final AbstractOAuthClient<?> client;
 
     private HttpGet get;
 
-    public AbstractHttpGetRequest(AbstractOAuthClient client) {
+    public AbstractHttpGetRequest(AbstractOAuthClient<?> client) {
         this.client = client;
     }
 

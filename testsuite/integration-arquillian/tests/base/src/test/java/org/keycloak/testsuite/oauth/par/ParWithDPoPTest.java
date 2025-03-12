@@ -1016,40 +1016,29 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
     }
 
     private ParResponse sendGenerateAndPushedAuthorizationRequest(String clientId, String clientSecret, String dpopJkt, String dpopProofEncoded) throws IOException {
-        oauth.clientId(clientId);
+        oauth.client(clientId, clientSecret);
         oauth.responseType(OAuth2Constants.CODE);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         oauth.scope(OAuth2Constants.SCOPE_OPENID);
-        oauth.dpopJkt(dpopJkt);
-        oauth.dpopProof(dpopProofEncoded);
-        oauth.request(null);
         // ----- PAR -----
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().dpopJkt(dpopJkt).dpopProof(dpopProofEncoded).send();
         // revert
-        oauth.clientId(null);
+        oauth.client(null);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
-        oauth.dpopJkt(null);
-        oauth.dpopProof(null);
         return pResp;
     }
 
     private ParResponse sendPushedAuthorizationRequestWithDpopJkt(String clientId, String clientSecret, String requestObject, String dpopProofEncoded, String dpopJkt) throws IOException {
-        oauth.clientId(clientId);
-        oauth.request(requestObject);
-        oauth.dpopProof(dpopProofEncoded);
-        oauth.dpopJkt(dpopJkt);
+        oauth.client(clientId, clientSecret);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
         // ----- PAR -----
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientId, clientSecret);
+        ParResponse pResp = oauth.pushedAuthorizationRequest().dpopJkt(dpopJkt).dpopProof(dpopProofEncoded).request(requestObject).send();
         // revert
-        oauth.clientId(null);
-        oauth.request(null);
-        oauth.dpopProof(null);
-        oauth.dpopJkt(null);
+        oauth.client(null);
         return pResp;
     }
 
@@ -1057,31 +1046,23 @@ public class ParWithDPoPTest extends AbstractClientPoliciesTest {
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
         oauth.clientId(clientId);
-        oauth.requestUri(requestUri);
-        oauth.dpopJkt(dpopJkt);
         oauth.responseType(null);
         oauth.redirectUri(null);
         oauth.scope(null);
-        oauth.request(null);
-        oauth.dpopProof(null);
         // ----- Authorization Request -----
-        AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse loginResponse = oauth.loginForm().requestUri(requestUri).dpopJkt(dpopJkt).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         // revert
         oauth.clientId(null);
-        oauth.requestUri(null);
-        oauth.dpopJkt(null);
         return loginResponse;
     }
 
     private AccessTokenResponse sentTokenRequest(String clientId, String clientSecret, String code, String dpopProofEncoded) {
         oauth.client(clientId, clientSecret);
-        oauth.dpopProof(dpopProofEncoded);
         oauth.redirectUri(CLIENT_REDIRECT_URI);
         // ----- Token Request -----
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse res = oauth.accessTokenRequest(code).dpopProof(dpopProofEncoded).send();
         // revert
         oauth.client(null);
-        oauth.dpopProof(null);
         oauth.redirectUri(null);
         return res;
     }

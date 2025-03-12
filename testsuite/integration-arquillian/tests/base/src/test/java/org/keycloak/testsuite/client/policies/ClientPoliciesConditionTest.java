@@ -200,8 +200,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
 
         try {
             failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_NONCE);
-            oauth.nonce("yesitisnonce");
-            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret, "yesitisnonce", "somestate");
         } catch (Exception e) {
             fail();
         }

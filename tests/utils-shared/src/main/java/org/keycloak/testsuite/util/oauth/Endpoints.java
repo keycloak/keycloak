@@ -58,11 +58,7 @@ public class Endpoints {
     }
 
     public String getLogout() {
-        return getLogoutBuilder().build();
-    }
-
-    public LogoutUrlBuilder getLogoutBuilder() {
-        return new LogoutUrlBuilder(this);
+        return asString(OIDCLoginProtocolService.logoutUrl(getBase()));
     }
 
     public String getBackChannelLogout() {

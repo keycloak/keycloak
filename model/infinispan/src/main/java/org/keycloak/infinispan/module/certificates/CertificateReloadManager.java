@@ -66,12 +66,14 @@ public class CertificateReloadManager implements Lifecycle {
     public static final String CERTIFICATE_ID = "crt_jgroups";
     private static final String JGROUPS_SUBJECT = "jgroups";
     private static final Duration RETRY_WAIT_TIME = Duration.ofMinutes(1);
+    private static final Duration BOOT_PERIOD = Duration.ofMillis(200);
 
     private final KeycloakSessionFactory sessionFactory;
     private final JGroupsCertificateHolder certificateHolder;
     private volatile long rotationSeconds;
     private final AutoCloseableLock lock;
     private ScheduledFuture<?> scheduledFuture;
+    private ScheduledFuture<?> bootFuture;
 
     @Inject
     EmbeddedCacheManager cacheManager;
@@ -96,16 +98,25 @@ public class CertificateReloadManager implements Lifecycle {
     @Override
     @Start
     public void start() {
-        logger.debug("Starting JGroups certificate reload manager");
+        logger.info("Starting JGroups certificate reload manager");
         notifier.addListener(this);
-        reloadCertificate();
+        scheduleNextRotation();
         certificateHolder.setExceptionHandler(this::onInvalidCertificate);
+
+        lock.lock();
+        try(lock) {
+            // It is invoked before JGroups starts; it schedules a fast pace reload of the certificate.
+            // It is canceled when it gets a view from JGroups.
+            // This is here to prevent the case when a node joins during a rotation process.
+            bootFuture = scheduledExecutorService.scheduleAtFixedRate(() -> blockingManager.runBlocking(this::bootReload, "boot-reload"), BOOT_PERIOD.toMillis(), BOOT_PERIOD.toMillis(), TimeUnit.MILLISECONDS);
+        }
+
     }
 
     @Override
     @Stop
     public void stop() {
-        logger.debug("Stopping JGroups certificate reload manager");
+        logger.info("Stopping JGroups certificate reload manager");
         notifier.removeListener(this);
         lock.lock();
         try (lock) {
@@ -120,7 +131,7 @@ public class CertificateReloadManager implements Lifecycle {
      * Creates and reload a new certificate.
      */
     public void rotateCertificate() {
-        logger.debug("Rotate JGroups certificate");
+        logger.info("Rotating JGroups certificate");
         lock.lock();
         try (lock) {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, this::replaceCertificateInTransaction);
@@ -135,9 +146,13 @@ public class CertificateReloadManager implements Lifecycle {
      * Reloads the certificate from storage.
      */
     public void reloadCertificate() {
-        logger.debug("Reload JGroups Certificate");
+        logger.info("Reloading JGroups Certificate");
         lock.lock();
         try (lock) {
+            if (bootFuture != null) {
+                bootFuture.cancel(true);
+                bootFuture = null;
+            }
             var maybeCrt = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::loadCertificateInTransaction);
             if (maybeCrt.isEmpty()) {
                 return;
@@ -183,8 +198,23 @@ public class CertificateReloadManager implements Lifecycle {
         }
     }
 
+    private void bootReload() {
+        logger.info("[Boot] reloading certificate.");
+        lock.lock();
+        try (lock) {
+            var maybeCrt = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::loadCertificateInTransaction);
+            if (maybeCrt.isEmpty()) {
+                return;
+            }
+            var crt = JGroupsCertificate.fromJson(maybeCrt.get());
+            certificateHolder.useCertificate(crt);
+        } catch (GeneralSecurityException | IOException e) {
+            logger.warn("Exception on boot reload cycle. Ignoring it.", e);
+        }
+    }
+
     private void onInvalidCertificate() {
-        logger.debug("On certificate exception");
+        logger.info("On certificate exception");
         blockingManager.runBlocking(this::reloadCertificate, "invalid-certificate");
     }
 

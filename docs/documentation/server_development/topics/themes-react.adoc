@@ -34,7 +34,7 @@ import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
       realm: "master",
       clientId: "security-admin-console"
   }}>
-  {/* rest of you application */}
+  {/* rest of your application */}
 </KeycloakProvider>
 ----
 

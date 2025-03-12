@@ -179,7 +179,7 @@ public class KeycloakRecorder {
                                 return name;
                             }
                         })) {
-                    propertyCollector.accept(AvailableSettings.JAKARTA_JTA_DATASOURCE, instance.get());
+                    propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
                 }
             }
         };

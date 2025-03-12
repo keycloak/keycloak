@@ -143,8 +143,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         // Re-authenticate the user with prompt=login
-        oauth.prompt("login");
-        loginPage.open();
+        oauth.loginForm().prompt("login").open();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
     }

@@ -174,18 +174,24 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected MemberRepresentation addMember(OrganizationResource organization, String email) {
-        return addMember(organization, email, null, null);
+        return addMember(organization, null, email, null, null, true);
     }
 
     protected MemberRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
+        return addMember(organization, null, email, firstName, lastName, true);
+    }
+
+    protected MemberRepresentation addMember(OrganizationResource organization, String username, String email, String firstName, String lastName, boolean isSetCredentials) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
-        expected.setUsername(expected.getEmail());
+        expected.setUsername(username == null ? expected.getEmail() : username);
         expected.setEnabled(true);
         expected.setFirstName(firstName);
         expected.setLastName(lastName);
-        Users.setPasswordFor(expected, memberPassword);
+        if (isSetCredentials) {
+            Users.setPasswordFor(expected, memberPassword);
+        }
 
         try (Response response = testRealm().users().create(expected)) {
             expected.setId(ApiUtil.getCreatedId(response));

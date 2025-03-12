@@ -102,6 +102,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
+    private String idTokenHint;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
@@ -194,7 +196,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     public void registerUpperCaseEmailWithChangedEmailAsUsername() throws IOException {
         String userId = registerUpperCaseAndGetUserId(false);
         assertThat(userId, notNullValue());
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).open();
         events.clear();
 
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
@@ -936,7 +938,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .user(userId)
                 .assertEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken());
+        idTokenHint = tokenResponse.getIdToken();
         assertUserBasicRegisterAttributes(userId, emailAsUsername ? null : USERNAME, EMAIL, "firstName", "lastName");
 
         return userId;

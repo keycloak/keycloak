@@ -229,8 +229,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login with kc_action=UPDATE_PROFILE
-        oauth.kcAction(RequiredAction.UPDATE_PROFILE.name());
-        oauth.openLoginForm();
+        oauth.loginForm().kcAction(RequiredAction.UPDATE_PROFILE.name()).open();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(USERNAME, PASSWORD);
 
@@ -349,8 +348,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         /* NOTE: we don't configure VERIFY_PROFILE on the user - it's set on the session because the profile is incomplete */
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
-        // make sure no action is requested
-        oauth.kcAction(null);
         // Get a password reset link
         loginPage.open();
         loginPage.assertCurrent(TEST_REALM_NAME);

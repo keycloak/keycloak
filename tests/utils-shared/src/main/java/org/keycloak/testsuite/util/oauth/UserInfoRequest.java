@@ -12,7 +12,7 @@ public class UserInfoRequest extends AbstractHttpGetRequest<UserInfoResponse> {
     private boolean dpop = false;
     private String dpopProof;
 
-    public UserInfoRequest(String token, AbstractOAuthClient client) {
+    public UserInfoRequest(String token, AbstractOAuthClient<?> client) {
         super(client);
         this.token = token;
     }

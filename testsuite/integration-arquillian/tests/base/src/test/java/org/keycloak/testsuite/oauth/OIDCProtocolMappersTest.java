@@ -320,7 +320,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(3, multiClaim.size());
             assertThat(multiClaim, containsInAnyOrder("abc", "bcd", "cde"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
         // undo mappers
@@ -359,7 +359,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("nested"));
             assertNull(idToken.getOtherClaims().get("department"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
 
@@ -417,7 +417,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         // logout
-        oauth.openLogout();
+        oauth.openLogoutForm();
 
         // undo mappers
         app = findClientByClientId(adminClient.realm("test"), "test-app");
@@ -552,7 +552,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(nulll);
 
             oauth.verifyToken(response.getAccessToken());
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
 
         // undo mappers
@@ -577,7 +577,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("empty"));
             assertNull(idToken.getOtherClaims().get("null"));
 
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         }
         events.clear();
     }

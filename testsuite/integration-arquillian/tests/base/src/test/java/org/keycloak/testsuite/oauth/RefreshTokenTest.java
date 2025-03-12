@@ -195,9 +195,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenStructure() {
-
-        oauth.nonce("123456");
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().nonce("123456").doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -227,8 +225,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void refreshTokenRequest() throws Exception {
-        oauth.nonce("123456");
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().nonce("123456").doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -1063,7 +1060,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenAfterUserLogoutAndLoginAgain() {
         String refreshToken1 = loginAndForceNewLoginPage();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
         events.clear();
 
         try {

@@ -23,17 +23,7 @@ runs:
     - name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache
 
-    - name: Cypress binary cache
-      uses: ./.github/actions/cypress-cache
-
     - name: Install dependencies
       shell: bash
       run: pnpm install --prefer-offline --frozen-lockfile
       working-directory: js
-
-    # This step is only needed to ensure that the Cypress binary is installed.
-    # If the binary was retrieved from the cache, this step is a no-op.
-    - name: Install Cypress dependencies
-      shell: bash
-      working-directory: js/apps/admin-ui
-      run: pnpm exec cypress install

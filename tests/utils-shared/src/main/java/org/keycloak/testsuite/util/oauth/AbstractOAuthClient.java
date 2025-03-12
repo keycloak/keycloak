@@ -1,39 +1,21 @@
 package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
+import org.keycloak.testsuite.util.oauth.device.DeviceClient;
 import org.openqa.selenium.WebDriver;
-
-import java.util.Map;
 
 public abstract class AbstractOAuthClient<T> {
 
     protected String baseUrl;
     protected OAuthClientConfig config;
-
-    protected Map<String, String> customParameters;
-    protected String codeChallenge;
-    protected String codeChallengeMethod;
-    protected String codeVerifier;
-    protected String clientSessionState;
-    protected String clientSessionHost;
-    protected String dpopJkt;
-    protected String dpopProof;
-    protected String request;
-    protected String requestUri;
-    protected String claims;
-    protected String kcAction;
-    protected String uiLocales;
-    protected String maxAge;
-    protected String prompt;
-    protected StateParamProvider state;
-    protected String nonce;
-    protected String idTokenHint;
 
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
@@ -46,14 +28,49 @@ public abstract class AbstractOAuthClient<T> {
         this.httpClientManager = new HttpClientManager(httpClient);
     }
 
+    public T realm(String realm) {
+        config.realm(realm);
+        return client();
+    }
+
     public T client(String clientId) {
         config.client(clientId);
-        return (T) this;
+        return client();
     }
 
     public T client(String clientId, String clientSecret) {
         config.client(clientId, clientSecret);
-        return (T) this;
+        return client();
+    }
+
+    public T redirectUri(String redirectUri) {
+        config.redirectUri(redirectUri);
+        return client();
+    }
+
+    public T scope(String scope) {
+        config.scope(scope);
+        return client();
+    }
+
+    public T openid(boolean openid) {
+        config.openid(openid);
+        return client();
+    }
+
+    public T responseType(String responseType) {
+        config.responseType(responseType);
+        return client();
+    }
+
+    public T responseMode(String responseMode) {
+        config.responseMode(responseMode);
+        return client();
+    }
+
+    public T origin(String origin) {
+        config.origin(origin);
+        return client();
     }
 
     public LoginUrlBuilder loginForm() {
@@ -116,6 +133,30 @@ public abstract class AbstractOAuthClient<T> {
         return refreshRequest(refreshToken).send();
     }
 
+    public LogoutUrlBuilder logoutForm() {
+        return new LogoutUrlBuilder(this);
+    }
+
+    public void openLogoutForm() {
+        logoutForm().open();
+    }
+
+    public LogoutRequest logoutRequest(String refreshToken) {
+        return new LogoutRequest(refreshToken, this);
+    }
+
+    public LogoutResponse doLogout(String refreshToken) {
+        return logoutRequest(refreshToken).send();
+    }
+
+    public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {
+        return new BackchannelLogoutRequest(logoutToken, this);
+    }
+
+    public BackchannelLogoutResponse doBackchannelLogout(String logoutToken) {
+        return backchannelLogoutRequest(logoutToken).send();
+    }
+
     public OpenIDProviderConfigurationRequest wellknownRequest() {
         return new OpenIDProviderConfigurationRequest(this);
     }
@@ -156,6 +197,34 @@ public abstract class AbstractOAuthClient<T> {
         return tokenRevocationRequest(token).send();
     }
 
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken) {
+        return tokenExchangeRequest(subjectToken, OAuth2Constants.ACCESS_TOKEN_TYPE);
+    }
+
+    public TokenExchangeRequest tokenExchangeRequest(String subjectToken, String subjectTokenType) {
+        return new TokenExchangeRequest(subjectToken, subjectTokenType, this);
+    }
+
+    public AccessTokenResponse doTokenExchange(String subjectToken) {
+        return tokenExchangeRequest(subjectToken).send();
+    }
+
+    public CibaClient ciba() {
+        return new CibaClient(this);
+    }
+
+    public DeviceClient device() {
+        return new DeviceClient(this);
+    }
+
+    public ParRequest pushedAuthorizationRequest() {
+        return new ParRequest(this);
+    }
+
+    public ParResponse doPushedAuthorizationRequest() {
+        return pushedAuthorizationRequest().send();
+    }
+
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
         return tokensManager.parseToken(token, clazz);
     }
@@ -182,7 +251,7 @@ public abstract class AbstractOAuthClient<T> {
 
     public T baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
-        return (T) this;
+        return client();
     }
 
     public OAuthClientConfig config() {
@@ -191,7 +260,7 @@ public abstract class AbstractOAuthClient<T> {
 
     public T driver(WebDriver webDriver) {
         this.driver = webDriver;
-        return (T) this;
+        return client();
     }
 
     public HttpClientManager httpClient() {
@@ -210,82 +279,17 @@ public abstract class AbstractOAuthClient<T> {
         return config.getRealm();
     }
 
+    public String getClientId() {
+        return config.getClientId();
+    }
+
     public String getRedirectUri() {
         return config.getRedirectUri();
     }
 
-    String getClientSessionState() {
-        return clientSessionState;
-    }
-
-    String getClientSessionHost() {
-        return clientSessionHost;
-    }
-
-    String getCodeChallenge() {
-        return codeChallenge;
-    }
-
-    String getCodeChallengeMethod() {
-        return codeChallengeMethod;
-    }
-
-    String getCodeVerifier() {
-        return codeVerifier;
-    }
-
-    Map<String, String> getCustomParameters() {
-        return customParameters;
-    }
-
-    String getDpopJkt() {
-        return dpopJkt;
-    }
-
-    String getDpopProof() {
-        return dpopProof;
-    }
-
-    String getRequestUri() {
-        return requestUri;
-    }
-
-    String getRequest() {
-        return request;
-    }
-
-    String getClaims() {
-        return claims;
-    }
-
-    String getKcAction() {
-        return kcAction;
-    }
-
-    String getUiLocales() {
-        return uiLocales;
-    }
-
-    public String getState() {
-        return state != null ? state.getState() : null;
-    }
-
-    String getNonce() {
-        return nonce;
-    }
-
-    String getMaxAge() {
-        return maxAge;
-    }
-
-    String getPrompt() {
-        return prompt;
-    }
-
-    protected interface StateParamProvider {
-
-        String getState();
-
+    @SuppressWarnings("unchecked")
+    private T client() {
+        return (T) this;
     }
 
 }

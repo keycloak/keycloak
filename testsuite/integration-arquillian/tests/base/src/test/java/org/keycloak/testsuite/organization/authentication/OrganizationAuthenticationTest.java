@@ -128,9 +128,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         try {
             setTimeOffset(10);
-            oauth.maxAge("1");
-            oauth.kcAction(RequiredAction.UPDATE_PASSWORD.name());
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.loginForm().maxAge(1).kcAction(RequiredAction.UPDATE_PASSWORD.name()).open();
             loginPage.assertCurrent();
             Matcher<String> expectedInfo = is("Please re-authenticate to continue");
             assertThat(loginPage.getInfoMessage(), expectedInfo);
@@ -139,8 +138,6 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             appPage.assertCurrent();
         } finally {
             resetTimeOffset();
-            oauth.kcAction(null);
-            oauth.maxAge(null);
         }
     }
 

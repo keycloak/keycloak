@@ -59,7 +59,7 @@ public class AppPage extends AbstractPage {
     }
 
     public void logout(String idTokenHint) {
-        oauth.idTokenHint(idTokenHint).openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
     }
 
 

@@ -234,6 +234,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return true;
         }
 
+        domain = domain == null ? getEmailDomain(user) : domain;
+
         return redirect(context, organization, username, domain);
     }
 

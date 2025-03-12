@@ -301,6 +301,13 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectBrokerWhenUnmanagedMemberProfileEmailMatchesOrganization() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        addMember(organization, bc.getUserLogin(), bc.getUserEmail(), "f", "l", false);
+        openIdentityFirstLoginPage(bc.getUserLogin(), true, null, false, false);
+    }
+
+    @Test
     public void testShowOnlyBrokersLinkedUserInPasswordPage() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());

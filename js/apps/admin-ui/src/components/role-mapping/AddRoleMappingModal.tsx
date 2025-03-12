@@ -192,7 +192,7 @@ export const AddRoleMappingModal = ({
         canSelectAll
         isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
-        ariaLabelKey="roles"
+        ariaLabelKey="associatedRolesText"
         columns={[
           {
             name: "name",

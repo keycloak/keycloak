@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.webauthn;
 
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -329,6 +330,123 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         } finally {
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_PASSWORDLESS, PASSWORDLESS_LABEL);
+        }
+    }
+
+    // See: https://github.com/keycloak/keycloak/issues/29586
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
+    public void webAuthnPasswordlessShouldFailIfUserIsDeletedInBetween() throws IOException {
+
+        final String WEBAUTHN_LABEL = "webauthn";
+        final String PASSWORDLESS_LABEL = "passwordless";
+
+        RealmResource realmResource = testRealm();
+
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(realmResource)
+                .setBrowserFlow(webAuthnTogetherPasswordlessFlow())
+                .update()) {
+
+            String username = "webauthn-tester@localhost";
+            String password = "password";
+
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername(username);
+            user.setEnabled(true);
+            user.setFirstName("WebAuthN");
+            user.setLastName("Tester");
+
+            String userId = ApiUtil.createUserAndResetPasswordWithAdminClient(realmResource, user, password, false);
+
+            user = ApiUtil.findUserByUsername(realmResource, username);
+
+            assertThat(user, notNullValue());
+            user.getRequiredActions().add(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+
+            UserResource userResource = realmResource.users().get(user.getId());
+            assertThat(userResource, notNullValue());
+            userResource.update(user);
+
+            user = userResource.toRepresentation();
+            assertThat(user, notNullValue());
+            assertThat(user.getRequiredActions(), hasItem(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID));
+
+            loginUsernamePage.open();
+            loginUsernamePage.login(username);
+
+            passwordPage.assertCurrent();
+            passwordPage.login(password);
+
+            events.clear();
+
+            webAuthnRegisterPage.assertCurrent();
+            webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL);
+
+            webAuthnRegisterPage.assertCurrent();
+
+            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
+                    .assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                    .user(userId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
+                    .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)
+                    .assertEvent();
+
+            webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.registerWebAuthnCredential(PASSWORDLESS_LABEL);
+
+            appPage.assertCurrent();
+
+            logout();
+
+            // Password + WebAuthn Passkey
+            loginUsernamePage.open();
+            loginUsernamePage.assertCurrent();
+            loginUsernamePage.login(username);
+
+            passwordPage.assertCurrent();
+            passwordPage.login(password);
+
+            webAuthnLoginPage.assertCurrent();
+
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(WEBAUTHN_LABEL));
+
+            webAuthnLoginPage.clickAuthenticate();
+
+            appPage.assertCurrent();
+            logout();
+
+            // Only passwordless login
+            loginUsernamePage.open();
+            loginUsernamePage.login(username);
+
+            passwordPage.assertCurrent();
+            passwordPage.assertTryAnotherWayLinkAvailability(true);
+            passwordPage.clickTryAnotherWayLink();
+
+            selectAuthenticatorPage.assertCurrent();
+            assertThat(selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.SECURITY_KEY),
+                    is("Use your Passkey for passwordless sign in."));
+            selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.SECURITY_KEY);
+
+            webAuthnLoginPage.assertCurrent();
+            assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
+            // remove testuser before user authenticates via webauthn
+            try (Response resp = realmResource.users().delete(userId)) {
+                // ignore
+            }
+
+            webAuthnLoginPage.clickAuthenticate();
+
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), is("Unknown user authenticated by the Passkey."));
         }
     }
 

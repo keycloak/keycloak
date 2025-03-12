@@ -295,6 +295,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         public UriInfo getUri() {
             return uriInfo;
         }
+
+        @Override
+        public boolean isProxyTrusted() {
+            return true;
+        }
     }
 
     private static class BruteForceHttpResponse implements HttpResponse {

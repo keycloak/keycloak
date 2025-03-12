@@ -74,8 +74,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.DeviceAuthorizationResponse;
+import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -267,8 +266,8 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
 
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
-        oauth.clientId(DEVICE_APP);
-        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        oauth.client(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
@@ -278,8 +277,8 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     public void testExtendedClientPolicyIntefacesForDeviceTokenRequest() throws Exception {
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
-        oauth.clientId(DEVICE_APP);
-        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        oauth.client(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -323,7 +322,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         // Token request from device
-        AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
@@ -333,8 +332,8 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     public void testExtendedClientPolicyIntefacesForDeviceTokenResponse() throws Exception {
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
-        oauth.clientId(DEVICE_APP);
-        DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+        oauth.client(DEVICE_APP, "secret");
+        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -378,7 +377,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         // Token request from device
-        AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP, "secret", response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
         assertEquals(400, tokenResponse.getStatusCode());
         assertEquals(ClientPolicyEvent.DEVICE_TOKEN_RESPONSE.toString(), tokenResponse.getError());
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());

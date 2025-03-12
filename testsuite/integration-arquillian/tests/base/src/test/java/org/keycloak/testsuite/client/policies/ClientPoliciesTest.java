@@ -1210,11 +1210,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // send an authorization request
         oauth.scope("openid" + " " + "microprofile-jwt");
-        oauth.request(request);
         oauth.client(clientId, clientSecret);
-        oauth.nonce(nonce);
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).request(request).open();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
@@ -1224,7 +1222,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(204, r.getStatus());
 
         // send an authorization request
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().request(request).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // check an authorization response
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
@@ -1253,7 +1251,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // logout
-        oauth.doLogout(response.getRefreshToken(), clientSecret);
+        oauth.doLogout(response.getRefreshToken());
         events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
 
         // create a request object with invalid claims
@@ -1266,8 +1264,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         request = new JWSBuilder().jsonContent(oidcRequest).none();
 
         // send an authorization request
-        oauth.request(request);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).open();
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
@@ -1325,7 +1322,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             // revert test client instance settings the same as OAuthClient.init
             oauth.openid(true);
             oauth.responseType(OIDCResponseType.CODE);
-            oauth.nonce(null);
         }
     }
 
@@ -1348,7 +1344,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         successfulLogin(clientId, clientSecret);
 
         configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.AUTHORIZATION_REQUEST, List.of(OAuth2Constants.AUTHORIZATION_CODE));
-        oauth.openLogout();
+        oauth.openLogoutForm();
         oauth.openLoginForm();
         MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(Objects.requireNonNull(driver.getCurrentUrl())).getQuery());
         assertEquals(ClientPolicyEvent.AUTHORIZATION_REQUEST.toString(), queryParams.getFirst("error"));
@@ -1426,8 +1422,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce, String expectedError, String expectedErrorDescription) {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
-        oauth.nonce(nonce);
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).open();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(expectedError, authorizationEndpointResponse.getError());
         assertEquals(expectedErrorDescription, authorizationEndpointResponse.getErrorDescription());

@@ -646,6 +646,10 @@
             <artifactId>nashorn-core</artifactId>
             <version>${nashorn.version}</version>
         </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

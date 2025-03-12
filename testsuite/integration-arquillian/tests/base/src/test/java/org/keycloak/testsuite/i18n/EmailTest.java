@@ -231,10 +231,8 @@ public class EmailTest extends AbstractI18NTest {
     // Issue 10981
     @Test
     public void resetPasswordOriginalUiLocalePreservedAfterForgetPassword() throws MessagingException, IOException {
-        oauth.uiLocales("de");
-
         // Assert login page is in german
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         // Click "Forget password"

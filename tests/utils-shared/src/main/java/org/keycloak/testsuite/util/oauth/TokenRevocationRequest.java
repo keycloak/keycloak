@@ -30,6 +30,11 @@ public class TokenRevocationRequest extends AbstractHttpPostRequest<TokenRevocat
         return this;
     }
 
+    public TokenRevocationRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getRevocation();
@@ -38,8 +43,6 @@ public class TokenRevocationRequest extends AbstractHttpPostRequest<TokenRevocat
     protected void initRequest() {
         parameter("token", token);
         parameter("token_type_hint", tokenTypeHint);
-
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
     }
 
     @Override

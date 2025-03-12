@@ -1382,7 +1382,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String encodedSignature = token.split("\\.",3)[2];
         byte[] signature = Base64Url.decode(encodedSignature);
         Assert.assertEquals(expectedLength, signature.length);
-        oauth.idTokenHint(response.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
     }
 
     private void conductAccessTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {

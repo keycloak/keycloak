@@ -61,24 +61,14 @@ public class OAuthDanceClientSessionExtensionTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
 
-        String clientSessionState = "1234";
-        String clientSessionHost = "test-client-host";
-
-        AccessTokenResponse tokenResponse = oauth.clientSessionState(clientSessionState)
-                .clientSessionHost(clientSessionHost)
-                .doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         String refreshTokenString = tokenResponse.getRefreshToken();
 
         EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId)
                 .assertEvent();
 
-
-        String updatedClientSessionState = "5678";
-
-        oauth.clientSessionState(updatedClientSessionState)
-                .clientSessionHost(clientSessionHost)
-                .doRefreshTokenRequest(refreshTokenString);
+        oauth.doRefreshTokenRequest(refreshTokenString);
 
         events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId)
                 .assertEvent();

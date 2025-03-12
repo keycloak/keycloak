@@ -62,9 +62,8 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
 
         oauth.realm(bc.consumerRealmName());
         oauth.clientId("consumer-client");
-        oauth.nonce("123456");
 
-        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), "123456");
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
@@ -89,9 +88,8 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
 
         oauth.realm(bc.consumerRealmName());
         oauth.clientId("consumer-client");
-        oauth.nonce(null);
 
-        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), null);
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());

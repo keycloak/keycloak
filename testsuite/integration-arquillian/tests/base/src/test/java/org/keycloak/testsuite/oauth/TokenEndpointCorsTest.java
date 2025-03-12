@@ -5,7 +5,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpOptions;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -63,7 +62,6 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.realm("test");
         oauth.client("test-app2", "password");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
-        oauth.postLogoutRedirectUri(VALID_CORS_URL + "/realms/master/app");
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -89,7 +87,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // No session
-        oauth.idTokenHint(response.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());
         assertCors(response);

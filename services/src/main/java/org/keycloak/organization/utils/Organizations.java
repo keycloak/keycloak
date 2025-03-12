@@ -172,6 +172,13 @@ public class Organizations {
         return email.substring(domainSeparator + 1);
     }
 
+    public static String getEmailDomain(UserModel user) {
+        if (user == null) {
+            return null;
+        }
+        return getEmailDomain(user.getEmail());
+    }
+
     public static OrganizationModel resolveOrganization(KeycloakSession session) {
         return resolveOrganization(session, null, null);
     }
@@ -229,7 +236,7 @@ public class Organizations {
         }
 
         organization = ofNullable(user).stream().flatMap(provider::getByMember)
-                .filter(o -> o.isEnabled() && provider.isManagedMember(o, user))
+                .filter(OrganizationModel::isEnabled)
                 .findAny();
 
         if (organization.isPresent()) {
@@ -237,7 +244,7 @@ public class Organizations {
         }
 
         if (user != null && domain == null) {
-            domain = getEmailDomain(user.getEmail());
+            domain = getEmailDomain(user);
         }
 
         return ofNullable(domain)
@@ -280,7 +287,7 @@ public class Organizations {
             return false;
         }
 
-        String emailDomain = Optional.ofNullable(getEmailDomain(user.getEmail())).orElse("");
+        String emailDomain = Optional.ofNullable(getEmailDomain(user)).orElse("");
         Stream<OrganizationDomainModel> domains = organization.getDomains();
         Stream<String> domainNames = domains.map(OrganizationDomainModel::getName);
 

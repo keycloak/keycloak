@@ -228,7 +228,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .assertEvent();
 
-        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
+        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
         events.expectLogout(accessToken.getSessionState())
                 .client("service-account-cl-refresh-on")
@@ -531,7 +531,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         assertEquals("service-account-service-account-cl-refresh-on", info.getPreferredUsername());
 
-        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
+        LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
     }
 

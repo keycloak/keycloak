@@ -274,7 +274,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
             assertEquals(200, response.getStatusCode());
             oauth.verifyToken(response.getAccessToken());
-            oauth.idTokenHint(response.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
             return clientSignedToken;
         } finally {
             // Revert jwks_url settings
@@ -693,7 +693,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-        return sendRequest(oauth.getEndpoints().getLogoutBuilder().build(), parameters);
+        return sendRequest(oauth.getEndpoints().getLogout(), parameters);
     }
 
     protected AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {

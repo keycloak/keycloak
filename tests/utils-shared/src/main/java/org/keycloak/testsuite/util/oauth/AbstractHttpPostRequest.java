@@ -11,8 +11,10 @@ import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractHttpPostRequest<T, R> {
 
@@ -24,6 +26,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected HttpPost post;
 
+    protected Map<String, String> headers = new HashMap<>();
     protected List<NameValuePair> parameters = new LinkedList<>();
 
     public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
@@ -36,16 +39,14 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     public R send() {
         post = new HttpPost(getEndpoint());
-        header("Accept", getAccept());
-        header("Origin", client.config().getOrigin());
-
-        if (client.getCustomParameters() != null) {
-            client.getCustomParameters().forEach(this::parameter);
-        }
+        post.addHeader("Accept", getAccept());
+        post.addHeader("Origin", client.config().getOrigin());
 
         authorization();
 
         initRequest();
+
+        headers.forEach((n, v) -> post.addHeader(n, v));
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
@@ -60,18 +61,18 @@ public abstract class AbstractHttpPostRequest<T, R> {
     public T client(String clientId) {
         this.clientId = clientId;
         this.clientSecret = null;
-        return (T) this;
+        return request();
     }
 
     public T client(String clientId, String clientSecret) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
-        return (T) this;
+        return request();
     }
 
     protected void header(String name, String value) {
         if (value != null) {
-            post.addHeader(name, value);
+            headers.put(name, value);
         }
     }
 
@@ -81,7 +82,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
         }
     }
 
-    private void authorization() {
+    protected void authorization() {
         String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
         String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
 
@@ -106,5 +107,10 @@ public abstract class AbstractHttpPostRequest<T, R> {
     }
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
+
+    @SuppressWarnings("unchecked")
+    private T request() {
+        return (T) this;
+    }
 
 }

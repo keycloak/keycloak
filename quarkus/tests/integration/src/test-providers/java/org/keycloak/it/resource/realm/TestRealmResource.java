@@ -40,14 +40,26 @@ public class TestRealmResource implements RealmResourceProvider {
     protected static final Logger logger = Logger.getLogger(TestRealmResource.class);
 
     final InfinispanConnectionProvider infinispanConnectionProvider;
+    final KeycloakSession session;
 
     public TestRealmResource(KeycloakSession session) {
+        this.session = session;
         this.infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
     }
 
     @Override
     public Object getResource() {
         return this;
+    }
+
+    @Path("trusted")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response trustedResponse() throws Exception {
+        if (session.getContext().getHttpRequest().isProxyTrusted()) {
+            return Response.ok("{}", MediaType.APPLICATION_JSON).build();
+        }
+        return Response.noContent().build();
     }
 
     @Path("slow")
@@ -66,8 +78,9 @@ public class TestRealmResource implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response cacheConfig(@PathParam("cache") String cacheName) {
         Cache<?, ?> cache = infinispanConnectionProvider.getCache(cacheName, false);
-        if (cache == null)
+        if (cache == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
 
         StringBuilderWriter out = new StringBuilderWriter();
         try (ConfigurationWriter writer = ConfigurationWriter.to(out)

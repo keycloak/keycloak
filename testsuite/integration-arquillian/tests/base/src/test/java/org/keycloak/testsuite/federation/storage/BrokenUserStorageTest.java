@@ -22,7 +22,6 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
@@ -64,7 +63,7 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
-        oauth.openLogout();
+        oauth.openLogoutForm();
     }
 
     @Test

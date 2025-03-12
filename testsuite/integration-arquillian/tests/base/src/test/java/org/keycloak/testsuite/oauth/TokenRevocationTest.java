@@ -131,7 +131,6 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
     @Test
     public void testRevokeToken() throws Exception {
-        oauth.clientSessionState("client-session");
         AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
         AccessTokenResponse tokenResponse2 = login("test-app-scope", "test-user@localhost", "password");
 
@@ -273,7 +272,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenEnabled(tokenResponse, "test-app");
 
-        oauth.doLogout(tokenResponse.getRefreshToken(), "password");
+        oauth.doLogout(tokenResponse.getRefreshToken());
 
         isTokenDisabled(tokenResponse, "test-app");
 

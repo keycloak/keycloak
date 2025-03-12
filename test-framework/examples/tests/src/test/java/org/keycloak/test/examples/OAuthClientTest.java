@@ -13,6 +13,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
@@ -33,6 +35,9 @@ public class OAuthClientTest {
     @InjectUser(config = OAuthUserConfig.class)
     ManagedUser user;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @Test
     public void testConfig() {
         Assertions.assertEquals(managedRealm.getName(), oauth.config().getRealm());
@@ -43,6 +48,8 @@ public class OAuthClientTest {
     public void testLogin() {
         AuthorizationEndpointResponse response = oauth.doLogin(user.getUsername(), user.getPassword());
         Assertions.assertTrue(response.isRedirected());
+
+        oauth.logoutForm().idTokenHint(oauth.doAccessTokenRequest(response.getCode()).getIdToken()).open();
     }
 
     @Test
@@ -119,6 +126,15 @@ public class OAuthClientTest {
 
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
         Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
+    }
+
+    @Test
+    public void testLogout() {
+        AuthorizationEndpointResponse authzResponse = oauth.doLogin(user.getUsername(), user.getPassword());
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode());
+        oauth.logoutForm().idTokenHint(accessTokenResponse.getIdToken()).open();
+        oauth.loginForm().open();
+        Assertions.assertTrue(loginPage.isActivePage());
     }
 
     public static class OAuthUserConfig implements UserConfig {

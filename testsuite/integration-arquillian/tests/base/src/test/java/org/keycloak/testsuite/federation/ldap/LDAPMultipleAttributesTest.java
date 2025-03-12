@@ -203,7 +203,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assert.assertTrue(postalCodes.contains("88441"));
         Assert.assertTrue(postalCodes.contains("77332"));
 
-        oauth.doLogout(response.getRefreshToken(), "password");
+        oauth.doLogout(response.getRefreshToken());
 
         // Login as jbrown
         loginPage.open();
@@ -222,7 +222,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assert.assertTrue(postalCodes.contains("88441"));
         Assert.assertFalse(postalCodes.contains("77332"));
 
-        oauth.doLogout(response.getRefreshToken(), "password");
+        oauth.doLogout(response.getRefreshToken());
     }
 
 

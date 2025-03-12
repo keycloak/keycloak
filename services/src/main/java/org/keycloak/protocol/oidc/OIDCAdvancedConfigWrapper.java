@@ -23,7 +23,6 @@ import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
@@ -35,6 +34,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
+
+    public static enum TokenExchangeRefreshTokenEnabled {NO, SAME_SESSION};
 
     private OIDCAdvancedConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
         super(client,clientRep);
@@ -240,12 +241,18 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, val);
     }
 
-    public boolean isStandardTokenExchangeRefreshEnabled() {
-        return Boolean.parseBoolean(getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED));
+    public TokenExchangeRefreshTokenEnabled getStandardTokenExchangeRefreshEnabled() {
+        final String value = getAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED);
+        try {
+            return value == null? TokenExchangeRefreshTokenEnabled.NO : TokenExchangeRefreshTokenEnabled.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return TokenExchangeRefreshTokenEnabled.NO;
+        }
     }
 
-    public void setStandardTokenExchangeRefreshEnabled(boolean enable) {
-        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, String.valueOf(enable));
+    public void setStandardTokenExchangeRefreshEnabled(TokenExchangeRefreshTokenEnabled enable) {
+        setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED,
+                enable == null || enable == TokenExchangeRefreshTokenEnabled.NO? null : enable.name());
     }
 
     public String getTlsClientAuthSubjectDn() {
