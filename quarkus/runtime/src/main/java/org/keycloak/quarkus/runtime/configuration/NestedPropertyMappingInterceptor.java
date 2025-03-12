@@ -42,17 +42,16 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        return resolve(context::restart, context::proceed, name);
+        return resolve(context::restart, context::proceed, name, false);
     }
 
-    static <T> T resolve(Function<String, T> resolver, Function<String, T> nonRecursiveResolver, String name) {
+    private static <T> T resolve(Function<String, T> resolver, Function<String, T> nonRecursiveResolver, String name, boolean startNew) {
         LinkedHashSet<String> recursing = recursions.get();
-        if (recursing == null) {
+        if (recursing == null && startNew) {
             recursing = new LinkedHashSet<String>();
             recursions.set(recursing);
         }
-        boolean added = recursing.add(name);
-        if (added) {
+        if (recursing != null && recursing.add(name)) {
             try {
                 return resolver.apply(name);
             } finally {
@@ -66,7 +65,12 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
     }
 
     public static Optional<String> getResolvingRoot() {
-        return Optional.ofNullable(recursions.get()).map(s -> s.iterator().next());
+        return Optional.ofNullable(recursions.get()).filter(s -> !s.isEmpty()).map(s -> s.iterator().next());
+    }
+
+    public static ConfigValue getValueFromPropertyMappers(ConfigSourceInterceptorContext context, String name) {
+        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n);
+        return resolve(resolver, resolver, name, true);
     }
 
 }

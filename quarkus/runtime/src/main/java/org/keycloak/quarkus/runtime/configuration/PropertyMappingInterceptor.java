@@ -21,7 +21,6 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -141,9 +140,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             return context.proceed(name);
         }
 
-        // track that we may be starting to resolve "name". There's no recursion concern here
-        // just proceed to get the value from the PropertyMappers.
-        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n);
-        return NestedPropertyMappingInterceptor.resolve(resolver, resolver, name);
+        // Call through NestedPropertyMappingInterceptor to track what we are currently getting the value for
+        return NestedPropertyMappingInterceptor.getValueFromPropertyMappers(context, name);
     }
 }
