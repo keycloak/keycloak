@@ -15,129 +15,68 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
-import org.junit.AfterClass;
-import org.junit.Test;
-import org.keycloak.admin.client.Keycloak;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.utils.tls.TLSUtils;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.utils.admin.ApiUtil;
 
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class CrossRealmPermissionsTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class CrossRealmPermissionsTest {
 
-    private static final String REALM_NAME = "crossrealm-test";
-    private static final String REALM2_NAME = "crossrealm2-test";
+    @InjectRealm(ref = "realm1", config = CrossRealmPermissionsRealmConfig.class)
+    ManagedRealm managedRealm1;
 
-    private static Keycloak adminClient1;
-    private static Keycloak adminClient2;
-
-    private RealmResource realm1;
-    private RealmResource realm2;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmBuilder builder = RealmBuilder.create().name(REALM_NAME).testMail();
-        builder.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
-
-        builder.user(UserBuilder.create()
-                .username(AdminRoles.REALM_ADMIN)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .addPassword("password"));
-        testRealms.add(builder.build());
-
-        adminClient1 = Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret", TLSUtils.initializeTLS());
-        realm1 = adminClient1.realm(REALM_NAME);
-
-        builder = RealmBuilder.create().name(REALM2_NAME).testMail();
-        builder.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
-
-        builder.user(UserBuilder.create()
-                .username(AdminRoles.REALM_ADMIN)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .addPassword("password"));
-
-        testRealms.add(builder.build());
-
-        adminClient2 = Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM2_NAME, AdminRoles.REALM_ADMIN, "password", "test-client", "secret", TLSUtils.initializeTLS());
-        realm2 = adminClient2.realm(REALM2_NAME);
-    }
-
-
-    @AfterClass
-    public static void afterClass() {
-        adminClient1.close();
-        adminClient2.close();
-    }
-
+    @InjectRealm(ref = "realm2", config = CrossRealmPermissionsRealmConfig.class)
+    ManagedRealm managedRealm2;
 
     @Test
     public void users() {
-        UserRepresentation user = UserBuilder.create().username("randomuser-" + Time.currentTimeMillis()).build();
-        Response response = realm1.users().create(user);
-        String userId = ApiUtil.getCreatedId(response);
-        response.close();
+        UserRepresentation user = UserConfigBuilder.create()
+                .username("randomuser-" + Time.currentTimeMillis())
+                .build();
+        final String userUuid = ApiUtil.getCreatedId(managedRealm1.admin().users().create(user));
 
-        realm1.users().get(userId).toRepresentation();
+        expectNotFound(realm ->
+                realm.users().get(userUuid).toRepresentation(), managedRealm2.admin()
+        );
 
-        expectNotFound(new PermissionsTest.Invocation() {
-            @Override
-            public void invoke(RealmResource realm) {
-                realm.users().get(userId).toRepresentation();
-            }
-        }, realm2);
+        expectNotFound(realm ->
+                realm.users().get(userUuid).update(new UserRepresentation()), managedRealm2.admin()
+        );
 
-        expectNotFound(new PermissionsTest.Invocation() {
-            @Override
-            public void invoke(RealmResource realm) {
-                realm.users().get(userId).update(new UserRepresentation());
-            }
-        }, realm2);
+        expectNotFound(realm ->
+                realm.users().get(userUuid).remove(), managedRealm2.admin()
+        );
 
-        expectNotFound(new PermissionsTest.Invocation() {
-            @Override
-            public void invoke(RealmResource realm) {
-                realm.users().get(userId).remove();
-            }
-        }, realm2);
-
-        expectNotFound(new PermissionsTest.Invocation() {
-            @Override
-            public void invoke(RealmResource realm) {
-                realm.users().get(userId).getUserSessions();
-            }
-        }, realm2);
+        expectNotFound(realm ->
+                realm.users().get(userUuid).getUserSessions(), managedRealm2.admin()
+        );
     }
 
-    private void expectNotFound(final PermissionsTest.Invocation invocation, RealmResource realm) {
-        expectNotFound(new PermissionsTest.InvocationWithResponse() {
-            public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                invocation.invoke(realm);
-            }
-        }, realm);
+    private void expectNotFound(final Invocation invocation, RealmResource realm) {
+        expectNotFound((realm1, response) -> invocation.invoke(realm1), realm);
     }
 
-    private void expectNotFound(PermissionsTest.InvocationWithResponse invocation, RealmResource realm) {
+    private void expectNotFound(InvocationWithResponse invocation, RealmResource realm) {
         int statusCode = 0;
         try {
             AtomicReference<Response> responseReference = new AtomicReference<>();
@@ -146,13 +85,37 @@ public class CrossRealmPermissionsTest extends AbstractKeycloakTest {
             if (response != null) {
                 statusCode = response.getStatus();
             } else {
-                fail("Expected failure");
+                Assertions.fail("Expected failure");
             }
         } catch (ClientErrorException e) {
             statusCode = e.getResponse().getStatus();
         }
 
-        assertEquals(404, statusCode);
+        Assertions.assertEquals(404, statusCode);
+    }
+
+    private interface Invocation {
+
+        void invoke(RealmResource realm);
+
+    }
+
+    private interface InvocationWithResponse {
+
+        void invoke(RealmResource realm, AtomicReference<Response> response);
+
+    }
+
+    private static class CrossRealmPermissionsRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.addUser(AdminRoles.REALM_ADMIN)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                    .password("password");
+
+            return realm;
+        }
     }
 
 }
