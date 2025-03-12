@@ -67,15 +67,6 @@ public class ApiUtil {
         return null;
     }
 
-    public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
-        for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getClientId().equals(clientId)) {
-                return realm.clients().get(c.getId());
-            }
-        }
-        return null;
-    }
-
     public static ClientResource findClientResourceByName(RealmResource realm, String name) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (name.equals(c.getName())) {

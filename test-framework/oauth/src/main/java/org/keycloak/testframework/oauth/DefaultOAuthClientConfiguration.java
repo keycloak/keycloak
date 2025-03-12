@@ -8,7 +8,7 @@ public class DefaultOAuthClientConfiguration implements ClientConfig {
     @Override
     public ClientConfigBuilder configure(ClientConfigBuilder client) {
         return client.clientId("test-app")
-                .serviceAccount()
+                .serviceAccountsEnabled(true)
                 .directAccessGrants()
                 .secret("test-secret");
     }
