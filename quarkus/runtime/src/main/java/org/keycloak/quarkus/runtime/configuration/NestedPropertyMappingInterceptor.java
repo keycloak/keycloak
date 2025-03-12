@@ -33,6 +33,7 @@ import jakarta.annotation.Priority;
  * happens at the ExpressionConfigSourceInterceptor, which is after
  * property mapping. This interceptor appears just after the expression
  * interceptor and will restart the context for anything not actively recursing.
+ * This is needed in case the expression contains something that requires property mapping.
  */
 @Priority(Priorities.LIBRARY + 299)
 public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor {
