@@ -25,6 +25,7 @@ import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { AdminEvents } from "../events/AdminEvents";
 import helpUrls from "../help-urls";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useToggle from "../utils/useToggle";
@@ -40,7 +41,6 @@ import { getId, getLastId } from "./groupIdUtils";
 import { toGroups } from "./routes/Groups";
 
 import "./GroupsSection.css";
-import { AdminEvents } from "../events/AdminEvents";
 
 export default function GroupsSection() {
   const { adminClient } = useAdminClient();
@@ -213,7 +213,7 @@ export default function GroupsSection() {
                     </Tab>
                   )}
                   <Tab
-                    data-testid="attributes"
+                    data-testid="attributesTab"
                     eventKey={2}
                     title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   >

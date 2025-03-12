@@ -23,10 +23,7 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "cy:open": "cypress open --e2e --browser chrome",
-    "cy:run": "cypress run --browser chrome",
-    "cy:check-types": "wireit",
-    "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
+    "test:integration": "playwright test"
   },
   "wireit": {
     "dev": {
@@ -79,12 +76,6 @@
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
       ]
-    },
-    "cy:check-types": {
-      "command": "tsc --project cypress/tsconfig.json",
-      "dependencies": [
-        "../../libs/keycloak-admin-client:build"
-      ]
     }
   },
   "dependencies": {
@@ -115,8 +106,8 @@
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
-    "@4tw/cypress-drag-drop": "^2.3.0",
-    "@testing-library/cypress": "^10.0.3",
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.49.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -126,13 +117,10 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.0",
-    "cypress": "^14.1.0",
-    "cypress-axe": "^1.6.0",
-    "cypress-split": "^1.24.14",
     "jsdom": "^26.0.0",
-    "ldap-server-mock": "^6.0.1",
     "lightningcss": "^1.29.2",
     "ts-node": "^10.9.2",
+    "uuid": "^11.1.0",
     "vite": "^6.2.1",
     "vite-plugin-checker": "^0.9.0",
     "vite-plugin-dts": "^4.5.3",

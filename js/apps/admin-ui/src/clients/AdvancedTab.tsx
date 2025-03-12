@@ -179,8 +179,19 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                     resetFields([
                       "saml.assertion.lifespan",
                       "access.token.lifespan",
+                      "session.idle.timeout",
+                      "client.session.max.lifespan",
+                      "client.offline.session.idle.timeout",
+                      "client.offline.session.max.lifespan",
+                      "dpop.bound.access.tokens",
                       "tls.client.certificate.bound.access.tokens",
+                      "require.pushed.authorization.requests",
+                      "client.use.lightweight.access.token.enabled",
+                      "client.introspection.response.allow.jwt.claim.enabled",
                       "pkce.code.challenge.method",
+                      "acr.loa.map",
+                      "default.acr.values",
+                      "minimum.acr.value",
                     ]);
                   }}
                 />

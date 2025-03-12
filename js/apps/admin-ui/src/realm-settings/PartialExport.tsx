@@ -77,7 +77,7 @@ export const PartialExportDialog = ({
       actions={[
         <Button
           key="export"
-          data-testid="export-button"
+          data-testid="confirm"
           isDisabled={isExporting}
           onClick={exportRealm}
         >
@@ -85,7 +85,7 @@ export const PartialExportDialog = ({
         </Button>,
         <Button
           key="cancel"
-          data-testid="cancel-button"
+          data-testid="cancel"
           variant={ButtonVariant.link}
           onClick={onClose}
         >

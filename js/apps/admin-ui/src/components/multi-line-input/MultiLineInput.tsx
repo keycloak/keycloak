@@ -127,7 +127,7 @@ export const MultiLineInput = ({
               onClick={append}
               tabIndex={-1}
               aria-label={t("add")}
-              data-testid="addValue"
+              data-testid={`${name}-addValue`}
               isDisabled={!value || isDisabled}
             >
               <PlusCircleIcon /> {t(addButtonLabel || "add")}
