@@ -23,6 +23,10 @@ Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://w
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
 
+=== `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
+
+Built-in X.509 client certificate lookup providers now reflect the `proxy-trusted-addresses` config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or `proxy-trusted-addresses` is unset.
+
 === Zero-configuration secure cluster communication
 
 For clustering multiple nodes, {project_name} uses distributed caches.
