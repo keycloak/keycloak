@@ -43,6 +43,7 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuth
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
@@ -317,6 +318,25 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         authenticateWithTotp();
         authenticateWithButton();
         assertLoggedInWithAcr("3");
+    }
+
+    @Test
+    public void stepupAuthenticationNoAuthSessionCookie() {
+        // logging in to level 1
+        openLoginFormWithAcrClaim(true, "silver");
+        authenticateWithUsernamePassword();
+        assertLoggedInWithAcr("silver");
+        // doing step-up authentication to level 2
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+        // going back to login again, otp should be presented as by default max-age is 0
+        openLoginFormWithAcrClaim(true, "gold");
+        // remove the auth session cookie emulating a browser restart in which this cookie is lost
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
     }
 
     @Test
