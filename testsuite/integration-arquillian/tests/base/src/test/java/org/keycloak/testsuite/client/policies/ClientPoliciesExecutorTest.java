@@ -1532,13 +1532,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
 
         // Pushed Authorization Request without state parameter
-        oauth.addCustomParameter("request", encodedRequestObject);
-        ParResponse pResp = oauth.pushedAuthorizationRequest().send();
+        ParResponse pResp = oauth.pushedAuthorizationRequest().request(encodedRequestObject).send();
         assertEquals(201, pResp.getStatusCode());
         String requestUri = pResp.getRequestUri();
 
         // only query parameters include state parameter
-        oauth.removeCustomParameter("request");
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
@@ -1547,13 +1545,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oidcClientEndpointsResource.setOIDCRequest(REALM_NAME, TEST_CLIENT, oauth.getRedirectUri(), "10", "mystate2", "none");
         encodedRequestObject = oidcClientEndpointsResource.getOIDCRequest();
 
-        oauth.addCustomParameter("request", encodedRequestObject);
-        pResp = oauth.pushedAuthorizationRequest().state("mystate2").send();
+        pResp = oauth.pushedAuthorizationRequest().request(encodedRequestObject).state("mystate2").send();
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
 
         // both query parameters and PAR requests include state parameter
-        oauth.removeCustomParameter("request");
         this.requestUri = requestUri;
         successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
 

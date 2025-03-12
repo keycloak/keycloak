@@ -23,8 +23,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
-import java.util.HashMap;
-
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
@@ -77,8 +75,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .redirectUri(APP_ROOT + "/auth")
                 .postLogoutRedirectUri(APP_ROOT + "/auth")
                 .responseType(OAuth2Constants.CODE);
-
-        customParameters = null;
     }
 
     public void setDriver(WebDriver driver) {
@@ -143,21 +139,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient origin(String origin) {
         config.origin(origin);
-        return this;
-    }
-
-    public OAuthClient addCustomParameter(String key, String value) {
-        if (customParameters == null) {
-            customParameters = new HashMap<>();
-        }
-        customParameters.put(key, value);
-        return this;
-    }
-
-    public OAuthClient removeCustomParameter(String key) {
-        if (customParameters != null) {
-            customParameters.remove(key);
-        }
         return this;
     }
 
