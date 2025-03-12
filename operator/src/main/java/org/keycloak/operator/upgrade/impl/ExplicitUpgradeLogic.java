@@ -8,6 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 /**
  * Implements an explicit upgrade logic.
@@ -28,7 +29,8 @@ public class ExplicitUpgradeLogic extends BaseUpgradeLogic {
             decideRecreateUpgrade("Explicit strategy configured. Revision annotation not present in stateful set.");
             return Optional.empty();
         }
-        var desiredRevision = CRDUtils.getRevision(context, keycloak);
+        // CRD validation ensures the revision is present
+        var desiredRevision = UpdateSpec.getRevision(keycloak).orElseThrow();
         if (Objects.equals(maybeCurrentRevision.get(), desiredRevision)) {
             decideRollingUpgrade("Explicit strategy configured. Revision matches.");
             return Optional.empty();

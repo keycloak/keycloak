@@ -36,13 +36,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -127,18 +124,6 @@ public final class CRDUtils {
 
     public static Optional<String> findUpdateReason(StatefulSet statefulSet) {
         return Optional.ofNullable(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION));
-    }
-
-    public static String getRevision(Context<Keycloak> context, Keycloak keycloak) {
-        return UpdateSpec.getRevision(keycloak)
-                .orElse(defaultExplicitStrategyRevision(context));
-    }
-
-    public static String defaultExplicitStrategyRevision(Context<Keycloak> context) {
-        // We can use anything we want as a default revision
-        // Using the default image since it changes with a new operator release.
-        // If the image changes, it is likely an incompatible update and will trigger a recreate update to keep the data safe.
-        return Utils.hash(ContextUtils.getOperatorConfig(context).keycloak().image());
     }
 
     public static Optional<String> getRevision(StatefulSet statefulSet) {

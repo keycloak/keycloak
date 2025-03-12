@@ -240,6 +240,9 @@ public class UpgradeTest extends BaseOperatorTest {
         kc.getSpec().setInstances(2);
         var updateSpec = new UpdateSpec();
         updateSpec.setStrategy(updateStrategy);
+        if (updateStrategy == UpdateStrategy.EXPLICIT) {
+            updateSpec.setRevision("0");
+        }
         kc.getSpec().setUpdateSpec(updateSpec);
 
         if (kc.getSpec().getFeatureSpec() == null) {

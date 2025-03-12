@@ -17,11 +17,13 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Default;
+import io.fabric8.generator.annotation.ValidationRule;
 import io.sundr.builder.annotations.Buildable;
-import java.util.Optional;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
@@ -29,6 +31,10 @@ import org.keycloak.operator.upgrade.UpdateStrategy;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
+@ValidationRule(
+        value = "self.strategy != 'Explicit' || has(self.revision)",
+        message = "The 'revision' field is required when 'Explicit' strategy is used"
+)
 public class UpdateSpec {
 
     // those are the default, keep them in sync.

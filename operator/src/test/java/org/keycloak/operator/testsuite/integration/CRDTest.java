@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
@@ -34,6 +35,7 @@ import java.io.FileNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.keycloak.operator.upgrade.UpdateStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -89,6 +91,23 @@ public class CRDTest {
         kc.getSpec().setInstances(null);
 
         assertThat(client.resource(kc).create().getSpec().getInstances()).isNull();
+    }
+
+    @Test
+    public void testUpdateSpecValidation() {
+        var cr = new KeycloakBuilder()
+                .withNewMetadata()
+                .withName("invalid-keycloak")
+                .endMetadata()
+                .withNewSpec()
+                .withNewUpdateSpec()
+                .withStrategy(UpdateStrategy.EXPLICIT)
+                .endUpdateSpec()
+                .endSpec()
+                .build();
+
+        var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
+        assertThat(eMsg).contains("spec.update: Invalid value: \"object\": The 'revision' field is required when 'Explicit' strategy is used.");
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {
