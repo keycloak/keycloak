@@ -40,9 +40,6 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantR
         parameter("password", password);
         parameter("otp", otp);
 
-        parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
-        parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
-
         scope();
     }
 

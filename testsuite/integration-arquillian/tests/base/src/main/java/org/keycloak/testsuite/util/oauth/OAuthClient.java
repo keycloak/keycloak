@@ -78,8 +78,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
                 .postLogoutRedirectUri(APP_ROOT + "/auth")
                 .responseType(OAuth2Constants.CODE);
 
-        clientSessionState = null;
-        clientSessionHost = null;
         customParameters = null;
     }
 
@@ -130,16 +128,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient openid(boolean openid) {
         config.openid(openid);
-        return this;
-    }
-
-    public OAuthClient clientSessionState(String client_session_state) {
-        this.clientSessionState = client_session_state;
-        return this;
-    }
-
-    public OAuthClient clientSessionHost(String client_session_host) {
-        this.clientSessionHost = client_session_host;
         return this;
     }
 

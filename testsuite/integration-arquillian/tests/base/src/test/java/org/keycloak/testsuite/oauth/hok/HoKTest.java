@@ -595,7 +595,6 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
-        oauth.clientSessionState("client-session");
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
 
