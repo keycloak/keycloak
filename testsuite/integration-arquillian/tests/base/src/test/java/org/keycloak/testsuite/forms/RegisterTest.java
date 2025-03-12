@@ -131,7 +131,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
     }
- 
+
     @Test
     public void registerExistingEmailForbidden() {
         loginPage.open();
@@ -155,7 +155,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("email_in_use").assertEvent();
     }
- 
+
     @Test
     public void registerExistingEmailAllowed() throws IOException {
         try (RealmAttributeUpdater rau = setDuplicateEmailsAllowed(true).update()) {
@@ -868,6 +868,35 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() {
         loginPage.open();
         loginPage.clickRegister();
+        String registrationUrl = driver.getCurrentUrl();
+
+        registerPage.clickBackToLogin();
+        loginPage.assertCurrent(testRealm().toRepresentation().getRealm());
+
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword("test-user@localhost");
+
+        events.clear();
+
+        driver.navigate().to(registrationUrl);
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
+
+        events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")
+                .removeDetail(Details.USERNAME)
+                .removeDetail(Details.EMAIL)
+                .removeDetail(Details.REGISTER_METHOD)
+                .detail(Details.EXISTING_USER, "test-user@localhost")
+                .detail(Details.AUTHENTICATION_ERROR_DETAIL, Errors.DIFFERENT_USER_AUTHENTICATING)
+                .error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+    }
+
+    @Test
+    public void testLoginPageClearsUserFromContextIfUserNavigatesBackFromResetPassword() {
+        loginPage.open();
+        loginPage.clickRegister();
         registerPage.clickBackToLogin();
         loginPage.assertCurrent(testRealm().toRepresentation().getRealm());
 
@@ -880,16 +909,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.clear();
         driver.navigate().back();
 
-        errorPage.assertCurrent();
-        Assert.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
-
-        events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")
-                .removeDetail(Details.USERNAME)
-                .removeDetail(Details.EMAIL)
-                .removeDetail(Details.REGISTER_METHOD)
-                .detail(Details.EXISTING_USER, "test-user@localhost")
-                .detail(Details.AUTHENTICATION_ERROR_DETAIL, Errors.DIFFERENT_USER_AUTHENTICATING)
-                .error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        registerPage.assertCurrent();
     }
 
     protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {
