@@ -18,6 +18,6 @@ Here is the result in account console once the URI is saved for the picture attr
 image::images/account-console-with-avatar.png[caption="",title="Avatar shown in account console"]
 
 === Important warning
-CAUTION: Allowing users to specify their own URI could lead to security concerns.  An avatar can contain malware so it is important that images come from a trusted source.  One way to accomplish this is to make sure that the `picture` has a regular expression validator to restrict the URI.
+CAUTION: Allowing users to specify their own URI could lead to security concerns.  An avatar can contain malware so ensure that images come from a trusted source.  One practical approach is to make sure that the `picture` has a regular expression validator to restrict the URI.
 
 image::images/avatar-validation.png[caption="",title="RegExp validator for User profile picture attribute"]
