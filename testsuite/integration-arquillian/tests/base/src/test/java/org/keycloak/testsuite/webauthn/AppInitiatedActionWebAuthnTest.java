@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -60,6 +61,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
@@ -229,12 +231,16 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     }
 
     private EventRepresentation loginUser() {
-        usernamePage.open();
+        oauth.openLoginForm();
         usernamePage.assertCurrent();
         usernamePage.login(DEFAULT_USERNAME);
 
         passwordPage.assertCurrent();
         passwordPage.login(DEFAULT_PASSWORD);
+
+        appPage.assertCurrent();
+        assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+        assertNotNull(oauth.parseLoginResponse().getCode());
 
         return events.expectLogin()
                 .detail(Details.USERNAME, DEFAULT_USERNAME)

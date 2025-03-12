@@ -49,6 +49,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 
@@ -214,7 +215,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
-        driver.findElement(By.name("submit1")).click();
+        UIUtils.clickLink(driver.findElement(By.name("submit1")));
 
 
         loginPage.assertCurrent();
