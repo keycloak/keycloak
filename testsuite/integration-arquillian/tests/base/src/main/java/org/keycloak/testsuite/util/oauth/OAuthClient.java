@@ -87,21 +87,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         loginPage.login(username, password);
     }
 
-
-
-    public String getClientId() {
-        return config.getClientId();
-    }
-
-    public String getScope() {
-        return config.getScope();
-    }
-
-    public OAuthClient realm(String realm) {
-        config.realm(realm);
-        return this;
-    }
-
     /**
      * @deprecated This method is deprecated, use {@link OAuthClient#client(String)} for public clients,
      * or {@link OAuthClient#client(String, String)} for confidential clients
@@ -109,36 +94,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     @Deprecated
     public OAuthClient clientId(String clientId) {
         config.clientId(clientId);
-        return this;
-    }
-
-    public OAuthClient redirectUri(String redirectUri) {
-        config.redirectUri(redirectUri);
-        return this;
-    }
-
-    public OAuthClient scope(String scope) {
-        config.scope(scope);
-        return this;
-    }
-
-    public OAuthClient openid(boolean openid) {
-        config.openid(openid);
-        return this;
-    }
-
-    public OAuthClient responseType(String responseType) {
-        config.responseType(responseType);
-        return this;
-    }
-
-    public OAuthClient responseMode(String responseMode) {
-        config.responseMode(responseMode);
-        return this;
-    }
-
-    public OAuthClient origin(String origin) {
-        config.origin(origin);
         return this;
     }
 
