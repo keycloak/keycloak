@@ -52,7 +52,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
       return [];
     },
     setSelectedRoles,
-    [values],
+    [],
   );
 
   return (

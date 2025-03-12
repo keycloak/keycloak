@@ -52,7 +52,6 @@ export const AddRoleMappingModal = ({
   id,
   name,
   type,
-  isRadio = false,
   isLDAPmapper,
   onAssign,
   onClose,
@@ -158,7 +157,13 @@ export const AddRoleMappingModal = ({
     >
       <KeycloakDataTable
         key={key}
-        onSelect={(rows) => setSelectedRows([...rows])}
+        onSelect={(rows) => {
+          if (tab === "evaluation") {
+            setSelectedRows(rows.length > 0 ? [rows[0]] : []);
+          } else {
+            setSelectedRows([...rows]);
+          }
+        }}
         searchPlaceholderKey="searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
@@ -196,8 +201,8 @@ export const AddRoleMappingModal = ({
             </ToolbarItem>
           )
         }
-        canSelectAll
-        isRadio={isRadio}
+        canSelectAll={tab !== "evaluation"}
+        isRadio={tab === "evaluation"}
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="associatedRolesText"
         columns={[
