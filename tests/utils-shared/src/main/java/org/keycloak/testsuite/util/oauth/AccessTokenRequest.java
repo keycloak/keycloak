@@ -20,6 +20,13 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return client.getEndpoints().getToken();
     }
 
+
+    public AccessTokenRequest signedJwt(String signedJwt) {
+        parameter(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
+        parameter(OAuth2Constants.CLIENT_ASSERTION, signedJwt);
+        return this;
+    }
+
     public AccessTokenRequest codeVerifier(PkceGenerator pkceGenerator) {
         if (pkceGenerator != null) {
             codeVerifier(pkceGenerator.getCodeVerifier());
