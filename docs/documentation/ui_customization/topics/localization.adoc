@@ -45,7 +45,7 @@ usernameOrEmail=Brukernavn
 password=Passord
 ----
 +
-If you omit a translation for messages, they will use English.
+If you omit a translation for messages, those messages appear in English.
 
 . Edit `themes/mytheme/login/theme.properties` and add:
 +
