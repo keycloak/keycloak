@@ -54,26 +54,35 @@ Read more about this in the https://www.keycloak.org/operator/advanced-configura
 
 === Supported standard token exchange
 
-In this release, {project_name} added support for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. In the past {project_name} releases, the {project_name} supported only preview token exchange feature, which is now referred
-as link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange]. In case you used the link:{securing_apps_token_exchange_link}#_internal-token-to-internal-token-exchange[internal-internal token exchange],
-it is recommended to migrate to the new standard token exchange instead. Here are some notes, which can help to migrate to the new standard token exchange:
+In this release, {project_name} added support for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] (Feature `token-exchange-standard:v2`). In the past {project_name} releases,
+the {project_name} had only preview token exchange feature, which is now referred as link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange] (Feature `token-exchange:v1`).
+The legacy token exchange still remains preview and it works the same way as in previous releases. In case you used the link:{securing_apps_token_exchange_link}#_internal-token-to-internal-token-exchange[internal-internal token exchange],
+it is recommended to migrate to the new standard token exchange instead.
 
-* The feature `token-exchange-standard`, which represents the new Standard token exchange is enabled by default. It is recommended to just
-disable the `token-exchange` feature, which represents the Legacy token exchange to make sure that requests will be served by the new standard token exchange.
+If needed for some reason, you can stick to the legacy token exchange and it should work the same way as in previous releases. For continue using legacy token exchange, it is not needed to disable the standard token exchange feature
+as your clients will use standard token exchange just if it is explicitly enabled on the {project_name} client as described below. However migration to the standard token exchange is recommended as that is
+officially supported and will be the priority for the {project_name} team in the future.
 
-* It is possible to have both standard and legacy token exchange enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases,
-which are supported only by legacy token exchange. Like for instance link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange]. In this case
-{project_name} will serve standard internal to internal requests preferably by the standard token exchange when the other requests will be served by the legacy token exchange. It is detected based on the
+Here are some notes, which can help to migrate to the new standard token exchange:
+
+* The feature `token-exchange-standard`, which represents the new Standard token exchange, is enabled by default. It is recommended to just
+disable the `token-exchange` feature, which represents the Legacy token exchange, to make sure that requests will be served by the new standard token exchange.
+
+* It is possible to have both standard and legacy token exchange features enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases,
+which are implemented only by legacy token exchange. Like for instance link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange] is implemented only by
+legacy token exchange. In this case {project_name} will serve standard internal-to-internal requests preferably by the standard token exchange when the other requests will be served by the legacy token exchange. It is detected based on the
 parameters if the particular request is standard or not. For instance requests containing non-standard parameters like `requested_issuer` or `requested_subject` are considered legacy.
 
 * Standard token exchange requires to enable switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
+
+Few more clarifications regarding the notable changes in the behaviour of standard token exchange in comparison to legacy token exchange:
 
 * Fine-grained admin permissions are no longer needed and no longer supported for the standard token exchange.
 
 * The most notable change regarding the behaviour of scopes and audiences is, that applied client scopes are based on the client triggering the token exchange request, rather than "target" client specified by the `audience` parameter.
 There is support for multiple values of the `audience` parameter as mentioned in the specification. The details are described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-scope[{securing_apps_token_exchange_name}].
 
-* Public clients are not allowed anymore to send the token exchange requests. Legacy token exchange supported public clients to exchanging to itself to downscope the original token. This use case can be
+* Public clients are no longer allowed to send the token exchange requests. Legacy token exchange implemented public clients to exchanging to itself to downscope the original token. This use case can be
 instead covered by using refresh token grant as in the refresh token grant, the parameter `scope` can be actually used to downscope the refreshed access token as mentioned in
 the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification].
 

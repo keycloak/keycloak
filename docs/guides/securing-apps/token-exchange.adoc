@@ -264,9 +264,12 @@ client `requester-client` send the request with `scope=some-confidential-scope`.
 for `client-scope`, `grant-type` and `client-roles`.
 
 * Requesting refresh token is allowed just if client has switch `Allow refresh token in Standard Token Exchange` set to other value than `No` (which is the default value). The switch is available in the
-admin console in the tab `Advanced` of the OIDC client. The other available value of the switch is `Same session`, which means that refresh token is allowed just if refresh token can use the same user
-session like the subject token has. In case that subject token is coming from transient session or from link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not
-be allowed. Similarly it will not be allowed to request offline token (using `scope=offline_access`).
+admin console in the tab `Advanced` of the OIDC client in the section `OpenID Connect Compatibility Modes` . The other available value of the switch is `Same session`, which means that refresh token is
+allowed just if refresh token can use the same user session like the subject token has. In case that subject token is coming from link:{adminguide_link}#_transient-session[Transient session] or from
+link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request offline token (using `scope=offline_access`).
+
+.Enabling refresh token in Token Exchange
+image::token-exchange-switch-refresh.png[Enabling refresh token in Token Exchange]
 
 * Token exchange never creates new link:{adminguide_link}#managing-user-sessions[user session]. In case that `requested_token_type` is refresh token, it may eventually create new client session in the user session
 for the requester client (if client session was not yet created).
@@ -429,6 +432,9 @@ an external realm or identity provider as an _external_ token.
 
 [[_internal-token-to-internal-token-exchange]]
 === Internal token to internal token exchange
+
+NOTE: For internal token to internal token exchange, it is recommended to use <<_standard-token-exchange,Standard token exchange>> instead of using the legacy token exchange flow described below.
+Standard token exchange is officially supported.
 
 With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
 this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens
