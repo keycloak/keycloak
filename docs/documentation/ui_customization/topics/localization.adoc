@@ -5,7 +5,7 @@
 
 .Prerequisites
 
-* To enable internationalization for a realm, you enable internationalization in the `Realm settings` section of the Admin Console. See {adminguide_link}#enabling-internationalization[{Enabling internationalization}].
+* You enable internationalization for a realm in the `Realm settings` section of the Admin Console. See {adminguide_link}#enabling-internationalization[{Enabling internationalization}].
 
 === Localizing mesages in a theme
 
