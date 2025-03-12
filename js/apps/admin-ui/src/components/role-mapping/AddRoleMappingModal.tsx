@@ -201,7 +201,7 @@ export const AddRoleMappingModal = ({
             </ToolbarItem>
           )
         }
-        canSelectAll={tab !== "evaluation"}
+        canSelectAll
         isRadio={tab === "evaluation"}
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="associatedRolesText"
@@ -209,7 +209,7 @@ export const AddRoleMappingModal = ({
           {
             name: "name",
             cellRenderer: ServiceRole,
-            transforms: [cellWidth(20)],
+            transforms: [cellWidth(30)],
           },
           {
             name: "role.description",
