@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -11,7 +10,7 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
 
     private final String code;
 
-    AccessTokenRequest(String code, AbstractOAuthClient client) {
+    AccessTokenRequest(String code, AbstractOAuthClient<?> client) {
         super(client);
         this.code = code;
     }

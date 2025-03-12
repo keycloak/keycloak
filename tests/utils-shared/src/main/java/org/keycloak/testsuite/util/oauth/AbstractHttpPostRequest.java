@@ -61,13 +61,13 @@ public abstract class AbstractHttpPostRequest<T, R> {
     public T client(String clientId) {
         this.clientId = clientId;
         this.clientSecret = null;
-        return (T) this;
+        return request();
     }
 
     public T client(String clientId, String clientSecret) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
-        return (T) this;
+        return request();
     }
 
     protected void header(String name, String value) {
@@ -107,5 +107,10 @@ public abstract class AbstractHttpPostRequest<T, R> {
     }
 
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
+
+    @SuppressWarnings("unchecked")
+    private T request() {
+        return (T) this;
+    }
 
 }

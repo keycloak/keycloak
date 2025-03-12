@@ -17,7 +17,6 @@ public abstract class AbstractOAuthClient<T> {
     protected String baseUrl;
     protected OAuthClientConfig config;
 
-
     private final KeyManager keyManager = new KeyManager(this);
     private final TokensManager tokensManager = new TokensManager(keyManager);
     protected HttpClientManager httpClientManager;
@@ -29,14 +28,49 @@ public abstract class AbstractOAuthClient<T> {
         this.httpClientManager = new HttpClientManager(httpClient);
     }
 
+    public T realm(String realm) {
+        config.realm(realm);
+        return client();
+    }
+
     public T client(String clientId) {
         config.client(clientId);
-        return (T) this;
+        return client();
     }
 
     public T client(String clientId, String clientSecret) {
         config.client(clientId, clientSecret);
-        return (T) this;
+        return client();
+    }
+
+    public T redirectUri(String redirectUri) {
+        config.redirectUri(redirectUri);
+        return client();
+    }
+
+    public T scope(String scope) {
+        config.scope(scope);
+        return client();
+    }
+
+    public T openid(boolean openid) {
+        config.openid(openid);
+        return client();
+    }
+
+    public T responseType(String responseType) {
+        config.responseType(responseType);
+        return client();
+    }
+
+    public T responseMode(String responseMode) {
+        config.responseMode(responseMode);
+        return client();
+    }
+
+    public T origin(String origin) {
+        config.origin(origin);
+        return client();
     }
 
     public LoginUrlBuilder loginForm() {
@@ -217,7 +251,7 @@ public abstract class AbstractOAuthClient<T> {
 
     public T baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
-        return (T) this;
+        return client();
     }
 
     public OAuthClientConfig config() {
@@ -226,7 +260,7 @@ public abstract class AbstractOAuthClient<T> {
 
     public T driver(WebDriver webDriver) {
         this.driver = webDriver;
-        return (T) this;
+        return client();
     }
 
     public HttpClientManager httpClient() {
@@ -245,8 +279,17 @@ public abstract class AbstractOAuthClient<T> {
         return config.getRealm();
     }
 
+    public String getClientId() {
+        return config.getClientId();
+    }
+
     public String getRedirectUri() {
         return config.getRedirectUri();
+    }
+
+    @SuppressWarnings("unchecked")
+    private T client() {
+        return (T) this;
     }
 
 }
