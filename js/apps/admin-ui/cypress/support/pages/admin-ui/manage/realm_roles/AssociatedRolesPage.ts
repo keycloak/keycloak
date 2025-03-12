@@ -1,23 +1,22 @@
+import SidebarPage from "../../SidebarPage";
+
 export default class AssociatedRolesPage {
-  #addRoleToolbarButton = "assignRole";
+  #addRoleToolbarButton = "add-role-mapping-button";
   #addAssociatedRolesModalButton = "assign";
   #compositeRoleBadge = "composite-role-badge";
-  #filterTypeDropdown = "filter-type-dropdown";
-  #filterTypeDropdownItem = "clients";
+  #clientsRole = "client-role";
+  #realmRole = "roles-role";
   #usersPage = "users-page";
   #removeRolesButton = "unAssignRole";
   #addRoleTable = '[aria-label="Roles"] td';
   #associatedRolesTab = "associatedRolesTab";
-  #assignRole = "no-roles-in-this-realm-empty-action";
 
   addAssociatedRealmRole(roleName: string) {
     cy.findByTestId(this.#associatedRolesTab).should("exist").click();
+    new SidebarPage().waitForPageLoad();
 
-    cy.findByTestId(this.#assignRole).click();
-
-    cy.findByTestId(this.#filterTypeDropdown).click();
-
-    cy.findByTestId(this.#filterTypeDropdownItem).click();
+    cy.findByTestId(this.#addRoleToolbarButton).click();
+    cy.findByTestId(this.#realmRole).click();
 
     cy.get(this.#addRoleTable)
       .contains(roleName)
@@ -40,9 +39,10 @@ export default class AssociatedRolesPage {
   addAssociatedRoleFromSearchBar(roleName: string, isClientRole?: boolean) {
     cy.findByTestId(this.#addRoleToolbarButton).click({ force: true });
 
-    if (!isClientRole) {
-      cy.findByTestId(this.#filterTypeDropdown).click();
-      cy.findByTestId(this.#filterTypeDropdownItem).click();
+    if (isClientRole) {
+      cy.findByTestId(this.#clientsRole).click();
+    } else {
+      cy.findByTestId(this.#realmRole).click();
     }
 
     cy.findByTestId(".pf-v5-c-spinner__tail-ball").should("not.exist");
