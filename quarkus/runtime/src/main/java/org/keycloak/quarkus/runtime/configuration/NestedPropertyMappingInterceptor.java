@@ -57,6 +57,9 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
                 return resolver.apply(name);
             } finally {
                 recursing.remove(name);
+                if (recursing.isEmpty()) {
+                    recursions.set(null);
+                }
             }
         }
         return nonRecursiveResolver.apply(name);
