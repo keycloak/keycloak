@@ -60,7 +60,7 @@ public final class LoggingPropertyMappers {
                         .transformer((value, ctx) -> addTracingInfo(value, LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE))
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_JSON_FORMAT)
-                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, CONSOLE_ENABLED_MSG + " and output is set to 'json'")
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
                         .to("quarkus.log.console.json.log-format")
                         .paramLabel("format")
                         .build(),
@@ -75,6 +75,21 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
                         .to("quarkus.log.console.enable")
+                        .build(),
+                // Console async
+                fromOption(LoggingOptions.LOG_CONSOLE_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
+                        .to("quarkus.log.console.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isConsoleAsyncEnabled, "%s and asynchronous logging is enabled".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.async.queue-length")
+                        .paramLabel("queue-length")
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_ASYNC_OVERFLOW)
+                        .isEnabled(LoggingPropertyMappers::isConsoleAsyncEnabled, "%s and asynchronous logging is enabled".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.async.overflow")
+                        .paramLabel("strategy")
                         .build(),
                 // File
                 fromOption(LoggingOptions.LOG_FILE_ENABLED)
@@ -113,6 +128,21 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.file.json.enabled")
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
+                        .build(),
+                // File async
+                fromOption(LoggingOptions.LOG_FILE_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isFileAsyncEnabled, "%s and asynchronous logging is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.async.queue-length")
+                        .paramLabel("queue-length")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ASYNC_OVERFLOW)
+                        .isEnabled(LoggingPropertyMappers::isFileAsyncEnabled, "%s and asynchronous logging is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.async.overflow")
+                        .paramLabel("strategy")
                         .build(),
                 // Log level
                 fromOption(LoggingOptions.LOG_LEVEL)
@@ -187,6 +217,21 @@ public final class LoggingPropertyMappers {
                         .paramLabel("output")
                         .transformer(LoggingPropertyMappers::resolveLogOutput)
                         .build(),
+                // Syslog async
+                fromOption(LoggingOptions.LOG_SYSLOG_ASYNC)
+                        .isEnabled(LoggingPropertyMappers::isSyslogEnabled, SYSLOG_ENABLED_MSG)
+                        .to("quarkus.log.syslog.async")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_ASYNC_QUEUE_LENGTH)
+                        .isEnabled(LoggingPropertyMappers::isSyslogAsyncEnabled, "%s and asynchronous logging is enabled".formatted(SYSLOG_ENABLED_MSG))
+                        .to("quarkus.log.syslog.async.queue-length")
+                        .paramLabel("queue-length")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SYSLOG_ASYNC_OVERFLOW)
+                        .isEnabled(LoggingPropertyMappers::isSyslogAsyncEnabled, "%s and asynchronous logging is enabled".formatted(SYSLOG_ENABLED_MSG))
+                        .to("quarkus.log.syslog.async.overflow")
+                        .paramLabel("strategy")
+                        .build(),
         };
 
         return defaultMappers;
@@ -194,6 +239,10 @@ public final class LoggingPropertyMappers {
 
     public static boolean isConsoleEnabled() {
         return isTrue(LoggingOptions.LOG_CONSOLE_ENABLED);
+    }
+
+    public static boolean isConsoleAsyncEnabled() {
+        return isConsoleEnabled() && isTrue(LoggingOptions.LOG_CONSOLE_ASYNC);
     }
 
     public static boolean isConsoleJsonEnabled() {
@@ -204,12 +253,20 @@ public final class LoggingPropertyMappers {
         return isTrue(LoggingOptions.LOG_FILE_ENABLED);
     }
 
+    public static boolean isFileAsyncEnabled() {
+        return isFileEnabled() && isTrue(LoggingOptions.LOG_FILE_ASYNC);
+    }
+
     public static boolean isFileJsonEnabled() {
         return isFileEnabled() && Configuration.isTrue("quarkus.log.file.json.enabled");
     }
 
     public static boolean isSyslogEnabled() {
         return isTrue(LoggingOptions.LOG_SYSLOG_ENABLED);
+    }
+
+    public static boolean isSyslogAsyncEnabled() {
+        return isSyslogEnabled() && isTrue(LoggingOptions.LOG_SYSLOG_ASYNC);
     }
 
     public static boolean isSyslogJsonEnabled() {
