@@ -45,11 +45,13 @@ export default function PermissionsConfigurationSection() {
   >();
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
   const form = useForm<FormFields>();
+  const { realmRepresentation } = useRealm();
 
   const usePermissionsConfigurationTabs = (tab: PermissionsConfigurationTabs) =>
     useRoutableTab(
       toPermissionsConfigurationTabs({
         realm,
+        permissionClientId: realmRepresentation?.adminPermissionsClient?.id!,
         tab,
       }),
     );
@@ -180,6 +182,7 @@ export default function PermissionsConfigurationSection() {
               unmountOnExit
               defaultLocation={toPermissionsConfigurationTabs({
                 realm,
+                permissionClientId: adminPermissionsClient.id!,
                 tab: "permissions",
               })}
             >
