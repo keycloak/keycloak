@@ -18,6 +18,7 @@ public class DefaultCookieProvider implements CookieProvider {
     private final CookiePathResolver pathResolver;
 
     private final boolean secure;
+    private boolean warned;
 
     private final Map<String, Cookie> cookies;
 
@@ -31,10 +32,6 @@ public class DefaultCookieProvider implements CookieProvider {
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Received cookies: %s, path: %s", String.join(", ", this.cookies.keySet()), context.getUri().getRequestUri().getRawPath());
-        }
-
-        if (!secure) {
-            logger.warnf("Non-secure context detected; cookies are not secured, and will not be available in cross-origin POST requests");
         }
 
         expireOldUnusedCookies();
@@ -73,6 +70,24 @@ public class DefaultCookieProvider implements CookieProvider {
         session.getContext().getHttpResponse().setCookieIfAbsent(newCookie);
 
         logger.tracef("Setting cookie: name: %s, path: %s, same-site: %s, secure: %s, http-only: %s, max-age: %d", name, path, sameSite, secure, httpOnly, maxAge);
+
+        if (!secure && !warned) {
+            warned = true;
+            String forwarded = session.getContext().getRequestHeaders().getHeaderString("Forwarded");
+            String xForwarded = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-Proto");
+
+            boolean probablyProxied = forwarded != null || xForwarded != null;
+
+            StringBuilder warning = new StringBuilder("Non-secure context detected; cookies are not secured, and will not be available in cross-origin POST requests.");
+
+            if (probablyProxied) {
+                warning.append(" Please review your `proxy-headers` setting as the request appears to have originated from a proxy.");
+            } else {
+                warning.append(" Please review whether this direct http usage of keycloak is expected.");
+            }
+
+            logger.warnf(warning.toString());
+        }
     }
 
     @Override
