@@ -27,9 +27,9 @@ For more information, check the link:https://www.keycloak.org/server/caching#_se
 
 = Supported Standard Token Exchange
 
-In this release, we added support for the Standard token exchange! The token exchange feature was a preview for a long time, so we are glad that we are able to finally make the standard token exchange
-supported. For now, this is limited to exchanging the Internal token to internal token compliant with the https://datatracker.ietf.org/doc/html/rfc8693[Token exchange specification]. It does not yet cover use
-cases related to identity brokering or subject impersonation. We hope to continue in the subsequent releases to support even more of the token exchange use cases.
+In this release, we added support for the Standard token exchange! The token exchange feature was in preview for a long time, so we are glad to finally support the standard token exchange.
+For now, this is limited to exchanging the Internal token to internal token compliant with the https://datatracker.ietf.org/doc/html/rfc8693[Token exchange specification]. It does not yet cover use
+cases related to identity brokering or subject impersonation. We hope to support even more token exchange use cases in subsequent releases.
 
 For more details, see the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
 
