@@ -15,43 +15,67 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
 import jakarta.ws.rs.BadRequestException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
-import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InitialAccessTokenResourceTest extends AbstractAdminTest {
+@KeycloakIntegrationTest
+public class InitialAccessTokenResourceTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     private ClientInitialAccessResource resource;
 
-    @Before
+    @BeforeEach
     public void before() {
-        resource = realm.clientInitialAccess();
+        resource = managedRealm.admin().clientInitialAccess();
     }
 
     @Test
@@ -63,7 +87,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         int time = Time.currentTime();
 
         ClientInitialAccessPresentation response = resource.create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         assertNotNull(response.getId());
         assertEquals(Integer.valueOf(2), response.getCount());
@@ -74,12 +98,12 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
 
         rep.setCount(3);
         response = resource.create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         rep.setCount(4);
         response = resource.create(rep);
         String lastId = response.getId();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(lastId), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(lastId), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         List<ClientInitialAccessPresentation> list = resource.list();
         assertEquals(3, list.size());
@@ -89,7 +113,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
 
         // Delete last and assert it was deleted
         resource.delete(lastId);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientInitialAccessPath(lastId), ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientInitialAccessPath(lastId), ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         list = resource.list();
         assertEquals(2, list.size());
@@ -104,11 +128,11 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         rep.setExpiration(100);
         try {
             resource.create(rep);
-            Assert.fail("Invalid value for count");
-        }catch (BadRequestException e){
+            Assertions.fail("Invalid value for count");
+        } catch (BadRequestException e) {
             OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-            Assert.assertEquals("Invalid value for count", error.getError());
-            Assert.assertEquals("The count cannot be less than 0", error.getErrorDescription());
+            Assertions.assertEquals("Invalid value for count", error.getError());
+            Assertions.assertEquals("The count cannot be less than 0", error.getErrorDescription());
         }
 
         // Set Expiration as -10
@@ -117,17 +141,26 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         rep.setExpiration(-10);
         try {
             resource.create(rep);
-            Assert.fail("Invalid value for expiration");
-        }catch (BadRequestException e){
+            Assertions.fail("Invalid value for expiration");
+        } catch (BadRequestException e) {
             OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-            Assert.assertEquals("Invalid value for expiration", error.getError());
-            Assert.assertEquals("The expiration time interval cannot be less than 0", error.getErrorDescription());
+            Assertions.assertEquals("Invalid value for expiration", error.getError());
+            Assertions.assertEquals("The expiration time interval cannot be less than 0", error.getErrorDescription());
         }
     }
 
+    private void removeExpired(String realmUuid) {
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealm(realmUuid);
+
+            session.sessions().removeExpired(realm);
+            session.authenticationSessions().removeExpired(realm);
+            session.realms().removeExpiredClientInitialAccess();
+        });
+    }
 
     @Test
-    public void testPeriodicExpiration() throws ClientRegistrationException, InterruptedException {
+    public void testPeriodicExpiration() {
         ClientInitialAccessPresentation response1 = resource.create(new ClientInitialAccessCreatePresentation(1, 1));
         ClientInitialAccessPresentation response2 = resource.create(new ClientInitialAccessCreatePresentation(1000, 1));
         ClientInitialAccessPresentation response3 = resource.create(new ClientInitialAccessCreatePresentation(1000, 0));
@@ -136,29 +169,30 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         List<ClientInitialAccessPresentation> list = resource.list();
         assertEquals(4, list.size());
 
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
-        testingClient.testing().removeExpired(REALM_NAME);
+        final String realmUuid = managedRealm.getId();
+        removeExpired(realmUuid);
 
         list = resource.list();
         assertEquals(2, list.size());
 
         List<String> remainingIds = list.stream()
-                .map(initialAccessPresentation -> initialAccessPresentation.getId())
+                .map(ClientInitialAccessPresentation::getId)
                 .collect(Collectors.toList());
 
         Assert.assertNames(remainingIds, response2.getId(), response4.getId());
 
-        setTimeOffset(2000);
+        timeOffSet.set(2000);
 
-        testingClient.testing().removeExpired(REALM_NAME);
+        removeExpired(realmUuid);
 
         list = resource.list();
         assertEquals(1, list.size());
-        Assert.assertEquals(list.get(0).getId(), response4.getId());
+        Assertions.assertEquals(list.get(0).getId(), response4.getId());
 
         // Cleanup
-        realm.clientInitialAccess().delete(response4.getId());
+        managedRealm.admin().clientInitialAccess().delete(response4.getId());
     }
 
 }

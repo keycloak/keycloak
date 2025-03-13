@@ -14,24 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.RealmModel;
-import org.junit.Test;
+import org.keycloak.storage.datastore.PeriodicEventInvalidation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
-import static org.junit.Assert.assertEquals;
+@KeycloakIntegrationTest
+public class TimeOffsetTest {
 
-public class TimeOffsetTest extends AbstractAdminTest {
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     @Test
     public void testOffset() {
-        String realmId = adminClient.realm(REALM_NAME).toRepresentation().getId();
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
+        String realmId = managedRealm.getId();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
             realm.setEventsExpiration(5);
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
 
@@ -42,18 +60,21 @@ public class TimeOffsetTest extends AbstractAdminTest {
             provider.onEvent(e);
         });
 
-        testingClient.server().run(session -> {
+        runOnServer.run(session -> {
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
-            assertEquals(1, provider.createQuery().realm(realmId).getResultStream().count());
+            Assertions.assertEquals(1, provider.createQuery().realm(realmId).getResultStream().count());
         });
 
-        setTimeOffset(5);
+        timeOffSet.set(5);
+        runOnServer.run(session -> {
+            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+            eventStore.clearExpiredEvents();
+            session.invalidate(PeriodicEventInvalidation.JPA_EVENT_STORE);
+        });
 
-        testingClient.testing().clearExpiredEvents();
-
-        testingClient.server().run(session -> {
+        runOnServer.run(session -> {
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
-            assertEquals(0, provider.createQuery().realm(realmId).getResultStream().count());
+            Assertions.assertEquals(0, provider.createQuery().realm(realmId).getResultStream().count());
         });
     }
 }
