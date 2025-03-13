@@ -367,10 +367,18 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
         if (supportsAuthorizationSchema(session, resourceServer)) {
             switch (resourceType) {
-                case CLIENTS_RESOURCE_TYPE -> resolveClient(session, resourceName).map(ClientModel::getClientId).orElse(resourceType);
-                case GROUPS_RESOURCE_TYPE -> resolveGroup(session, resourceName).map(GroupModel::getName).orElse(resourceType);
-                case ROLES_RESOURCE_TYPE -> resolveRole(session, resourceName).map(RoleModel::getName).orElse(resourceType);
-                case USERS_RESOURCE_TYPE -> resolveUser(session, resourceName).map(UserModel::getUsername).orElse(resourceType);
+                case CLIENTS_RESOURCE_TYPE -> {
+                    return resolveClient(session, resourceName).map(ClientModel::getClientId).orElse(resourceType);
+                }
+                case GROUPS_RESOURCE_TYPE -> {
+                    return resolveGroup(session, resourceName).map(GroupModel::getName).orElse(resourceType);
+                }
+                case ROLES_RESOURCE_TYPE -> {
+                    return resolveRole(session, resourceName).map(RoleModel::getName).orElse(resourceType);
+                }
+                case USERS_RESOURCE_TYPE -> {
+                    return resolveUser(session, resourceName).map(UserModel::getUsername).orElse(resourceType);
+                }
                 default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
             }
         }

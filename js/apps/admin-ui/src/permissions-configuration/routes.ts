@@ -5,12 +5,14 @@ import { PermissionConfigurationDetailRoute } from "./routes/PermissionConfigura
 import { PermissionPolicyDetailsRoute } from "./routes/PermissionPolicyDetails";
 import { PermissionsConfigurationRoute } from "./routes/PermissionsConfiguration";
 import { PermissionsConfigurationTabsRoute } from "./routes/PermissionsConfigurationTabs";
+import { PermissionsPoliciesRoute } from "./routes/PermissionsPolicies";
 
 const routes: AppRouteObject[] = [
   NewPermissionConfigurationRoute,
   PermissionConfigurationDetailRoute,
   PermissionsConfigurationRoute,
   PermissionsConfigurationTabsRoute,
+  PermissionsPoliciesRoute,
   NewPermissionPolicyRoute,
   PermissionPolicyDetailsRoute,
 ];

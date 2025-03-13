@@ -134,10 +134,9 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            // TODO: Will need update once token-exchange will be supported. Also can be good to remove testGrantTypesSupportedWithStandardTokenExchange() and update/remove testGrantTypesSupportedWithLegacyTokenExchange()
-            assertEquals(8, oidcConfig.getGrantTypesSupported().size());
+            assertEquals(9, oidcConfig.getGrantTypesSupported().size());
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
-                    OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
+                    OAuth2Constants.DEVICE_CODE_GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
@@ -358,25 +357,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         } finally {
             client.close();
         }
-    }
-
-    @Test
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
-    public void testGrantTypesSupportedWithLegacyTokenExchange() throws IOException {
-        Client client = AdminClientUtil.createResteasyClient();
-        try {
-            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
-            assertEquals(oidcConfig.getGrantTypesSupported().size(),9);
-            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
-        } finally {
-            client.close();
-        }
-    }
-
-    @Test
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
-    public void testGrantTypesSupportedWithStandardTokenExchange() throws IOException {
-        testGrantTypesSupportedWithLegacyTokenExchange();
     }
 
     @Test

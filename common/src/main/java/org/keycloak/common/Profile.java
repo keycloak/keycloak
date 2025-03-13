@@ -74,7 +74,7 @@ public class Profile {
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
-        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.EXPERIMENTAL, 2),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 

@@ -1326,7 +1326,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
     public void testClientGrantTypeCondition() throws Exception {
 
         String clientId = generateSuffixedName(CLIENT_NAME);

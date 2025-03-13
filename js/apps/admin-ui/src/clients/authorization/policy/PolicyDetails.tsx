@@ -168,6 +168,7 @@ export default function PolicyDetails() {
           isAdminPermissionsClient
             ? toPermissionsConfigurationTabs({
                 realm: realm!,
+                permissionClientId,
                 tab: "policies",
               })
             : toAuthorizationTab({ realm, clientId: id, tab: "policies" }),
@@ -244,6 +245,7 @@ export default function PolicyDetails() {
                       isAdminPermissionsClient
                         ? toPermissionsConfigurationTabs({
                             realm: realm!,
+                            permissionClientId,
                             tab: "policies",
                           })
                         : toAuthorizationTab({

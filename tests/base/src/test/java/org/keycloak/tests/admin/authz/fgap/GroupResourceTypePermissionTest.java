@@ -9,18 +9,22 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.resource.ScopePermissionResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation.GroupDefinition;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -39,6 +43,9 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("User Policy");
         client.admin().authorization().policies().user().create(policy).close();
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("MyGroup");
+        realm.admin().groups().add(group).close();;
     }
 
     @AfterEach
@@ -48,6 +55,39 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         for (ScopePermissionRepresentation permission : permissions.findAll(null, null, null, -1, -1)) {
             permissions.findById(permission.getId()).remove();
         }
+    }
+
+    @Test
+    public void testCreateResourceTypePermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation expected = createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, onlyMyAdminUserPolicy, AdminPermissionsSchema.GROUPS.getScopes());
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        assertEquals(1, result.size());
+        ScopePermissionRepresentation permissionRep = result.get(0);
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        assertEquals(expected.getName(), permissionRep.getName());
+        assertEquals(AdminPermissionsSchema.GROUPS.getScopes().size(), permission.scopes().size());
+        assertEquals(1, permission.associatedPolicies().size());
+        assertEquals(1, permission.resources().size());
+        assertEquals(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, permission.resources().get(0).getDisplayName());
+    }
+
+    @Test
+    public void testCreateResourceObjectPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        GroupRepresentation group = realm.admin().groups().groups().get(0);
+        ScopePermissionRepresentation expected = createPermission(client, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.GROUPS.getScopes(), onlyMyAdminUserPolicy);
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        assertEquals(1, result.size());
+        ScopePermissionRepresentation permissionRep = result.get(0);
+        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        assertEquals(expected.getName(), permissionRep.getName());
+        assertEquals(AdminPermissionsSchema.GROUPS.getScopes().size(), permission.scopes().size());
+        assertEquals(1, permission.associatedPolicies().size());
+        assertEquals(1, permission.resources().size());
+        assertEquals(group.getName(), permission.resources().get(0).getDisplayName());
     }
  
     @Test

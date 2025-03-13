@@ -200,7 +200,13 @@ export default function PermissionConfigurationDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        navigate(toPermissionsConfigurationTabs({ realm, tab: "permissions" }));
+        navigate(
+          toPermissionsConfigurationTabs({
+            realm,
+            permissionClientId,
+            tab: "permissions",
+          }),
+        );
       } catch (error) {
         addError("permissionDeletedError", error);
       }
@@ -269,6 +275,7 @@ export default function PermissionConfigurationDetails() {
                     {...props}
                     to={toPermissionsConfigurationTabs({
                       realm,
+                      permissionClientId,
                       tab: "permissions",
                     })}
                   />
