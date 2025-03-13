@@ -27,15 +27,15 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   const { t } = useTranslation();
   const form = useFormContext();
   const resourceIds: string[] = form.getValues("resources");
+  const normalizedResourceType = resourceType.toLowerCase();
 
   const [isSpecificResources, setIsSpecificResources] = useState(
     resourceIds.some((id) => id !== resourceType),
   );
 
   function getComponentType() {
-    const selectedResourceType = resourceType.toLowerCase();
-    if (isValidComponentType(selectedResourceType)) {
-      return COMPONENTS[selectedResourceType];
+    if (isValidComponentType(normalizedResourceType)) {
+      return COMPONENTS[normalizedResourceType];
     }
     return null;
   }
@@ -84,8 +84,10 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
       {isSpecificResources && ComponentType && (
         <ComponentType
           name="resources"
-          label={`${resourceType.toLowerCase()}Resources`}
-          helpText={t("resourceTypeHelpText", { resourceType })}
+          label={`${normalizedResourceType}Resources`}
+          helpText={t("resourceTypeHelpText", {
+            resourceType: normalizedResourceType,
+          })}
           defaultValue={[]}
           variant="typeaheadMulti"
         />
