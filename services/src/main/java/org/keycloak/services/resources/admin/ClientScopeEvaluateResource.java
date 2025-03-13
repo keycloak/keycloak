@@ -19,6 +19,10 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -49,6 +53,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -241,18 +246,24 @@ public class ClientScopeEvaluateResource {
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
-    public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+    public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
 
         UserModel user = getUserModel(userId);
 
-        logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+        logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
         return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
         {
             TokenManager tokenManager = new TokenManager();
-            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+            ClientModel[] audienceClients = getClients(audience);
+            if(audienceClients.length > 0) {
+                clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
+            }
+            AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
                     .generateAccessToken().getAccessToken();
+            validateAudience(accessToken, audienceClients);
+            return accessToken;
         });
     }
 
@@ -281,6 +292,35 @@ public class ClientScopeEvaluateResource {
             if (authSession != null) {
                 authSessionManager.removeAuthenticationSession(realm, authSession, false);
             }
+        }
+    }
+
+    private ClientModel[] getClients(String clientsStr) {
+        List<ClientModel> clients = new ArrayList<>();
+        if(clientsStr != null && !clientsStr.isEmpty()) {
+            for (String clientId : clientsStr.split("\\s+")) {
+                ClientModel client = realm.getClientByClientId(clientId);
+                if (client != null) {
+                    clients.add(client);
+                }
+            }
+        }
+        return clients.toArray(ClientModel[]::new);
+    }
+    
+    private void validateAudience(IDToken idToken, ClientModel[] requestedAudience) {
+        if(requestedAudience.length > 0 && (idToken.getAudience() == null || idToken.getAudience().length < requestedAudience.length)) {
+            String missingAudienceStr = "";
+            List<String> grantedAudience = idToken.getAudience() != null ? Arrays.asList(idToken.getAudience()) : Collections.emptyList();
+            for (ClientModel client : requestedAudience) {
+                if(!grantedAudience.contains(client.getClientId())) {
+                    if (missingAudienceStr.length() > 0) {
+                        missingAudienceStr += ", ";
+                    }
+                    missingAudienceStr += client.getClientId();
+                }
+            }
+            throw new NotFoundException("Requested audience not available: " + missingAudienceStr);
         }
     }
 

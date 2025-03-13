@@ -16,6 +16,7 @@ type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
   isRequired?: boolean;
   clientKey?: keyof ClientRepresentation;
+  placeholderText?: string;
 };
 
 export const ClientSelect = ({
@@ -27,6 +28,7 @@ export const ClientSelect = ({
   isRequired,
   variant = "typeahead",
   clientKey = "clientId",
+  placeholderText,
 }: ClientSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -72,6 +74,7 @@ export const ClientSelect = ({
         key: client[clientKey] as string,
         value: client.clientId!,
       }))}
+      placeholderText={placeholderText}
     />
   );
 };
