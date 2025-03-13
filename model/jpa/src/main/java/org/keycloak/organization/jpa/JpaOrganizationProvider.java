@@ -63,6 +63,7 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
@@ -310,6 +311,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                         .or(getSearchOptionPredicateArray(filter.getValue(), Optional.ofNullable(exact).orElse(false), builder, userJoin)));
                 case MembershipType.NAME -> predicates.add(builder
                         .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
+                case UserModel.USERNAME -> predicates.add(builder.equal(userJoin.get(UserModel.USERNAME), filter.getValue()));
+                case UserModel.EMAIL -> predicates.add(builder.equal(userJoin.get(UserModel.EMAIL), filter.getValue()));
+                case UserModel.FIRST_NAME -> predicates.add(builder.equal(userJoin.get(UserModel.FIRST_NAME), filter.getValue()));
+                case UserModel.LAST_NAME -> predicates.add(builder.equal(userJoin.get(UserModel.LAST_NAME), filter.getValue()));
+                case UserModel.ENABLED -> predicates.add(builder.equal(userJoin.get(UserModel.ENABLED), Boolean.parseBoolean(filter.getValue())));
+                default -> {
+                    // Handle custom attributes
+                    Join<UserEntity, UserAttributeEntity> attributeJoin = userJoin.join("attributes");
+                    predicates.add(builder.and(
+                            builder.equal(attributeJoin.get("name"), filter.getKey()),
+                            builder.equal(attributeJoin.get("value"), filter.getValue())
+                    ));
+                }
             }
         }
 

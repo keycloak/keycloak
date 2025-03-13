@@ -63,6 +63,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.StringUtil;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -152,6 +153,21 @@ public class OrganizationMemberResource {
         return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
     }
 
+    /**
+     * Returns the number of users that match the given criteria.
+     * It can be called in three different ways.
+     * 1. Don't specify any criteria and pass {@code null}. The number of all
+     * users within that realm will be returned.
+     * <p>
+     * 2. If {@code search} is specified other criteria such as {@code last} will
+     * be ignored even though you set them. The {@code search} string will be
+     * matched against the first and last name, the username and the email of a
+     * user.
+     * <p>
+     * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
+     * {@code email} or {@code username} those criteria are matched against their
+     * respective fields on a user entity. Combined with a logical and.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -162,6 +178,12 @@ public class OrganizationMemberResource {
     })
     public Stream<MemberRepresentation> search(
             @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
+            @Parameter(description = "A String representing the member's username") @QueryParam("username") String username,
+            @Parameter(description = "A String representing the member's email address") @QueryParam("email") String email,
+            @Parameter(description = "A String representing the member's first name") @QueryParam("firstName") String firstName,
+            @Parameter(description = "A String representing the member's last name") @QueryParam("lastName") String lastName,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Boolean indicating whether the member is enabled or disabled") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
@@ -171,10 +193,31 @@ public class OrganizationMemberResource {
 
         if (search != null) {
             filters.put(UserModel.SEARCH, search);
+        } else {
+            if (username != null) {
+                filters.put(UserModel.USERNAME, username);
+            }
+            if (email != null) {
+                filters.put(UserModel.EMAIL, email);
+            }
+            if (firstName != null) {
+                filters.put(UserModel.FIRST_NAME, firstName);
+            }
+            if (lastName != null) {
+                filters.put(UserModel.LAST_NAME, lastName);
+            }   
+        }
+
+        if (enabled != null) {
+            filters.put(UserModel.ENABLED, enabled.toString());
         }
 
         if (membershipType != null) {
             filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
+        }
+
+        if (searchQuery != null) {
+            filters.putAll(SearchQueryUtils.getFields(searchQuery));
         }
 
         return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);

@@ -303,7 +303,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     @Test
     public void testRedirectBrokerWhenUnmanagedMemberProfileEmailMatchesOrganization() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        addMember(organization, bc.getUserLogin(), bc.getUserEmail(), "f", "l", false);
+        addMember(organization, bc.getUserLogin(), bc.getUserEmail(), "f", "l", false,null);
         openIdentityFirstLoginPage(bc.getUserLogin(), true, null, false, false);
     }
 
