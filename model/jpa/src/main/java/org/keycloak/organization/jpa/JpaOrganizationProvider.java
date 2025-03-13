@@ -18,12 +18,12 @@
 package org.keycloak.organization.jpa;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -55,6 +55,7 @@ import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -64,6 +65,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -74,6 +76,7 @@ import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
@@ -381,39 +384,94 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         queryBuilder.select(groupMembership.get("user").get("id"));
 
-        var predicates = new ArrayList<>();
+        List<Predicate> predicates = new ArrayList<>();
         var group = getOrganizationGroup(organization);
 
         predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
 
         From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+        Map<String, String> customLongValueSearchAttributes = new HashMap<>();
 
-        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
-            switch (filter.getKey()) {
-                case UserModel.SEARCH -> predicates.add(builder
-                        .or(getSearchOptionPredicateArray(filter.getValue(), Optional.ofNullable(exact).orElse(false), builder, userJoin)));
-                case MembershipType.NAME -> predicates.add(builder
-                        .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
-            }
-        }
-
+        predicates.addAll(createPredicates(filters, exact, builder, userJoin, groupMembership, customLongValueSearchAttributes));
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
 
-        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(id -> {
-            UserModel user = userProvider.getUserById(getRealm(), id);
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
+                .map(id -> em.getReference(UserEntity.class, id))
+                .filter(predicateForFilteringUsersByAttributes(customLongValueSearchAttributes, JpaHashUtils::compareSourceValueLowerCase)))
+                .map(entity -> {
+                    UserModel user = userProvider.getUserById(getRealm(), entity.getId());
 
-            if (isReadOnlyOrganizationMember(session, user)) {
-                return new ReadOnlyUserModelDelegate(user) {
-                    @Override
-                    public boolean isEnabled() {
-                        return false;
+                    if (isReadOnlyOrganizationMember(session, user)) {
+                        return new ReadOnlyUserModelDelegate(user) {
+                            @Override
+                            public boolean isEnabled() {
+                                return false;
+                            }
+                        };
                     }
-                };
-            }
 
-            return user;
-        }));
+                    return user;
+                });
+    }
+
+    private List<Predicate> createPredicates(Map<String, String> filters, Boolean exact, CriteriaBuilder builder, From<UserGroupMembershipEntity, UserEntity> root, Root<UserGroupMembershipEntity> groupMembership, Map<String, String> customLongValueSearchAttributes) {
+        List<Predicate> predicates = new ArrayList<>();
+        boolean exactValue = Optional.ofNullable(exact).orElse(false);
+
+        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
+            String value = filter.getValue();
+            String key = filter.getKey();
+
+            switch (key) {
+                case UserModel.SEARCH:
+                    predicates.add(builder
+                            .or(getSearchOptionPredicateArray(value, exactValue, builder, root)));
+                    break;
+                case MembershipType.NAME:
+                    predicates.add(builder
+                            .equal(groupMembership.get(MembershipType.NAME), value.toUpperCase()));
+                    break;
+                case UserModel.ENABLED:
+                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value)));
+                    break;
+                case UserModel.USERNAME:
+                case UserModel.EMAIL:
+                case UserModel.FIRST_NAME:
+                case UserModel.LAST_NAME:
+                    if (exactValue) {
+                        predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
+                    } else {
+                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
+                    }
+                    break;
+                default:
+                    // Handle custom attributes
+                    // All unknown attributes will be assumed as custom attributes
+                    Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
+
+                    if (value.length() > 255) {
+                        if (customLongValueSearchAttributes != null) {
+                            customLongValueSearchAttributes.put(key, value);
+                        }
+                        predicates.add(builder.and(
+                                builder.equal(attributesJoin.get("name"), key),
+                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
+                    } else {
+                        if (exactValue) {
+                            predicates.add(builder.and(
+                                    builder.equal(attributesJoin.get("name"), key),
+                                    builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
+                        } else {
+                            predicates.add(builder.and(
+                                    builder.equal(attributesJoin.get("name"), key),
+                                    builder.like(builder.lower(attributesJoin.get("value")), "%" + value.toLowerCase() + "%")));
+                        }
+                    }
+            }
+        }
+
+        return predicates;
     }
 
     private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
@@ -438,11 +496,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public long getMembersCount(OrganizationModel organization) {
-        throwExceptionIfObjectIsNull(organization, "Organization");
-        String groupId = getOrganizationGroup(organization).getId();
+    public long getMembersCount(OrganizationModel organization, Boolean exact, Map<String, String> filters) {
+        if (organization == null) {
+            throw new IllegalStateException("Organization not found");
+        }
 
-        return userProvider.getUsersCount(getRealm(), Set.of(groupId));
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+        Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(groupMembership.get("groupId"), getOrganizationGroup(organization).getId()));
+        predicates.addAll(createPredicates(filters, exact, builder, userJoin, groupMembership, null));
+        queryBuilder.select(builder.count(userJoin)).where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
     }
 
     @Override
