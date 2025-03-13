@@ -14,7 +14,7 @@ const NewPermissionPolicyDetails = lazy(
 );
 
 export const NewPermissionPolicyRoute: AppRouteObject = {
-  path: "/:realm/permissions/:permissionClientId/policies/policy/new/:policyType",
+  path: "/:realm/permissions/:permissionClientId/policies/new/:policyType",
   element: <NewPermissionPolicyDetails />,
   breadcrumb: (t) => t("createPermissionPolicy"),
   handle: {
