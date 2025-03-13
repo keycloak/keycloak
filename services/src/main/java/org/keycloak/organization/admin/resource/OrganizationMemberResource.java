@@ -302,8 +302,49 @@ public class OrganizationMemberResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Long.class)))
     })
-    public Long count() {
-        return provider.getMembersCount(organization);
+    public Long count(
+            @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
+            @Parameter(description = "A String representing the member's username") @QueryParam("username") String username,
+            @Parameter(description = "A String representing the member's email address") @QueryParam("email") String email,
+            @Parameter(description = "A String representing the member's first name") @QueryParam("firstName") String firstName,
+            @Parameter(description = "A String representing the member's last name") @QueryParam("lastName") String lastName,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Boolean indicating whether the member is enabled or disabled") @QueryParam("enabled") Boolean enabled,
+            @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
+    ) {
+        Map<String, String> filters = new HashMap<>();
+
+        if (search != null) {
+            filters.put(UserModel.SEARCH, search);
+        } else {
+            if (username != null) {
+                filters.put(UserModel.USERNAME, username);
+            }
+            if (email != null) {
+                filters.put(UserModel.EMAIL, email);
+            }
+            if (firstName != null) {
+                filters.put(UserModel.FIRST_NAME, firstName);
+            }
+            if (lastName != null) {
+                filters.put(UserModel.LAST_NAME, lastName);
+            }   
+        }
+
+        if (enabled != null) {
+            filters.put(UserModel.ENABLED, enabled.toString());
+        }
+
+        if (membershipType != null) {
+            filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
+        }
+
+        if (searchQuery != null) {
+            filters.putAll(SearchQueryUtils.getFields(searchQuery));
+        }
+
+        return provider.getMembersCount(organization, filters);
     }
 
     private UserModel getMember(String id) {

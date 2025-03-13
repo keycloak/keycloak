@@ -165,11 +165,25 @@ public interface OrganizationProvider extends Provider {
     }
 
     /**
-     * Returns number of members in the organization.
+     * Returns the number of members in the organization.
+     *
      * @param organization the organization
-     * @return Number of members in the organization.
+     * @param filters the filters to apply to the search
+     * @return the number of members
      */
-    long getMembersCount(OrganizationModel organization);
+    default long getMembersCount(OrganizationModel organization, Map<String, String> filters) {
+        return getMembersStream(organization, filters, null, null, null).count();
+    }
+
+    /**
+     * Returns the number of members in the organization.
+     *
+     * @param organization the organization
+     * @return the number of members
+     */
+    default long getMembersCount(OrganizationModel organization) {
+        return getMembersCount(organization, null);
+    }
 
     /**
      * Returns the member of the {@link OrganizationModel} by its {@code id}.

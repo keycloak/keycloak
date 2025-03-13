@@ -58,8 +58,8 @@ public interface OrganizationMembersResource {
     /**
      * Return members in the organization.
      *
-     * @param first index of the first element (pagination offset).
-     * @param max the maximum number of results.
+     * @param firstResult index of the first element (pagination offset).
+     * @param maxResults the maximum number of results.
      * @return a list containing organization members.
      */
     @GET
@@ -170,6 +170,38 @@ public interface OrganizationMembersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     Long count();
+
+    /**
+     * Returns the number of members that match the given criteria.
+     *
+     * @param search a {@code String} representing either a member's username, e-mail, first name, or last name.
+     * @param username a {@code String} representing the member's username
+     * @param email a {@code String} representing the member's email address
+     * @param firstName a {@code String} representing the member's first name
+     * @param lastName a {@code String} representing the member's last name
+     * @param searchQuery a query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param enabled Boolean indicating whether the member is enabled or disabled
+     * @param exact if {@code true}, the members will be searched using exact match for the {@code search} param - i.e.
+     *              at least one of the username main attributes must match exactly the {@code search} param. If false,
+     *              the method returns all members with at least one main attribute partially matching the {@code search} param.
+     * @param membershipType The {@link org.keycloak.representations.idm.MembershipType}
+     * @return the number of members that match the given criteria
+     * @since Keycloak 26.1
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Long count(
+            @QueryParam("search") String search,
+            @QueryParam("username") String username,
+            @QueryParam("email") String email,
+            @QueryParam("firstName") String firstName,
+            @QueryParam("lastName") String lastName,
+            @QueryParam("q") String searchQuery,
+            @QueryParam("enabled") Boolean enabled,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("membershipType") MembershipType membershipType
+    );
 
     @Path("{id}/organizations")
     @GET

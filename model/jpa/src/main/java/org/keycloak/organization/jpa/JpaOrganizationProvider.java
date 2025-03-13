@@ -368,11 +368,44 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public long getMembersCount(OrganizationModel organization) {
-        throwExceptionIfObjectIsNull(organization, "Organization");
-        String groupId = getOrganizationGroup(organization).getId();
+    public long getMembersCount(OrganizationModel organization, Map<String, String> filters) {
+        if (organization == null) {
+            throw new IllegalStateException("Organization not found");
+        }
 
-        return userProvider.getUsersCount(getRealm(), Set.of(groupId));
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+        Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(groupMembership.get("groupId"), getOrganizationGroup(organization).getId()));
+
+        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
+            switch (filter.getKey()) {
+                case UserModel.SEARCH -> predicates.add(builder
+                        .or(getSearchOptionPredicateArray(filter.getValue(), false, builder, userJoin)));
+                case MembershipType.NAME -> predicates.add(builder
+                        .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
+                case UserModel.USERNAME -> predicates.add(builder.equal(userJoin.get(UserModel.USERNAME), filter.getValue()));
+                case UserModel.EMAIL -> predicates.add(builder.equal(userJoin.get(UserModel.EMAIL), filter.getValue()));
+                case UserModel.FIRST_NAME -> predicates.add(builder.equal(userJoin.get(UserModel.FIRST_NAME), filter.getValue()));
+                case UserModel.LAST_NAME -> predicates.add(builder.equal(userJoin.get(UserModel.LAST_NAME), filter.getValue()));
+                case UserModel.ENABLED -> predicates.add(builder.equal(userJoin.get(UserModel.ENABLED), Boolean.parseBoolean(filter.getValue())));
+                default -> {
+                    // Handle custom attributes
+                    Join<UserEntity, UserAttributeEntity> attributeJoin = userJoin.join("attributes");
+                    predicates.add(builder.and(
+                            builder.equal(attributeJoin.get("name"), filter.getKey()),
+                            builder.equal(attributeJoin.get("value"), filter.getValue())
+                    ));
+                }
+            }
+        }
+
+        queryBuilder.select(builder.count(userJoin)).where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
     }
 
     @Override
