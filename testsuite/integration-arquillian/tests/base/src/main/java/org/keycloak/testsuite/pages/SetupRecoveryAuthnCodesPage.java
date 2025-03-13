@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -21,8 +22,8 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
     private WebElement kcRecoveryCodesConfirmationCheck;
 
     public void clickSaveRecoveryAuthnCodesButton() {
-        kcRecoveryCodesConfirmationCheck.click();
-        saveRecoveryAuthnCodesButton.click();
+        UIUtils.switchCheckbox(kcRecoveryCodesConfirmationCheck, true);
+        UIUtils.clickLink(saveRecoveryAuthnCodesButton);
     }
 
     public List<String> getRecoveryAuthnCodes() {

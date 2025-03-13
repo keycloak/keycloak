@@ -37,6 +37,7 @@ import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 
 import java.util.HashMap;
@@ -284,7 +285,7 @@ public class AuthenticatorSubflowsTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
-        driver.findElement(By.name("submit1")).click();
+        UIUtils.clickLink(driver.findElement(By.name("submit1")));
 
 
         loginPage.assertCurrent();

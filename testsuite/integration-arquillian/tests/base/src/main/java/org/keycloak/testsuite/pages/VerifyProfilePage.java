@@ -64,7 +64,7 @@ public class VerifyProfilePage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void update(String firstName, String lastName, String department) {
@@ -93,7 +93,7 @@ public class VerifyProfilePage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getAlertError() {
