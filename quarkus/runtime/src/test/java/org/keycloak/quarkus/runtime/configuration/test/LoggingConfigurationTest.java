@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.configuration.test;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hamcrest.CoreMatchers;
+import org.jboss.logmanager.handlers.AsyncHandler;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -285,5 +286,72 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     public void testWildcardPropertiesDontMatchEnvVarsFormat() {
         SmallRyeConfig config = createConfig();
         assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+    }
+
+    @Test
+    public void asyncDefaults() {
+        initConfig();
+
+        boolean defaultEnabled = false;
+        int defaultQueueLength = 512;
+        AsyncHandler.OverflowAction defaultStrategy = AsyncHandler.OverflowAction.BLOCK;
+
+        for (var handler : LoggingOptions.Handler.values()) {
+            assertAsyncProperties(handler, defaultEnabled, defaultQueueLength, defaultStrategy);
+        }
+    }
+
+    @Test
+    public void asyncProperties() {
+        boolean enabled = true;
+        int queueLength = 1024;
+        AsyncHandler.OverflowAction strategy = AsyncHandler.OverflowAction.DISCARD;
+
+        for (var handler : LoggingOptions.Handler.values()) {
+            setAsyncProperties(handler, enabled, queueLength, strategy);
+        }
+
+        initConfig();
+
+        for (var handler : LoggingOptions.Handler.values()) {
+            assertAsyncProperties(handler, enabled, queueLength, strategy);
+        }
+    }
+
+    @Test
+    public void asyncPropertiesIndividual() {
+        setAsyncProperties(LoggingOptions.Handler.console, true, 768, AsyncHandler.OverflowAction.DISCARD);
+        setAsyncProperties(LoggingOptions.Handler.file, false, 1523, AsyncHandler.OverflowAction.BLOCK);
+        setAsyncProperties(LoggingOptions.Handler.syslog, true, 888, AsyncHandler.OverflowAction.DISCARD);
+
+        initConfig();
+
+        assertAsyncProperties(LoggingOptions.Handler.console, true, 768, AsyncHandler.OverflowAction.DISCARD);
+        assertAsyncProperties(LoggingOptions.Handler.file, false, 1523, AsyncHandler.OverflowAction.BLOCK);
+        assertAsyncProperties(LoggingOptions.Handler.syslog, true, 888, AsyncHandler.OverflowAction.DISCARD);
+    }
+
+    protected void setAsyncProperties(LoggingOptions.Handler handler, Boolean enabled, Integer queueLength, AsyncHandler.OverflowAction overflowStrategy) {
+        var handlerName = handler.name();
+        putEnvVars(Map.of(
+                "KC_LOG_%s_ASYNC".formatted(handlerName), enabled.toString(),
+                "KC_LOG_%s_ASYNC_QUEUE_LENGTH".formatted(handlerName), queueLength.toString(),
+                "KC_LOG_%s_ASYNC_OVERFLOW".formatted(handlerName), overflowStrategy.toString()
+        ));
+    }
+
+    protected void assertAsyncProperties(LoggingOptions.Handler handler, Boolean enabled, Integer queueLength, AsyncHandler.OverflowAction overflowStrategy) {
+        var handlerName = handler.toString();
+        assertConfig(Map.of(
+                "log-%s-async".formatted(handlerName), enabled.toString(),
+                "log-%s-async-queue-length".formatted(handlerName), queueLength.toString(),
+                "log-%s-async-overflow".formatted(handlerName), overflowStrategy.toString()
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.log.%s.async".formatted(handlerName), enabled.toString(),
+                "quarkus.log.%s.async.queue-length".formatted(handlerName), queueLength.toString(),
+                "quarkus.log.%s.async.overflow".formatted(handlerName), overflowStrategy.toString()
+        ));
     }
 }
