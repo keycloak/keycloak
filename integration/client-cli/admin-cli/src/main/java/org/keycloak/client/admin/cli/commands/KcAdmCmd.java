@@ -16,6 +16,7 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
+import io.quarkus.picocli.runtime.annotations.TopCommand;
 import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
 
@@ -27,6 +28,7 @@ import picocli.CommandLine.Command;
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
+@TopCommand
 @Command(name = "kcadm",
 header = {
         "Keycloak - Open Source Identity and Access Management",
