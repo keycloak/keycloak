@@ -59,7 +59,6 @@ import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -99,7 +98,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2, skipRestart = true)
 public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Page
