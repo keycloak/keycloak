@@ -1,19 +1,13 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   Button,
-  DataListCell,
-  DataListControl,
-  DataListDragButton,
-  DataListItem,
-  DataListItemCells,
-  DataListItemRow,
-  DataListToggle,
   Draggable,
   Text,
   TextVariants,
   Tooltip,
 } from "@patternfly/react-core";
 import { TrashIcon } from "@patternfly/react-icons";
+import { Td, TreeRowWrapper } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
 import type { ExpandableExecution } from "../execution-model";
 import { AddFlowDropdown } from "./AddFlowDropdown";
@@ -38,6 +32,21 @@ type FlowRowProps = {
   onDelete: (execution: ExpandableExecution) => void;
 };
 
+export type FlowType = "flow" | "condition" | "execution" | "step";
+
+const convertToType = (execution: ExpandableExecution): FlowType => {
+  if (execution.authenticationFlow) {
+    return "flow";
+  }
+  if (execution.displayName!.startsWith("Condition -")) {
+    return "condition";
+  }
+  if (execution.level === 0) {
+    return "execution";
+  }
+  return "step";
+};
+
 export const FlowRow = ({
   builtIn,
   execution,
@@ -50,90 +59,91 @@ export const FlowRow = ({
   const { t } = useTranslation();
   const hasSubList = !!execution.executionList?.length;
 
+  const treeRow = {
+    onCollapse: () => onRowClick(execution),
+    props: {
+      isExpanded: !execution.isCollapsed,
+      isDetailsExpanded: !execution.isCollapsed,
+      "aria-level": execution.level! + 1,
+      "aria-labelledby": execution.id,
+      "aria-setsize": hasSubList ? execution.executionList!.length : 0,
+    },
+  };
+
   return (
     <>
       <Draggable key={`draggable-${execution.id}`} hasNoWrapper>
-        <DataListItem
-          className="keycloak__authentication__flow-item"
-          id={execution.id}
-          isExpanded={!execution.isCollapsed}
-          aria-labelledby={`title-id-${execution.id}`}
+        <TreeRowWrapper
+          row={{ props: treeRow.props }}
+          className="keycloak__authentication__flow-row"
         >
-          <DataListItemRow
-            className="keycloak__authentication__flow-row"
-            aria-level={execution.level! + 1}
-            role="heading"
-            aria-labelledby={execution.id}
-          >
-            <DataListControl>
-              <DataListDragButton aria-label={t("dragHelp")} />
-            </DataListControl>
-            {hasSubList && (
-              <DataListToggle
-                onClick={() => onRowClick(execution)}
-                isExpanded={!execution.isCollapsed}
-                id={`toggle1-${execution.id}`}
-                aria-controls={execution.executionList![0].id}
+          <Td
+            draggableRow={{
+              id: execution.id!,
+            }}
+          />
+          <Td treeRow={treeRow}>
+            {!execution.authenticationFlow && (
+              <FlowTitle
+                id={execution.id}
+                type={convertToType(execution)}
+                key={execution.id}
+                alias={execution.alias!}
+                providerId={execution.providerId!}
+                title={execution.displayName!}
               />
             )}
-            <DataListItemCells
-              dataListCells={[
-                <DataListCell key={`${execution.id}-name`}>
-                  {!execution.authenticationFlow && (
-                    <FlowTitle
-                      id={execution.id}
-                      key={execution.id}
-                      alias={execution.alias!}
-                      title={execution.displayName!}
-                    />
-                  )}
-                  {execution.authenticationFlow && (
-                    <span data-testid={execution.displayName}>
-                      {execution.displayName} <br />{" "}
-                      <Text component={TextVariants.small}>
-                        {execution.alias} {execution.description}
-                      </Text>
-                    </span>
-                  )}
-                </DataListCell>,
-                <DataListCell key={`${execution.id}-requirement`}>
-                  <FlowRequirementDropdown
-                    flow={execution}
-                    onChange={onRowChange}
-                  />
-                </DataListCell>,
-                <DataListCell key={`${execution.id}-config`}>
-                  <ExecutionConfigModal execution={execution} />
-                  {execution.authenticationFlow && !builtIn && (
-                    <>
-                      <AddFlowDropdown
-                        execution={execution}
-                        onAddExecution={onAddExecution}
-                        onAddFlow={onAddFlow}
-                      />
-                      <EditFlow
-                        execution={execution}
-                        onRowChange={onRowChange}
-                      />
-                    </>
-                  )}
-                  {!builtIn && (
-                    <Tooltip content={t("delete")}>
-                      <Button
-                        variant="plain"
-                        data-testid={`${execution.displayName}-delete`}
-                        aria-label={t("delete")}
-                        onClick={() => onDelete(execution)}
-                      >
-                        <TrashIcon />
-                      </Button>
-                    </Tooltip>
-                  )}
-                </DataListCell>,
-              ]}
-            />
-          </DataListItemRow>
-        </DataListItem>
+            {execution.authenticationFlow && (
+              <span data-testid={execution.displayName}>
+                {execution.displayName} <br />{" "}
+                <Text component={TextVariants.small}>
+                  {execution.alias} {execution.description}
+                </Text>
+              </span>
+            )}
+          </Td>
+          <Td>
+            <FlowRequirementDropdown flow={execution} onChange={onRowChange} />
+          </Td>
+          {(!execution.authenticationFlow || builtIn) && (
+            <>
+              <Td isActionCell />
+              <Td isActionCell />
+            </>
+          )}
+          <Td isActionCell>
+            <ExecutionConfigModal execution={execution} />
+          </Td>
+
+          {execution.authenticationFlow && !builtIn && (
+            <>
+              <Td isActionCell>
+                <AddFlowDropdown
+                  execution={execution}
+                  onAddExecution={onAddExecution}
+                  onAddFlow={onAddFlow}
+                />
+              </Td>
+              <Td isActionCell>
+                <EditFlow execution={execution} onRowChange={onRowChange} />
+              </Td>
+            </>
+          )}
+          <Td isActionCell>
+            {!builtIn && (
+              <Tooltip content={t("delete")}>
+                <Button
+                  variant="plain"
+                  data-testid={`${execution.displayName}-delete`}
+                  aria-label={t("delete")}
+                  onClick={() => onDelete(execution)}
+                >
+                  <TrashIcon />
+                </Button>
+              </Tooltip>
+            )}
+          </Td>
+        </TreeRowWrapper>
       </Draggable>
       {!execution.isCollapsed &&
         hasSubList &&
