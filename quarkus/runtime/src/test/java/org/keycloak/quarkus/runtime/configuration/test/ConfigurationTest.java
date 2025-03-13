@@ -151,6 +151,28 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testExpressionEnvValue() {
+        putEnvVar("KC_HOSTNAME_STRICT", "false");
+        putEnvVar("MY_EXPRESSION", "${KC_HOSTNAME_STRICT}");
+        ConfigArgsConfigSource.setCliArgs("");
+        var config = createConfig();
+        // with the env variable set, we should get the same value either way
+        assertEquals("false", config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
+        assertEquals("false", config.getConfigValue("MY_EXPRESSION").getValue());
+
+        // without the env variable set, the expression should use the missing env variable
+        putEnvVar("KC_HOSTNAME_STRICT", null);
+        ConfigArgsConfigSource.setCliArgs("");
+        config = createConfig();
+        // check that we get the mapped default value
+        assertEquals("true", config.getConfigValue("kc.hostname-strict").getValue());
+        // check that we don't get the mapped value
+        assertNull(config.getConfigValue("MY_EXPRESSION").getValue());
+        // could change after https://github.com/keycloak/keycloak/issues/38072
+        assertEquals("true", config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
+    }
+
+    @Test
     public void testResolveTransformedValue() {
         ConfigArgsConfigSource.setCliArgs("");
         assertEquals("false", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());

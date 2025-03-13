@@ -55,7 +55,11 @@ public abstract class AbstractConfigurationTest {
         try {
             field = env.getClass().getDeclaredField("m");
             field.setAccessible(true);
-            ((Map<String, String>) field.get(env)).put(name, value);
+            if (value == null) {
+                ((Map<String, String>) field.get(env)).remove(name);
+            } else {
+                ((Map<String, String>) field.get(env)).put(name, value);
+            }
         } catch (Exception cause) {
             throw new RuntimeException("Failed to update environment variables", cause);
         } finally {
