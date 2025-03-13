@@ -8,6 +8,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../../components/dynamic/components";
+import { PermissionsConfigurationTabsParams } from "../routes/PermissionsConfigurationTabs";
+import { useParams } from "react-router-dom";
 
 type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
@@ -26,6 +28,7 @@ export const GroupSelect = ({
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
+  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
     () => {
@@ -38,8 +41,8 @@ export const GroupSelect = ({
   return (
     <SelectControl
       name={name!}
-      label={t(label!)}
-      labelIcon={t(helpText!)}
+      label={tab !== "evaluation" ? t(label!) : t("group")}
+      labelIcon={tab !== "evaluation" ? t(helpText!) : t("selectGroup")}
       controller={{
         defaultValue: defaultValue || "",
         rules: {
