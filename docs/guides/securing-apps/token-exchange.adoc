@@ -21,7 +21,7 @@ Here is a short summary of the current capabilities of {project_name} around tok
 The standard token exchange supports only the use-case (1), when legacy token exchange provides also other three use-cases. When possible, it is highly recommended to use standard token exchange V2 as that
 one is supported and will be maintained for the future. Using legacy token exchange is possible if you need some of the last three use cases, but note that legacy token exchange is preview and may not be
 backwards compatible with the future {project_name} versions. It is possible to enable both token exchange features and use them together, which is useful if you need to use both internal-internal exchange
-provided by V2 together with other use cases, which are provided only by V1.
+provided by V2 together with other use cases, which are provided only by V1. The summary comparison of standard and legacy token exchange can be seen in <<_standard-token-exchange-comparison,this section>>.
 
 [[_standard-token-exchange]]
 == Standard token exchange
@@ -293,6 +293,31 @@ tokens would mean quite an overhead. So considering this, it is the responsibili
      as well. In other words, whole "chain" of exchanged tokens is going to be revoked.
   ** Note that access token should be valid when the revocation endpoint is invoked. If you do not have valid access token as the original `access-token1` is already expired, you can perhaps use other
      access token issued to same client in the same user session. The exchanged tokens like `refresh-token2` and others from the "chain" should be revoked.
+
+[[_standard-token-exchange-comparison]]
+=== Comparison of standard token exchange and legacy token exchange
+
+Here is the summary with the comparison of current capabilities of standard token exchange and legacy token exchange. Details are described in the sections above.
+
+[cols="3*", options="header"]
+|===
+|Capability |Standard token exchange V2 |Legacy token exchange V1
+s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
+s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
+s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
+s|Behaviour of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on scopes of
+the "target" client specified by audience parameter. Downscoping support only
+s|Behaviour of `audience` parameter   | Support for more values as per the specification. Can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
+the required target audience | Support for single audience value. Token effectively issued to the client requested by audience parameter and using scopes of that client
+s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
+s|Consents        | Allowed for clients with `Consent required` as long as user already granted consent | Not allowed for clients with `Consent required`
+s|Authorization  | Verification that requester client must be in the audience of `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions
+s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
+s|Delegation per rfc8693|Not supported yet|Not supported
+s|Resource parameter per rfc8693|Not supported yet|Not supported
+s|Federated token exchange | Not implemented yet | Implemented as a preview
+s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
+|===
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
