@@ -96,6 +96,8 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile
 
 public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
+  public static final String SLOW = "slow";
+
   public static final String QUARKUS_KUBERNETES_DEPLOYMENT_TARGET = "quarkus.kubernetes.deployment-target";
   public static final String OPERATOR_DEPLOYMENT_PROP = "test.operator.deployment";
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
@@ -184,7 +186,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
             .inNamespace(namespace).delete();
   }
 
-  static void createCRDs(KubernetesClient client) throws FileNotFoundException {
+  public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
     K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
     K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
 
