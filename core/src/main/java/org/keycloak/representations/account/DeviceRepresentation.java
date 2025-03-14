@@ -57,6 +57,11 @@ public class DeviceRepresentation {
         this.id = id;
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
