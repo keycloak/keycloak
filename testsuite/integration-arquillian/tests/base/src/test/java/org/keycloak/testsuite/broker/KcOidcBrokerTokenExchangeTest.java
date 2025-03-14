@@ -85,24 +85,29 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
     @Test
     public void testExternalInternalTokenExchange() throws Exception {
-        assertExternalToInternalExchange(bc.getIDPAlias());
+        assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
     }
 
     @Test
     public void testExternalInternalTokenExchangeUsingIssuer() throws Exception {
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         IdentityProviderRepresentation broker = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
-        assertExternalToInternalExchange(broker.getConfig().get(OIDCIdentityProviderConfigRep.ISSUER));
+        assertExternalToInternalExchange(broker.getConfig().get(OIDCIdentityProviderConfigRep.ISSUER), true, false);
     }
 
-    private void assertExternalToInternalExchange(String subjectIssuer) throws Exception {
+    @Test
+    public void testExternalInternalTokenExchangeWithJwtAccessTokenAndUserInfoEndpoint() throws Exception {
+        assertExternalToInternalExchange(bc.getIDPAlias(), false, true);
+    }
+
+    private void assertExternalToInternalExchange(String subjectIssuer, boolean idToken, boolean userInfo) throws Exception {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
         ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
         brokerApp.setDirectAccessGrantsEnabled(true);
         ClientResource brokerAppResource = providerRealm.clients().get(brokerApp.getId());
         brokerAppResource.update(brokerApp);
-        brokerAppResource.getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true, true)).close();
+        brokerAppResource.getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, idToken, true)).close();
 
         IdentityProviderMapperRepresentation hardCodedSessionNoteMapper = new IdentityProviderMapperRepresentation();
         hardCodedSessionNoteMapper.setName("hard-coded");
@@ -116,12 +121,14 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
 
-        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
         IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+        representation.getConfig().put("isAccessTokenJWT", Boolean.toString(!idToken));
+        representation.getConfig().put("validateSignature", Boolean.toString(!userInfo));
+        // if auth.server.host != auth.server.host2 we need to update the issuer in the IDP config
         if (!representation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
             representation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
-            identityProviderResource.update(representation);
         }
+        identityProviderResource.update(representation);
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
@@ -146,14 +153,15 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
                     .post(Entity.form(
                             new Form()
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN, tokenResponse.getIdToken())
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, idToken ? tokenResponse.getIdToken() : tokenResponse.getAccessToken())
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, idToken ? OAuth2Constants.ID_TOKEN_TYPE : OAuth2Constants.ACCESS_TOKEN_TYPE)
                                     .param(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer)
                                     .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
 
                     ))) {
                 assertThat(response.getStatus(), equalTo(200));
                 UserRepresentation user = consumerRealm.users().search(bc.getUserLogin()).get(0);
+                getCleanup(bc.consumerRealmName()).addUserId(user.getId());
                 assertThat(user.getAttributes().get("mapped-from-claim").get(0), equalTo("hard-coded"));
             }
         } finally {
