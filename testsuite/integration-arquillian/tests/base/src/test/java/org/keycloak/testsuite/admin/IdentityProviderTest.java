@@ -56,8 +56,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 import javax.xml.crypto.dsig.XMLSignature;
 
@@ -87,6 +89,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -603,6 +606,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNull(rep.getIdentityProviderMappers());
     }
 
+
     private void create(IdentityProviderRepresentation idpRep) {
         Response response = realm.identityProviders().create(idpRep);
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
@@ -749,17 +753,31 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    public void importShouldFailDueAliasWithSpace() {
+    public void importShouldFailDueInvalidProperties() {
+        BiConsumer<Map<String, Object>, String> assertImportFrom = (data, expectedErrorMessage) -> {
+            BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+                realm.identityProviders().importFrom(data);
+            });
+
+            var response = exception.getResponse();
+            assertThat(response, notNullValue());
+            var error = Optional.ofNullable(response.readEntity(OAuth2ErrorRepresentation.class)).map(OAuth2ErrorRepresentation::getError).orElse(null);
+            assertThat(error, notNullValue());
+            assertThat(error, containsString(expectedErrorMessage));
+        };
 
         Map<String, Object> data = new HashMap<>();
         data.put("providerId", "saml");
         data.put("alias", "Alias With Space");
         data.put("fromUrl", "http://");
 
-       assertThrows(BadRequestException.class, () -> {
-            realm.identityProviders().importFrom(data);
-        });
+        assertImportFrom.accept(data, "Empty Space not allowed.");
 
+        data.put("alias", "something");
+        assertImportFrom.accept(data, "Invalid URL");
+
+        data.put("fromUrl", "https://some-not-existing.com");
+        assertImportFrom.accept(data, "Cannot access specified URL");
     }
 
     @Test

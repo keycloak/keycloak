@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -73,7 +74,7 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
-
+    private static final Logger log = Logger.getLogger(IdentityProvidersResource.class);
     private final RealmModel realm;
     private final KeycloakSession session;
     private final AdminPermissionEvaluator auth;
@@ -146,7 +147,7 @@ public class IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation( summary = "Import identity provider from JSON body")
-    public Map<String, String> importFrom(@Parameter(description = "JSON body") Map<String, Object> data) throws IOException {
+    public Map<String, String> importFrom(@Parameter(description = "JSON body") Map<String, Object> data) {
         this.auth.realm().requireManageIdentityProviders();
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
@@ -156,7 +157,17 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        String file = session.getProvider(HttpClientProvider.class).getString(from);
+
+        String file;
+        try {
+            file = session.getProvider(HttpClientProvider.class).getString(from);
+        } catch (IOException e) {
+            throw new BadRequestException("Cannot access specified URL");
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid specified URL", e);
+            throw new BadRequestException("Invalid URL");
+        }
+
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         Map<String, String> config = providerFactory.parseConfig(session, file);
         // add the URL just if needed by the identity provider
