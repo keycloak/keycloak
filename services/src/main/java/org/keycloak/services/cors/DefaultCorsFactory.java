@@ -17,7 +17,10 @@
 
 package org.keycloak.services.cors;
 
+import java.util.Arrays;
+import java.util.List;
 import org.keycloak.Config;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -27,14 +30,22 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class DefaultCorsFactory implements CorsFactory {
 
     private static final String PROVIDER_ID = "default";
+    private static final String HEADERS = "headers";
+
+    private String defaultAllowHeaders = Cors.DEFAULT_ALLOW_HEADERS;
 
     @Override
     public Cors create(KeycloakSession session) {
-        return new DefaultCors(session);
+        return new DefaultCors(session, defaultAllowHeaders);
     }
 
     @Override
     public void init(Config.Scope config) {
+        String[] configHeaders = config.getArray(HEADERS);
+        if (configHeaders != null && configHeaders.length > 0) {
+            List<String> headers = Arrays.asList(configHeaders);
+                defaultAllowHeaders = String.format("%s, %s", defaultAllowHeaders, CollectionUtil.join(headers));
+        }
     }
 
     @Override
