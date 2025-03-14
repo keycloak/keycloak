@@ -121,9 +121,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAdminPermissionsEnabled(boolean adminPermissionsEnabled);
 
-    boolean isVerifiableCredentialsEnabled();
+    boolean isOid4VciEnabled();
 
-    void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
+    void setOid4VciEnabled(boolean oid4VciEnabled);
 
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
