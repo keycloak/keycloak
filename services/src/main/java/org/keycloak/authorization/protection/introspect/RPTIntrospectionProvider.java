@@ -43,7 +43,7 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
+public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider<AccessToken> {
 
     protected static final Logger LOGGER = Logger.getLogger(RPTIntrospectionProvider.class);
 
@@ -52,13 +52,13 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     }
 
     @Override
-    public Response introspect(String token, EventBuilder eventBuilder) {
+    public Response introspect(String tokenStr, EventBuilder eventBuilder) {
+        this.eventBuilder = eventBuilder;
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken accessToken = verifyAccessToken(token, eventBuilder, true);
             ObjectNode tokenMetadata;
-
-            if (accessToken != null) {
+            if (introspectionChecks(tokenStr)) {
+                AccessToken accessToken = this.token;
                 AccessToken metadata = new AccessToken();
 
                 metadata.id(accessToken.getId());
@@ -85,12 +85,12 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
 
                     tokenMetadata.putPOJO("permissions", permissions);
                 }
+                tokenMetadata.put("active", true);
+                eventBuilder.success();
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
-                eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
+                tokenMetadata.put("active", false);
             }
-
-            tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {

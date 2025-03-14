@@ -52,6 +52,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -131,7 +132,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());
-        event.session(tokenSession);
+        if (tokenSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
+            event.session(tokenSession);
+        }
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
 
         return exchangeClientToClient(tokenUser, tokenSession, token, true);
@@ -206,8 +209,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                                                   List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
+        boolean isOfflineSession = targetUserSession.isOffline();
 
-        if (targetUserSession == null || targetUserSession.isOffline()) {
+        if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT || isOfflineSession) {
             // if no session is associated with the subject_token or it is offline, check no online session is needed
             if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
                 event.detail(Details.REASON, "Refresh token not valid as requested_token_type because creating a new session is needed");
@@ -215,16 +219,15 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                         "Refresh token not valid as requested_token_type because creating a new session is needed", Response.Status.BAD_REQUEST);
             }
+
             // create a transient session now for the token exchange
-            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
-                    UserSessionModel.SessionPersistenceState.TRANSIENT);
+            if (isOfflineSession) {
+                targetUserSession = UserSessionUtil.createTransientUserSession(session, targetUserSession);
+            }
         }
 
         final boolean newClientSessionCreated = targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT
                 && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
-
-        event.session(targetUserSession);
 
         try {
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession,
@@ -271,7 +274,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             checkRequestedAudiences(responseBuilder);
 
-            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
+            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT && !isOfflineSession) {
                 responseBuilder.getAccessToken().setSessionId(null);
                 event.session((String) null);
             }

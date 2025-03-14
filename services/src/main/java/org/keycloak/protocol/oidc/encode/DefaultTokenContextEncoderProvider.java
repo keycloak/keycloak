@@ -46,7 +46,12 @@ public class DefaultTokenContextEncoderProvider implements TokenContextEncoderPr
         AccessTokenContext.SessionType sessionType;
         UserSessionModel userSession = clientSessionContext.getClientSession().getUserSession();
         if (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
-            sessionType = AccessTokenContext.SessionType.TRANSIENT;
+            String createdFromPersistent = userSession.getNote(Constants.CREATED_FROM_PERSISTENT);
+            if (createdFromPersistent != null) {
+                sessionType = Constants.CREATED_FROM_PERSISTENT_OFFLINE.equals(createdFromPersistent) ? AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT : AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT;
+            } else {
+                sessionType = AccessTokenContext.SessionType.TRANSIENT;
+            }
         } else {
             sessionType = clientSessionContext.isOfflineTokenRequested() ? AccessTokenContext.SessionType.OFFLINE : AccessTokenContext.SessionType.ONLINE;
         }

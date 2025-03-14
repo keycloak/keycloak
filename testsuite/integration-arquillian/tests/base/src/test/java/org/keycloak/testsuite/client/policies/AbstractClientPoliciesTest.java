@@ -664,7 +664,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals(clientId, rep.getClientId());
         assertEquals(clientId, rep.getIssuedFor());
         assertEquals(username, rep.getUserName());
-        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).session(sessionId).user((String)null).clearDetails().assertEvent();
+        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).session(sessionId).user(AssertEvents.isUUID()).clearDetails().assertEvent();
     }
 
     protected void doTokenRevoke(String refreshToken, String clientId, String clientSecret, String userId, String sessionId, boolean isOfflineAccess) throws IOException {

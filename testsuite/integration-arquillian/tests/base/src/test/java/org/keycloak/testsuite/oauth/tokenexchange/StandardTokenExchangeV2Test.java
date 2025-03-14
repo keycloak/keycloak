@@ -350,22 +350,61 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         final AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
         assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
         assertEquals("requester-client", exchangedToken.getIssuedFor());
-        assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+        assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT,
                 AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
-        // assert instrospection and user-info works
+        // assert introspection and user-info works
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
         assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
-        // assert instrospection and user-info works in 10s
+        // assert introspection and user-info works in 10s
         setTimeOffset(10);
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
         assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
-        // assert instrospection and user-info fails with session deleted
+        // assert introspection and user-info fails with session deleted
         realm.deleteSession(exchangedToken.getSessionId(), false);
         assertIntrospectError(exchangedTokenString, "requester-client", "secret");
-        assertUserInfoError(exchangedTokenString, "requester-client", "secret", "invalid_token", "Session not found");
+        assertUserInfoError(exchangedTokenString, "requester-client", "secret", "invalid_token", Errors.USER_SESSION_NOT_FOUND);
+    }
+
+    @Test
+    public void testTransientOfflineSessionForRequester() throws Exception {
+        final RealmResource realm = adminClient.realm(TEST);
+        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        try (ClientAttributeUpdater clientUpdater2 = ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
+                     .setOptionalClientScopes(List.of(OAuth2Constants.OFFLINE_ACCESS))
+                     .update();
+        ) {
+            // Login, which creates offline-session
+            oauth.realm(TEST);
+            final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", OAuth2Constants.OFFLINE_ACCESS).getAccessToken();
+
+            // Regular token-exchange with the access token as requested_token_type
+            oauth.scope(OAuth2Constants.SCOPE_OPENID); // add openid scope for the user-info request
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+            assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+            final String exchangedTokenString = response.getAccessToken();
+            final AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
+            assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+            assertEquals("requester-client", exchangedToken.getIssuedFor());
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT,
+                    AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            // assert introspection and user-info works
+            assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+            assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+            // assert introspection and user-info works in 10s
+            setTimeOffset(10);
+            assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+            assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
+
+            // assert introspection and user-info fails with offline session deleted
+            realm.deleteSession(getSessionIdFromToken(accessToken), true);
+            assertIntrospectError(exchangedTokenString, "requester-client", "secret");
+            assertUserInfoError(exchangedTokenString, "requester-client", "secret", "invalid_token", Errors.USER_SESSION_NOT_FOUND);
+        }
     }
 
     @Test
@@ -394,7 +433,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             final AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), null);
             assertAudiencesAndScopes(response, john, List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), List.of("realm-management-view-scope"));
             final AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
-            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT,
                     AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
             try (Keycloak keycloak = Keycloak.getInstance(ServerURLs.getAuthServerContextRoot() + "/auth",
@@ -429,7 +468,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             final AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID), null);
             assertAudiencesAndScopes(response, john, List.of(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID), List.of("account-view-profile-scope"));
             final AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
-            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.TRANSIENT,
+            assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT,
                     AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
             final String accountUrl = ServerURLs.getAuthServerContextRoot() + "/auth/realms/test/account";
@@ -859,7 +898,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             oauth.scope(null);
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), null);
             AccessToken exchangedToken = assertAudiencesAndScopes(response, mike, List.of("target-client1"), List.of("default-scope1"));
-            assertNull(exchangedToken.getSessionId());
+            assertEquals(originalToken.getSessionId(), exchangedToken.getSessionId());
 
             // Refresh token-exchange without "scope=offline_access". Not allowed cos a new new "online" user session is needed (as previous one was offline)
             oauth.scope(null);
@@ -908,6 +947,39 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             Assert.assertEquals(0, user.getUserSessions().size());
             Assert.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
             Assert.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
+        }
+    }
+
+    @Test
+    public void testIntrospectionWithExchangedTokenAfterSSOLoginOfRequesterClient() throws Exception {
+        final RealmResource realm = adminClient.realm(TEST);
+        final UserResource mikeRes = ApiUtil.findUserByUsernameId(realm, "mike");
+        final UserRepresentation mike = mikeRes.toRepresentation();
+
+        // Login with "subject-client" and create SSO session
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
+                .setConsentRequired(Boolean.TRUE)
+                .update()) {
+            String accessToken = loginWithConsents(mike, "password", "subject-client", "secret");
+
+            // Token exchange access-token for "Requester-client" . No client session yet for "requester-client" at this stage
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret",  null, null);
+            String exchangedToken = response.getAccessToken();
+            Assert.assertNotNull(exchangedToken);
+
+            // Set time offset
+            setTimeOffset(10);
+
+            // SSO login to "requester-client". Will create client session for "requester-client"
+            oauth.client("requester-client", "secret").openLoginForm();
+            assertNotNull(oauth.parseLoginResponse().getCode());
+            response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            String requesterClientToken = response.getAccessToken();
+
+            // Token introspection with the previously exchanged token should success. Also with the new token should success
+            assertIntrospectSuccess(exchangedToken, "requester-client", "secret", mike.getId());
+            assertIntrospectSuccess(requesterClientToken, "requester-client", "secret", mike.getId());
         }
     }
 

@@ -50,6 +50,8 @@ public interface Details {
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
+    String TOKEN_TYPE = "token_type";
+    String TOKEN_ISSUED_FOR = "token_issued_for";
     String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
