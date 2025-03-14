@@ -151,7 +151,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
 
         {
             oauth.client("client-exchanger", "secret");
-            AccessTokenResponse response = oauth.tokenExchangeRequest(accessToken).audience("target").additionalParams(Map.of(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)).send();
+            AccessTokenResponse response = oauth.tokenExchangeRequest(accessToken).audience("target").requestedTokenType(OAuth2Constants.ACCESS_TOKEN_TYPE).send();
             Assert.assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
