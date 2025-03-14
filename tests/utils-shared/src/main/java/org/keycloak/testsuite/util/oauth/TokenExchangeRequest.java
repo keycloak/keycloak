@@ -12,8 +12,9 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
 
     private final String subjectToken;
     private final String subjectTokenType;
+    private String requestedTokenType;
+    private String requestedSubject;
     private List<String> audience;
-    private Map<String, String> additionalParams;
 
     TokenExchangeRequest(String subjectToken, String subjectTokenType, AbstractOAuthClient<?> client) {
         super(client);
@@ -26,6 +27,16 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         return client.getEndpoints().getToken();
     }
 
+    public TokenExchangeRequest requestedTokenType(String requestedTokenType) {
+        this.requestedTokenType = requestedTokenType;
+        return this;
+    }
+
+    public TokenExchangeRequest requestedSubject(String requestedSubject) {
+        this.requestedSubject = requestedSubject;
+        return this;
+    }
+
     public TokenExchangeRequest audience(List<String> audience) {
         this.audience = audience;
         return this;
@@ -36,28 +47,22 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         return this;
     }
 
-    /**
-     * @deprecated Additional parameters should not be passed as a map, instead specific methods should be added
-     * for example <code>requestedTokenType(tokenType)</code>
-     */
-    @Deprecated
-    public TokenExchangeRequest additionalParams(Map<String, String> additionalParams) {
-        this.additionalParams = additionalParams;
-        return this;
-    }
-
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
         parameter(OAuth2Constants.SUBJECT_TOKEN, subjectToken);
         parameter(OAuth2Constants.SUBJECT_TOKEN_TYPE, subjectTokenType != null ? subjectTokenType : OAuth2Constants.ACCESS_TOKEN_TYPE);
 
-        if (audience != null) {
-            audience.forEach(a -> parameter(OAuth2Constants.AUDIENCE, a));
+        if (requestedTokenType != null) {
+            parameter(OAuth2Constants.REQUESTED_TOKEN_TYPE, requestedTokenType);
         }
 
-        if (additionalParams != null) {
-            additionalParams.forEach(this::parameter);
+        if (requestedSubject != null) {
+            parameter(OAuth2Constants.REQUESTED_SUBJECT, requestedSubject);
+        }
+
+        if (audience != null) {
+            audience.forEach(a -> parameter(OAuth2Constants.AUDIENCE, a));
         }
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
