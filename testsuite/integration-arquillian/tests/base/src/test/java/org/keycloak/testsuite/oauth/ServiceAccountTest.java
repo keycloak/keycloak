@@ -380,13 +380,14 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         // Check that it is not possible to introspect token anymore
         Assert.assertFalse(getIntrospectionResponse(tokenString));
-        // TODO: This would be better to be "INTROSPECT_TOKEN_ERROR"
+
         events.expect(EventType.INTROSPECT_TOKEN_ERROR)
                 .client("service-account-cl")
                 .user(is(emptyOrNullString()))
                 .session(is(emptyOrNullString()))
-                .error(Errors.TOKEN_INTROSPECTION_FAILED)
+                .error(Errors.INVALID_TOKEN)
                 .assertEvent();
+        events.assertEmpty();
     }
 
     @Test
@@ -436,7 +437,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assert.assertTrue(getIntrospectionResponse(tokenString));
         events.expect(EventType.INTROSPECT_TOKEN)
                 .client("service-account-cl")
-                .user(is(emptyOrNullString()))
+                .user(AssertEvents.isUUID())
                 .session(is(emptyOrNullString()))
                 .assertEvent();
 

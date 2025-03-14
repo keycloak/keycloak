@@ -106,12 +106,7 @@ public class TokenIntrospectionEndpoint {
         }
 
         try {
-
-            Response response = provider.introspect(token, event);
-
-            this.event.success();
-
-            return response;
+            return provider.introspect(token, event);
         } catch (ErrorResponseException ere) {
             throw ere;
         } catch (Exception e) {

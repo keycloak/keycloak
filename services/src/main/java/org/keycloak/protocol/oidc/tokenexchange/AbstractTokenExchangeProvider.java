@@ -388,14 +388,6 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
 
-        if (targetUserSession == null) {
-            // if no session is associated with a subject_token, a transient session is created to only allow building a token to the audience
-            targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
-        }
-
-        event.session(targetUserSession);
-
         AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
 
