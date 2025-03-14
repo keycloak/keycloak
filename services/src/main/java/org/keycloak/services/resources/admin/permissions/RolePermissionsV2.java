@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class RolePermissionsV2 extends RolePermissions {
 
@@ -76,7 +78,7 @@ public class RolePermissionsV2 extends RolePermissions {
     }
 
     @Override
-    public Set<String> getRolesWithPermission(String scope) {
+    public Set<String> getRoleIdsWithViewPermission(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
@@ -89,11 +91,13 @@ public class RolePermissionsV2 extends RolePermissions {
 
         Set<String> granted = new HashSet<>();
 
-        resourceStore.findByType(server, AdminPermissionsSchema.ROLES_RESOURCE_TYPE, resource -> {
-            if (hasGrantedPermission(server, resource, scope)) {
-                granted.add(resource.getName());
-            }
-        });
+        policyStore.findByResourceType(server, AdminPermissionsSchema.ROLES_RESOURCE_TYPE).stream()
+                .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
+                .forEach(gr -> {
+                    if (hasGrantedPermission(server, gr, scope)) {
+                        granted.add(gr.getName());
+                    }
+                });
 
         return granted;
     }
@@ -121,11 +125,13 @@ public class RolePermissionsV2 extends RolePermissions {
     private boolean hasGrantedPermission(ResourceServer server, Resource resource, String scope) {
         Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
         for (Permission permission : permissions) {
-            for (String s : permission.getScopes()) {
-                if (scope.equals(s)) {
-                    return true;
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String s : permission.getScopes()) {
+                    if (scope.equals(s)) {
+                        return true;
+                    }
                 }
-            }
+            };
         }
 
         return false;

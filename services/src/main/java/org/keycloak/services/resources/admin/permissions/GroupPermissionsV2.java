@@ -23,6 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -118,9 +121,11 @@ class GroupPermissionsV2 extends GroupPermissions {
 
         Set<String> granted = new HashSet<>();
 
-        resourceStore.findByType(server, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, groupResource -> {
-            if (hasPermission(groupResource.getId(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS)) {
-                granted.add(groupResource.getId());
+        policyStore.findByResourceType(server, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE).stream()
+                .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
+                .forEach(gr -> {
+            if (hasPermission(gr.getName(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS)) {
+                granted.add(gr.getName());
             }
         });
 
@@ -154,9 +159,11 @@ class GroupPermissionsV2 extends GroupPermissions {
         List<String> expectedScopes = Arrays.asList(scopes);
 
         for (Permission permission : permissions) {
-            for (String scope : permission.getScopes()) {
-                if (expectedScopes.contains(scope)) {
-                    return true;
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String scope : permission.getScopes()) {
+                    if (expectedScopes.contains(scope)) {
+                        return true;
+                    }
                 }
             }
         }

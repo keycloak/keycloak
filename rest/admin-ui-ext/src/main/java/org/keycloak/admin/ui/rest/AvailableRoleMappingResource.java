@@ -225,8 +225,8 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
     }
 
     private Set<String> getRoleIdsWithPermissions(String roleResourceScope, String clientResourceScope) {
-        Set<String> roleIds = this.auth.roles().getRolesWithPermission(roleResourceScope);
-        Set<String> clientIds = this.auth.clients().getClientsWithPermission(clientResourceScope);
+        Set<String> roleIds = this.auth.roles().getRoleIdsWithViewPermission(roleResourceScope);
+        Set<String> clientIds = this.auth.clients().getClientIdsWithViewPermission(clientResourceScope);
         clientIds.stream().flatMap(cid -> realm.getClientById(cid).getRolesStream()).forEach(role -> roleIds.add(role.getId()));
         return roleIds;
     }

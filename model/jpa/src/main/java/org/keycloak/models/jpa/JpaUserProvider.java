@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -1078,7 +1079,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         List<Predicate> subs = new ArrayList<>();
 
         Expression<String> groupId = from.get("groupId");
-        subs.add(cb.like(from1.get("name"), cb.concat("group.resource.", groupId)));
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            subs.add(cb.like(from1.get("name"), groupId));
+        } else {
+            subs.add(cb.like(from1.get("name"), cb.concat("group.resource.", groupId)));
+        }
 
         subquery1.where(subs.toArray(Predicate[]::new));
 
