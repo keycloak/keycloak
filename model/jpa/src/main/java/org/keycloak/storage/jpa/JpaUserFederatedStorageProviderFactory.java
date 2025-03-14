@@ -20,6 +20,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.jpa.JpaUserFederatedCredentialStore;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
@@ -33,7 +34,7 @@ public class JpaUserFederatedStorageProviderFactory implements UserFederatedStor
     @Override
     public UserFederatedStorageProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaUserFederatedStorageProvider(session, em);
+        return new JpaUserFederatedStorageProvider(session, em, new JpaUserFederatedCredentialStore(session, em));
     }
 
     @Override
