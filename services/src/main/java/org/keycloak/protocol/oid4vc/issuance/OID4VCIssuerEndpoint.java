@@ -41,6 +41,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -215,13 +216,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
-        String format = supportedCredentialConfiguration.getFormat();
 
-        // check that the user is allowed to get such credential
-        if (getClientsOfScope(supportedCredentialConfiguration.getScope(), format).isEmpty()) {
-            LOGGER.debugf("No OID4VP-Client supporting type %s registered.", supportedCredentialConfiguration.getScope());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
-        }
         // calculate the expiration of the preAuthorizedCode. The sessionCode will also expire at that time.
         int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
         String preAuthorizedCode = generateAuthorizationCodeForClientSession(expiration, clientSession);
@@ -454,10 +449,11 @@ public class OID4VCIssuerEndpoint {
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult, SupportedCredentialConfiguration credentialConfig, CredentialRequest credentialRequestVO) {
 
-        List<OID4VCClient> clients = getClientsOfScope(credentialConfig.getScope(), credentialConfig.getFormat());
+        // Get the client scope model from the credential configuration
+        ClientScopeModel clientScopeModel = getClientScopeModel(credentialConfig);
 
-        List<OID4VCMapper> protocolMappers = getProtocolMappers(clients)
-                .stream()
+        // Get the protocol mappers from the client scope
+        List<OID4VCMapper> protocolMappers = clientScopeModel.getProtocolMappersStream()
                 .map(pm -> {
                     if (session.getProvider(ProtocolMapper.class, pm.getProtocolMapper()) instanceof OID4VCMapper mapperFactory) {
                         ProtocolMapper protocolMapper = mapperFactory.create(session);
@@ -489,6 +485,21 @@ public class OID4VCIssuerEndpoint {
                 .orElseThrow(() -> new BadRequestException(
                         String.format("No signer found for format '%s'.", format)
                 ));
+    }
+
+    private ClientScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {
+        // Get the current client from the session
+        ClientModel clientModel = session.getContext().getClient();
+
+        // Get the client scope that matches the credentialConfig scope
+        Map<String, ClientScopeModel> clientScopes = clientModel.getClientScopes(false);
+        ClientScopeModel clientScopeModel = clientScopes.get(credentialConfig.getScope());
+
+        if (clientScopeModel == null) {
+            throw new BadRequestException("Client scope not found for the specified scope: " + credentialConfig.getScope());
+        }
+
+        return clientScopeModel;
     }
 
     private List<ProtocolMapperModel> getProtocolMappers(List<OID4VCClient> oid4VCClients) {
@@ -541,20 +552,6 @@ public class OID4VCIssuerEndpoint {
                 .entity(errorResponse)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
-    }
-
-    // Return all {@link  OID4VCClient}s that support the given scope and format
-    // Scope might be different from vct. In the case of sd-jwt for example
-    private List<OID4VCClient> getClientsOfScope(String vcScope, String format) {
-        LOGGER.debugf("Retrieve all clients of scope %s, supporting format %s", vcScope, format);
-
-        if (Optional.ofNullable(vcScope).filter(scope -> !scope.isEmpty()).isEmpty()) {
-            throw new BadRequestException("No VerifiableCredential-Scope was provided in the request.");
-        }
-
-        // Since clients are not bound to specific VC definitions, they can all
-        // potentially define protocol mappers to source data.
-        return getOID4VCClientsFromSession();
     }
 
     private ClientModel getClient(String clientId) {
