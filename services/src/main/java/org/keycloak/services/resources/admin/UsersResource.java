@@ -258,6 +258,7 @@ public class UsersResource {
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param organizationId Only return users that are members of the specified organization
      * @return a non-null {@code Stream} of users
      */
     @GET
@@ -283,7 +284,8 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Only return users that are members of the specified organization") @QueryParam("organizationId") String organizationId) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -401,7 +403,8 @@ public class UsersResource {
             @QueryParam("emailVerified") Boolean emailVerified,
             @Parameter(description = "username filter") @QueryParam("username") String username,
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
-            @QueryParam("q") String searchQuery) {
+            @QueryParam("q") String searchQuery,
+            @QueryParam("organizationId") String organizationId){
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -418,7 +421,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty() || organizationId != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -437,6 +440,9 @@ public class UsersResource {
             }
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (organizationId != null) {
+                parameters.put(UserModel.ORGANIZATION_ID, organizationId);
             }
             parameters.putAll(searchAttributes);
 
