@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -565,5 +566,86 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--proxy-headers=forwarded", "--proxy-protocol-enabled=true");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(" protocol cannot be enabled when using the `proxy-headers` option"));
+    }
+
+    @Test
+    public void logAsyncDisabledParent() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-console-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-console-async'. Available only when Console log handler is activated"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=console", "--log-file-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-file-async'. Available only when File log handler is activated"));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=file", "--log-syslog-async=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-syslog-async'. Available only when Syslog is activated"));
+    }
+
+    @Test
+    public void logAsyncConsoleDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.file, LoggingOptions.Handler.console, "Console log handler");
+    }
+
+    @Test
+    public void logAsyncFileDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.console, LoggingOptions.Handler.file, "File log handler");
+    }
+
+    @Test
+    public void logAsyncSyslogDisabledOptions() {
+        assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler.console, LoggingOptions.Handler.syslog, "Syslog");
+    }
+
+    private void assertLogAsyncHandlerDisabledOptions(LoggingOptions.Handler logHandler, LoggingOptions.Handler logHandlerOptions, String logHandlerFullName) {
+        var logHandlerName = logHandler.toString();
+        var logHandlerOptionsName = logHandlerOptions.toString();
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
+
+    }
+
+    @Test
+    public void logAsyncConsoleInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.console);
+    }
+
+    @Test
+    public void logAsyncFileInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.file);
+    }
+
+    @Test
+    public void logAsyncSyslogInvalidValues() {
+        assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler.syslog);
+    }
+
+    @Test
+    public void logAsyncOverflowCase() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-async=true", "--log-console-async-overflow=block");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-async=true", "--log-console-async-overflow=BLOCK");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+    }
+
+    protected void assertLogAsyncHandlerInvalidValues(LoggingOptions.Handler handler) {
+        var handlerName = handler.toString();
+
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-queue-length=invalid".formatted(handlerName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-overflow=invalid".formatted(handlerName));
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-overflow': invalid. Expected values are (case insensitive): BLOCK, DISCARD".formatted(handlerName)));
+
     }
 }
