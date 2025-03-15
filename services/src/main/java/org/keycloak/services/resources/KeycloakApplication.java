@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.config.ConfigProviderFactory;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -113,10 +114,11 @@ public abstract class KeycloakApplication extends Application {
     }
 
     protected void shutdown() {
-        if (sessionFactory != null)
+        if (sessionFactory != null) {
             sessionFactory.close();
+        }
     }
-    
+
     private static class BootstrapState {
         ExportImportManager exportImportManager;
         boolean newInstall;
@@ -151,20 +153,25 @@ public abstract class KeycloakApplication extends Application {
                 var exportImportManager = bootstrapState.exportImportManager = new ExportImportManager(session);
                 bootstrapState.newInstall = applianceBootstrap.isNewInstall();
                 if (bootstrapState.newInstall) {
-                    if (!exportImportManager.isImportMasterIncluded()) {
-                        applianceBootstrap.createMasterRealm();
+                    ExportImportConfig.setSingleTransaction(true);
+                    try {
+                        if (!exportImportManager.isImportMasterIncluded()) {
+                            applianceBootstrap.createMasterRealm();
+                        }
+                        // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
+                        exportImportManager.runImport();
+                        createTemporaryAdmin(session);
+                    } finally {
+                        ExportImportConfig.setSingleTransaction(false);
                     }
-                    // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
-                    exportImportManager.runImport();
-                    createTemporaryAdmin(session);
-                } 
+                }
             }
         });
 
         if (!bootstrapState.newInstall) {
             bootstrapState.exportImportManager.runImport();
         }
-        
+
         importAddUser();
 
         return bootstrapState.exportImportManager;
