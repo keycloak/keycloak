@@ -19,6 +19,7 @@ package org.keycloak.exportimport.dir;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.AbstractFileBasedImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
@@ -38,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.services.managers.RealmManager;
 
 /**
@@ -47,6 +50,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private final Strategy strategy;
     private final KeycloakSessionFactory factory;
+    private final JpaConnectionProvider connectionProvider;
 
     private static final Logger logger = Logger.getLogger(DirImportProvider.class);
 
@@ -54,9 +58,10 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private String realmName;
 
-    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy) {
+    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy, JpaConnectionProvider connectionProvider) {
         this.factory = factory;
         this.strategy = strategy;
+        this.connectionProvider = connectionProvider;
     }
 
     public DirImportProvider withDir(String dir) {
@@ -155,30 +160,21 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
         if (realmImported.get()) {
             // Import users
-            for (final File userFile : userFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported users from %s", userFile.getAbsolutePath());
-                        }
-                    });
-                }
-            }
-            for (final File userFile : federatedUserFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
-                        }
-                    });
-                }
-            }
+            connectionProvider.runInBatch(batchControl -> {
+                AtomicInteger userCount = new AtomicInteger();
+                Runnable onUserAdded = () -> {
+                    // TODO: determine what a good number is here
+                    // There actually doesn't seem to be much difference with setting this
+                    // higher - the important part is to clear the contexts - which could be even more optimal
+                    // as detaching just users and their children
+                    if (userCount.incrementAndGet() % 64 == 0) {
+                        batchControl.flush();
+                        batchControl.clear();
+                    }
+                };
+                importUsers(realmName, userFiles, false, onUserAdded);
+                importUsers(realmName, federatedUserFiles, true, onUserAdded);
+            });
         }
 
         if (realmImported.get()) {
@@ -193,6 +189,23 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                 }
 
             });
+        }
+    }
+
+    private void importUsers(final String realmName, File[] userFiles, boolean federated, Runnable onUserCreated) {
+        for (final File userFile : userFiles) {
+            try (InputStream fis = parseFile(userFile)) {
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        session.getContext().setRealm(session.realms().getRealmByName(realmName));
+                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, onUserCreated);
+                        logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
+                    }
+                });
+            } catch (IOException e) {
+                throw new RuntimeException("Error during import: " + e.getMessage(), e);
+            }
         }
     }
 

@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -62,6 +63,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         this.realm = realm;
     }
 
+    @Override
     public GroupEntity getEntity() {
         return group;
     }
@@ -277,8 +279,10 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         entity.setGroup(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!PersistenceExceptionConverter.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
         fireGroupUpdatedEvent();
     }
 

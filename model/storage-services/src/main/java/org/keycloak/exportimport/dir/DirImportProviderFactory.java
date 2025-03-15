@@ -18,6 +18,7 @@
 package org.keycloak.exportimport.dir;
 
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ImportProvider;
 import org.keycloak.exportimport.ImportProviderFactory;
@@ -50,7 +51,7 @@ public class DirImportProviderFactory implements ImportProviderFactory {
         Strategy strategy = Enum.valueOf(Strategy.class, System.getProperty(ExportImportConfig.STRATEGY, config.get(STRATEGY, DEFAULT_STRATEGY.toString())));
         String realmName = System.getProperty(ExportImportConfig.REALM_NAME, config.get(REALM_NAME));
         String dir = overrides.getOrDefault(ExportImportConfig.DIR, System.getProperty(ExportImportConfig.DIR, config.get(DIR)));
-        return new DirImportProvider(session.getKeycloakSessionFactory(), strategy)
+        return new DirImportProvider(session.getKeycloakSessionFactory(), strategy, session.getProvider(JpaConnectionProvider.class))
                 .withDir(dir)
                 .withRealmName(realmName);
     }
