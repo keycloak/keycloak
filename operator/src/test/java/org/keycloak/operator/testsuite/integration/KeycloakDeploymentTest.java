@@ -34,6 +34,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Config;
@@ -75,6 +76,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
+@Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
 
