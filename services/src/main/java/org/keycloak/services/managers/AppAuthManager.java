@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import jakarta.ws.rs.NotAuthorizedException;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +29,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.util.TokenUtil;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -67,8 +69,15 @@ public class AppAuthManager extends AuthenticationManager {
         }
 
         String bearerPart = split[0];
-        if (!bearerPart.equalsIgnoreCase(BEARER) && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
-            return null;
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            if (bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
+                return null;
+            }
+        } else {
+            if (!bearerPart.equalsIgnoreCase(BEARER) && !bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)){
+                return null;
+            }
         }
 
         String tokenString = split[1];
@@ -86,6 +95,14 @@ public class AppAuthManager extends AuthenticationManager {
      * @return the token string or {@literal null} if the Authorization header is not of type Bearer, or the token string is missing.
      */
     public static String extractAuthorizationHeaderTokenOrReturnNull(HttpHeaders headers) {
+        // error if including more than one Authorization header
+        List<String> authHeaders = headers.getRequestHeaders().get(HttpHeaders.AUTHORIZATION);
+        if (authHeaders == null || authHeaders.isEmpty()) {
+            return null;
+        }
+        if (authHeaders.size() != 1) {
+            throw new NotAuthorizedException(BEARER);
+        }
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         return extractTokenStringFromAuthHeader(authHeader);
     }
