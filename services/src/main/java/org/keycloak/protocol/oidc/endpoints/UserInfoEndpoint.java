@@ -22,7 +22,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CekManagementProvider;
@@ -52,7 +51,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
@@ -80,7 +78,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * @author pedroigor
@@ -99,8 +96,6 @@ public class UserInfoEndpoint {
     private final OAuth2Error error;
     private Cors cors;
     private TokenForUserInfo tokenForUserInfo = new TokenForUserInfo();
-
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
 
     public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
         this.session = session;
@@ -184,6 +179,8 @@ public class UserInfoEndpoint {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenForUserInfo.getToken(), AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
+            verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
+
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
@@ -264,31 +261,6 @@ public class UserInfoEndpoint {
                 event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken(errorMessage);
             }
-        }
-
-        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            String authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
-            String[] split = WHITESPACES.split(authHeader.trim());
-            String bearerPart = split[0];
-            if (!bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
-                String errorMessage = "The access token type is DPoP but Authorization Header is not DPoP";
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken(errorMessage);
-            }
-
-            if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
-                try {
-                    DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
-                    DPoPUtil.validateBinding(token, dPoP);
-                } catch (VerificationException ex) {
-                    String errorMessage = "DPoP proof and token binding verification failed";
-                    event.detail(Details.REASON, errorMessage + ": " + ex.getMessage());
-                    event.error(Errors.NOT_ALLOWED);
-                    throw error.invalidToken(errorMessage);
-                }
-            }
-
         }
 
         // Existence of authenticatedClientSession for our client already handled before
