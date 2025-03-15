@@ -17,9 +17,12 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Default;
+import io.fabric8.generator.annotation.ValidationRule;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -28,6 +31,10 @@ import org.keycloak.operator.upgrade.UpdateStrategy;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
+@ValidationRule(
+        value = "self.strategy != 'Explicit' || has(self.revision)",
+        message = "The 'revision' field is required when 'Explicit' strategy is used"
+)
 public class UpdateSpec {
 
     // those are the default, keep them in sync.
@@ -38,6 +45,9 @@ public class UpdateSpec {
     @Default(DEFAULT_JSON)
     private UpdateStrategy strategy;
 
+    @JsonPropertyDescription("When use the Explicit strategy, the revision signals if a rolling update can be used or not.")
+    private String revision;
+
     public UpdateStrategy getStrategy() {
         return strategy;
     }
@@ -46,10 +56,24 @@ public class UpdateSpec {
         this.strategy = strategy;
     }
 
+    public String getRevision() {
+        return revision;
+    }
+
+    public void setRevision(String revision) {
+        this.revision = revision;
+    }
+
     public static UpdateStrategy getUpdateStrategy(Keycloak keycloak) {
         return CRDUtils.keycloakSpecOf(keycloak)
                 .map(KeycloakSpec::getUpdateSpec)
                 .map(UpdateSpec::getStrategy)
                 .orElse(DEFAULT);
+    }
+
+    public static Optional<String> getRevision(Keycloak keycloak) {
+        return CRDUtils.keycloakSpecOf(keycloak)
+                .map(KeycloakSpec::getUpdateSpec)
+                .map(UpdateSpec::getRevision);
     }
 }

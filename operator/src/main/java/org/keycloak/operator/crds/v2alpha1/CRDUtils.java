@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -123,5 +124,12 @@ public final class CRDUtils {
 
     public static Optional<String> findUpdateReason(StatefulSet statefulSet) {
         return Optional.ofNullable(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION));
+    }
+
+    public static Optional<String> getRevision(StatefulSet statefulSet) {
+        return Optional.ofNullable(statefulSet)
+                .map(StatefulSet::getMetadata)
+                .map(ObjectMeta::getAnnotations)
+                .map(annotations -> annotations.get(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION));
     }
 }
