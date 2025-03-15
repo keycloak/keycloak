@@ -23,7 +23,7 @@ public class AuthzClientConfig implements ClientConfig {
 
     @Override
     public ClientConfigBuilder configure(ClientConfigBuilder client) {
-        return client.serviceAccount()
+        return client.serviceAccountsEnabled(true)
                 .authorizationServices();
     }
 

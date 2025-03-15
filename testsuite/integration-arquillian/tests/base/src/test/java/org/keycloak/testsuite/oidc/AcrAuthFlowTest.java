@@ -424,8 +424,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         ClaimsRepresentation claims = new ClaimsRepresentation();
         claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
 
-        oauth.claims(claims);
-        oauth.openLoginForm();
+        oauth.loginForm().claims(claims).open();
     }
 
     /**

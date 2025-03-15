@@ -629,7 +629,8 @@ public class Picocli {
         consumer.accept(spec);
 
         CommandLine cmd = new CommandLine(spec);
-
+        cmd.setExpandAtFiles(false);
+        cmd.setPosixClusteredShortOptionsAllowed(false);
         cmd.setExecutionExceptionHandler(this.errorHandler);
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());

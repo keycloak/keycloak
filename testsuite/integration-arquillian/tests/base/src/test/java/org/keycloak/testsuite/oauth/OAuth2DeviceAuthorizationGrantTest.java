@@ -51,13 +51,13 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -387,11 +387,8 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Successful Device Authorization Request with PKCE from device
         oauth.realm(REALM_NAME);
         oauth.client(DEVICE_APP_PUBLIC);
-        PkceGenerator pkce = new PkceGenerator();
-        oauth.codeChallenge(pkce.getCodeChallenge());
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(pkce.getCodeVerifier());
-        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
+        PkceGenerator pkce = PkceGenerator.s256();
+        DeviceAuthorizationResponse response = oauth.device().deviceAuthorizationRequest().codeChallenge(pkce).send();
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -410,7 +407,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         grantPage.accept();
 
         // Token request from device
-        AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.device().deviceTokenRequest(response.getDeviceCode()).codeVerifier(pkce.getCodeVerifier()).send();
 
         Assert.assertEquals(200, tokenResponse.getStatusCode());
 
@@ -426,11 +423,8 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Device Authorization Request with PKCE from device - device send false code_verifier
         oauth.realm(REALM_NAME);
         oauth.client(DEVICE_APP_PUBLIC);
-        PkceGenerator pkce = new PkceGenerator();
-        oauth.codeChallenge(pkce.getCodeChallenge());
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(pkce.getCodeVerifier()+"a");
-        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
+        PkceGenerator pkce = PkceGenerator.s256();
+        DeviceAuthorizationResponse response = oauth.device().deviceAuthorizationRequest().codeChallenge(pkce).send();
 
         Assert.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
@@ -449,7 +443,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         grantPage.accept();
 
         // Token request from device
-        AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+        AccessTokenResponse tokenResponse = oauth.device().deviceTokenRequest(response.getDeviceCode()).codeVerifier(pkce.getCodeVerifier()+"a").send();
 
         Assert.assertEquals(400, tokenResponse.getStatusCode());
         Assert.assertEquals("invalid_grant", tokenResponse.getError());

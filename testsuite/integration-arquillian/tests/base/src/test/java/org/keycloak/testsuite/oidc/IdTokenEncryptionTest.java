@@ -94,7 +94,6 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.client("test-app", "password");
-        oauth.maxAge(null);
     }
 
     @Override

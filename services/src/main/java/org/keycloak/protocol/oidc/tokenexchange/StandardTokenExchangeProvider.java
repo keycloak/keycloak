@@ -26,31 +26,28 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
@@ -206,24 +203,26 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope) {
+                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
 
-        boolean newUserSessionCreated = false;
         if (targetUserSession == null || targetUserSession.isOffline()) {
-            // if no session is associated with a subject_token, a new session will be created, only persistent if refresh token type requested
-            // The new session created also when original session was offline (assuming we don't allow offline-access from token exchange)
+            // if no session is associated with the subject_token or it is offline, check no online session is needed
+            if (OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)) {
+                event.detail(Details.REASON, "Refresh token not valid as requested_token_type because creating a new session is needed");
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "Refresh token not valid as requested_token_type because creating a new session is needed", Response.Status.BAD_REQUEST);
+            }
+            // create a transient session now for the token exchange
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
                     clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
-                    requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                            ? UserSessionModel.SessionPersistenceState.PERSISTENT
-                            : UserSessionModel.SessionPersistenceState.TRANSIENT);
-            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.PERSISTENT) {
-                newUserSessionCreated = true;
-            }
+                    UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
-        boolean newClientSessionCreated = !newUserSessionCreated && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
+
+        final boolean newClientSessionCreated = targetUserSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT
+                && targetUserSession.getAuthenticatedClientSessionByClient(client.getId()) == null;
 
         event.session(targetUserSession);
 
@@ -247,6 +246,25 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             validateConsents(targetUser, clientSessionCtx);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+
+            TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+            AccessTokenContext subjectTokenContext = encoder.getTokenContextFromTokenId(subjectToken.getId());
+
+            //copy subject client from the client session notes if the subject token used has already been exchanged
+            if (OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE.equals(subjectTokenContext.getGrantType())) {
+                ClientModel subjectClient = session.clients().getClientByClientId(realm, subjectToken.getIssuedFor());
+                if (subjectClient != null) {
+                    AuthenticatedClientSessionModel subjectClientSession = targetUserSession.getAuthenticatedClientSessionByClient(subjectClient.getId());
+                    if (subjectClientSession != null) {
+                        subjectClientSession.getNotes().entrySet().stream()
+                                .filter(note -> note.getKey().startsWith(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT))
+                                .forEach(note -> clientSessionCtx.getClientSession().setNote(note.getKey(), note.getValue()));
+                    }
+                }
+            }
+
+            //store client id of the subject token
+            clientSessionCtx.getClientSession().setNote(Constants.TOKEN_EXCHANGE_SUBJECT_CLIENT + subjectToken.getIssuedFor(), subjectToken.getId());
 
             TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session,
                     clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx).generateAccessToken();
@@ -280,11 +298,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
 
             if (responseBuilder.getAccessToken().getAudience() != null) {
-                StringJoiner joiner = new StringJoiner(" ");
-                for (String s : List.of(responseBuilder.getAccessToken().getAudience())) {
-                    joiner.add(s);
-                }
-                event.detail(Details.AUDIENCE, joiner.toString());
+                event.detail(Details.AUDIENCE, CollectionUtil.join(List.of(responseBuilder.getAccessToken().getAudience()), " "));
             }
             event.success();
 
@@ -293,10 +307,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             // Cleanup client-session if created in this request
             if (newClientSessionCreated) {
                 targetUserSession.removeAuthenticatedClientSessions(Set.of(client.getId()));
-            }
-            // Cleanup user-session if created in this request
-            if (newUserSessionCreated) {
-                session.sessions().removeUserSession(realm, targetUserSession);
             }
 
             throw e;
@@ -346,7 +356,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         }
         OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
-                && oidcClient.isUseRefreshToken() && oidcClient.isStandardTokenExchangeRefreshEnabled()) {
+                && oidcClient.isUseRefreshToken()
+                && oidcClient.getStandardTokenExchangeRefreshEnabled() != OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO) {
             return requestedTokenType;
         }
 

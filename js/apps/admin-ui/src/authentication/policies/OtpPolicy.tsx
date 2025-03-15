@@ -1,5 +1,12 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  HelpItem,
+  NumberControl,
+  SelectControl,
+  SwitchControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ActionGroup,
   AlertVariant,
   Button,
@@ -10,17 +17,10 @@ import {
   PageSection,
   Radio,
 } from "@patternfly/react-core";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  HelpItem,
-  NumberControl,
-  SelectControl,
-  SwitchControl,
-} from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -46,7 +46,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
+  const form = useForm<FormFields>({ mode: "onChange" });
   const {
     control,
     reset,
@@ -64,8 +64,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   });
 
   const setupForm = (formValues: FormFields) => reset(formValues);
-
-  useEffect(() => setupForm(realm), []);
 
   const supportedApplications = useMemo(() => {
     const labels = (realm.otpSupportedApplications ?? []).map((key) =>

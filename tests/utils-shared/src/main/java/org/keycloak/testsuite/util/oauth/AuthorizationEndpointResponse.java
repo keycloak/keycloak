@@ -1,17 +1,13 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.openqa.selenium.WebDriver;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class AuthorizationEndpointResponse {
@@ -36,23 +32,6 @@ public class AuthorizationEndpointResponse {
                     .stream().filter(p -> p.getValue() != null)
                     .forEach(p -> params.put(p.getName(), p.getValue()));
         }
-    }
-
-    private URI getCurrentUri(WebDriver driver) {
-        try {
-            return new URI(driver.getCurrentUrl());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Map<String, String> getCurrentQuery(WebDriver driver) {
-        Map<String, String> m = new HashMap<>();
-        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(driver), StandardCharsets.UTF_8);
-        for (NameValuePair p : pairs) {
-            m.put(p.getName(), p.getValue());
-        }
-        return m;
     }
 
     private boolean isFragment(AbstractOAuthClient<?> client) {

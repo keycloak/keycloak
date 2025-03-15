@@ -195,6 +195,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         UserModel user = session.users().getUserById(context.getRealm(), userId);
 
+        if (user == null) {
+            context.getEvent()
+                    .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId);
+            setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
+            return;
+        }
+
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 credentialId,
                 authenticatorData,
@@ -233,7 +240,10 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
             setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
-            context.cancelLogin();
+            /*
+             * Previously, we called context.cancelLogin() here, but this gave potential attackers
+             * information about existing user accounts. To avoid that, we just return here.
+             */
         }
     }
 

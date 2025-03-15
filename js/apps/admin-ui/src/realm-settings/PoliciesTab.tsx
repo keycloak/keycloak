@@ -2,10 +2,11 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import {
   Action,
   KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import {
   AlertVariant,
   Button,
@@ -26,8 +27,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
 import { translationFormatter } from "../utils/translationFormatter";
@@ -288,13 +288,12 @@ export const PoliciesTab = () => {
       ) : (
         <>
           <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
-            <div style={{ height: "30rem", overflow: "scroll" }}>
-              <CodeEditor
-                value={code}
-                language="json"
-                onChange={(event) => setCode(event.target.value)}
-              />
-            </div>
+            <CodeEditor
+              value={code}
+              language="json"
+              onChange={(value) => setCode(value)}
+              height={480}
+            />
           </div>
           <div className="pf-v5-u-mt-md">
             <Button

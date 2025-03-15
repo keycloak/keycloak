@@ -81,7 +81,6 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
         oauth.clientId("test-app");
         oauth.scope(null);
-        oauth.maxAge(null);
     }
 
     /**

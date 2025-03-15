@@ -2,9 +2,9 @@ package org.keycloak.testsuite.util.oauth.device;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import java.io.IOException;
 
@@ -12,6 +12,19 @@ public class DeviceAuthorizationRequest extends AbstractHttpPostRequest<DeviceAu
 
     DeviceAuthorizationRequest(AbstractOAuthClient<?> client) {
         super(client);
+    }
+
+    public DeviceAuthorizationRequest codeChallenge(PkceGenerator pkceGenerator) {
+        if (pkceGenerator != null) {
+            codeChallenge(pkceGenerator.getCodeChallenge(), pkceGenerator.getCodeChallengeMethod());
+        }
+        return this;
+    }
+
+    public DeviceAuthorizationRequest codeChallenge(String codeChallenge, String codeChallengeMethod) {
+        parameter(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        return this;
     }
 
     @Override
@@ -22,9 +35,6 @@ public class DeviceAuthorizationRequest extends AbstractHttpPostRequest<DeviceAu
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-        parameter(OIDCLoginProtocol.NONCE_PARAM, client.getNonce());
-        parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
-        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, client.getCodeChallengeMethod());
     }
 
     @Override

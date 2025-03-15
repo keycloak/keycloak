@@ -88,12 +88,12 @@ export const FlowRow = ({
                     />
                   )}
                   {execution.authenticationFlow && (
-                    <>
+                    <span data-testid={execution.displayName}>
                       {execution.displayName} <br />{" "}
                       <Text component={TextVariants.small}>
                         {execution.alias} {execution.description}
                       </Text>
-                    </>
+                    </span>
                   )}
                 </DataListCell>,
                 <DataListCell key={`${execution.id}-requirement`}>

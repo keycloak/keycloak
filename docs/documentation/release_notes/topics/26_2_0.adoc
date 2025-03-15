@@ -25,6 +25,16 @@ This strengthens a secure-by-default setup and minimizes the configuration steps
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
 
+= Supported Standard Token Exchange
+
+In this release, we added support for the Standard token exchange! The token exchange feature was in preview for a long time, so we are glad to finally support the standard token exchange.
+For now, this is limited to exchanging the Internal token to internal token compliant with the https://datatracker.ietf.org/doc/html/rfc8693[Token exchange specification]. It does not yet cover use
+cases related to identity brokering or subject impersonation. We hope to support even more token exchange use cases in subsequent releases.
+
+For more details, see the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
+
+For information on how to upgrade from the legacy token exchange used in previous {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = New cache for CRLs loaded for the X.509 authenticator
 
 Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.
@@ -67,8 +77,19 @@ link:{grafanadashboards_link}[The guide] contains two dashboards.
 * Keycloak troubleshooting dashboard - showing metrics related to service level indicators and troubleshooting.
 * Keycloak capacity planning dashboard - showing metrics related to estimating the load handled by Keycloak.
 
+= Operator creates NetworkPolicies to restrict traffic
+
+The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+
+You can restrict the access to the management and HTTP endpoints further using the Kubernetes NetworkPolicies rule syntax.
+
+Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
 = Removal of the `X-XSS-Protection` header
 
 Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
 
 We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP[Content Security Policy (CSP)].
+

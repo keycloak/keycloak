@@ -147,8 +147,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -187,8 +186,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -235,8 +233,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // User directly on the password page. Info message should be shown here
         passwordPage.assertCurrent();
@@ -277,9 +274,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         // See that user can re-authenticate with the github link present on the page as user has link to github social provider
         setTimeOffset(10);
-        oauth.maxAge("1");
-
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // Username input hidden as well as register and rememberMe. Info message should be present
         loginPage.assertCurrent();
@@ -313,8 +308,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
-        oauth.prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
-        loginPage.open();
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
         loginPage.clickResetLogin();
         loginPage.login("john-doh@localhost", "password");
 
