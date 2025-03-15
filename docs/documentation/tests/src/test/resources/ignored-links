@@ -47,3 +47,5 @@ http://example.com:8080
 # To be removed once KC 26.2 has been released
 https://www.keycloak.org/server/caching#_securing_transport_stacks
 https://www.keycloak.org/securing-apps/token-exchange*
+https://login.microsoftonline.com/TenantID/oauth2/v2.0/token
+https://outlook.office.com/.default
