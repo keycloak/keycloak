@@ -17,6 +17,9 @@ image:images/user-federation.png[User federation]
 . Click *Add LDAP providers*.
 +
 {project_name} brings you to the LDAP configuration page.
++
+.Add LDAP provider
+image:images/user-fed-ldap.png[User federation]
 
 ==== Storage mode
 
