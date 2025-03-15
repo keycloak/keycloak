@@ -381,7 +381,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(text, Matchers.containsString(("<a href=\"" + link + "\" rel=\"nofollow\">Link to join the organization</a></p>")));
         assertThat(text, Matchers.containsString(("Link to join the organization")));
         assertThat(text, Matchers.containsString(("This link will expire within 12 hours")));
-        assertThat(text, Matchers.containsString(("<p>If you dont want to join the organization, just ignore this message.</p>")));
+        assertThat(text, Matchers.containsString(("<p>If you don&#39;t want to join the organization, just ignore this message.</p>")));
 
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
         Assert.assertNotNull(orgToken);
