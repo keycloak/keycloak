@@ -33,7 +33,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.commons.codec.binary.Hex;
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -88,7 +87,7 @@ public class DPoPUtil {
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
 
-    public static enum Mode {
+    public enum Mode {
         ENABLED,
         OPTIONAL,
         DISABLED
@@ -197,7 +196,7 @@ public class DPoPUtil {
     
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
-        if (token == null || token.trim().equals("")) {
+        if (token == null || token.trim().isEmpty()) {
             throw new VerificationException("DPoP proof is missing");
         }
 
@@ -308,6 +307,10 @@ public class DPoPUtil {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
+    }
+
+    public static boolean isDPoPToken(AccessToken refreshToken) {
+        return refreshToken.getConfirmation() != null && refreshToken.getConfirmation().getKeyThumbprint() != null;
     }
 
     private static class DPoPClaimsCheck implements TokenVerifier.Predicate<DPoP> {
@@ -426,7 +429,7 @@ public class DPoPUtil {
 
     private static class DPoPAccessTokenHashCheck implements TokenVerifier.Predicate<DPoP> {
 
-        private String hash;
+        private final String hash;
 
         public DPoPAccessTokenHashCheck(String tokenString) {
             hash = HashUtils.accessTokenHash(DPOP_ATH_ALG, tokenString, true);

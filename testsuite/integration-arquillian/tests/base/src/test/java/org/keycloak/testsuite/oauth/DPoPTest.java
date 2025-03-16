@@ -190,6 +190,20 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testDPoPByPublicClientTokenRefreshWithoutDPoPProof() throws Exception {
+        // use pre-computed EC key
+
+        int clockSkew = 10; // acceptable clock skew is +-10sec
+
+        sendAuthorizationRequestWithDPoPJkt(null);
+
+        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) (Time.currentTime() + clockSkew), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+
+        changeDPoPBound(TEST_PUBLIC_CLIENT_ID, false); // not enforce DPoP proof, but the refresh token is a DPoP type token.
+        failureRefreshTokenProceduresWithoutDPoP(dpopProofEcEncoded, jktEc);
+    }
+
+    @Test
     public void testDPoPProofByConfidentialClient() throws Exception {
         // use pre-computed RSA key
 
@@ -902,6 +916,26 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         dpopProofEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofEncoded).send();
         assertEquals(TEST_USER_NAME, userInfoResponse.getUserInfo().getPreferredUsername());
+
+        // logout
+        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+    }
+
+    private void failureRefreshTokenProceduresWithoutDPoP(String dpopProofEncoded, String jkt) throws Exception {
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.accessTokenRequest(code).dpopProof(dpopProofEncoded).send();
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, response.getTokenType());
+        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertEquals(jkt, refreshToken.getConfirmation().getKeyThumbprint());
+
+        // token refresh without DPoP Proof
+        response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(null).send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+        assertEquals("DPoP proof is missing", response.getErrorDescription());
 
         // logout
         oauth.logoutForm().idTokenHint(response.getIdToken()).open();
