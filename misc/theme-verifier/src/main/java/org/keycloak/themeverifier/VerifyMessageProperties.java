@@ -53,6 +53,8 @@ public class VerifyMessageProperties {
             verifyProblematicBlanks();
             if (validateMessageFormatQuotes) {
                 verifyMessageFormatQuotes();
+            } else {
+                verifyNotMessageFormatQuotes();
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Can not read file " + file, e);
@@ -60,9 +62,29 @@ public class VerifyMessageProperties {
         return messages;
     }
 
-    private static Pattern SINGLE_QUOTE_MIDDLE = Pattern.compile("[^']'[^']");
-    private static Pattern SINGLE_QUOTE_END = Pattern.compile("[^']'$");
-    private static Pattern SINGLE_QUOTE_START = Pattern.compile("^'[^']");
+    private final static Pattern DOUBLE_SINGLE_QUOTES = Pattern.compile("''");
+
+    private void verifyNotMessageFormatQuotes() {
+        PropertyResourceBundle bundle;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            bundle = new PropertyResourceBundle(fis);
+        } catch (IOException e) {
+            throw new RuntimeException("unable to read file " + file, e);
+        }
+
+        bundle.getKeys().asIterator().forEachRemaining(key -> {
+            String value = bundle.getString(key);
+
+            if (DOUBLE_SINGLE_QUOTES.matcher(value).find()) {
+                messages.add("Double single quotes are not allowed in message formats as they might be shown in frontends as-is in '" + key + "' for file " + file + ": " + value);
+            }
+
+        });
+    }
+
+    private static final Pattern SINGLE_QUOTE_MIDDLE = Pattern.compile("[^']'[^']");
+    private static final Pattern SINGLE_QUOTE_END = Pattern.compile("[^']'$");
+    private static final Pattern SINGLE_QUOTE_START = Pattern.compile("^'[^']");
 
     private void verifyMessageFormatQuotes() {
         PropertyResourceBundle bundle;

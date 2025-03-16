@@ -65,6 +65,12 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
+    void verifyNoDoubleQuoteForUIMessages() throws MojoExecutionException {
+        List<String> verify = getFile("doubleSingleQuotes_en.properties").withValidateMessageFormatQuotes(false).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Double single quotes are not allowed")));
+    }
+
+    @Test
     void verifyNoExtraBlanks() throws MojoExecutionException {
         List<String> verify = getFile("blanks_en.properties").verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Duplicate blanks")));

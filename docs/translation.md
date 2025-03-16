@@ -29,9 +29,15 @@ To ensure consistency and quality across translations, please adhere to the foll
 
 ### Handling of single quotes (`'`)
 
-Whenever messages are formatted in the backend, Keycloak uses Java's MessageFormat to replace placeholders. This uses single quotes as an escape mechanism. 
+Whenever messages are formatted in the backend, Keycloak uses Java's MessageFormat to replace placeholders. This uses single quotes (`'`) as an escape mechanism. 
 
-Therefore, use typographic quotes like `‘` and `’` (preferred), or duplicate each single quote `''` (discouraged, still used in lots of legacy places). 
+Therefore, use typographic quotes like `‘` and `’` where possible.
+
+To avoid problems, automatic checks ensure the following:
+
+* In all "base" themes, where message keys are evaluated in the backend, no single quote (`'`) must be used standalone as it would not print when used in Java's MessageFormat. For legacy messages, a double single quote (`''`) can be used to print a single quote. 
+
+* In all UI themes, where message keys are evaluated in the frontend, a single quote (`'`) must only be used standalone, and a double single (`''`) must not be used.
 
 ### Spanish translations
 
