@@ -388,6 +388,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public boolean hideUserAlreadyRegisteredError() {
+        return getAttribute("hideUserAlreadyRegisteredError", true); // TODO: false
+    }
+
+    @Override
+    public void setHideUserAlreadyRegisteredError(boolean hideUserAlreadyRegisteredError) {
+        setAttribute("hideUserAlreadyRegisteredError", hideUserAlreadyRegisteredError);
+    }
+
+    @Override
     public boolean isResetPasswordAllowed() {
         return realm.isResetPasswordAllowed();
     }
