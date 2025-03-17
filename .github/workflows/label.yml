@@ -3,14 +3,15 @@ on:
   pull_request_target:
     types: closed
 
+permissions:
+  contents: read
+  
 jobs:
   label:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
-
+      issues: write # Required to add labels to Issues
     steps:
       - uses: actions/checkout@v4
         with:

@@ -24,6 +24,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   conditional:
     name: Check conditional workflows and jobs
