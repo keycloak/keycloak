@@ -1,11 +1,5 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import {
-  Button,
-  Draggable,
-  Text,
-  TextVariants,
-  Tooltip,
-} from "@patternfly/react-core";
+import { Button, Draggable, Tooltip } from "@patternfly/react-core";
 import { TrashIcon } from "@patternfly/react-icons";
 import { Td, TreeRowWrapper } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
@@ -83,24 +77,18 @@ export const FlowRow = ({
             }}
           />
           <Td treeRow={treeRow}>
-            {!execution.authenticationFlow && (
-              <FlowTitle
-                id={execution.id}
-                type={convertToType(execution)}
-                key={execution.id}
-                alias={execution.alias!}
-                providerId={execution.providerId!}
-                title={execution.displayName!}
-              />
-            )}
-            {execution.authenticationFlow && (
-              <span data-testid={execution.displayName}>
-                {execution.displayName} <br />{" "}
-                <Text component={TextVariants.small}>
-                  {execution.alias} {execution.description}
-                </Text>
-              </span>
-            )}
+            <FlowTitle
+              id={execution.id}
+              type={convertToType(execution)}
+              key={execution.id}
+              subtitle={
+                (execution.authenticationFlow
+                  ? execution.description
+                  : execution.alias) || ""
+              }
+              providerId={execution.providerId!}
+              title={execution.displayName!}
+            />
           </Td>
           <Td>
             <FlowRequirementDropdown flow={execution} onChange={onRowChange} />
