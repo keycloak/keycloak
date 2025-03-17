@@ -142,6 +142,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             }
         }
 
+        requestedInstances.sort(RequestedInstanceComparator.INSTANCE);
         logger.logRequestedInstances(requestedInstances);
     }
 
@@ -163,7 +164,6 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     private void deployRequestedInstances() {
-        requestedInstances.sort(RequestedInstanceComparator.INSTANCE);
         while (!requestedInstances.isEmpty()) {
             RequestedInstance requestedInstance = requestedInstances.remove(0);
 

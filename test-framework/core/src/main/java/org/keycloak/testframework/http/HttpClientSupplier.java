@@ -7,6 +7,7 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.injection.SupplierOrder;
 
 import java.io.IOException;
 
@@ -24,6 +25,11 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public int order() {
+        return SupplierOrder.DEFAULT - 100;
     }
 
     @Override
