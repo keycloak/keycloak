@@ -1,4 +1,4 @@
-package org.keycloak.operator.upgrade.impl;
+package org.keycloak.operator.update.impl;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -11,32 +11,32 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 /**
- * Implements an explicit upgrade logic.
+ * Implements an explicit update logic.
  * <p>
  * The decision is controlled by an outside actor using the revision field.
  */
-public class ExplicitUpgradeLogic extends BaseUpgradeLogic {
+public class ExplicitUpdateLogic extends BaseUpdateLogic {
 
-    public ExplicitUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
+    public ExplicitUpdateLogic(Context<Keycloak> context, Keycloak keycloak) {
         super(context, keycloak);
     }
 
     @Override
-    Optional<UpdateControl<Keycloak>> onUpgrade() {
+    Optional<UpdateControl<Keycloak>> onUpdate() {
         var maybeCurrentRevision = CRDUtils.getRevision(ContextUtils.getCurrentStatefulSet(context).orElseThrow());
 
         if (maybeCurrentRevision.isEmpty()) {
-            decideRecreateUpgrade("Explicit strategy configured. Revision annotation not present in stateful set.");
+            decideRecreateUpdate("Explicit strategy configured. Revision annotation not present in stateful set.");
             return Optional.empty();
         }
         // CRD validation ensures the revision is present
         var desiredRevision = UpdateSpec.getRevision(keycloak).orElseThrow();
         if (Objects.equals(maybeCurrentRevision.get(), desiredRevision)) {
-            decideRollingUpgrade("Explicit strategy configured. Revision matches.");
+            decideRollingUpdate("Explicit strategy configured. Revision matches.");
             return Optional.empty();
         }
 
-        decideRecreateUpgrade("Explicit strategy configured. Revision (%s) does not match (%s).".formatted(maybeCurrentRevision.get(), desiredRevision));
+        decideRecreateUpdate("Explicit strategy configured. Revision (%s) does not match (%s).".formatted(maybeCurrentRevision.get(), desiredRevision));
         return Optional.empty();
     }
 }

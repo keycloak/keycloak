@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
 import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.upgrade.UpdateStrategy;
+import org.keycloak.operator.update.UpdateStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;

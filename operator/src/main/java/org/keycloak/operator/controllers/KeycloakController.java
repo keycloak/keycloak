@@ -47,7 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.upgrade.UpgradeLogicFactory;
+import org.keycloak.operator.update.UpdateLogicFactory;
 
 import java.util.Comparator;
 import java.util.List;
@@ -78,7 +78,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
     KeycloakDistConfigurator distConfigurator;
 
     @Inject
-    UpgradeLogicFactory upgradeLogicFactory;
+    UpdateLogicFactory updateLogicFactory;
 
     @Inject
     KeycloakUpdateJobDependentResource updateJobDependentResource;
@@ -134,11 +134,11 @@ public class KeycloakController implements Reconciler<Keycloak> {
         ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
         ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
 
-        var upgradeLogic = upgradeLogicFactory.create(kc, context);
-        var upgradeLogicControl = upgradeLogic.decideUpgrade();
-        if (upgradeLogicControl.isPresent()) {
-            Log.debug("--- Reconciliation interrupted due to upgrade logic");
-            return upgradeLogicControl.get();
+        var updateLogic = updateLogicFactory.create(kc, context);
+        var updateLogicControl = updateLogic.decideUpdate();
+        if (updateLogicControl.isPresent()) {
+            Log.debug("--- Reconciliation interrupted due to update logic");
+            return updateLogicControl.get();
         }
 
         // after the spec has possibly been updated, reconcile the StatefulSet
@@ -147,7 +147,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         updateStatus(kc, existingDeployment, statusAggregator, context);
-        upgradeLogic.updateStatus(statusAggregator);
+        updateLogic.updateStatus(statusAggregator);
         var status = statusAggregator.build();
 
         Log.debug("--- Reconciliation finished successfully");
@@ -217,7 +217,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         if (Optional
                 .ofNullable(existingDeployment.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MIGRATING_ANNOTATION))
                 .map(Boolean::valueOf).orElse(false)) {
-            status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
+            status.addNotReadyMessage("Performing Keycloak update, scaling down the deployment");
         } else if (existingDeployment.getStatus() != null
                 && existingDeployment.getStatus().getCurrentRevision() != null
                 && existingDeployment.getStatus().getUpdateRevision() != null

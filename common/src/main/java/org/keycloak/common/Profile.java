@@ -131,7 +131,7 @@ public class Profile {
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
-        ROLLING_UPDATES("Rolling Updates", Type.PREVIEW),
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ;
 
         private final Type type;

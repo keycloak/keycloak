@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.upgrade.impl;
+package org.keycloak.operator.update.impl;
 
 import java.util.Map;
 import java.util.Objects;
@@ -35,47 +35,47 @@ import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.upgrade.UpgradeLogic;
-import org.keycloak.operator.upgrade.UpgradeType;
+import org.keycloak.operator.update.UpdateLogic;
+import org.keycloak.operator.update.UpdateType;
 
 /**
- * Common {@link UpgradeLogic} implementation that checks if the upgrade logic needs to be run.
+ * Common {@link UpdateLogic} implementation that checks if the update logic needs to be run.
  * <p>
- * The upgrade logic can be skipped if it is the first deployment or if the change is not relevance (like, updating the
+ * The update logic can be skipped if it is the first deployment or if the change is not relevance (like, updating the
  * number of replicas or annotations).
  */
-abstract class BaseUpgradeLogic implements UpgradeLogic {
+abstract class BaseUpdateLogic implements UpdateLogic {
 
     protected final Context<Keycloak> context;
     protected final Keycloak keycloak;
-    private Consumer<KeycloakStatusAggregator> statusConsumer = KeycloakStatusAggregator::resetUpgradeType;
+    private Consumer<KeycloakStatusAggregator> statusConsumer = KeycloakStatusAggregator::resetUpdateType;
 
-    BaseUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
+    BaseUpdateLogic(Context<Keycloak> context, Keycloak keycloak) {
         this.context = context;
         this.keycloak = keycloak;
     }
 
     @Override
-    public final Optional<UpdateControl<Keycloak>> decideUpgrade() {
+    public final Optional<UpdateControl<Keycloak>> decideUpdate() {
         var existing = ContextUtils.getCurrentStatefulSet(context);
         if (existing.isEmpty()) {
-            // new deployment, no upgrade needed
-            Log.debug("New deployment - skipping upgrade logic");
+            // new deployment, no update needed
+            Log.debug("New deployment - skipping update logic");
             return Optional.empty();
         }
         copyStatusFromExistStatefulSet(existing.get());
 
         var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
-        var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpgradeLogic::containerNotFound);
-        var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpgradeLogic::containerNotFound);
+        var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpdateLogic::containerNotFound);
+        var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpdateLogic::containerNotFound);
 
         if (isContainerEquals(actualContainer, desiredContainer)) {
-            // container is equals, no upgrade required
-            Log.debug("No changes detected in the container - skipping upgrade logic");
+            // container is equals, no update required
+            Log.debug("No changes detected in the container - skipping update logic");
             return Optional.empty();
         }
 
-        return onUpgrade();
+        return onUpdate();
     }
 
     @Override
@@ -84,19 +84,19 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
     }
 
     /**
-     * Concrete upgrade logic should be implemented here.
+     * Concrete update logic should be implemented here.
      * <p>
      * Use {@link ContextUtils#getCurrentStatefulSet(Context)} and/or
      * {@link ContextUtils#getDesiredStatefulSet(Context)} to get the current and the desired {@link StatefulSet},
      * respectively.
      * <p>
-     * Use the methods {@link #decideRecreateUpgrade(String)} or {@link #decideRollingUpgrade(String)} to use one of the available
-     * upgrade logics.
+     * Use the methods {@link #decideRecreateUpdate(String)} or {@link #decideRollingUpdate(String)} to use one of the available
+     * update logics.
      *
      * @return An {@link UpdateControl} if the reconciliation must be interrupted before updating the
      * {@link StatefulSet}.
      */
-    abstract Optional<UpdateControl<Keycloak>> onUpgrade();
+    abstract Optional<UpdateControl<Keycloak>> onUpdate();
 
     private void copyStatusFromExistStatefulSet(StatefulSet current) {
         var maybeRecreate = CRDUtils.fetchIsRecreateUpdate(current);
@@ -105,19 +105,19 @@ abstract class BaseUpgradeLogic implements UpgradeLogic {
         }
         var reason = CRDUtils.findUpdateReason(current).orElseThrow();
         var recreate = maybeRecreate.get();
-        statusConsumer = statusAggregator -> statusAggregator.addUpgradeType(recreate, reason);
+        statusConsumer = statusAggregator -> statusAggregator.addUpdateType(recreate, reason);
     }
 
-    void decideRollingUpgrade(String reason) {
-        Log.debugf("Decided rolling upgrade type. Reason: %s", reason);
-        statusConsumer = status -> status.addUpgradeType(false, reason);
-        ContextUtils.storeUpgradeType(context, UpgradeType.ROLLING, reason);
+    void decideRollingUpdate(String reason) {
+        Log.debugf("Decided rolling update type. Reason: %s", reason);
+        statusConsumer = status -> status.addUpdateType(false, reason);
+        ContextUtils.storeUpdateType(context, UpdateType.ROLLING, reason);
     }
 
-    void decideRecreateUpgrade(String reason) {
-        Log.debugf("Decided recreate upgrade type. Reason: %s", reason);
-        statusConsumer = status -> status.addUpgradeType(true, reason);
-        ContextUtils.storeUpgradeType(context, UpgradeType.RECREATE, reason);
+    void decideRecreateUpdate(String reason) {
+        Log.debugf("Decided recreate update type. Reason: %s", reason);
+        statusConsumer = status -> status.addUpdateType(true, reason);
+        ContextUtils.storeUpdateType(context, UpdateType.RECREATE, reason);
     }
 
     static IllegalStateException containerNotFound() {

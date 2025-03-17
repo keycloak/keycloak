@@ -25,6 +25,18 @@ This strengthens a secure-by-default setup and minimizes the configuration steps
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
 
+= Rolling updates for optimized and customized images
+
+When passing an optimized or customized image to the {project_name} Operator, it can now perform a rolling update without downtime if you enable the `Auto` update strategy and the old and the new image contain the same version of {project_name}.
+
+The commands to determine if a rolling update is possible are also available on the {project_name} command line so you can use them in your deployment pipeline to identify if a rolling update or a recreate update should be triggered.
+
+To use the functionality in the Operator, enable the `Auto` update strategy and the {project_name} Operator will on image change briefly start up the old and the new image to determine if a rolling update without downtime is possible, or recreate update should be performed.
+
+Read https://www.keycloak.org/nightly/operator/advanced-configuration#managing-rolling-updates[Managing Rolling Updates] in the {project_name} Operator Advanced Configuration guide.
+
+Read on how to integrate this into your deployment pipelines on https://www.keycloak.org/server/update-compatibility[Update Compatibility Tool] guide.
+
 = Supported Standard Token Exchange
 
 In this release, we added support for the Standard token exchange! The token exchange feature was in preview for a long time, so we are glad to finally support the standard token exchange.

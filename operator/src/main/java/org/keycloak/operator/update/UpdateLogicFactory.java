@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.upgrade;
+package org.keycloak.operator.update;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,24 +23,24 @@ import jakarta.inject.Inject;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
-import org.keycloak.operator.upgrade.impl.AutoUpgradeLogic;
-import org.keycloak.operator.upgrade.impl.ExplicitUpgradeLogic;
-import org.keycloak.operator.upgrade.impl.RecreateOnImageChangeUpgradeLogic;
+import org.keycloak.operator.update.impl.AutoUpdateLogic;
+import org.keycloak.operator.update.impl.ExplicitUpdateLogic;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 /**
- * The {@link UpgradeLogic} factory. It returns an implementation based on the {@link Keycloak} configuration.
+ * The {@link UpdateLogic} factory. It returns an implementation based on the {@link Keycloak} configuration.
  */
 @ApplicationScoped
-public class UpgradeLogicFactory {
+public class UpdateLogicFactory {
     @Inject
     KeycloakUpdateJobDependentResource updateJobDependentResource;
 
-    public UpgradeLogic create(Keycloak keycloak, Context<Keycloak> context) {
+    public UpdateLogic create(Keycloak keycloak, Context<Keycloak> context) {
         var strategy = UpdateSpec.getUpdateStrategy(keycloak);
         return switch (strategy) {
-            case RECREATE_ON_IMAGE_CHANGE -> new RecreateOnImageChangeUpgradeLogic(context, keycloak);
-            case AUTO -> new AutoUpgradeLogic(context, keycloak, updateJobDependentResource);
-            case EXPLICIT -> new ExplicitUpgradeLogic(context, keycloak);
+            case RECREATE_ON_IMAGE_CHANGE -> new RecreateOnImageChangeUpdateLogic(context, keycloak);
+            case AUTO -> new AutoUpdateLogic(context, keycloak, updateJobDependentResource);
+            case EXPLICIT -> new ExplicitUpdateLogic(context, keycloak);
         };
     }
 

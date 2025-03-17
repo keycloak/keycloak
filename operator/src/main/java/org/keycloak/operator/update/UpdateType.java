@@ -15,18 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.upgrade;
+package org.keycloak.operator.update;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 
-public enum UpdateStrategy {
-
-    @JsonProperty("RecreateOnImageChange")
-    RECREATE_ON_IMAGE_CHANGE,
-
-    @JsonProperty("Auto")
-    AUTO,
-
-    @JsonProperty("Explicit")
-    EXPLICIT
+/**
+ * Supported update types by {@link KeycloakDeploymentDependentResource}.
+ */
+public enum UpdateType {
+    /**
+     * Shutdown the existing cluster before updating the {@link StatefulSet}.
+     */
+    RECREATE,
+    /**
+     * Updates the {@link StatefulSet} and does a rolling update.
+     */
+    ROLLING
 }

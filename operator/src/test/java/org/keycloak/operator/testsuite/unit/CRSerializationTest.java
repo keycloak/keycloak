@@ -37,7 +37,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.upgrade.UpdateStrategy;
+import org.keycloak.operator.update.UpdateStrategy;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;

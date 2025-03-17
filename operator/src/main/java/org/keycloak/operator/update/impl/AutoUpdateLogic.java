@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.upgrade.impl;
+package org.keycloak.operator.update.impl;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -36,17 +36,17 @@ import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
-public class AutoUpgradeLogic extends BaseUpgradeLogic {
+public class AutoUpdateLogic extends BaseUpdateLogic {
 
     private final KeycloakUpdateJobDependentResource updateJobResource;
 
-    public AutoUpgradeLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakUpdateJobDependentResource updateJobResource) {
+    public AutoUpdateLogic(Context<Keycloak> context, Keycloak keycloak, KeycloakUpdateJobDependentResource updateJobResource) {
         super(context, keycloak);
         this.updateJobResource = updateJobResource;
     }
 
     @Override
-    Optional<UpdateControl<Keycloak>> onUpgrade() {
+    Optional<UpdateControl<Keycloak>> onUpdate() {
         var existingJob = context.getSecondaryResource(Job.class);
         if (existingJob.isEmpty()) {
             updateJobResource.reconcile(keycloak, context);
@@ -69,11 +69,11 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         if (pod.isEmpty()) {
             // TODO some cases the pod is removed. Do we start over or use recreate update?
             Log.warn("Pod for Update Job not found.");
-            decideRecreateUpgrade("The Pod running update-compatibility command not found.");
+            decideRecreateUpdate("The Pod running update-compatibility command not found.");
             return Optional.empty();
         }
 
-        checkUpgradeType(pod.get());
+        checkUpdateType(pod.get());
         return Optional.empty();
     }
 
@@ -93,62 +93,62 @@ public class AutoUpgradeLogic extends BaseUpgradeLogic {
         return completed == 0;
     }
 
-    private void checkUpgradeType(Pod pod) {
+    private void checkUpdateType(Pod pod) {
         // check init container.
         var initContainerExitCode = initContainer(pod)
-                .map(AutoUpgradeLogic::exitCode);
+                .map(AutoUpdateLogic::exitCode);
         if (initContainerExitCode.isEmpty()) {
             Log.warn("InitContainer not found for Update Job.");
-            decideRecreateUpgrade("InitContainer running update-compatibility command not found. Did it crash? Check update job for details.");
+            decideRecreateUpdate("InitContainer running update-compatibility command not found. Did it crash? Check update job for details.");
             return;
         }
         if (initContainerExitCode.get() != 0) {
             if (initContainerExitCode.get() == 4) {
                 Log.warn("Feature 'rolling-update' not enabled.");
-                decideRecreateUpgrade("Feature 'rolling-update' not enabled.");
+                decideRecreateUpdate("Feature 'rolling-update' not enabled.");
                 return;
             }
             Log.warn("InitContainer unexpectedly failed for Update Job.");
-            decideRecreateUpgrade("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(initContainerExitCode.get()));
+            decideRecreateUpdate("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(initContainerExitCode.get()));
             return;
         }
 
         // check container.
         var containerExitCode = container(pod)
-                .map(AutoUpgradeLogic::exitCode);
+                .map(AutoUpdateLogic::exitCode);
         if (containerExitCode.isEmpty()) {
             Log.warn("Container not found for Update Job.");
-            decideRecreateUpgrade("Container running update-compatibility command not found. Did it crash?");
+            decideRecreateUpdate("Container running update-compatibility command not found. Did it crash?");
             return;
         }
         switch (containerExitCode.get()) {
             case 0: {
-                decideRollingUpgrade("Compatible changes detected.");
+                decideRollingUpdate("Compatible changes detected.");
                 return;
             }
             case 1: {
                 Log.warn("Container has an unexpected error for Update Job");
-                decideRecreateUpgrade("Unexpected update-compatibility command error. Check update job for details.");
+                decideRecreateUpdate("Unexpected update-compatibility command error. Check update job for details.");
                 return;
             }
             case 2: {
                 Log.warn("Container has an invalid arguments for Update Job.");
-                decideRecreateUpgrade("Invalid arguments in update-compatibility command. Check update job for details.");
+                decideRecreateUpdate("Invalid arguments in update-compatibility command. Check update job for details.");
                 return;
             }
             case 3: {
                 Log.warn("Rolling Update not possible.");
-                decideRecreateUpgrade("Incompatible changes detected. Check update job for details.");
+                decideRecreateUpdate("Incompatible changes detected. Check update job for details.");
                 return;
             }
             case 4: {
                 Log.warn("Feature 'rolling-update' not enabled.");
-                decideRecreateUpgrade("Feature 'rolling-update' not enabled.");
+                decideRecreateUpdate("Feature 'rolling-update' not enabled.");
                 return;
             }
             default: {
                 Log.warnf("Unexpected Update Job exit code: %s", containerExitCode.get());
-                decideRecreateUpgrade("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(containerExitCode.get()));
+                decideRecreateUpdate("Unexpected update-compatibility command exit code (%s). Check update job for details.".formatted(containerExitCode.get()));
             }
         }
     }

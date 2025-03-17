@@ -3,20 +3,16 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Update Compatibility Tool"
-summary="Learn how to use this tool before upgrade {project_name}"
-preview="true"
-previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/36785"
+title="Update Compatibility Command"
+summary="Execute the update compatibility command to check if a rolling update is supported when updating."
 >
 
-[CAUTION]
-====
-While on preview stage, the feature `rolling-updates` must be enabled.
-Otherwise, the commands will fail.
-====
-
-The goal of this tool is to assist with modifying a {project_name} deployment, whether upgrading to a new version, enabling/disabling features, or changing configuration.
+Use update compatibility command to determine if you can update your deployment in a rolling, enabling/disabling features, or changing configuration.
 The outcome will indicate whether a rolling upgrade is possible or if a recreate upgrade is required.
+
+In its current version, it will indicate that a rolling update is possibly when the {project_name} version is the same for the old and the new version.
+
+Future versions of {project_name} might take into consideration additional information about {project_name}'s configuration.
 
 This has been designed to be fully scriptable, so an update procedure can adapt to a rolling or recreate strategy depending on the configuration or version change.
 It is also GitOps friendly as it allows storing the metadata of a currently running configuration in a file. This file can be used in a CI/CD run with the new configuration to determine if a rolling upgrade is possible or if a recreate upgrade is needed.
@@ -31,15 +27,15 @@ Wait until the new node's start-up probe returns success before proceeding to th
 
 [NOTE]
 ====
-.Recreate Upgrade
-A recreate upgrade is not compatible with zero-downtime and requires downtime to be applied.
+.Recreate Update
+A recreate update is not compatible with zero-downtime and requires downtime to be applied.
 Shut down all nodes of the cluster running the old version before starting the nodes with the new version.
 ====
 
 The update compatibility tool involves two steps:
 
 1. Generating the required metadata.
-2. Checking the metadata to determine the possible upgrade type.
+2. Checking the metadata to determine the possible update type.
 
 [WARNING]
 ====
@@ -92,32 +88,32 @@ Failure to meet these requirements will result in an incorrect outcome.
 ====
 
 The command will print the result to the console.
-For example, if a rolling upgrade is possible, it will display:
+For example, if a rolling update is possible, it will display:
 
-.Rolling Upgrade possible message
+.Rolling Update possible message
 [source,bash]
 ----
-[OK] Rolling Upgrade is available.
+[OK] Rolling Update is available.
 ----
 
-Otherwise, the command will indicate that a rolling upgrade is not possible and, optionally, provide details about the incompatibility:
+Otherwise, the command will indicate that a rolling update is not possible and, optionally, provide details about the incompatibility:
 
-.Rolling Upgrade not possible message
+.Rolling Update not possible message
 [source,bash]
 ----
-[Versions] Rolling Upgrade is not available. 'infinispan' is incompatible: Old=15.0.0.Final, New=15.0.11.Final #<1>
+[Versions] Rolling Update is not available. 'infinispan' is incompatible: Old=15.0.0.Final, New=15.0.11.Final #<1>
 ----
-<1> In this example, the Infinispan version `15.0.0.Final` is not compatible with version `15.0.11.Final` and a rolling upgrade is not possible.
+<1> In this example, the Infinispan version `15.0.0.Final` is not compatible with version `15.0.11.Final` and a rolling update is not possible.
 
 *Command exit code*
 
-To aid in the development of your automation and/or DevOps pipelines, the command's exit code can be used to determine the upgrade type:
+To aid in the development of your automation and/or DevOps pipelines, the command's exit code can be used to determine the update type:
 
 |===
 |Exit Code |Description
 
 m|0
-|Rolling Upgrade is possible.
+|Rolling Update is possible.
 
 m|1
 |Unexpected error occurred (e.g., the metadata file is missing or corrupted).
@@ -126,11 +122,11 @@ m|2
 |Invalid CLI option.
 
 m|3
-|Rolling Upgrade is not possible.
+|Rolling Update is not possible.
 The deployment must be shut down before applying the new configuration.
 
 m|4
-|Rolling Upgrade is not possible.
+|Rolling Update is not possible.
 The feature `rolling-updates` is disabled.
 |===
 

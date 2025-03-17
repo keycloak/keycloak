@@ -27,7 +27,7 @@ import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.upgrade.UpdateStrategy;
+import org.keycloak.operator.update.UpdateStrategy;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
@@ -41,7 +41,7 @@ public class UpdateSpec {
     private static final UpdateStrategy DEFAULT = UpdateStrategy.RECREATE_ON_IMAGE_CHANGE;
     private static final String DEFAULT_JSON = "RecreateOnImageChange";
 
-    @JsonPropertyDescription("Sets the upgrade strategy to use.")
+    @JsonPropertyDescription("Sets the update strategy to use.")
     @Default(DEFAULT_JSON)
     private UpdateStrategy strategy;
 
