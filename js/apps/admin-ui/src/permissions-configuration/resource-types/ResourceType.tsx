@@ -3,9 +3,10 @@ import { FormGroup, Radio } from "@patternfly/react-core";
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useFormContext } from "react-hook-form";
 import { useState, type JSX } from "react";
-import { UserSelect } from "../../components/users/UserSelect";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { GroupSelect } from "./GroupSelect";
+import { UserSelect } from "../../components/users/UserSelect";
+import { RoleSelect } from "./RoleSelect";
 
 type ResourceTypeProps = {
   resourceType: string;
@@ -17,6 +18,7 @@ const COMPONENTS: {
   users: UserSelect,
   clients: ClientSelect,
   groups: GroupSelect,
+  roles: RoleSelect,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
@@ -25,15 +27,15 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   const { t } = useTranslation();
   const form = useFormContext();
   const resourceIds: string[] = form.getValues("resources");
+  const normalizedResourceType = resourceType.toLowerCase();
 
   const [isSpecificResources, setIsSpecificResources] = useState(
     resourceIds.some((id) => id !== resourceType),
   );
 
   function getComponentType() {
-    const selectedResourceType = resourceType.toLowerCase();
-    if (isValidComponentType(selectedResourceType)) {
-      return COMPONENTS[selectedResourceType];
+    if (isValidComponentType(normalizedResourceType)) {
+      return COMPONENTS[normalizedResourceType];
     }
     return null;
   }
@@ -43,7 +45,7 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
   return (
     <>
       <FormGroup
-        label={t("EnforceAccessTo")}
+        label={t("enforceAccessTo")}
         labelIcon={
           <HelpItem
             helpText={t("enforceAccessToHelpText")}
@@ -82,8 +84,10 @@ export const ResourceType = ({ resourceType }: ResourceTypeProps) => {
       {isSpecificResources && ComponentType && (
         <ComponentType
           name="resources"
-          label={`${resourceType.toLowerCase()}Resources`}
-          helpText={t("resourceTypeHelpText", { resourceType })}
+          label={`${normalizedResourceType}Resources`}
+          helpText={t("resourceTypeHelpText", {
+            resourceType: normalizedResourceType,
+          })}
           defaultValue={[]}
           variant="typeaheadMulti"
         />

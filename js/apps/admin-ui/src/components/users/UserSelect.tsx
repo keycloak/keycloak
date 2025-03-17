@@ -25,6 +25,8 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import useToggle from "../../utils/useToggle";
 import type { ComponentProps } from "../dynamic/components";
+import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
+import { useParams } from "react-router-dom";
 
 type UserSelectVariant = "typeaheadMulti" | "typeahead";
 
@@ -57,6 +59,7 @@ export const UserSelect = ({
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
+  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   const debounceFn = useCallback(debounce(setSearch, 500), []);
 
@@ -111,9 +114,14 @@ export const UserSelect = ({
 
   return (
     <FormGroup
-      label={t(label!)}
+      label={tab !== "evaluation" ? t(label!) : t("user")}
       isRequired={isRequired}
-      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={label!} />}
+      labelIcon={
+        <HelpItem
+          helpText={helpText!}
+          fieldLabelId={tab !== "evaluation" ? t(label!) : t("user")}
+        />
+      }
       fieldId={name!}
     >
       <Controller
