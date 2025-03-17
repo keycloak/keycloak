@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.smallrye.config.PropertiesConfigSource;
+
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -50,13 +51,7 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
                 if (mapper != null) {
-                    mapper = mapper.forEnvKey(key);
-
-                    String to = mapper.getTo();
-
-                    if (to != null) {
-                        properties.put(to, value);
-                    }
+                    mapper = mapper.forKey(key);
 
                     properties.put(mapper.getFrom(), value);
                 }
