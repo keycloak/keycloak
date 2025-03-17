@@ -34,7 +34,6 @@ import org.keycloak.operator.upgrade.UpgradeType;
  * <p>
  * It uses a {@link UpgradeType#RECREATE} if the image changes; otherwise uses {@link UpgradeType#ROLLING}.
  */
-@SuppressWarnings("ALL")
 public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
 
     public RecreateOnImageChangeUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
