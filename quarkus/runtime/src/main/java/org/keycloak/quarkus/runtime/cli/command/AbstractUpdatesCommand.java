@@ -31,7 +31,6 @@ import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import picocli.CommandLine;
 
 public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
@@ -119,7 +118,14 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     private static void loadConfiguration() {
-        Config.init(new MicroProfileConfigProvider());
+        // Initialize config
+        var configProvider = ServiceLoader.load(ConfigProviderFactory.class)
+                .stream()
+                .findFirst()
+                .map(ServiceLoader.Provider::get)
+                .flatMap(ConfigProviderFactory::create)
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak Configuration"));
+        Config.init(configProvider);
     }
 
 }
