@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.testsuite.integration;
+package org.keycloak.operator.testsuite.apiserver;
 
-import io.fabric8.junit.jupiter.api.KubernetesTest;
+import io.fabric8.kubeapitest.junit.EnableKubeAPIServer;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -34,13 +34,14 @@ import java.io.FileNotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.upgrade.UpdateStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@KubernetesTest
+@EnableKubeAPIServer
 public class CRDTest {
 
     static KubernetesClient client;
