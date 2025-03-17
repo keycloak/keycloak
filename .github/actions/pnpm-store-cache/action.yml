@@ -9,7 +9,7 @@ runs:
       shell: bash
       run: echo "key=pnpm-store-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
       name: Cache PNPM store
       with:
         # See: https://pnpm.io/npmrc#store-dir
