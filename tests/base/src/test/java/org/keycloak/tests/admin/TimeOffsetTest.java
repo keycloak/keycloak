@@ -53,6 +53,7 @@ public class TimeOffsetTest {
             realm.setEventsExpiration(5);
             EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
 
+            provider.clear(realm);
             Event e = new Event();
             e.setType(EventType.LOGIN);
             e.setTime(Time.currentTimeMillis());
