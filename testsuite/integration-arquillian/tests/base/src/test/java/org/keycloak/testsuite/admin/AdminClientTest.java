@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.AdminRoles;
@@ -175,6 +176,19 @@ public class AdminClientTest extends AbstractKeycloakTest {
         } finally {
             setClientEnabled(clientId, true);
         }
+    }
+
+    @Test
+    public void adminAuthCloseUserSession() throws Exception {
+        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(realmName), "test-user@localhost");
+        try (Keycloak keycloak = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            // Check possible to load the realm
+            RealmRepresentation realm = keycloak.realm(realmName).toRepresentation();
+            Assert.assertEquals(realmName, realm.getRealm());
+
+            Assert.assertEquals(1, user.getUserSessions().size());
+        }
+        Assert.assertEquals(0, user.getUserSessions().size());
     }
 
     @Test
