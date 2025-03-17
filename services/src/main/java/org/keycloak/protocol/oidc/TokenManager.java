@@ -563,8 +563,11 @@ public class TokenManager {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-                DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
-                if (client.isPublicClient() && (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() || dPoP != null )) {
+                if (DPoPUtil.isDPoPToken(refreshToken)) {
+                    DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+                    if (dPoP == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
+                    }
                     try {
                         DPoPUtil.validateBinding(refreshToken, dPoP);
                     } catch (VerificationException ex) {
