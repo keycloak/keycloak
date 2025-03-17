@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.model.user;
 
 import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
@@ -33,6 +34,8 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.organization.OrganizationProvider;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -42,11 +45,14 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -58,6 +64,7 @@ import static org.junit.Assume.assumeThat;
  */
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@RequireProvider(OrganizationProvider.class)
 public class UserModelTest extends KeycloakModelTest {
 
     protected static final int NUM_GROUPS = 100;
@@ -247,7 +254,6 @@ public class UserModelTest extends KeycloakModelTest {
             if (UserStorageUtil.userCache(session) != null) {
                 UserStorageUtil.userCache(session).clear();
             }
-            return null;
         });
 
         // Now delete the users, and count those that were not found to be deleted. This should be equal to the number
@@ -287,6 +293,66 @@ public class UserModelTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void testSearchByOrganization() {
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            
+            realm.setOrganizationsEnabled(true);
+            
+            UserModel user1 = session.users().addUser(realm, "user1");
+            UserModel user2 = session.users().addUser(realm, "user2");
+            UserModel user3 = session.users().addUser(realm, "user3");
+            UserModel user4 = session.users().addUser(realm, "user4");
+
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+
+            OrganizationModel org = orgProvider.create("test-org", "test-org");
+            OrganizationModel otherOrg = orgProvider.create("other-org", "other-org");
+
+            // Add users to the organization
+            assertTrue("User1 should be successfully added as member to test-org", orgProvider.addMember(org, user1));
+            assertTrue("User2 should be successfully added as member to test-org", orgProvider.addMember(org, user2));
+            assertEquals("Org should have 2 members", orgProvider.getMembersCount(org), 2);
+
+            assertTrue("User4 should be successfully added as member to other-org", orgProvider.addMember(otherOrg, user4));
+            assertEquals("Other org should have 1 member", orgProvider.getMembersCount(otherOrg), 1);
+
+            // Search for users in the organization
+            Stream<UserModel> users = session.users().searchForUserStream(realm, Map.of(
+                    UserModel.ORGANIZATION_ID, org.getId()
+            ));
+
+            @NotNull Set<String> usernames = users.map(UserModel::getUsername).collect(Collectors.toSet());
+            
+            assertEquals("Expected exactly 2 users in the organization", 2, usernames.size());
+            assertTrue("User 'user1' should be in the organization", usernames.contains("user1"));
+            assertTrue("User 'user2' should be in the organization", usernames.contains("user2"));
+            assertFalse("User 'user3' should not be in any organization", usernames.contains("user3"));
+            assertFalse("User 'user4' should not be in the organization as it is in other-org", usernames.contains("user4"));
+
+            users = session.users().searchForUserStream(realm, Map.of(
+                UserModel.ORGANIZATION_ID, otherOrg.getId()
+            ));
+
+            usernames = users.map(UserModel::getUsername).collect(Collectors.toSet());
+            assertEquals("1 user should be in other-org", 1, usernames.size());
+            assertTrue("User4 should be in other-org", usernames.contains("user4"));
+
+
+            // Search with additional criteria
+            users = session.users().searchForUserStream(realm, Map.of(
+                UserModel.ORGANIZATION_ID, org.getId(),
+                UserModel.USERNAME, "user1"
+            ));
+            usernames = users.map(UserModel::getUsername).collect(Collectors.toSet());
+
+            assertEquals("1 user should be in the organization", 1, usernames.size());
+            assertTrue("User 'user1' should be in the organization", usernames.contains("user1"));
+        });
+    }
+
     private void registerUserFederationWithRealm() {
         getParameters(UserStorageProviderModel.class).forEach(fs -> inComittedTransaction(session -> {
             assumeThat("Cannot handle more than 1 user federation provider", userFederationId, Matchers.nullValue());
@@ -315,5 +381,4 @@ public class UserModelTest extends KeycloakModelTest {
 
         return instance;
     }
-
 }
