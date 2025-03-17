@@ -118,7 +118,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "jsdom": "^26.0.0",
-    "lightningcss": "^1.29.2",
+    "lightningcss": "^1.29.3",
     "ts-node": "^10.9.2",
     "uuid": "^11.1.0",
     "vite": "^6.2.2",
