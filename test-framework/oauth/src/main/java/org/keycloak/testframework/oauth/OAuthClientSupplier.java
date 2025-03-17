@@ -4,7 +4,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.injection.InstanceContext;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
@@ -52,12 +51,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
 
     @Override
     public boolean compatible(InstanceContext<OAuthClient, InjectOAuthClient> a, RequestedInstance<OAuthClient, InjectOAuthClient> b) {
-        return true;
-    }
-
-    @Override
-    public LifeCycle getDefaultLifecycle() {
-        return LifeCycle.GLOBAL;
+        return a.getAnnotation().ref().equals(b.getAnnotation().ref());
     }
 
     @Override
