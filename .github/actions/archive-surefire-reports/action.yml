@@ -37,7 +37,7 @@ runs:
     - id: upload-surefire-linux
       name: Upload Surefire reports
       if: (!cancelled() && contains(fromJSON(inputs.release-branches), github.ref) && contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name))
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1
       with:
         name: surefire-${{ inputs.job-id }}
         path: |
