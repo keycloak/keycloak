@@ -10,6 +10,7 @@ import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -32,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.keycloak.quarkus.runtime.Environment.isParsedCommand;
@@ -138,14 +138,11 @@ public final class PropertyMappers {
         MAPPERS.sanitizeDisabledMappers();
     }
 
-    public static String maskValue(String property, String value) {
-        return maskValue(property, value, null);
+    public static String maskValue(String value, PropertyMapper<?> mapper) {
+        return maskValue(value, null, mapper);
     }
 
-    public static String maskValue(String property, String value, String configSourceName) {
-        property = removeProfilePrefixIfNeeded(property);
-        PropertyMapper<?> mapper = getMapper(property);
-
+    public static String maskValue(String value, String configSourceName, PropertyMapper<?> mapper) {
         if ((configSourceName != null && isKeyStoreConfigSource(configSourceName) || (mapper != null && mapper.isMask()))) {
             return VALUE_MASK;
         }
@@ -155,8 +152,7 @@ public final class PropertyMappers {
 
     private static String removeProfilePrefixIfNeeded(String property) {
         if(property.startsWith("%")) {
-            String profilePrefix = property.substring(0, property.indexOf(".") +1);
-            property = property.split(profilePrefix)[1];
+            return property.substring(property.indexOf('.') + 1);
         }
         return property;
     }
@@ -186,6 +182,18 @@ public final class PropertyMappers {
         return getMapper(property, null);
     }
 
+    public static PropertyMapper<?> getMapperByCliKey(String cliKey) {
+        return getKcKeyFromCliKey(cliKey).map(PropertyMappers::getMapper).orElse(null);
+    }
+
+    public static Optional<String> getKcKeyFromCliKey(String cliKey) {
+        if (!cliKey.startsWith(Picocli.ARG_PREFIX)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + cliKey.substring(Picocli.ARG_PREFIX.length()));
+    }
+
     /**
      * @return a mutable copy of all known mappers
      */
@@ -211,6 +219,8 @@ public final class PropertyMappers {
             return Optional.empty();
         }
 
+        property = removeProfilePrefixIfNeeded(property);
+
         PropertyMapper<?> mapper = getDisabledBuildTimeMappers().get(property);
         if (mapper == null) {
             mapper = getDisabledRuntimeMappers().get(property);
@@ -219,12 +229,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isDisabledMapper(String property) {
-        final Predicate<String> isDisabledMapper = (p) -> getDisabledMapper(p).isPresent() && getMapper(p) == null;
-
-        if (property.startsWith("%")) {
-            return isDisabledMapper.test(property.substring(property.indexOf('.') + 1));
-        }
-        return isDisabledMapper.test(property);
+        return getDisabledMapper(property).isPresent() && getMapper(property) == null;
     }
 
     private static Set<PropertyMapper<?>> filterDeniedCategories(List<PropertyMapper<?>> mappers) {
@@ -403,8 +408,6 @@ public final class PropertyMappers {
             if (!mapper.getFrom().equals(mapper.getTo())) {
                 operation.accept(mapper.getTo(), mapper);
             }
-            operation.accept(mapper.getCliFormat(), mapper);
-            operation.accept(mapper.getEnvVarFormat(), mapper);
         }
     }
 

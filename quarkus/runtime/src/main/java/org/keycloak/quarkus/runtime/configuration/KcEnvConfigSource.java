@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.smallrye.config.PropertiesConfigSource;
 
@@ -48,18 +49,17 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
             String value = entry.getValue();
 
             if (key.startsWith(kcPrefix)) {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+                String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
 
-                if (mapper != null) {
-                    mapper = mapper.forKey(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
 
-                    properties.put(mapper.getFrom(), value);
+                if (mapper == null) {
+                    // special case - wildcards don't follow the default conversion rule
+                    transformedKey = PropertyMappers.getWildcardMappers().stream().map(w -> w.getKcKeyForEnvKey(key))
+                            .filter(Objects::nonNull).findFirst().orElse(transformedKey);
                 }
-                else {
-                    // most probably an SPI but could be also something else
-                    String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
-                    properties.put(transformedKey, value);
-                }
+
+                properties.put(transformedKey, value);
             }
         }
 

@@ -168,8 +168,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("true", config.getConfigValue("kc.hostname-strict").getValue());
         // check that we don't get the mapped value
         assertNull(config.getConfigValue("MY_EXPRESSION").getValue());
-        // could change after https://github.com/keycloak/keycloak/issues/38072
-        assertEquals("true", config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
+        assertNull(config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
     }
 
     @Test
