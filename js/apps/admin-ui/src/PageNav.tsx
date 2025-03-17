@@ -1,3 +1,4 @@
+import { label } from "@keycloak/keycloak-ui-shared";
 import {
   Nav,
   NavGroup,
@@ -63,7 +64,7 @@ export const PageNav = () => {
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
-  const { realmRepresentation } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
   type SelectedItem = {
     groupId: number | string;
@@ -95,6 +96,12 @@ export const PageNav = () => {
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
+          <NavGroup aria-label={t("currentRealm")} title={t("currentRealm")}>
+            <LeftNav
+              title={label(t, realmRepresentation?.displayName, realm)}
+              path="/realms"
+            />
+          </NavGroup>
           {showManage && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&
