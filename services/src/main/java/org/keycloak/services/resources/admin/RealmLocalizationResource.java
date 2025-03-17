@@ -176,7 +176,7 @@ public class RealmLocalizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<String> getRealmLocalizationLocales() {
@@ -191,7 +191,7 @@ public class RealmLocalizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
@@ -221,7 +221,7 @@ public class RealmLocalizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })

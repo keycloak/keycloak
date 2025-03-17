@@ -164,7 +164,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Base path for importing clients under this realm.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
@@ -244,7 +244,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get realm default client scopes. Only name and ids are returned.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
@@ -323,7 +323,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get realm optional client scopes. Only name and ids are returned.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
@@ -406,7 +406,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get the top-level representation of the realm It will not include nested information like User and Client representations.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public RealmRepresentation getRealm() {
@@ -571,7 +571,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public ManagementPermissionReference getUserMgmtPermissions() {
@@ -594,7 +594,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public ManagementPermissionReference setUsersManagementPermissionsEnabled(ManagementPermissionReference ref) {
@@ -663,7 +663,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Push the realm's revocation policy to any client that has an admin url associated with it.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GlobalRequestResult pushRevocation() {
@@ -685,7 +685,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Removes all user sessions.", description = "Any client that has an admin url will also be told to invalidate any sessions they have.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GlobalRequestResult.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GlobalRequestResult logoutAll() {
@@ -743,7 +743,7 @@ public class RealmAdminResource {
     @Operation(summary = "Get client session stats Returns a JSON map.",
         description = "The key is the client id, the value is the number of sessions that currently are active with that client. Only clients that actually have a session associated with them will be in this map.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Map.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<Map<String, String>> getClientSessionStats() {
@@ -799,7 +799,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get the events provider configuration Returns JSON object with events provider configuration")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RealmEventsConfigRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmEventsConfigRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
@@ -866,7 +866,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get events Returns all events, or filters them based on URL query parameters listed here")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = EventRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = EventRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
@@ -966,7 +966,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get admin events Returns all admin events, or filters events based on URL query parameters listed here")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = AdminEventRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = AdminEventRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
@@ -1166,7 +1166,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Get group hierarchy.  Only name and ids are returned.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<GroupRepresentation> getDefaultGroups() {
@@ -1233,7 +1233,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
@@ -1259,7 +1259,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Partial import from a JSON file to an existing realm.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = KeycloakSession.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = PartialImportResults.class))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict")
     })
@@ -1318,7 +1318,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation(summary = "Partial export of existing realm into a JSON file.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
@@ -1369,7 +1369,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<String> getCredentialRegistrators(){
