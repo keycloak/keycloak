@@ -136,8 +136,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
-        specifier: ^0.9.0
-        version: 0.9.0(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^0.9.1
+        version: 0.9.1(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
         specifier: ^4.5.3
         version: 4.5.3(@types/node@22.13.10)(rollup@4.36.0)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -269,8 +269,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
-        specifier: ^0.9.0
-        version: 0.9.0(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^0.9.1
+        version: 0.9.1(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
         specifier: ^4.5.3
         version: 4.5.3(@types/node@22.13.10)(rollup@4.36.0)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -412,8 +412,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vite-plugin-checker:
-        specifier: ^0.9.0
-        version: 0.9.0(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+        specifier: ^0.9.1
+        version: 0.9.1(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
       vite-plugin-dts:
         specifier: ^4.5.3
         version: 4.5.3(@types/node@22.13.10)(rollup@4.36.0)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -4117,14 +4117,14 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite-plugin-checker@0.9.0:
-    resolution: {integrity: sha512-gf/zc0KWX8ATEOgnpgAM1I+IbvWkkO80RB+FxlLtC5cabXSesbJmAUw6E+mMDDMGIT+VHAktmxJZpMTt3lSubQ==}
+  vite-plugin-checker@0.9.1:
+    resolution: {integrity: sha512-neH3CSNWdkZ+zi+WPt/0y5+IO2I0UAI0NX6MaXqU/KxN1Lz6np/7IooRB6VVAMBa4nigqm1GRF6qNa4+EL5jDQ==}
     engines: {node: '>=14.16'}
     peerDependencies:
       '@biomejs/biome': '>=1.7'
       eslint: '>=7'
       meow: ^13.2.0
-      optionator: ^0.9.1
+      optionator: ^0.9.4
       stylelint: '>=16'
       typescript: '*'
       vite: '>=2.0.0'
@@ -8440,7 +8440,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.9.0(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
+  vite-plugin-checker@0.9.1(eslint@9.22.0)(optionator@0.9.4)(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)):
     dependencies:
       '@babel/code-frame': 7.26.2
       chokidar: 4.0.3
