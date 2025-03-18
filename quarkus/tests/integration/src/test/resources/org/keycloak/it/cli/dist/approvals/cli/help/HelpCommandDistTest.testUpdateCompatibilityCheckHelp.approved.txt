@@ -3,7 +3,7 @@ Usage:
 
 kc.sh update-compatibility check [OPTIONS]
 Checks if the metadata is compatible with the current configuration. A zero
-exit code means a rolling upgrade is possible between old and the current
+exit code means a rolling update is possible between old and the current
 metadata.
 
 Options:
