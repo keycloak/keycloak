@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -478,7 +479,12 @@ public class UsersResource {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
         usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(usersEvaluator::canView)
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            userModels = userModels.filter(usersEvaluator::canView);
+        }
+
+        return userModels
                 .map(user -> {
                     UserRepresentation userRep = briefRepresentationB
                             ? ModelToRepresentation.toBriefRepresentation(user)

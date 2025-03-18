@@ -29,6 +29,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.UserManagedPermissionUtil;
@@ -1041,6 +1042,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
             return getPolicyStoreDelegate().findDependentPolicies(resourceServer, id);
+        }
+
+        @Override
+        public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
+            return getPolicyStoreDelegate().findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
         }
 
         private <R extends Policy, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, ResourceServer resourceServer) {

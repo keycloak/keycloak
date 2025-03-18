@@ -104,7 +104,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(IMPERSONATE));
 
         // create user permission forbidding the impersonation for userAlice
-        String cannotImpersonateAlice = createPermission(client, Logic.NEGATIVE, userAlice.getId(), usersType, Set.of(IMPERSONATE)).getName();
+        String cannotImpersonateAlice = createPermission(client, userAlice.getId(), usersType, Set.of(IMPERSONATE)).getName();
 
         // even though "myadmin" has permission to impersonate all users in realm it should be denied to impersonate userAlice
         try {
@@ -117,7 +117,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         // remove the negative permission
         String cannotImpersonateAliceId = getScopePermissionsResource(client).findByName(cannotImpersonateAlice).getId();
         getScopePermissionsResource(client).findById(cannotImpersonateAliceId).remove();
-        
+
         // need to create a separate client for the impersonation call, otherwise next usage of the 'realmAdminClient' would throw 401
         try (Keycloak adminClient = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")

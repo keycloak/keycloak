@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
@@ -305,7 +306,6 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findDependentPolicies(ResourceServer resourceServer, String policyId) {
-
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByDependentPolices", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -321,5 +321,20 @@ public class JPAPolicyStore implements PolicyStore {
             }
         }
         return list;
+    }
+
+    @Override
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
+        TypedQuery<String> query = entityManager.createNamedQuery("findDependentPolicyByResourceTypeAndConfig", String.class);
+
+        query.setParameter("serverId", resourceServer.getId());
+        query.setParameter("resourceType", resourceType);
+        query.setParameter("associatedPolicyType", associatedPolicyType);
+        query.setParameter("configKey", configKey);
+        query.setParameter("configValue", "%" + configValue + "%");
+
+        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+
+        return query.getResultStream().map((id) -> policyStore.findById(resourceServer, id)).filter(Objects::nonNull);
     }
 }
