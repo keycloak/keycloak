@@ -1,3 +1,4 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import {
   useErrorBoundary,
   type FallbackProps,
@@ -19,12 +20,18 @@ export const ErrorRenderer = ({ error }: FallbackProps) => {
     window.location.href = window.location.origin + window.location.pathname;
   };
 
+  let message;
+  if (error instanceof NetworkError && error.response.status === 403) {
+    message = t("forbiddenAdminConsole");
+  } else {
+    message = error.message;
+  }
   return (
     <PageSection>
       <Alert
         isInline
         variant={AlertVariant.danger}
-        title={error.message}
+        title={message}
         actionClose={
           <AlertActionCloseButton title={error.message} onClose={reset} />
         }
