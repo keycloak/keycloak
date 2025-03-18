@@ -34,7 +34,6 @@ import java.util.function.BiConsumer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.Environment.isParsedCommand;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
@@ -43,7 +42,6 @@ import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourcePro
 public final class PropertyMappers {
 
     public static final String KC_SPI_PREFIX = "kc.spi";
-    public static final String ENV_KC_SPI_PREFIX = replaceNonAlphanumericByUnderscores(KC_SPI_PREFIX.toUpperCase());
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
@@ -203,7 +201,7 @@ public final class PropertyMappers {
     }
 
     public static Set<WildcardPropertyMapper<?>> getWildcardMappers() {
-        return Collections.unmodifiableSet(MAPPERS.wildcardMappers);
+        return MAPPERS.getWildcardMappers();
     }
 
     public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
@@ -250,7 +248,6 @@ public final class PropertyMappers {
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
 
-        // TODO: support disabling
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
         private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
 
@@ -283,8 +280,10 @@ public final class PropertyMappers {
 
         public void removeMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
-                // TODO
-                throw new AssertionError();
+                wildcardMappers.remove(mapper);
+                if (mapper.getFrom() != null) {
+                    wildcardMapFrom.remove(mapper.getMapFrom());
+                }
             } else {
                 handleMapper(mapper, this::remove);
             }
@@ -326,6 +325,10 @@ public final class PropertyMappers {
         @Override
         public List<PropertyMapper<?>> remove(Object mapper) {
             return super.remove(mapper);
+        }
+
+        public Set<WildcardPropertyMapper<?>> getWildcardMappers() {
+            return Collections.unmodifiableSet(wildcardMappers);
         }
 
         public void sanitizeDisabledMappers() {

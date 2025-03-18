@@ -33,6 +33,7 @@ import java.util.stream.StreamSupport;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -289,18 +290,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void testDisambiguateEnvVar() {
-        putEnvVar("KC_LOG_LEVEL_SOME_THING", "trace");
-        SmallRyeConfig config = createConfig();
-        // the default quarkus kc mapping should not be present
-        Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
-        assertFalse(keys.contains("kc.log-level-some-thing"));
-        assertFalse(keys.contains("quarkus.log.category.\"some.thing\".level"));
-        // should pick up the mapping from the test keycloak.conf
-        assertTrue(keys.contains("quarkus.log.category.\"some_thing\".level"));
-    }
-
-    @Test
     public void testWildcardOptionFromConfigFile() {
         putEnvVar("SOME_CATEGORY_LOG_LEVEL", "debug");
         SmallRyeConfig config = createConfig();
@@ -312,4 +301,20 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertNull(config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
     }
+
+    @Test
+    public void testLogLevelWithUnderscore() {
+        ConfigArgsConfigSource.setCliArgs("--log-level=error,reproducer.not_ok:debug");
+        SmallRyeConfig config = createConfig();
+        assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"reproducer.not_ok\".level").getValue());
+        Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertTrue(keys.contains("quarkus.log.category.\"reproducer.not_ok\".level"));
+    }
+
+    @Test(expected = PropertyException.class)
+    public void testInvalidLogLevel() {
+        ConfigArgsConfigSource.setCliArgs("--log-level=reproducer.not^ok:debug");
+        createConfig();
+    }
+
 }

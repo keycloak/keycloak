@@ -36,9 +36,6 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
@@ -147,20 +144,10 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     private static Map<String, String> transform(Map<String, String> properties) {
         Map<String, String> result = new HashMap<>(properties.size());
-        properties.entrySet().forEach(e -> {
-            String key = transformKey(e.getKey());
-            String value = e.getValue();
 
-            result.put(key, value);
-
-            if (key.charAt(0) != '%') {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
-                // create mappings in case there's environment variables that need
-                // disambiguated
-                if (mapper != null && mapper.hasWildcard()) {
-                    ((WildcardPropertyMapper)mapper).addCanonicalEnv(key);
-                }
-            }
+        properties.entrySet().forEach(entry -> {
+            String key = transformKey(entry.getKey());
+            result.put(key, entry.getValue());
         });
 
         return result;

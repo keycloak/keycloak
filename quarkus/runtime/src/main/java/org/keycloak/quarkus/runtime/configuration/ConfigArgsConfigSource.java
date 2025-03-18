@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +35,6 @@ import java.util.stream.Stream;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -123,11 +121,9 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         parseConfigArgs(getAllCliArgs(), new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
-                if (key.startsWith(Picocli.ARG_PREFIX)) {
-                    key = NS_KEYCLOAK_PREFIX + key.substring(Picocli.ARG_PREFIX.length());
-
-                    properties.put(key, value);
-                }
+                PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> {
+                    properties.put(s, value);
+                });
             }
         }, ignored -> {});
 

@@ -1,23 +1,23 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.Option;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.common.utils.StringUtil;
 
 public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public static final String WILDCARD_FROM_START = "<";
+
+    private static final Pattern valueValidator = Pattern.compile("[\\[\\]\\$\\-._a-zA-Z0-9]+");
 
     private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
@@ -25,8 +25,6 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private final String fromPrefix;
     private String toPrefix;
     private String toSuffix;
-
-    private Map<String, String> canonicalEnvMapping = new HashMap<String, String>();
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
             BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
@@ -42,8 +40,8 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         }
 
         if (to != null) {
-            this.toPrefix = to.substring(0, to.indexOf('"') + 1);
-            this.toSuffix = to.substring(to.lastIndexOf('"'), to.length());
+            this.toPrefix = to.substring(0, to.indexOf(WILDCARD_FROM_START));
+            this.toSuffix = to.substring(to.lastIndexOf(">") + 1, to.length());
         }
 
         this.wildcardKeysTransformer = wildcardKeysTransformer;
@@ -79,13 +77,23 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     }
 
     private String extractWildcardValue(String key) {
+        String result = null;
         if (key.startsWith(fromPrefix)) {
-            return key.substring(fromPrefix.length());
+            result = key.substring(fromPrefix.length());
         } else if (key.startsWith(toPrefix) && key.endsWith(toSuffix)) {
             // TODO: this presumes that the quarkus value is quoted
-            return key.substring(toPrefix.length(), key.length() - toSuffix.length());
+            result = key.substring(toPrefix.length(), key.length() - toSuffix.length());
         }
-        throw new IllegalArgumentException();
+        if (result == null || !isValidWildcardValue(result)) {
+            // TODO: it would be nice to warn the user for property file or env entries that look
+            // like they should be wildcards, but aren't allowed
+            throw new IllegalArgumentException();
+        }
+        return result;
+    }
+
+    public static boolean isValidWildcardValue(String result) {
+        return valueValidator.matcher(result).matches();
     }
 
     /**
@@ -101,15 +109,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         }
     }
 
-    public void addCanonicalEnv(String key) {
-        this.canonicalEnvMapping.put(StringUtil.replaceNonAlphanumericByUnderscores(key.toUpperCase()), key);
-    }
-
     public String getKcKeyForEnvKey(String envKey, String transformedKey) {
-        String from = this.canonicalEnvMapping.get(envKey);
-        if (from != null) {
-            return from;
-        }
         if (transformedKey.startsWith(fromPrefix)) {
             return getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", "."));
         }

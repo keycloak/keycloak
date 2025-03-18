@@ -122,7 +122,7 @@ public final class LoggingPropertyMappers {
                         .paramLabel("category:level")
                         .build(),
                 fromOption(LoggingOptions.LOG_LEVEL_CATEGORY)
-                        .to("quarkus.log.category.\"categories\".level")
+                        .to("quarkus.log.category.\"<categories>\".level")
                         .validator(LoggingPropertyMappers::validateCategoryLogLevel)
                         .wildcardKeysTransformer(LoggingPropertyMappers::getConfiguredLogCategories)
                         .transformer((v,c) -> v == null ? null : toLevel(v).getName())
@@ -243,6 +243,9 @@ public final class LoggingPropertyMappers {
             categoryLevel = parts[0];
         } else if (parts.length == 2) {
             category = parts[0];
+            if (!WildcardPropertyMapper.isValidWildcardValue(category)) {
+                throw new PropertyException("logging category '%s' is not valid".formatted(category));
+            }
             categoryLevel = parts[1];
         } else {
             throw new PropertyException(Messages.invalidLogCategoryFormat(level));

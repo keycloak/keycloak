@@ -403,12 +403,13 @@ public class Picocli {
                     // TODO: due to picking values up from the env and auto-builds, this probably isn't correct
                     // - the same issue exists with the second pass
                 }
+                String from = mapper.getFrom();
                 if (!mapper.hasWildcard()) {
                     return; // non-wildcard options will be validated in the next pass
                 }
-                mapper = mapper.forKey(name);
+                from = mapper.forKey(name).getFrom();
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                        deprecatedInUse, missingOption, disabledMappers, mapper);
+                        deprecatedInUse, missingOption, disabledMappers, mapper, from);
             });
 
             // second pass validate any property mapper not seen in the first pass
@@ -422,7 +423,7 @@ public class Picocli {
             for (PropertyMapper<?> mapper : mappers) {
                 if (!mapper.hasWildcard()) {
                     validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                            deprecatedInUse, missingOption, disabledMappers, mapper);
+                            deprecatedInUse, missingOption, disabledMappers, mapper, mapper.getFrom());
                 }
             }
 
@@ -455,8 +456,8 @@ public class Picocli {
     private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,
             final List<String> ignoredRunTime, final Set<String> disabledBuildTime, final Set<String> disabledRunTime,
             final Set<String> deprecatedInUse, final Set<String> missingOption,
-            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper) {
-        ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
+            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper, String from) {
+        ConfigValue configValue = Configuration.getConfigValue(from);
         String configValueStr = configValue.getValue();
 
         // don't consider missing or anything below standard env properties
@@ -465,7 +466,7 @@ public class Picocli {
         }
 
         if (disabledMappers.contains(mapper)) {
-            if (PropertyMappers.getMapper(mapper.getFrom()) != null) {
+            if (PropertyMappers.getMapper(from) != null) {
                 return; // we found enabled mapper with the same name
             }
 

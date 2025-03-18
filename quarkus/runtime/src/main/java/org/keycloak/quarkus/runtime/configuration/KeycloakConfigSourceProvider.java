@@ -50,6 +50,8 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
         addConfigSources("CLI", List.of(new ConfigArgsConfigSource()));
 
+        addConfigSources("ENV", List.of(new KcEnvConfigSource()));
+
         addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
         addConfigSources("Persisted", List.of(PersistedConfigSource.getInstance()));
@@ -62,9 +64,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
         // by enabling this config source we are able to rely on the default settings when running tests
         addConfigSources("classpath keycloak.conf", new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
-
-        // must be done after keycloak.conf to utilize existing mappings
-        addConfigSources("ENV", List.of(new KcEnvConfigSource()));
     }
 
     private static void addConfigSources(String displayName, Collection<ConfigSource> configSources) {
