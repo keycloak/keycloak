@@ -78,7 +78,6 @@ public final class PropertyMappers {
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        name = removeProfilePrefixIfNeeded(name);
         PropertyMapper<?> mapper = getMapper(name);
 
         // During re-aug do not resolve server runtime properties and avoid they included by quarkus in the default value config source.
@@ -149,15 +148,7 @@ public final class PropertyMappers {
         return value;
     }
 
-    private static String removeProfilePrefixIfNeeded(String property) {
-        if(property.startsWith("%")) {
-            return property.substring(property.indexOf('.') + 1);
-        }
-        return property;
-    }
-
     private static PropertyMapper<?> getMapperOrDefault(String property, PropertyMapper<?> defaultMapper, OptionCategory category) {
-        property = removeProfilePrefixIfNeeded(property);
         final var mappers = new ArrayList<>(MAPPERS.getOrDefault(property, Collections.emptyList()));
         if (category != null) {
             mappers.removeIf(m -> !m.getCategory().equals(category));
@@ -217,8 +208,6 @@ public final class PropertyMappers {
         if (property == null) {
             return Optional.empty();
         }
-
-        property = removeProfilePrefixIfNeeded(property);
 
         PropertyMapper<?> mapper = getDisabledBuildTimeMappers().get(property);
         if (mapper == null) {

@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.io.File;
@@ -31,7 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -48,7 +46,6 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     public static final int PROPERTIES_FILE_ORDINAL = 475;
 
-    private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
     private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";
     public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
@@ -160,19 +157,19 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
      * @return the same key but prefixed with the namespace
      */
     private static String transformKey(String key) {
-        String namespace = NS_KEYCLOAK;
-        String[] keyParts = DOT_SPLIT.split(key);
-        String extension = keyParts[0];
         String profile = "";
         String transformed = key;
 
-        if (extension.startsWith("%")) {
-            profile = String.format("%s.", keyParts[0]);
-            extension = keyParts[1];
-            transformed = key.substring(key.indexOf('.') + 1);
+        // TODO: we don't document that this is supported and it's not
+        // strictly necessary as our usage of profiled entries have been moved to application.properties
+        if (key.startsWith("%")) {
+            int index = key.indexOf('.');
+            if (index > 0 && index < key.length() - 1) {
+                profile = key.substring(0, index + 1);
+                transformed = key.substring(index + 1);
+            }
         }
 
-        return profile + namespace + "." + transformed;
-
+        return profile + MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + transformed;
     }
 }

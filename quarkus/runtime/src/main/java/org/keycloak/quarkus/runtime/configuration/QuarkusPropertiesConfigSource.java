@@ -29,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
@@ -44,6 +46,11 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     private static final String FILE_NAME = "quarkus.properties";
     public static final String NAME = "KcQuarkusPropertiesConfigSource";
+    private final boolean includeClasspath;
+
+    public QuarkusPropertiesConfigSource(boolean includeClasspath) {
+        this.includeClasspath = includeClasspath;
+    }
 
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
@@ -69,23 +76,19 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
         String name = loadingFile ? NAME : (NAME + " " + url);
-        return new PropertiesConfigSource(ConfigSourceUtil.urlToMap(url), name, ordinal) {
-            @Override
-            public String getValue(String propertyName) {
-                if (propertyName.startsWith(NS_QUARKUS)) {
-                    return super.getValue(propertyName);
-                }
-
-                return null;
-            }
-        };
+        return new PropertiesConfigSource(
+                ConfigSourceUtil.urlToMap(url).entrySet().stream().filter(e -> e.getKey().startsWith(NS_QUARKUS))
+                        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())),
+                name, ordinal);
     }
 
     @Override
     public synchronized List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         List<ConfigSource> configSources = new ArrayList<>();
 
-        configSources.addAll(loadConfigSources("META-INF/services/" + FILE_NAME, 450, classLoader));
+        if (includeClasspath) {
+            configSources.addAll(loadConfigSources("META-INF/services/" + FILE_NAME, 450, classLoader));
+        }
 
         Path configFile = getConfigurationFile();
 
