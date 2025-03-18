@@ -41,7 +41,11 @@ public class ManagedClient extends ManagedTestResource {
             configBuilder = update.update(configBuilder);
         }
 
-        admin().update(configBuilder.build());
+        ClientRepresentation updated = configBuilder.build();
+        admin().update(updated);
+
+        ClientRepresentation original = cleanup().getOriginalRepresentation();
+        updated.getAttributes().keySet().stream().filter(k -> !original.getAttributes().containsKey(k)).forEach(k -> original.getAttributes().put(k, ""));
     }
 
     public ManagedClientCleanup cleanup() {
