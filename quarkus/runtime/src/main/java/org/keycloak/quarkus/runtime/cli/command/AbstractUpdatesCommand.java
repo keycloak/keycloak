@@ -95,12 +95,12 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
 
     private void printPreviewWarning() {
         if (Profile.Feature.ROLLING_UPDATES_V1.getType() == Profile.Feature.Type.PREVIEW) {
-            printError("Warning! This command is " + Profile.Feature.ROLLING_UPDATES_V1.getType() + " and is not recommended for use in production. It may change or be removed at a future release.");
+            printError("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V1.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
         }
     }
 
     void printFeatureDisabled() {
-        printError("Unable to use this command. The feature " + Profile.Feature.ROLLING_UPDATES_V1.getVersionedKey() + " is not enabled.");
+        printError("Unable to use this command. The feature '" + Profile.Feature.ROLLING_UPDATES_V1.getVersionedKey() + "' is not enabled.");
     }
 
     static Map<String, CompatibilityMetadataProvider> loadAllProviders() {

@@ -41,13 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @RawDistOnly(reason = "Requires creating JSON file to be available between containers")
 public class UpdateCommandDistTest {
 
-    private static final String ENABLE_FEATURE = ""; // enabled by default
     private static final String DISABLE_FEATURE = "--features-disabled=rolling-updates";
 
     @Test
     @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, DISABLE_FEATURE})
     public void testFeatureNotEnabled(CLIResult cliResult) {
-        cliResult.assertError("Unable to use this command. The feature 'rolling-updates' is not enabled.");
+        cliResult.assertError("Unable to use this command. The feature 'rolling-updates:v1' is not enabled.");
     }
 
     @Test
@@ -57,13 +56,13 @@ public class UpdateCommandDistTest {
     }
 
     @Test
-    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, ENABLE_FEATURE})
+    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME})
     public void testMissingOptionOnSave(CLIResult cliResult) {
         cliResult.assertNoMessage("Missing required argument");
     }
 
     @Test
-    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, ENABLE_FEATURE})
+    @Launch({UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME})
     public void testMissingOptionOnCheck(CLIResult cliResult) {
         cliResult.assertError("Missing required argument: " + UpdateCompatibilityCheck.INPUT_OPTION_NAME);
     }
@@ -71,7 +70,7 @@ public class UpdateCommandDistTest {
     @Test
     public void testCompatible(KeycloakDistribution distribution) throws IOException {
         var jsonFile = createTempFile("compatible");
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath(), ENABLE_FEATURE);
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertMessage("Metadata:");
         assertEquals(0, result.exitCode());
 
@@ -79,7 +78,7 @@ public class UpdateCommandDistTest {
         assertEquals(Version.VERSION, info.get(KeycloakCompatibilityMetadataProvider.ID).get("version"));
         assertEquals(org.infinispan.commons.util.Version.getVersion(), info.get(CachingCompatibilityMetadataProvider.ID).get("version"));
 
-        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), ENABLE_FEATURE);
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertMessage("[OK] Rolling Update is available.");
         result.assertNoError("Rolling Update is not available.");
     }
@@ -98,7 +97,7 @@ public class UpdateCommandDistTest {
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), ENABLE_FEATURE);
+        var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(KeycloakCompatibilityMetadataProvider.ID, KeycloakCompatibilityMetadataProvider.ID, Version.VERSION));
 
         // incompatible infinispan version
@@ -110,7 +109,7 @@ public class UpdateCommandDistTest {
         ));
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
-        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), ENABLE_FEATURE);
+        result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(CachingCompatibilityMetadataProvider.ID, CachingCompatibilityMetadataProvider.ID, org.infinispan.commons.util.Version.getVersion()));
     }
 
