@@ -387,7 +387,10 @@ public class Picocli {
 
             // first validate the advertised property names
             // - this allows for efficient resolution of wildcard values and checking spi options
-            Configuration.getConfig().getPropertyNames().forEach(name -> {
+            Configuration.getPropertyNames().forEach(name -> {
+                if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    return; // there are canonical mappings to kc. values - no need to consider alternative forms
+                }
                 if (!options.includeRuntime) {
                     checkRuntimeSpiOptions(name, ignoredRunTime);
                 }
@@ -400,13 +403,12 @@ public class Picocli {
                     // TODO: due to picking values up from the env and auto-builds, this probably isn't correct
                     // - the same issue exists with the second pass
                 }
-                String from = mapper.getFrom();
                 if (!mapper.hasWildcard()) {
                     return; // non-wildcard options will be validated in the next pass
                 }
-                from = mapper.forKey(name).getFrom();
+                mapper = mapper.forKey(name);
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                        deprecatedInUse, missingOption, disabledMappers, mapper, from);
+                        deprecatedInUse, missingOption, disabledMappers, mapper);
             });
 
             // second pass validate any property mapper not seen in the first pass
@@ -420,7 +422,7 @@ public class Picocli {
             for (PropertyMapper<?> mapper : mappers) {
                 if (!mapper.hasWildcard()) {
                     validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                            deprecatedInUse, missingOption, disabledMappers, mapper, mapper.getFrom());
+                            deprecatedInUse, missingOption, disabledMappers, mapper);
                 }
             }
 
@@ -453,8 +455,8 @@ public class Picocli {
     private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,
             final List<String> ignoredRunTime, final Set<String> disabledBuildTime, final Set<String> disabledRunTime,
             final Set<String> deprecatedInUse, final Set<String> missingOption,
-            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper, String from) {
-        ConfigValue configValue = Configuration.getConfigValue(from);
+            final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper) {
+        ConfigValue configValue = Configuration.getConfigValue(mapper.getFrom());
         String configValueStr = configValue.getValue();
 
         // don't consider missing or anything below standard env properties
@@ -463,7 +465,7 @@ public class Picocli {
         }
 
         if (disabledMappers.contains(mapper)) {
-            if (PropertyMappers.getMapper(from) != null) {
+            if (PropertyMappers.getMapper(mapper.getFrom()) != null) {
                 return; // we found enabled mapper with the same name
             }
 

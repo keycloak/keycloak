@@ -42,10 +42,6 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        // don't look up the mapped value for direct env references
-        if (Character.isUpperCase(name.charAt(0))) {
-            return context.proceed(name);
-        }
         return resolve(context::restart, context::proceed, name, false);
     }
 

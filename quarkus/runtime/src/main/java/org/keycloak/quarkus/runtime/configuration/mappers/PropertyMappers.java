@@ -2,7 +2,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
@@ -35,6 +34,7 @@ import java.util.function.BiConsumer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.Environment.isParsedCommand;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
@@ -43,6 +43,7 @@ import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourcePro
 public final class PropertyMappers {
 
     public static final String KC_SPI_PREFIX = "kc.spi";
+    public static final String ENV_KC_SPI_PREFIX = replaceNonAlphanumericByUnderscores(KC_SPI_PREFIX.toUpperCase());
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
@@ -202,7 +203,7 @@ public final class PropertyMappers {
     }
 
     public static Set<WildcardPropertyMapper<?>> getWildcardMappers() {
-        return MAPPERS.getWildcardMappers();
+        return Collections.unmodifiableSet(MAPPERS.wildcardMappers);
     }
 
     public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
@@ -249,6 +250,7 @@ public final class PropertyMappers {
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
 
+        // TODO: support disabling
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
         private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
 
@@ -281,12 +283,11 @@ public final class PropertyMappers {
 
         public void removeMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
-                wildcardMappers.remove(mapper);
-                if (mapper.getFrom() != null) {
-                    wildcardMapFrom.remove(mapper.getMapFrom());
-                }
+                // TODO
+                throw new AssertionError();
+            } else {
+                handleMapper(mapper, this::remove);
             }
-            handleMapper(mapper, this::remove);
         }
 
         private void remove(String key, PropertyMapper<?> mapper) {
@@ -308,11 +309,15 @@ public final class PropertyMappers {
             }
 
             // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
-            ret = wildcardMappers.stream()
-                    .filter(m -> m.matchesWildcardOptionName(strKey))
-                    .toList();
-            if (!ret.isEmpty()) {
-                return ret;
+            // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
+            // keycloak key
+            if (strKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || strKey.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                ret = wildcardMappers.stream()
+                        .filter(m -> m.matchesWildcardOptionName(strKey))
+                        .toList();
+                if (!ret.isEmpty()) {
+                    return ret;
+                }
             }
 
             return null;
@@ -321,10 +326,6 @@ public final class PropertyMappers {
         @Override
         public List<PropertyMapper<?>> remove(Object mapper) {
             return super.remove(mapper);
-        }
-
-        public Set<WildcardPropertyMapper<?>> getWildcardMappers() {
-            return Collections.unmodifiableSet(wildcardMappers);
         }
 
         public void sanitizeDisabledMappers() {

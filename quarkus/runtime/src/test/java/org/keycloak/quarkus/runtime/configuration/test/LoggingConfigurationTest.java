@@ -17,21 +17,26 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
-import io.smallrye.config.SmallRyeConfig;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import java.util.Map;
-import java.util.stream.StreamSupport;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
-import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
+import io.smallrye.config.SmallRyeConfig;
 
 public class LoggingConfigurationTest extends AbstractConfigurationTest {
 
@@ -194,6 +199,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertEquals("INFO", config.getConfigValue("quarkus.log.level").getValue());
         assertEquals("ERROR", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
 
+        onAfter();
         ConfigArgsConfigSource.setCliArgs("--log-level=org.keycloak:error", "--log-level-org.keycloak=trace");
         config = createConfig();
         assertEquals("INFO", config.getConfigValue("quarkus.log.level").getValue());
@@ -206,7 +212,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("WARN", config.getConfigValue("quarkus.log.level").getValue());
         assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
-        assertEquals("WARN", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+        assertNull(config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
     }
 
     @Test
@@ -263,18 +269,35 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--log-level-org.keycloak=trace");
         SmallRyeConfig config = createConfig();
         assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+        assertNull(config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+        assertNull(config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
     }
 
     @Test
     public void testWildcardEnvVarOptionCanBeMappedToQuarkusOption() {
         putEnvVar("KC_LOG_LEVEL_IO_QUARKUS", "trace");
         SmallRyeConfig config = createConfig();
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
+        // the default quarkus kc mapping should not be present
+        Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertFalse(keys.contains("kc.log.level.\"io.quarkus"));
+        assertFalse(keys.contains("kc.log.level.io-quarkus"));
+        // the default quarkus mapping should be
+        assertNull(config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
         assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch("kc.log-level-io.quarkus"::equals));
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+        assertTrue(keys.contains("kc.log-level-io.quarkus"));
+        assertNull(config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
+    }
+
+    @Test
+    public void testDisambiguateEnvVar() {
+        putEnvVar("KC_LOG_LEVEL_SOME_THING", "trace");
+        SmallRyeConfig config = createConfig();
+        // the default quarkus kc mapping should not be present
+        Set<String> keys = StreamSupport.stream(config.getPropertyNames().spliterator(), false).collect(Collectors.toSet());
+        assertFalse(keys.contains("kc.log-level-some-thing"));
+        assertFalse(keys.contains("quarkus.log.category.\"some.thing\".level"));
+        // should pick up the mapping from the test keycloak.conf
+        assertTrue(keys.contains("quarkus.log.category.\"some_thing\".level"));
     }
 
     @Test
@@ -287,6 +310,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testWildcardPropertiesDontMatchEnvVarsFormat() {
         SmallRyeConfig config = createConfig();
-        assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+        assertNull(config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
     }
 }

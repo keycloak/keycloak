@@ -7,14 +7,12 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import io.quarkus.runtime.configuration.MemorySizeConverter;
-import io.smallrye.config.ConfigValue;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -124,7 +122,7 @@ public final class LoggingPropertyMappers {
                         .paramLabel("category:level")
                         .build(),
                 fromOption(LoggingOptions.LOG_LEVEL_CATEGORY)
-                        .to("quarkus.log.category.\"<categories>\".level")
+                        .to("quarkus.log.category.\"categories\".level")
                         .validator(LoggingPropertyMappers::validateCategoryLogLevel)
                         .wildcardKeysTransformer(LoggingPropertyMappers::getConfiguredLogCategories)
                         .transformer((v,c) -> v == null ? null : toLevel(v).getName())
@@ -285,20 +283,12 @@ public final class LoggingPropertyMappers {
     }
 
     private static String resolveCategoryLogLevelFromParentLogLevelOption(String category, String parentLogLevelValue, ConfigSourceInterceptorContext context) {
-        String rootLevel = DEFAULT_ROOT_LOG_LEVEL;
         for (CategoryLevel categoryLevel : parseRootLogLevel(parentLogLevelValue)) {
             if (category.equals(categoryLevel.category)) {
                 return categoryLevel.levelName;
-            } else if (categoryLevel.category == null) {
-                rootLevel = categoryLevel.levelName;
             }
         }
-
-        // If KC property is not set and the 'log-level' does not override the specific category, use value from Quarkus or properties files
-        return Optional.ofNullable(context.proceed("quarkus.log.category.\"" + category + "\".level"))
-                .map(ConfigValue::getValue)
-                .map(level -> !level.equals("inherit") ? level : null)
-                .orElse(rootLevel);
+        return null;
     }
 
     private static List<CategoryLevel> parseRootLogLevel(String values) {

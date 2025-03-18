@@ -1,55 +1,49 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
-
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.common.utils.StringUtil;
 
 public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
-    private final Matcher fromWildcardMatcher;
-    private final Pattern fromWildcardPattern;
-    private final Pattern envVarNameWildcardPattern;
-    private Matcher toWildcardMatcher;
-    private Pattern toWildcardPattern;
+    public static final String WILDCARD_FROM_START = "<";
+
     private final BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
     private final ValueMapper wildcardMapFrom;
+
+    private final String fromPrefix;
+    private String toPrefix;
+    private String toSuffix;
+
+    private Map<String, String> canonicalEnvMapping = new HashMap<String, String>();
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
             BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, BiFunction<String, ConfigSourceInterceptorContext, String> parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-            String description, BooleanSupplier required, String requiredWhen, Matcher fromWildcardMatcher, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
+            String description, BooleanSupplier required, String requiredWhen, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
         super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null);
         this.wildcardMapFrom = wildcardMapFrom;
-        this.fromWildcardMatcher = fromWildcardMatcher;
-        // Includes handling for both "--" prefix for CLI options and "kc." prefix
-        this.fromWildcardPattern = Pattern.compile("(?:kc\\.)" + fromWildcardMatcher.replaceFirst("([\\\\\\\\.a-zA-Z0-9]+)"));
 
-        // Not using toEnvVarFormat because it would process the whole string incl the <...> wildcard.
-        Matcher envVarMatcher = WILDCARD_PLACEHOLDER_PATTERN.matcher(option.getKey().toUpperCase().replace("-", "_"));
-        this.envVarNameWildcardPattern = Pattern.compile("KC_" + envVarMatcher.replaceFirst("([_A-Z0-9]+)"));
+        this.fromPrefix = getFrom().substring(0, getFrom().indexOf(WILDCARD_FROM_START));
+        if (!getFrom().endsWith(">")) {
+            throw new IllegalArgumentException("Invalid wildcard form format");
+        }
 
         if (to != null) {
-            toWildcardMatcher = WILDCARD_PLACEHOLDER_PATTERN.matcher(to);
-            if (!toWildcardMatcher.find()) {
-                throw new IllegalArgumentException("Attempted to map a wildcard option to a non-wildcard option");
-            }
-
-            this.toWildcardPattern = Pattern.compile(toWildcardMatcher.replaceFirst("([\\\\\\\\.a-zA-Z0-9]+)"));
+            this.toPrefix = to.substring(0, to.indexOf('"') + 1);
+            this.toSuffix = to.substring(to.lastIndexOf('"'), to.length());
         }
 
         this.wildcardKeysTransformer = wildcardKeysTransformer;
@@ -61,43 +55,37 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     }
 
     String getTo(String wildcardKey) {
-        return toWildcardMatcher.replaceFirst(wildcardKey);
+        return toPrefix + wildcardKey + toSuffix;
     }
 
     String getFrom(String wildcardKey) {
-        return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + fromWildcardMatcher.replaceFirst(wildcardKey);
+        return fromPrefix + wildcardKey;
     }
 
     public Stream<String> getToFromWildcardTransformer(String value) {
         if (wildcardKeysTransformer == null) {
             return Stream.empty();
         }
-        return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(toWildcardMatcher::replaceFirst);
+        return wildcardKeysTransformer.apply(value, new HashSet<String>()).stream().map(this::getTo);
     }
 
-    /**
-     * Returns a mapped key for the given option name if a relevant mapping is available, or empty otherwise.
-     * Currently, it only attempts to extract the wildcard key from the given option name.
-     * E.g. for the option "log-level-<category>" and the option name "log-level-io.quarkus",
-     * the wildcard value would be "io.quarkus".
-     */
-    private Optional<String> getMappedKey(String originalKey) {
-        Matcher matcher = null;
-        if (originalKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-            matcher = fromWildcardPattern.matcher(originalKey);
-            if (matcher.matches()) {
-                return Optional.of(matcher).map(m -> m.group(1));
-            }
-        }
+    @Override
+    public PropertyMapper<?> forKey(String key) {
+        String wildcardValue = extractWildcardValue(key);
+        String to = getTo(wildcardValue);
+        String from = getFrom(wildcardValue);
+        return new PropertyMapper<T>(this, from, to,
+                wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
+    }
 
-        if (toWildcardPattern != null) {
-            matcher = toWildcardPattern.matcher(originalKey);
-            if (matcher.matches()) {
-                return Optional.of(matcher).map(m -> m.group(1));
-            }
+    private String extractWildcardValue(String key) {
+        if (key.startsWith(fromPrefix)) {
+            return key.substring(fromPrefix.length());
+        } else if (key.startsWith(toPrefix) && key.endsWith(toSuffix)) {
+            // TODO: this presumes that the quarkus value is quoted
+            return key.substring(toPrefix.length(), key.length() - toSuffix.length());
         }
-
-        return Optional.empty();
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -105,27 +93,27 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      * E.g. check if "log-level-io.quarkus" matches the wildcard pattern "log-level-<category>".
      */
     public boolean matchesWildcardOptionName(String name) {
-        return getMappedKey(name).isPresent();
-    }
-
-    private PropertyMapper<?> forWildcardValue(final String wildcardValue) {
-        String to = getTo(wildcardValue);
-        String from = getFrom(wildcardValue);
-        return new PropertyMapper<T>(this, from, to, wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
-    }
-
-    @Override
-    public PropertyMapper<?> forKey(String key) {
-        return getMappedKey(key).map(this::forWildcardValue).orElseThrow();
-    }
-
-    public String getKcKeyForEnvKey(String envKey) {
-        Matcher matcher = envVarNameWildcardPattern.matcher(envKey);
-        if (matcher.matches()) {
-            // we opiniotatedly convert env var names to CLI format with dots
-            return getFrom(matcher.group(1).toLowerCase().replace("_", "."));
+        try {
+            extractWildcardValue(name);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
-        return null;
+    }
+
+    public void addCanonicalEnv(String key) {
+        this.canonicalEnvMapping.put(StringUtil.replaceNonAlphanumericByUnderscores(key.toUpperCase()), key);
+    }
+
+    public String getKcKeyForEnvKey(String envKey, String transformedKey) {
+        String from = this.canonicalEnvMapping.get(envKey);
+        if (from != null) {
+            return from;
+        }
+        if (transformedKey.startsWith(fromPrefix)) {
+            return getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", "."));
+        }
+        throw new IllegalArgumentException();
     }
 
 }

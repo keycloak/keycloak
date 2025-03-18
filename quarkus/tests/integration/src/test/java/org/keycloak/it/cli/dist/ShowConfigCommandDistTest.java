@@ -86,10 +86,12 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @Launch({ ShowConfig.NAME })
-    @WithEnvVars({"KC_DB_PASSWORD", "secret-pass"})
+    @WithEnvVars({"KC_DB_PASSWORD", "secret-pass", "KC_LOG_LEVEL_FOO_BAR", "trace"})
     void testNoDuplicitEnvVarEntries(LaunchResult result) {
         String output = result.getOutput();
         assertThat(output, containsString("kc.db-password =  " + PropertyMappers.VALUE_MASK));
+        assertThat(output, containsString("kc.log-level-foo.bar"));
+        assertThat(output, not(containsString("kc.log.")));
         assertThat(output, not(containsString("kc.db.password")));
         assertThat(output, not(containsString("secret-pass")));
     }

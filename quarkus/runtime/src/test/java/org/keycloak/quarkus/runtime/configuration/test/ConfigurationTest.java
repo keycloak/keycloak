@@ -578,7 +578,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testQuarkusLogPropDependentUponKeycloak() {
         Environment.setRebuildCheck(); // will be reset by the system properties logic
-        ConfigArgsConfigSource.setCliArgs("--log-level=debug");
+        ConfigArgsConfigSource.setCliArgs("--log-level=something:debug");
         SmallRyeConfig config = createConfig();
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"something\".level").getValue());
     }
