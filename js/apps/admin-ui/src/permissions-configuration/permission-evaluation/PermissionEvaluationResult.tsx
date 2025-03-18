@@ -18,12 +18,6 @@ export const PermissionEvaluationResult = ({
     evaluatedResult?.resource?.name ?? t("permissionEvaluationAlertTitle");
   const alertVariant =
     evaluateResult?.status === "PERMIT" ? "success" : "warning";
-  const alertMessage =
-    evaluateResult?.status === "PERMIT"
-      ? t("grantedScope")
-      : evaluateResult?.status === "DENY" && evaluatedResults.length === 0
-        ? ""
-        : t("deniedScope");
 
   const evaluatedAllowedScopes = useMemo(
     () => sortBy(evaluatedResult?.allowedScopes || [], "name"),
@@ -38,38 +32,63 @@ export const PermissionEvaluationResult = ({
     [evaluatedResult],
   );
 
-  return (
-    <Alert isInline variant={alertVariant} title={alertTitle} component="h6">
-      <Text>{alertMessage}</Text>
+  const evaluatedPermission = function (title: string, status: string) {
+    const permissions = evaluatedPolicies.filter((p) => p.status === status);
 
-      {evaluatedAllowedScopes.length > 0 && (
+    if (permissions.length == 0) {
+      return;
+    }
+
+    return (
+      <>
+        <Text className="pf-v5-u-pt-sm">
+          <strong>{t(title)}</strong>:
+        </Text>
         <List className="pf-v5-u-mt-sm">
-          {evaluatedAllowedScopes.map((scope) => (
-            <ListItem key={scope.id}>{scope.name}</ListItem>
+          {permissions.map((p) => (
+            <ListItem key={p.policy?.id}>
+              {t("evaluatedPolicy", {
+                name: p.policy?.name,
+                status: p.status,
+              })}
+            </ListItem>
           ))}
         </List>
+      </>
+    );
+  };
+
+  return (
+    <Alert isInline variant={alertVariant} title={alertTitle} component="h6">
+      {evaluatedAllowedScopes.length > 0 && (
+        <>
+          <Text>
+            <b>{t("grantedScope")}</b>
+          </Text>
+          <List className="pf-v5-u-mt-sm">
+            {evaluatedAllowedScopes.map((scope) => (
+              <ListItem key={scope.id}>{scope.name}</ListItem>
+            ))}
+          </List>
+        </>
       )}
 
       {evaluatedDeniedScopes.length > 0 && (
-        <List className="pf-v5-u-mt-sm">
-          {evaluatedDeniedScopes.map((scope) => (
-            <ListItem key={scope.id}>{scope.name}</ListItem>
-          ))}
-        </List>
+        <>
+          <Text className="pf-v5-u-pt-sm">
+            <strong>{t("deniedScope")}</strong>
+          </Text>
+
+          <List className="pf-v5-u-mt-sm">
+            {evaluatedDeniedScopes.map((scope) => (
+              <ListItem key={scope.id}>{scope.name}</ListItem>
+            ))}
+          </List>
+        </>
       )}
 
-      {evaluatedPolicies.length > 0 && (
-        <Text className="pf-v5-u-mt-sm">
-          {evaluatedPolicies.map((evaluatedPolicy) => (
-            <Text key={evaluatedPolicy.policy?.id}>
-              {t("evaluatedPolicy", {
-                name: evaluatedPolicy.policy?.name,
-                status: evaluatedPolicy.status,
-              })}
-            </Text>
-          ))}
-        </Text>
-      )}
+      {evaluatedPermission("grantedPermissions", "PERMIT")}
+      {evaluatedPermission("deniedPermissions", "DENY")}
     </Alert>
   );
 };
