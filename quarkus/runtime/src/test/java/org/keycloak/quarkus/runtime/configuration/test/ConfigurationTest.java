@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.dialect.H2Dialect;
@@ -126,6 +127,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testQuarkusProfilePropertyStillWorks() {
         System.setProperty("quarkus.profile", "user-profile");
         assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
+    }
+
+    @Test
+    public void testProfiledPropertyExposure() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        // the "nope" profile is not active, the property should not be advertised
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.proxy.proxy-address-forwarding"::equals));
     }
 
     @Test
@@ -573,6 +582,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
         assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
+    }
+
+    @Test
+    public void testQuarkusPropertiesNamesFiltered() {
+        SmallRyeConfig config = createConfig();
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("not.quarkus"::equals));
     }
 
     @Test
