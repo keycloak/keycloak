@@ -217,7 +217,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             }
             // create a transient session now for the token exchange
             targetUserSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
-                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
+                    clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null,
                     UserSessionModel.SessionPersistenceState.TRANSIENT);
         }
 

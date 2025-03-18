@@ -80,7 +80,9 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
         List<NameValuePair> formparams = new LinkedList<>();
         formparams.add(new BasicNameValuePair("secret", config.get(SECRET_KEY)));
         formparams.add(new BasicNameValuePair("response", captcha));
-        formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
+        if (context.getConnection().getRemoteAddr() != null) {
+            formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
+        }
 
         try {
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8);

@@ -97,29 +97,34 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
         String hostAddress = session.getContext().getConnection().getRemoteAddr();
 
-        verifyHost(hostAddress);
+        logger.debugf("Verifying remote host : %s", session.getContext().getConnection().getRemoteHost());
+
+        if (!verifyHost(hostAddress)) {
+            ServicesLogger.LOGGER.failedToVerifyRemoteHost(session.getContext().getConnection().getRemoteHost());
+            throw new ClientRegistrationPolicyException("Host not trusted.");
+        }
     }
 
-    protected void verifyHost(String hostAddress) throws ClientRegistrationPolicyException {
-        logger.debugf("Verifying remote host : %s", hostAddress);
-
+    protected boolean verifyHost(String hostAddress) {
+        if (hostAddress == null) {
+            return false;
+        }
         List<String> trustedHosts = getTrustedHosts();
         List<String> trustedDomains = getTrustedDomains();
 
         // Verify trustedHosts by their IP addresses
         String verifiedHost = verifyHostInTrustedHosts(hostAddress, trustedHosts);
         if (verifiedHost != null) {
-            return;
+            return true;
         }
 
         // Verify domains if hostAddress hostname belongs to the domain. This assumes proper DNS setup
         verifiedHost = verifyHostInTrustedDomains(hostAddress, trustedDomains);
         if (verifiedHost != null) {
-            return;
+            return true;
         }
 
-        ServicesLogger.LOGGER.failedToVerifyRemoteHost(hostAddress);
-        throw new ClientRegistrationPolicyException("Host not trusted.");
+        return false;
     }
 
 
