@@ -33,12 +33,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.keycloak.common.Profile;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.update.UpdateStrategy;
@@ -247,11 +245,6 @@ public class UpdateTest extends BaseOperatorTest {
             updateSpec.setRevision("0");
         }
         kc.getSpec().setUpdateSpec(updateSpec);
-
-        if (kc.getSpec().getFeatureSpec() == null) {
-            kc.getSpec().setFeatureSpec(new FeatureSpec());
-        }
-        kc.getSpec().getFeatureSpec().setEnabledFeatures(List.of(Profile.Feature.ROLLING_UPDATES_V1.getKey()));
         return kc;
     }
 
