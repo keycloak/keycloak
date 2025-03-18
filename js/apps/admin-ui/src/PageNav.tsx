@@ -5,7 +5,7 @@ import {
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
-import { FormEvent } from "react";
+import { FormEvent, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
@@ -17,9 +17,14 @@ import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 import "./page-nav.css";
 
-type LeftNavProps = { title: string; path: string; id?: string };
+type LeftNavProps = {
+  title: string;
+  path: string;
+  id?: string;
+  fallback?: ReactNode;
+};
 
-const LeftNav = ({ title, path, id }: LeftNavProps) => {
+const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
@@ -36,7 +41,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
       : hasAccess(route.handle.access));
 
   if (!accessAllowed) {
-    return null;
+    return fallback;
   }
 
   const name = "nav-item" + path.replace("/", "-");
@@ -100,6 +105,11 @@ export const PageNav = () => {
             <LeftNav
               title={label(t, realmRepresentation?.displayName, realm)}
               path="/realms"
+              fallback={
+                <li>
+                  <span className="pf-v5-c-nav__link">{realm}</span>
+                </li>
+              }
             />
           </NavGroup>
           {showManage && (

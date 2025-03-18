@@ -23,6 +23,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useRecentRealms } from "../context/RecentRealms";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { translationFormatter } from "../utils/translationFormatter";
 import NewRealmForm from "./add/NewRealmForm";
 import { toRealm } from "./RealmRoutes";
@@ -40,6 +41,8 @@ const RecentRealmsDropdown = ({ onClick }: DropdownProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const recentRealms = useRecentRealms();
+
+  if (recentRealms.length < 3) return null;
   return (
     <Dropdown
       shouldFocusToggleOnSelect
@@ -121,6 +124,7 @@ type RealmRow = RealmNameRepresentation & { id: string };
 export default function RealmSection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -159,12 +163,12 @@ export default function RealmSection() {
         if (selected.filter(({ name }) => name === "master").length > 0) {
           addAlert(t("cantDeleteMasterRealm"), AlertVariant.warning);
         }
+        const filtered = selected.filter(({ name }) => name !== "master");
+        if (filtered.length === 0) return;
         await Promise.all(
-          selected
-            .filter(({ name }) => name !== "master")
-            .map(({ name: realmName }) =>
-              adminClient.realms.del({ realm: realmName }),
-            ),
+          filtered.map(({ name: realmName }) =>
+            adminClient.realms.del({ realm: realmName }),
+          ),
         );
         addAlert(t("deletedSuccessRealmSetting"));
         if (selected.filter(({ name }) => name === realm).length > 0) {
@@ -211,12 +215,14 @@ export default function RealmSection() {
           toolbarItem={
             <>
               <ToolbarItem>
-                <Button
-                  onClick={() => setOpenNewRealm(true)}
-                  data-testid="create"
-                >
-                  {t("createRealm")}
-                </Button>
+                {whoAmI.canCreateRealm() && (
+                  <Button
+                    onClick={() => setOpenNewRealm(true)}
+                    data-testid="create"
+                  >
+                    {t("createRealm")}
+                  </Button>
+                )}
               </ToolbarItem>
               <ToolbarItem>
                 <RecentRealmsDropdown onClick={() => refresh()} />
