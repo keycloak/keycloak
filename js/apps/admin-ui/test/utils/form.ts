@@ -23,8 +23,8 @@ export async function selectItem(
 }
 
 export async function assertSelectValue(field: Locator, value: string) {
-  const text = await field.textContent();
-  expect(text).toBe(value);
+  const text = field;
+  await expect(text).toHaveText(value);
 }
 
 export async function switchOn(page: Page, id: string | Locator) {
