@@ -19,6 +19,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
+import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -73,6 +74,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -86,7 +88,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider, UserCredentialStore {
+public class JpaUserProvider implements UserProvider, UserCredentialStore, PartialEvaluationStorageProvider {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -694,7 +696,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
 
-        groupsWithPermissionsSubquery(countQuery, groupIds, root, restrictions);
+        session.setAttribute(UserModel.GROUPS, groupIds);
+
+        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, countQuery));
 
         countQuery.where(restrictions.toArray(Predicate[]::new));
         TypedQuery<Long> query = em.createQuery(countQuery);
@@ -760,11 +764,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
-        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
-
-        if (userGroups != null) {
-            groupsWithPermissionsSubquery(queryBuilder, userGroups, root, predicates);
-        }
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder));
 
         queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
@@ -1056,24 +1056,39 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return predicates;
     }
 
-    @SuppressWarnings("unchecked")
-    private void groupsWithPermissionsSubquery(CriteriaQuery<?> query, Set<String> groupIds, Root<UserEntity> root, List<Predicate> restrictions) {
+    @Override
+    public List<Predicate> getFilters(EvaluationContext evaluationContext) {
+        @SuppressWarnings("unchecked")
+        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
+        Predicate groupFilterPredicate = null;
+
+        if (userGroups != null) {
+            groupFilterPredicate = groupsWithPermissionsSubquery(session, evaluationContext, userGroups);
+        }
+
+        return groupFilterPredicate == null ? List.of() : List.of(groupFilterPredicate);
+    }
+
+    private Predicate groupsWithPermissionsSubquery(KeycloakSession session, EvaluationContext evaluationContext, Set<String> groupIds) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-
+        CriteriaQuery<?> query = evaluationContext.criteriaQuery();
         Subquery subquery = query.subquery(String.class);
-
-        Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
+        Root<?> from = subquery.from(UserGroupMembershipEntity.class);
 
         subquery.select(cb.literal(1));
 
         List<Predicate> subPredicates = new ArrayList<>();
 
         subPredicates.add(from.get("groupId").in(groupIds));
+
+        Root<?> root = evaluationContext.getRootEntity();
+
         subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
 
         Subquery subquery1 = query.subquery(String.class);
 
         subquery1.select(cb.literal(1));
+
         Root from1 = subquery1.from(ResourceEntity.class);
 
         List<Predicate> subs = new ArrayList<>();
@@ -1094,6 +1109,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         subquery.where(subPredicates.toArray(Predicate[]::new));
 
-        restrictions.add(cb.exists(subquery));
+        return cb.exists(subquery);
     }
 }

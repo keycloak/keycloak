@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -187,4 +188,6 @@ public interface PolicyStore {
      * @return a list of policies that depends on the a policy with the given identifier
      */
     List<Policy> findDependentPolicies(ResourceServer resourceServer, String id);
+
+    Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue);
 }

@@ -16,19 +16,21 @@
  */
 package org.keycloak.authorization;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
+import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -52,14 +54,11 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
-import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceType;
-import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.util.JsonSerialization;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
 
@@ -97,8 +96,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
-
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
+
+    private final PartialEvaluator partialEvaluator = new PartialEvaluator();
+    private final PolicyEvaluator policyEvaluator = new FGAPPolicyEvaluator();
 
     private AdminPermissionsSchema() {
         super(Map.of(
@@ -433,5 +434,23 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             //remove the resource associated with the object
             authorization.getStoreFactory().getResourceStore().delete(resource.getId());
         }
+    }
+
+    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder) {
+        return partialEvaluator.applyAuthorizationFilters(session, resourceType, evaluator, realm, builder, queryBuilder);
+    }
+
+    public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {
+        if (resourceServer == null) {
+            return null;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (isAdminPermissionClient(realm, resourceServer.getId())) {
+            return policyEvaluator;
+        }
+
+        return null;
     }
 }

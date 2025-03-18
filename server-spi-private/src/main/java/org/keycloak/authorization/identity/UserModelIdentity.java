@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authorization.common;
+package org.keycloak.authorization.identity;
+
+import java.util.Map;
 
 import org.keycloak.authorization.attribute.Attributes;
-import org.keycloak.authorization.identity.Identity;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

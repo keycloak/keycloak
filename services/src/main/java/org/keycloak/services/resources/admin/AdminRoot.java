@@ -190,6 +190,8 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
+        session.getContext().setBearerToken(authResult.getToken());
+
         return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
     }
 

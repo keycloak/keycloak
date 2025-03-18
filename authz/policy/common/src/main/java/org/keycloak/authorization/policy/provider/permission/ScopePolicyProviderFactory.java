@@ -34,6 +34,7 @@ import java.util.Map;
  */
 public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePermissionRepresentation> {
 
+    public static final String ID = "scope";
     private final ScopePolicyProvider provider = new ScopePolicyProvider();
 
     @Override
@@ -53,7 +54,7 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -113,6 +114,6 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
 
     @Override
     public String getId() {
-        return "scope";
+        return ID;
     }
 }

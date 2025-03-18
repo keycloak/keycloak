@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -252,7 +254,21 @@ public class ClientPermissionsV2 extends ClientPermissions {
             return false;
         }
 
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        List<ResourcePermission> expected = new ArrayList<>();
+
+        if (policyStore.findByResource(server, resource).isEmpty()) {
+            // TODO: client scope permissions are evaluated based on any permission granted to any client in a realm
+            // this won't scale and instead we should just enforce access when actually mapping roles where the client is known
+            policyStore.findByResourceType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, policy -> {
+                for (Resource r : policy.getResources()) {
+                    expected.add(new ResourcePermission(r, r.getScopes(), server));
+                }
+            });
+        } else {
+            expected.add(new ResourcePermission(resource, resource.getScopes(), server));
+        }
+
+        Collection<Permission> permissions = root.evaluatePermission(expected, server);
         List<String> expectedScopes = Arrays.asList(scope);
         for (Permission permission : permissions) {
             for (String s : permission.getScopes()) {
