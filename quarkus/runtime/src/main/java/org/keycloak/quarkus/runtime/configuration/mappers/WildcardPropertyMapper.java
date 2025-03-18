@@ -1,7 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -14,7 +13,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -39,7 +37,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         this.wildcardMapFrom = wildcardMapFrom;
         this.fromWildcardMatcher = fromWildcardMatcher;
         // Includes handling for both "--" prefix for CLI options and "kc." prefix
-        this.fromWildcardPattern = Pattern.compile("(?:" + ARG_PREFIX + "|kc\\.)" + fromWildcardMatcher.replaceFirst("([\\\\\\\\.a-zA-Z0-9]+)"));
+        this.fromWildcardPattern = Pattern.compile("(?:kc\\.)" + fromWildcardMatcher.replaceFirst("([\\\\\\\\.a-zA-Z0-9]+)"));
 
         // Not using toEnvVarFormat because it would process the whole string incl the <...> wildcard.
         Matcher envVarMatcher = WILDCARD_PLACEHOLDER_PATTERN.matcher(option.getKey().toUpperCase().replace("-", "_"));
@@ -85,7 +83,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      */
     private Optional<String> getMappedKey(String originalKey) {
         Matcher matcher = null;
-        if (originalKey.startsWith(Picocli.ARG_PREFIX) || originalKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+        if (originalKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
             matcher = fromWildcardPattern.matcher(originalKey);
             if (matcher.matches()) {
                 return Optional.of(matcher).map(m -> m.group(1));
@@ -96,14 +94,6 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             matcher = toWildcardPattern.matcher(originalKey);
             if (matcher.matches()) {
                 return Optional.of(matcher).map(m -> m.group(1));
-            }
-        }
-
-        if (originalKey.startsWith("KC_")) {
-            matcher = envVarNameWildcardPattern.matcher(originalKey);
-            if (matcher.matches()) {
-                // we opiniotatedly convert env var names to CLI format with dots
-                return Optional.of(matcher).map(m -> m.group(1).toLowerCase().replace("_", "."));
             }
         }
 
@@ -127,6 +117,15 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     @Override
     public PropertyMapper<?> forKey(String key) {
         return getMappedKey(key).map(this::forWildcardValue).orElseThrow();
+    }
+
+    public String getKcKeyForEnvKey(String envKey) {
+        Matcher matcher = envVarNameWildcardPattern.matcher(envKey);
+        if (matcher.matches()) {
+            // we opiniotatedly convert env var names to CLI format with dots
+            return getFrom(matcher.group(1).toLowerCase().replace("_", "."));
+        }
+        return null;
     }
 
 }

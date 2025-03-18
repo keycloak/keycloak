@@ -280,10 +280,10 @@ public class Picocli {
         List<String> properties = new ArrayList<>();
 
         parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
 
             if (mapper == null || mapper.isRunTime()) {
-                properties.add(key + "=" + maskValue(key, value));
+                properties.add(key + "=" + maskValue(value, mapper));
             }
         }, properties::add);
 
@@ -301,7 +301,7 @@ public class Picocli {
         List<String> configArgsList = new ArrayList<>();
         configArgsList.add(Build.NAME);
         parseConfigArgs(cliArgs, (k, v) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(k);
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(k);
 
             if (mapper != null && mapper.isBuildTime()) {
                 configArgsList.add(k + "=" + v);
@@ -332,7 +332,7 @@ public class Picocli {
             if (arg.contains("=")) {
                 arg = arg.substring(0, arg.indexOf("="));
             }
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(arg);
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(arg);
             return mapper != null && mapper.hasWildcard() && allowedMappers.contains(mapper);
         });
         if (!unrecognizedArgs.isEmpty()) {
@@ -463,7 +463,7 @@ public class Picocli {
         }
 
         if (disabledMappers.contains(mapper)) {
-            if (!PropertyMappers.isDisabledMapper(from)) {
+            if (PropertyMappers.getMapper(from) != null) {
                 return; // we found enabled mapper with the same name
             }
 

@@ -40,6 +40,9 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
     @Override
     public List<String> getSuggestions() {
         // filter out disabled mappers
-        return super.getSuggestions().stream().filter(f -> !PropertyMappers.isDisabledMapper(f) && !f.endsWith(DUPLICIT_OPTION_SUFFIX)).toList();
+        return super.getSuggestions().stream()
+                .filter(f -> PropertyMappers.getKcKeyFromCliKey(f).filter(PropertyMappers::isDisabledMapper).isEmpty()
+                        && !f.endsWith(DUPLICIT_OPTION_SUFFIX))
+                .toList();
     }
 }

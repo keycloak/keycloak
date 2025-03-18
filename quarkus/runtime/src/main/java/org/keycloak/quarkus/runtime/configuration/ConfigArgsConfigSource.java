@@ -150,7 +150,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                     unaryConsumer.accept(arg);
                     continue;
                 }
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
                 // - Even though We've explicitly disabled PosixClusteredShortOptionsAllowed, it may not know all of the picocli parsing rules.
