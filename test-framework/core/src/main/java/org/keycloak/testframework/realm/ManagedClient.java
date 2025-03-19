@@ -34,7 +34,11 @@ public class ManagedClient extends ManagedTestResource {
 
     public void updateWithCleanup(ManagedClient.ClientUpdate... updates) {
         ClientRepresentation rep = admin().toRepresentation();
-        cleanup().resetToOriginalRepresentation(rep);
+
+        // TODO Admin v2 - Setting a field to `null` is ignored when updating the client (for example `adminUrl`), which
+        // makes it impossible to reset to the original. For now we are just re-creating the client by marking it as dirty
+        // cleanup().resetToOriginalRepresentation(rep);
+        dirty();
 
         ClientConfigBuilder configBuilder = ClientConfigBuilder.update(rep);
         for (ManagedClient.ClientUpdate update : updates) {
@@ -44,8 +48,10 @@ public class ManagedClient extends ManagedTestResource {
         ClientRepresentation updated = configBuilder.build();
         admin().update(updated);
 
-        ClientRepresentation original = cleanup().getOriginalRepresentation();
-        updated.getAttributes().keySet().stream().filter(k -> !original.getAttributes().containsKey(k)).forEach(k -> original.getAttributes().put(k, ""));
+        // TODO It's possible to delete attributes by setting their value to an empty string, but due to the above this
+        // is not a complete solution to resetting to the original
+        // ClientRepresentation original = cleanup().getOriginalRepresentation();
+        // updated.getAttributes().keySet().stream().filter(k -> !original.getAttributes().containsKey(k)).forEach(k -> original.getAttributes().put(k, ""));
     }
 
     public ManagedClientCleanup cleanup() {
