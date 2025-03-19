@@ -56,7 +56,9 @@ import java.util.Locale;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -176,9 +178,10 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void testIdentityProviderCapitalization(){
         loginPage.open();
-        assertEquals("GitHub", loginPage.findSocialButton("github").getText());
-        assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
-        assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+        // contains even name of sub-item - svg element in this case
+        assertThat(loginPage.findSocialButton("github").getText(), startsWith("GitHub"));
+        assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
+        assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
     }
 
 
