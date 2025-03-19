@@ -36,7 +36,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
         this.fromPrefix = getFrom().substring(0, getFrom().indexOf(WILDCARD_FROM_START));
         if (!getFrom().endsWith(">")) {
-            throw new IllegalArgumentException("Invalid wildcard form format");
+            throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
 
         if (to != null) {
