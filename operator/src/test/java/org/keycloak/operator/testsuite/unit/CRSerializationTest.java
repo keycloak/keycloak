@@ -37,7 +37,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.upgrade.UpdateStrategy;
+import org.keycloak.operator.update.UpdateStrategy;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
@@ -256,24 +256,24 @@ public class CRSerializationTest {
     }
 
     @Test
-    public void testUpgradeStrategy() {
+    public void testUpdateStrategy() {
         var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
         var updateSpec = keycloak.getSpec().getUpdateSpec();
         assertNotNull(updateSpec);
-        var upgradeStrategy = updateSpec.getStrategy();
-        assertNotNull(upgradeStrategy);
-        assertEquals(UpdateStrategy.AUTO, upgradeStrategy);
+        var updateStrategy = updateSpec.getStrategy();
+        assertNotNull(updateStrategy);
+        assertEquals(UpdateStrategy.AUTO, updateStrategy);
     }
 
     @Test
-    public void testInvalidUpgradeStrategy() {
+    public void testInvalidUpdateStrategy() {
         var thrown = assertThrows(IllegalArgumentException.class,
                 () -> Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-invalid-update.yml"), Keycloak.class));
-        assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.upgrade.UpdateStrategy` from String \"abc\""));
+        assertTrue(thrown.getMessage().contains("Cannot deserialize value of type `org.keycloak.operator.update.UpdateStrategy` from String \"abc\""));
     }
 
     @Test
-    public void testUpgradeStrategyRevision() {
+    public void testUpdateStrategyRevision() {
         var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
         var updateSpec = keycloak.getSpec().getUpdateSpec();
         assertNotNull(updateSpec);

@@ -16,6 +16,6 @@ record ProviderIncompatibleResult(String providerId, String attribute, String pr
 
     @Override
     public Optional<String> errorMessage() {
-        return Optional.of("[%s] Rolling Upgrade is not available. '%s.%s' is incompatible: %s -> %s.".formatted(providerId, providerId, attribute, previousValue, currentValue));
+        return Optional.of("[%s] Rolling Update is not available. '%s.%s' is incompatible: %s -> %s.".formatted(providerId, providerId, attribute, previousValue, currentValue));
     }
 }

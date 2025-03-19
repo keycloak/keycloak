@@ -33,48 +33,46 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.keycloak.common.Profile;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 import org.keycloak.operator.testsuite.utils.CRAssert;
-import org.keycloak.operator.upgrade.UpdateStrategy;
-import org.keycloak.operator.upgrade.impl.AutoUpgradeLogic;
+import org.keycloak.operator.update.UpdateStrategy;
+import org.keycloak.operator.update.impl.AutoUpdateLogic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRecreateUpgradeStatus;
-import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUpgradeStatus;
+import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRecreateUpdateStatus;
+import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUpdateStatus;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
-public class UpgradeTest extends BaseOperatorTest {
+public class UpdateTest extends BaseOperatorTest {
 
     @ParameterizedTest(name = "testImageChange-{0}")
     @EnumSource(UpdateStrategy.class)
     public void testImageChange(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
-        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
-        // changing the image to non-existing will always use the recreate upgrade type.
+        // changing the image to non-existing will always use the recreate update type.
         kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
         disableProbes(kc);
-        upgradeCondition = switch (updateStrategy) {
-            case AUTO -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Unexpected update-compatibility command");
-            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Image changed");
-            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
+        updateCondition = switch (updateStrategy) {
+            case AUTO -> eventuallyRecreateUpdateStatus(k8sclient, kc, "Unexpected update-compatibility command");
+            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpdateStatus(k8sclient, kc, "Image changed");
+            case EXPLICIT -> eventuallyRollingUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, false);
-        await(upgradeCondition);
+        await(updateCondition);
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -85,21 +83,21 @@ public class UpgradeTest extends BaseOperatorTest {
     @EnumSource(UpdateStrategy.class)
     public void testCacheMaxCount(UpdateStrategy updateStrategy) throws InterruptedException {
         var kc = createInitialDeployment(updateStrategy);
-        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
-        // changing the local cache max-count should never use the recreate upgrade type
+        // changing the local cache max-count should never use the recreate update type
         kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("cache-embedded-authorization-max-count", "10"));
 
-        upgradeCondition = switch (updateStrategy) {
-            case AUTO -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Compatible changes detected.");
-            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Image unchanged");
-            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
+        updateCondition = switch (updateStrategy) {
+            case AUTO -> eventuallyRollingUpdateStatus(k8sclient, kc, "Compatible changes detected.");
+            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRollingUpdateStatus(k8sclient, kc, "Image unchanged");
+            case EXPLICIT -> eventuallyRollingUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -111,24 +109,24 @@ public class UpgradeTest extends BaseOperatorTest {
     @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
     public void testOptimizedImage(UpdateStrategy updateStrategy) throws InterruptedException {
         // In GHA, the custom image is an optimized image of the base image.
-        // We should be able to do a zero-downtime upgrade with Auto strategy.
+        // We should be able to do a zero-downtime update with Auto strategy.
         var kc = createInitialDeployment(updateStrategy);
         // use the base image
         kc.getSpec().setImage(null);
-        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
-        // use the optimized image, auto strategy should use a rolling upgrade
+        // use the optimized image, auto strategy should use a rolling update
         kc.getSpec().setImage(getTestCustomImage());
-        upgradeCondition = switch (updateStrategy) {
-            case AUTO -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Compatible changes detected.");
-            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpgradeStatus(k8sclient, kc, "Image changed");
-            case EXPLICIT -> eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
+        updateCondition = switch (updateStrategy) {
+            case AUTO -> eventuallyRollingUpdateStatus(k8sclient, kc, "Compatible changes detected.");
+            case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpdateStatus(k8sclient, kc, "Image changed");
+            case EXPLICIT -> eventuallyRollingUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
 
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
@@ -139,33 +137,33 @@ public class UpgradeTest extends BaseOperatorTest {
     @Test
     public void testNoJobReuse() throws InterruptedException {
         // In GHA, the custom image is an optimized image of the base image.
-        // We should be able to do a zero-downtime upgrade with Auto strategy.
+        // We should be able to do a zero-downtime update with Auto strategy.
         var kc = createInitialDeployment(UpdateStrategy.AUTO);
         // use the base image
         kc.getSpec().setImage(null);
-        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
-        // let's trigger a rolling upgrade
-        upgradeCondition = eventuallyRollingUpgradeStatus(k8sclient, kc, "Compatible changes detected.");
+        // let's trigger a rolling update
+        updateCondition = eventuallyRollingUpdateStatus(k8sclient, kc, "Compatible changes detected.");
         kc.getSpec().setImage(getTestCustomImage());
 
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         var job = assertUpdateJobExists(kc);
         var hash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertEquals(0, containerExitCode(job));
 
         //let's trigger a recreate
-        upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc, "Unexpected update-compatibility command");
+        updateCondition = eventuallyRecreateUpdateStatus(k8sclient, kc, "Unexpected update-compatibility command");
         // enough to crash the Pod and return exit code != 0
         kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
         disableProbes(kc);
 
         deployKeycloak(k8sclient, kc, false);
-        await(upgradeCondition);
+        await(updateCondition);
 
         job = assertUpdateJobExists(kc);
         var newHash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
@@ -177,30 +175,30 @@ public class UpgradeTest extends BaseOperatorTest {
     public void testExplicitStrategy() throws InterruptedException {
         var kc = createInitialDeployment(UpdateStrategy.EXPLICIT);
 
-        var upgradeCondition = assertUnknownUpdateTypeStatus(kc);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         // update configuration, revision is updated
-        upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc, "does not match");
+        updateCondition = eventuallyRecreateUpdateStatus(k8sclient, kc, "does not match");
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "10")));
         kc.getSpec().getUpdateSpec().setRevision("1");
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         // update configuration, revision is updated
-        upgradeCondition = eventuallyRecreateUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision (1) does not match (2).");
+        updateCondition = eventuallyRecreateUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision (1) does not match (2).");
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "11")));
         kc.getSpec().getUpdateSpec().setRevision("2");
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
 
         // update configuration, revision is unchanged
-        upgradeCondition = eventuallyRollingUpgradeStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
+        updateCondition = eventuallyRollingUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("cache-embedded-authorization-max-count", "12")));
         kc.getSpec().getUpdateSpec().setRevision("2");
         deployKeycloak(k8sclient, kc, true);
-        await(upgradeCondition);
+        await(updateCondition);
     }
 
     private Job assertUpdateJobExists(Keycloak keycloak) {
@@ -217,9 +215,9 @@ public class UpgradeTest extends BaseOperatorTest {
     }
 
     private int containerExitCode(Job job) {
-        var maybeExitCode = AutoUpgradeLogic.findPodForJob(k8sclient, job)
-                .flatMap(AutoUpgradeLogic::container)
-                .map(AutoUpgradeLogic::exitCode);
+        var maybeExitCode = AutoUpdateLogic.findPodForJob(k8sclient, job)
+                .flatMap(AutoUpdateLogic::container)
+                .map(AutoUpdateLogic::exitCode);
         assertTrue(maybeExitCode.isPresent());
         return maybeExitCode.get();
     }
@@ -247,11 +245,6 @@ public class UpgradeTest extends BaseOperatorTest {
             updateSpec.setRevision("0");
         }
         kc.getSpec().setUpdateSpec(updateSpec);
-
-        if (kc.getSpec().getFeatureSpec() == null) {
-            kc.getSpec().setFeatureSpec(new FeatureSpec());
-        }
-        kc.getSpec().getFeatureSpec().setEnabledFeatures(List.of(Profile.Feature.ROLLING_UPDATES.getKey()));
         return kc;
     }
 

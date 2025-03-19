@@ -54,7 +54,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     @Override
     public void run() {
         Environment.updateProfile(true);
-        if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
             printFeatureDisabled();
             picocli.exit(FEATURE_DISABLED_EXIT_CODE);
             return;
@@ -94,11 +94,13 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     private void printPreviewWarning() {
-        printError("Warning! This command is preview and is not recommended for use in production. It may change or be removed at a future release.");
+        if (Profile.Feature.ROLLING_UPDATES_V1.getType() == Profile.Feature.Type.PREVIEW) {
+            printError("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V1.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
+        }
     }
 
     void printFeatureDisabled() {
-        printError("Unable to use this command. The preview feature 'rolling-updates' is not enabled.");
+        printError("Unable to use this command. The feature '" + Profile.Feature.ROLLING_UPDATES_V1.getVersionedKey() + "' is not enabled.");
     }
 
     static Map<String, CompatibilityMetadataProvider> loadAllProviders() {

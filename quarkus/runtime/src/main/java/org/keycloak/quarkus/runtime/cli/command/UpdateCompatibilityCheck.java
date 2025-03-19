@@ -29,7 +29,7 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = UpdateCompatibilityCheck.NAME,
-        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling upgrade is possible between old and the current metadata."
+        description = "Checks if the metadata is compatible with the current configuration. A zero exit code means a rolling update is possible between old and the current metadata."
 )
 public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
 
@@ -55,7 +55,7 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
             var id = idIterator.next();
             var provider = providers.get(id);
             if (provider == null) {
-                printError("[%s] Provider not found. Rolling Upgrade is not available.".formatted(id));
+                printError("[%s] Provider not found. Rolling Update is not available.".formatted(id));
                 return CompatibilityResult.ExitCode.RECREATE.value();
             }
 
@@ -68,7 +68,7 @@ public class UpdateCompatibilityCheck extends AbstractUpdatesCommand {
             }
         }
 
-        printOut("[OK] Rolling Upgrade is available.");
+        printOut("[OK] Rolling Update is available.");
         return CompatibilityResult.ExitCode.ROLLING.value();
     }
 

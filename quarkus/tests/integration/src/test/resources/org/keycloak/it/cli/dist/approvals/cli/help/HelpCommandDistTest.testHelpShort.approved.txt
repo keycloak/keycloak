@@ -33,7 +33,7 @@ Commands:
   update-compatibility    [Preview] Tool for configuration compatibility.
     check                 Checks if the metadata is compatible with the current
                             configuration. A zero exit code means a rolling
-                            upgrade is possible between old and the current
+                            update is possible between old and the current
                             metadata.
     metadata              Stores the metadata necessary to determine if a
                             configuration is compatible.

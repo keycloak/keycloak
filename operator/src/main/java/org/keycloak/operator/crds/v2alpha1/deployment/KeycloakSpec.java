@@ -132,7 +132,7 @@ public class KeycloakSpec {
     private TracingSpec tracingSpec;
 
     @JsonProperty("update")
-    @JsonPropertyDescription("Configuration related to Keycloak deployment upgrades.")
+    @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
     private UpdateSpec updateSpec;
 
     public HttpSpec getHttpSpec() {

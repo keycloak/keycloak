@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.upgrade.impl;
+package org.keycloak.operator.update.impl;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -27,28 +27,28 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.upgrade.UpgradeType;
+import org.keycloak.operator.update.UpdateType;
 
 /**
  * Implements Keycloak 26.0 logic.
  * <p>
- * It uses a {@link UpgradeType#RECREATE} if the image changes; otherwise uses {@link UpgradeType#ROLLING}.
+ * It uses a {@link UpdateType#RECREATE} if the image changes; otherwise uses {@link UpdateType#ROLLING}.
  */
-public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
+public class RecreateOnImageChangeUpdateLogic extends BaseUpdateLogic {
 
-    public RecreateOnImageChangeUpgradeLogic(Context<Keycloak> context, Keycloak keycloak) {
+    public RecreateOnImageChangeUpdateLogic(Context<Keycloak> context, Keycloak keycloak) {
         super(context, keycloak);
     }
 
     @Override
-    Optional<UpdateControl<Keycloak>> onUpgrade() {
+    Optional<UpdateControl<Keycloak>> onUpdate() {
         var currentImage = extractImage(ContextUtils.getCurrentStatefulSet(context).orElseThrow());
         var desiredImage = extractImage(ContextUtils.getDesiredStatefulSet(context));
 
         if (Objects.equals(currentImage, desiredImage)) {
-            decideRollingUpgrade("Image unchanged.");
+            decideRollingUpdate("Image unchanged.");
         } else {
-            decideRecreateUpgrade("Image changed %s -> %s".formatted(currentImage, desiredImage));
+            decideRecreateUpdate("Image changed %s -> %s".formatted(currentImage, desiredImage));
         }
         return Optional.empty();
     }
@@ -56,7 +56,7 @@ public class RecreateOnImageChangeUpgradeLogic extends BaseUpgradeLogic {
     private static String extractImage(StatefulSet statefulSet) {
         return CRDUtils.firstContainerOf(statefulSet)
                 .map(Container::getImage)
-                .orElseThrow(BaseUpgradeLogic::containerNotFound);
+                .orElseThrow(BaseUpdateLogic::containerNotFound);
     }
 
 }
