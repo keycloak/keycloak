@@ -58,12 +58,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
 
     @Override
     public boolean compatible(InstanceContext<ManagedRealm, InjectRealm> a, RequestedInstance<ManagedRealm, InjectRealm> b) {
-        if (!a.getAnnotation().config().equals(b.getAnnotation().config())) {
-            return false;
-        }
-
-        RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(a.getRegistry());
-        return interceptor.sameInterceptors(a);
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
