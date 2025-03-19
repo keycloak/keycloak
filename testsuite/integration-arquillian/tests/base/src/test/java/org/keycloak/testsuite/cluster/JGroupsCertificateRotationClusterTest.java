@@ -21,8 +21,8 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     @Test
     public void testRotation() {
         Assume.assumeTrue(getClusterSize() >= 2);
-        var mtlsEnabled = assumeEnabledAndOverwriteRotation(1, TimeUnit.DAYS);
-        Assume.assumeTrue(mtlsEnabled);
+        Assume.assumeTrue(isMtlsEnabled());
+
         assertClusterSize();
 
         var alias = currentCertificateAliasFor(0);
@@ -41,22 +41,25 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     @Test
     public void testAutoRotation() {
         Assume.assumeTrue(getClusterSize() >= 2);
-        var mtlsEnabled = assumeEnabledAndOverwriteRotation(5, TimeUnit.SECONDS);
-        Assume.assumeTrue(mtlsEnabled);
-        assertClusterSize();
+        Assume.assumeTrue(isMtlsEnabled());
 
-        var alias = currentCertificateAliasFor(0);
-        log.infof("Current JGroups Certificate alias: %s", alias);
+        try (var revert = overwriteRotation(5, TimeUnit.SECONDS)) {
+            assertClusterSize();
 
-        // The certificate should rotate after 5 seconds
-        assertAliasNotEquals(alias);
+            var alias = currentCertificateAliasFor(0);
+            log.infof("Current JGroups Certificate alias: %s", alias);
+
+            // The certificate should rotate after 5 seconds
+            assertAliasNotEquals(alias);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     public void testCoordinatorHasScheduleTask() {
         Assume.assumeTrue(getClusterSize() >= 2);
-        var mtlsEnabled = assumeEnabledAndOverwriteRotation(1, TimeUnit.DAYS);
-        Assume.assumeTrue(mtlsEnabled);
+        Assume.assumeTrue(isMtlsEnabled());
 
         var alias = currentCertificateAliasFor(0);
         log.infof("Current JGroups Certificate alias: %s", alias);
@@ -85,27 +88,58 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         assertTrue(hasRotationTask(coordinatorIdx));
     }
 
-    private boolean assumeEnabledAndOverwriteRotation(long time, TimeUnit timeUnit) {
-        boolean enabled = false;
+    private boolean isMtlsEnabled() {
+        boolean isMtlsEnabled = true;
         for (int i = 0; i < getClusterSize(); ++i) {
             var crmEnabled = getTestingClientFor(backendNode(i))
                     .server()
                     .fetch(session -> {
                         var crm = certificateReloadManager(session);
+                        return crm != null;
+                    }, Boolean.class);
+
+            isMtlsEnabled = isMtlsEnabled && crmEnabled;
+        }
+
+        return isMtlsEnabled;
+    }
+
+    private AutoCloseable overwriteRotation(long time, TimeUnit timeUnit) {
+        long previousRotationSeconds = 0;
+        for (int i = 0; i < getClusterSize(); ++i) {
+            previousRotationSeconds = getTestingClientFor(backendNode(i))
+                    .server()
+                    .fetch(session -> {
+                        var crm = certificateReloadManager(session);
                         if (crm == null) {
-                            return false;
+                            throw new RuntimeException("MTLS is not enabled");
                         }
+                        long originalRotation = crm.getRotationSeconds();
                         crm.setRotationSeconds(timeUnit.toSeconds(time));
                         if (crm.isCoordinator()) {
                             crm.rotateCertificate();
                         }
-                        return true;
-                    }, Boolean.class);
-            if (crmEnabled) {
-                enabled = true;
-            }
+                        return originalRotation;
+                    }, Long.class);
         }
-        return enabled;
+
+        long finalPreviousRotationSeconds = previousRotationSeconds;
+        return () -> {
+            for (int i = 0; i < getClusterSize(); ++i) {
+                getTestingClientFor(backendNode(i))
+                        .server()
+                        .run(session -> {
+                            var crm = certificateReloadManager(session);
+                            if (crm == null) {
+                                throw new RuntimeException("MTLS is not enabled");
+                            }
+                            crm.setRotationSeconds(finalPreviousRotationSeconds);
+                            if (crm.isCoordinator()) {
+                                crm.rotateCertificate();
+                            }
+                        });
+            }
+        };
     }
 
     private void assertAliasNotEquals(String alias) {
