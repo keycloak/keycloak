@@ -46,6 +46,9 @@ public class JGroupsCertificate {
     @JsonProperty("alias")
     private String alias;
 
+    @JsonProperty("generatedMillis")
+    private long generatedMillis;
+
     public JGroupsCertificate() {
     }
 
@@ -79,6 +82,14 @@ public class JGroupsCertificate {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public long getGeneratedMillis() {
+        return generatedMillis;
+    }
+
+    public void setGeneratedMillis(long generatedMillis) {
+        this.generatedMillis = generatedMillis;
     }
 
     @JsonIgnore
