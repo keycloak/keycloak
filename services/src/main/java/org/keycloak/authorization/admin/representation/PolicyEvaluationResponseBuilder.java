@@ -168,10 +168,22 @@ public class PolicyEvaluationResponseBuilder {
             }
 
             result.setAllowedScopes(new ArrayList<>(result.getAllowedScopes()));
-            result.getAllowedScopes().removeAll(result.getDeniedScopes());
 
-            if (!result.getAllowedScopes().isEmpty() && result.getAllowedScopes().stream().noneMatch(result.getScopes()::contains)) {
-                response.setStatus(DecisionEffect.DENY);
+            List<ScopeRepresentation> allowedScopes = result.getAllowedScopes();
+
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(),resourceServer.getId())
+                    && allowedScopes.size() == 1
+                    && allowedScopes.stream().map(ScopeRepresentation::getName).anyMatch(AdminPermissionsSchema.VIEW::equals)
+                    && result.getScopes().stream().map(ScopeRepresentation::getName).anyMatch(AdminPermissionsSchema.VIEW::equals)) {
+                response.setStatus(DecisionEffect.PERMIT);
+                result.setDeniedScopes(new ArrayList<>(result.getDeniedScopes()));
+                result.getDeniedScopes().removeIf((s) -> AdminPermissionsSchema.VIEW.equals(s.getName()));
+            } else {
+                allowedScopes.removeAll(result.getDeniedScopes());
+
+                if (!result.getScopes().isEmpty() && allowedScopes.stream().noneMatch(result.getScopes()::contains)) {
+                    response.setStatus(DecisionEffect.DENY);
+                }
             }
 
             if (resource.getId() != null) {
@@ -187,7 +199,7 @@ public class PolicyEvaluationResponseBuilder {
                 result.getDeniedScopes().addAll(model.getScopes().stream()
                         .map(ModelToRepresentation::toRepresentation)
                         .filter(Predicate.not(scopes::contains))
-                        .filter(Predicate.not(result.getAllowedScopes()::contains))
+                        .filter(Predicate.not(allowedScopes::contains))
                         .toList()
                 );
             } else {
