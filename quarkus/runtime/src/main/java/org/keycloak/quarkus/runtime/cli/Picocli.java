@@ -387,7 +387,10 @@ public class Picocli {
 
             // first validate the advertised property names
             // - this allows for efficient resolution of wildcard values and checking spi options
-            Configuration.getConfig().getPropertyNames().forEach(name -> {
+            Configuration.getPropertyNames().forEach(name -> {
+                if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    return; // there are canonical mappings to kc. values - no need to consider alternative forms
+                }
                 if (!options.includeRuntime) {
                     checkRuntimeSpiOptions(name, ignoredRunTime);
                 }

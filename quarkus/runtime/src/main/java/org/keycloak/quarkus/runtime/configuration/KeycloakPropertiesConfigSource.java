@@ -154,8 +154,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
     }
 
     /**
-     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest
-     * path is to just have the "kc" namespace for Keycloak-specific properties.
+     * Only kc properties can be in keycloak.conf
      *
      * @param key the key to transform
      * @return the same key but prefixed with the namespace

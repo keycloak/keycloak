@@ -17,7 +17,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.config.Option.WILDCARD_PLACEHOLDER_PATTERN;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
@@ -35,11 +34,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.ConfigValue.ConfigValueBuilder;
-import io.smallrye.config.ExpressionConfigSourceInterceptor;
-import io.smallrye.config.Expressions;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
@@ -49,6 +43,12 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.utils.StringUtil;
+
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.ExpressionConfigSourceInterceptor;
+import io.smallrye.config.Expressions;
 
 public class PropertyMapper<T> {
 
@@ -259,7 +259,7 @@ public class PropertyMapper<T> {
                     name).getValue();
         }
 
-        if (value == null && mappedValue == null) {
+        if (mappedValue == null) {
             return null;
         }
 
@@ -468,10 +468,8 @@ public class PropertyMapper<T> {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            // The wildcard pattern (e.g. log-level-<category>) is matching only a-z, 0-0 and dots. For env vars, dots are replaced by underscores.
-            var fromWildcardMatcher = WILDCARD_PLACEHOLDER_PATTERN.matcher(option.getKey());
-            if (fromWildcardMatcher.find()) {
-                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, fromWildcardMatcher, wildcardKeysTransformer, wildcardMapFrom);
+            if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
+                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");

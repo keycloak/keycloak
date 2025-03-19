@@ -2,7 +2,6 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
@@ -285,8 +284,9 @@ public final class PropertyMappers {
                 if (mapper.getFrom() != null) {
                     wildcardMapFrom.remove(mapper.getMapFrom());
                 }
+            } else {
+                handleMapper(mapper, this::remove);
             }
-            handleMapper(mapper, this::remove);
         }
 
         private void remove(String key, PropertyMapper<?> mapper) {
@@ -308,11 +308,15 @@ public final class PropertyMappers {
             }
 
             // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
-            ret = wildcardMappers.stream()
-                    .filter(m -> m.matchesWildcardOptionName(strKey))
-                    .toList();
-            if (!ret.isEmpty()) {
-                return ret;
+            // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
+            // keycloak key
+            if (strKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || strKey.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                ret = wildcardMappers.stream()
+                        .filter(m -> m.matchesWildcardOptionName(strKey))
+                        .toList();
+                if (!ret.isEmpty()) {
+                    return ret;
+                }
             }
 
             return null;

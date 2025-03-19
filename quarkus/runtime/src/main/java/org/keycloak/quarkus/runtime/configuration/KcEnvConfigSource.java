@@ -22,12 +22,12 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 // Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
 // leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to
@@ -53,10 +53,10 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
 
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
 
-                if (mapper == null) {
+                if (mapper != null && mapper.hasWildcard()) {
                     // special case - wildcards don't follow the default conversion rule
-                    transformedKey = PropertyMappers.getWildcardMappers().stream().map(w -> w.getKcKeyForEnvKey(key))
-                            .filter(Objects::nonNull).findFirst().orElse(transformedKey);
+                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
+                            .orElseThrow();
                 }
 
                 properties.put(transformedKey, value);
