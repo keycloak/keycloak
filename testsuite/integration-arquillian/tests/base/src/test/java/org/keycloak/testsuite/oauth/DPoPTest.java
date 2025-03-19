@@ -19,8 +19,10 @@ package org.keycloak.testsuite.oauth;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.apache.http.client.methods.HttpGet;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -71,6 +73,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.security.KeyPair;
@@ -85,7 +88,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -122,6 +124,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     private String jktEc;
     private ClientRegistration reg;
 
+    private HttpGet get;
+
     @Before
     public void beforeDPoPTest() throws Exception {
         rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
@@ -148,6 +152,42 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
+
+    @Test
+    public void testDuplicatedAuthorizationHeaderOnUserInfo() throws Exception {
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
+
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        String authorization = "DPoP" + " " + response.getAccessToken();
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+
+        assertEquals(401, userInfoResponse.getStatusCode());
+        assertEquals("HTTP 401 Unauthorized", userInfoResponse.getError());
+
+        oauth.doLogout(response.getRefreshToken());
+    }
+
+    @Test
+    public void testDPoPAccessTokenButBearerAuthorizationHeader() throws Exception {
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
+
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        String authorization = "Bearer" + " " + response.getAccessToken();
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+        assertEquals(401, userInfoResponse.getStatusCode());
+
+        oauth.doLogout(response.getRefreshToken());
+    }
+
 
     @Test
     public void testDPoPByPublicClientWithDpopJkt() throws Exception {
