@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -9,6 +10,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -40,8 +42,15 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         }
 
         if (to != null) {
+            if (!to.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                throw new IllegalArgumentException("Wildcards should map to quarkus options. If not, PropertyMappers logic will need adjusted");
+            }
             this.toPrefix = to.substring(0, to.indexOf(WILDCARD_FROM_START));
-            this.toSuffix = to.substring(to.lastIndexOf(">") + 1, to.length());
+            int lastIndexOf = to.lastIndexOf(">");
+            if (lastIndexOf == -1) {
+                throw new IllegalArgumentException("Invalid wildcard map to.");
+            }
+            this.toSuffix = to.substring(lastIndexOf + 1, to.length());
         }
 
         this.wildcardKeysTransformer = wildcardKeysTransformer;
@@ -69,14 +78,14 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     @Override
     public PropertyMapper<?> forKey(String key) {
-        String wildcardValue = extractWildcardValue(key);
+        String wildcardValue = extractWildcardValue(key).orElseThrow();
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
         return new PropertyMapper<T>(this, from, to,
                 wildcardMapFrom == null ? null : (v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
-    private String extractWildcardValue(String key) {
+    private Optional<String> extractWildcardValue(String key) {
         String result = null;
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());
@@ -84,12 +93,9 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             // TODO: this presumes that the quarkus value is quoted
             result = key.substring(toPrefix.length(), key.length() - toSuffix.length());
         }
-        if (result == null || !isValidWildcardValue(result)) {
-            // TODO: it would be nice to warn the user for property file or env entries that look
-            // like they should be wildcards, but aren't allowed
-            throw new IllegalArgumentException();
-        }
-        return result;
+        // TODO: it would be nice to warn the user for property file or env entries that look
+        // like they should be wildcards, but aren't allowed
+        return Optional.ofNullable(result).filter(WildcardPropertyMapper::isValidWildcardValue);
     }
 
     public static boolean isValidWildcardValue(String result) {
@@ -101,19 +107,14 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      * E.g. check if "log-level-io.quarkus" matches the wildcard pattern "log-level-<category>".
      */
     public boolean matchesWildcardOptionName(String name) {
-        try {
-            extractWildcardValue(name);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+        return extractWildcardValue(name).isPresent();
     }
 
-    public String getKcKeyForEnvKey(String envKey, String transformedKey) {
+    public Optional<String> getKcKeyForEnvKey(String envKey, String transformedKey) {
         if (transformedKey.startsWith(fromPrefix)) {
-            return getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", "."));
+            return Optional.ofNullable(getFrom(envKey.substring(fromPrefix.length()).toLowerCase().replace("_", ".")));
         }
-        throw new IllegalArgumentException();
+        return Optional.empty();
     }
 
 }

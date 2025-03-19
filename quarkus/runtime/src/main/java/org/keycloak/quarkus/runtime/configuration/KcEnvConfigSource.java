@@ -55,7 +55,8 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
 
                 if (mapper != null && mapper.hasWildcard()) {
                     // special case - wildcards don't follow the default conversion rule
-                    transformedKey = ((WildcardPropertyMapper<?>)mapper).getKcKeyForEnvKey(key, transformedKey);
+                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
+                            .orElseThrow();
                 }
 
                 properties.put(transformedKey, value);

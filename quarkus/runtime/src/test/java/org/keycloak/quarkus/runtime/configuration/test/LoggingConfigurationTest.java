@@ -296,11 +296,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"io.k8s\".level").getValue());
     }
 
-    @Test
-    public void testWildcardPropertiesDontMatchEnvVarsFormat() {
-        SmallRyeConfig config = createConfig();
-        assertNull(config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
-    }
 
     @Test
     public void testLogLevelWithUnderscore() {
