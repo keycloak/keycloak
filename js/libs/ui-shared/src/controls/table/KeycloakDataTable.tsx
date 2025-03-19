@@ -156,24 +156,31 @@ function DataTable<T>({
   };
 
   const updateState = (rowIndex: number, isSelected: boolean) => {
-    if (rowIndex === -1) {
-      const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) => get(v, "id"));
-      updateSelectedRows(
-        isSelected
-          ? [...selectedRows, ...rows.map((row) => row.data)]
-          : selectedRows.filter(
-              (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-            ),
-      );
+    if (isRadio) {
+      const selectedRow = isSelected ? [rows[rowIndex].data] : [];
+      updateSelectedRows(selectedRow);
     } else {
-      if (isSelected) {
-        updateSelectedRows([...selectedRows, rows[rowIndex].data]);
-      } else {
-        updateSelectedRows(
-          selectedRows.filter(
-            (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
-          ),
+      if (rowIndex === -1) {
+        const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) =>
+          get(v, "id"),
         );
+        updateSelectedRows(
+          isSelected
+            ? [...selectedRows, ...rows.map((row) => row.data)]
+            : selectedRows.filter(
+                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
+              ),
+        );
+      } else {
+        if (isSelected) {
+          updateSelectedRows([...selectedRows, rows[rowIndex].data]);
+        } else {
+          updateSelectedRows(
+            selectedRows.filter(
+              (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
+            ),
+          );
+        }
       }
     }
   };
@@ -246,17 +253,21 @@ function DataTable<T>({
             {index % 2 === 0 ? (
               <Tr>
                 <Td
-                  expand={{
-                    isExpanded: !!expandedRows[index],
-                    rowIndex: index,
-                    expandId: `${index}`,
-                    onToggle: (_, rowIndex, isOpen) => {
-                      onCollapse(isOpen, rowIndex);
-                      const expand = [...expandedRows];
-                      expand[index] = isOpen;
-                      setExpandedRows(expand);
-                    },
-                  }}
+                  expand={
+                    rows[index + 1].cells.length === 0
+                      ? undefined
+                      : {
+                          isExpanded: !!expandedRows[index],
+                          rowIndex: index,
+                          expandId: "expandable-row-",
+                          onToggle: (_, rowIndex, isOpen) => {
+                            onCollapse(isOpen, rowIndex);
+                            const expand = [...expandedRows];
+                            expand[index] = isOpen;
+                            setExpandedRows(expand);
+                          },
+                        }
+                  }
                 />
                 <CellRenderer
                   row={row}
@@ -571,7 +582,7 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button variant="link" onClick={refresh}>
+                <Button variant="link" onClick={refresh} data-testid="refresh">
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>

@@ -77,7 +77,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         if(args == null) {
             return Collections.emptyList();
         }
-        
+
         List<String> result = new ArrayList<String>();
         boolean escaped = false;
         StringBuilder arg = new StringBuilder();
@@ -101,7 +101,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             }
         }
         result.add(arg.toString());
-        
+
         return result;
     }
 
@@ -125,20 +125,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
                 properties.put(key, value);
-
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
-
-                if (mapper != null) {
-                    mapper = mapper.forKey(key);
-
-                    String to = mapper.getTo();
-
-                    if (to != null) {
-                        properties.put(mapper.getTo(), value);
-                    }
-
-                    properties.put(mapper.getFrom(), value);
-                }
             }
         }, ignored -> {});
 
@@ -164,10 +150,10 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                     unaryConsumer.accept(arg);
                     continue;
                 }
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
-                // - does not know all of the picocli parsing rules. picocli will accept -cffile, and short option grouping - that's not accounted for
+                // - Even though We've explicitly disabled PosixClusteredShortOptionsAllowed, it may not know all of the picocli parsing rules.
                 if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);

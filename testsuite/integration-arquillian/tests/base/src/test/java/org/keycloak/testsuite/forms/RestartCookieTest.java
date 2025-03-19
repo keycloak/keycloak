@@ -157,9 +157,8 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         oauth.redirectUri(null);
         oauth.scope(null);
         oauth.responseType(null);
-        oauth.requestUri(requestUri);
 
-        oauth.loginForm().state("testRestartCookieWithPar").open();
+        oauth.loginForm().requestUri(requestUri).state("testRestartCookieWithPar").open();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
     }

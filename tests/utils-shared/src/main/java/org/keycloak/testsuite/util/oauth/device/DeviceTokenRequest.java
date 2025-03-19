@@ -5,6 +5,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import java.io.IOException;
 
@@ -17,6 +18,18 @@ public class DeviceTokenRequest extends AbstractHttpPostRequest<DeviceTokenReque
         this.deviceCode = deviceCode;
     }
 
+    public DeviceTokenRequest codeVerifier(PkceGenerator pkceGenerator) {
+        if (pkceGenerator != null) {
+            codeVerifier(pkceGenerator.getCodeVerifier());
+        }
+        return this;
+    }
+
+    public DeviceTokenRequest codeVerifier(String codeVerifier) {
+        parameter(OAuth2Constants.CODE_VERIFIER, codeVerifier);
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getToken();
@@ -26,7 +39,6 @@ public class DeviceTokenRequest extends AbstractHttpPostRequest<DeviceTokenReque
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
         parameter("device_code", deviceCode);
-        parameter(OAuth2Constants.CODE_VERIFIER, client.getCodeVerifier());
     }
 
     @Override

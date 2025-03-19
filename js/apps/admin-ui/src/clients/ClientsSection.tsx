@@ -113,6 +113,7 @@ const ToolbarItems = () => {
     <>
       <ToolbarItem>
         <Button
+          data-testid="createClient"
           component={(props) => <Link {...props} to={toAddClient({ realm })} />}
         >
           {t("createClient")}
@@ -194,6 +195,7 @@ export default function ClientsSection() {
       <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           mountOnEnter
+          unmountOnExit
           isBox
           defaultLocation={toClients({
             realm,

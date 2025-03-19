@@ -2,7 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <base href="${resourceUrl}/">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
@@ -127,7 +126,7 @@
     <div id="app">
       <main class="container">
         <div class="keycloak__loading-container">
-          <span class="pf-c-spinner pf-m-xl" role="progressbar" aria-valuetext="Loading&hellip;">
+          <span class="pf-c-spinner pf-m-xl" role="progressbar" aria-label="Loading&hellip;">
             <span class="pf-c-spinner__clipper"></span>
             <span class="pf-c-spinner__lead-ball"></span>
             <span class="pf-c-spinner__tail-ball"></span>

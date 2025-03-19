@@ -25,9 +25,11 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
 import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
 
@@ -271,6 +273,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"org.keycloak\".level").getValue());
         assertEquals("TRACE", config.getConfigValue("quarkus.log.category.\"io.quarkus\".level").getValue());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch("kc.log-level-io.quarkus"::equals));
         assertEquals("INFO", config.getConfigValue("quarkus.log.category.\"foo.bar\".level").getValue());
     }
 

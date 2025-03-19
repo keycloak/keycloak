@@ -34,6 +34,7 @@ import { BellIcon } from "@patternfly/react-icons";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
 import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
+import { RoleSelect } from "../resource-types/RoleSelect";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -42,6 +43,7 @@ interface EvaluateFormInputs
   clients: string[];
   groups: string[];
   users: string[];
+  roles: string[];
   resourceType?: string;
 }
 
@@ -54,6 +56,7 @@ const COMPONENTS: Record<string, React.ElementType> = {
   users: UserSelect,
   clients: ClientSelect,
   groups: GroupSelect,
+  roles: RoleSelect,
 };
 
 export const PermissionsEvaluationTab = (props: Props) => {
@@ -114,6 +117,8 @@ const PermissionEvaluateContent = ({ client }: Props) => {
           return formValues.users?.[0];
         case "Clients":
           return formValues.clients?.[0];
+        case "Roles":
+          return formValues.roles?.[0];
         default:
           return undefined;
       }

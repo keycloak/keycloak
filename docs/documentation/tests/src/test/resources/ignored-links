@@ -46,3 +46,4 @@ https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing#_measu
 http://example.com:8080
 # To be removed once KC 26.2 has been released
 https://www.keycloak.org/server/caching#_securing_transport_stacks
+https://www.keycloak.org/securing-apps/token-exchange*

@@ -114,7 +114,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
             return; // most system properties are internally used, and not relevant during show-config
         }
 
-        value = maskValue(configValue.getName(), value, configValue.getConfigSourceName());
+        value = maskValue(value, configValue.getConfigSourceName(), mapper);
 
         spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", configValue.getName(), value, KeycloakConfigSourceProvider.getConfigSourceDisplayName(configValue.getConfigSourceName()));
     }

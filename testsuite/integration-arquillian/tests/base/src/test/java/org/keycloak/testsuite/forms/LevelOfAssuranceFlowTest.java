@@ -43,6 +43,7 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuth
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
@@ -320,6 +321,25 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void stepupAuthenticationNoAuthSessionCookie() {
+        // logging in to level 1
+        openLoginFormWithAcrClaim(true, "silver");
+        authenticateWithUsernamePassword();
+        assertLoggedInWithAcr("silver");
+        // doing step-up authentication to level 2
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+        // going back to login again, otp should be presented as by default max-age is 0
+        openLoginFormWithAcrClaim(true, "gold");
+        // remove the auth session cookie emulating a browser restart in which this cookie is lost
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+    }
+
+    @Test
     public void stepupToUnknownEssentialAcrFails() {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsernamePassword();
@@ -334,7 +354,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsernamePassword();
         assertLoggedInWithAcr("silver");
-        oauth.claims(null);
         oauth.openLoginForm();
         assertLoggedInWithAcr("silver"); // Return silver without need to re-authenticate due maxAge for "silver" condition did not timed-out yet
     }
@@ -575,7 +594,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("3");
 
         // Re-auth 1: Should be automatically authenticated and still return "3"
-        oauth.claims(null);
         oauth.openLoginForm();
         assertLoggedInWithAcr("3");
 
@@ -642,14 +660,12 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("3");
 
         // Send request with prompt=login . User should be asked to re-authenticate with level 1
-        oauth.claims(null);
         oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
         reauthenticateWithPassword();
         assertLoggedInWithAcr("silver");
 
         // Request with prompt=login together with "acr=2" . User should be asked to re-authenticate with level 2
-        oauth.claims(claims(true, "gold"));
-        oauth.loginForm().prompt("login").open();
+        oauth.loginForm().claims(claims(true, "gold")).prompt("login").open();
         reauthenticateWithPassword();
         authenticateWithTotp();
         assertLoggedInWithAcr("gold");
@@ -1069,8 +1085,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     public static void openLoginFormWithAcrClaim(OAuthClient oauth, boolean essential, String... acrValues) {
-        oauth.claims(claims(essential, acrValues));
-        oauth.openLoginForm();
+        oauth.loginForm().claims(claims(essential, acrValues)).open();
     }
 
     public static ClaimsRepresentation claims(boolean essential, String... acrValues) {

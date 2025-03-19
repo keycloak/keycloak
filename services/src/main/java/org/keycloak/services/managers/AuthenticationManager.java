@@ -1619,8 +1619,11 @@ public class AuthenticationManager {
         if(client == null) {
             return;
         }
-        boolean isAlwaysUseLightweightAccessToken = Boolean.parseBoolean(client.getAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED));
-        if (isAlwaysUseLightweightAccessToken || accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
+
+        TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+        AccessTokenContext subjectTokenContext = encoder.getTokenContextFromTokenId(accessToken.getId());
+        boolean isAccessTokenLightweight = AccessTokenContext.TokenType.LIGHTWEIGHT.equals(subjectTokenContext.getTokenType());
+        if (isAccessTokenLightweight || accessToken.getSubject() == null || (accessToken.getSessionId() == null && accessToken.getResourceAccess().isEmpty() && accessToken.getRealmAccess() == null)) {
             //get user session
             EventBuilder event = new EventBuilder(realm, session);
             event.event(EventType.INTROSPECT_TOKEN);

@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util.oauth;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.ClaimsRepresentation;
 
 public class LoginUrlBuilder extends AbstractUrlBuilder {
 
@@ -55,6 +56,39 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder codeChallenge(PkceGenerator pkceGenerator) {
+        if (pkceGenerator != null) {
+            codeChallenge(pkceGenerator.getCodeChallenge(), pkceGenerator.getCodeChallengeMethod());
+        }
+        return this;
+    }
+
+    public LoginUrlBuilder codeChallenge(String codeChallenge, String codeChallengeMethod) {
+        parameter(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        return this;
+    }
+
+    public LoginUrlBuilder dpopJkt(String dpopJkt) {
+        parameter(OIDCLoginProtocol.DPOP_JKT, dpopJkt);
+        return this;
+    }
+
+    public LoginUrlBuilder claims(ClaimsRepresentation claims) {
+        parameter(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+        return this;
+    }
+
+    public LoginUrlBuilder request(String request) {
+        parameter(OIDCLoginProtocol.REQUEST_PARAM, request);
+        return this;
+    }
+
+    public LoginUrlBuilder requestUri(String requestUri) {
+        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
@@ -63,19 +97,6 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope());
-
-        parameter(OAuth2Constants.CODE_CHALLENGE, client.getCodeChallenge());
-        parameter(OAuth2Constants.CODE_CHALLENGE_METHOD, client.getCodeChallengeMethod());
-
-        parameter(OIDCLoginProtocol.DPOP_JKT, client.getDpopJkt());
-
-        parameter(OIDCLoginProtocol.REQUEST_PARAM, client.getRequest());
-        parameter(OIDCLoginProtocol.REQUEST_URI_PARAM, client.getRequestUri());
-        parameter(OIDCLoginProtocol.CLAIMS_PARAM, client.getClaims());
-
-        if (client.getCustomParameters() != null) {
-            client.getCustomParameters().forEach(this::parameter);
-        }
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {

@@ -16,6 +16,7 @@
 
     <properties>
         <maven.compiler.parameters>true</maven.compiler.parameters>
+        <kc.quarkus.tests.groups>!invalid</kc.quarkus.tests.groups>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
@@ -116,6 +117,16 @@
         </dependency>
 
         <!-- Test -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kube-api-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kube-api-test-client-inject</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-test-common</artifactId>
@@ -261,6 +272,7 @@
                         <!-- Used in KeycloakDeploymentTest#testPreconfiguredPodLabels -->
                         <OPERATOR_TEST_LABEL_EXPRESSION>my-value</OPERATOR_TEST_LABEL_EXPRESSION>
                     </systemPropertyVariables>
+                    <groups>${kc.quarkus.tests.groups}</groups>
                 </configuration>
             </plugin>
 

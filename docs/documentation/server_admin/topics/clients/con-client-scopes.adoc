@@ -84,6 +84,7 @@ The scope parameter contains the string, with the scope values divided by spaces
 == Evaluating Client Scopes
 include::proc-evaluating-client-scopes.adoc[]
 
+[[client-scopes-permissions]]
 == Client scopes permissions
 
 When issuing tokens to a user, the client scope applies only if the user is permitted to use it.
