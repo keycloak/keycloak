@@ -128,7 +128,7 @@ export async function assertClipboardHasText(page: Page) {
   const clipboardText = await page.evaluateHandle(() =>
     navigator.clipboard.readText(),
   );
-  expect(page.getByTestId("authorization-export-code-editor")).toHaveText(
+  await expect(page.getByTestId("authorization-export-code-editor")).toHaveText(
     await clipboardText.jsonValue(),
   );
 }

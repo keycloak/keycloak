@@ -51,7 +51,7 @@ test.describe("Realm settings general tab tests", () => {
     expect(response.status()).toBe(200);
   });
 
-  test("Test all general tab switches", async ({ page }) => {
+  test("all general tab switches", async ({ page }) => {
     await switchOn(page, "#userManagedAccessAllowed");
     await clickSaveRealm(page);
     await assertNotificationMessage(page, "Realm successfully updated");
@@ -61,7 +61,7 @@ test.describe("Realm settings general tab tests", () => {
     await assertNotificationMessage(page, "Realm successfully updated");
   });
 
-  test("Test realm enable/disable switch", async ({ page }) => {
+  test("realm enable/disable switch", async ({ page }) => {
     // Enable realm
     await switchOn(page, `#${realmName}-switch`);
     await assertNotificationMessage(page, "Realm successfully updated");

@@ -27,7 +27,11 @@ export async function assertTestClusterAvailability(
   expected: boolean = true,
 ) {
   const button = page.getByTestId("test-cluster-availability");
-  expect(await button.isDisabled()).toBe(!expected);
+  if (expected) {
+    await expect(button).toBeEnabled();
+  } else {
+    await expect(button).toBeDisabled();
+  }
 }
 
 export async function deleteClusterNode(page: Page, host: string) {
@@ -91,11 +95,12 @@ export async function assertTokenLifespanClientOfflineSessionMaxVisible(
   page: Page,
   visible: boolean,
 ) {
-  expect(
-    await page
-      .getByTestId("token-lifespan-clientOfflineSessionMax")
-      .isVisible(),
-  ).toBe(visible);
+  const locator = page.getByTestId("token-lifespan-clientOfflineSessionMax");
+  if (visible) {
+    await expect(locator).toBeVisible();
+  } else {
+    await expect(locator).toBeHidden();
+  }
 }
 
 const oAuthMutualSwitch =

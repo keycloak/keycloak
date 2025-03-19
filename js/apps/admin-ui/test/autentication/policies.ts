@@ -10,10 +10,8 @@ export async function assertSupportedApplications(
   page: Page,
   applications: string[],
 ) {
-  const supportedApplications = await page
-    .getByTestId("supportedApplications")
-    .textContent();
-  expect(supportedApplications).toEqual(applications.join(""));
+  const supportedApplications = page.getByTestId("supportedApplications");
+  await expect(supportedApplications).toHaveText(applications.join(""));
 }
 
 export async function setPolicyType(page: Page, type: string) {

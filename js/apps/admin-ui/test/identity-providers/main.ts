@@ -82,9 +82,9 @@ async function assertElementExists(
   exist: boolean = true,
 ) {
   if (exist) {
-    expect(page.locator(locator)).toBeVisible();
+    await expect(page.locator(locator)).toBeVisible();
   } else {
-    expect(page.locator(locator)).not.toBeVisible();
+    await expect(page.locator(locator)).toBeHidden();
   }
 }
 
