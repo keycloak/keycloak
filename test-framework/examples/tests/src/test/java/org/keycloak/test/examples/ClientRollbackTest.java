@@ -11,6 +11,8 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 
+import java.util.List;
+
 @KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class ClientRollbackTest {
@@ -19,19 +21,22 @@ public class ClientRollbackTest {
     ManagedClient client;
 
     @Test
-    public void testAddAttributeWithRollback() {
+    public void test1UpdateWithRollback() {
         client.updateWithCleanup(u -> u.attribute("one", "two").attribute("two", "two"));
-
-        ClientRepresentation rep = client.admin().toRepresentation();
-        Assertions.assertEquals("two", rep.getAttributes().get("one"));
-        Assertions.assertTrue(rep.getAttributes().containsKey("two"));
+        client.updateWithCleanup(u -> u.adminUrl("http://something"));
+        client.updateWithCleanup(u -> u.redirectUris("http://something"));
+        client.updateWithCleanup(u -> u.attribute("three", "three"));
     }
 
     @Test
-    public void testAttributeNotSet() {
-        ClientRepresentation rep = client.admin().toRepresentation();
-        Assertions.assertEquals("one", rep.getAttributes().get("one"));
-        Assertions.assertFalse(rep.getAttributes().containsKey("two"));
+    public void test2CheckRollback() {
+        ClientRepresentation current = client.admin().toRepresentation();
+
+        Assertions.assertEquals("one", current.getAttributes().get("one"));
+        Assertions.assertFalse(current.getAttributes().containsKey("two"));
+        Assertions.assertFalse(current.getAttributes().containsKey("three"));
+        Assertions.assertNull(current.getAdminUrl());
+        Assertions.assertTrue(current.getRedirectUris().isEmpty());
     }
 
     public static class ClientWithSingleAttribute implements ClientConfig {
