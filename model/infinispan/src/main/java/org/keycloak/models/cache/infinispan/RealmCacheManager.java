@@ -95,7 +95,6 @@ public class RealmCacheManager extends CacheManager {
 
     public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
-        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
         addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
     }
 

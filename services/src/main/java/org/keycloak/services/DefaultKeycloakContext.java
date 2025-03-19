@@ -291,16 +291,23 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public UserModel getUser() {
+        UserModel user = null;
+
         if (bearerToken instanceof JsonWebToken jwt) {
-            UserModel user = session.users().getUserById(realm, jwt.getSubject());
+            String issuer = jwt.getIssuer();
+            String realmName = issuer.substring(issuer.lastIndexOf("/") + 1);
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            user = session.users().getUserById(realm, jwt.getSubject());
+        }
 
-            if (user == null) {
-                throw new IllegalStateException("Could not resolve subject with id: " + jwt.getSubject());
-            }
+        if (user == null) {
+            user = userSession == null ? null : userSession.getUser();
+        }
 
+        if (user != null) {
             return user;
         }
 
-        return userSession == null ? null : userSession.getUser();
+        throw new IllegalStateException("Could not resolve subject");
     }
 }
