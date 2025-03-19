@@ -632,10 +632,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         return client + "." + (defaultScope ? SCOPE_KEY_DEFAULT : SCOPE_KEY_OPTIONAL) + ".clientscopes";
     }
 
-    static String getTopGroupsQueryCacheKey(String realm) {
-        return realm + ".top.groups";
-    }
-
     static String getGroupByNameCacheKey(String realm, String parentId, String name) {
         if (parentId != null) {
             return realm + ".group." + parentId + "." + name;
@@ -1096,57 +1092,6 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
-
-        if (hasInvalidation(realm, cacheKey)) {
-            return getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max);
-        }
-
-        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
-        String searchKey = Optional.ofNullable(search).orElse("") + "." + Optional.ofNullable(first).orElse(-1) + "." + Optional.ofNullable(max).orElse(-1);
-        Set<String> cached;
-
-        if (Objects.isNull(query)) {
-            // not cached yet
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            cached = getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max).map(GroupModel::getId).collect(Collectors.toSet());
-            query = new GroupListQuery(loaded, cacheKey, realm, searchKey, cached);
-            logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
-        } else {
-            logger.tracev("getTopLevelGroups cache hit: {0}", realm.getName());
-
-            cached = query.getGroups(searchKey);
-
-            if (hasInvalidation(realm, cacheKey) || cached == null) {
-                // there is a cache entry, but the current search is not yet cached
-                cache.invalidateObject(cacheKey);
-                Long loaded = cache.getCurrentRevision(cacheKey);
-                cached = getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max).map(GroupModel::getId).collect(Collectors.toSet());
-                query = new GroupListQuery(loaded, cacheKey, realm, searchKey, cached, query);
-                logger.tracev("adding realm getTopLevelGroups search cache miss: realm {0} key {1}", realm.getName(), searchKey);
-                cache.addRevisioned(query, cache.getCurrentCounter());
-            }
-        }
-
-        AtomicBoolean invalidate = new AtomicBoolean(false);
-        Stream<GroupModel> groups = cached.stream()
-                .map((id) -> session.groups().getGroupById(realm, id))
-                .takeWhile(group -> {
-                    if (Objects.isNull(group)) {
-                        invalidate.set(true);
-                        return false;
-                    }
-                    return true;
-                })
-                .sorted(GroupModel.COMPARE_BY_NAME);
-
-        if (!invalidate.get()) {
-            return groups;
-        }
-
-        invalidations.add(cacheKey);
-
         return getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max);
     }
 

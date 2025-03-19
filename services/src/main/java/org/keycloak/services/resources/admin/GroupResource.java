@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
@@ -174,9 +175,14 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation) {
         this.auth.groups().requireView(group);
-        return paginatedStream(
-            group.getSubGroupsStream(search, exact, -1, -1)
-            .filter(auth.groups()::canView), first, max)
+
+        Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            stream = stream.filter(auth.groups()::canView);
+        }
+
+        return paginatedStream(stream, first, max)
             .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation)));
     }
 

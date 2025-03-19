@@ -40,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -110,8 +111,11 @@ public class GroupsResource {
             return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
         }
 
-        return stream.filter(groupsEvaluator::canView)
-            .map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            stream = stream.filter(groupsEvaluator::canView);
+        }
+
+        return stream.map(g -> GroupUtils.populateSubGroupCount(g, GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation)));
     }
 
     /**

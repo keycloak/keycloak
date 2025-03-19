@@ -17,6 +17,11 @@
 
 package org.keycloak.models.jpa;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -136,17 +141,32 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Stream<GroupModel> getSubGroupsStream(String search, Boolean exact, Integer firstResult, Integer maxResults) {
-        TypedQuery<String> query;
-        if (Boolean.TRUE.equals(exact)) {
-            query = em.createNamedQuery("getGroupIdsByParentAndName", String.class);
-        } else {
-            query = em.createNamedQuery("getGroupIdsByParentAndNameContaining", String.class);
-        }
-        query.setParameter("realm", realm.getId())
-                .setParameter("parent", group.getId())
-                .setParameter("search", search == null ? "" : search);
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()
+        queryBuilder.select(root.get("id"));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("parentId"), group.getId()));
+
+        search = search == null ? "" : search;
+
+        if (Boolean.TRUE.equals(exact)) {
+            predicates.add(builder.like(root.get("name"), search));
+        } else {
+            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+        }
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(root.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
                 .map(realm::getGroupById)
                 // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
                 .filter(Objects::nonNull)
@@ -155,10 +175,22 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Long getSubGroupsCount() {
-        return em.createNamedQuery("getGroupCountByParent", Long.class)
-                .setParameter("realm", realm.getId())
-                .setParameter("parent", group.getId())
-                .getSingleResult();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
+
+        queryBuilder.select(builder.count(root.get("id")));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("parentId"), group.getId()));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
     }
 
     @Override
