@@ -7,7 +7,7 @@
   <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
       <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
           <#list social.providers as p>
-              <li class="${properties.kcFormSocialAccountListItemClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if> <#if social.providers?size % 2 != 0 && p?is_last>${properties.kcFormSocialAccountUneven!}</#if>">
+              <li class="${properties.kcFormSocialAccountListItemClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>">
                   <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!}" aria-label="${p.displayName}"
                           type="button" href="${p.loginUrl}">
                         <#if p.iconClasses?has_content>
