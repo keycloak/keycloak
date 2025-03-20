@@ -240,7 +240,8 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        OAuthClient.AuthorizationEndpointResponse response = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        assertNotNull(response.getCode());
 
         return events.expectLogin()
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
