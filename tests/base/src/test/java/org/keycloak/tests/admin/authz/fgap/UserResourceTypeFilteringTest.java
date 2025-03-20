@@ -17,6 +17,9 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +38,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -214,5 +220,19 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertEquals(memberUsernames.size(), search.size());
         assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(memberUsernames::contains));
+    }
+
+    @Test
+    public void testListingUsersWithRolesOnly() {
+        List<UserRepresentation> search = realm.admin().users().search("myadmin");
+        assertThat(search, Matchers.hasSize(1));
+
+        String userId = search.get(0).getId();
+        String clientUuid = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewUsers = realm.admin().clients().get(clientUuid).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(userId).roles().clientLevel(clientUuid).add(List.of(viewUsers));
+        realm.cleanup().add(r -> r.users().get(userId).roles().clientLevel(clientUuid).remove(List.of(viewUsers)));
+
+        assertThat(realmAdminClient.realm(realm.getName()).users().list(), not(empty()));
     }
 }
