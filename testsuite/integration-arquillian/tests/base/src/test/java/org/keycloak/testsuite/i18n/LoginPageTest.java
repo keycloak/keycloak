@@ -179,7 +179,7 @@ public class LoginPageTest extends AbstractI18NTest {
     public void testIdentityProviderCapitalization(){
         loginPage.open();
         // contains even name of sub-item - svg element in this case
-        assertThat(loginPage.findSocialButton("github").getText(), startsWith("GitHub"));
+        assertThat(loginPage.findSocialButton("github").getText(), is("GitHub"));
         assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
         assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
     }
