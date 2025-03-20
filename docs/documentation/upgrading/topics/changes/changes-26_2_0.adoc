@@ -66,7 +66,7 @@ Consider the following notes as you plan for migration to the new standard token
 * The feature `token-exchange-standard`, which represents the new Standard token exchange, is enabled by default. It is recommended to
 disable the `token-exchange` feature, which represents the Legacy token exchange, to make sure that requests will be served by the new standard token exchange.
 
-* You can have both the standard and legacy token exchange features enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases that are implemented only by legacy token exchange. For instance, link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange] is implemented only by the 
+* You can have both the standard and legacy token exchange features enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases that are implemented only by legacy token exchange. For instance, link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange] is implemented only by the
 legacy token exchange. In this case, {project_name} serves the standard internal-to-internal requests preferably by the standard token exchange while the other requests are served by the legacy token exchange. The choice of standard or legacy token exchange is determined based on the
 parameters of the particular request. For example, requests containing non-standard parameters such as `requested_issuer` or `requested_subject` are considered legacy.
 
@@ -79,7 +79,7 @@ Consider these additional changes in the behavior of the two types of token exch
 * The most notable change regarding the behavior of scopes and audiences is that the applied client scopes are based on the client triggering the token exchange request rather than the "target" client specified by the `audience` parameter.
 Support exists for multiple values of the `audience` parameter as mentioned in the specification. The details are described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-scope[{securing_apps_token_exchange_name}].
 
-* Public clients are no longer allowed to send the token exchange requests. Legacy token exchange allowed public clients to exchange tokens with themselves to downscope the original token. This use case can 
+* Public clients are no longer allowed to send the token exchange requests. Legacy token exchange allowed public clients to exchange tokens with themselves to downscope the original token. This use case can
 instead be covered by using the refresh token grant, in which the `scope` parameter can be used to downscope the refreshed access token, as mentioned in
 the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification].
 
@@ -94,3 +94,9 @@ refresh token when possible.
 When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
 
 It is now possible to control where new users, groups, or roles will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group and role mappers. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
+
+=== Removal of the `X-XSS-Protection` header
+
+Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
+
+We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP[Content Security Policy (CSP)].
