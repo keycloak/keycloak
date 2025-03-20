@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +31,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -102,17 +100,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         result.add(arg.toString());
 
         return result;
-    }
-
-    @Override
-    public ConfigValue getConfigValue(String propertyName) {
-        ConfigValue value = super.getConfigValue(propertyName);
-
-        if (value != null) {
-            return value;
-        }
-
-        return super.getConfigValue(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArguments() {

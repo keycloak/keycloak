@@ -17,8 +17,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -100,11 +98,6 @@ public class PropertyMapper<T> {
 
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
-
-        if (to != null && to.endsWith(OPTION_PART_SEPARATOR)) {
-            // in case mapping is based on prefixes instead of full property names
-            from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
-        }
 
         // try to obtain the value for the property we want to map first
         ConfigValue config = convertValue(context.proceed(from));
@@ -199,7 +192,9 @@ public class PropertyMapper<T> {
         return this.option.getCategory();
     }
 
-    public boolean isHidden() { return this.option.isHidden(); }
+    public boolean isHidden() {
+        return this.option.isHidden() || this.getDescription() == null;
+    }
 
     public boolean isBuildTime() {
         return this.option.isBuildTime();
