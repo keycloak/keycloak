@@ -50,6 +50,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-junit5-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
         <dependency>

@@ -26,39 +26,17 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-framework-core</artifactId>
+    <artifactId>keycloak-test-framework-junit5-config</artifactId>
     <name>Keycloak Test Framework</name>
     <packaging>jar</packaging>
-    <description>Preview Keycloak testing framework based on JUnit 5</description>
+    <description>Default test framework config for JUnit 5</description>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-junit5</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-junit5-config</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
 
 </project>
