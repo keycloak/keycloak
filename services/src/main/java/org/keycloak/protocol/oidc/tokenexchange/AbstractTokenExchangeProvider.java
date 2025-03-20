@@ -51,6 +51,8 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
@@ -246,6 +248,24 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         return targetAudienceClients;
     }
 
+    protected CheckedResourceIndicators getTargetResources() {
+        List<String> resources = params.getResource();
+        if (resources == null || resources.isEmpty()) {
+            return null;
+        }
+        CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, null, Set.copyOf(resources));
+        if (checkedResourceIndicators == null) {
+            return null;
+        }
+        if (checkedResourceIndicators.hasUnsupportedResources()) {
+            event.detail(Details.REASON, "resource not allowed");
+            event.detail(Details.RESOURCE, resources);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
+        }
+        return checkedResourceIndicators;
+    }
+
     protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
         ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
         for (ClientModel targetClient : targetAudienceClients) {
@@ -306,6 +326,16 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    protected void validateTargetResources(ClientSessionContext clientSessionCtx) {
+        CheckedResourceIndicators targetResources = getTargetResources();
+        if (targetResources == null) {
+            return;
+        }
+
+        Set<String> supportedResources = targetResources.getSupportedResources();
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, supportedResources);
     }
 
     protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token) {
@@ -396,6 +426,8 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
             TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
         }
+
+        validateTargetResources(clientSessionCtx);
 
         updateUserSessionFromClientAuth(targetUserSession);
 
