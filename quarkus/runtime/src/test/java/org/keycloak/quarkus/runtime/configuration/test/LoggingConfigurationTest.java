@@ -33,6 +33,7 @@ import java.util.stream.StreamSupport;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -296,7 +297,6 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"io.k8s\".level").getValue());
     }
 
-
     @Test
     public void testLogLevelWithUnderscore() {
         ConfigArgsConfigSource.setCliArgs("--log-level=error,reproducer.not_ok:debug");
@@ -310,6 +310,13 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     public void testInvalidLogLevel() {
         ConfigArgsConfigSource.setCliArgs("--log-level=reproducer.not^ok:debug");
         createConfig();
+    }
+
+    @Test
+    public void testNestedBuildTimeLogging() {
+        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        ConfigArgsConfigSource.setCliArgs("");
+        assertEquals("true", createConfig().getConfigValue("quarkus.log.console.enable").getValue());
     }
 
 }

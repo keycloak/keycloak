@@ -21,15 +21,12 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -46,11 +43,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     private static final String FILE_NAME = "quarkus.properties";
     public static final String NAME = "KcQuarkusPropertiesConfigSource";
-    private final boolean includeClasspath;
-
-    public QuarkusPropertiesConfigSource(boolean includeClasspath) {
-        this.includeClasspath = includeClasspath;
-    }
 
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
@@ -66,8 +58,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         return null;
     }
 
-    private boolean loadingFile;
-
     @Override
     protected String[] getFileExtensions() {
         return new String[] { "properties" };
@@ -75,48 +65,22 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        String name = loadingFile ? NAME : (NAME + " " + url);
-        return new PropertiesConfigSource(
-                ConfigSourceUtil.urlToMap(url).entrySet().stream().filter(e -> e.getKey().startsWith(NS_QUARKUS))
-                        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())),
-                name, ordinal);
+        Map<String, String> map = ConfigSourceUtil.urlToMap(url);
+        map.keySet().removeIf(k -> !k.startsWith(NS_QUARKUS));
+        return new PropertiesConfigSource(map, NAME, ordinal);
     }
 
     @Override
     public synchronized List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         List<ConfigSource> configSources = new ArrayList<>();
 
-        if (includeClasspath) {
-            configSources.addAll(loadConfigSources("META-INF/services/" + FILE_NAME, 450, classLoader));
-        }
-
         Path configFile = getConfigurationFile();
 
         if (configFile != null) {
-            loadingFile = true;
-            try {
-                configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
-            } finally {
-                loadingFile = false;
-            }
+            configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
         }
 
         return configSources;
     }
 
-    @Override
-    protected List<ConfigSource> tryClassPath(URI uri, int ordinal, ClassLoader classLoader) {
-        try {
-            return super.tryClassPath(uri, ordinal, classLoader);
-        } catch (RuntimeException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof NoSuchFileException) {
-                // configuration step happens before classpath is updated, and it might happen that
-                // provider JARs are still in classpath index but removed from the providers dir
-                return Collections.emptyList();
-            }
-
-            throw e;
-        }
-    }
 }
