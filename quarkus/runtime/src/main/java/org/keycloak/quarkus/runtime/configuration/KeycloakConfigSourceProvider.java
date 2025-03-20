@@ -36,11 +36,11 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
     public KeycloakConfigSourceProvider() {
         if (CONFIG_SOURCES.isEmpty()) {
-            initializeSources(false);
+            initializeSources();
         }
     }
 
-    private static void initializeSources(boolean includeClasspath) {
+    private static void initializeSources() {
         String profile = org.keycloak.common.util.Environment.getProfile();
 
         if (profile != null) {
@@ -51,7 +51,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
         addConfigSources("ENV", List.of(new KcEnvConfigSource()));
 
-        addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource(includeClasspath).getConfigSources(Thread.currentThread().getContextClassLoader()));
+        addConfigSources("quarkus.properties", new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
         addConfigSources("Persisted", List.of(PersistedConfigSource.getInstance()));
 
@@ -59,11 +59,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
         Path path = inFileSystem.getConfigurationFile();
         if (path != null) {
             addConfigSources(path.getFileName().toString(), inFileSystem.getConfigSources(Thread.currentThread().getContextClassLoader(), path));
-        }
-
-        if (includeClasspath) {
-            // by enabling this config source we are able to rely on the default settings when running tests
-            addConfigSources("classpath keycloak.conf", new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
         }
     }
 
@@ -81,7 +76,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     public static void reload() {
         CONFIG_SOURCES.clear();
         CONFIG_SOURCE_DISPLAY_NAMES.clear();
-        initializeSources(true);
+        initializeSources();
     }
 
     @Override

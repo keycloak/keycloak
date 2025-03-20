@@ -63,7 +63,7 @@ public class ClusterConfigDistTest {
     @Test
     @Launch({ "start-dev", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(CLIResult result) {
-        result.assertError("ERROR: Could not load cluster configuration file");
+        result.assertError("Cache config file 'invalid' does not exist in the conf directory");
     }
 
     @Test

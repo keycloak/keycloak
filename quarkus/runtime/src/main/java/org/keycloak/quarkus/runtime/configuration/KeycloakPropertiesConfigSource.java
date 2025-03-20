@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -58,36 +57,6 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
         return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
-    }
-
-    public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
-
-        @Override
-        public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
-            return loadConfigSources("META-INF/" + KEYCLOAK_CONF_FILE, 150, classLoader);
-        }
-
-        @Override
-        protected List<ConfigSource> tryClassPath(URI uri, int ordinal, ClassLoader classLoader) {
-            try {
-                return super.tryClassPath(uri, ordinal, classLoader);
-            } catch (RuntimeException e) {
-                Throwable cause = e.getCause();
-
-                if (cause instanceof NoSuchFileException) {
-                    // configuration step happens before classpath is updated, and it might happen that
-                    // provider JARs are still in classpath index but removed from the providers dir
-                    return Collections.emptyList();
-                }
-
-                throw e;
-            }
-        }
-
-        @Override
-        protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
-            return Collections.emptyList();
-        }
     }
 
     public static class InFileSystem extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
@@ -143,33 +112,10 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         Map<String, String> result = new HashMap<>(properties.size());
 
         properties.entrySet().forEach(entry -> {
-            String key = transformKey(entry.getKey());
-            result.put(key, entry.getValue());
+            result.put(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + entry.getKey(), entry.getValue());
         });
 
         return result;
     }
 
-    /**
-     * Only kc properties can be in keycloak.conf
-     *
-     * @param key the key to transform
-     * @return the same key but prefixed with the namespace
-     */
-    private static String transformKey(String key) {
-        String profile = "";
-        String transformed = key;
-
-        // TODO: we don't document that this is supported and it's not
-        // strictly necessary as our usage of profiled entries have been moved to application.properties
-        if (key.startsWith("%")) {
-            int index = key.indexOf('.');
-            if (index > 0 && index < key.length() - 1) {
-                profile = key.substring(0, index + 1);
-                transformed = key.substring(index + 1);
-            }
-        }
-
-        return profile + MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + transformed;
-    }
 }

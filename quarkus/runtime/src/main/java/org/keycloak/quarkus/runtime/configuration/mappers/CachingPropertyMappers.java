@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +53,11 @@ final class CachingPropertyMappers {
                         })
                         .to("kc.spi-connections-infinispan-quarkus-config-file")
                         .transformer(CachingPropertyMappers::resolveConfigFile)
+                        .validator(s -> {
+                            if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
+                                throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                            }
+                        })
                         .paramLabel("file")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)

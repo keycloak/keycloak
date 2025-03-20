@@ -39,6 +39,7 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
+    private static final String KC_HOME_DIR = "kc.home.dir";
     public static final String NON_SERVER_MODE = "nonserver";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
@@ -60,7 +61,7 @@ public final class Environment {
     }
 
     public static String getHomeDir() {
-        return System.getProperty("kc.home.dir");
+        return System.getProperty(KC_HOME_DIR);
     }
 
     public static Path getHomePath() {
@@ -226,7 +227,7 @@ public final class Environment {
     }
 
     public static void setHomeDir(Path path) {
-        System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+        System.setProperty(KC_HOME_DIR, path.toFile().getAbsolutePath());
     }
 
     /**
@@ -259,5 +260,9 @@ public final class Environment {
 
     public static void setParsedCommand(AbstractCommand command) {
         Environment.parsedCommand = command;
+    }
+
+    public static void removeHomeDir() {
+        System.getProperties().remove(KC_HOME_DIR);
     }
 }

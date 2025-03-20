@@ -42,6 +42,7 @@ import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.utils.StringUtil;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -107,7 +108,9 @@ public class PropertyMapper<T> {
         }
 
         // try to obtain the value for the property we want to map first
-        ConfigValue config = convertValue(context.proceed(from));
+        // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
+        // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
+        ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
