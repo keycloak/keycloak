@@ -478,10 +478,9 @@ public class UsersResource {
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             userModels = userModels.filter(usersEvaluator::canView);
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
         return userModels

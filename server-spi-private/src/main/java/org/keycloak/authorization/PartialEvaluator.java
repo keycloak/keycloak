@@ -59,8 +59,8 @@ public class PartialEvaluator {
         KeycloakContext context = session.getContext();
         UserModel adminUser = context.getUser();
 
-        if (!hasAnyQueryAdminRole(session, adminUser, realm)) {
-            // only run partial evaluation if the admin user has any query-* role
+        if (skipPartialEvaluation(session, adminUser, realm, resourceType)) {
+            // only run partial evaluation if the admin user does not have view-* or manage-* role for specified resourceType or has any query-* role
             return List.of();
         }
 
@@ -173,7 +173,7 @@ public class PartialEvaluator {
                 .toList();
     }
 
-    private boolean hasAnyQueryAdminRole(KeycloakSession session, UserModel user, RealmModel realm) {
+    private boolean skipPartialEvaluation(KeycloakSession session, UserModel user, RealmModel realm, ResourceType resourceType) {
         if (user == null) {
             return false;
         }
@@ -192,7 +192,17 @@ public class PartialEvaluator {
             return false;
         }
 
-        for (String adminRole : AdminRoles.ALL_QUERY_ROLES) {
+        if (resourceType.equals(AdminPermissionsSchema.USERS) || resourceType.equals(AdminPermissionsSchema.GROUPS)) {
+            return user.hasRole(client.getRole(AdminRoles.VIEW_USERS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_USERS)) || !hasAnyQueryAdminRole(client, user);
+        } else if (resourceType.equals(AdminPermissionsSchema.CLIENTS)) {
+            return user.hasRole(client.getRole(AdminRoles.VIEW_CLIENTS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_CLIENTS)) || !hasAnyQueryAdminRole(client, user);
+        } else {
+            return false;
+        }
+    }
+
+    private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
+        for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS)) {
             RoleModel role = client.getRole(adminRole);
 
             if (user.hasRole(role)) {
