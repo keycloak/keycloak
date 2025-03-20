@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.authz.fgap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.authorization.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.AdminPermissionsSchema.VIEW_MEMBERS;
 
@@ -214,5 +215,11 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertEquals(memberUsernames.size(), search.size());
         assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(memberUsernames::contains));
+
+        UserPolicyRepresentation negativePolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, realm.admin().users().search("user-0").get(0).getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertFalse(search.isEmpty());
+        assertTrue(search.stream().map(UserRepresentation::getUsername).noneMatch("user-0"::equals));
     }
 }

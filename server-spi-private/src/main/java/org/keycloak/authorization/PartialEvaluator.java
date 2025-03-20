@@ -78,7 +78,7 @@ public class PartialEvaluator {
 
         List<Predicate> evaluate = evaluator == null ? List.of() : evaluator.getFilters(evaluationContext);
 
-        if (evaluate.isEmpty() && result.isResourceTypedDenied() || (!deniedIds.isEmpty() && result.rawAllowedIds().isEmpty())) {
+        if (evaluate.isEmpty() && (result.isResourceTypedDenied() || (!deniedIds.isEmpty() && result.rawAllowedIds().isEmpty()))) {
             // do not return any result because there is no filter from the evaluator, and access is denied for the resource type
             return List.of(builder.equal(root.get("id"), "none"));
         }
