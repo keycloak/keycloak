@@ -149,7 +149,7 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>htmlunit3-driver</artifactId>
-                <version>${selenium.version}</version>
+                <version>${selenium.htmlunit3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-validator</groupId>
