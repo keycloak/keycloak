@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
@@ -40,6 +41,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -274,6 +276,19 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(offline);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
+
+        if(em.unwrap(Session.class).doReturningWork(Connection::getTransactionIsolation) >= Connection.TRANSACTION_REPEATABLE_READ) {
+            // For repeatable read isolation level or stronger isolation levels, first lock the user sessions that are about to be deleted later.
+            // This avoids a deadlock with ongoing inserts and updates of sessions that will first touch the user session before touching the client session.
+            // This has been seen to happen with databases like MariaDB.
+            // If a deadlock would also occur with PostgreSQL (which is using read committed by default), for those databases a select-for-update clause would be the thing to do.
+            // Not adding a select-for-update for those databases as there aren't any reports yet, and their read-committed isolation is less prone to such deadlocks.
+            em.createNamedQuery("selectExpiredUserSessions")
+                .setParameter("realmId", realm.getId())
+                .setParameter("lastSessionRefresh", expiredOffline)
+                .setParameter("offline", offlineStr)
+                .getSingleResult();
+        }
 
         int cs = em.createNamedQuery("deleteExpiredClientSessions")
                 .setParameter("realmId", realm.getId())
