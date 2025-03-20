@@ -1552,6 +1552,7 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.protocol</groupId>
                     <artifactId>arquillian-protocol-servlet-jakarta</artifactId>
+                    <version>${arquillian.protocol.servlet.jakarta.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>
