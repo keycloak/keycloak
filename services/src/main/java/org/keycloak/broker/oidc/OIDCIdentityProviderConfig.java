@@ -168,6 +168,18 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         }
     }
 
+    public boolean isDisableTypeClaimCheck() {
+        return Boolean.parseBoolean(getConfig().get("disableTypeClaimCheck"));
+    }
+
+    public void setDisableTypeClaimCheck(boolean disableTypeClaimCheck) {
+        if (disableTypeClaimCheck) {
+            getConfig().put("disableTypeClaimCheck", Boolean.TRUE.toString());
+        } else {
+            getConfig().remove("disableTypeClaimCheck");
+        }
+    }
+
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
