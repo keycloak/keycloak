@@ -12,7 +12,7 @@ public class InstanceContext<T, A extends Annotation> {
     private final Registry registry;
     private final Supplier<T, A> supplier;
     private final A annotation;
-    private final Set<InstanceContext<T, A>> dependencies = new HashSet<>();
+    private final Set<InstanceContext<?, ?>> dependencies = new HashSet<>();
     private T value;
     private Class<? extends T> requestedValueType;
     private LifeCycle lifeCycle;
@@ -73,11 +73,11 @@ public class InstanceContext<T, A extends Annotation> {
         return annotation;
     }
 
-    public Set<InstanceContext<T, A>> getDependencies() {
+    public Set<InstanceContext<?, ?>> getDependencies() {
         return dependencies;
     }
 
-    public void registerDependency(InstanceContext<T, A> instanceContext) {
+    public void registerDependency(InstanceContext<?, ?> instanceContext) {
         dependencies.add(instanceContext);
     }
 

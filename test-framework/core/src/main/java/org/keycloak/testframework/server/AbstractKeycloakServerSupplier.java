@@ -59,12 +59,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
     @Override
     public boolean compatible(InstanceContext<KeycloakServer, KeycloakIntegrationTest> a, RequestedInstance<KeycloakServer, KeycloakIntegrationTest> b) {
-        if (!a.getAnnotation().config().equals(b.getAnnotation().config())) {
-            return false;
-        }
-
-        ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(a.getRegistry());
-        return interceptor.sameInterceptors(a);
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override
