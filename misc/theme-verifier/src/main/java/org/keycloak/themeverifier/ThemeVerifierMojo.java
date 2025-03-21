@@ -31,12 +31,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mojo(name = "verify-theme", defaultPhase = LifecyclePhase.INSTALL, threadSafe = true)
 public class ThemeVerifierMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject mavenProject;
+
+    @Parameter(defaultValue = "false", readonly = true)
+    private boolean validateMessageFormatQuotes;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -48,11 +52,11 @@ public class ThemeVerifierMojo extends AbstractMojo {
             Iterator<File> fileIterator = FileUtils.iterateFiles(dir, MessagePropertiesFilter.INSTANCE, DirectoryFileFilter.INSTANCE);
             while (fileIterator.hasNext()) {
                 File file = fileIterator.next();
-                messages.addAll(new VerifyMessageProperties(file).verify());
+                messages.addAll(new VerifyMessageProperties(file).withValidateMessageFormatQuotes(validateMessageFormatQuotes).verify());
             }
         }
         if (!messages.isEmpty()) {
-            throw new MojoFailureException("Validation errors: " + messages);
+            throw new MojoFailureException("Validation errors: " + messages.stream().collect(Collectors.joining(System.lineSeparator())));
         }
     }
 }

@@ -343,8 +343,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                     OAuthClient oauth1 = new OAuthClient(HttpClientUtils.createDefault(), driver);
 
                     // Add some randomness to state, nonce and redirectUri. Verify that login is successful and "state" and "nonce" will match
-                    oauth1.stateParamHardcoded(KeycloakModelUtils.generateId());
-                    oauth1.nonce(KeycloakModelUtils.generateId());
                     oauth1.redirectUri(oauth.getRedirectUri() + "?some=" + new Random().nextInt(1024));
                     return oauth1;
                 }
@@ -380,10 +378,13 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             oauth1.client("client" + i, "password");
             log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());
 
+            String requestState = KeycloakModelUtils.generateId();
+            String requestNonce = KeycloakModelUtils.generateId();
+
             final HttpClientContext templateContext = clientContexts.get(i % clientContexts.size());
             final HttpClientContext context = HttpClientContext.create();
             context.setCookieStore(templateContext.getCookieStore());
-            String pageContent = getPageContent(oauth1.loginForm().build(), httpClient, context);
+            String pageContent = getPageContent(oauth1.loginForm().nonce(requestNonce).state(requestState).build(), httpClient, context);
             assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
             assertThat(context.getRedirectLocations(), Matchers.notNullValue());
             assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
@@ -393,7 +394,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             String code = query.get(OAuth2Constants.CODE);
             String state = query.get(OAuth2Constants.STATE);
 
-            Assert.assertEquals("Invalid state.", state, oauth1.getState());
+            Assert.assertEquals("Invalid state.", requestState, state);
 
             AtomicReference<AccessTokenResponse> accessResRef = new AtomicReference<>();
             totalInvocations.incrementAndGet();
@@ -410,7 +411,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             Assert.assertNull(refreshedToken.getNonce());
 
             AccessToken idToken = JsonSerialization.readValue(new JWSInput(accessRes.getIdToken()).getContent(), AccessToken.class);
-            Assert.assertEquals(oauth1.getNonce(), idToken.getNonce());
+            Assert.assertEquals(requestNonce, idToken.getNonce());
 
             accessResRef.set(accessRes);
 

@@ -19,7 +19,15 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
-= Zero-configuration secure cluster communication
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== `proxy-trusted-addresses` enforced for built-in X509 client certificate lookup providers
+
+Built-in X.509 client certificate lookup providers now reflect the `proxy-trusted-addresses` config option. A certificate provided through the HTTP headers will now be processed only if the proxy is trusted, or `proxy-trusted-addresses` is unset.
+
+=== Zero-configuration secure cluster communication
 
 For clustering multiple nodes, {project_name} uses distributed caches.
 Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
@@ -31,3 +39,64 @@ If you provided your own keystore and truststore to secure the TCP transport sta
 If you are using a custom transport stack, this default behavior can be disabled by setting the option `cache-embedded-mtls-enabled` to `false`.
 
 For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
+=== Operator creates NetworkPolicies to restrict traffic
+
+The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+We expect this to be backwards compatible to existing deployment, so no additional steps are necessary at the time of the upgrade.
+You can return to the previous behavior by disabling the creation of NetworkPolicies in the Keycloak CR.
+
+If your deployment scripts add explicit NetworkPolicies for {project_name}, you should consider removing those and migrate to the new functionality provided in the Keycloak CR as a follow-up to the upgrade.
+
+Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+=== Supported standard token exchange
+
+In this release, {project_name} added support for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] (Feature `token-exchange-standard:v2`). In the past {project_name} releases,
+{project_name} had only a preview token exchange feature, which is now referred to as link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Legacy token exchange] (Feature `token-exchange:v1`).
+The legacy token exchange is still in preview and it works the same way as in previous releases. If you used the link:{securing_apps_token_exchange_link}#_internal-token-to-internal-token-exchange[internal-internal token exchange],
+consider migrating to the new standard token exchange.
+
+If you prefer to continue using the legacy token exchange, you will find it operates as in previous releases. No need exists to disable the standard token exchange feature. Your clients will use the standard token exchange only if it is enabled on the {project_name} client. However, migration to the standard token exchange is recommended. It is the officially supported method and the priority for enhancements.
+
+Consider the following notes as you plan for migration to the new standard token exchange:
+
+* The feature `token-exchange-standard`, which represents the new Standard token exchange, is enabled by default. It is recommended to
+disable the `token-exchange` feature, which represents the Legacy token exchange, to make sure that requests will be served by the new standard token exchange.
+
+* You can have both the standard and legacy token exchange features enabled, which can be useful if you need to cover standard use cases (internal-internal) together with the other token exchange use cases that are implemented only by legacy token exchange. For instance, link:{securing_apps_token_exchange_link}#_external-token-to-internal-token-exchange[external to internal token exchange] is implemented only by the
+legacy token exchange. In this case, {project_name} serves the standard internal-to-internal requests preferably by the standard token exchange while the other requests are served by the legacy token exchange. The choice of standard or legacy token exchange is determined based on the
+parameters of the particular request. For example, requests containing non-standard parameters such as `requested_issuer` or `requested_subject` are considered legacy.
+
+* Standard token exchange requires enabling a switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
+
+Consider these additional changes in the behavior of the two types of token exchange:
+
+* Fine-grained admin permissions are no longer needed or supported for the standard token exchange.
+
+* The most notable change regarding the behavior of scopes and audiences is that the applied client scopes are based on the client triggering the token exchange request rather than the "target" client specified by the `audience` parameter.
+Support exists for multiple values of the `audience` parameter as mentioned in the specification. The details are described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-scope[{securing_apps_token_exchange_name}].
+
+* Public clients are no longer allowed to send the token exchange requests. Legacy token exchange allowed public clients to exchange tokens with themselves to downscope the original token. This use case can
+instead be covered by using the refresh token grant, in which the `scope` parameter can be used to downscope the refreshed access token, as mentioned in
+the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification].
+
+* Exchanging an access token for a SAML assertion is not supported in this release. In other words, using `requested_token_type=urn:ietf:params:oauth:token-type:saml2` is not supported.
+
+* Exchanging an access token for a refresh token is allowed only if it is explicitly enabled on the client as mentioned in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-details[{securing_apps_token_exchange_name}].
+Currently, it is not supported to request offline tokens or exchange a refresh token when the subject token was issued from an offline session. The recommended approach is to exchange for access tokens instead of
+refresh token when possible.
+
+=== LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
+
+When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.
+
+It is now possible to control where new users, groups, or roles will be created using the new `Relative User Creation DN` config option in the LDAP provider and also in the LDAP group and role mappers. For more details, check the link:{adminguide_link}#_ldap[LDAP admin guide]
+
+=== Removal of the `X-XSS-Protection` header
+
+Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
+
+We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP[Content Security Policy (CSP)].

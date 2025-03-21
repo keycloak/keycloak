@@ -277,7 +277,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
     }
 
     public void openWithLoginHint(String loginHint) {
-        oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
+        oauth.registrationForm().loginHint(loginHint).open();
         assertCurrent();
     }
 

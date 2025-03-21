@@ -114,6 +114,7 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     public void beforeEach(Object testInstance) {
         findRequestedInstances(testInstance);
+        destroyIncompatibleInstances();
         matchDeployedInstancesWithRequestedInstances();
         deployRequestedInstances();
         injectFields(testInstance);
@@ -145,6 +146,19 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         logger.logRequestedInstances(requestedInstances);
     }
 
+    private void destroyIncompatibleInstances() {
+        for (RequestedInstance<?, ?> requestedInstance : requestedInstances) {
+            InstanceContext deployedInstance = getDeployedInstance(requestedInstance);
+            if (deployedInstance != null) {
+                boolean compatible = requestedInstance.getLifeCycle().equals(deployedInstance.getLifeCycle()) && deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance);
+                if (!compatible) {
+                    logger.logDestroyIncompatible(deployedInstance);
+                    destroy(deployedInstance);
+                }
+            }
+        }
+    }
+
     private void matchDeployedInstancesWithRequestedInstances() {
         Iterator<RequestedInstance<?, ?>> itr = requestedInstances.iterator();
         while (itr.hasNext()) {
@@ -154,9 +168,6 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 if (requestedInstance.getLifeCycle().equals(deployedInstance.getLifeCycle()) && deployedInstance.getSupplier().compatible(deployedInstance, requestedInstance)) {
                     logger.logReusingCompatibleInstance(deployedInstance);
                     itr.remove();
-                } else {
-                    logger.logDestroyIncompatible(deployedInstance);
-                    destroy(deployedInstance);
                 }
             }
         }
@@ -171,6 +182,11 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
                 InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType());
                 instance.setValue(requestedInstance.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
+
+                if (!requestedInstance.getDependencies().isEmpty()) {
+                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependencies();
+                    dependencies.forEach(instance::registerDependency);
+                }
 
                 logger.logCreatedInstance(requestedInstance, instance);
             }

@@ -22,6 +22,11 @@ public class ManagedClientCleanup {
         }
     }
 
+    ClientRepresentation getOriginalRepresentation() {
+        ResetClient clientCleanup = (ResetClient) cleanupTasks.stream().filter(c -> c instanceof ResetClient).findFirst().orElse(null);
+        return clientCleanup != null ? clientCleanup.rep() : null;
+    }
+
     void runCleanupTasks(ClientResource client) {
         cleanupTasks.forEach(t -> t.cleanup(client));
         cleanupTasks.clear();

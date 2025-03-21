@@ -93,7 +93,7 @@ export const PermissionsConfigurationTab = ({
       ]);
 
       const processedPermissions = await Promise.all(
-        permissionsData.map(async (permission) => {
+        (permissionsData || []).map(async (permission) => {
           const policies = await adminClient.clients.getAssociatedPolicies({
             id: clientId,
             permissionId: permission.id!,

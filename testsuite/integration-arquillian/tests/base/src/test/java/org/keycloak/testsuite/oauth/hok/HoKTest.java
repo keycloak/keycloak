@@ -595,7 +595,6 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
-        oauth.clientSessionState("client-session");
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
 
@@ -611,9 +610,8 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(true).implicitFlow(true);
         oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        oauth.nonce(nonce);
 
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();

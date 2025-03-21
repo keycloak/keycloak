@@ -32,6 +32,7 @@ public class RoleMapperConfig extends CommonLDAPGroupMapperConfig {
 
     // LDAP DN where are roles of this tree saved.
     public static final String ROLES_DN = "roles.dn";
+    public static final String ROLES_RELATIVE_CREATE_DN = "roles.relative.create.dn";
 
     // Name of LDAP attribute, which is used in role objects for name and RDN of role. Usually it will be "cn"
     public static final String ROLE_NAME_LDAP_ATTRIBUTE = "role.name.ldap.attribute";
@@ -64,6 +65,15 @@ public class RoleMapperConfig extends CommonLDAPGroupMapperConfig {
             throw new ModelException("Roles DN is null! Check your configuration");
         }
         return rolesDn;
+    }
+
+    public String getRelativeCreateDn() {
+        String relativeCreateDn = mapperModel.getConfig().getFirst(ROLES_RELATIVE_CREATE_DN);
+        if(relativeCreateDn != null) {
+            relativeCreateDn = relativeCreateDn.trim();
+            return relativeCreateDn.endsWith(",") ? relativeCreateDn : relativeCreateDn + ",";
+        }
+        return "";
     }
 
     @Override

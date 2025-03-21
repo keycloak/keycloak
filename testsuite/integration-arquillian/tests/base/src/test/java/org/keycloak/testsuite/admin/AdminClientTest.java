@@ -25,9 +25,11 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.AdminRoles;
@@ -37,12 +39,14 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
 import java.util.Objects;
 
@@ -124,7 +128,8 @@ public class AdminClientTest extends AbstractKeycloakTest {
                 .id(KeycloakModelUtils.generateId())
                 .username("test-user@localhost")
                 .password("password")
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .addRoles(OAuth2Constants.OFFLINE_ACCESS);
         realm.user(defaultUser);
 
         testRealms.add(realm.build());
@@ -178,6 +183,19 @@ public class AdminClientTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void adminAuthCloseUserSession() throws Exception {
+        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(realmName), "test-user@localhost");
+        try (Keycloak keycloak = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            // Check possible to load the realm
+            RealmRepresentation realm = keycloak.realm(realmName).toRepresentation();
+            Assert.assertEquals(realmName, realm.getRealm());
+
+            Assert.assertEquals(1, user.getUserSessions().size());
+        }
+        Assert.assertEquals(0, user.getUserSessions().size());
+    }
+
+    @Test
     public void adminAuthClientDisabled() throws Exception {
         try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
             // Check possible to load the realm
@@ -196,6 +214,38 @@ public class AdminClientTest extends AbstractKeycloakTest {
             }
         } finally {
             setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, true);
+        }
+    }
+
+    @Test
+    public void adminAuthUserDisabled() throws Exception {
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+             Keycloak adminClientOffline = AdminClientUtil.createAdminClient(false, ServerURLs.getAuthServerContextRoot(), realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null, OAuth2Constants.OFFLINE_ACCESS);
+        ) {
+            // Check possible to load the realm
+            RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
+            Assert.assertEquals(realmName, realm.getRealm());
+            realm = adminClientOffline.realm(realmName).toRepresentation();
+            Assert.assertEquals(realmName, realm.getRealm());
+
+            // Disable client and check it should not be possible to load the realms anymore
+            setUserEnabled("test-user@localhost", false);
+
+            // Check not possible to invoke anymore
+            try {
+                realm = adminClient.realm(realmName).toRepresentation();
+                Assert.fail("Not expected to successfully get realm");
+            } catch (NotAuthorizedException nae) {
+                // Expected
+            }
+            try {
+                realm = adminClientOffline.realm(realmName).toRepresentation();
+                Assert.fail("Not expected to successfully get realm");
+            } catch (NotAuthorizedException nae) {
+                // Expected
+            }
+        } finally {
+            setUserEnabled("test-user@localhost", true);
         }
     }
 
@@ -255,6 +305,13 @@ public class AdminClientTest extends AbstractKeycloakTest {
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(enabled);
         client.update(clientRep);
+    }
+
+    private void setUserEnabled(String username, boolean enabled) {
+        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realms().realm(realmName), username);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEnabled(enabled);
+        user.update(userRep);
     }
 
     private String createScope(RealmResource testRealm, String scopeName, String scopeId) {

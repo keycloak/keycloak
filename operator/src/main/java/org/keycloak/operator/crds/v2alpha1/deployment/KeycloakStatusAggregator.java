@@ -103,13 +103,13 @@ public class KeycloakStatusAggregator {
         return this;
     }
 
-    public void addUpgradeType(boolean recreate, String message) {
+    public void addUpdateType(boolean recreate, String message) {
         updateType.setStatus(recreate);
         updateType.setObservedGeneration(observedGeneration);
         updateType.setMessage(message);
     }
 
-    public void resetUpgradeType() {
+    public void resetUpdateType() {
         updateType.setStatus(null);
         updateType.setObservedGeneration(observedGeneration);
         updateType.setMessage(null);

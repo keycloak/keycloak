@@ -125,6 +125,7 @@ spec:
       secret: else
   update:
     strategy: Auto
+    revision: 1
   unsupported:
     podTemplate:
       metadata:

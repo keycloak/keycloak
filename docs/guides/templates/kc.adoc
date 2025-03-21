@@ -50,6 +50,6 @@ bin/kc.[sh|bat] bootstrap-admin ${parameters}
 <#macro updatecompatibility parameters>
 [source,bash]
 ----
-bin/kc.[sh|bat] update-compatibility ${parameters} --features=rolling-updates
+bin/kc.[sh|bat] update-compatibility ${parameters}
 ----
 </#macro>

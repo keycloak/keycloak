@@ -88,7 +88,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         builder.withMetadata(createMetadata(jobName(primary), primary));
         var specBuilder = builder.withNewSpec();
         addPodSpecTemplate(specBuilder, primary, context);
-        // we don't need retries; we use exit code != 1 to signal the upgrade decision.
+        // we don't need retries; we use exit code != 1 to signal the update decision.
         specBuilder.withBackoffLimit(JOB_RETRIES);
         // Remove the job after 30 minutes.
         specBuilder.withTtlSecondsAfterFinished(JOB_TIME_TO_LIVE_SECONDS);

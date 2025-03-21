@@ -25,13 +25,9 @@ public class TokensManager {
             KeyWrapper key = keyManager.getPublicKey(algorithm, kid);
             AsymmetricSignatureVerifierContext verifierContext;
             switch (algorithm) {
-                case Algorithm.ES256:
-                case Algorithm.ES384:
-                case Algorithm.ES512:
-                    verifierContext = new ServerECDSASignatureVerifierContext(key);
-                    break;
-                default:
-                    verifierContext = new AsymmetricSignatureVerifierContext(key);
+                case Algorithm.ES256, Algorithm.ES384, Algorithm.ES512 ->
+                        verifierContext = new ServerECDSASignatureVerifierContext(key);
+                default -> verifierContext = new AsymmetricSignatureVerifierContext(key);
             }
             verifier.verifierContext(verifierContext);
             verifier.verify();

@@ -172,8 +172,9 @@ public final class AuthorizationProvider implements Provider {
         return realm;
     }
 
-    public PolicyEvaluator getPolicyEvaluator() {
-        return policyEvaluator;
+    public PolicyEvaluator getPolicyEvaluator(ResourceServer resourceServer) {
+        PolicyEvaluator schemaPolicyEvaluator = AdminPermissionsSchema.SCHEMA.getPolicyEvaluator(keycloakSession, resourceServer);
+        return schemaPolicyEvaluator == null ? policyEvaluator : schemaPolicyEvaluator;
     }
 
     @Override
@@ -441,6 +442,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
                 return policyStore.findDependentPolicies(resourceServer, id);
+            }
+
+            @Override
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValue);
             }
 
             @Override

@@ -51,7 +51,6 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout");
         clients.get(rep.getId()).update(rep);
         try {
-            oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -81,7 +80,6 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, "false");
         clients.get(rep.getId()).update(rep);
         try {
-            oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -110,7 +108,6 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout");
         clients.get(rep.getId()).update(rep);
         try {
-            oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -142,7 +139,6 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractTestRealmKeycloak
                 .setFrontchannelLogout(true)
                 .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout")
                 .update()) {
-            oauth.clientSessionState("client-session");
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

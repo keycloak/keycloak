@@ -128,8 +128,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     }
 
     protected void validateNonceNotUsedErrorExpected() {
-        oauth.nonce(null);
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(null).open();
 
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
@@ -181,11 +180,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
 
     protected EventRepresentation loginUser(String nonce) {
-        if (nonce != null) {
-            oauth.nonce(nonce);
-        }
-
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).state("somestate").open();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
@@ -195,15 +190,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     }
 
     protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
-        if (nonce != null) {
-            oauth.nonce(nonce);
-        }
-
         if (redirectUri != null) {
             oauth.redirectUri(redirectUri);
         }
 
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).state("somestate").open();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");

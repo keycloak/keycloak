@@ -22,26 +22,36 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
+import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -86,8 +96,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
-
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
+
+    private final PartialEvaluator partialEvaluator = new PartialEvaluator();
+    private final PolicyEvaluator policyEvaluator = new FGAPPolicyEvaluator();
 
     private AdminPermissionsSchema() {
         super(Map.of(
@@ -387,5 +399,58 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
                 policy.removeResource(resourceTypeResource);
             }
         }
+    }
+
+    public void removeResourceObject(AuthorizationProvider authorization, ProviderEvent event) {
+        if (!isAdminPermissionsEnabled(authorization.getRealm()) || authorization.getRealm().getAdminPermissionsClient() == null) return;
+
+        String id;
+        if (event instanceof UserRemovedEvent userRemovedEvent) {
+            id = userRemovedEvent.getUser().getId();
+        } else if (event instanceof ClientRemovedEvent clientRemovedEvent) {
+            id = clientRemovedEvent.getClient().getId();
+        } else if (event instanceof GroupRemovedEvent groupRemovedEvent) {
+            id = groupRemovedEvent.getGroup().getId();
+        } else if (event instanceof RoleRemovedEvent roleRemovedEvent) {
+            id = roleRemovedEvent.getRole().getId();
+        } else {
+            return;
+        }
+
+        ResourceServer server = authorization.getStoreFactory().getResourceServerStore().findByClient(authorization.getRealm().getAdminPermissionsClient());
+
+        Resource resource = authorization.getStoreFactory().getResourceStore().findByName(server, id);
+        if (resource != null) {
+            List<Policy> permissions = authorization.getStoreFactory().getPolicyStore().findByResource(server, resource);
+            //remove object from permission if there is more than one resource, remove the permission if there is only the removed object
+            for (Policy permission : permissions) {
+                if (permission.getResources().size() == 1) {
+                    authorization.getStoreFactory().getPolicyStore().delete(permission.getId());
+                } else {
+                    permission.removeResource(resource);
+                }
+            }
+
+            //remove the resource associated with the object
+            authorization.getStoreFactory().getResourceStore().delete(resource.getId());
+        }
+    }
+
+    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder) {
+        return partialEvaluator.applyAuthorizationFilters(session, resourceType, evaluator, realm, builder, queryBuilder);
+    }
+
+    public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {
+        if (resourceServer == null) {
+            return null;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (isAdminPermissionClient(realm, resourceServer.getId())) {
+            return policyEvaluator;
+        }
+
+        return null;
     }
 }

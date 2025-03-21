@@ -37,19 +37,56 @@ public class AccessTokenContext {
     private final String rawTokenId;
 
     public enum SessionType {
-        ONLINE("on"),
-        OFFLINE("of"),
-        TRANSIENT("tr"),
-        UNKNOWN("un");
+        // Regular online user session with valid client session
+        ONLINE("on", false, true, false, false),
+
+        // Regular offline user session with valid client session
+        OFFLINE("of", false, false, true, false),
+
+        // Transient user session
+        TRANSIENT("tr", true, false, false, false),
+
+        // Regular online user session with transient client session (Client session may not need to exist)
+        ONLINE_TRANSIENT_CLIENT("nt", false, true, false, true),
+
+        // Regular offline user session with transient client session (Client session may not need to exist)
+        OFFLINE_TRANSIENT_CLIENT("ft", false, false, true, true),
+
+        // Unknown type. Perhaps token coming from older Keycloak version than 26.2.0. No need to support transientClientSession as this was added in 26.2 with standard token-exchange
+        UNKNOWN("un", true, true, true, false);
 
         private final String shortcut;
+        private final boolean allowTransientUserSession;
+        private final boolean allowLookupOnlineUserSession;
+        private final boolean allowLookupOfflineUserSession;
+        private final boolean allowTransientClientSession;
 
-        SessionType(String shortcut) {
+        SessionType(String shortcut, boolean allowTransientUserSession, boolean allowLookupOnlineUserSession, boolean allowLookupOfflineUserSession, boolean allowTransientClientSession) {
             this.shortcut = shortcut;
+            this.allowTransientUserSession = allowTransientUserSession;
+            this.allowLookupOnlineUserSession = allowLookupOnlineUserSession;
+            this.allowLookupOfflineUserSession = allowLookupOfflineUserSession;
+            this.allowTransientClientSession = allowTransientClientSession;
         }
 
         public String getShortcut() {
             return shortcut;
+        }
+
+        public boolean isAllowTransientUserSession() {
+            return allowTransientUserSession;
+        }
+
+        public boolean isAllowLookupOnlineUserSession() {
+            return allowLookupOnlineUserSession;
+        }
+
+        public boolean isAllowLookupOfflineUserSession() {
+            return allowLookupOfflineUserSession;
+        }
+
+        public boolean isAllowTransientClientSession() {
+            return allowTransientClientSession;
         }
     }
 

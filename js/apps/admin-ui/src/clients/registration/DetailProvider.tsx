@@ -148,6 +148,7 @@ export default function DetailProvider() {
                 {t("save")}
               </Button>
               <Button
+                data-testid="cancel"
                 variant="link"
                 component={(props) => (
                   <Link

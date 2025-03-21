@@ -125,7 +125,7 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
       }
     },
     setRealms,
-    [realm],
+    [realmRepresentation],
   );
 
   const recentRealmsList = useMemo(
@@ -161,18 +161,8 @@ export const RealmSelector = ({ onViewAll }: RealmSelectorProps) => {
             setOpen(!open);
           }}
           isFullWidth
-          isDisabled={
-            realms.length <= 1 && realms.map((r) => r.name).includes(realm)
-          }
         >
-          <Stack className="keycloak__realm_selector__dropdown">
-            {realmDisplayName ? (
-              <StackItem className="pf-v5-u-font-weight-bold" isFilled>
-                {label(t, realmDisplayName)}
-              </StackItem>
-            ) : null}
-            <StackItem isFilled>{realm}</StackItem>
-          </Stack>
+          {label(t, realmDisplayName, realm)}
         </MenuToggle>
       )}
     >

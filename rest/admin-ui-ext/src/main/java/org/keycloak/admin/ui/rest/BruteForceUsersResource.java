@@ -17,6 +17,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.ui.rest.model.BruteUser;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -157,7 +158,12 @@ public class BruteForceUsersResource {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
         usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(usersEvaluator::canView).map(user -> {
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            userModels = userModels.filter(usersEvaluator::canView);
+        }
+
+        return userModels.map(user -> {
             UserRepresentation userRep = briefRepresentationB ?
                     ModelToRepresentation.toBriefRepresentation(user) :
                     ModelToRepresentation.toRepresentation(session, realm, user);

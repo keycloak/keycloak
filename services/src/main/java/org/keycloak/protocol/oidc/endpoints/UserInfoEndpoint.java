@@ -80,6 +80,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * @author pedroigor
@@ -98,6 +99,8 @@ public class UserInfoEndpoint {
     private final OAuth2Error error;
     private Cors cors;
     private TokenForUserInfo tokenForUserInfo = new TokenForUserInfo();
+
+    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
 
     public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
         this.session = session;
@@ -229,7 +232,14 @@ public class UserInfoEndpoint {
             throw error.invalidToken("Client disabled");
         }
 
-        UserSessionModel userSession = UserSessionUtil.findValidSession(session, realm, token, event, clientModel, error);
+        event.session(token.getSessionId());
+        UserSessionUtil.UserSessionValidationResult userSessionValidation = UserSessionUtil.findValidSessionForAccessToken(session, realm, token, clientModel, (invalidUserSession -> {}));
+        if (userSessionValidation.getError() != null) {
+            event.error(userSessionValidation.getError());
+            throw error.invalidToken(userSessionValidation.getError());
+        }
+
+        UserSessionModel userSession = userSessionValidation.getUserSession();
 
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
@@ -257,6 +267,16 @@ public class UserInfoEndpoint {
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            String authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
+            String[] split = WHITESPACES.split(authHeader.trim());
+            String bearerPart = split[0];
+            if (!bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                String errorMessage = "The access token type is DPoP but Authorization Header is not DPoP";
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.NOT_ALLOWED);
+                throw error.invalidToken(errorMessage);
+            }
+
             if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
                 try {
                     DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
@@ -268,6 +288,7 @@ public class UserInfoEndpoint {
                     throw error.invalidToken(errorMessage);
                 }
             }
+
         }
 
         // Existence of authenticatedClientSession for our client already handled before

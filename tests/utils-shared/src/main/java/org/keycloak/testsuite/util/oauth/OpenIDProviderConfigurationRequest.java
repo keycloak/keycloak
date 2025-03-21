@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class OpenIDProviderConfigurationRequest extends AbstractHttpGetRequest<OpenIDProviderConfigurationResponse> {
 
-    public OpenIDProviderConfigurationRequest(AbstractOAuthClient client) {
+    public OpenIDProviderConfigurationRequest(AbstractOAuthClient<?> client) {
         super(client);
     }
 

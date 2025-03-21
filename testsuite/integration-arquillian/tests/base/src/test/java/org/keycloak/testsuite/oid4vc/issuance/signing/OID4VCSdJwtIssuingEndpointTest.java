@@ -259,7 +259,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 }));
     }
 
-
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator) {
         String issuerDid = "did:web:issuer.org";
         SdJwtCredentialBuilder testSdJwtCredentialBuilder = new SdJwtCredentialBuilder(issuerDid);
@@ -273,32 +272,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 TIME_PROVIDER,
                 30,
                 true);
-    }
-
-    @Override
-    protected ClientRepresentation getTestClient(String clientId) {
-        ClientRepresentation clientRepresentation = new ClientRepresentation();
-        clientRepresentation.setClientId(clientId);
-        clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        clientRepresentation.setEnabled(true);
-        clientRepresentation.setProtocolMappers(
-                List.of(
-                        getRoleMapper(clientId, "test-credential"),
-                        getUserAttributeMapper("email", "email", "test-credential"),
-                        getUserAttributeMapper("firstName", "firstName", "test-credential"),
-                        getUserAttributeMapper("lastName", "lastName", "test-credential"),
-                        getJtiGeneratedIdMapper("test-credential"),
-                        getStaticClaimMapper("test-credential", "test-credential"),
-                        getIssuedAtTimeMapper(null, ChronoUnit.HOURS.name(), "COMPUTE", "test-credential"),
-                        getIssuedAtTimeMapper("nbf", null, "COMPUTE", "test-credential"),
-
-                        getUserAttributeMapper("given_name", "firstName", "identity_credential"),
-                        getUserAttributeMapper("family_name", "lastName", "identity_credential"),
-                        getIssuedAtTimeMapper(null, ChronoUnit.MINUTES.name(), "COMPUTE", "identity_credential"),
-                        getIssuedAtTimeMapper("nbf", ChronoUnit.SECONDS.name(), "COMPUTE", "identity_credential")
-                )
-        );
-        return clientRepresentation;
     }
 
     private static final String JTI_KEY = "jti";
@@ -399,14 +372,14 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertFalse("Only mappers supported for the requested type should have been evaluated.", disclosureMap.containsKey("given_name"));
             assertTrue("The credentials should include the firstName claim.", disclosureMap.containsKey("firstName"));
-            assertEquals("firstName claim incorrectly mapped.", disclosureMap.get("firstName").get(2).asText(), "John");
+            assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
-            assertEquals("lastName claim incorrectly mapped.", disclosureMap.get("lastName").get(2).asText(), "Doe");
+            assertEquals("lastName claim incorrectly mapped.", "Doe", disclosureMap.get("lastName").get(2).asText());
             assertTrue("The credentials should include the roles claim.", disclosureMap.containsKey("roles"));
             assertTrue("The credentials should include the test-credential claim.", disclosureMap.containsKey("test-credential"));
             assertTrue("lastName claim incorrectly mapped.", disclosureMap.get("test-credential").get(2).asBoolean());
             assertTrue("The credentials should include the email claim.", disclosureMap.containsKey("email"));
-            assertEquals("email claim incorrectly mapped.", disclosureMap.get("email").get(2).asText(), "john@email.cz");
+            assertEquals("email claim incorrectly mapped.", "john@email.cz", disclosureMap.get("email").get(2).asText());
 
             assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
             assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());

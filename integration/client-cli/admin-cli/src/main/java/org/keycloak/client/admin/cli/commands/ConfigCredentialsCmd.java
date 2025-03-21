@@ -33,8 +33,10 @@ import static org.keycloak.client.cli.util.IoUtil.printOut;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@Command(name = "credentials", description = "--server SERVER_URL --realm REALM [ARGUMENTS]")
+@Command(name = ConfigCredentialsCmd.NAME, description = "--server SERVER_URL --realm REALM [ARGUMENTS]")
 public class ConfigCredentialsCmd extends BaseConfigCredentialsCmd {
+
+    static final String NAME = "credentials";
 
     public ConfigCredentialsCmd() {
         super(KcAdmMain.COMMAND_STATE);
@@ -61,5 +63,9 @@ public class ConfigCredentialsCmd extends BaseConfigCredentialsCmd {
         } else {
             super.process();
         }
+    }
+
+    String getPassword() {
+        return this.password;
     }
 }

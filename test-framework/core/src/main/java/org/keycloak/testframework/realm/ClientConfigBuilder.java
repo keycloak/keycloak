@@ -70,8 +70,8 @@ public class ClientConfigBuilder {
     }
 
 
-    public ClientConfigBuilder serviceAccount() {
-        rep.setServiceAccountsEnabled(true);
+    public ClientConfigBuilder serviceAccountsEnabled(boolean enabled) {
+        rep.setServiceAccountsEnabled(enabled);
         return this;
     }
 
@@ -82,6 +82,11 @@ public class ClientConfigBuilder {
 
     public ClientConfigBuilder authorizationServices() {
         rep.setAuthorizationServicesEnabled(true);
+        return this;
+    }
+
+    public ClientConfigBuilder authenticatorType(String authenticatorType) {
+        rep.setClientAuthenticatorType(authenticatorType);
         return this;
     }
 

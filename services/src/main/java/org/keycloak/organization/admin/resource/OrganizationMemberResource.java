@@ -42,6 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -87,6 +88,7 @@ public class OrganizationMemberResource {
     @Operation(summary = "Adds the user with the specified id as a member of the organization", description = "Adds, or associates, " +
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
+    @RequestBody(description = "Payload should contain only id of the user to be added to the organization (UUID without quotes).", required = true)
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),

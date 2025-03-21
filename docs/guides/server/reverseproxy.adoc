@@ -22,7 +22,7 @@ The port `8443` (or `8080` if HTTP is enabled) is used for the Admin UI, Account
 
 The port `9000` is used for management, which includes endpoints for health checks and metrics as described in the  <@links.server id="management-interface"/> {section}.
 
-You only need to proxy port `8443` (or `8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configure-production"/>. You should not proxy port `9000` as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.
+You only need to proxy port `8443` (or `8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configuration-production"/>. You should not proxy port `9000` as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.
 
 == Configure the reverse proxy headers
 
@@ -170,7 +170,6 @@ Client certificate lookup via a proxy header for X.509 authentication is conside
 * If passthrough is not an option, implement the following security measures:
 ** Configure your network so that {project_name} is isolated and can accept connections only from the proxy.
 ** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup-<provider>-ssl-client-cert` option.
-** Keep in mind that any of the `spi-x509cert-*` options don't reflect the `proxy-trusted-addresses` option.
 ** Pay extra attention to the `spi-x509cert-lookup-<provider>-trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
    Setting `spi-x509cert-lookup-<provider>-trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
    when a forged client certificate can be used for authentication.

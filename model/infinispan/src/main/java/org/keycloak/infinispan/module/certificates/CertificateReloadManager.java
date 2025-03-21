@@ -186,6 +186,11 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     // testing purpose
+    public long getRotationSeconds() {
+        return rotationSeconds;
+    }
+
+    // testing purpose
     public boolean isCoordinator() {
         return cacheManager.isCoordinator();
     }
@@ -235,7 +240,7 @@ public class CertificateReloadManager implements Lifecycle {
                 return;
             }
             var crt = certificateHolder.getCertificateInUse();
-            var delay = delayUntilNextRotation(crt.getCertificate().getNotBefore().toInstant(), crt.getCertificate().getNotAfter().toInstant());
+            var delay = delayUntilNextRotation(Instant.ofEpochMilli(crt.getGeneratedMillis()), crt.getCertificate().getNotAfter().toInstant());
             logger.debugf("Next rotation in %s", delay);
             if (delay.isZero()) {
                 blockingManager.runBlocking(this::rotateCertificate, "rotate");
@@ -285,6 +290,7 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     public static String generateSelfSignedCertificate(long validForSeconds) {
+        // We are not using Time Keycloak service in this method to follow CertificateUtilsProvider implementations
         var endDate = Date.from(Instant.now().plus(validForSeconds, ChronoUnit.SECONDS));
         var keyPair = KeyUtils.generateRsaKeyPair(2048);
         var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate);
@@ -295,6 +301,7 @@ public class CertificateReloadManager implements Lifecycle {
         entity.setCertificate(certificate);
         entity.setKeyPair(keyPair);
         entity.setAlias(UUID.randomUUID().toString());
+        entity.setGeneratedMillis(System.currentTimeMillis());
         return toJson(entity);
     }
 

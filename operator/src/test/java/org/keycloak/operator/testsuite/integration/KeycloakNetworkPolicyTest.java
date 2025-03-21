@@ -25,6 +25,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.quarkus.test.junit.QuarkusTest;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
@@ -38,6 +40,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
 

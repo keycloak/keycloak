@@ -1,12 +1,11 @@
 .keycloak__realm_selector__dropdown .pf-m-fill {
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 15.125rem;
 }
 
 .keycloak__realm_selector__dropdown .pf-v5-c-menu__list {
   min-width: 0;
-  width: 15.125rem;
-
 }
 
 .pf-v5-c-nav__item.keycloak__page_nav__nav_item__realm-selector {

@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.oauth;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -29,16 +28,21 @@ public class PasswordGrantRequest extends AbstractHttpPostRequest<PasswordGrantR
         return this;
     }
 
-    protected void initRequest() {
-        header(TokenUtil.TOKEN_TYPE_DPOP, client.getDpopProof());
+    public PasswordGrantRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
 
+    public PasswordGrantRequest param(String name, String value) {
+        parameter(name, value);
+        return this;
+    }
+
+    protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
         parameter("username", username);
         parameter("password", password);
         parameter("otp", otp);
-
-        parameter(AdapterConstants.CLIENT_SESSION_STATE, client.getClientSessionState());
-        parameter(AdapterConstants.CLIENT_SESSION_HOST, client.getClientSessionHost());
 
         scope();
     }

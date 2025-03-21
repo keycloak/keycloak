@@ -34,6 +34,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Config;
@@ -75,6 +76,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
+@Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
 
@@ -585,7 +587,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testUpgradeRecreatesPods() {
+    public void testUpdateRecreatesPods() {
         var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setInstances(3);
         deployKeycloak(k8sclient, kc, true);
@@ -595,9 +597,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         kc.getSpec().setImage(newImage);
 
-        var upgradeCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
+        var updateCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
             try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak update");
                 return true;
             } catch (AssertionError e) {
                 return false;
@@ -606,7 +608,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         deployKeycloak(k8sclient, kc, false);
         try {
-            upgradeCondition.get(2, TimeUnit.MINUTES);
+            updateCondition.get(2, TimeUnit.MINUTES);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new AssertionError(e);
         }

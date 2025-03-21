@@ -54,13 +54,6 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
         configRep = testRsc.getRealmEventsConfig();
     }
 
-    protected void enableEvents() {
-        configRep.setEventsEnabled(true);
-        configRep.setAdminEventsEnabled(Boolean.TRUE);
-
-        saveConfig();
-    }
-
     protected String realmName() {
         return testRealmResource().toRepresentation().getId();
     }

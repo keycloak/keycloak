@@ -81,7 +81,6 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.clientId("test-app");
-        oauth.maxAge(null);
     }
 
 
