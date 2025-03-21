@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
@@ -89,7 +90,7 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         try (Response response = organization.members().addMember(ldapUser.getId())) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
-        List<OrganizationRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations();
+        List<MembershipRepresentation> orgMemberships = organization.members().member(ldapUser.getId()).getOrganizations();
         assertThat(orgMemberships, notNullValue());
         assertThat(orgMemberships, hasSize(1));
         assertThat(orgMemberships.get(0).getId(), equalTo(orgRepresentation.getId()));

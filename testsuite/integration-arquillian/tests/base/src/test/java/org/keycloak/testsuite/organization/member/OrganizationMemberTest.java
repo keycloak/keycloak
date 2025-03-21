@@ -57,6 +57,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -120,17 +121,19 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         OrganizationRepresentation orgB = createOrganization("orgb");
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
         OrganizationRepresentation expected = organization.toRepresentation();
-        List<OrganizationRepresentation> actual = organization.members().member(member.getId()).getOrganizations();
+        List<MembershipRepresentation> actual = organization.members().member(member.getId()).getOrganizations();
         assertNotNull(actual);
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
+        assertTrue(actual.stream().map(MembershipRepresentation::getMembershipType).allMatch(MembershipType.UNMANAGED::equals));
 
         actual = testRealm().organizations().members().getOrganizations(member.getId());
         assertNotNull(actual);
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
+        assertTrue(actual.stream().map(MembershipRepresentation::getMembershipType).allMatch(MembershipType.UNMANAGED::equals));
     }
 
     @Test

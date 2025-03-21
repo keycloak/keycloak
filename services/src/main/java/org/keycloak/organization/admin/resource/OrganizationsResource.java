@@ -55,6 +55,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.organization.validation.OrganizationsValidation.OrganizationValidationException;
+import org.keycloak.representations.idm.MembershipRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -196,7 +197,7 @@ public class OrganizationsResource {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")
     })
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+    public Stream<MembershipRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
         return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
     }
 }
