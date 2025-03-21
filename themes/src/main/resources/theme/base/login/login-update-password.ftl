@@ -1,9 +1,9 @@
 <#import "template.ftl" as layout>
 <#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password','password-confirm'); section>
-    <#if section = "header">
+    <#if section == "header">
         ${msg("updatePasswordTitle")}
-    <#elseif section = "form">
+    <#elseif section == "form">
         <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
@@ -14,6 +14,12 @@
                         <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}"
                                autofocus autocomplete="new-password"
                                aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>"
+                               pattern=".{${authenticationSession.getAuthNote('minLength')},${authenticationSession.getAuthNote('maxLength')}}"
+                               title="Password must contain at least ${authenticationSession.getAuthNote('minLength')} characters"
+                               passwordrules="minlength: ${authenticationSession.getAuthNote('minLength')}; maxlength: ${authenticationSession.getAuthNote('maxLength')};
+                               <#if authenticationSession.getAuthNote('minLowerCase') != "0"> required: lower; </#if>
+                               <#if authenticationSession.getAuthNote('minUpperCase') != "0"> required: upper; </#if>
+                               <#if authenticationSession.getAuthNote('minDigits') != "0"> required: digit; </#if>"
                         />
                         <button class="${properties.kcFormPasswordVisibilityButtonClass!}" type="button" aria-label="${msg('showPassword')}"
                                 aria-controls="password-new"  data-password-toggle
@@ -55,7 +61,6 @@
                             ${kcSanitize(messagesPerField.get('password-confirm'))?no_esc}
                         </span>
                     </#if>
-
                 </div>
             </div>
 
