@@ -1691,6 +1691,12 @@ public class RepresentationToModel {
                 representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         String orgId = existing != null ? existing.getOrganizationId() : repOrgId;
 
+        boolean emailMatchAny = Boolean.parseBoolean(representation.getConfig().get(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH_ANY_ORG_DOMAIN.getKey()));
+        boolean emailMatch = Boolean.parseBoolean(representation.getConfig().get(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey()));
+        if (emailMatchAny && emailMatch) {
+            throw new IllegalArgumentException("Only one of " + OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH_ANY_ORG_DOMAIN.getKey() +" or " + OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey() + " can be specified.");
+        }
+
         if (orgId != null) {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
             OrganizationModel org = provider.getById(orgId);
@@ -1705,11 +1711,14 @@ public class RepresentationToModel {
                 representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
             } else if (org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
                 throw new IllegalArgumentException("Domain does not match any domain from the organization");
+            } else if (emailMatchAny) {
+                throw new IllegalArgumentException("No domain can be specified when "  + OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH_ANY_ORG_DOMAIN.getKey() + " is enabled.");
             }
 
             // make sure the link to an organization does not change
             representation.setOrganizationId(orgId);
         }
+
     }
 
     public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {
