@@ -14,16 +14,16 @@ environment variable (this should be the directory containing `/bin/` or `/jre/`
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
 
----    
+---
 First clone the Keycloak repository:
-    
+
     git clone https://github.com/keycloak/keycloak.git
     cd keycloak
-    
+
 To build Keycloak run:
 
     ./mvnw clean install
-    
+
 This will build all modules and run the testsuite.
 
 To build Keycloak with adapters run:
@@ -45,7 +45,7 @@ Classes from `org.keycloak.testsuite.*` packages aren't suitable to be used in p
 
 This project contains opt-in support for incremental Maven builds using the [Apache Maven Build Cache Extension](https://github.com/apache/maven-build-cache-extension) which is disabled by default.
 
-To enable it for a single Maven command execution, enable it as follows: 
+To enable it for a single Maven command execution, enable it as follows:
 
     ./mvnw -D -Dmaven.build.cache.enabled=true ...
 
@@ -75,8 +75,8 @@ For more details, follow the [`quarkus` module documentation](../quarkus/README.
 
 ## Working with the codebase
 
-We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be 
-retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tree/main/ide-configs).To import formatting 
+We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be
+retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tree/main/ide-configs).To import formatting
 rules, see following [instructions](http://community.jboss.org/wiki/ImportFormattingRules).
 
 If your changes require updates to the database read [Updating Database Schema](updating-database-schema.md).

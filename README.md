@@ -43,7 +43,7 @@ To run Keycloak, download the distribution from our [website](https://www.keyclo
 Alternatively, you can use the Docker image by running:
 
     docker run quay.io/keycloak/keycloak start-dev
-    
+
 For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
 
