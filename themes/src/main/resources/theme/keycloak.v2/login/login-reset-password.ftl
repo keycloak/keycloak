@@ -18,10 +18,12 @@
 
         </form>
     <#elseif section = "info" >
-        <#if realm.duplicateEmailsAllowed>
-            ${msg("emailInstructionUsername")}
-        <#else>
-            ${msg("emailInstruction")}
-        </#if>
+        <span class="${properties.kcLoginMainFooterHelperText!}">
+            <#if realm.duplicateEmailsAllowed>
+                ${msg("emailInstructionUsername")}
+            <#else>
+                ${msg("emailInstruction")}
+            </#if>
+        </span>
     </#if>
 </@layout.registrationLayout>
