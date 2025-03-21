@@ -42,7 +42,7 @@ public class LocaleBean {
     public LocaleBean(RealmModel realm, java.util.Locale current, UriBuilder uriBuilder, Properties messages) {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
-        this.rtl = isLeftToRight(this.current);
+        this.rtl = !isLeftToRight(this.current);
 
         Collator collator = Collator.getInstance(current);
         collator.setStrength(Collator.PRIMARY); // ignore case and accents
