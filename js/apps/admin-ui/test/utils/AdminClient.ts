@@ -3,6 +3,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
+import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
@@ -623,6 +624,48 @@ class AdminClient {
       providerType: "org.keycloak.storage.UserStorageProvider",
       ...federatedIdentity,
     });
+  }
+
+  async #getPermissionClient(realm: string = this.#client.realmName) {
+    const clients = await this.#client.clients.find({
+      realm,
+      clientId: "admin-permissions",
+    });
+    if (clients.length === 0)
+      throw new Error("Client admin-permissions not found");
+    return clients[0];
+  }
+
+  async createPermission({
+    realm,
+    ...permission
+  }: PolicyRepresentation & { realm?: string }) {
+    await this.#login();
+    const client = await this.#getPermissionClient(realm);
+    await this.#client.clients.createPermission(
+      { id: client.id!, type: "scope", realm },
+      permission,
+    );
+  }
+
+  async createUserPolicy({
+    username,
+    realm,
+    ...policy
+  }: PolicyRepresentation & { realm?: string; username: string }) {
+    await this.#login();
+    const user = await this.#client.users.find({ username, realm });
+    if (user.length === 0) {
+      throw new Error(`User ${username} not found`);
+    }
+    const client = await this.#getPermissionClient(realm);
+    return this.#client.clients.createPolicy(
+      { id: client.id!, type: policy.type!, realm },
+      {
+        users: [user[0].id!],
+        ...policy,
+      },
+    );
   }
 }
 

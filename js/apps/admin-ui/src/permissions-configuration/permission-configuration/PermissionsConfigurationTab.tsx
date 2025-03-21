@@ -32,10 +32,7 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
-import {
-  SearchDropdown,
-  SearchForm,
-} from "../../clients/authorization/SearchDropdown";
+import { SearchDropdown, SearchForm } from "../resource-types/SearchDropdown";
 import { toCreatePermissionConfiguration } from "../routes/NewPermissionConfiguration";
 import { AuthorizationScopesDetails } from "../permission-configuration/AuthorizationScopesDetails";
 import { toPermissionConfigurationDetails } from "../routes/PermissionConfigurationDetails";
@@ -197,7 +194,6 @@ export const PermissionsConfigurationTab = ({
                     types={resourceTypes}
                     search={search}
                     onSearch={setSearch}
-                    type="adminPermission"
                   />
                 </ToolbarItem>
                 <ToolbarItem>
