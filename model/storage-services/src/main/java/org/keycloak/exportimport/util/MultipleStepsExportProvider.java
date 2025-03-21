@@ -18,6 +18,7 @@
 package org.keycloak.exportimport.util;
 
 import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.models.KeycloakSession;
@@ -46,23 +47,29 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     private String realmId;
     private int usersPerFile;
     private UsersExportStrategy usersExportStrategy;
+    private final JpaConnectionProvider connectionProvider;
 
-    public MultipleStepsExportProvider(KeycloakSessionFactory factory) {
+    public MultipleStepsExportProvider(KeycloakSessionFactory factory, JpaConnectionProvider connectionProvider) {
         this.factory = factory;
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
     public void exportModel() {
-        if (realmId != null) {
-            ServicesLogger.LOGGER.realmExportRequested(realmId);
-            exportRealm(realmId);
-        } else {
-            ServicesLogger.LOGGER.fullModelExportRequested();
-            List<RealmModel> realms = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> session.realms().getRealmsStream().collect(Collectors.toList()));
-            for (RealmModel realm : realms) {
-                exportRealmImpl(realm.getName());
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+
+            @Override
+            protected void runExportImportTask(KeycloakSession session) throws IOException {
+                if (realmId != null) {
+                    ServicesLogger.LOGGER.realmExportRequested(realmId);
+                    exportRealm(realmId);
+                } else {
+                    ServicesLogger.LOGGER.fullModelExportRequested();
+                            session.realms().getRealmsStream().map(RealmModel::getName)
+                                    .forEach(MultipleStepsExportProvider.this::exportRealm);
+                }
             }
-        }
+        });
         ServicesLogger.LOGGER.exportSuccess();
     }
 
@@ -81,11 +88,15 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
         return (T) this;
     }
 
-    public void exportRealm(String realmName) {
-        exportRealmImpl(realmName);
+    private void exportRealm(String realmName) {
+        // the main benefit of running in a batch here is to ensure
+        // that queries are in flushMode COMMIT
+        // there is also some clearing of the context to limit how much is in memory when running under a single
+        // transaction - this could be further optimized if the writing strategy were more streaming, rather than being based upon lists
+        this.connectionProvider.runInBatch(batchControl -> exportRealmImpl(realmName, batchControl));
     }
 
-    protected void exportRealmImpl(final String realmName) {
+    private void exportRealmImpl(final String realmName, JpaConnectionProvider.BatchControl batchControl) {
         final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
         FederatedUsersHolder federatedUsersHolder = new FederatedUsersHolder();
@@ -109,6 +120,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                         federatedUsersHolder.totalCount = 0;
                     }
                 }
+                batchControl.clear();
             }
 
         });
@@ -145,6 +157,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                 });
 
                 usersHolder.currentPageStart = usersHolder.currentPageEnd;
+                batchControl.clear();
             }
         }
         if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
@@ -179,6 +192,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                 });
 
                 federatedUsersHolder.currentPageStart = federatedUsersHolder.currentPageEnd;
+                batchControl.clear();
             }
         }
     }

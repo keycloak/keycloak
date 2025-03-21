@@ -17,7 +17,13 @@
 
 package org.keycloak.exportimport.dir;
 
+import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_EXPORT_STRATEGY;
+import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
+
+import java.util.List;
+
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.ExportProviderFactory;
@@ -26,11 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.List;
-
-import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_EXPORT_STRATEGY;
-import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
 
 /**
  * Construct a {@link DirExportProviderFactory} to be used to export one or more realms.
@@ -53,7 +54,7 @@ public class DirExportProviderFactory implements ExportProviderFactory {
         String realmName = System.getProperty(ExportImportConfig.REALM_NAME, config.get(REALM_NAME));
         String usersExportStrategy = System.getProperty(ExportImportConfig.USERS_EXPORT_STRATEGY, config.get(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString()));
         String usersPerFile = System.getProperty(ExportImportConfig.USERS_PER_FILE, config.get(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE)));
-        return new DirExportProvider(session.getKeycloakSessionFactory())
+        return new DirExportProvider(session.getKeycloakSessionFactory(), session.getProvider(JpaConnectionProvider.class))
                 .withDir(dir)
                 .withRealmName(realmName)
                 .withUsersExportStrategy(Enum.valueOf(UsersExportStrategy.class, usersExportStrategy.toUpperCase()))

@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.jpa;
 
+import java.util.function.Consumer;
+
 import org.keycloak.provider.Provider;
 
 import jakarta.persistence.EntityManager;
@@ -26,6 +28,14 @@ import jakarta.persistence.EntityManager;
  */
 public interface JpaConnectionProvider extends Provider {
 
+    interface BatchControl {
+        void flush();
+        void clear();
+    }
+
     EntityManager getEntityManager();
+
+    // TODO: does this need a default impl
+    void runInBatch(Consumer<BatchControl> consumer);
 
 }

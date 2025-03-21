@@ -17,6 +17,7 @@
 
 package org.keycloak.exportimport.dir;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
@@ -36,16 +37,16 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class DirExportProvider extends MultipleStepsExportProvider<DirExportProvider> {
-    
-    private String dir; 
-    
+
+    private String dir;
+
     private File rootDirectory;
 
-    public DirExportProvider(KeycloakSessionFactory sessionFactory) {
+    public DirExportProvider(KeycloakSessionFactory sessionFactory, JpaConnectionProvider connectionProvider) {
         // Determine platform tmp directory
-        super(sessionFactory);
+        super(sessionFactory, connectionProvider);
     }
-    
+
     private File getRootDirectory() {
         if (rootDirectory == null) {
             if (dir == null) {
@@ -70,10 +71,11 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
                 }
             }
         }
-        if (dirPath.exists())
+        if (dirPath.exists()) {
             return dirPath.delete();
-        else
+        } else {
             return true;
+        }
     }
 
     @Override
