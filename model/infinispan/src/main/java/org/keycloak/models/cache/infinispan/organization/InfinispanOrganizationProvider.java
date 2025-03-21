@@ -151,6 +151,16 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public long count(String search, Boolean exact) {
+        return getDelegate().count(search, exact);
+    }
+
+    @Override
+    public long count(Map<String, String> attributes) {
+        return getDelegate().count(attributes);
+    }
+
+    @Override
     public void removeAll() {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
         //this way, all organizations in the realm will be invalidated ... or should it be invalidated whole realm instead?
