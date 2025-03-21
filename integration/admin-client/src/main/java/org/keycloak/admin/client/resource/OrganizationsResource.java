@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.resource;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -149,6 +150,18 @@ public interface OrganizationsResource {
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max
     );
+
+    /**
+     * Counts organizations by search.
+     * @param search text to look for.
+     * @return A map containing the key "count" with number of orgs that match with search as the value.
+     */
+    @GET
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Map<String, Long> count(@QueryParam("search") String search);
+
 
     @Path("members")
     OrganizationsMembersResource members();
