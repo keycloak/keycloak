@@ -10,7 +10,10 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../dynamic/components";
 
-type ClientSelectProps = ComponentProps & { variant?: `${SelectVariant}` };
+type ClientSelectProps = ComponentProps & {
+  variant?: `${SelectVariant}`;
+  clientKey?: keyof ClientRepresentation;
+};
 
 export const ClientSelect = ({
   name,
@@ -20,6 +23,7 @@ export const ClientSelect = ({
   isDisabled = false,
   required = false,
   variant = "typeahead",
+  clientKey = "clientId",
 }: ClientSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -52,7 +56,7 @@ export const ClientSelect = ({
         defaultValue: defaultValue || "",
         rules: {
           required: {
-            value: required,
+            value: required || false,
             message: t("required"),
           },
         },
@@ -60,7 +64,10 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
-      options={clients.map(({ clientId }) => clientId!)}
+      options={clients.map((client) => ({
+        key: client[clientKey] as string,
+        value: client.clientId!,
+      }))}
     />
   );
 };
