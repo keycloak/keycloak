@@ -2,8 +2,8 @@
 
 <div class="${properties.kcFormGroupClass}">
     <div class="${properties.kcFormGroupLabelClass}">
-        <label for="${name}" class="${properties.kcFormGroupLabelClass}">
-        <span class="${properties.kcFormGroupLabelTextClass}">
+        <label for="${name}" class="${properties.kcFormLabelClass}">
+        <span class="${properties.kcFormLabelTextClass}">
             ${label}
         </span>
             <#if required>
@@ -70,17 +70,20 @@
         </button>
       </div>
     </div>
-      <#if forgotPassword>
-        <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
-            <div class="${properties.kcInputHelperTextClass}">
+    <div class="${properties.kcFormHelperTextClass}" aria-live="polite">
+        <div class="${properties.kcInputHelperTextClass}">
+            <#-- Additional helper items -->
+            <#nested>
+            <#if forgotPassword>
                 <div class="${properties.kcInputHelperTextItemClass}">
-                    <span class="${properties.kcInputHelperTextItemTextClass}">
-                        <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
-                    </span>
+                  <span class="${properties.kcInputHelperTextItemTextClass}">
+                      <a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
+                  </span>
                 </div>
-            </div>
+            </#if>
         </div>
-      </#if>
+    </div>
+
   </@group>
 </#macro>
 

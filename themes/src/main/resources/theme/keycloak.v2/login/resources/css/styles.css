@@ -3,6 +3,7 @@
     --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
     --keycloak-logo-height: 63px;
     --keycloak-logo-width: 300px;
+    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
 }
 
 .pf-v5-c-login__container {
@@ -10,6 +11,16 @@
     grid-template-areas: "header"
                          "main"
 }
+
+/* Info section - top margin + bottom padding */
+.pf-v5-c-login__main-footer-band:first-child {
+    margin-block-start: var(--pf-v5-global--spacer--lg);
+}
+
+.pf-v5-c-login__main-footer-band:last-child {
+    padding-bottom: 0;
+}
+/* Info section */
 
 .login-pf body {
     background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
@@ -24,6 +35,10 @@ div.kc-logo-text {
     background-repeat: no-repeat;
     background-size: contain;
     margin: 0 auto;
+}
+
+.kc-card {
+    border-top: 4px solid var(--keycloak-card-top-color);
 }
 
 div.kc-logo-text span {
@@ -104,11 +119,7 @@ hr {
 }
 
 #kc-social-providers svg {
-    height: var(--pf-v5-global--FontSize--sm);
-}
-
-#kc-social-providers li {
-    padding-bottom: var(--pf-v5-global--spacer--sm);
+    height: var(--pf-v5-global--FontSize--xl);
 }
 
 @media (prefers-color-scheme: dark) {
