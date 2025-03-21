@@ -99,6 +99,10 @@ public interface Attributes {
             this.values = values.toArray(new String[values.size()]);
         }
 
+        public String[] getValues() {
+            return values;
+        }
+
         private String getName() {
             return this.name;
         }
