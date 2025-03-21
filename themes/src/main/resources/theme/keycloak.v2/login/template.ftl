@@ -215,20 +215,23 @@
           </form>
         </#if>
 
-        <#if displayInfo>
-          <div id="kc-info" class="${properties.kcSignUpClass!}">
-              <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                  <#nested "info">
-              </div>
-          </div>
-        </#if>
-      </div>
-      <div class="pf-v5-c-login__main-footer">
-        <#nested "socialProviders">
-      </div>
-    </main>
+          <div class="${properties.kcLoginMainFooter!}">
+              <#nested "socialProviders">
 
-    <@loginFooter.content/>
+              <#if displayInfo>
+                  <div id="kc-info" class="${properties.kcLoginMainFooterBand!} ${properties.kcFormClass}">
+                      <div id="kc-info-wrapper" class="${properties.kcLoginMainFooterBandItem!}">
+                          <#nested "info">
+                      </div>
+                  </div>
+              </#if>
+          </div>
+      </div>
+
+        <div class="${properties.kcLoginMainFooter!}">
+            <@loginFooter.content/>
+        </div>
+    </main>
   </div>
 </div>
 </body>
