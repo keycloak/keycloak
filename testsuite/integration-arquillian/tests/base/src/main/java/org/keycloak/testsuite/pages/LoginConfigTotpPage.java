@@ -59,21 +59,21 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
 
     public void configure(String totp) {
         totpInput.sendKeys(totp);
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void configure(String totp, String userLabel) {
         totpInput.sendKeys(totp);
         totpLabelInput.sendKeys(userLabel);
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void submit() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
     
     public void cancel() {
-        cancelAIAButton.click();
+        UIUtils.clickLink(cancelAIAButton);
     }
 
     public String getTotpSecret() {
@@ -94,11 +94,11 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
     }
 
     public void clickManual() {
-        manualLink.click();
+        UIUtils.clickLink(manualLink);
     }
 
     public void clickBarcode() {
-        barcodeLink.click();
+        UIUtils.clickLink(barcodeLink);
     }
 
     public String getInputCodeError() {
