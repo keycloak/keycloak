@@ -54,6 +54,7 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
+    public static final String IS_REQUIRED = "is.required";
 
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
@@ -82,6 +83,12 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
         property.setLabel("Role");
         property.setHelpText("Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(IS_REQUIRED);
+        property.setLabel("isRequired");
+        property.setHelpText("Friendly name of attribute to search for in assertion.  You can leave this blank and specify a name instead.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(property);
     }
 
@@ -151,7 +158,7 @@ public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper impleme
         String attributeFriendlyName = mapperModel.getConfig().get(AttributeToRoleMapper.ATTRIBUTE_FRIENDLY_NAME);
 
         RequestedAttributeType requestedAttribute = new RequestedAttributeType(mapperModel.getConfig().get(AttributeToRoleMapper.ATTRIBUTE_NAME));
-        requestedAttribute.setIsRequired(null);
+        requestedAttribute.setIsRequired(Boolean.valueOf(mapperModel.getConfig().get(UserAttributeMapper.IS_REQUIRED)) ? true: null);
         requestedAttribute.setNameFormat(ATTRIBUTE_FORMAT_BASIC.get());
 
         if (attributeFriendlyName != null && attributeFriendlyName.length() > 0)
