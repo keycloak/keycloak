@@ -31,7 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true, defaultOptions = {"--http-enabled=true", "--hostname-strict=false"})
+@DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Containers are immutable")
 public class IpStackDistTest {
 

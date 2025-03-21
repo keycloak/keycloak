@@ -118,7 +118,7 @@ public class ValidationError implements Serializable {
     }
 
     /**
-     * Returns an array where the first element is the {@link #inputHint} follwed by the {@link #messageParameters}.
+     * Returns an array where the first element is the {@link #inputHint} followed by the {@link #messageParameters}.
      *
      * @return
      */

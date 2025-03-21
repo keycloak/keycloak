@@ -37,6 +37,7 @@ import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 
 import java.util.HashMap;
@@ -264,13 +265,7 @@ public class AuthenticatorSubflowsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSubflow1() throws Exception {
         // Add foo=bar1 . I am redirected to subflow1 - username+password form
-        String loginFormUrl = oauth.getLoginFormUrl();
-        loginFormUrl = loginFormUrl + "&foo=bar1";
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.loginForm().param("foo", "bar1").open();
 
         loginPage.assertCurrent();
 
@@ -285,17 +280,12 @@ public class AuthenticatorSubflowsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSubflow2() throws Exception {
         // Don't add 'foo' parameter. I am redirected to subflow2 - push the button
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.loginForm().open();
 
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
-        driver.findElement(By.name("submit1")).click();
+        UIUtils.clickLink(driver.findElement(By.name("submit1")));
 
 
         loginPage.assertCurrent();

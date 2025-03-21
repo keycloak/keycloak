@@ -33,6 +33,5 @@
     <modules>
         <module>spi</module>
         <module>saml</module>
-        <module>oidc</module>
     </modules>
 </project>

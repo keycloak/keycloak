@@ -20,6 +20,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 
@@ -49,7 +50,9 @@ public class XPathAttributeMapperTest {
                 assertThrows(RuntimeException.class, () -> testMapping("<Open>Foo</Close>", "//*"));
         assertThat(actualException.getCause(), instanceOf(ParsingException.class));
 
-        assertThrows(RuntimeException.class, () -> testMapping(XML_WITH_NAMESPACE, "//*[local-name()=$street]"));
+        // it seems additional validation is added as 'TransformerException: Prefix must resolve to a namespace: unknownPrefix'
+        // is thrown before the XPath function resolver
+        assertNull(testMapping(XML_WITH_NAMESPACE, "//*[local-name()=$street]"));
         assertNull(testMapping(XML_WITH_NAMESPACE, "//*[local-name()=myPrefix:add(1,2)]"));
     }
 
@@ -110,7 +113,7 @@ public class XPathAttributeMapperTest {
         config.put(XPathAttributeMapper.ATTRIBUTE_NAME, attributeNameToSearch);
         config.put(XPathAttributeMapper.USER_ATTRIBUTE, attribute);
         config.put(XPathAttributeMapper.ATTRIBUTE_XPATH, xpath);
-        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext");
+        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext", new IdentityProviderModel());
         AssertionType assertion = AssertionUtil.createAssertion("assertionId", NameIDType.deserializeFromString("nameIDType"));
         AttributeStatementType statement = new AttributeStatementType();
         assertion.addStatement(statement);

@@ -2,7 +2,11 @@ package org.keycloak.broker.provider.util;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ClientData;
+
+import java.io.IOException;
 
 
 public class IdentityBrokerStateTest {
@@ -17,13 +21,13 @@ public class IdentityBrokerStateTest {
         String tabId = "vpISZLVDAc0";
 
         // When
-        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId);
+        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId, null);
 
         // Then
         Assert.assertNotNull(encodedState);
         Assert.assertEquals(clientClientId, encodedState.getClientId());
         Assert.assertEquals(tabId, encodedState.getTabId());
-        Assert.assertEquals("gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.http://i.am.an.url", encodedState.getEncoded());
+        Assert.assertEquals("gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.aHR0cDovL2kuYW0uYW4udXJs", encodedState.getEncoded());
     }
 
     @Test
@@ -36,7 +40,7 @@ public class IdentityBrokerStateTest {
         String tabId = "vpISZLVDAc0";
 
         // When
-        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId);
+        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId, null);
 
         // Then
         Assert.assertNotNull(encodedState);
@@ -46,22 +50,28 @@ public class IdentityBrokerStateTest {
     }
 
     @Test
-    public void testDecodedWithClientIdAnActualUuidBASE64UriFriendly() {
+    public void testDecodedWithClientIdAnActualUuidBASE64UriFriendly() throws IOException {
 
         // Given
         String state = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk";
         String clientId = "c5ac1ea7-6c28-4be1-b7cd-d63a1ba57f78";
         String clientClientId = "http://i.am.an.url";
         String tabId = "vpISZLVDAc0";
+        String clientDataParam = new ClientData("https://my-redirect-uri", "code", "query", "some-state").encode();
 
         // When
-        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId);
+        IdentityBrokerState encodedState = IdentityBrokerState.decoded(state, clientId, clientClientId, tabId, clientDataParam);
 
         // Then
         Assert.assertNotNull(encodedState);
         Assert.assertEquals(clientClientId, encodedState.getClientId());
         Assert.assertEquals(tabId, encodedState.getTabId());
-        Assert.assertEquals("gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.xawep2woS-G3zdY6G6V_eA", encodedState.getEncoded());
+        ClientData clientData = ClientData.decodeClientDataFromParameter(encodedState.getClientData());
+        Assert.assertEquals("https://my-redirect-uri", clientData.getRedirectUri());
+        Assert.assertEquals("code", clientData.getResponseType());
+        Assert.assertEquals("query", clientData.getResponseMode());
+        Assert.assertEquals("some-state", clientData.getState());
+        Assert.assertEquals("gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.xawep2woS-G3zdY6G6V_eA.eyJydSI6Imh0dHBzOi8vbXktcmVkaXJlY3QtdXJpIiwicnQiOiJjb2RlIiwicm0iOiJxdWVyeSIsInN0Ijoic29tZS1zdGF0ZSJ9", encodedState.getEncoded());
     }
 
     @Test
@@ -82,9 +92,9 @@ public class IdentityBrokerStateTest {
     }
 
     @Test
-    public void testEncodedWithClientIdNotUUid() {
+    public void testEncodedWithClientIdNotUUid() throws IOException {
         // Given
-        String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.http://i.am.an.url";
+        String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.aHR0cDovL2kuYW0uYW4udXJs";
         String clientId = "http://i.am.an.url";
         ClientModel clientModel = new IdentityBrokerStateTestHelpers.TestClientModel(clientId, clientId);
         RealmModel realmModel = new IdentityBrokerStateTestHelpers.TestRealmModel(clientId, clientId, clientModel);
@@ -95,6 +105,29 @@ public class IdentityBrokerStateTest {
         // Then
         Assert.assertNotNull(decodedState);
         Assert.assertEquals("http://i.am.an.url", decodedState.getClientId());
+        Assert.assertNull(ClientData.decodeClientDataFromParameter(decodedState.getClientData()));
+    }
+
+    @Test
+    public void testEncodedWithClientData() throws IOException {
+        // Given
+        String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.aHR0cDovL2kuYW0uYW4udXJs.eyJydSI6Imh0dHBzOi8vbXktcmVkaXJlY3QtdXJpIiwicnQiOiJjb2RlIiwicm0iOiJxdWVyeSIsInN0Ijoic29tZS1zdGF0ZSJ9";
+        String clientId = "http://i.am.an.url";
+        ClientModel clientModel = new IdentityBrokerStateTestHelpers.TestClientModel(clientId, clientId);
+        RealmModel realmModel = new IdentityBrokerStateTestHelpers.TestRealmModel(clientId, clientId, clientModel);
+
+        // When
+        IdentityBrokerState decodedState = IdentityBrokerState.encoded(encoded, realmModel);
+
+        // Then
+        Assert.assertNotNull(decodedState);
+        Assert.assertEquals("http://i.am.an.url", decodedState.getClientId());
+        ClientData clientData = ClientData.decodeClientDataFromParameter(decodedState.getClientData());
+        Assert.assertNotNull(clientData);
+        Assert.assertEquals("https://my-redirect-uri", clientData.getRedirectUri());
+        Assert.assertEquals("code", clientData.getResponseType());
+        Assert.assertEquals("query", clientData.getResponseMode());
+        Assert.assertEquals("some-state", clientData.getState());
     }
 
 }

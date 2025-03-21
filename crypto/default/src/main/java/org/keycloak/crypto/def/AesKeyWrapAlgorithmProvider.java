@@ -22,6 +22,8 @@ import java.security.Key;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
@@ -32,14 +34,14 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 public class AesKeyWrapAlgorithmProvider implements JWEAlgorithmProvider {
 
     @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws Exception {
+    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey, JWEHeader header, JWEEncryptionProvider encryptionProvider) throws Exception {
         Wrapper encrypter = new AESWrapEngine();
         encrypter.init(false, new KeyParameter(encryptionKey.getEncoded()));
         return encrypter.unwrap(encodedCek, 0, encodedCek.length);
     }
 
     @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws Exception {
+    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey, JWEHeaderBuilder headerBuilder) throws Exception {
         Wrapper encrypter = new AESWrapEngine();
         encrypter.init(true, new KeyParameter(encryptionKey.getEncoded()));
         byte[] cekBytes = keyStorage.getCekBytes();

@@ -21,44 +21,41 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
-import org.junit.Rule;
+import java.util.Set;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.UserProfileConstants;
+import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(Profile.Feature.DECLARATIVE_USER_PROFILE)
 public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
 
     private static String userId;
     private static String userName;
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -116,7 +113,6 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         realm.user(serviceAccountUser);
 
         RealmRepresentation realmRep = realm.build();
-        VerifyProfileTest.enableDynamicUserProfile(realmRep);
         testRealms.add(realmRep);
     }
 
@@ -136,6 +132,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         UserRepresentation representation = serviceAccount.toRepresentation();
         String username = representation.getUsername();
 
+        assertNotNull(username);
         assertNull(representation.getEmail());
 
         serviceAccount.update(representation);
@@ -162,5 +159,37 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         representation = serviceAccount.toRepresentation();
         assertFalse(representation.getAttributes().isEmpty());
         assertEquals("attr-1-value", representation.getAttributes().get("attr-1").get(0));
+
+        Map<String, List<String>> unmanagedAttributes = test.users().get(userId).getUnmanagedAttributes();
+
+        assertEquals(1, unmanagedAttributes.size());
+    }
+
+    @Test
+    public void testEmailFormatIsEnforced() {
+        final RealmResource realm = adminClient.realm("test");
+        UserResource serviceAccount = realm.users().get(userId);
+        UserRepresentation rep = serviceAccount.toRepresentation();
+        rep.setEmail("invalidEmail");
+        BadRequestException e = assertThrows(BadRequestException.class, () -> serviceAccount.update(rep));
+        assertThat(e.getResponse().readEntity(String.class), containsString(EmailValidator.MESSAGE_INVALID_EMAIL));
+    }
+
+    @Test
+    public void testAttributesAreNotRequired() {
+        final RealmResource realm = adminClient.realm("test");
+        UPConfig config = realm.users().userProfile().getConfiguration();
+        UPAttribute lastName = config.getAttribute(UserModel.LAST_NAME);
+        assertNotNull("The attribute lastName is not defined in User Profile", lastName);
+        UPAttributeRequired upRequired = new UPAttributeRequired(Set.of(
+                UserProfileConstants.ROLE_ADMIN, UserProfileConstants.ROLE_USER), null);
+        lastName.setRequired(upRequired);
+        realm.users().userProfile().update(config);
+        getCleanup().addCleanup(() -> realm.users().userProfile().update(null));
+
+        UserResource serviceAccount = realm.users().get(userId);
+        UserRepresentation rep = serviceAccount.toRepresentation();
+        rep.setLastName(null);
+        serviceAccount.update(rep);
     }
 }

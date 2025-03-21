@@ -21,19 +21,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
-import org.keycloak.common.ClientConnection;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.UriInfo;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -120,24 +120,18 @@ public class RestartLoginCookie implements Token {
         }
     }
 
-    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, AuthenticationSessionModel authSession) {
+    public static void setRestartCookie(KeycloakSession session, AuthenticationSessionModel authSession) {
         RestartLoginCookie restart = new RestartLoginCookie(authSession);
-        String encoded = session.tokens().encode(restart);
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true, session);
+        String encoded = encodeAndEncrypt(session, restart);
+        session.getProvider(CookieProvider.class).set(CookieType.AUTH_RESTART, encoded);
     }
 
-    public static void expireRestartCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
-        KeycloakContext context = session.getContext();
-        ClientConnection connection = context.getConnection();
-        String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
-        boolean secureOnly = realm.getSslRequired().isRequired(connection);
-        CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true, session);
+    public static void expireRestartCookie(KeycloakSession session) {
+        session.getProvider(CookieProvider.class).expire(CookieType.AUTH_RESTART);
     }
 
-    public static Cookie getRestartCookie(KeycloakSession session){
-        Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
+    public static String getRestartCookie(KeycloakSession session){
+        String cook = session.getProvider(CookieProvider.class).get(CookieType.AUTH_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
             return null;
@@ -147,11 +141,8 @@ public class RestartLoginCookie implements Token {
 
     public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
                                                             RootAuthenticationSessionModel rootSession, String expectedClientId,
-                                                            Cookie cook) throws Exception {
-
-        String encodedCookie = cook.getValue();
-
-        RestartLoginCookie cookie = session.tokens().decode(encodedCookie, RestartLoginCookie.class);
+                                                            String encodedCookie) throws Exception {
+        RestartLoginCookie cookie = decryptAndDecode(session, encodedCookie);
         if (cookie == null) {
             logger.debug("Failed to verify encoded RestartLoginCookie");
             return null;
@@ -180,6 +171,36 @@ public class RestartLoginCookie implements Token {
         }
 
         return authSession;
+    }
+
+    private static RestartLoginCookie decryptAndDecode(KeycloakSession session, String encodedToken) {
+        try {
+            String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+            String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+            SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
+            SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+
+            byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, encodedToken);
+            String jwt = new String(contentBytes, StandardCharsets.UTF_8);
+            return session.tokens().decode(jwt, RestartLoginCookie.class);
+        } catch (Exception e) {
+            // Might be the cookie from the older version
+            return session.tokens().decode(encodedToken, RestartLoginCookie.class);
+        }
+    }
+
+    private static String encodeAndEncrypt(KeycloakSession session, RestartLoginCookie cookie) {
+        try {
+            String sigAlgorithm = session.tokens().signatureAlgorithm(cookie.getCategory());
+            String algAlgorithm = session.tokens().cekManagementAlgorithm(cookie.getCategory());
+            SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
+            SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+
+            String encodedJwt = session.tokens().encode(cookie);
+            return TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new RuntimeException("Error encoding cookie.", e);
+        }
     }
 
     @Override

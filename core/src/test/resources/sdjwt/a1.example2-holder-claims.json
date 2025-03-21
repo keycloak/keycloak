@@ -1,0 +1,14 @@
+{
+  "sub": "6c5c0a49-b589-431d-bae7-219122a9ec2c",
+  "given_name": "太郎",
+  "family_name": "山田",
+  "email": "\"unusual email address\"@example.jp",
+  "phone_number": "+81-80-1234-5678",
+  "address": {
+    "street_address": "東京都港区芝公園４丁目２−８",
+    "locality": "東京都",
+    "region": "港区",
+    "country": "JP"
+  },
+  "birthdate": "1940-01-01"
+}

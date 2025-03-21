@@ -113,7 +113,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     URI getRefreshUrl(boolean authSessionIdParam);
 
     /**
-     * End the flow and redirect browser based on protocol specific respones.  This should only be executed
+     * End the flow and redirect browser based on protocol specific response.  This should only be executed
      * in browser-based flows.
      *
      */

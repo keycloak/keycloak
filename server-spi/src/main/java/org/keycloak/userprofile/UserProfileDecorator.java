@@ -19,18 +19,27 @@
 
 package org.keycloak.userprofile;
 
+import java.util.List;
+
 import org.keycloak.models.RealmModel;
 
 /**
+ * <p>This interface allows user storage providers to customize the user profile configuration and its attributes for realm
+ * on a per-user storage provider basis.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface UserProfileDecorator {
 
     /**
-     * Decorates user profile with additional metadata. For instance, metadata attributes, which are available just for your user-storage
-     * provider can be added there, so they are available just for the users coming from your provider
+     * <p>Decorates user profile with additional metadata. For instance, metadata attributes, which are available just for your user-storage
+     * provider can be added there, so they are available just for the users coming from your provider.
      *
-     * @param metadata to decorate
+     * <p>This method is invoked every time a user is being managed through a user profile provider.
+     *
+     * @param providerId the id of the user storage provider to which the user is associated with
+     * @param metadata the current {@link UserProfileMetadata} for the current realm
+     * @return a list of attribute metadata.The {@link AttributeMetadata} returned from this method overrides any other metadata already set in {@code metadata} for a given attribute.
      */
-    void decorateUserProfile(RealmModel realm, UserProfileMetadata metadata);
+    List<AttributeMetadata> decorateUserProfile(String providerId, UserProfileMetadata metadata);
 }

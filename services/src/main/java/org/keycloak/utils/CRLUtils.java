@@ -18,9 +18,12 @@
 package org.keycloak.utils;
 
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.security.auth.x500.X500Principal;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.truststore.TruststoreProvider;
 
@@ -51,16 +53,15 @@ public final class CRLUtils {
      * @throws GeneralSecurityException if some error in validation happens. Typically certificate not valid, or CRL signature not valid
      */
     public static void check(X509Certificate[] certs, X509CRL crl, KeycloakSession session) throws GeneralSecurityException {
-        if (certs.length < 2) {
-            throw new GeneralSecurityException("Not possible to verify signature on CRL. X509 certificate doesn't have CA chain available on it");
+        if (certs == null || certs.length < 1) {
+            throw new GeneralSecurityException("Not possible to verify signature on CRL because no certificate chain was passed.");
         }
 
         X500Principal crlIssuerPrincipal = crl.getIssuerX500Principal();
         X509Certificate crlSignatureCertificate = null;
 
         // Try to find the certificate in the CA chain, which was used to sign the CRL
-        for (int i=1 ; i<certs.length ; i++) {
-            X509Certificate currentCACert = certs[i];
+        for (X509Certificate currentCACert: certs) {
             if (crlIssuerPrincipal.equals(currentCACert.getSubjectX500Principal())) {
                 crlSignatureCertificate = currentCACert;
 
@@ -72,12 +73,11 @@ public final class CRLUtils {
         // Try to find the CRL issuer certificate in the truststore
         if (crlSignatureCertificate == null) {
             log.tracef("Not found CRL issuer '%s' in the CA chain of the certificate. Fallback to lookup CRL issuer in the truststore", crlIssuerPrincipal);
-            crlSignatureCertificate = findCRLSignatureCertificateInTruststore(session, certs, crlIssuerPrincipal);
+            findCRLSignatureCertificateInTruststore(session, certs, crl);
+        } else {
+            // Verify signature on CRL with the previous found certificate
+            crl.verify(crlSignatureCertificate.getPublicKey());
         }
-
-        // Verify signature on CRL
-        // TODO: It will be nice to cache CRLs and also verify their signatures just once at the time when CRL is loaded, rather than in every request
-        crl.verify(crlSignatureCertificate.getPublicKey());
 
         // Finally check if
         if (crl.isRevoked(certs[0])) {
@@ -88,18 +88,31 @@ public final class CRLUtils {
     }
 
 
-    private static X509Certificate findCRLSignatureCertificateInTruststore(KeycloakSession session, X509Certificate[] certs, X500Principal crlIssuerPrincipal) throws GeneralSecurityException {
+    private static X509Certificate findCRLSignatureCertificateInTruststore(KeycloakSession session, X509Certificate[] certs, X509CRL crl) throws GeneralSecurityException {
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
             throw new GeneralSecurityException("Truststore not available");
         }
 
-        Map<X500Principal, X509Certificate> rootCerts = truststoreProvider.getRootCertificates();
-        Map<X500Principal, X509Certificate> intermediateCerts = truststoreProvider.getIntermediateCertificates();
+        X500Principal crlIssuerPrincipal = crl.getIssuerX500Principal();
+        Map<X500Principal, List<X509Certificate>> rootCerts = truststoreProvider.getRootCertificates();
+        Map<X500Principal, List<X509Certificate>> intermediateCerts = truststoreProvider.getIntermediateCertificates();
 
-        X509Certificate crlSignatureCertificate = intermediateCerts.get(crlIssuerPrincipal);
-        if (crlSignatureCertificate == null) {
-            crlSignatureCertificate = rootCerts.get(crlIssuerPrincipal);
+        List<X509Certificate> crlSignatureCertificates = intermediateCerts.get(crlIssuerPrincipal);
+        X509Certificate crlSignatureCertificate = null;
+
+        if (crlSignatureCertificates == null) {
+            crlSignatureCertificates = rootCerts.get(crlIssuerPrincipal);
+        }
+
+        for (X509Certificate cacert : crlSignatureCertificates) {
+            try {
+                    crl.verify(cacert.getPublicKey());
+            } catch (InvalidKeyException | SignatureException e) {
+                    continue;
+            }
+            crlSignatureCertificate = cacert;
+            break;
         }
 
         if (crlSignatureCertificate == null) {
@@ -110,31 +123,25 @@ public final class CRLUtils {
 
         // Check if CRL issuer has trust anchor with the checked certificate (See https://tools.ietf.org/html/rfc5280#section-6.3.3 , paragraph (f))
         Set<X500Principal> certificateCAPrincipals = Arrays.asList(certs).stream()
-                .map(X509Certificate::getSubjectX500Principal)
+                .map(X509Certificate::getIssuerX500Principal)
                 .collect(Collectors.toSet());
 
-        // Remove the checked certificate itself
-        certificateCAPrincipals.remove(certs[0].getSubjectX500Principal());
-
-        X509Certificate currentCRLAnchorCertificate = crlSignatureCertificate;
         X500Principal currentCRLAnchorPrincipal = crlIssuerPrincipal;
 
         for (X500Principal certificateCAPrincipal : certificateCAPrincipals) {
             if (certificateCAPrincipal.equals(currentCRLAnchorPrincipal)) {
                 log.tracef("Found trust anchor of the CRL issuer '%s' in the CA chain. Anchor is '%s'", crlIssuerPrincipal, currentCRLAnchorPrincipal);
-                break;
+                return crlSignatureCertificate;
             }
+        }
 
-            // Try to see the anchor
-            currentCRLAnchorPrincipal = currentCRLAnchorCertificate.getIssuerX500Principal();
-
-            currentCRLAnchorCertificate = intermediateCerts.get(currentCRLAnchorPrincipal);
-            if (currentCRLAnchorCertificate == null) {
-                currentCRLAnchorCertificate = rootCerts.get(currentCRLAnchorPrincipal);
-            }
-            if (currentCRLAnchorCertificate == null) {
-                throw new GeneralSecurityException("Certificate for CRL issuer '" + crlIssuerPrincipal + "' available in the truststore, but doesn't have trust anchors with the CA chain.");
-            }
+        // Anchor was not in the provided certificate chain, check the truststore
+        List<X509Certificate> currentCRLAnchorCertificates = intermediateCerts.get(currentCRLAnchorPrincipal);
+        if (currentCRLAnchorCertificates == null) {
+            currentCRLAnchorCertificates = rootCerts.get(currentCRLAnchorPrincipal);
+        }
+        if (currentCRLAnchorCertificates == null) {
+            throw new GeneralSecurityException("Certificate for CRL issuer '" + crlIssuerPrincipal + "' available in the truststore, but doesn't have trust anchors with the CA chain.");
         }
 
         return crlSignatureCertificate;

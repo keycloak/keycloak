@@ -54,7 +54,7 @@ import java.util.Map;
  * </ol>
  * </p>
  * <p>
- * Note that the {@code user} variable is only defined when the user was identified by a preceeding
+ * Note that the {@code user} variable is only defined when the user was identified by a preceding
  * authentication step, e.g. by the {@link UsernamePasswordForm} authenticator.
  * </p>
  * <p>

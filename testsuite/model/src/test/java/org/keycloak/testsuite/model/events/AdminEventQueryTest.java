@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,7 +41,6 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RequireProvider(EventStoreProvider.class)
@@ -52,12 +51,15 @@ public class AdminEventQueryTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         EventStoreProvider eventStore = s.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(s.realms().getRealm(realmId));
         s.realms().removeRealm(realmId);
@@ -67,10 +69,10 @@ public class AdminEventQueryTest extends KeycloakModelTest {
     public void testQuery() {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            eventStore.onEvent(createClientEvent(realm, OperationType.CREATE), false);
-            eventStore.onEvent(createClientEvent(realm, OperationType.UPDATE), false);
-            eventStore.onEvent(createClientEvent(realm, OperationType.DELETE), false);
-            eventStore.onEvent(createClientEvent(realm, OperationType.CREATE), false);
+            eventStore.onEvent(createClientEvent(realm, session, OperationType.CREATE), false);
+            eventStore.onEvent(createClientEvent(realm, session, OperationType.UPDATE), false);
+            eventStore.onEvent(createClientEvent(realm, session, OperationType.DELETE), false);
+            eventStore.onEvent(createClientEvent(realm, session, OperationType.CREATE), false);
         return null;
         });
 
@@ -90,9 +92,9 @@ public class AdminEventQueryTest extends KeycloakModelTest {
     public void testQueryOrder() {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            AdminEvent firstEvent = createClientEvent(realm, OperationType.CREATE);
+            AdminEvent firstEvent = createClientEvent(realm, session, OperationType.CREATE);
             firstEvent.setTime(1L);
-            AdminEvent secondEvent = createClientEvent(realm, OperationType.DELETE);
+            AdminEvent secondEvent = createClientEvent(realm, session, OperationType.DELETE);
             secondEvent.setTime(2L);
             eventStore.onEvent(firstEvent, false);
             eventStore.onEvent(secondEvent, false);
@@ -122,8 +124,8 @@ public class AdminEventQueryTest extends KeycloakModelTest {
         String longValue = RandomStringUtils.random(30000, true, true);
 
         withRealm(realmId, (session, realm) -> {
-            
-            AdminEvent event = createClientEvent(realm, OperationType.CREATE);
+
+            AdminEvent event = createClientEvent(realm, session, OperationType.CREATE);
             event.setRepresentation(longValue);
 
             session.getProvider(EventStoreProvider.class).onEvent(event, true);
@@ -141,8 +143,8 @@ public class AdminEventQueryTest extends KeycloakModelTest {
         });
     }
 
-    private AdminEvent createClientEvent(RealmModel realm, OperationType operation) {
-        return new AdminEventBuilder(realm, new DummyAuth(realm), null, DummyClientConnection.DUMMY_CONNECTION)
+    private AdminEvent createClientEvent(RealmModel realm, KeycloakSession session, OperationType operation) {
+        return new AdminEventBuilder(realm, new DummyAuth(realm), session, DummyClientConnection.DUMMY_CONNECTION)
                 .resource(ResourceType.CLIENT).operation(operation).getEvent();
     }
 

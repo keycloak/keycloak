@@ -7,15 +7,15 @@ export function parseLinks(response: Response): Links {
   const linkHeader = response.headers.get("link");
 
   if (!linkHeader) {
-    throw new Error("Attempted to parse links, but no header was found.");
+    return {};
   }
 
   const links = linkHeader.split(/,\s*</);
   return links.reduce<Links>((acc: Links, link: string) => {
-    const matcher = link.match(/<?([^>]*)>(.*)/);
+    const matcher = /<?([^>]*)>(.*)/.exec(link);
     if (!matcher) return {};
     const linkUrl = matcher[1];
-    const rel = matcher[2].match(/\s*(.+)\s*=\s*"?([^"]+)"?/);
+    const rel = /\s*(.+)\s*=\s*"?([^"]+)"?/.exec(matcher[2]);
     if (rel) {
       const link: Record<string, string> = {};
       for (const [key, value] of new URL(linkUrl).searchParams.entries()) {

@@ -8,14 +8,13 @@ import java.util.stream.Stream;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 public class AuthenticationMapper {
     private static final int MAX_USED_BY = 9;
 
-    public static Authentication convertToModel(AuthenticationFlowModel flow, RealmModel realm) {
-
-        final Stream<IdentityProviderModel> identityProviders = realm.getIdentityProvidersStream();
+    public static Authentication convertToModel(KeycloakSession session, AuthenticationFlowModel flow, RealmModel realm) {
 
         final Authentication authentication = new Authentication();
         authentication.setId(flow.getId());
@@ -23,9 +22,7 @@ public class AuthenticationMapper {
         authentication.setBuiltIn(flow.isBuiltIn());
         authentication.setDescription(flow.getDescription());
 
-        final List<String> usedByIdp = identityProviders.filter(idp -> flow.getId().equals(idp.getFirstBrokerLoginFlowId())
-                        || flow.getId().equals(idp.getPostBrokerLoginFlowId()))
-                .map(IdentityProviderModel::getAlias).limit(MAX_USED_BY).collect(Collectors.toList());
+        final List<String> usedByIdp = session.identityProviders().getByFlow(flow.getId(), null,0, MAX_USED_BY).toList();
         if (!usedByIdp.isEmpty()) {
             authentication.setUsedBy(new UsedBy(UsedBy.UsedByType.SPECIFIC_PROVIDERS, usedByIdp));
         }
@@ -42,8 +39,8 @@ public class AuthenticationMapper {
         }
 
         final List<String> useAsDefault = Stream.of(realm.getBrowserFlow(), realm.getRegistrationFlow(), realm.getDirectGrantFlow(),
-                        realm.getResetCredentialsFlow(), realm.getClientAuthenticationFlow(), realm.getDockerAuthenticationFlow())
-                .filter(f -> flow.getAlias().equals(f.getAlias())).map(AuthenticationFlowModel::getAlias).collect(Collectors.toList());
+                        realm.getResetCredentialsFlow(), realm.getClientAuthenticationFlow(), realm.getDockerAuthenticationFlow(), realm.getFirstBrokerLoginFlow())
+                .filter(f -> f != null && flow.getAlias().equals(f.getAlias())).map(AuthenticationFlowModel::getAlias).collect(Collectors.toList());
 
         if (!useAsDefault.isEmpty()) {
             authentication.setUsedBy(new UsedBy(UsedBy.UsedByType.DEFAULT, useAsDefault));

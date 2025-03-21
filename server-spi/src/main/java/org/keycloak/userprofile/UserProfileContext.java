@@ -52,7 +52,7 @@ public enum UserProfileContext {
     /**
      * In this context, a user profile is managed by themselves through the account console.
      */
-    ACCOUNT(false, false, true),
+    ACCOUNT(false, true, true),
 
     /**
      * In this context, a user profile is managed by themselves when authenticating through a broker.

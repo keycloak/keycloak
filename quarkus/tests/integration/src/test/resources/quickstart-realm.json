@@ -1,6 +1,6 @@
 {
     "realm": "quickstart-realm",
-    "enabled": true,
+    "enabled": ${TEST_REALM_ENABLED:true},
     "accessTokenLifespan": 60,
     "accessCodeLifespan": 60,
     "accessCodeLifespanUserAction": 300,

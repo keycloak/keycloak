@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,6 +46,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
+    public static final String ID = "user";
+
     private UserPolicyProvider provider = new UserPolicyProvider(this::toRepresentation);
 
     @Override
@@ -64,7 +67,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -77,7 +80,9 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
             if (users == null) {
                 representation.setUsers(Collections.emptySet());
             } else {
-                representation.setUsers(JsonSerialization.readValue(users, Set.class));
+                representation.setUsers((Set<String>) JsonSerialization.readValue(users, Set.class).stream()
+                        .filter(id -> getUser((String) id, authorization) != null)
+                        .collect(Collectors.toSet()));
             }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);
@@ -93,12 +98,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public void onCreate(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateUsers(policy, representation, authorization);
+        updateUsers(policy, authorization, representation.getUsers());
     }
 
     @Override
     public void onUpdate(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateUsers(policy, representation, authorization);
+        updateUsers(policy, authorization, representation.getUsers());
     }
 
     @Override
@@ -119,7 +124,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
             UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
             RealmModel realm = authorizationProvider.getRealm();
 
-            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(realm, id).getUsername()).collect(Collectors.toList())));
+            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream()
+                    .map(id -> {
+                        UserModel user = userProvider.getUserById(realm, id);
+                        return user != null ? user.getUsername() : null;
+                    })
+                    .filter(Objects::nonNull).collect(Collectors.toList())));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
         }
@@ -127,28 +137,12 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         representation.setConfig(config);
     }
 
-    private void updateUsers(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateUsers(policy, authorization, representation.getUsers());
-    }
-
     private void updateUsers(Policy policy, AuthorizationProvider authorization, Set<String> users) {
-        KeycloakSession session = authorization.getKeycloakSession();
-        RealmModel realm = authorization.getRealm();
-        UserProvider userProvider = session.users();
         Set<String> updatedUsers = new HashSet<>();
 
         if (users != null) {
             for (String userId : users) {
-                UserModel user = null;
-
-                try {
-                    user = userProvider.getUserByUsername(realm, userId);
-                } catch (Exception ignore) {
-                }
-
-                if (user == null) {
-                    user = userProvider.getUserById(realm, userId);
-                }
+                UserModel user = getUser(userId, authorization);
 
                 if (user == null) {
                     throw new RuntimeException("Error while updating policy [" + policy.getName()  + "]. User [" + userId + "] could not be found.");
@@ -164,6 +158,24 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize users", cause);
         }
+    }
+
+    private static UserModel getUser(String userId, AuthorizationProvider authorization) {
+        if (userId == null) {
+            return null;
+        }
+
+        KeycloakSession session = authorization.getKeycloakSession();
+        RealmModel realm = authorization.getRealm();
+        UserProvider userProvider = session.users();
+        UserModel user = userProvider.getUserById(realm, userId);
+
+        if (user == null) {
+            // fallback - userId is possibly a username
+            user = userProvider.getUserByUsername(realm, userId);
+        }
+
+        return user;
     }
 
     @Override
@@ -183,20 +195,6 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public String getId() {
-        return "user";
-    }
-
-    static String[] getUsers(Policy policy) {
-        String users = policy.getConfig().get("users");
-
-        if (users != null) {
-            try {
-                return JsonSerialization.readValue(users.getBytes(), String[].class);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not parse users [" + users + "] from policy config [" + policy.getName() + ".", e);
-            }
-        }
-
-        return new String[0];
+        return ID;
     }
 }

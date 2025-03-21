@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory
+org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory

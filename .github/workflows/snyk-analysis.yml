@@ -10,11 +10,16 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   analysis:
     name: Analysis of Quarkus and Operator
     runs-on: ubuntu-latest
     if: github.repository == 'keycloak/keycloak'
+    permissions:
+      security-events: write # Required for SARIF uploads
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +36,7 @@ jobs:
 
       - name: Upload Quarkus scanner results to GitHub
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
         with:
           sarif_file: quarkus-report.sarif
           category: snyk-quarkus-report

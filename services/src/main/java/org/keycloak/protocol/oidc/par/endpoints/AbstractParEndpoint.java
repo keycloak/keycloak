@@ -31,7 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.resources.Cors;
+import org.keycloak.services.cors.Cors;
 
 public abstract class AbstractParEndpoint {
 

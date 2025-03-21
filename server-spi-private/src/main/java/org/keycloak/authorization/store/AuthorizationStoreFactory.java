@@ -24,12 +24,14 @@ import java.util.Map;
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.GroupSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
+import org.keycloak.authorization.store.syncronization.RoleSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
 import org.keycloak.authorization.store.syncronization.UserSynchronizer;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ClientModel.ClientRemovedEvent;
+import org.keycloak.models.GroupModel.GroupRemovedEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
+import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderFactory;
@@ -50,7 +52,8 @@ public interface AuthorizationStoreFactory extends ProviderFactory<StoreFactory>
         synchronizers.put(ClientRemovedEvent.class, new ClientApplicationSynchronizer());
         synchronizers.put(RealmRemovedEvent.class, new RealmSynchronizer());
         synchronizers.put(UserRemovedEvent.class, new UserSynchronizer());
-        synchronizers.put(GroupModel.GroupRemovedEvent.class, new GroupSynchronizer());
+        synchronizers.put(GroupRemovedEvent.class, new GroupSynchronizer());
+        synchronizers.put(RoleRemovedEvent.class, new RoleSynchronizer());
 
         factory.register(event -> {
             try {

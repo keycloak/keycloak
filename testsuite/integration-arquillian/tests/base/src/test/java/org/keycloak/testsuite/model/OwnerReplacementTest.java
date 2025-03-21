@@ -102,9 +102,10 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             }),
             // Try to update some component in realm1 through the realm2
             ((session, realm1, realm2, realm1ComponentId) -> {
-
+                session.getContext().setRealm(realm1);
                 ComponentModel component = realm1.getComponent(realm1ComponentId);
                 component.put("key1", "Val1");
+                session.getContext().setRealm(realm2);
                 realm2.updateComponent(component);
 
             }),
@@ -117,8 +118,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             }),
             // Try remove component from realm1 in the context of realm2
             ((session, realm1, realm2, realm1ComponentId) -> {
-
+                session.getContext().setRealm(realm1);
                 ComponentModel component = realm1.getComponent(realm1ComponentId);
+                session.getContext().setRealm(realm2);
                 realm2.removeComponent(component);
 
             }),
@@ -147,9 +149,10 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try to update some object in realm1 through the realm2
                 ((session, realm1, realm2, realm1ReqActionId) -> {
-
+                    session.getContext().setRealm(realm1);
                     RequiredActionProviderModel reqAction = realm1.getRequiredActionProviderById(realm1ReqActionId);
                     reqAction.getConfig().put("key1", "Val1");
+                    session.getContext().setRealm(realm2);
                     realm2.updateRequiredActionProvider(reqAction);
 
                 }),
@@ -162,8 +165,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1ReqActionId) -> {
-
+                    session.getContext().setRealm(realm1);
                     RequiredActionProviderModel reqAction = realm1.getRequiredActionProviderById(realm1ReqActionId);
+                    session.getContext().setRealm(realm2);
                     realm2.removeRequiredActionProvider(reqAction);
 
                 }),
@@ -198,9 +202,10 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try to update some object in realm1 through the realm2
                 ((session, realm1, realm2, realm1FlowId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticationFlowModel flow = realm1.getAuthenticationFlowById(realm1FlowId);
                     flow.setDescription("foo");
+                    session.getContext().setRealm(realm2);
                     realm2.updateAuthenticationFlow(flow);
 
                 }),
@@ -213,8 +218,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1FlowId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticationFlowModel flow = realm1.getAuthenticationFlowById(realm1FlowId);
+                    session.getContext().setRealm(realm2);
                     realm2.removeAuthenticationFlow(flow);
 
                 }),
@@ -249,9 +255,10 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try to update some object in realm1 through the realm2
                 ((session, realm1, realm2, realm1ExecutionId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticationExecutionModel execution = realm1.getAuthenticationExecutionById(realm1ExecutionId);
                     execution.setPriority(1234);
+                    session.getContext().setRealm(realm2);
                     realm2.updateAuthenticatorExecution(execution);
 
                 }),
@@ -264,8 +271,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1ExecutionId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticationExecutionModel execution = realm1.getAuthenticationExecutionById(realm1ExecutionId);
+                    session.getContext().setRealm(realm2);
                     realm2.removeAuthenticatorExecution(execution);
 
                 }),
@@ -295,9 +303,10 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try to update some object in realm1 through the realm2
                 ((session, realm1, realm2, realm1AuthConfigId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticatorConfigModel config = realm1.getAuthenticatorConfigById(realm1AuthConfigId);
                     config.getConfig().put("key1", "val1");
+                    session.getContext().setRealm(realm2);
                     realm2.updateAuthenticatorConfig(config);
 
                 }),
@@ -310,8 +319,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1AuthConfigId) -> {
-
+                    session.getContext().setRealm(realm1);
                     AuthenticatorConfigModel config = realm1.getAuthenticatorConfigById(realm1AuthConfigId);
+                    session.getContext().setRealm(realm2);
                     realm2.removeAuthenticatorConfig(config);
 
                 }),
@@ -358,7 +368,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1ClientInitialAccessId) -> {
-
+                    session.getContext().setRealm(realm2);
                     session.getProvider(RealmProvider.class).removeClientInitialAccessModel(realm2, realm1ClientInitialAccessId);
 
                 }),
@@ -450,8 +460,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 }),
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1SessionId) -> {
-
+                    session.getContext().setRealm(realm1);
                     UserSessionModel userSession = session.sessions().getUserSession(realm1, realm1SessionId);
+                    session.getContext().setRealm(realm2);
                     session.sessions().removeUserSession(realm2, userSession);
 
                 }),
@@ -481,6 +492,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             // can't use getRealmByName as that returns the infinispan realm adapter version, meaning the tests will query
             // the cache instead of the actual provider.
             RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
+            session.getContext().setRealm(realm1);
             realm1ObjectId.set(realm1ObjectIdProducer.apply(session, realm1));
 
         });
@@ -490,7 +502,9 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
             RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm(fooRealmId);
 
+            session.getContext().setRealm(realm2);
             testLookupRealm1ObjectInRealm2.accept(session, realm2, realm1ObjectId.get());
+            // each implementation of updater should set the realm in context according to the operations executed
             updaterRealm1ObjectInRealm2.accept(session, realm1, realm2, realm1ObjectId.get());
 
         });
@@ -498,7 +512,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
         // Transaction 3
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
             RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
-
+            session.getContext().setRealm(realm1);
             testUpdateFailed.accept(session, realm1, realm1ObjectId.get());
         });
 
@@ -507,6 +521,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
             KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
                 RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
                 RealmModel realm2 = session.getProvider(RealmProvider.class).getRealm(fooRealmId);
+                // each implementation of remover should set the realm in context according to the operations executed
                 removeRealm1ObjectInRealm2.accept(session, realm1, realm2, realm1ObjectId.get());
 
             });
@@ -517,6 +532,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
         // Transaction 5
         KeycloakModelUtils.runJobInTransaction(session1.getKeycloakSessionFactory(), (KeycloakSession session) -> {
             RealmModel realm1 = session.getProvider(RealmProvider.class).getRealm(testRealmId);
+            session.getContext().setRealm(realm1);
             testRemoveFailed.accept(session, realm1, realm1ObjectId.get());
         });
     }

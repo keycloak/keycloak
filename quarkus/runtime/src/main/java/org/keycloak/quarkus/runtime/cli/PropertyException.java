@@ -23,4 +23,8 @@ public class PropertyException extends RuntimeException {
         super(message);
     }
 
+    public PropertyException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
+
 }

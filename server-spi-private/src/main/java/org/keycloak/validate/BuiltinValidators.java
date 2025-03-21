@@ -22,6 +22,7 @@ package org.keycloak.validate;
 import org.keycloak.validate.validators.DoubleValidator;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.IntegerValidator;
+import org.keycloak.validate.validators.IsoDateValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.LocalDateValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
@@ -70,6 +71,10 @@ public class BuiltinValidators {
 
     public static LocalDateValidator dateValidator() {
         return LocalDateValidator.INSTANCE;
+    }
+
+    public static IsoDateValidator isoDateValidator() {
+        return IsoDateValidator.INSTANCE;
     }
 
     public static OptionsValidator optionsValidator() {

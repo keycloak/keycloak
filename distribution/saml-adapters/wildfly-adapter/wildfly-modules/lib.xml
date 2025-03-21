@@ -31,19 +31,12 @@
 
         <sequential>
             <echo message="Initializing module -> @{name}"/>
-            <property name="module.repo.output.dir" value="${output.dir}/modules"/>
+            <property name="module.repo.output.dir" value="${output.dir}/modules/system/add-ons/keycloak"/>
             <!-- Figure out the correct module path -->
             <define-module-dir name="@{name}" slot="@{slot}"/>
 
             <!-- Make the module output director -->
             <mkdir dir="${module.repo.output.dir}/${current.module.path}"/>
-
-            <!-- Copy the module.xml and other stuff to the output director -->
-            <copy todir="${module.repo.output.dir}/${current.module.path}" overwrite="true">
-                <fileset dir="${module.repo.src.dir}/${current.module.path}">
-                    <include name="**"/>
-                </fileset>
-            </copy>
 
             <!-- Process the resource -->
             <resources/>

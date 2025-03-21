@@ -36,6 +36,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -58,6 +59,9 @@ import javax.net.ssl.X509TrustManager;
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
 
+import io.restassured.RestAssured;
+import org.awaitility.Awaitility;
+import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -65,6 +69,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -76,32 +81,81 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
 
+    private static final Logger LOG = Logger.getLogger(RawKeycloakDistribution.class);
     private Process keycloak;
     private int exitCode = -1;
     private final Path distPath;
-    private final List<String> outputStream = new ArrayList<>();
-    private final List<String> errorStream = new ArrayList<>();
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
     private int httpsPort;
-    private boolean debug;
-    private boolean enableTls;
-    private boolean reCreate;
-    private boolean removeBuildOptionsAfterBuild;
-    private boolean createAdminUser;
+    private final boolean debug;
+    private final boolean enableTls;
+    private final boolean reCreate;
+    private final boolean removeBuildOptionsAfterBuild;
+    private final int requestPort;
     private ExecutorService outputExecutor;
     private boolean inited = false;
-    private Map<String, String> envVars = new HashMap<>();
+    private final Map<String, String> envVars = new HashMap<>();
+    private final OutputConsumer outputConsumer;
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
+        this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
+    }
+
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort, OutputConsumer outputConsumer) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
+        this.requestPort = requestPort;
         this.distPath = prepareDistribution();
+        this.outputConsumer = outputConsumer;
     }
+
+    public CLIResult kcadm(String... arguments) throws IOException {
+    	return kcadm(Arrays.asList(arguments));
+    }
+
+    public CLIResult kcadm(List<String> arguments) throws IOException {
+        List<String> allArgs = new ArrayList<>();
+
+        invoke(allArgs, SCRIPT_KCADM_CMD);
+
+        if (this.isDebug()) {
+            allArgs.add("-x");
+        }
+
+        allArgs.addAll(arguments);
+
+        ProcessBuilder pb = new ProcessBuilder(allArgs);
+        ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
+
+        // TODO: it is possible to debug kcadm, but it's more involved
+        /*if (debug) {
+            builder.environment().put("DEBUG_SUSPEND", "y");
+        }*/
+
+        builder.environment().putAll(envVars);
+
+        Process kcadm = builder.start();
+
+        DefaultOutputConsumer outputConsumer = new DefaultOutputConsumer();
+        readOutput(kcadm, outputConsumer);
+
+        int exitValue = kcadm.exitValue();
+
+        return CLIResult.create(outputConsumer.getStdOut(), outputConsumer.getErrOut(), exitValue);
+    }
+
+	private void invoke(List<String> allArgs, String cmd) {
+		if (isWindows()) {
+            allArgs.add(distPath.resolve("bin") + File.separator + cmd);
+        } else {
+            allArgs.add("./" + cmd);
+        }
+	}
 
     @Override
     public CLIResult run(List<String> arguments) {
@@ -128,17 +182,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (List<PropertyMapper> mappers : PropertyMappers.getBuildTimeMappers().values()) {
-                    for (PropertyMapper mapper : mappers) {
+                for (List<PropertyMapper<?>> mappers : PropertyMappers.getBuildTimeMappers().values()) {
+                    for (PropertyMapper<?> mapper : mappers) {
                         removeProperty(mapper.getFrom().substring(3));
                     }
                 }
             }
             if (!manualStop) {
                 stop();
-                envVars.clear();
             }
         }
+
+        setRequestPort();
 
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
     }
@@ -158,12 +213,16 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
                 keycloak.destroy();
                 keycloak.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                exitCode = keycloak.exitValue();
             } catch (Exception cause) {
                 destroyDescendantsOnWindows(keycloak, true);
                 keycloak.destroyForcibly();
+                threadDump();
                 throw new RuntimeException("Failed to stop the server", cause);
             }
+        }
+
+        if (keycloak != null) {
+            exitCode = keycloak.exitValue();
         }
 
         shutdownOutputExecutor();
@@ -174,9 +233,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             return;
         }
 
-        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
+        CompletableFuture<?> allProcesses = CompletableFuture.completedFuture(null);
 
-        for (ProcessHandle process : parent.descendants().collect(Collectors.toList())) {
+        for (ProcessHandle process : parent.descendants().toList()) {
             if (force) {
                 process.destroyForcibly();
             } else {
@@ -204,12 +263,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public List<String> getOutputStream() {
-        return outputStream;
+        return outputConsumer.getStdOut();
     }
 
     @Override
     public List<String> getErrorStream() {
-        return errorStream;
+        return outputConsumer.getErrOut();
     }
 
     @Override
@@ -227,11 +286,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         List<String> allArgs = new ArrayList<>();
 
-        if (isWindows()) {
-            allArgs.add(distPath.resolve("bin") + File.separator + SCRIPT_CMD_INVOKABLE);
-        } else {
-            allArgs.add(SCRIPT_CMD_INVOKABLE);
-        }
+        invoke(allArgs, SCRIPT_CMD);
 
         if (this.isDebug()) {
             allArgs.add("--debug");
@@ -253,6 +308,16 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return allArgs.toArray(String[]::new);
     }
 
+    @Override
+    public void setRequestPort() {
+        setRequestPort(requestPort);
+    }
+
+    @Override
+    public void setRequestPort(int port) {
+        RestAssured.port = port;
+    }
+
     private void waitForReadiness() throws MalformedURLException {
         waitForReadiness("http", httpPort);
 
@@ -269,6 +334,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         while (true) {
             if (System.currentTimeMillis() - startTime > getStartTimeout()) {
+                threadDump();
                 throw new IllegalStateException(
                         "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
             }
@@ -308,17 +374,28 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    private void threadDump() {
+        if (Environment.isWindows()) {
+            return;
+        }
+        try {
+            ProcessBuilder builder = new ProcessBuilder("kill", "-3", String.valueOf(keycloak.pid()));
+            Process p = builder.start();
+            p.onExit().get(getStartTimeout(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            LOG.warn("A thread dump may not have been successfully triggered", e);
+            return;
+        }
+        Awaitility.await().atMost(1, TimeUnit.MINUTES)
+                .until(() -> getOutputStream().stream().anyMatch(s -> s.contains("JNI global refs")));
+    }
+
     private long getStartTimeout() {
         return TimeUnit.SECONDS.toMillis(120);
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
@@ -374,8 +451,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void reset() {
-        outputStream.clear();
-        errorStream.clear();
+        outputConsumer.reset();
         exitCode = -1;
         shutdownOutputExecutor();
         keycloak = null;
@@ -405,14 +481,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 if (System.getProperty("product") != null) {
                     // JDBC drivers might be excluded if running as a product build
                     copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
-                    copyProvider(dPath, "com.oracle.database.jdbc", "ojdbc11");
-                    copyProvider(dPath, "com.oracle.database.nls", "orai18n");
                 }
             }
 
             // make sure script is executable
             if (!dPath.resolve("bin").resolve(SCRIPT_CMD).toFile().setExecutable(true)) {
                 throw new RuntimeException("Cannot set " + SCRIPT_CMD + " executable");
+            }
+            if (!dPath.resolve("bin").resolve(SCRIPT_KCADM_CMD).toFile().setExecutable(true)) {
+                throw new RuntimeException("Cannot set " + SCRIPT_KCADM_CMD + " executable");
             }
 
             inited = true;
@@ -424,13 +501,17 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void readOutput() {
+        readOutput(keycloak, outputConsumer);
+    }
+
+    private void readOutput(Process process, OutputConsumer outputConsumer) {
         try (
-                BufferedReader outStream = new BufferedReader(new InputStreamReader(keycloak.getInputStream()));
-                BufferedReader errStream = new BufferedReader(new InputStreamReader(keycloak.getErrorStream()));
+                BufferedReader outStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()))
         ) {
-            while (keycloak.isAlive()) {
-                readStream(outStream, outputStream);
-                readStream(errStream, errorStream);
+            while (process.isAlive()) {
+                readStream(outStream, outputConsumer, false);
+                readStream(errStream, outputConsumer, true);
                 // a hint to temporarily disable the current thread in favor of the process where the distribution is running
                 // after some tests it shows effective to help starting the server faster
                 LockSupport.parkNanos(1L);
@@ -440,12 +521,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void readStream(BufferedReader reader, List<String> stream) throws IOException {
+    private void readStream(BufferedReader reader, OutputConsumer outputConsumer, boolean error) throws IOException {
         String line;
 
         while (reader.ready() && (line = reader.readLine()) != null) {
-            stream.add(line);
-            System.out.println(line);
+            if (error) {
+                outputConsumer.onErrOut(line);
+            } else {
+                outputConsumer.onStdOut(line);
+            }
         }
     }
 
@@ -486,22 +570,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void removeProperty(String name) {
-        updateProperties(new Consumer<Properties>() {
-            @Override
-            public void accept(Properties properties) {
-                properties.remove(name);
-            }
-        }, distPath.resolve("conf").resolve("keycloak.conf").toFile());
+        updateProperties(properties -> properties.remove(name), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
 
     @Override
     public void setQuarkusProperty(String key, String value) {
-        updateProperties(new Consumer<Properties>() {
-            @Override
-            public void accept(Properties properties) {
-                properties.put(key, value);
-            }
-        }, getQuarkusPropertiesFile());
+        updateProperties(properties -> properties.put(key, value), getQuarkusPropertiesFile());
     }
 
     @Override
@@ -549,9 +623,22 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private static void copyProvider(Path distPath, String groupId, String artifactId) {
         try {
-            Files.copy(Maven.resolveArtifact(groupId, artifactId), distPath.resolve("providers").resolve(artifactId + ".jar"));
+            Path providerPath = Maven.resolveArtifact(groupId, artifactId);
+            if (!Files.isRegularFile(providerPath)) {
+                throw new RuntimeException("Failed to copy JAR file to 'providers' directory; " + providerPath + " is not a file");
+            }
+
+            Files.copy(providerPath, distPath.resolve("providers").resolve(artifactId + ".jar"));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
+        }
+    }
+
+    public void copyConfigFile(Path configFilePath) {
+        try {
+            Files.copy(configFilePath, distPath.resolve("conf").resolve(configFilePath.getFileName()));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy config file [" + configFilePath + "] to 'conf' directory", cause);
         }
     }
 
@@ -560,7 +647,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         if (propertiesFile.exists()) {
             try (
-                FileInputStream in = new FileInputStream(propertiesFile);
+                FileInputStream in = new FileInputStream(propertiesFile)
             ) {
 
                 properties.load(in);
@@ -621,9 +708,48 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (type.isInstance(this)) {
-            return (D) this;
+            return type.cast(type);
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
+    }
+
+    private static final class DefaultOutputConsumer implements OutputConsumer {
+
+        private final List<String> stdOut = Collections.synchronizedList(new ArrayList<>());
+        private final List<String> errOut = Collections.synchronizedList(new ArrayList<>());
+
+        @Override
+        public void onStdOut(String line) {
+            System.out.println(line);
+            stdOut.add(line);
+        }
+
+        @Override
+        public void onErrOut(String line) {
+            System.err.println(line);
+            errOut.add(line);
+        }
+
+        @Override
+        public void reset() {
+            stdOut.clear();
+            errOut.clear();
+        }
+
+        @Override
+        public List<String> getErrOut() {
+            return errOut;
+        }
+
+        @Override
+        public List<String> getStdOut() {
+            return stdOut;
+        }
     }
 }

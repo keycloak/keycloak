@@ -24,10 +24,12 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.services.util.DPoPUtil;
 
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -68,6 +70,9 @@ public class ProtocolMapperUtils {
     public static final String MULTIVALUED_HELP_TEXT = "multivalued.tooltip";
     public static final String AGGREGATE_ATTRS_HELP_TEXT = "aggregate.attrs.tooltip";
 
+    // Priority of SubMapper. It should be first to allow other mappers override the `sub` claim
+    public static final int SUB_MAPPER = -10;
+
     // Role name mapper can move some roles to different positions
     public static final int PRIORITY_ROLE_NAMES_MAPPER = 10;
 
@@ -83,25 +88,42 @@ public class ProtocolMapperUtils {
     // Script mapper goes last, so it can access the roles in the token
     public static final int PRIORITY_SCRIPT_MAPPER = 50;
 
+    private static final HashMap<String, Method> ACCESSORS = new HashMap<>();
+
+    // This caches known methods to avoid generating unnecessary failed lookups and exception at runtime which are expensive
+    static {
+        for (Method method : UserModel.class.getMethods()) {
+            String propertyName;
+            if (method.getName().startsWith("is") && method.getParameterCount() == 0) {
+                propertyName = method.getName().substring(2);
+            } else if (method.getName().startsWith("get") && method.getParameterCount() == 0) {
+                propertyName = method.getName().substring(3);
+            } else {
+                continue;
+            }
+            ACCESSORS.put(getLowerCasedProperty(propertyName), method);
+        }
+    }
+
     public static String getUserModelValue(UserModel user, String propertyName) {
+        // To support existing configurations, we accept property names starting with both upper and lower case
+        // as earlier versions of Keycloak where applying this behavior.
+        Method m = ACCESSORS.get(getLowerCasedProperty(propertyName));
+        if (m == null) {
+            return null;
+        }
 
-        String methodName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         try {
-            Method method = UserModel.class.getMethod(methodName);
-            Object val = method.invoke(user);
+            Object val = m.invoke(user);
             if (val != null) return val.toString();
         } catch (Exception ignore) {
-
         }
-        methodName = "is" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        try {
-            Method method = UserModel.class.getMethod(methodName);
-            Object val = method.invoke(user);
-            if (val != null) return val.toString();
-        } catch (Exception ignore) {
 
-        }
         return null;
+    }
+
+    private static String getLowerCasedProperty(String propertyName) {
+        return Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
     }
 
     /**
@@ -122,32 +144,29 @@ public class ProtocolMapperUtils {
 
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx) {
-        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return ctx.getProtocolMappersStream()
-                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
-                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-                    if (mapper == null) {
-                        return null;
-                    }
-                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
-                })
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
+        return getSortedProtocolMappers(session, ctx, entry -> true);
     }
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        return ctx.getProtocolMappersStream()
-                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
-                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-                    if (mapper == null) {
-                        return null;
-                    }
-                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
-                })
-                .filter(Objects::nonNull)
-                .filter(filter)
-                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
+
+        Stream<Entry<ProtocolMapperModel, ProtocolMapper>> protocolMapperStream = //
+                ctx.getProtocolMappersStream()
+                        .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
+                            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                            if (mapper == null) {
+                                return null;
+                            }
+                            return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
+                        })
+                        .filter(Objects::nonNull)
+                        .filter(filter);
+
+        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(ctx.getClientSession().getClient().getProtocol())) {
+            protocolMapperStream = Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper());
+        }
+
+        return protocolMapperStream.sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 
     public static int compare(Entry<ProtocolMapperModel, ProtocolMapper> entry) {

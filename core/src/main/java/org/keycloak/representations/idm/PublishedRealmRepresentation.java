@@ -17,11 +17,7 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.util.PemUtils;
-
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,9 +38,6 @@ public class PublishedRealmRepresentation {
     @JsonProperty("tokens-not-before")
     protected int notBefore;
 
-    @JsonIgnore
-    protected volatile transient PublicKey publicKey;
-
     public String getRealm() {
         return realm;
     }
@@ -59,27 +52,6 @@ public class PublishedRealmRepresentation {
 
     public void setPublicKeyPem(String publicKeyPem) {
         this.publicKeyPem = publicKeyPem;
-        this.publicKey = null;
-    }
-
-
-    @JsonIgnore
-    public PublicKey getPublicKey() {
-        if (publicKey != null) return publicKey;
-        if (publicKeyPem != null) {
-            try {
-                publicKey = PemUtils.decodePublicKey(publicKeyPem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return publicKey;
-    }
-
-    @JsonIgnore
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        this.publicKeyPem = PemUtils.encodeKey(publicKey);
     }
 
     public String getTokenServiceUrl() {

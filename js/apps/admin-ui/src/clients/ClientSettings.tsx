@@ -2,7 +2,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import { Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { ScrollForm } from "ui-shared";
+import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import { ClientDescription } from "./ClientDescription";
 import { FormFields } from "./ClientDetails";
 import { AccessSettings } from "./add/AccessSettings";
@@ -29,7 +29,7 @@ export const ClientSettings = (props: ClientSettingsProps) => {
   return (
     <ScrollForm
       label={t("jumpToSection")}
-      className="pf-u-px-lg pf-u-pb-lg"
+      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
       sections={[
         {
           title: t("generalSettings"),

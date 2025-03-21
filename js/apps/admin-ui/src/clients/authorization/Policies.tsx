@@ -1,6 +1,12 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
+  ListEmptyState,
+  PaginatingTableToolbar,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Alert,
   AlertVariant,
   Button,
@@ -10,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -20,16 +26,11 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toUpperCase } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toCreatePolicy } from "../routes/NewPolicy";
 import { toPermissionDetails } from "../routes/PermissionDetails";
@@ -38,6 +39,9 @@ import { DetailDescriptionLink } from "./DetailDescription";
 import { MoreLabel } from "./MoreLabel";
 import { NewPolicyDialog } from "./NewPolicyDialog";
 import { SearchDropdown, SearchForm } from "./SearchDropdown";
+import { useIsAdminPermissionsClient } from "../../utils/useIsAdminPermissionsClient";
+import { toCreatePermissionPolicy } from "../../permissions-configuration/routes/NewPermissionPolicy";
+import { toPermissionPolicyDetails } from "../../permissions-configuration/routes/PermissionPolicyDetails";
 
 type PoliciesProps = {
   clientId: string;
@@ -66,6 +70,8 @@ export const AuthorizationPolicies = ({
   clientId,
   isDisabled = false,
 }: PoliciesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -84,6 +90,7 @@ export const AuthorizationPolicies = ({
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<SearchForm>({});
   const [newDialog, toggleDialog] = useToggle();
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
   useFetch(
     async () => {
@@ -134,11 +141,11 @@ export const AuthorizationPolicies = ({
               isPlain
               component="p"
               title={t("deletePolicyWarning")}
-              className="pf-u-pt-lg"
+              className="pf-v5-u-pt-lg"
             >
-              <p className="pf-u-pt-xs">
+              <p className="pf-v5-u-pt-xs">
                 {selectedPolicy.dependentPolicies.map((policy) => (
-                  <strong key={policy.id} className="pf-u-pr-md">
+                  <strong key={policy.id} className="pf-v5-u-pr-md">
                     {policy.name}
                   </strong>
                 ))}
@@ -169,7 +176,7 @@ export const AuthorizationPolicies = ({
   const noData = policies.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <>
@@ -178,13 +185,22 @@ export const AuthorizationPolicies = ({
               policyProviders={policyProviders}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
+                  isAdminPermissionsClient
+                    ? toCreatePermissionPolicy({
+                        realm,
+                        permissionClientId: clientId,
+                        policyType: p.type!,
+                      })
+                    : toCreatePolicy({
+                        id: clientId,
+                        realm,
+                        policyType: p.type!,
+                      }),
                 )
               }
               toggleDialog={toggleDialog}
             />
           )}
-
           <PaginatingTableToolbar
             count={policies.length}
             first={first}
@@ -202,22 +218,27 @@ export const AuthorizationPolicies = ({
                     types={policyProviders}
                     search={search}
                     onSearch={setSearch}
+                    type="policy"
                   />
                 </ToolbarItem>
                 <ToolbarItem>
                   <Button
                     data-testid="createPolicy"
-                    onClick={toggleDialog}
+                    onClick={() => {
+                      toggleDialog();
+                    }}
                     isDisabled={isDisabled}
                   >
-                    {t("createPolicy")}
+                    {isAdminPermissionsClient
+                      ? t("createPermissionPolicy")
+                      : t("createPolicy")}
                   </Button>
                 </ToolbarItem>
               </>
             }
           >
             {!noData && (
-              <TableComposable aria-label={t("resources")} variant="compact">
+              <Table aria-label={t("resources")} variant="compact">
                 <Thead>
                   <Tr>
                     <Th aria-hidden="true" />
@@ -246,16 +267,29 @@ export const AuthorizationPolicies = ({
                         }}
                       />
                       <Td data-testid={`name-column-${policy.name}`}>
-                        <Link
-                          to={toPolicyDetails({
-                            realm,
-                            id: clientId,
-                            policyType: policy.type!,
-                            policyId: policy.id!,
-                          })}
-                        >
-                          {policy.name}
-                        </Link>
+                        {isAdminPermissionsClient ? (
+                          <Link
+                            to={toPermissionPolicyDetails({
+                              realm,
+                              permissionClientId: clientId,
+                              policyId: policy.id!,
+                              policyType: policy.type!,
+                            })}
+                          >
+                            {policy.name}
+                          </Link>
+                        ) : (
+                          <Link
+                            to={toPolicyDetails({
+                              realm,
+                              id: clientId,
+                              policyType: policy.type!,
+                              policyId: policy.id!,
+                            })}
+                          >
+                            {policy.name}
+                          </Link>
+                        )}
                       </Td>
                       <Td>{toUpperCase(policy.type!)}</Td>
                       <Td>
@@ -285,7 +319,7 @@ export const AuthorizationPolicies = ({
                       <Td />
                       <Td colSpan={3 + (isDisabled ? 0 : 1)}>
                         <ExpandableRowContent>
-                          {policy.isExpanded && (
+                          {policy.isExpanded && !isAdminPermissionsClient && (
                             <DescriptionList
                               isHorizontal
                               className="keycloak_resource_details"
@@ -305,12 +339,26 @@ export const AuthorizationPolicies = ({
                               />
                             </DescriptionList>
                           )}
+                          {policy.isExpanded && isAdminPermissionsClient && (
+                            <>
+                              <Th>{t("dependentPermission")}</Th>
+                              {policy.dependentPolicies!.map(
+                                (dependentPolicy, index) => (
+                                  <Td key={index}>
+                                    <span style={{ marginLeft: "8px" }}>
+                                      {dependentPolicy.name}
+                                    </span>
+                                  </Td>
+                                ),
+                              )}
+                            </>
+                          )}
                         </ExpandableRowContent>
                       </Td>
                     </Tr>
                   </Tbody>
                 ))}
-              </TableComposable>
+              </Table>
             )}
           </PaginatingTableToolbar>
         </>
@@ -332,7 +380,17 @@ export const AuthorizationPolicies = ({
               )}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
+                  isAdminPermissionsClient
+                    ? toCreatePermissionPolicy({
+                        realm,
+                        permissionClientId: clientId,
+                        policyType: p.type!,
+                      })
+                    : toCreatePolicy({
+                        id: clientId,
+                        realm,
+                        policyType: p.type!,
+                      }),
                 )
               }
               toggleDialog={toggleDialog}
@@ -340,10 +398,18 @@ export const AuthorizationPolicies = ({
           )}
           <ListEmptyState
             message={t("emptyPolicies")}
-            instructions={t("emptyPoliciesInstructions")}
+            instructions={
+              isAdminPermissionsClient
+                ? t("emptyPermissionPoliciesInstructions")
+                : t("emptyPoliciesInstructions")
+            }
             isDisabled={isDisabled}
-            primaryActionText={t("createPolicy")}
-            onPrimaryAction={toggleDialog}
+            primaryActionText={
+              isAdminPermissionsClient
+                ? t("createPermissionPolicy")
+                : t("createPolicy")
+            }
+            onPrimaryAction={() => toggleDialog()}
           />
         </>
       )}

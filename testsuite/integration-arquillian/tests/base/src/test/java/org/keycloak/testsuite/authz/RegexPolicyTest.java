@@ -107,6 +107,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
             .user(UserBuilder.create().username("my-user").password("password").addAttribute("canCreateItems","true"))
             .user(UserBuilder.create().username("my-user2").password("password").addAttribute("canCreateItems","false"))
             .user(UserBuilder.create().username("my-user3").password("password").addAttribute("otherClaim","something"))
+            .user(UserBuilder.create().username("context-user").password("password").addAttribute("custom", "foo"))
             .group(GroupBuilder.create().name("ADMIN").singleAttribute("attribute","example").build())
             .user(UserBuilder.create().username("admin").password("password").addGroups("ADMIN"))
 
@@ -125,6 +126,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createResource("Resource D");
         createResource("Resource E");
         createResource("Resource ITEM");
+        createResource("Resource CONTEXT");
         ScopeRepresentation scopeRead = new ScopeRepresentation();
         scopeRead.setName("read");
         ScopeRepresentation scopeDelete = new ScopeRepresentation();
@@ -141,6 +143,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createRegexPolicy("Regex json-array Policy", "json-complex.some-array[1]", "bar");
         createRegexPolicy("Regex user attribute to json-Complex Policy", "customPermissions.canCreateItems", "true");
         createRegexPolicyExtended("attribute-policy","attributes.values","^example$",Logic.POSITIVE);
+        createRegexPolicy("Regex context policy", "custom", "^foo$", true);
 
         createResourcePermission("Resource A Permission", "Resource A", "Regex foo Policy");
         createResourcePermission("Resource B Permission", "Resource B", "Regex bar Policy");
@@ -151,7 +154,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createResourcePermission("Resource ITEM Permission", "Resource ITEM", "Regex user attribute to json-Complex Policy");
         createResourceScopesPermissionExtended("read-permission","service",DecisionStrategy.UNANIMOUS,"read","attribute-policy");
 
-
+        createResourcePermission("Resource CONTEXT Permission", "Resource CONTEXT", "Regex context policy");
     }
 
     private void createResource(String name) {
@@ -170,11 +173,16 @@ public class RegexPolicyTest extends AbstractAuthzTest {
 
 
     private void createRegexPolicy(String name, String targetClaim, String pattern) {
+        createRegexPolicy(name, targetClaim, pattern, false);
+    }
+
+    private void createRegexPolicy(String name, String targetClaim, String pattern, Boolean targetContextAttributes) {
         RegexPolicyRepresentation policy = new RegexPolicyRepresentation();
 
         policy.setName(name);
         policy.setTargetClaim(targetClaim);
         policy.setPattern(pattern);
+        policy.setTargetContextAttributes(targetContextAttributes);
 
         getClient().authorization().policies().regex().create(policy).close();
     }
@@ -282,11 +290,8 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
         theRequest.setMetadata(metadata);
         List<Permission> permissions = authzClient.authorization("admin", "password").getPermissions(theRequest);
         assertNotNull(permissions);
-       Assert.assertTrue(((Map)permissions.get(0)).get("rsname").equals("service"));
-       Assert.assertTrue(((List)(((Map)permissions.get(0)).get("scopes"))).get(0).equals("read"));
-
-
-
+        Assert.assertTrue(permissions.get(0).getResourceName().equals("service"));
+        Assert.assertTrue(permissions.get(0).getScopes().contains("read"));
     }
 
 
@@ -359,11 +364,50 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
 
         // Access Resource D with taro.
         request = new PermissionRequest("Resource D");
+        PermissionResponse foo = authzClient.protection().permission().create(request);
+
         ticket = authzClient.protection().permission().create(request).getTicket();
         try {
             authzClient.authorization("taro", "password").authorize(new AuthorizationRequest(ticket));
             fail("Should fail.");
         } catch (AuthorizationDeniedException ignore) {
+
+        }
+    }
+
+    @Test
+    public void testWithExpectedContextAttribute() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource CONTEXT");
+        request.setClaim("custom", "foo");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationRequest theRequest = new AuthorizationRequest(ticket);
+        AuthorizationResponse response = authzClient.authorization("my-user", "password").authorize(theRequest);
+        assertNotNull(response.getToken());
+    }
+
+    @Test
+    public void testWithExpectedContextAttributeAsUserAttribute() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource CONTEXT");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        try {
+            authzClient.authorization("context-user", "password").authorize(new AuthorizationRequest(ticket));
+            fail("failed because it should thrown an exception with 403 Forbidden Status");
+        } catch (AuthorizationDeniedException ignored) {
+
+        }
+    }
+
+    @Test
+    public void testWithoutExpectedContextAttribute() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource CONTEXT");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        try {
+            authzClient.authorization("my-user", "password").authorize(new AuthorizationRequest(ticket));
+            fail("failed because it should thrown an exception with 403 Forbidden Status");
+        } catch (AuthorizationDeniedException ignored) {
 
         }
     }

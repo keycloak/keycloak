@@ -24,6 +24,8 @@ export default interface RealmRepresentation {
   actionTokenGeneratedByUserLifespan?: number;
   adminEventsDetailsEnabled?: boolean;
   adminEventsEnabled?: boolean;
+  adminPermissionsClient?: ClientRepresentation;
+  adminPermissionsEnabled?: boolean;
   adminTheme?: string;
   attributes?: Record<string, any>;
   // AuthenticationFlowRepresentation
@@ -73,6 +75,8 @@ export default interface RealmRepresentation {
   loginWithEmailAllowed?: boolean;
   maxDeltaTimeSeconds?: number;
   maxFailureWaitSeconds?: number;
+  maxTemporaryLockouts?: number;
+  bruteForceStrategy?: "MULTIPLE" | "LINEAR";
   minimumQuickLoginWaitSeconds?: number;
   notBefore?: number;
   oauth2DeviceCodeLifespan?: number;
@@ -80,6 +84,8 @@ export default interface RealmRepresentation {
   offlineSessionIdleTimeout?: number;
   offlineSessionMaxLifespan?: number;
   offlineSessionMaxLifespanEnabled?: boolean;
+  organizationsEnabled?: boolean;
+  verifiableCredentialsEnabled?: boolean;
   otpPolicyAlgorithm?: string;
   otpPolicyDigits?: number;
   otpPolicyInitialCounter?: number;

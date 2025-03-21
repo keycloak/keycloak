@@ -178,8 +178,8 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
                     Response.Status.BAD_REQUEST);
         }
-        if (!TokenManager.isValidScope(scope, client)) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + scope,
+        if (!TokenManager.isValidScope(session, scope, client, user)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }
         request.setScope(scope);

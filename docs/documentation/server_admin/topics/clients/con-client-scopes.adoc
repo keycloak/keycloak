@@ -29,7 +29,7 @@ This scope is also not defined in the OpenID Connect specification and not added
 +
 ** *microprofile-jwt*
 +
-This scope handles claims defined in the https://wiki.eclipse.org/MicroProfile/JWT_Auth[MicroProfile/JWT Auth Specification]. This scope defines a user property mapper for the *upn* claim and a realm role mapper for the *groups* claim. These mappers can be changed so different properties can be used to create the MicroProfile/JWT specific claims.
+This scope handles claims defined in the https://github.com/eclipse/microprofile/wiki/JWT_Auth[MicroProfile/JWT Auth Specification]. This scope defines a user property mapper for the *upn* claim and a realm role mapper for the *groups* claim. These mappers can be changed so different properties can be used to create the MicroProfile/JWT specific claims.
 +
 ** *offline_access*
 +
@@ -84,6 +84,7 @@ The scope parameter contains the string, with the scope values divided by spaces
 == Evaluating Client Scopes
 include::proc-evaluating-client-scopes.adoc[]
 
+[[client-scopes-permissions]]
 == Client scopes permissions
 
 When issuing tokens to a user, the client scope applies only if the user is permitted to use it.

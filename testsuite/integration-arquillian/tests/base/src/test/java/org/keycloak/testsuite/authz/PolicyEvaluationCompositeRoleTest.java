@@ -111,6 +111,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
         String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
         Map<String, String> config = new HashMap<>();
         config.put("roles", roleValues);
+        config.put("fetchRoles", Boolean.TRUE.toString());
         representation.setConfig(config);
 
         return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
@@ -130,7 +131,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
         request.setClientId(resourceServerId);
         request.addResource("myresource", "myscope");
         PolicyEvaluationResponse result = realm.clients().get(resourceServerId).authorization().policies().evaluate(request);
-        Assert.assertEquals(result.getStatus(), DecisionEffect.PERMIT);
+        Assert.assertEquals(DecisionEffect.PERMIT, result.getStatus());
     }
 
 

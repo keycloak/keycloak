@@ -19,20 +19,30 @@
 
 package org.keycloak.admin.ui.rest;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status.Family;
+import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.admin.ui.rest.model.UIRealmRepresentation;
+import org.keycloak.admin.ui.rest.model.UIRealmInfo;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.UserProfileResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.storage.UserStorageProviderModel;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status.Family;
 
 /**
  * This JAX-RS resource is decorating the Admin Realm API in order to support specific behaviors from the
@@ -67,23 +77,32 @@ public class UIRealmResource {
         return response;
     }
 
-    private void updateUserProfileConfiguration(UIRealmRepresentation rep) {
-        UPConfig upConfig = rep.getUpConfig();
+    @GET
+    @Path("info")
+    @Operation(summary = "Gets information about the realm, viewable by all realm admins")
+    @APIResponse(responseCode = "200", description = "", content = {
+            @Content(schema = @Schema(implementation = UIRealmInfo.class, type = SchemaType.OBJECT))})
+    @Produces(MediaType.APPLICATION_JSON)
+    public UIRealmInfo getInfo() {
+        auth.requireAnyAdminRole();
 
-        if (upConfig == null) {
+        final var info = new UIRealmInfo();
+        info.setUserProfileProvidersEnabled(isAtLeastOneUserStorageProviderEnabled());
+        return info;
+    }
+
+    private boolean isAtLeastOneUserStorageProviderEnabled() {
+        return ((StorageProviderRealmModel) session.getContext().getRealm()).getUserStorageProvidersStream()
+                .anyMatch(UserStorageProviderModel::isEnabled);
+    }
+
+    private void updateUserProfileConfiguration(UIRealmRepresentation rep) {
+        UserProfileResource userProfileResource = new UserProfileResource(session, auth, adminEvent);
+        UPConfig config = rep.getUpConfig();
+        if (config == null) {
             return;
         }
-
-        UserProfileResource userProfileResource = new UserProfileResource(session, auth, adminEvent);
-        if (!upConfig.equals(userProfileResource.getConfiguration())) {
-            Response response = userProfileResource.update(upConfig);
-
-            if (isSuccessful(response)) {
-                return;
-            }
-
-            throw new InternalServerErrorException("Failed to update user profile configuration");
-        }
+        userProfileResource.setAndGetConfiguration(config);
     }
 
     private boolean isSuccessful(Response response) {

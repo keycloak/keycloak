@@ -122,7 +122,7 @@ public class ComponentResource {
                     try {
                         return ModelToRepresentation.toRepresentation(session, component, false);
                     } catch (Exception e) {
-                        logger.error("Failed to get component list for component model" + component.getName() + "of realm " + realm.getName());
+                        logger.error("Failed to get component list for component model " + component.getName() + " of realm " + realm.getName());
                         return ModelToRepresentation.toRepresentationWithoutConfig(component);
                     }
                 });
@@ -140,12 +140,12 @@ public class ComponentResource {
 
             model = realm.addComponentModel(model);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e);
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
 
@@ -178,13 +178,13 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid provider type or no such provider", e);
         }
     }
     @DELETE

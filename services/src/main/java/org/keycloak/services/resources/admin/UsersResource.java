@@ -17,14 +17,19 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -32,6 +37,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -39,9 +45,10 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
@@ -50,6 +57,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -60,12 +68,15 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -117,8 +128,15 @@ public class UsersResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Create a new user Username must be unique.")
+    @Operation(summary = "Create a new user Username must be unique.")
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -132,23 +150,6 @@ public class UsersResource {
         String username = rep.getUsername();
         if(realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
-        }
-        if (ObjectUtil.isBlank(username)) {
-            throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
-        }
-
-        // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(realm, username) != null) {
-            throw ErrorResponse.exists("User exists with same username");
-        }
-        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
-            try {
-                if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
-                    throw ErrorResponse.exists("User exists with same email");
-                }
-            } catch (ModelDuplicateException e) {
-                throw ErrorResponse.exists("User exists with same email");
-            }
         }
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
@@ -170,25 +171,18 @@ public class UsersResource {
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().commit();
-            }
-
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
-            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
+            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+                    Response.Status.BAD_REQUEST);
+        } catch (ModelIllegalStateException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me){
-            if (session.getTransactionManager().isActive()) {
-                session.getTransactionManager().setRollbackOnly();
-            }
             logger.warn("Could not create user", me);
             throw ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
@@ -270,8 +264,12 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -385,6 +383,10 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Integer.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Returns the number of users that match the given criteria.",
@@ -415,7 +417,7 @@ public class UsersResource {
             } else if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, search.trim());
             } else {
-                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
@@ -442,12 +444,12 @@ public class UsersResource {
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -465,24 +467,24 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!auth.users().canView()) {
-            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
-
-            if (!groupModels.isEmpty()) {
-                session.setAttribute(UserModel.GROUPS, groupModels);
-            }
+        Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
+        if (!groupIds.isEmpty()) {
+            session.setAttribute(UserModel.GROUPS, groupIds);
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);
-        return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
+        return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
-        boolean canViewGlobal = usersEvaluator.canView();
 
         usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(user -> canViewGlobal || usersEvaluator.canView(user))
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            userModels = userModels.filter(usersEvaluator::canView);
+        }
+
+        return userModels
                 .map(user -> {
                     UserRepresentation userRep = briefRepresentationB
                             ? ModelToRepresentation.toBriefRepresentation(user)

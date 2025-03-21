@@ -24,12 +24,12 @@ A lot of effort went into polishing and improving the Quarkus distribution to ma
 * Initial support for Cross-DC
 * User-defined profiles are no longer supported but using different configuration files to achieve the same goal
 * Quickstarts updated to use the new distribution
+
 == Other improvements
 
-=== Offline sessions lazy loaded
+=== Offline sessions lazily loaded
 
 The offline sessions are now lazily fetched from the database by default instead of preloading during the server startup.
-To change the default behavior, see link:{adminguide_link}#offline-sessions-preloading[{adminguide_name}].
 
 === Improved User Search
 

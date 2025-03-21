@@ -29,14 +29,18 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.GroupProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -44,45 +48,51 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.RequestContextHelper;
+import org.keycloak.utils.KeycloakSessionUtil;
 
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.transaction.InvalidTransactionException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
-
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.keycloak.models.AccountRoles;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
-
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
-import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE;
-import static org.keycloak.models.Constants.REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -98,13 +108,69 @@ public final class KeycloakModelUtils {
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
     public static final String GROUP_PATH_SEPARATOR = "/";
+    public static final String GROUP_PATH_ESCAPE = "~";
     private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     private KeycloakModelUtils() {
     }
 
+    /**
+     * Return an ID generated using the UUID java class.
+     * @return The ID using UUID.toString (36 chars)
+     */
     public static String generateId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Return an ID generated using the UUID class but using base64 URL encoding
+     * with the two longs (msb+lsb).
+     * @return The ID getting msb and lsb from UUID and encoding them in
+     * base64 URL without padding (22 chars)
+     */
+    public static String generateShortId() {
+        return generateShortId(UUID.randomUUID());
+    }
+
+    /**
+     * Generates a short ID representation for the UUID. The representation is the
+     * base64 url encoding of the msb+lsb of the UUID.
+     * @param uuid The UUID to represent
+     * @return The string representation in 22 characters
+     */
+    public static String generateShortId(final UUID uuid) {
+        final byte[] bytes = new byte[2 * Long.BYTES];
+        // first the msb
+        long l = uuid.getMostSignificantBits();
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
+            bytes[i] = (byte) (l & 0xff);
+            l >>= 8;
+        }
+        // second the lsb
+        l = uuid.getLeastSignificantBits();
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
+            bytes[Long.BYTES + i] = (byte) (l & 0xff);
+            l >>= 8;
+        }
+        // encode in base64 URL no padding (22 chars)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Check if a string is a valid UUID.
+     * @param uuid The UUID string to verify
+     * @return true if the string is a valid uuid
+     */
+    public static boolean isValidUUID(String uuid) {
+        if (uuid == null) {
+            return false;
+        }
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -233,11 +299,14 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Try to find user by username or email for authentication
+     * If "Login with email" is enabled and the given username contains '@',
+     * attempts to find the user by email for authentication.
      *
-     * @param realm    realm
-     * @param username username or email of user
-     * @return found user
+     * Otherwise, or if not found, attempts to find the user by username.
+     *
+     * @param realm the realm to search within
+     * @param username the username or email of the user
+     * @return the found user if present; otherwise, {@code null}
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
@@ -256,10 +325,7 @@ public final class KeycloakModelUtils {
      * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, null, session -> {
-            task.run(session);
-            return null;
-        });
+        runJobInTransaction(factory, null, task);
     }
 
     /**
@@ -272,7 +338,7 @@ public final class KeycloakModelUtils {
         runJobInTransactionWithResult(factory, context, session -> {
             task.run(session);
             return null;
-        });
+        }, task.useExistingSession(), task.getTaskName());
     }
 
     /**
@@ -362,7 +428,7 @@ public final class KeycloakModelUtils {
      * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
-        return runJobInTransactionWithResult(factory, null, callable);
+        return runJobInTransactionWithResult(factory, null, callable, false, "Non-HTTP task");
     }
 
     /**
@@ -371,18 +437,30 @@ public final class KeycloakModelUtils {
      * @param factory The session factory
      * @param context The context from the previous session to use
      * @param callable The callable to execute
+     * @param useExistingSession if the existing session should be used
+     * @param taskName Name of the task. Can be useful for logging purposes
      * @return The return value from the callable
      */
-    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable,
+                                                      boolean useExistingSession, String taskName) {
         V result;
+        KeycloakSession existing = KeycloakSessionUtil.getKeycloakSession();
+        if (useExistingSession && existing != null && existing.getTransactionManager().isActive()) {
+            return callable.run(existing);
+        }
+
         try (KeycloakSession session = factory.create()) {
+            RequestContextHelper.getContext(session).setContextMessage(taskName);
             session.getTransactionManager().begin();
+            KeycloakSessionUtil.setKeycloakSession(session);
             try {
                 cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
+            } finally {
+                KeycloakSessionUtil.setKeycloakSession(existing);
             }
         }
         return result;
@@ -691,9 +769,21 @@ public final class KeycloakModelUtils {
     }
 
     /**
+     * Helper to get from the session if group path slashes should be escaped or not.
+     * @param session The session
+     * @return true or false
+     */
+    public static boolean escapeSlashesInGroupPath(KeycloakSession session) {
+        GroupProviderFactory fact = (GroupProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
+        return fact.escapeSlashesInGroupPath();
+    }
+
+    /**
      * Finds group by path. Path is separated by '/' character. For example: /group/subgroup/subsubgroup
      * <p />
      * The method takes into consideration also groups with '/' in their name. For example: /group/sub/group/subgroup
+     * This method allows escaping of slashes for example: /parent\/group/child which
+     * is a two level path for ["parent/group", "child"].
      *
      * @param session Keycloak session
      * @param realm The realm
@@ -705,13 +795,7 @@ public final class KeycloakModelUtils {
         if (path == null) {
             return null;
         }
-        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(1);
-        }
-        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(0, path.length() - 1);
-        }
-        String[] split = path.split(GROUP_PATH_SEPARATOR);
+        String[] split = splitPath(path, escapeSlashesInGroupPath(session));
         if (split.length == 0) return null;
         return getGroupModel(session.groups(), realm, null, split, 0);
     }
@@ -750,22 +834,76 @@ public final class KeycloakModelUtils {
         return null;
     }
 
-    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent) {
-        if (parent != null) {
-            buildGroupPath(sb, parent.getName(), parent.getParent());
+    /**
+     * Splits a group path than can be escaped for slashes.
+     * @param path The group path
+     * @param escapedSlashes true if slashes are escaped in the path
+     * @return
+     */
+    public static String[] splitPath(String path, boolean escapedSlashes) {
+        if (path == null) {
+            return null;
         }
-        sb.append(GROUP_PATH_SEPARATOR).append(groupName);
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(1);
+        }
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        // just split by slashed that are not escaped
+        return escapedSlashes
+                ? Arrays.stream(path.split("(?<!" + Pattern.quote(GROUP_PATH_ESCAPE) + ")" + Pattern.quote(GROUP_PATH_SEPARATOR)))
+                        .map(KeycloakModelUtils::unescapeGroupNameForPath)
+                        .toArray(String[]::new)
+                : path.split(GROUP_PATH_SEPARATOR);
+    }
+
+    /**
+     * Escapes the slash in the name if found. "group/slash" returns "group\/slash".
+     * @param groupName
+     * @return
+     */
+    private static String escapeGroupNameForPath(String groupName) {
+        return groupName.replace(GROUP_PATH_SEPARATOR, GROUP_PATH_ESCAPE + GROUP_PATH_SEPARATOR);
+    }
+
+    /**
+     * Unescape the escaped slashes in name. "group\/slash" returns "group/slash".
+     * @param groupName
+     * @return
+     */
+    private static String unescapeGroupNameForPath(String groupName) {
+        return groupName.replace(GROUP_PATH_ESCAPE + GROUP_PATH_SEPARATOR, GROUP_PATH_SEPARATOR);
+    }
+
+    public static String buildGroupPath(boolean escapeSlashes, String... names) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(GROUP_PATH_SEPARATOR);
+        for (int i = 0; i < names.length; i++) {
+            sb.append(escapeSlashes? escapeGroupNameForPath(names[i]) : names[i]);
+            if (i < names.length - 1) {
+                sb.append(GROUP_PATH_SEPARATOR);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes) {
+        if (parent != null) {
+            buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes);
+        }
+        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes? escapeGroupNameForPath(groupName) : groupName);
     }
 
     public static String buildGroupPath(GroupModel group) {
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), group.getParent());
+        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath());
         return sb.toString();
     }
 
     public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), otherParentGroup);
+        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath());
         return sb.toString();
     }
 
@@ -845,7 +983,7 @@ public final class KeycloakModelUtils {
      * @param model
      * @return
      */
-    public static boolean isFlowUsed(RealmModel realm, AuthenticationFlowModel model) {
+    public static boolean isFlowUsed(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowModel realmFlow = null;
 
         if ((realmFlow = realm.getBrowserFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
@@ -854,21 +992,32 @@ public final class KeycloakModelUtils {
         if ((realmFlow = realm.getDirectGrantFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getDockerAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getFirstBrokerLoginFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
 
-        return realm.getIdentityProvidersStream().anyMatch(idp ->
-                Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
-                        Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
+        Stream<ClientModel> browserFlowOverridingClients = realm.searchClientByAuthenticationFlowBindingOverrides(Collections.singletonMap("browser", model.getId()), 0, 1);
+        Stream<ClientModel> directGrantFlowOverridingClients = realm.searchClientByAuthenticationFlowBindingOverrides(Collections.singletonMap("direct_grant", model.getId()), 0, 1);
+        boolean usedByClient = closing(Stream.concat(browserFlowOverridingClients, directGrantFlowOverridingClients))
+                .limit(1)
+                .findAny()
+                .isPresent();
+
+        if (usedByClient) {
+            return true;
+        }
+
+        return session.identityProviders().getByFlow(model.getId(), null,0, 1).findAny().isPresent();
     }
 
     /**
      * Recursively remove authentication flow (including all subflows and executions) from the model storage
      *
-     * @param realm
+     * @param session The keycloak session
+     * @param realm The realm
      * @param authFlow flow to delete
-     * @param flowUnavailableHandler Will be executed when flow or some of it's subflow is null
+     * @param flowUnavailableHandler Will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationFlow(RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
         if (authFlow == null) {
             flowUnavailableHandler.run();
             return;
@@ -878,12 +1027,45 @@ public final class KeycloakModelUtils {
         }
 
         realm.getAuthenticationExecutionsStream(authFlow.getId())
-                .map(AuthenticationExecutionModel::getFlowId)
-                .filter(Objects::nonNull)
-                .map(realm::getAuthenticationFlowById)
-                .forEachOrdered(subflow -> deepDeleteAuthenticationFlow(realm, subflow, flowUnavailableHandler, builtinFlowHandler));
+                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler));
 
         realm.removeAuthenticationFlow(authFlow);
+    }
+
+    /**
+     * Recursively remove authentication executor (including sub-flows and configs) from the model storage
+     *
+     * @param session The keycloak session
+     * @param realm The realm
+     * @param authExecutor The authentication executor to remove
+     * @param flowUnavailableHandler Handler that will be executed when flow, sub-flow or executor is null
+     * @param builtinFlowHandler Handler that will be executed when flow is built-in flow
+     */
+    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+        if (authExecutor == null) {
+            flowUnavailableHandler.run();
+            return;
+        }
+
+        // recursively remove sub flows
+        if (authExecutor.getFlowId() != null) {
+            AuthenticationFlowModel authFlow = realm.getAuthenticationFlowById(authExecutor.getFlowId());
+            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler);
+        }
+
+        // remove the config if not shared
+        if (authExecutor.getAuthenticatorConfig() != null) {
+            DeployedConfigurationsManager configManager = new DeployedConfigurationsManager(session);
+            if (configManager.getDeployedAuthenticatorConfig(authExecutor.getAuthenticatorConfig()) == null) {
+                AuthenticatorConfigModel config = configManager.getAuthenticatorConfig(realm, authExecutor.getAuthenticatorConfig());
+                if (config != null) {
+                    realm.removeAuthenticatorConfig(config);
+                }
+            }
+        }
+
+        // remove the executor at the end
+        realm.removeAuthenticatorExecution(authExecutor);
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
@@ -981,14 +1163,6 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @return true if implementation of realmProvider is "jpa" . Which is always the case in standard Keycloak installations.
-     */
-    public static boolean isRealmProviderJpa(KeycloakSession session) {
-        Set<String> providerIds = session.listProviderIds(RealmProvider.class);
-        return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
-    }
-
-    /**
      * @param clientAuthenticatorType
      * @return secret size based on authentication type
      */
@@ -1001,19 +1175,6 @@ public final class KeycloakModelUtils {
                 }
             }
         return SecretGenerator.SECRET_LENGTH_256_BITS;
-    }
-
-    /**
-     * Returns <code>true</code> if given realm has attribute {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE}
-     * set and its value is <code>true</code>. Otherwise default value of it is returned. The default setting
-     * can be seen at {@link Constants#REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT}.
-     *
-     * @param realm
-     * @return See the description
-     * @throws NullPointerException if <code>realm</code> is <code>null</code>
-     */
-    public static boolean isUsernameCaseSensitive(RealmModel realm) {
-        return realm.getAttribute(REALM_ATTR_USERNAME_CASE_SENSITIVE, REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT);
     }
 
     /**
@@ -1032,4 +1193,30 @@ public final class KeycloakModelUtils {
         });
     }
 
+    /**
+     * <p>Runs the given {@code operation} within the scope of the given @{target} realm.
+     *
+     * <p>Only use this method when you need to execute operations in a {@link RealmModel} object that is different
+     * than the one associated with the {@code session}.
+     *
+     * @param session the session
+     * @param target the target realm
+     * @param operation the operation
+     * @return the result from the supplier
+     */
+    public static <T> T runOnRealm(KeycloakSession session, RealmModel target, Function<KeycloakSession, T> operation) {
+        KeycloakContext context = session.getContext();
+        RealmModel currentRealm = context.getRealm();
+
+        if (currentRealm.equals(target)) {
+            return operation.apply(session);
+        }
+
+        try {
+            context.setRealm(target);
+            return operation.apply(session);
+        } finally {
+            context.setRealm(currentRealm);
+        }
+    }
 }

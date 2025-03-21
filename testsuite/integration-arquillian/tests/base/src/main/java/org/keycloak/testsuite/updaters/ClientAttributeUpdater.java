@@ -68,6 +68,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setName(String name) {
+        this.rep.setName(name);
+        return this;
+    }
+
     public ClientAttributeUpdater setAttribute(String name, String value) {
         this.rep.getAttributes().put(name, value);
         if (value != null && !this.origRep.getAttributes().containsKey(name)) {
@@ -91,6 +96,17 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setAuthenticationFlowBindingOverrides(Map<String, String> bindings) {
+        rep.setAuthenticationFlowBindingOverrides(bindings);
+        if (origRep.getAuthenticationFlowBindingOverrides() == null) {
+            origRep.setAuthenticationFlowBindingOverrides(new HashMap<>());
+        }
+        for (String key : bindings.keySet()) {
+            origRep.getAuthenticationFlowBindingOverrides().putIfAbsent(key, "");
+        }
+        return this;
+    }
+
     public ClientAttributeUpdater setConsentRequired(Boolean consentRequired) {
         rep.setConsentRequired(consentRequired);
         return this;
@@ -103,6 +119,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater setFullScopeAllowed(Boolean fullScopeAllowed) {
         rep.setFullScopeAllowed(fullScopeAllowed);
+        return this;
+    }
+
+    public ClientAttributeUpdater setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
+        rep.setImplicitFlowEnabled(implicitFlowEnabled);
         return this;
     }
 
@@ -135,6 +156,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
         rep.getDefaultClientScopes().add(clientScope);
+        return this;
+    }
+
+    public ClientAttributeUpdater addOptionalClientScope(String clientScope) {
+        rep.getOptionalClientScopes().add(clientScope);
         return this;
     }
 

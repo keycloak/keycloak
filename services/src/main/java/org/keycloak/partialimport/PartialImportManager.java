@@ -51,7 +51,7 @@ public class PartialImportManager {
         partialImports.add(new UsersPartialImport());
     }
 
-    public PartialImportResults saveResources() throws ErrorResponseException {
+    public PartialImportResults saveResources() {
         PartialImportResults results = new PartialImportResults();
 
         for (PartialImport partialImport : partialImports) {

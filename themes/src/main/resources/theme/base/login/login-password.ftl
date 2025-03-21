@@ -10,7 +10,7 @@
                     <div class="${properties.kcFormGroupClass!} no-bottom-margin">
                         <hr/>
                         <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
-                        <div class="${properties.kcInputGroup!}">
+                        <div class="${properties.kcInputGroup!}" dir="ltr">
                             <input tabindex="2" id="password" class="${properties.kcInputClass!}" name="password"
                                    type="password" autocomplete="on" autofocus
                                    aria-invalid="<#if messagesPerField.existsError('password')>true</#if>"
@@ -31,12 +31,12 @@
 
                     <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
                         <div id="kc-form-options">
-                        </div>
-                        <div class="${properties.kcFormOptionsWrapperClass!}">
-                            <#if realm.resetPasswordAllowed>
-                                <span><a tabindex="5"
-                                         href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
-                            </#if>
+                            <div class="${properties.kcFormOptionsWrapperClass!}">
+                                <#if realm.resetPasswordAllowed>
+                                    <span><a tabindex="5"
+                                             href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
+                                </#if>
+                            </div>
                         </div>
                     </div>
 

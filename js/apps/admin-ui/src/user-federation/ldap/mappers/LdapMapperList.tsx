@@ -1,5 +1,12 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
+  Action,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   ButtonVariant,
@@ -8,16 +15,8 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate, useParams } from "react-router-dom";
-
-import { adminClient } from "../../../admin-client";
-import { useAlerts } from "../../../components/alert/Alerts";
+import { useAdminClient } from "../../../admin-client";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 export type LdapMapperListProps = {
@@ -34,6 +33,8 @@ const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
 );
 
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
+  const { adminClient } = useAdminClient();
+
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();

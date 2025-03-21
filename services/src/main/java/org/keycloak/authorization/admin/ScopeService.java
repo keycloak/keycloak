@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -34,7 +35,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -75,8 +75,8 @@ public class ScopeService {
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
-    private KeycloakSession session;
-    private ResourceServer resourceServer;
+    private final KeycloakSession session;
+    private final ResourceServer resourceServer;
 
     public ScopeService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -91,7 +91,8 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(ScopeRepresentation scope) {
-            this.auth.realm().requireManageAuthorization();
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+        this.auth.realm().requireManageAuthorization();
         Scope model = toModel(scope, this.resourceServer, authorization);
 
         scope.setId(model.getId());
@@ -106,10 +107,11 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("scope-id") String id, ScopeRepresentation scope) {
-            this.auth.realm().requireManageAuthorization();
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+        this.auth.realm().requireManageAuthorization();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, scope.getId());
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, scope.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -125,10 +127,10 @@ public class ScopeService {
     @Path("{scope-id}")
     @DELETE
     public Response delete(@PathParam("scope-id") String id) {
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        RealmModel realm = resourceServer.getRealm();
-        Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, id);
+        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
         if (scope == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -144,7 +146,7 @@ public class ScopeService {
 
         for (Policy policyModel : policies) {
             if (policyModel.getScopes().size() == 1) {
-                policyStore.delete(realm, policyModel.getId());
+                policyStore.delete(policyModel.getId());
             } else {
                 policyModel.removeScope(scope);
             }
@@ -153,7 +155,7 @@ public class ScopeService {
         //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
         ScopeRepresentation scopeRep = toRepresentation(scope);
 
-        storeFactory.getScopeStore().delete(realm, id);
+        storeFactory.getScopeStore().delete(id);
 
         audit(scopeRep, OperationType.DELETE);
 
@@ -173,7 +175,7 @@ public class ScopeService {
     })
     public Response findById(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
-        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -196,7 +198,7 @@ public class ScopeService {
     public Response getResources(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -226,7 +228,7 @@ public class ScopeService {
     public Response getPermissions(@PathParam("scope-id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();

@@ -17,12 +17,15 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -71,6 +74,22 @@ public class JSSETruststoreConfigurator {
     public TrustManager[] getTrustManagers() {
         if (provider == null) {
             return null;
+        }
+
+        if (getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
+            return new TrustManager[] {
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
         }
 
         if (tm == null) {

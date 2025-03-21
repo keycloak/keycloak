@@ -18,6 +18,8 @@
 package org.keycloak.exportimport;
 
 import java.io.Closeable;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -59,6 +61,18 @@ public class ExportImportConfig {
     public static String getAction() {
         return System.getProperty(ACTION);
     }
+    
+    public static String getStrategy() {
+        return System.getProperty(STRATEGY);
+    }
+    
+    public static String setStrategy(Strategy strategy) {
+        return System.setProperty(STRATEGY, strategy.toString());
+    }
+    
+    public static Optional<String> getDir() {
+        return Optional.ofNullable(System.getProperty(DIR));
+    }
 
     public static Closeable setAction(String exportImportAction) {
         System.setProperty(ACTION, exportImportAction);
@@ -91,5 +105,10 @@ public class ExportImportConfig {
 
     public static void setReplacePlaceholders(boolean replacePlaceholders) {
         System.setProperty(REPLACE_PLACEHOLDERS, String.valueOf(replacePlaceholders));
+    }
+    
+    public static void reset() {
+        Stream.of(FILE, DIR, ACTION, STRATEGY, REPLACE_PLACEHOLDERS)
+                .forEach(prop -> System.getProperties().remove(prop));
     }
 }

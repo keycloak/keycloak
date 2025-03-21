@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static java.lang.Boolean.parseBoolean;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 import java.io.File;
@@ -36,7 +34,6 @@ import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
-import io.smallrye.config.ConfigValue;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
@@ -46,19 +43,7 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
 public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
 
     private static final String FILE_NAME = "quarkus.properties";
-    public static final String QUARKUS_PROPERTY_ENABLED = "kc.quarkus-properties-enabled";
-    public static final String NAME = "QuarkusProperties";
-
-    //for auto-build working with multiple datasources
-    public static final String QUARKUS_DATASOURCE_BUILDTIME_REGEX = "^quarkus\\.datasource\\.[A-Za-z0-9\\-_]+\\.(db-kind|jdbc\\.driver|jdbc\\.transactions|jdbc\\.enable-metrics)$";
-
-    public static boolean isSameSource(ConfigValue value) {
-        if (value == null) {
-            return false;
-        }
-
-        return NAME.equals(value.getConfigSourceName());
-    }
+    public static final String NAME = "KcQuarkusPropertiesConfigSource";
 
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
@@ -74,6 +59,8 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         return null;
     }
 
+    private boolean loadingFile;
+
     @Override
     protected String[] getFileExtensions() {
         return new String[] { "properties" };
@@ -81,12 +68,8 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        return new PropertiesConfigSource(ConfigSourceUtil.urlToMap(url), FILE_NAME, ordinal) {
-            @Override
-            public String getName() {
-                return NAME;
-            }
-
+        String name = loadingFile ? NAME : (NAME + " " + url);
+        return new PropertiesConfigSource(ConfigSourceUtil.urlToMap(url), name, ordinal) {
             @Override
             public String getValue(String propertyName) {
                 if (propertyName.startsWith(NS_QUARKUS)) {
@@ -99,7 +82,7 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     }
 
     @Override
-    public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
+    public synchronized List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         List<ConfigSource> configSources = new ArrayList<>();
 
         configSources.addAll(loadConfigSources("META-INF/services/" + FILE_NAME, 450, classLoader));
@@ -107,7 +90,12 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         Path configFile = getConfigurationFile();
 
         if (configFile != null) {
-            configSources.addAll(loadConfigSources(configFile.toUri().toString(), 500, classLoader));
+            loadingFile = true;
+            try {
+                configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
+            } finally {
+                loadingFile = false;
+            }
         }
 
         return configSources;

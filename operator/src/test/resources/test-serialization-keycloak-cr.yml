@@ -32,6 +32,41 @@ spec:
     annotations:
       myAnnotation: myValue
       anotherAnnotation: anotherValue
+  networkPolicy:
+    enabled: true
+    http:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    https:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    management:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
   http:
     httpEnabled: true
     httpPort: 123
@@ -43,6 +78,11 @@ spec:
     adminUrl: https://www.my-admin-hostname.org:8448/something
     strict: true
     strictBackchannel: true
+    backchannelDynamic: true
+  cache:
+    configMapFile:
+      name: my-config-map
+      key: file.xml
   features:
     enabled:
       - docker
@@ -52,6 +92,40 @@ spec:
       - step-up-authentication
   transaction:
     xaEnabled: false
+  tracing:
+    enabled: true
+    endpoint: http://my-tracing:4317
+    serviceName: my-best-keycloak
+    protocol: http/protobuf
+    samplerType: parentbased_traceidratio
+    samplerRatio: 0.01
+    compression: gzip
+    resourceAttributes:
+      service.namespace: keycloak-namespace
+      service.name: custom-service-name
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500M"
+    limits:
+      cpu: "2"
+      memory: "1500M"
+  proxy:
+    headers: forwarded
+  truststores:
+    x:
+      secret:
+        name: my-secret
+  httpManagement:
+    port: 9003
+  bootstrapAdmin:
+    user:
+      secret: something
+    service:
+      secret: else
+  update:
+    strategy: Auto
+    revision: 1
   unsupported:
     podTemplate:
       metadata:

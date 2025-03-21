@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - quarkus-next
   pull_request:
      branches: [main]
   workflow_dispatch:
@@ -21,14 +22,17 @@ defaults:
   run:
     shell: bash
 
-jobs:
+permissions:
+  contents: read
 
+jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
     outputs:
       java: ${{ steps.conditional.outputs.codeql-java }}
-      themes: ${{ steps.conditional.outputs.codeql-themes }}
+      javascript: ${{ steps.conditional.outputs.codeql-javascript }}
+      typescript: ${{ steps.conditional.outputs.codeql-typescript }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +45,8 @@ jobs:
     name: CodeQL Java
     needs: conditional
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Required for SARIF upload
     if: needs.conditional.outputs.java == 'true'
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
@@ -63,11 +69,13 @@ jobs:
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
 
-  themes:
-    name: CodeQL Themes
+  javascript:
+    name: CodeQL JavaScript
     needs: conditional
     runs-on: ubuntu-latest
-    if: needs.conditional.outputs.themes == 'true'
+    permissions:
+      security-events: write  # Required for SARIF upload
+    if: needs.conditional.outputs.javascript == 'true'
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}
 
@@ -80,7 +88,33 @@ jobs:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
           languages: javascript
-          source-root: themes/src/main/
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          wait-for-processing: true
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
+  typescript:
+    name: CodeQL TypeScript
+    needs: conditional
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Required for SARIF upload
+    if: needs.conditional.outputs.typescript == 'true'
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
+        with:
+          languages: typescript
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -95,7 +129,8 @@ jobs:
     needs:
       - conditional
       - java
-      - themes
+      - javascript
+      - typescript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

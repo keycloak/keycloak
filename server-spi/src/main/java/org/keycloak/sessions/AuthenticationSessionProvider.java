@@ -100,4 +100,7 @@ public interface AuthenticationSessionProvider extends Provider {
      * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
      */
     void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment);
+
+    default void migrate(String modelVersion) {
+    }
 }

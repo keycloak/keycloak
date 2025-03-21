@@ -1,15 +1,5 @@
 {
 
-    "hostname": {
-        "provider": "${keycloak.hostname.provider:}",
-
-        "default": {
-            "frontendUrl": "${keycloak.frontendUrl:}",
-            "adminUrl": "${keycloak.adminUrl:}",
-            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:}"
-        }
-    },
-
     "eventsStore": {
         "provider": "${keycloak.eventsStore.provider:jpa}",
         "jpa": {
@@ -137,7 +127,7 @@
         "default": {
             "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
             "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
-            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
+            "siteName": "${keycloak.connectionsInfinispan.siteName:}",
             "clustered": "${keycloak.connectionsInfinispan.clustered:}",
             "async": "${keycloak.connectionsInfinispan.async:}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:}",
@@ -158,9 +148,6 @@
     },
 
     "login-protocol": {
-        "openid-connect": {
-            "legacy-logout-redirect-uri": "${keycloak.oidc.legacyLogoutRedirectUri:false}"
-        },
         "saml": {
             "knownProtocols": [
                 "http=${auth.server.http.port}",
@@ -194,6 +181,12 @@
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
         }
-    }
+    },
 
+    "security-profile": {
+        "provider": "${keycloak.security-profile.provider:default}",
+        "default": {
+            "name":"${keycloak.security-profile.default.name:none-security-profile}"
+        }
+    }
 }

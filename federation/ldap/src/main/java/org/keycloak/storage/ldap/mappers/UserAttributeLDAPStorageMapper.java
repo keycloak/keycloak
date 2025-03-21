@@ -187,6 +187,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                             UserModel.USERNAME);
                 }
             } else if (usernameChanged) {
+                if (realm.isRegistrationEmailAsUsername() && username.equals(user.getEmail())) {
+                    return;
+                }
                 throw new ModelException("Cannot change username if the realm is not configured to allow edit the usernames");
             }
         }

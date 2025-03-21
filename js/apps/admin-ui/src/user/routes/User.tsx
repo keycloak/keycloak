@@ -6,12 +6,14 @@ import type { AppRouteObject } from "../../routes";
 export type UserTab =
   | "settings"
   | "groups"
+  | "organizations"
   | "consents"
   | "attributes"
   | "sessions"
   | "credentials"
   | "role-mapping"
-  | "identity-provider-links";
+  | "identity-provider-links"
+  | "events";
 
 export type UserParams = {
   realm: string;

@@ -47,8 +47,8 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -118,7 +118,7 @@ public class SamlEncryptionTest {
                 .nameIdentifier(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get(), "nameId");
         ResponseType samlModel = builder.buildModel();
 
-        KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
+        KeycloakSession session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder(session);
         if (alg != null) {
             bindingBuilder.encryptionAlgorithm(alg);

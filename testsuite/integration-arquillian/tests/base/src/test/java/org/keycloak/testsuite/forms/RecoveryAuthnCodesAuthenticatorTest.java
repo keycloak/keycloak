@@ -17,6 +17,7 @@ import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -41,7 +42,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -128,8 +129,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
     private void testSetupRecoveryAuthnCodesLogoutOtherSessions(boolean logoutOtherSessions) {
         // login with the user using the second driver
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());
@@ -149,8 +149,18 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
         Assert.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation event2 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
-                .user(event1.getUserId()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name())
+                    .assertEvent();
+        }
+
+        EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(event1.getUserId())
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .assertEvent();
         event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID))
                 .detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
@@ -176,9 +186,73 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
         testSetupRecoveryAuthnCodesLogoutOtherSessions(false);
     }
 
+    @Test
+    public void test03SetupRecoveryAuthnCodesModifyGeneratedAt() {
+        // add the configure recovery codes action
+        UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRepresentation = testUser.toRepresentation();
+        userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
+        testUser.update(userRepresentation);
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        setupRecoveryAuthnCodesPage.assertCurrent();
+
+        // modify generatedAt to a fixed value
+        setupRecoveryAuthnCodesPage.setGeneratedAtHidden("10000");
+        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+        // the recovery codes are regerated as they were tampered
+        setupRecoveryAuthnCodesPage.assertCurrent();
+        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userRepresentation.getId())
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .assertEvent();
+        events.expectLogin().user(event.getUserId()).session(event.getDetails().get(Details.CODE_ID))
+                .detail(Details.USERNAME, "test-user@localhost")
+                .assertEvent();
+    }
+
+    @Test
+    public void test04SetupRecoveryAuthnCodesModifyGeneratedCodes() {
+        // add the configure recovery codes action
+        UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRepresentation = testUser.toRepresentation();
+        userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
+        testUser.update(userRepresentation);
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        setupRecoveryAuthnCodesPage.assertCurrent();
+
+        // modify the codes with a new generated ones
+        setupRecoveryAuthnCodesPage.setGeneratedRecoveryAuthnCodesHidden(new RecoveryAuthnCodesBean().getGeneratedRecoveryAuthnCodesAsString());
+        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+        // the recovery codes are regerated as they were tampered
+        setupRecoveryAuthnCodesPage.assertCurrent();
+        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+        assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userRepresentation.getId())
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .assertEvent();
+        events.expectLogin().user(event.getUserId()).session(event.getDetails().get(Details.CODE_ID))
+                .detail(Details.USERNAME, "test-user@localhost")
+                .assertEvent();
+    }
+
     // In a sub-flow with alternative credential executors, test whether Recovery Authentication Codes are working
     @Test
-    public void test03AuthenticateRecoveryAuthnCodes() {
+    public void test05AuthenticateRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient);
             testRealm().flows().removeRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
@@ -222,7 +296,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class)
     @IgnoreBrowserDriver(ChromeDriver.class)
-    public void test04SetupRecoveryAuthnCodes() {
+    public void test06SetupRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient);
             RequiredActionProviderSimpleRepresentation simpleRepresentation = new RequiredActionProviderSimpleRepresentation();
@@ -253,7 +327,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/13543
     @IgnoreBrowserDriver(ChromeDriver.class)
-    public void test05BruteforceProtectionRecoveryAuthnCodes() {
+    public void test07BruteforceProtectionRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient);
             RealmRepresentation rep = testRealm().toRepresentation();
@@ -305,5 +379,4 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
-
 }

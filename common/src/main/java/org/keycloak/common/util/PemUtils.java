@@ -124,6 +124,13 @@ public class PemUtils {
                 .toString();
     }
 
+    public static String addCertificateBeginEnd(String certificate) {
+        return new StringBuilder(BEGIN_CERT + "\n")
+            .append(certificate)
+            .append("\n" + END_CERT)
+            .toString();
+    }
+
     public static String addRsaPrivateKeyBeginEnd(String privateKeyPem) {
         return new StringBuilder(PemUtils.BEGIN_RSA_PRIVATE_KEY + "\n")
                 .append(privateKeyPem)

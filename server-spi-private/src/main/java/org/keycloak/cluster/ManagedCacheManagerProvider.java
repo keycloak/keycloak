@@ -18,13 +18,19 @@
 package org.keycloak.cluster;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 
 /**
- * A Service Provider Interface (SPI) that allows to plug-in a cache manager instance.
- * 
+ * A Service Provider Interface (SPI) that allows to plug-in an embedded or remote cache manager instance.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface ManagedCacheManagerProvider {
-    
-    <C> C getCacheManager(Config.Scope config);
+
+    <C> C getEmbeddedCacheManager(KeycloakSession keycloakSession, Config.Scope config);
+
+    /**
+     * @return A RemoteCacheManager if the features {@link org.keycloak.common.Profile.Feature#CLUSTERLESS} or {@link org.keycloak.common.Profile.Feature#MULTI_SITE}  is enabled, {@code null} otherwise.
+     */
+    <C> C getRemoteCacheManager(Config.Scope config);
 }

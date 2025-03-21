@@ -26,14 +26,15 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.storage.StorageId;
 
 import java.util.Arrays;
@@ -44,6 +45,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.ForbiddenException;
 
 import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
@@ -61,6 +64,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     protected final AuthorizationProvider authz;
     protected final MgmtPermissions root;
     protected final ResourceStore resourceStore;
+    protected final PolicyStore policyStore;
 
     private static final String RESOURCE_NAME_PREFIX = "client.resource.";
 
@@ -71,8 +75,10 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         this.root = root;
         if (authz != null) {
             resourceStore = authz.getStoreFactory().getResourceStore();
+            policyStore = authz.getStoreFactory().getPolicyStore();
         } else {
             resourceStore = null;
+            policyStore = null;
         }
     }
 
@@ -178,7 +184,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
 
     }
@@ -194,7 +200,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(client));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
     @Override
@@ -318,7 +324,12 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to) {
+    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel client) {
+        return canExchangeTo(authorizedClient, client, null);
+    }
+
+    @Override
+    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token) {
 
         ResourceServer server = resourceServer(to);
         if (server == null) {
@@ -350,7 +361,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             logger.debug(TOKEN_EXCHANGE + " not initialized");
             return false;
         }
-        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient, token);
         EvaluationContext context = new DefaultEvaluationContext(identity, session) {
             @Override
             public Map<String, Collection<String>> getBaseAttributes() {
@@ -657,7 +668,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public Set<String> getClientsWithPermission(String scope) {
+    public Set<String> getClientIdsWithViewPermission(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }

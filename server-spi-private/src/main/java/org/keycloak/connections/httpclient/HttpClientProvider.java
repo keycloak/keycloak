@@ -21,6 +21,7 @@ import org.keycloak.provider.Provider;
 
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
@@ -50,11 +51,56 @@ public interface HttpClientProvider extends Provider {
     public int postText(String uri, String text) throws IOException;
 
     /**
-     * Helper method
+     * Helper method to retrieve the contents of a URL as a String.
+     * Decoding response with the correct character set is performed according to the headers returned in the server's response.
+     * To retrieve binary data, use {@link #getInputStream(String)}
+     * 
+     * Implementations should limit the amount of data returned to avoid an {@link OutOfMemoryError}.
      *
-     * @param uri
-     * @return response stream, you must close this stream or leaks will happen
+     * @param uri URI with data to receive.
+     * @return Body of the response as a String.
      * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code
      */
-    public InputStream get(String uri) throws IOException;
+    String getString(String uri) throws IOException;
+
+    /**
+     * Helper method to retrieve the contents of a URL as an InputStream.
+     * Use this to retrieve binary data where no additional HTTP headers need to be considered.
+     * The caller is required to close the returned InputStream to prevent a resource leak.
+     * <p>
+     * To retrieve strings that depend on their encoding, use {@link #getString(String)}
+     *
+     * @param uri URI with data to receive.
+     * @return Body of the response as an InputStream. The caller is required to close the returned InputStream to prevent a resource leak.
+     * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code.
+     */
+    InputStream getInputStream(String uri) throws IOException;
+
+    /**
+     * Helper method.
+     * The caller is required to close the returned InputStream to prevent a resource leak.
+
+     * @deprecated For String content, use  {@link #getString(String)}, for binary data use {@link #getInputStream(String)}.
+     * To be removed in Keycloak 27.
+     *
+     * @param uri URI with data to receive.
+     * @return Body of the response as an InputStream. The caller is required to close the returned InputStream to prevent a resource leak.
+     * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code.
+     */
+    @Deprecated
+    default InputStream get(String uri) throws IOException {
+        return getInputStream(uri);
+    }
+
+    long DEFAULT_MAX_CONSUMED_RESPONSE_SIZE = 10_000_000L;
+
+    /**
+     * Get the configured limit for the response size.
+     *
+     * @return number of bytes
+     */
+    default long getMaxConsumedResponseSize() {
+        return DEFAULT_MAX_CONSUMED_RESPONSE_SIZE;
+    }
+
 }

@@ -16,34 +16,29 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-
-import java.util.Optional;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING, resourceDiscriminator = KeycloakServiceDependentResource.NameResourceDiscriminator.class)
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakServiceDependentResource extends CRUDKubernetesDependentResource<Service, Keycloak> {
-
-    public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
-        @Override
-        public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return Utils.getByName(Service.class, KeycloakServiceDependentResource::getServiceName, primary, context);
-        }
-    }
 
     public KeycloakServiceDependentResource() {
         super(Service.class);
@@ -56,13 +51,26 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
         boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
         if (!tlsConfigured || httpEnabled) {
-            builder.addNewPort().withPort(getServicePort(false, keycloak)).withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
-                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+            builder.addNewPort()
+                    .withPort(HttpSpec.httpPort(keycloak))
+                    .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                    .endPort();
         }
         if (tlsConfigured) {
-            builder.addNewPort().withPort(getServicePort(true, keycloak)).withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
-                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+            builder.addNewPort()
+                    .withPort(HttpSpec.httpsPort(keycloak))
+                    .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                    .endPort();
         }
+
+        builder.addNewPort()
+                .withPort(HttpManagementSpec.managementPort(keycloak))
+                .withName(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME)
+                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                .endPort();
+
         return builder.build();
     }
 
@@ -81,13 +89,5 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
 
     public static String getServiceName(HasMetadata keycloak) {
         return keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
-    }
-
-    public static int getServicePort(boolean tls, Keycloak keycloak) {
-        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
-        if (tls) {
-            return httpSpec.map(HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
-        }
-        return httpSpec.map(HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
     }
 }

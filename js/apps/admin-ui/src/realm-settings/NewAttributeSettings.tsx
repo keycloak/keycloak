@@ -2,6 +2,7 @@ import type {
   UserProfileAttribute,
   UserProfileConfig,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { ScrollForm, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -13,17 +14,19 @@ import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { ScrollForm } from "ui-shared";
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { convertToFormValues } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
+import { TranslationForm } from "./AddTranslationModal";
 import type { AttributeParams } from "./routes/Attribute";
 import { toUserProfile } from "./routes/UserProfile";
 import { UserProfileProvider } from "./user-profile/UserProfileContext";
+import {
+  saveTranslations,
+  Translations,
+} from "./user-profile/attribute/TranslatableField";
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
@@ -45,12 +48,14 @@ type UserProfileAttributeFormFields = Omit<
   UserProfileAttribute,
   "validations" | "annotations"
 > &
+  Translations &
   Attribute &
   Permission & {
     validations: IndexedValidations[];
     annotations: IndexedAnnotations[];
     hasSelector: boolean;
     hasRequiredScopes: boolean;
+    translations?: TranslationForm[];
   };
 
 type Attribute = {
@@ -124,7 +129,8 @@ const CreateAttributeFormContent = ({
 };
 
 export default function NewAttributeSettings() {
-  const { realm, attributeName } = useParams<AttributeParams>();
+  const { adminClient } = useAdminClient();
+  const { realm: realmName, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeFormFields>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -142,6 +148,7 @@ export default function NewAttributeSettings() {
         permissions,
         selector,
         required,
+        multivalued,
         ...values
       } = config.attributes!.find(
         (attribute) => attribute.name === attributeName,
@@ -172,6 +179,7 @@ export default function NewAttributeSettings() {
         })),
       );
       form.setValue("isRequired", required !== undefined);
+      form.setValue("multivalued", multivalued === true);
     },
     [],
   );
@@ -204,7 +212,7 @@ export default function NewAttributeSettings() {
     );
 
     const patchAttributes = () =>
-      config?.attributes!.map((attribute) => {
+      (config?.attributes || []).map((attribute) => {
         if (attribute.name !== attributeName) {
           return attribute;
         }
@@ -217,6 +225,7 @@ export default function NewAttributeSettings() {
             displayName: formFields.displayName!,
             selector: formFields.selector,
             permissions: formFields.permissions!,
+            multivalued: formFields.multivalued,
             annotations,
             validations,
           },
@@ -226,7 +235,7 @@ export default function NewAttributeSettings() {
       });
 
     const addAttribute = () =>
-      config?.attributes!.concat([
+      (config?.attributes || []).concat([
         Object.assign(
           {
             name: formFields.name,
@@ -234,6 +243,7 @@ export default function NewAttributeSettings() {
             required: formFields.isRequired ? formFields.required : undefined,
             selector: formFields.selector,
             permissions: formFields.permissions!,
+            multivalued: formFields.multivalued,
             annotations,
             validations,
           },
@@ -242,16 +252,29 @@ export default function NewAttributeSettings() {
         ),
       ] as UserProfileAttribute);
 
-    const updatedAttributes = editMode ? patchAttributes() : addAttribute();
-
     try {
+      const updatedAttributes = editMode ? patchAttributes() : addAttribute();
+
       await adminClient.users.updateProfile({
         ...config,
         attributes: updatedAttributes as UserProfileAttribute[],
-        realm,
+        realm: realmName,
       });
 
-      navigate(toUserProfile({ realm, tab: "attributes" }));
+      if (formFields.translation) {
+        try {
+          await saveTranslations({
+            adminClient,
+            realmName,
+            translationsData: {
+              translation: formFields.translation,
+            },
+          });
+        } catch (error) {
+          addError(t("errorSavingTranslations"), error);
+        }
+      }
+      navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
 
       addAlert(t("createAttributeSuccess"), AlertVariant.success);
     } catch (error) {

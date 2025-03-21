@@ -19,32 +19,51 @@ package org.keycloak.protocol.oidc.endpoints.request;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
+import org.keycloak.services.ErrorResponseException;
+
+import jakarta.ws.rs.core.Response;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
+ * This endpoint parser supports, per default, up to
+ * {@value org.keycloak.protocol.oidc.OIDCProviderConfig#DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER} parameters with each
+ * having a total size of {@value org.keycloak.protocol.oidc.OIDCProviderConfig#DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE}.
+ * If there are more authentication request parameters, or a parameter has a size
+ * than allowed, those parameters are silently ignored.
+ * <p>
+ * You can toggle the behavior by setting ({@code additionalReqParamsFailFast}) that enables the fail-fast principle.
+ * Any request parameter in violation of the configuration results in an
+ * error response, e.g.,
+ * <ul>
+ * <li>for a Pushed Authorization Request (PAR) this results in a JSON response.</li>
+ * <li>For openid/auth in an error page with an "Back to Application" button using the client's base URL. (if valid) as redirect target.</li>
+ * </ul>
+ *
+ * <p>
+ * Additionally, ({@code additionalReqParamMaxOverallSize}) can be configured
+ * that sets the maximum of size of all parameters combined. If not provided, {@link Integer#MAX_VALUE} will be used.
+ *
+ * @author <a href="mailto:manuel.schallar@prime-sign.com">Manuel Schallar</a>
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AuthzEndpointRequestParser {
 
     private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
 
-    /**
-     * Max number of additional req params copied into client session note to prevent DoS attacks
-     *
-     */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_MUMBER = 5;
-
-    /**
-     * Max size of additional req param value copied into client session note to prevent DoS attacks - params with longer value are ignored
-     *
-     */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 2000;
+    protected final int additionalReqParamsMaxNumber;
+    protected final int additionalReqParamsMaxSize;
+    protected final boolean additionalReqParamsFailFast;
+    protected final int additionalReqParamsMaxOverallSize;
 
     public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
     public static final String AUTHZ_REQUEST_OBJECT_ENCRYPTED = "EncryptedRequestObject";
@@ -73,6 +92,23 @@ public abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.DPOP_JKT);
+
+        // Those are not OAuth/OIDC parameters, but they should never be added to the additionalRequestParameters
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ASSERTION);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
+    }
+
+    protected AuthzEndpointRequestParser(KeycloakSession keycloakSession) {
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) keycloakSession.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig config = loginProtocol.getConfig();
+        this.additionalReqParamsMaxNumber = config.getAdditionalReqParamsMaxNumber();
+        this.additionalReqParamsMaxSize = config.getAdditionalReqParamsMaxSize();
+        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast();
+        this.additionalReqParamsMaxOverallSize = config.getAdditionalReqParamsMaxOverallSize();
     }
 
     public void parseRequest(AuthorizationEndpointRequest request) {
@@ -109,6 +145,8 @@ public abstract class AuthzEndpointRequestParser {
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
         request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
+        request.dpopJkt = replaceIfNotNull(request.dpopJkt, getParameter(OIDCLoginProtocol.DPOP_JKT));
+
         extractAdditionalReqParams(request.additionalReqParams);
     }
 
@@ -120,23 +158,61 @@ public abstract class AuthzEndpointRequestParser {
     }
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
+        int currentAdditionalReqParamMaxOverallSize = 0;
         for (String paramName : keySet()) {
-            if (!KNOWN_REQ_PARAMS.contains(paramName)) {
-                String value = getParameter(paramName);
-                if (value != null && value.trim().isEmpty()) {
-                    value = null;
-                }
-                if (value != null && value.length() <= ADDITIONAL_REQ_PARAMS_MAX_SIZE) {
-                    if (additionalReqParams.size() >= ADDITIONAL_REQ_PARAMS_MAX_MUMBER) {
-                        logger.debug("Maximal number of additional OIDC params (" + ADDITIONAL_REQ_PARAMS_MAX_MUMBER + ") exceeded, ignoring rest of them!");
-                        break;
-                    }
-                    additionalReqParams.put(paramName, value);
-                } else {
-                    logger.debug("OIDC Additional param " + paramName + " ignored because value is empty or longer than " + ADDITIONAL_REQ_PARAMS_MAX_SIZE);
-                }
+
+          if (KNOWN_REQ_PARAMS.contains(paramName)) {
+            logger.debugv("The additional OIDC param ''{0}'' is well known. Continue with the other additional parameters.", paramName);
+            continue;
+          }
+
+          final String value = getParameter(paramName);
+
+          if (value == null || value.trim().isEmpty()) {
+            logger.debugv("The additional OIDC param ''{0}'' ignored because it's value is null or blank.", paramName);
+            continue;
+          }
+
+          // Compare with ">=", as the currently processed parameter will be added at the END of this method.
+          if (additionalReqParams.size() >= additionalReqParamsMaxNumber) {
+
+            if (additionalReqParamsFailFast) {
+              logger.debugv("The maximum number of allowed parameters ({0}) is exceeded.", additionalReqParamsMaxNumber);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The maximum number of allowed parameters (" + additionalReqParamsMaxNumber + ") is exceeded.", Response.Status.BAD_REQUEST);
+            } else {
+              logger.debugv("The maximum number of allowed parameters ({0}) is exceeded.", additionalReqParamsMaxNumber);
+              break;
             }
 
+          }
+
+          if (value.length() + currentAdditionalReqParamMaxOverallSize > additionalReqParamsMaxOverallSize) {
+
+            if (additionalReqParamsFailFast) {
+              logger.debugv("The OIDC additional parameter '{0}''s size ({1}) exceeds the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size (" + value.length() + ") exceeds the maximum allowed size of all parameters (" + additionalReqParamsMaxOverallSize + ").", Response.Status.BAD_REQUEST);
+            } else {
+              logger.debugv("The OIDC additional parameter '{0}''s size exceeds ({1}) the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
+              break;
+            }
+
+          }
+
+          if (value.length() > additionalReqParamsMaxSize) {
+
+            if (additionalReqParamsFailFast) {
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size is longer (" + value.length() + ") than allowed (" + additionalReqParamsMaxSize + ").", Response.Status.BAD_REQUEST);
+            } else {
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
+              break;
+            }
+
+          }
+
+          logger.debugv("Adding OIDC additional parameter ''{0}'' as additional parameter.", paramName);
+          currentAdditionalReqParamMaxOverallSize += value.length();
+          additionalReqParams.put(paramName, value);
         }
     }
 

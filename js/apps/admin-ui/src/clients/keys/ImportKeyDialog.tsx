@@ -1,23 +1,20 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { SelectControl } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
+  FileUpload,
   Form,
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { HelpItem } from "ui-shared";
-import { StoreSettings } from "./StoreSettings";
-import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
+import { useState } from "react";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { StoreSettings } from "./StoreSettings";
 
 type ImportKeyDialogProps = {
   toggleDialog: () => void;
@@ -37,9 +34,8 @@ export const ImportKeyDialog = ({
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation();
   const form = useForm<ImportFile>();
+  const [file, setFile] = useState<string>("");
   const { control, handleSubmit } = form;
-
-  const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
 
   const baseFormats = useServerInfo().cryptoInfo?.supportedKeystoreTypes ?? [];
 
@@ -80,9 +76,7 @@ export const ImportKeyDialog = ({
           data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
+          onClick={toggleDialog}
         >
           {t("cancel")}
         </Button>,
@@ -91,67 +85,43 @@ export const ImportKeyDialog = ({
       <TextContent>
         <Text>{t("generateKeysDescription")}</Text>
       </TextContent>
-      <Form className="pf-u-pt-lg">
-        <FormGroup
-          label={t("archiveFormat")}
-          labelIcon={
-            <HelpItem
-              helpText={t("archiveFormatHelp")}
-              fieldLabelId="archiveFormat"
-            />
-          }
-          fieldId="archiveFormat"
-        >
-          <Controller
+      <Form className="pf-v5-u-pt-lg">
+        <FormProvider {...form}>
+          <SelectControl
             name="keystoreFormat"
-            control={control}
-            defaultValue={formats[0]}
-            render={({ field }) => (
-              <Select
-                toggleId="archiveFormat"
-                onToggle={setOpenArchiveFormat}
-                onSelect={(_, value) => {
-                  field.onChange(value as string);
-                  setOpenArchiveFormat(false);
-                }}
-                selections={field.value}
-                variant={SelectVariant.single}
-                aria-label={t("archiveFormat")}
-                isOpen={openArchiveFormat}
-              >
-                {formats.map((option) => (
-                  <SelectOption
-                    selected={option === field.value}
-                    key={option}
-                    value={option}
-                  />
-                ))}
-              </Select>
-            )}
+            label={t("archiveFormat")}
+            labelIcon={t("archiveFormatHelp")}
+            controller={{
+              defaultValue: formats[0],
+            }}
+            options={formats}
           />
-        </FormGroup>
-        {baseFormats.includes(format) && (
-          <FormProvider {...form}>
-            <StoreSettings hidePassword />
-          </FormProvider>
-        )}
-        <FormGroup label={t("importFile")} fieldId="importFile">
-          <Controller
-            name="file"
-            control={control}
-            defaultValue={{ filename: "" }}
-            render={({ field }) => (
-              <FileUpload
-                id="importFile"
-                value={field.value.value}
-                filename={field.value.filename}
-                onChange={(value, filename) =>
-                  field.onChange({ value, filename })
-                }
-              />
-            )}
-          />
-        </FormGroup>
+          {baseFormats.includes(format) && <StoreSettings hidePassword />}
+          <FormGroup label={t("importFile")} fieldId="importFile">
+            <Controller
+              name="file"
+              control={control}
+              defaultValue={{ value: "", filename: "" }}
+              render={({ field }) => (
+                <FileUpload
+                  id="importFile"
+                  value={field.value.value}
+                  filename={file}
+                  hideDefaultPreview
+                  type="text"
+                  onDataChange={(_, value) => {
+                    field.onChange({
+                      value,
+                    });
+                  }}
+                  onFileInputChange={(_, file) => {
+                    setFile(file.name);
+                  }}
+                />
+              )}
+            />
+          </FormGroup>
+        </FormProvider>
       </Form>
     </Modal>
   );

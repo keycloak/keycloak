@@ -107,7 +107,7 @@ public interface DBus extends DBusInterface {
     UInt32 GetConnectionUnixUser(String _connectionName);
 
     /**
-    * Returns the proccess ID associated with a connection.
+    * Returns the process ID associated with a connection.
     * @param _connectionName The name of the connection
     * @return The PID of the connection.
     */

@@ -71,7 +71,7 @@ public class AuthorizationResource {
      * @throws AuthorizationDeniedException in case the request was denied by the server
      */
     public AuthorizationResponse authorize(final AuthorizationRequest request) throws AuthorizationDeniedException {
-        return invoke(request);
+        return invoke(request, new TypeReference<AuthorizationResponse>(){});
     }
 
     /**
@@ -86,16 +86,17 @@ public class AuthorizationResource {
 
         if (request.getMetadata() == null) {
             metadata = new AuthorizationRequest.Metadata();
+            request.setMetadata(metadata);
         } else {
             metadata = request.getMetadata();
         }
 
         metadata.setResponseMode("permissions");
 
-        return invoke(request);
+        return (List<Permission>) invoke(request, new TypeReference<List<Permission>>(){});
     }
 
-    private <T> T invoke(AuthorizationRequest request) {
+    private <T> T invoke(AuthorizationRequest request, TypeReference<T> responseType) {
         if (request == null) {
             throw new IllegalArgumentException("Authorization request must not be null");
         }
@@ -116,13 +117,8 @@ public class AuthorizationResource {
                 HttpMethodResponse<T> response = method
                         .authentication()
                         .uma(request)
-                        .response();
-
-                if (request.getMetadata() != null && "permissions".equals(request.getMetadata().getResponseMode())) {
-                    response = response.json(new TypeReference<T>(){});
-                } else {
-                    response = response.json((Class<T>) AuthorizationResponse.class);
-                }
+                        .response()
+                        .json(responseType);
 
                 return response.execute();
             }

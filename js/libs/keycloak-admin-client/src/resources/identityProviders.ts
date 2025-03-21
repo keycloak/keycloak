@@ -12,6 +12,7 @@ export interface PaginatedQuery {
 
 export interface IdentityProvidersQuery extends PaginatedQuery {
   search?: string;
+  realmOnly?: boolean;
 }
 
 export class IdentityProviders extends Resource<{ realm?: string }> {

@@ -55,6 +55,7 @@ public class KeycloakOpenAPI {
             public static final String ROOT = "Root";
             public static final String SCOPE_MAPPINGS = "Scope Mappings";
             public static final String USERS = "Users";
+            public static final String ORGANIZATIONS = "Organizations";
             private Tags() { }
         }
 

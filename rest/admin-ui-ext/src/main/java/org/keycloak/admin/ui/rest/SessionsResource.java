@@ -1,12 +1,13 @@
 package org.keycloak.admin.ui.rest;
 
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.keycloak.admin.ui.rest.model.SessionId;
-import org.keycloak.admin.ui.rest.model.SessionId.SessionType;
+import org.keycloak.admin.ui.rest.model.ClientIdSessionType;
+import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
 import org.keycloak.admin.ui.rest.model.SessionRepresentation;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -14,6 +15,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import jakarta.ws.rs.Consumes;
@@ -21,14 +23,12 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import org.keycloak.utils.StringUtil;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.admin.ui.rest.model.SessionId.SessionType.*;
+import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.*;
 
 public class SessionsResource {
     private final KeycloakSession session;
@@ -63,49 +63,87 @@ public class SessionsResource {
                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
         auth.realm().requireViewRealm();
 
-        Stream<SessionId> sessionIdStream = Stream.<SessionId>builder().build();
+        Stream<ClientIdSessionType> sessionIdStream = Stream.<ClientIdSessionType>builder().build();
         if (type == ALL || type == REGULAR) {
             final Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
             sessionIdStream = Stream.concat(sessionIdStream, clientSessionStats
-                    .keySet().stream().map(i -> new SessionId(i, REGULAR)));
+                    .keySet().stream().map(i -> new ClientIdSessionType(i, REGULAR)));
         }
         if (type == ALL || type == OFFLINE) {
             sessionIdStream = Stream.concat(sessionIdStream, session.sessions().getActiveClientSessionStats(realm, true)
-                    .keySet().stream().map(i -> new SessionId(i, OFFLINE)));
+                    .keySet().stream().map(i -> new ClientIdSessionType(i, OFFLINE)));
         }
 
-        Stream<SessionRepresentation> result = sessionIdStream.flatMap((sessionId) -> {
-            ClientModel clientModel = realm.getClientById(sessionId.getClientId());
-            switch (sessionId.getType()) {
+        Stream<SessionRepresentation> result = sessionIdStream.flatMap((clientIdSessionType) -> {
+            ClientModel clientModel = realm.getClientById(clientIdSessionType.getClientId());
+            if (clientModel == null) {
+                // client has been removed in the meantime
+                return Stream.empty();
+            }
+            switch (clientIdSessionType.getType()) {
                 case REGULAR:
                     return session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR));
+                            .map(s -> toRepresentation(s, REGULAR));
                 case OFFLINE:
                     return session.sessions()
                             .getOfflineUserSessionsStream(realm, clientModel, null, null)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE));
+                            .map(s -> toRepresentation(s, OFFLINE));
             }
             return Stream.<SessionRepresentation>builder().build();
-        }).distinct();
+        });
 
-        if (!search.equals("")) {
-            result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search)
-                    || s.getClients().values().stream().anyMatch(c -> c.contains(search)));
+        return applySearch(search, result).distinct().skip(first).limit(max);
+    }
+
+    @GET
+    @Path("client")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
+    @Operation(
+            summary = "List all sessions of the passed client containing regular and offline",
+            description = "This endpoint returns a list of sessions and the clients that have been used including offline tokens"
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "",
+            content = {@Content(
+                    schema = @Schema(
+                            implementation = SessionRepresentation.class,
+                            type = SchemaType.ARRAY
+                    )
+            )}
+    )
+    public Stream<SessionRepresentation> clientSessions(@QueryParam("clientId") final String clientId,
+                                                        @QueryParam("type") @DefaultValue("ALL") final SessionType type,
+                                                        @QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
+                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+        ClientModel clientModel = realm.getClientById(clientId);
+        auth.clients().requireView(clientModel);
+
+        Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
+        if (type == ALL || type == REGULAR) {
+            result = Stream.concat(result, session.sessions()
+                    .getUserSessionsStream(clientModel.getRealm(), clientModel).map(s -> toRepresentation(s, REGULAR)));
         }
-        return result.skip(first).limit(max);
+        if (type == ALL || type == OFFLINE) {
+            result = Stream.concat(result, session.sessions()
+                    .getOfflineUserSessionsStream(clientModel.getRealm(), clientModel, null, null)
+                    .map(s -> toRepresentation(s, OFFLINE)));
+        }
+
+        return applySearch(search, result).distinct().skip(first).limit(max);
     }
 
-    private SessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, String clientId, SessionType type) {
-        SessionRepresentation rep = toRepresentation(userSession, type);
-
-        // Update lastSessionRefresh with the timestamp from clientSession
-        userSession.getAuthenticatedClientSessions().entrySet().stream()
-                .filter(entry -> Objects.equals(clientId, entry.getKey()))
-                .findFirst().ifPresent(result -> rep.setLastAccess(Time.toMillis(result.getValue().getTimestamp())));
-        return rep;
+    private static Stream<SessionRepresentation> applySearch(String search, Stream<SessionRepresentation> result) {
+        if (!StringUtil.isBlank(search)) {
+            String searchTrimmed = search.trim();
+            result = result.filter(s -> s.getUsername().contains(searchTrimmed) || s.getIpAddress().contains(searchTrimmed)
+                    || s.getClients().values().stream().anyMatch(c -> c.contains(searchTrimmed)));
+        }
+        return result;
     }
 
-    public static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
+    private static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {
         SessionRepresentation rep = new SessionRepresentation();
         rep.setId(session.getId());
         rep.setStart(Time.toMillis(session.getStarted()));
@@ -118,6 +156,7 @@ public class SessionsResource {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
         }
+        rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
         return rep;
     }
 }

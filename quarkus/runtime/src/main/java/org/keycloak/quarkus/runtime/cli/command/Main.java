@@ -28,6 +28,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 @Command(name = "keycloak",
         header = {
                 "Keycloak - Open Source Identity and Access Management",
@@ -63,7 +66,9 @@ import picocli.CommandLine.ScopeType;
                 Export.class,
                 Import.class,
                 ShowConfig.class,
-                Tools.class
+                Tools.class,
+                BootstrapAdmin.class,
+                UpdateCompatibility.class
         })
 public final class Main {
 
@@ -74,11 +79,6 @@ public final class Main {
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
-
-    @Option(names = { "-h", "--help" },
-            description = "This help message.",
-            usageHelp = true)
-    boolean help;
 
     @Option(names = { "-V", "--version" },
             description = "Show version information",
@@ -106,6 +106,10 @@ public final class Main {
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
+        if (Files.notExists(Path.of(path))) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }

@@ -1,4 +1,5 @@
 <#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="OpenShift"
@@ -9,7 +10,9 @@ summary="Get started with {project_name} on OpenShift">
 
 == Before you start
 
-. Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a 
+include::templates/hw-requirements.adoc[]
+
+. Install https://code-ready.github.io/crc/[Red Hat Code Ready Containers] and follow the steps in the documentation to install a
 local OpenShift cluster.
 
 . Make sure the cluster is functional by entering the following command:
@@ -48,9 +51,9 @@ oc new-project keycloak
 +
 [source,bash,subs="attributes+"]
 ----
-oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift/keycloak.yaml \
-    -p KEYCLOAK_ADMIN=admin \
-    -p KEYCLOAK_ADMIN_PASSWORD=admin \
+oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/refs/heads/main/openshift/keycloak.yaml \
+    -p KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+    -p KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
     -p NAMESPACE=keycloak \
 | oc create -f -
 ----
@@ -96,6 +99,8 @@ echo "{project_name} Admin Console:   $KEYCLOAK_URL/admin" &&
 echo "{project_name} Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
 echo ""
 ----
+
+NOTE: If you will eventually want more than one server replica, please see the <@links.gettingstarted id="getting-started-scaling-and-tuning" anchor="horizontal-scaling" /> {section}.
 
 Remember these URLs as you will need them throughout this {section}. The URL for the account console won't work
 right now as you will need to create the realm first.

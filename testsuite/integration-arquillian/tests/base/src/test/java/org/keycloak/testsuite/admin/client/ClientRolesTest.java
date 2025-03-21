@@ -111,6 +111,12 @@ public class ClientRolesTest extends AbstractClientTest {
     }
 
     @Test
+    public void createRoleWithNamePattern() {
+        RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
+        rolesRsc.create(role);
+    }
+
+    @Test
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");
         rolesRsc.create(role2);
@@ -233,8 +239,10 @@ public class ClientRolesTest extends AbstractClientTest {
         // pagination
         List<UserRepresentation> usersInRole1 = roleResource.getUserMembers(0, 5);
         assertEquals(createUsernames(0, 5), extractUsernames(usersInRole1));
-        List<UserRepresentation> usersInRole2 = roleResource.getUserMembers(5, 10);
+        Assert.assertNotNull("Not in full representation", usersInRole1.get(0).getNotBefore());
+        List<UserRepresentation> usersInRole2 = roleResource.getUserMembers(true, 5, 10);
         assertEquals(createUsernames(5, 10), extractUsernames(usersInRole2));
+        Assert.assertNull("Not in brief representation", usersInRole2.get(0).getNotBefore());
     }
 
     private static List<String> createUsernames(int startIndex, int endIndex) {

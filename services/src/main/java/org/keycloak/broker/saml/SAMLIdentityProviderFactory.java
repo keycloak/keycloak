@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.saml;
 
-import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +39,8 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
+
+import static org.keycloak.models.IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR;
 
 /**
  * @author Pedro Igor
@@ -69,16 +70,15 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
         try {
-            EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(inputStream);
+            EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(config);
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
 
             if (idpDescriptor != null) {
                 SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
                 String singleSignOnServiceUrl = null;
                 boolean postBindingResponse = false;
-                boolean postBindingLogout = false;
                 for (EndpointType endpoint : idpDescriptor.getSingleSignOnService()) {
                     if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                         singleSignOnServiceUrl = endpoint.getLocation().toString();
@@ -89,24 +89,34 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
                 }
                 String singleLogoutServiceUrl = null;
+                boolean postBindingLogout = false;
                 for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
-                    if (postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                    if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                         singleLogoutServiceUrl = endpoint.getLocation().toString();
                         postBindingLogout = true;
                         break;
-                    } else if (!postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())) {
+                    } else if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())) {
                         singleLogoutServiceUrl = endpoint.getLocation().toString();
-                        break;
                     }
 
                 }
+                String artifactResolutionServiceUrl = null;
+                boolean artifactBindingResponse = false;
+                for (EndpointType endpoint : idpDescriptor.getArtifactResolutionService()) {
+                    if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_SOAP_BINDING.get())) {
+                        artifactResolutionServiceUrl = endpoint.getLocation().toString();
+                        break;
+                    }
+                }
                 samlIdentityProviderConfig.setIdpEntityId(entityType.getEntityID());
                 samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
+                samlIdentityProviderConfig.setArtifactResolutionServiceUrl(artifactResolutionServiceUrl);
                 samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                 samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                 samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
+                samlIdentityProviderConfig.setArtifactBindingResponse(artifactBindingResponse);
                 samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
                 samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
                 samlIdentityProviderConfig.setLoginHint(false);
@@ -152,7 +162,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     for (AttributeType attribute : entityType.getExtensions().getEntityAttributes().getAttribute()) {
                         if (MACEDIR_ENTITY_CATEGORY.equals(attribute.getName())
                                 && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
-                            samlIdentityProviderConfig.setHideOnLogin(true);
+                            samlIdentityProviderConfig.getConfig().put(LEGACY_HIDE_ON_LOGIN_ATTR, String.valueOf(true));
                         }
                     }
 

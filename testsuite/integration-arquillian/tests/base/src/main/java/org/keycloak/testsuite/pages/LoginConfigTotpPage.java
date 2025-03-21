@@ -38,7 +38,7 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
-    
+
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
@@ -48,7 +48,7 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     @FindBy(id = "input-error-otp-code")
@@ -59,21 +59,21 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
 
     public void configure(String totp) {
         totpInput.sendKeys(totp);
-        submitButton.click();
+        submit();
     }
 
     public void configure(String totp, String userLabel) {
         totpInput.sendKeys(totp);
         totpLabelInput.sendKeys(userLabel);
-        submitButton.click();
+        submit();
     }
 
     public void submit() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
-    
+
     public void cancel() {
-        cancelAIAButton.click();
+        UIUtils.clickLink(cancelAIAButton);
     }
 
     public String getTotpSecret() {
@@ -89,16 +89,12 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
         }
     }
 
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public void clickManual() {
-        manualLink.click();
+        UIUtils.clickLink(manualLink);
     }
 
     public void clickBarcode() {
-        barcodeLink.click();
+        UIUtils.clickLink(barcodeLink);
     }
 
     public String getInputCodeError() {

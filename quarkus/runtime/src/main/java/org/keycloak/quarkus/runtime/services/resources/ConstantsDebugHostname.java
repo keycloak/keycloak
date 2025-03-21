@@ -16,6 +16,10 @@
  */
 package org.keycloak.quarkus.runtime.services.resources;
 
+import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
+
 public class ConstantsDebugHostname {
     public static final String[] RELEVANT_HEADERS = new String[] {
             "Host",
@@ -26,21 +30,16 @@ public class ConstantsDebugHostname {
             "X-Forwarded-For"
     };
 
-    public static final String[] RELEVANT_OPTIONS = {
-            "hostname",
-            "hostname-url",
-            "hostname-admin",
-            "hostname-admin-url",
-            "hostname-strict",
-            "hostname-strict-backchannel",
-            "hostname-strict-https",
-            "hostname-path",
-            "hostname-port",
-            "proxy",
-            "http-enabled",
-            "http-relative-path",
-            "http-port",
-            "https-port"
+    public static final String[] RELEVANT_OPTIONS_V2 = {
+            HostnameV2Options.HOSTNAME.getKey(),
+            HostnameV2Options.HOSTNAME_ADMIN.getKey(),
+            HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC.getKey(),
+            HostnameV2Options.HOSTNAME_STRICT.getKey(),
+            ProxyOptions.PROXY_HEADERS.getKey(),
+            HttpOptions.HTTP_ENABLED.getKey(),
+            HttpOptions.HTTP_RELATIVE_PATH.getKey(),
+            HttpOptions.HTTP_PORT.getKey(),
+            HttpOptions.HTTPS_PORT.getKey()
     };
 
 }

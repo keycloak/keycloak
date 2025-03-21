@@ -14,9 +14,8 @@ import {
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
 
@@ -31,6 +30,8 @@ export const PartialExportDialog = ({
   isOpen,
   onClose,
 }: PartialExportDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -76,7 +77,7 @@ export const PartialExportDialog = ({
       actions={[
         <Button
           key="export"
-          data-testid="export-button"
+          data-testid="confirm"
           isDisabled={isExporting}
           onClick={exportRealm}
         >
@@ -84,7 +85,7 @@ export const PartialExportDialog = ({
         </Button>,
         <Button
           key="cancel"
-          data-testid="cancel-button"
+          data-testid="cancel"
           variant={ButtonVariant.link}
           onClick={onClose}
         >
@@ -108,7 +109,7 @@ export const PartialExportDialog = ({
             id="include-groups-and-roles-check"
             data-testid="include-groups-and-roles-check"
             isChecked={exportGroupsAndRoles}
-            onChange={setExportGroupsAndRoles}
+            onChange={(_event, val) => setExportGroupsAndRoles(val)}
             label={t("on")}
             labelOff={t("off")}
             aria-label={t("includeGroupsAndRoles")}
@@ -122,7 +123,7 @@ export const PartialExportDialog = ({
           <Switch
             id="include-clients-check"
             data-testid="include-clients-check"
-            onChange={setExportClients}
+            onChange={(_event, val) => setExportClients(val)}
             isChecked={exportClients}
             label={t("on")}
             labelOff={t("off")}
@@ -135,6 +136,7 @@ export const PartialExportDialog = ({
         <Alert
           data-testid="warning-message"
           variant="warning"
+          component="p"
           title={t("exportWarningTitle")}
           isInline
         >

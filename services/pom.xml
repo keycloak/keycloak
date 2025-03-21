@@ -17,7 +17,7 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
@@ -28,7 +28,11 @@
 
     <artifactId>keycloak-services</artifactId>
     <name>Keycloak REST Services</name>
-    <description />
+    <description/>
+
+    <properties>
+        <version.swagger.doclet>1.1.2</version.swagger.doclet>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -84,6 +88,11 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
+            <artifactId>commons-logging-jboss-logging</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -94,13 +103,24 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- for MockHttpRequest -->
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus.resteasy.reactive</groupId>
+            <artifactId>resteasy-reactive</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.quarkus.resteasy.reactive</groupId>
             <artifactId>resteasy-reactive-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -122,11 +142,20 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-multipart-provider</artifactId>
+            <artifactId>resteasy-core-spi</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
             <artifactId>owasp-java-html-sanitizer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>java8-shim</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+            <artifactId>java10-shim</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -174,6 +203,14 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.apicatalog</groupId>
+            <artifactId>titanium-json-ld</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.setl</groupId>
+            <artifactId>rdf-urdna</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -212,7 +249,11 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-storage-private</artifactId>
+        </dependency>
+        <dependency>
+        	<groupId>org.keycloak</groupId>
+        	<artifactId>keycloak-config-api</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -224,7 +265,24 @@
                     <compilerArgument>
                         -AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
                     </compilerArgument>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.jboss.logging</groupId>
+                            <artifactId>jboss-logging-processor</artifactId>
+                            <version>${jboss-logging-annotations.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -252,6 +310,26 @@
                                             <filtering>true</filtering>
                                         </resource>
                                     </resources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-raw-openapi-definition</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
+                                            <includes>
+                                                <include>**/openapi.yaml</include>
+                                                <include>**/openapi.json</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>
@@ -339,31 +417,6 @@
                                         <project_community>true</project_community>
                                         <project_product>false</project_product>
                                     </attributes>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-raw-openapi-definition</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.build.directory}/apidocs-rest/swagger/apidocs</directory>
-                                            <includes>
-                                                <include>**/openapi.yaml</include>
-                                                <include>**/openapi.json</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>

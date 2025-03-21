@@ -11,7 +11,9 @@ summary="Get started with {project_name} on bare metal">
 
 == Before you start
 
-Make sure you have https://openjdk.java.net/[OpenJDK 17] installed. 
+include::templates/hw-requirements.adoc[]
+
+Make sure you have https://openjdk.java.net/[OpenJDK 21] installed.
 
 == Download {project_name}
 

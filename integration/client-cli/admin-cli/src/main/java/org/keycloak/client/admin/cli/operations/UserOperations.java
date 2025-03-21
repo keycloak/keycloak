@@ -16,10 +16,10 @@
  */
 package org.keycloak.client.admin.cli.operations;
 
-import org.keycloak.client.admin.cli.util.Headers;
-import org.keycloak.client.admin.cli.util.HeadersBody;
-import org.keycloak.client.admin.cli.util.HeadersBodyStatus;
-import org.keycloak.client.admin.cli.util.HttpUtil;
+import org.keycloak.client.cli.util.Headers;
+import org.keycloak.client.cli.util.HeadersBody;
+import org.keycloak.client.cli.util.HeadersBodyStatus;
+import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -27,10 +27,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doDeleteJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doPostJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
+import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.cli.util.HttpUtil.doDeleteJSON;
+import static org.keycloak.client.cli.util.HttpUtil.doPostJSON;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -91,7 +90,7 @@ public class UserOperations {
     }
 
     public static String getIdFromUsername(String rootUrl, String realm, String auth, String username) {
-        return getIdForType(rootUrl, realm, auth, "users", "username", username, "username",
+        return OperationUtils.getIdForType(rootUrl, realm, auth, "users", "username", username, "username",
                 () -> new String[] {"exact", "true"});
     }
 }

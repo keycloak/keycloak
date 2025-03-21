@@ -28,6 +28,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,22 +39,30 @@ public class KeystoreUtil {
 
     public enum KeystoreFormat {
         JKS("jks"),
-        PKCS12("p12"),
+        PKCS12("p12", "pfx", "pkcs12"),
         BCFKS("bcfks");
 
         // Typical file extension for this keystore format
-        private final String fileExtension;
-        KeystoreFormat(String extension) {
-            this.fileExtension = extension;
+        private final List<String> fileExtensions;
+        KeystoreFormat(String... extensions) {
+            this.fileExtensions = Arrays.asList(extensions);
         }
 
-        public String getFileExtension() {
-            return fileExtension;
+        public List<String> getFileExtensions() {
+            return fileExtensions;
+        }
+
+        public String getPrimaryExtension() {
+            return fileExtensions.get(0);
         }
     }
 
     public static KeyStore loadKeyStore(String filename, String password) throws Exception {
-        String keystoreType = getKeystoreType(null, filename, KeyStore.getDefaultType());
+        return loadKeyStore(filename, password, null);
+    }
+
+    public static KeyStore loadKeyStore(String filename, String password, String preferedType) throws Exception {
+        String keystoreType = getKeystoreType(preferedType, filename, KeyStore.getDefaultType());
         KeyStore trustStore = KeyStore.getInstance(keystoreType);
         InputStream trustStream = null;
         if (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
@@ -71,7 +80,7 @@ public class KeystoreUtil {
             trustStream = new FileInputStream(new File(filename));
         }
         try (InputStream is = trustStream) {
-            trustStore.load(is, password.toCharArray());
+            trustStore.load(is, password == null ? null : password.toCharArray());
         }
         return trustStore;
     }
@@ -96,6 +105,17 @@ public class KeystoreUtil {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
     }
+    
+    public static Optional<KeystoreFormat> getKeystoreFormat(String path) {
+        int lastDotIndex = path.lastIndexOf('.');
+        if (lastDotIndex > -1) {
+            String ext = path.substring(lastDotIndex + 1).toLowerCase();
+            return Arrays.stream(KeystoreUtil.KeystoreFormat.values())
+                    .filter(ksFormat -> ksFormat.getFileExtensions().contains(ext))
+                    .findFirst();
+        }
+        return Optional.empty();
+    }
 
 
     /**
@@ -111,13 +131,9 @@ public class KeystoreUtil {
         if (preferredType != null) return preferredType;
 
         // Fallback to path
-        int lastDotIndex = path.lastIndexOf('.');
-        if (lastDotIndex > -1) {
-            String ext = path.substring(lastDotIndex + 1).toLowerCase();
-            Optional<KeystoreFormat> detectedType = Arrays.stream(KeystoreUtil.KeystoreFormat.values())
-                    .filter(ksFormat -> ksFormat.getFileExtension().equals(ext))
-                    .findFirst();
-            if (detectedType.isPresent()) return detectedType.get().toString();
+        Optional<KeystoreFormat> format = getKeystoreFormat(path);
+        if (format.isPresent()) {
+            return format.get().toString();
         }
 
         // Fallback to default

@@ -13,17 +13,20 @@ Keycloak is an Open Source community-driven project and we welcome contributions
 Firstly, if you want to contribute a larger change to Keycloak we ask that you open a 
 discussion first. For minor changes you can skip this part and go straight ahead to sending a contribution. Bear in mind that if you open a discussion first you can identify if the change will be accepted, as well as getting early feedback.  
 
+Each PR, no matter how small, should have a GitHub issue associated with it.
+Issues are important for administrative purposes such as generating a changelog and handling backports.
+
 Here's a quick checklist for a good PR, more details below:
 
 1. A discussion around the change (https://github.com/keycloak/keycloak/discussions/categories/ideas)
-2. A GitHub Issue with a good description associated with the PR
-3. One feature/change per PR
-4. One commit per PR
-5. PR rebased on main (`git rebase`, not `git pull`) 
-5. [Good descriptive commit message, with link to issue](#commit-messages-and-issue-linking)
-6. No changes to code not directly related to your PR
-7. Includes functional/integration test
-8. Includes documentation
+1. A GitHub Issue with a good description associated with the PR
+1. One feature/change per PR
+1. One commit per PR
+1. PR rebased on main (`git rebase`, not `git pull`) 
+1. [Good descriptive commit message, with link to issue](#commit-messages-and-issue-linking)
+1. No changes to code not directly related to your PR
+1. Includes functional/integration test
+1. Includes documentation
 
 Once you have submitted your PR please monitor it for comments/feedback. We reserve the right to close inactive PRs if
 you do not respond within 2 weeks (bear in mind you can always open a new PR if it is closed due to inactivity).
@@ -144,3 +147,7 @@ $ git commit -m "Summary
 ```
 
 For more information linking PRs to issues refer to the [GitHub Documentation](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).
+
+### Contributing Translations
+
+In order to provide translations for Keycloak, kindly follow the instructions provided in [Translation Docs](./docs/translation.md).

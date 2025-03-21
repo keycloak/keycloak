@@ -34,6 +34,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -48,6 +49,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+
+import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -67,7 +70,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context);
+        JWTClientValidator validator = new JWTClientValidator(context, getId());
         if (!validator.clientAssertionParametersValidation()) return;
 
         try {
@@ -90,7 +93,17 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
             boolean signatureValid;
             try {
-                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
+                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, (jose, validatedClient) -> {
+                    DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                    String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                    ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                    if (signatureProvider == null) {
+                        throw new RuntimeException("Algorithm not supported");
+                    }
+                    if (!signatureProvider.isAsymmetricAlgorithm()) {
+                        throw new RuntimeException("Algorithm is not asymmetric");
+                    }
+                }, JsonWebToken.class);
                 signatureValid = jwt != null;
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -199,8 +212,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
         String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
         String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl));
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
         String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
         expectedAudiences.add(backchannelAuthenticationUrl);
 

@@ -15,10 +15,6 @@
     <packaging>jar</packaging>
     
     <properties>
-        <maven.compiler.release>11</maven.compiler.release>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
         <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
@@ -29,7 +25,6 @@
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
         <jacoco.skip>true</jacoco.skip>
-        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
     
     <dependencies>
@@ -67,6 +62,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
         </dependency>
         <dependency>
@@ -77,6 +78,12 @@
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-tests-base</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-quarkus-server</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
@@ -99,7 +106,12 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -111,6 +123,10 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-component-annotations</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-remote-query-server</artifactId>
         </dependency>
     </dependencies>
 
@@ -148,8 +164,6 @@
                     <!-- See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60 -->
                     <argLine>@{argLine} -Xmx1536m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
-                        <!-- ensure a log entry if we're running out of JGroup threads -->
-                        <jgroups.thread_dumps_threshold>1</jgroups.thread_dumps_threshold>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
                         <keycloak.model.parameters>${keycloak.model.parameters}</keycloak.model.parameters>
@@ -159,7 +173,6 @@
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
-                        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
                         <infinispan.version>${infinispan.version}</infinispan.version>
@@ -195,102 +208,127 @@
     
     <profiles>
         <profile>
-            <id>legacy-jpa</id>
+            <id>jpa</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpa</keycloak.model.parameters>
+                <keycloak.model.parameters>Jpa</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa+infinispan</id>
+            <id>jpa+infinispan</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,LegacyJpa</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa+infinispan+client-storage</id>
+            <id>jpa+infinispan+volatilesessions</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,Jpa,VolatileUserSessions</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa+cross-dc-infinispan</id>
+            <id>jpa+infinispan+client-storage</id>
             <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,LegacyJpa</keycloak.model.parameters>
+                <keycloak.model.parameters>Jpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa+cross-dc-infinispan-offline-sessions-preloading</id>
+            <id>jpa+cross-dc-infinispan</id>
             <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,LegacyJpa</keycloak.model.parameters>
-                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.multi_site>enabled</keycloak.profile.feature.multi_site>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jpa+clusterless</id>
+            <properties>
+                <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.profile.feature.clusterless>enabled</keycloak.profile.feature.clusterless>
+                                <keycloak.profile.feature.persistent_user_sessions>disabled</keycloak.profile.feature.persistent_user_sessions>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jpa-federation+infinispan</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,JpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa+infinispan-offline-sessions-preloading</id>
+            <id>jpa-federation-backward+infinispan</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,LegacyJpa</keycloak.model.parameters>
-                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+                <keycloak.model.parameters>Infinispan,JpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation+infinispan</id>
+            <id>jpa-federation</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,LegacyJpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation-backward+infinispan</id>
+            <id>jpa-federation-backward</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,LegacyJpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation</id>
+            <id>jpa-federation-file-storage</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation-backward</id>
+            <id>jpa-federation-file-storage+infinispan</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage,Infinispan</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation-file-storage</id>
+            <id>jpa-federation+ldap</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,TestsuiteUserFileStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,LdapUserStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
-            <id>legacy-jpa-federation-file-storage+infinispan</id>
+            <id>jpa-federation+ldap+infinispan</id>
             <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,TestsuiteUserFileStorage,Infinispan</keycloak.model.parameters>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>legacy-jpa-federation+ldap</id>
-            <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,LdapUserStorage</keycloak.model.parameters>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>legacy-jpa-federation+ldap+infinispan</id>
-            <properties>
-                <keycloak.model.parameters>LegacyJpaFederation,LdapUserStorage,Infinispan</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,LdapUserStorage,Infinispan</keycloak.model.parameters>
             </properties>
         </profile>
 

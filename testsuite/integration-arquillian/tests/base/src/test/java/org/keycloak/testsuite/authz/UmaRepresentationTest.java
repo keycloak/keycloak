@@ -31,7 +31,6 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import java.util.List;
 
-@Ignore
 public class UmaRepresentationTest extends AbstractResourceServerTest {
     private ResourceRepresentation resource;
     private PermissionResource permission;

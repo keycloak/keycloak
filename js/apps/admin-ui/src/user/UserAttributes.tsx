@@ -16,14 +16,12 @@ type UserAttributesProps = {
   user: UserRepresentation;
   save: (user: UserFormFields) => void;
   upConfig?: UserProfileConfig;
-  isUserProfileEnabled: boolean;
 };
 
 export const UserAttributes = ({
   user,
   save,
   upConfig,
-  isUserProfileEnabled,
 }: UserAttributesProps) => {
   const form = useFormContext<UserFormFields>();
 
@@ -36,10 +34,10 @@ export const UserAttributes = ({
         reset={() =>
           form.reset({
             ...form.getValues(),
-            attributes: toUserFormFields(user, isUserProfileEnabled).attributes,
+            attributes: toUserFormFields(user).attributes,
           })
         }
-        name={isUserProfileEnabled ? "unmanagedAttributes" : "attributes"}
+        name="unmanagedAttributes"
         isDisabled={
           UnmanagedAttributePolicy.AdminView ==
           upConfig?.unmanagedAttributePolicy

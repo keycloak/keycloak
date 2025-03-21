@@ -16,115 +16,80 @@
  */
 package org.keycloak.models.cache.infinispan.events;
 
-import org.keycloak.cluster.ClusterEvent;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  *
  * @author hmlnarik
  */
-@SerializeWith(AuthenticationSessionAuthNoteUpdateEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.AUTHENTICATION_SESSION_AUTH_NOTE_UPDATE_EVENT)
 public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
-    private String authSessionId;
-    private String tabId;
-    private String clientUUID;
+    private final String authSessionId;
+    private final String tabId;
+    private final Map<String, String> authNotesFragment;
 
-    private Map<String, String> authNotesFragment;
+    private AuthenticationSessionAuthNoteUpdateEvent(Map<String, String> authNotesFragment, String authSessionId, String tabId) {
+        this.authNotesFragment = Objects.requireNonNull(authNotesFragment);
+        this.authSessionId = Objects.requireNonNull(authSessionId);
+        this.tabId = Objects.requireNonNull(tabId);
+    }
 
     /**
      * Creates an instance of the event.
-     * @param authSessionId
-     * @param authNotesFragment
+     *
      * @return Event. Note that {@code authNotesFragment} property is not thread safe which is fine for now.
      */
-    public static AuthenticationSessionAuthNoteUpdateEvent create(String authSessionId, String tabId, String clientUUID, Map<String, String> authNotesFragment) {
-        AuthenticationSessionAuthNoteUpdateEvent event = new AuthenticationSessionAuthNoteUpdateEvent();
-        event.authSessionId = authSessionId;
-        event.tabId = tabId;
-        event.clientUUID = clientUUID;
-        event.authNotesFragment = new LinkedHashMap<>(authNotesFragment);
-        return event;
+    @ProtoFactory
+    public static AuthenticationSessionAuthNoteUpdateEvent create(String authSessionId, String tabId, Map<String, String> authNotesFragment) {
+        return new AuthenticationSessionAuthNoteUpdateEvent(authNotesFragment, authSessionId, tabId);
     }
 
+    @ProtoField(1)
     public String getAuthSessionId() {
         return authSessionId;
     }
 
+    @ProtoField(2)
     public String getTabId() {
         return tabId;
     }
 
-    public String getClientUUID() {
-        return clientUUID;
-    }
-
+    @ProtoField(value = 3, mapImplementation = LinkedHashMap.class)
     public Map<String, String> getAuthNotesFragment() {
         return authNotesFragment;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AuthenticationSessionAuthNoteUpdateEvent that = (AuthenticationSessionAuthNoteUpdateEvent) o;
-        return Objects.equals(authSessionId, that.authSessionId) && Objects.equals(tabId, that.tabId) && Objects.equals(clientUUID, that.clientUUID);
+        return Objects.equals(authSessionId, that.authSessionId) && Objects.equals(tabId, that.tabId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(authSessionId, tabId, clientUUID);
+        return Objects.hash(authSessionId, tabId);
     }
 
     @Override
     public String toString() {
-        return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, tabId=%s, clientUUID=%s, authNotesFragment=%s ]",
-                authSessionId, clientUUID, authNotesFragment);
+        return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, tabId=%s, authNotesFragment=%s ]",
+                authSessionId, tabId, authNotesFragment);
     }
 
-    public static class ExternalizerImpl implements Externalizer<AuthenticationSessionAuthNoteUpdateEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, AuthenticationSessionAuthNoteUpdateEvent value) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(value.authSessionId, output);
-            MarshallUtil.marshallString(value.tabId, output);
-            MarshallUtil.marshallString(value.clientUUID, output);
-            MarshallUtil.marshallMap(value.authNotesFragment, output);
-        }
-
-        @Override
-        public AuthenticationSessionAuthNoteUpdateEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public AuthenticationSessionAuthNoteUpdateEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            return create(
-              MarshallUtil.unmarshallString(input),
-              MarshallUtil.unmarshallString(input),
-              MarshallUtil.unmarshallString(input),
-              MarshallUtil.<String, String, Map<String, String>>unmarshallMap(input, HashMap::new)
-            );
-        }
-
-    }
 }

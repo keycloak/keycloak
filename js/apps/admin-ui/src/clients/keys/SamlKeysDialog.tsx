@@ -1,3 +1,4 @@
+import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
@@ -21,10 +22,9 @@ import { saveAs } from "file-saver";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { Certificate } from "./Certificate";
 import { KeyForm } from "./GenerateKeyDialog";
 import type { KeyTypes } from "./SamlKeys";
@@ -41,6 +41,7 @@ export type SamlKeysDialogForm = KeyStoreConfig & {
 };
 
 export const submitForm = async (
+  adminClient: KeycloakAdminClient,
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
@@ -70,6 +71,8 @@ export const SamlKeysDialog = ({
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
@@ -82,7 +85,7 @@ export const SamlKeysDialog = ({
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {
-    submitForm(form, id, attr, (error) => {
+    submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
       } else {
@@ -114,7 +117,7 @@ export const SamlKeysDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      aria-labelledby={t("enableClientSignatureRequired")}
+      aria-label={t("enableClientSignatureRequiredModal")}
       header={
         <TextContent>
           <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
@@ -206,7 +209,7 @@ export const SamlKeysDialog = ({
             </FormGroup>
           )}
         </Form>
-        {type && <KeyForm useFile />}
+        {type && <KeyForm useFile hasPem />}
       </FormProvider>
     </Modal>
   );

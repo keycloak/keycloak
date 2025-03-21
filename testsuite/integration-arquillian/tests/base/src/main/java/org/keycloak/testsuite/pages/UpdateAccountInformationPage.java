@@ -9,21 +9,21 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
-    @FindBy(id = "username")
+    @FindBy(name = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
-    
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
@@ -45,27 +45,27 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
 
         clickLink(submitButton);
     }
-    
+
     public void updateAccountInformation(String userName,
                                          String email,
                                          String firstName,
-                                         String lastName, 
+                                         String lastName,
                                          String department) {
         usernameInput.clear();
         usernameInput.sendKeys(userName);
-        
+
         emailInput.clear();
         emailInput.sendKeys(email);
-        
+
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
-        
+
         lastNameInput.clear();
         lastNameInput.sendKeys(lastName);
 
         departmentInput.clear();
         departmentInput.sendKeys(department);
-        
+
         clickLink(submitButton);
     }
 
@@ -99,21 +99,17 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equalsIgnoreCase("update account information");
     }
-    
+
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
-    
+
     public boolean isDepartmentPresent() {
         try {
-            return driver.findElement(By.id("department")).isDisplayed();
+            return driver.findElement(By.name("department")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
     }
 
-    @Override
-    public void open() throws Exception {
-
-    }
 }

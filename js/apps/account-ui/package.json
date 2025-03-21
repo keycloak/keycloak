@@ -1,48 +1,62 @@
 {
-  "name": "account-ui",
+  "name": "@keycloak/keycloak-account-ui",
+  "version": "999.0.0-SNAPSHOT",
   "type": "module",
+  "main": "lib/keycloak-account-ui.js",
+  "types": "./lib/keycloak-account-ui.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/keycloak-account-ui.js",
+      "types": "./lib/keycloak-account-ui.d.ts"
+    }
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
+    "build-lib": "wireit",
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.224.5",
-    "@patternfly/react-core": "^4.278.0",
-    "@patternfly/react-icons": "^4.93.7",
-    "@patternfly/react-table": "^4.113.6",
-    "i18next": "^23.7.15",
-    "i18next-http-backend": "^2.4.2",
-    "keycloak-js": "workspace:*",
-    "keycloak-masthead": "workspace:*",
+    "@keycloak/keycloak-ui-shared": "workspace:*",
+    "@patternfly/patternfly": "^5.4.2",
+    "@patternfly/react-core": "^5.4.14",
+    "@patternfly/react-icons": "^5.4.2",
+    "@patternfly/react-table": "^5.4.16",
+    "i18next": "^24.2.3",
+    "i18next-fetch-backend": "^6.0.0",
+    "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-hook-form": "^7.49.2",
-    "react-i18next": "^14.0.0",
-    "react-router-dom": "^6.21.1",
-    "ui-shared": "workspace:*"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "react-i18next": "^15.4.1",
+    "react-router-dom": "^6.30.0"
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@playwright/test": "^1.40.1",
+    "@playwright/test": "^1.51.1",
     "@types/lodash-es": "^4.17.12",
-    "@types/react": "^18.2.46",
-    "@types/react-dom": "^18.2.18",
-    "@vitejs/plugin-react-swc": "^3.5.0",
-    "lightningcss": "^1.22.1",
-    "vite": "^5.0.10",
-    "vite-plugin-checker": "^0.6.2"
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react-swc": "^3.8.1",
+    "lightningcss": "^1.29.3",
+    "vite": "^6.2.2",
+    "vite-plugin-checker": "^0.9.1",
+    "vite-plugin-dts": "^4.5.3"
   },
   "wireit": {
     "dev": {
       "command": "vite --host",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -50,8 +64,6 @@
       "command": "vite preview",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
@@ -59,17 +71,29 @@
       "command": "vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ],
+      "files": [
+        "public",
+        "src",
+        "tsconfig.json",
+        "vite.config.ts"
+      ],
+      "output": [
+        "target/classes/theme/keycloak.v3/account/resources"
+      ]
+    },
+    "build-lib": {
+      "command": "LIB=true vite build",
+      "dependencies": [
+        "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },
     "lint": {
-      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "command": "eslint .",
       "dependencies": [
         "../../libs/ui-shared:build",
-        "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build",
         "../../libs/keycloak-admin-client:build"
       ]
     },

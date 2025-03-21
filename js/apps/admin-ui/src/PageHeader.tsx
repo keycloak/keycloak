@@ -1,30 +1,25 @@
 import {
-  Avatar,
-  Brand,
-  Dropdown,
-  DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
-  KebabToggle,
-  PageHeader,
-  PageHeaderTools,
-  PageHeaderToolsGroup,
-  PageHeaderToolsItem,
-} from "@patternfly/react-core";
+  KeycloakMasthead,
+  useEnvironment,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
+import { DropdownItem, ToolbarItem } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
+import { Link, useHref } from "react-router-dom";
+import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
+import { RealmPanel } from "./components/realm-selector/RealmPanel";
+import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
-import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
-import environment from "./environment";
-import { keycloak } from "./keycloak";
+import { usePreviewLogo } from "./realm-settings/themes/LogoContext";
+import { joinPath } from "./utils/joinPath";
+import useToggle from "./utils/useToggle";
 
 const ManageAccountDropdownItem = () => {
+  const { keycloak } = useEnvironment();
+
   const { t } = useTranslation();
   return (
     <DropdownItem
@@ -37,19 +32,6 @@ const ManageAccountDropdownItem = () => {
   );
 };
 
-const SignOutDropdownItem = () => {
-  const { t } = useTranslation();
-  return (
-    <DropdownItem
-      id="sign-out"
-      key="sign out"
-      onClick={() => keycloak.logout({ redirectUri: "" })}
-    >
-      {t("signOut")}
-    </DropdownItem>
-  );
-};
-
 const ServerInfoDropdownItem = () => {
   const { realm } = useRealm();
   const { t } = useTranslation();
@@ -57,15 +39,24 @@ const ServerInfoDropdownItem = () => {
   return (
     <DropdownItem
       key="server info"
-      component={
-        // The type definition in PatternFly is incorrect, so we need to cast here.
-        ((props: any) => (
-          <Link {...props} to={toDashboard({ realm })} />
-        )) as unknown as ReactNode
-      }
+      component={(props) => <Link {...props} to={toDashboard({ realm })} />}
     >
       {t("realmInfo")}
     </DropdownItem>
+  );
+};
+
+const ClearCachesDropdownItem = () => {
+  const { t } = useTranslation();
+  const [open, toggleModal] = useToggle();
+
+  return (
+    <>
+      <DropdownItem key="clear caches" onClick={() => toggleModal()}>
+        {t("clearCachesTitle")}
+      </DropdownItem>
+      {open && <PageHeaderClearCachesModal onClose={() => toggleModal()} />}
+    </>
   );
 };
 
@@ -73,125 +64,77 @@ const HelpDropdownItem = () => {
   const { t } = useTranslation();
   const { enabled, toggleHelp } = useHelp();
   return (
-    <DropdownItem icon={<HelpIcon />} onClick={toggleHelp}>
+    <DropdownItem
+      data-testId="helpIcon"
+      icon={<HelpIcon />}
+      onClick={toggleHelp}
+    >
       {enabled ? t("helpEnabled") : t("helpDisabled")}
     </DropdownItem>
   );
 };
 
-const kebabDropdownItems = [
+const kebabDropdownItems = (isMasterRealm: boolean, isManager: boolean) => [
   <ManageAccountDropdownItem key="kebab Manage Account" />,
   <ServerInfoDropdownItem key="kebab Server Info" />,
+  ...(isMasterRealm && isManager
+    ? [<ClearCachesDropdownItem key="Clear Caches" />]
+    : []),
   <HelpDropdownItem key="kebab Help" />,
-  <DropdownSeparator key="kebab sign out separator" />,
-  <SignOutDropdownItem key="kebab Sign out" />,
 ];
 
-const userDropdownItems = [
+const userDropdownItems = (isMasterRealm: boolean, isManager: boolean) => [
   <ManageAccountDropdownItem key="Manage Account" />,
   <ServerInfoDropdownItem key="Server info" />,
-  <DropdownSeparator key="sign out separator" />,
-  <SignOutDropdownItem key="Sign out" />,
+  ...(isMasterRealm && isManager
+    ? [<ClearCachesDropdownItem key="Clear Caches" />]
+    : []),
 ];
 
-const KebabDropdown = () => {
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-  return (
-    <Dropdown
-      id="user-dropdown-kebab"
-      isPlain
-      position="right"
-      toggle={<KebabToggle onToggle={setDropdownOpen} />}
-      isOpen={isDropdownOpen}
-      dropdownItems={kebabDropdownItems}
-    />
-  );
-};
-
-const UserDropdown = () => {
-  const { whoAmI } = useWhoAmI();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-  return (
-    <Dropdown
-      isPlain
-      position="right"
-      id="user-dropdown"
-      isOpen={isDropdownOpen}
-      toggle={
-        <DropdownToggle onToggle={setDropdownOpen}>
-          {whoAmI.getDisplayName()}
-        </DropdownToggle>
-      }
-      dropdownItems={userDropdownItems}
-    />
-  );
-};
-
 export const Header = () => {
+  const { environment, keycloak } = useEnvironment();
+  const { t } = useTranslation();
   const { realm } = useRealm();
+  const { hasAccess } = useAccess();
 
-  const headerTools = () => {
-    const picture = keycloak.tokenParsed?.picture;
-    return (
-      <PageHeaderTools>
-        <PageHeaderToolsGroup
+  const contextLogo = usePreviewLogo();
+  const customLogo = contextLogo?.logo;
+
+  const isMasterRealm = realm === "master";
+  const isManager = hasAccess("manage-realm");
+
+  const logo = customLogo || environment.logo || "/logo.svg";
+  const url = useHref(toDashboard({ realm }));
+  const logoUrl = environment.logoUrl ? environment.logoUrl : url;
+
+  return (
+    <KeycloakMasthead
+      data-testid="page-header"
+      keycloak={keycloak}
+      features={{ hasManageAccount: false }}
+      brand={{
+        href: logoUrl,
+        src: logo.startsWith("/")
+          ? joinPath(environment.resourceUrl, logo)
+          : logo,
+        alt: t("logo"),
+        className: "keycloak__pageheader_brand",
+      }}
+      dropdownItems={userDropdownItems(isMasterRealm, isManager)}
+      kebabDropdownItems={kebabDropdownItems(isMasterRealm, isManager)}
+      toolbar={<RealmPanel />}
+      toolbarItems={[
+        <ToolbarItem
+          key="help"
+          align={{ default: "alignRight" }}
           visibility={{
             default: "hidden",
             md: "visible",
           }} /** the settings and help icon buttons are only visible on desktop sizes and replaced by a kebab dropdown for other sizes */
         >
-          <PageHeaderToolsItem>
-            <HelpHeader />
-          </PageHeaderToolsItem>
-        </PageHeaderToolsGroup>
-
-        <PageHeaderToolsGroup>
-          <PageHeaderToolsItem
-            visibility={{
-              md: "hidden",
-            }} /** this kebab dropdown replaces the icon buttons and is hidden for desktop sizes */
-          >
-            <KebabDropdown />
-          </PageHeaderToolsItem>
-          <PageHeaderToolsItem
-            visibility={{
-              default: "hidden",
-              md: "visible",
-            }} /** this user dropdown is hidden on mobile sizes */
-          >
-            <UserDropdown />
-          </PageHeaderToolsItem>
-        </PageHeaderToolsGroup>
-        <Avatar
-          src={picture || environment.resourceUrl + "/img_avatar.svg"}
-          alt="Avatar image"
-        />
-      </PageHeaderTools>
-    );
-  };
-
-  const logo = environment.logo ? environment.logo : "/logo.svg";
-  const logoUrl = environment.logoUrl
-    ? environment.logoUrl
-    : toDashboard({ realm });
-
-  return (
-    <PageHeader
-      showNavToggle
-      logo={
-        <Link to={logoUrl}>
-          <Brand
-            src={environment.resourceUrl + logo}
-            id="masthead-logo"
-            alt="Logo"
-            className="keycloak__pageheader_brand"
-          />
-        </Link>
-      }
-      logoComponent="div"
-      headerTools={headerTools()}
+          <HelpHeader />
+        </ToolbarItem>,
+      ]}
     />
   );
 };

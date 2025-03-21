@@ -16,24 +16,24 @@
  */
 package test.org.keycloak.quarkus.services.health;
 
-import io.quarkus.test.QuarkusUnitTest;
-import org.hamcrest.Matchers;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-
-import java.sql.SQLException;
-
 import static io.restassured.RestAssured.given;
 
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import io.restassured.RestAssured;
+
+@QuarkusTest
+@TestProfile(MetricsEnabledProfile.class)
 public class KeycloakReadyHealthCheckTest {
 
-    @RegisterExtension
-    static final QuarkusUnitTest test = new QuarkusUnitTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addAsResource("keycloak.conf", "META-INF/keycloak.conf"));
+    @BeforeEach
+    void setUp() {
+        RestAssured.port = 9001;
+    }
 
     @Test
     public void testLivenessUp() {
@@ -45,7 +45,7 @@ public class KeycloakReadyHealthCheckTest {
     }
 
     @Test
-    public void testReadinessUp() throws SQLException {
+    public void testReadinessUp() {
         given()
             .when().get("/health/ready")
             .then()

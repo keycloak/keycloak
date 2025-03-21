@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.codec.binary.Hex;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -43,7 +44,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
 
@@ -56,7 +56,6 @@ import org.keycloak.services.x509.X509ClientCertificateLookup;
 public abstract class AbstractX509ClientCertificateAuthenticator implements Authenticator {
 
     public static final String DEFAULT_ATTRIBUTE_NAME = "usercertificate";
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
     public static final String REGULAR_EXPRESSION = "x509-cert-auth.regular-expression";
     public static final String ENABLE_CRL = "x509-cert-auth.crl-checking-enabled";
@@ -67,6 +66,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String TIMESTAMP_VALIDATION = "x509-cert-auth.timestamp-validation-enabled";
     public static final String SERIALNUMBER_HEX = "x509-cert-auth.serialnumber-hex-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
+    public static final String CRL_ABORT_IF_NON_UPDATED = "x509-cert-auth-crl-abort-if-non-updated";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
     public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
@@ -94,6 +94,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String CONFIRMATION_PAGE_DISALLOWED = "x509-cert-auth.confirmation-page-disallowed";
     public static final String REVALIDATE_CERTIFICATE = "x509-cert-auth.revalidate-certificate-enabled";
 
+    private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);;
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
         LoginFormsProvider form = context.form();
@@ -115,6 +116,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .mode(config.getCertificatePolicyMode().getMode())
                         .parse(config.getCertificatePolicy())
                     .revocation()
+                        .crlAbortIfNonUpdated(config.getCrlAbortIfNonUpdated())
                         .cRLEnabled(config.getCRLEnabled())
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
@@ -139,16 +141,16 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         private static final Function<X509Certificate[],Principal> subject = certs -> {
             return certs[0].getSubjectX500Principal();
         };
-        
+
         private static Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
-            return config.isSerialnumberHex() ? 
-                    certs -> Hex.encodeHexString(certs[0].getSerialNumber().toByteArray()) : 
+            return config.isSerialnumberHex() ?
+                    certs -> Hex.encodeHexString(certs[0].getSerialNumber().toByteArray()) :
                     certs -> certs[0].getSerialNumber().toString();
         }
-        
+
         private static Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
-            return config.isCanonicalDnEnabled() ? 
-                    certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) : 
+            return config.isCanonicalDnEnabled() ?
+                    certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) :
                     certs -> certs[0].getIssuerDN().toString();
         }
 
@@ -161,8 +163,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
             Function<X509Certificate[], String> func = null;
 
             UserIdentityExtractorProvider userIdExtractor = CryptoIntegration.getProvider().getIdentityExtractorProvider();
-            logger.debug("UID Source: " + userIdentitySource);
-            logger.debug("UID Extractor: " + userIdExtractor.getClass().getName());
+            logger.debugf("UID Source: %s", userIdentitySource);
+            logger.debugf("UID Extractor: %s", userIdExtractor.getClass().getName());
             switch(userIdentitySource) {
 
                 case SUBJECTDN:

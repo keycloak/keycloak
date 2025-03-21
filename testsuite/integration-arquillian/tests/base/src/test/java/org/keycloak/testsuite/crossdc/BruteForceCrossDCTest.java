@@ -34,7 +34,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -257,7 +257,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
         oauth.realm(REALM_NAME);
 
         for (int i=0 ; i<count ; i++) {
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", username, "bad-password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(username, "bad-password");
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
         }

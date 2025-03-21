@@ -68,24 +68,11 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            policyStore.findByResource(resourceServer, resource, policyConsumer);
-
-            if (resource.getType() != null) {
-                policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
-
-                if (!resource.getOwner().equals(resourceServer.getClientId())) {
-                    for (Resource typedResource : resourceStore.findByType(resourceServer, resource.getType())) {
-                        policyStore.findByResource(resourceServer, typedResource, policyConsumer);
-                    }
-                }
-            }
+            evaluateResourcePolicies(policyStore, resourceServer, resource, policyConsumer);
+            evaluateResourceTypePolicies(resource, policyStore, resourceServer, policyConsumer, resourceStore);
         }
 
-        Collection<Scope> scopes = permission.getScopes();
-
-        if (!scopes.isEmpty()) {
-            policyStore.findByScopes(resourceServer, null, new LinkedList<>(scopes), policyConsumer);
-        }
+        evaluateScopePolicies(permission, policyStore, resourceServer, policyConsumer);
 
         if (verified.get()) {
             decision.onComplete(permission);
@@ -94,6 +81,30 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode)) {
             grantAndComplete(permission, authorizationProvider, executionContext, decision);
+        }
+    }
+
+    private void evaluateResourcePolicies(PolicyStore policyStore, ResourceServer resourceServer, Resource resource, Consumer<Policy> policyConsumer) {
+        policyStore.findByResource(resourceServer, resource, policyConsumer);
+    }
+
+    protected void evaluateResourceTypePolicies(Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
+        if (resource.getType() != null) {
+            policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
+
+            if (!resource.getOwner().equals(resourceServer.getClientId())) {
+                for (Resource typedResource : resourceStore.findByType(resourceServer, resource.getType())) {
+                    policyStore.findByResource(resourceServer, typedResource, policyConsumer);
+                }
+            }
+        }
+    }
+
+    protected void evaluateScopePolicies(ResourcePermission permission, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer) {
+        Collection<Scope> scopes = permission.getScopes();
+
+        if (!scopes.isEmpty()) {
+            policyStore.findByScopes(resourceServer, null, new LinkedList<>(scopes), policyConsumer);
         }
     }
 

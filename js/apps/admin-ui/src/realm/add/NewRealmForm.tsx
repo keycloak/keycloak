@@ -1,42 +1,40 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
+  FormSubmitButton,
+  TextControl,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import { Button, Modal } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useRealms } from "../../context/RealmsContext";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
-export default function NewRealmForm() {
+type NewRealmFormProps = {
+  onClose: () => void;
+};
+
+export default function NewRealmForm({ onClose }: NewRealmFormProps) {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
-  const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { errors },
-  } = useForm<RealmRepresentation>({ mode: "onChange" });
+  const form = useForm<RealmRepresentation>({
+    mode: "onChange",
+  });
+
+  const { handleSubmit, setValue, formState } = form;
 
   const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
@@ -53,7 +51,7 @@ export default function NewRealmForm() {
       addAlert(t("saveRealmSuccess"));
 
       refresh();
-      await refreshRealms();
+      onClose();
       navigate(toDashboard({ realm: fields.realm }));
     } catch (error) {
       addError("saveRealmError", error);
@@ -61,10 +59,36 @@ export default function NewRealmForm() {
   };
 
   return (
-    <>
-      <ViewHeader titleKey="createRealm" subKey="realmExplain" />
-      <PageSection variant="light">
+    <Modal
+      variant="medium"
+      title={t("createRealm")}
+      description={t("realmExplain")}
+      onClose={onClose}
+      isOpen
+      actions={[
+        <FormSubmitButton
+          form="realm-form"
+          data-testid="create"
+          formState={formState}
+          allowInvalid
+          allowNonDirty
+          key="confirm"
+        >
+          {t("create")}
+        </FormSubmitButton>,
+        <Button
+          variant="link"
+          onClick={onClose}
+          key={"cancel"}
+          data-testid="cancel"
+        >
+          {t("cancel")}
+        </Button>,
+      ]}
+    >
+      <FormProvider {...form}>
         <FormAccess
+          id="realm-form"
           isHorizontal
           onSubmit={handleSubmit(save)}
           role="view-realm"
@@ -75,50 +99,18 @@ export default function NewRealmForm() {
             allowEditingUploadedText
             onChange={handleFileChange}
           />
-          <FormGroup
+          <TextControl
+            name="realm"
             label={t("realmNameField")}
-            isRequired
-            fieldId="kc-realm-name"
-            validated={errors.realm ? "error" : "default"}
-            helperTextInvalid={errors.realm?.message}
-          >
-            <KeycloakTextInput
-              isRequired
-              id="kc-realm-name"
-              validated={errors.realm ? "error" : "default"}
-              {...register("realm", {
-                required: { value: true, message: t("required") },
-              })}
-            />
-          </FormGroup>
-          <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">
-            <Controller
-              name="enabled"
-              defaultValue={true}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="kc-realm-enabled-switch"
-                  name="enabled"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("enabled")}
-                />
-              )}
-            />
-          </FormGroup>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("create")}
-            </Button>
-            <Button variant="link" onClick={() => navigate(-1)}>
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
+            rules={{ required: t("required") }}
+          />
+          <DefaultSwitchControl
+            name="enabled"
+            label={t("enabled")}
+            defaultValue={true}
+          />
         </FormAccess>
-      </PageSection>
-    </>
+      </FormProvider>
+    </Modal>
   );
 }

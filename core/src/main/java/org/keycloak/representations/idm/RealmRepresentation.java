@@ -91,6 +91,8 @@ public class RealmRepresentation {
     //--- brute force settings
     protected Boolean bruteForceProtected;
     protected Boolean permanentLockout;
+    protected Integer maxTemporaryLockouts;
+    protected BruteForceStrategy bruteForceStrategy;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -112,6 +114,7 @@ public class RealmRepresentation {
     @Deprecated
     protected List<String> defaultRoles;
     protected RoleRepresentation defaultRole;
+    protected ClientRepresentation adminPermissionsClient;
     protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
@@ -180,15 +183,15 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
-    
+
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
     protected List<String> eventsListeners;
     protected List<String> enabledEventTypes;
-    
+
     protected Boolean adminEventsEnabled;
     protected Boolean adminEventsDetailsEnabled;
-    
+
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
@@ -205,12 +208,20 @@ public class RealmRepresentation {
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
     protected String dockerAuthenticationFlow;
+    protected String firstBrokerLoginFlow;
 
     protected Map<String, String> attributes;
 
     protected String keycloakVersion;
 
     protected Boolean userManagedAccessAllowed;
+
+    protected Boolean organizationsEnabled;
+    private List<OrganizationRepresentation> organizations;
+
+    protected Boolean verifiableCredentialsEnabled;
+
+    protected Boolean adminPermissionsEnabled;
 
     @Deprecated
     protected Boolean social;
@@ -543,6 +554,14 @@ public class RealmRepresentation {
         this.defaultRole = defaultRole;
     }
 
+    public ClientRepresentation getAdminPermissionsClient() {
+        return adminPermissionsClient;
+    }
+
+    public void setAdminPermissionsClient(ClientRepresentation adminPermissionsClient) {
+        this.adminPermissionsClient = adminPermissionsClient;
+    }
+
     public List<String> getDefaultGroups() {
         return defaultGroups;
     }
@@ -618,7 +637,7 @@ public class RealmRepresentation {
     public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
-    
+
     public Boolean isLoginWithEmailAllowed() {
         return loginWithEmailAllowed;
     }
@@ -626,7 +645,7 @@ public class RealmRepresentation {
     public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
         this.loginWithEmailAllowed = loginWithEmailAllowed;
     }
-    
+
     public Boolean isDuplicateEmailsAllowed() {
         return duplicateEmailsAllowed;
     }
@@ -764,6 +783,22 @@ public class RealmRepresentation {
         this.permanentLockout = permanentLockout;
     }
 
+    public Integer getMaxTemporaryLockouts() {
+        return maxTemporaryLockouts;
+    }
+
+    public void setMaxTemporaryLockouts(Integer maxTemporaryLockouts) {
+        this.maxTemporaryLockouts = maxTemporaryLockouts;
+    }
+
+    public BruteForceStrategy getBruteForceStrategy() {
+        return this.bruteForceStrategy;
+    }
+
+    public void setBruteForceStrategy(BruteForceStrategy bruteForceStrategy) {
+        this.bruteForceStrategy = bruteForceStrategy;
+    }
+
     public Integer getMaxFailureWaitSeconds() {
         return maxFailureWaitSeconds;
     }
@@ -835,7 +870,7 @@ public class RealmRepresentation {
     public void setEventsListeners(List<String> eventsListeners) {
         this.eventsListeners = eventsListeners;
     }
-    
+
     public List<String> getEnabledEventTypes() {
         return enabledEventTypes;
     }
@@ -1319,6 +1354,15 @@ public class RealmRepresentation {
         return this;
     }
 
+    public String getFirstBrokerLoginFlow() {
+        return firstBrokerLoginFlow;
+    }
+
+    public RealmRepresentation setFirstBrokerLoginFlow(String firstBrokerLoginFlow) {
+        this.firstBrokerLoginFlow = firstBrokerLoginFlow;
+        return this;
+    }
+
     public String getKeycloakVersion() {
         return keycloakVersion;
     }
@@ -1401,8 +1445,51 @@ public class RealmRepresentation {
         return userManagedAccessAllowed;
     }
 
+    public Boolean isOrganizationsEnabled() {
+        return organizationsEnabled;
+    }
+
+    public void setOrganizationsEnabled(Boolean organizationsEnabled) {
+        this.organizationsEnabled = organizationsEnabled;
+    }
+
+    public Boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public void setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        this.adminPermissionsEnabled = adminPermissionsEnabled;
+    }
+
+    public Boolean isVerifiableCredentialsEnabled() {
+        return verifiableCredentialsEnabled;
+    }
+
+    public void setVerifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
+        this.verifiableCredentialsEnabled = verifiableCredentialsEnabled;
+    }
+
     @JsonIgnore
     public Map<String, String> getAttributesOrEmpty() {
         return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
+    }
+
+    public List<OrganizationRepresentation> getOrganizations() {
+        return organizations;
+    }
+
+    public void setOrganizations(List<OrganizationRepresentation> organizations) {
+        this.organizations = organizations;
+    }
+
+    public void addOrganization(OrganizationRepresentation org) {
+        if (organizations == null) {
+            organizations = new ArrayList<>();
+        }
+        organizations.add(org);
+    }
+
+    public enum BruteForceStrategy {
+        LINEAR, MULTIPLE;
     }
 }

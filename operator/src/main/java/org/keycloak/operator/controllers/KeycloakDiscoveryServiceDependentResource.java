@@ -20,8 +20,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
@@ -29,17 +29,10 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
-import java.util.Optional;
-
-@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING, resourceDiscriminator = KeycloakDiscoveryServiceDependentResource.NameResourceDiscriminator.class)
+@KubernetesDependent(
+        informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+)
 public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDependentResource<Service, Keycloak> {
-
-    public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
-        @Override
-        public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
-            return Utils.getByName(Service.class, KeycloakDiscoveryServiceDependentResource::getName, primary, context);
-        }
-    }
 
     public KeycloakDiscoveryServiceDependentResource() {
         super(Service.class);
@@ -48,6 +41,7 @@ public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDep
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
       return new ServiceSpecBuilder()
               .addNewPort()
+              .withName(Constants.KEYCLOAK_DISCOVERY_TCP_PORT_NAME)
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()

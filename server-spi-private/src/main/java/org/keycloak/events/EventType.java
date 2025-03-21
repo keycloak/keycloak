@@ -57,20 +57,29 @@ public enum EventType implements EnumWithStableIndex {
     REMOVE_FEDERATED_IDENTITY(9, true),
     REMOVE_FEDERATED_IDENTITY_ERROR(0x10000 + REMOVE_FEDERATED_IDENTITY.getStableIndex(), true),
 
+
     UPDATE_EMAIL(10, true),
     UPDATE_EMAIL_ERROR(0x10000 + UPDATE_EMAIL.getStableIndex(), true),
     UPDATE_PROFILE(11, true),
     UPDATE_PROFILE_ERROR(0x10000 + UPDATE_PROFILE.getStableIndex(), true),
+
+    @Deprecated
     UPDATE_PASSWORD(12, true),
+    @Deprecated
     UPDATE_PASSWORD_ERROR(0x10000 + UPDATE_PASSWORD.getStableIndex(), true),
+
+    @Deprecated
     UPDATE_TOTP(13, true),
+    @Deprecated
     UPDATE_TOTP_ERROR(0x10000 + UPDATE_TOTP.getStableIndex(), true),
     VERIFY_EMAIL(14, true),
     VERIFY_EMAIL_ERROR(0x10000 + VERIFY_EMAIL.getStableIndex(), true),
     VERIFY_PROFILE(15, true),
     VERIFY_PROFILE_ERROR(0x10000 + VERIFY_PROFILE.getStableIndex(), true),
 
+    @Deprecated
     REMOVE_TOTP(16, true),
+    @Deprecated
     REMOVE_TOTP_ERROR(0x10000 + REMOVE_TOTP.getStableIndex(), true),
 
     GRANT_CONSENT(17, true),
@@ -158,7 +167,25 @@ public enum EventType implements EnumWithStableIndex {
     PUSHED_AUTHORIZATION_REQUEST_ERROR(0x10000 + PUSHED_AUTHORIZATION_REQUEST.getStableIndex(), false),
 
     USER_DISABLED_BY_PERMANENT_LOCKOUT(52, true),
-    USER_DISABLED_BY_PERMANENT_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_PERMANENT_LOCKOUT.getStableIndex(), false);
+    USER_DISABLED_BY_PERMANENT_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_PERMANENT_LOCKOUT.getStableIndex(), false),
+
+    USER_DISABLED_BY_TEMPORARY_LOCKOUT(53,true),
+    USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR(0x10000 + USER_DISABLED_BY_TEMPORARY_LOCKOUT.getStableIndex(), false),
+
+    OAUTH2_EXTENSION_GRANT(54, true),
+    OAUTH2_EXTENSION_GRANT_ERROR(0x10000 + OAUTH2_EXTENSION_GRANT.getStableIndex(), true),
+
+    FEDERATED_IDENTITY_OVERRIDE_LINK(55, true),
+    FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true),
+
+    UPDATE_CREDENTIAL(56, true),
+    UPDATE_CREDENTIAL_ERROR(0x10000 + UPDATE_CREDENTIAL.getStableIndex(), true),
+
+    REMOVE_CREDENTIAL(57, true),
+    REMOVE_CREDENTIAL_ERROR(0x10000 + REMOVE_CREDENTIAL.getStableIndex(), true),
+
+    INVITE_ORG(60, true),
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true);
 
     private final int stableIndex;
     private final boolean saveByDefault;

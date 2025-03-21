@@ -19,6 +19,10 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -27,13 +31,11 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-import java.util.Arrays;
-import java.util.List;
-
 public abstract class AbstractCommand {
 
     @Spec
-    protected CommandSpec spec;
+    protected CommandSpec spec; // will be null for "start --optimized"
+    protected Picocli picocli;
 
     protected void executionError(CommandLine cmd, String message) {
         executionError(cmd, message, null);
@@ -65,8 +67,17 @@ public abstract class AbstractCommand {
     }
 
     protected void validateConfig() {
-        Picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this, spec.commandLine().getOut());
+        picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this);
     }
 
     public abstract String getName();
+
+    public Optional<CommandLine> getCommandLine() {
+        return Optional.ofNullable(spec).map(CommandSpec::commandLine);
+    }
+
+    public void setPicocli(Picocli picocli) {
+        this.picocli = picocli;
+    }
+
 }

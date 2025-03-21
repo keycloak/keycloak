@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -61,7 +62,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -300,7 +302,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     private void assertAuthenticateClientSuccess(Map<String, String> generatedKeys, OIDCClientRepresentation response, String kid) throws Exception {
         KeyPair keyPair = getKeyPairFromGeneratedPems(generatedKeys);
         String signedJwt = getClientSignedJWT(response.getClientId(), keyPair, kid);
-        OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
+        AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
         Assert.assertEquals(200, accessTokenResponse.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertEquals(response.getClientId(), accessToken.getIssuedFor());
@@ -309,7 +311,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     private void assertAuthenticateClientError(Map<String, String> generatedKeys, OIDCClientRepresentation response, String kid) throws Exception {
         KeyPair keyPair = getKeyPairFromGeneratedPems(generatedKeys);
         String signedJwt = getClientSignedJWT(response.getClientId(), keyPair, kid);
-        OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
+        AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
         Assert.assertEquals(400, accessTokenResponse.getStatusCode());
         Assert.assertNull(accessTokenResponse.getAccessToken());
         Assert.assertNotNull(accessTokenResponse.getError());
@@ -360,26 +362,23 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     }
 
 
-    private OAuthClient.AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {
+    private AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-        CloseableHttpResponse response = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        return new OAuthClient.AccessTokenResponse(response);
+        CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        return new AccessTokenResponse(response);
     }
 
 
     private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = new DefaultHttpClient()) {
             HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
         }
     }
 }

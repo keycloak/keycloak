@@ -5,7 +5,7 @@ import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { ResourcesTab } from "./ResourcesTab";
 import { Page } from "../components/page/Page";
 
-const Resources = () => {
+export const Resources = () => {
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState(0);
 

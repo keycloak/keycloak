@@ -1,6 +1,12 @@
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
+  ListEmptyState,
+  PaginatingTableToolbar,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Alert,
   AlertVariant,
   Button,
@@ -9,7 +15,8 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
+  TableText,
   Tbody,
   Td,
   Th,
@@ -19,15 +26,10 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import { toNewPermission } from "../routes/NewPermission";
 import { toCreateResource } from "../routes/NewResource";
 import { toResourceDetails } from "../routes/Resource";
@@ -45,15 +47,17 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
 };
 
 const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
-  <>
+  <TableText wrapModifier="truncate">
     {row.uris?.[0]} <MoreLabel array={row.uris} />
-  </>
+  </TableText>
 );
 
 export const AuthorizationResources = ({
   clientId,
   isDisabled = false,
 }: ResourcesProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -111,11 +115,11 @@ export const AuthorizationResources = ({
             isInline
             isPlain
             title={t("deleteResourceWarning")}
-            className="pf-u-pt-lg"
+            className="pf-v5-u-pt-lg"
           >
-            <p className="pf-u-pt-xs">
+            <p className="pf-v5-u-pt-xs">
               {permissions.map((permission) => (
-                <strong key={permission.id} className="pf-u-pr-md">
+                <strong key={permission.id} className="pf-v5-u-pr-md">
                   {permission.name}
                 </strong>
               ))}
@@ -146,7 +150,7 @@ export const AuthorizationResources = ({
   const noData = resources.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar
@@ -165,7 +169,7 @@ export const AuthorizationResources = ({
                 <SearchDropdown
                   search={search}
                   onSearch={setSearch}
-                  isResource
+                  type="resource"
                 />
               </ToolbarItem>
 
@@ -187,7 +191,7 @@ export const AuthorizationResources = ({
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -225,19 +229,33 @@ export const AuthorizationResources = ({
                       }}
                     />
                     <Td data-testid={`name-column-${resource.name}`}>
-                      <Link
-                        to={toResourceDetails({
-                          realm,
-                          id: clientId,
-                          resourceId: resource._id!,
-                        })}
-                      >
-                        {resource.name}
-                      </Link>
+                      <TableText wrapModifier="truncate">
+                        <Link
+                          to={toResourceDetails({
+                            realm,
+                            id: clientId,
+                            resourceId: resource._id!,
+                          })}
+                        >
+                          {resource.name}
+                        </Link>
+                      </TableText>
                     </Td>
-                    <Td>{resource.displayName}</Td>
-                    <Td>{resource.type}</Td>
-                    <Td>{resource.owner?.name}</Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.displayName}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.type}
+                      </TableText>
+                    </Td>
+                    <Td>
+                      <TableText wrapModifier="truncate">
+                        {resource.owner?.name}
+                      </TableText>
+                    </Td>
                     <Td>
                       <UriRenderer row={resource} />
                     </Td>
@@ -299,7 +317,7 @@ export const AuthorizationResources = ({
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

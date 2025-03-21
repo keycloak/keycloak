@@ -17,13 +17,17 @@
 
 package org.keycloak.it.cli.dist;
 
+import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -36,14 +40,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@DistributionTest(keepAlive = true)
+@DistributionTest(keepAlive = true, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class HttpDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
     public void maxQueuedRequestsTest(KeycloakDistribution dist) {
-        dist.setQuarkusProperty("quarkus.thread-pool.max-threads", "1");
-        dist.run("start-dev", "--http-max-queued-requests=1");
+        dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
         // run requests async
         List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();
@@ -55,5 +58,34 @@ public class HttpDistTest {
 
         assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
         assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
+    }
+    
+    @Test
+    @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
+    public void testHttpCertificateReloadPeriod(CLIResult result) {
+        result.assertError("Text cannot be parsed to a Duration");
+    }
+
+    @Test
+    public void httpStoreTypeValidation(KeycloakDistribution dist) {
+        CLIResult result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
+        result.assertExitCode(-1);
+        result.assertMessage("ERROR: Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property");
+
+        result = dist.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
+        result.assertExitCode(-1);
+        result.assertMessage("ERROR: Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property");
+
+        result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
+        result.assertExitCode(-1);
+        result.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException not-there.ks");
+
+        dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.p12").toAbsolutePath();
+
+        result = dist.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
+        result.assertExitCode(-1);
+        result.assertMessage("ERROR: No trust store password provided");
     }
 }

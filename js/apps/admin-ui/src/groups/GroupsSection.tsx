@@ -1,4 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Drawer,
@@ -18,15 +19,14 @@ import { AngleLeftIcon, TreeIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import { useAdminClient } from "../admin-client";
 import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { adminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { AdminEvents } from "../events/AdminEvents";
 import helpUrls from "../help-urls";
-import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useToggle from "../utils/useToggle";
 import { GroupAttributes } from "./GroupAttributes";
@@ -43,6 +43,8 @@ import { toGroups } from "./routes/Groups";
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -75,6 +77,8 @@ export default function GroupsSection() {
     hasAccess("view-users") ||
     currentGroup()?.access?.viewMembers ||
     currentGroup()?.access?.manageMembers;
+
+  const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   useFetch(
     async () => {
@@ -128,7 +132,7 @@ export default function GroupsSection() {
           handleModalToggle={() => setRename(undefined)}
         />
       )}
-      <PageSection variant={PageSectionVariants.light} className="pf-u-p-0">
+      <PageSection variant={PageSectionVariants.light} className="pf-v5-u-p-0">
         <Drawer isInline isExpanded={open} key={key} position="left">
           <DrawerContent
             panelContent={
@@ -197,10 +201,7 @@ export default function GroupsSection() {
                     eventKey={0}
                     title={<TabTitleText>{t("childGroups")}</TabTitleText>}
                   >
-                    <GroupTable
-                      refresh={refresh}
-                      canViewDetails={canViewDetails}
-                    />
+                    <GroupTable refresh={refresh} />
                   </Tab>
                   {canViewMembers && (
                     <Tab
@@ -212,7 +213,7 @@ export default function GroupsSection() {
                     </Tab>
                   )}
                   <Tab
-                    data-testid="attributes"
+                    data-testid="attributesTab"
                     eventKey={2}
                     title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   >
@@ -236,11 +237,46 @@ export default function GroupsSection() {
                       <PermissionsTab id={id} type="groups" />
                     </Tab>
                   )}
+                  {hasAccess("view-events") && (
+                    <Tab
+                      eventKey={5}
+                      data-testid="admin-events-tab"
+                      title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                    >
+                      <Tabs
+                        activeKey={activeEventsTab}
+                        onSelect={(_, key) => setActiveEventsTab(key as string)}
+                      >
+                        <Tab
+                          eventKey="adminEvents"
+                          title={
+                            <TabTitleText>{t("adminEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`groups/${id}`} />
+                        </Tab>
+                        <Tab
+                          eventKey="membershipEvents"
+                          title={
+                            <TabTitleText>{t("membershipEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`users/*/groups/${id}`} />
+                        </Tab>
+                        <Tab
+                          eventKey="childGroupEvents"
+                          title={
+                            <TabTitleText>{t("childGroupEvents")}</TabTitleText>
+                          }
+                        >
+                          <AdminEvents resourcePath={`groups/${id}/children`} />
+                        </Tab>
+                      </Tabs>
+                    </Tab>
+                  )}
                 </Tabs>
               )}
-              {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} canViewDetails={canViewDetails} />
-              )}
+              {subGroups.length === 0 && <GroupTable refresh={refresh} />}
             </DrawerContentBody>
           </DrawerContent>
         </Drawer>

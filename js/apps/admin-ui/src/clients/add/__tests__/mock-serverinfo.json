@@ -299,11 +299,6 @@
      },
      {
         "groupName":"Social",
-        "name":"Openshift v3",
-        "id":"openshift-v3"
-     },
-     {
-        "groupName":"Social",
         "name":"GitLab",
         "id":"gitlab"
      },
@@ -378,11 +373,6 @@
         "groupName":"Social",
         "name":"Openshift v4",
         "id":"openshift-v4"
-     },
-     {
-        "groupName":"Social",
-        "name":"Openshift v3",
-        "id":"openshift-v3"
      },
      {
         "groupName":"Social",
@@ -754,6 +744,12 @@
               "order":0
            },
            "ES256":{
+              "order":0
+           },
+           "Ed25519":{
+              "order":0
+           },
+           "Ed448":{
               "order":0
            },
            "RS256":{
@@ -1517,6 +1513,12 @@
            "ES256":{
               "order":0
            },
+           "Ed25519":{
+              "order":0
+           },
+           "Ed448":{
+              "order":0
+           },
            "RS256":{
               "order":0
            },
@@ -1573,9 +1575,6 @@
               "order":0
            },
            "openshift-v4":{
-              "order":0
-           },
-           "openshift-v3":{
               "order":0
            },
            "gitlab":{
@@ -2058,7 +2057,7 @@
            "id":"saml-user-attribute-mapper",
            "name":"User Attribute",
            "category":"AttributeStatement Mapper",
-           "helpText":"Map a custom user attribute to a to a SAML attribute.",
+           "helpText":"Map a custom user attribute to a SAML attribute.",
            "priority":0,
            "properties":[
               {
@@ -6432,7 +6431,7 @@
         },
         {
            "id":"saml-user-attribute-mapper",
-           "helpText":"Map a custom user attribute to a to a SAML attribute.",
+           "helpText":"Map a custom user attribute to a SAML attribute.",
            "properties":[
               {
                  "name":"user.attribute",
@@ -7200,6 +7199,8 @@
         "REMOVE_FEDERATED_IDENTITY_ERROR",
         "REMOVE_TOTP",
         "REMOVE_TOTP_ERROR",
+        "REMOVE_CREDENTIAL",
+        "REMOVE_CREDENTIAL_ERROR",
         "RESET_PASSWORD",
         "RESET_PASSWORD_ERROR",
         "RESTART_AUTHENTICATION",
@@ -7222,6 +7223,8 @@
         "UPDATE_EMAIL_ERROR",
         "UPDATE_PASSWORD",
         "UPDATE_PASSWORD_ERROR",
+        "UPDATE_CREDENTIAL",
+        "UPDATE_CREDENTIAL_ERROR",
         "UPDATE_PROFILE",
         "UPDATE_PROFILE_ERROR",
         "UPDATE_TOTP",

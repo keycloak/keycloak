@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,12 +40,16 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.validators.LengthValidator;
 
 /**
  * <p>The default implementation for {@link Attributes}. Should be reused as much as possible by the different implementations
@@ -67,6 +72,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
      * We should probably remove that once we remove the legacy provider, because this will come from the configuration.
      */
     public static final String READ_ONLY_ATTRIBUTE_KEY = "kc.read.only";
+    public static final String DEFAULT_MAX_LENGTH_ATTRIBUTES = "2048";
 
     protected final UserProfileContext context;
     protected final KeycloakSession session;
@@ -81,34 +87,33 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         this.context = context;
         this.user = user;
         this.session = session;
-        this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes());
+        this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes(), profileMetadata);
         this.upConfig = session.getProvider(UserProfileProvider.class).getConfiguration();
         putAll(Collections.unmodifiableMap(normalizeAttributes(attributes)));
     }
 
     @Override
     public boolean isReadOnly(String name) {
-        if (!isManagedAttribute(name)) {
-            return !isAllowEditUnmanagedAttribute();
+        if (isReadableOrWritableDuringRegistration(name)) {
+            return false;
         }
-
-        if (UserModel.USERNAME.equals(name)) {
-            if (isServiceAccountUser()) {
-                return true;
-            }
-        }
-
-        if (UserModel.EMAIL.equals(name)) {
-            if (isServiceAccountUser()) {
-                return false;
-            }
-        }
-
         if (isReadOnlyFromMetadata(name) || isReadOnlyInternalAttribute(name)) {
             return true;
         }
 
+        if (!isManagedAttribute(name)) {
+            return !isAllowEditUnmanagedAttribute();
+        }
+
         return getMetadata(name) == null;
+    }
+
+    private boolean isReadableOrWritableDuringRegistration(String name) {
+        if (context.equals(UserProfileContext.REGISTRATION) && isRequired(name)) {
+            // in context of registration, username or email (email as username) cannot be readonly otherwise registration is not possible
+            return UserModel.EMAIL.equals(name) || UserModel.USERNAME.equals(name);
+        }
+        return false;
     }
 
     private boolean isAllowEditUnmanagedAttribute() {
@@ -164,6 +169,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 .map(Collections::singletonList).orElse(emptyList()));
         metadatas.addAll(Optional.ofNullable(this.metadataByAttribute.get(READ_ONLY_ATTRIBUTE_KEY))
                 .map(Collections::singletonList).orElse(emptyList()));
+        addDefaultValidators(name, metadatas);
 
         Boolean result = null;
 
@@ -203,6 +209,31 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return result == null;
+    }
+
+    protected void addDefaultValidators(String name, List<AttributeMetadata> metadatas) {
+        addLengthValidatorIfNotSet(name, metadatas);
+    }
+
+    /**
+     * In case there are unmanaged attributes or attributes that don't have a length restrictions,
+     * add a default length restriction to avoid a denial of service by a caller.
+     */
+    private void addLengthValidatorIfNotSet(String name, List<AttributeMetadata> metadatas) {
+        for (AttributeMetadata metadata : metadatas) {
+            for (AttributeValidatorMetadata validator : metadata.getValidators()) {
+                if (validator.getValidatorId().equals(LengthValidator.ID)) {
+                    return;
+                }
+            }
+        }
+
+        AttributeMetadata am = new AttributeMetadata(name, -1);
+        Map<String, Object> vc = new HashMap<>();
+        vc.put(LengthValidator.KEY_MIN, "0");
+        vc.put(LengthValidator.KEY_MAX, DEFAULT_MAX_LENGTH_ATTRIBUTES);
+        am.addValidators(Collections.singletonList(new AttributeValidatorMetadata(LengthValidator.ID, new ValidatorConfig(vc))));
+        metadatas.add(am);
     }
 
     @Override
@@ -264,10 +295,12 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                 continue;
             }
 
-            AttributeContext attributeContext = createAttributeContext(metadata);
+            if (!isReadableOrWritableDuringRegistration(name)) {
+                AttributeContext attributeContext = createAttributeContext(metadata);
 
-            if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
-                attributes.remove(name);
+                if (!metadata.canView(attributeContext) || !metadata.isSelected(attributeContext)) {
+                    attributes.remove(name);
+                }
             }
         }
 
@@ -277,10 +310,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     @Override
     public Map<String, List<String>> toMap() {
         return Collections.unmodifiableMap(this);
-    }
-
-    protected boolean isServiceAccountUser() {
-        return user != null && user.getServiceAccountClientLink() != null;
     }
 
     private AttributeContext createAttributeContext(Entry<String, List<String>> attribute, AttributeMetadata metadata) {
@@ -295,7 +324,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return createAttributeContext(createAttribute(metadata.getName()), metadata);
     }
 
-    private Map<String, AttributeMetadata> configureMetadata(List<AttributeMetadata> attributes) {
+    private Map<String, AttributeMetadata> configureMetadata(List<AttributeMetadata> attributes, UserProfileMetadata profileMetadata) {
         Map<String, AttributeMetadata> metadatas = new HashMap<>();
 
         for (AttributeMetadata metadata : attributes) {
@@ -305,7 +334,28 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             }
         }
 
+        metadatas.putAll(getUserStorageProviderMetadata(profileMetadata));
+
         return metadatas;
+    }
+
+    private Map<String, AttributeMetadata> getUserStorageProviderMetadata(UserProfileMetadata profileMetadata) {
+        if (user == null || (StorageId.isLocalStorage(user.getId()) && user.getFederationLink() == null)) {
+            // new user or not a user from a storage provider other than local
+            return Collections.emptyMap();
+        }
+
+        String providerId = user.getFederationLink();
+        UserProvider userProvider = session.users();
+
+        if (userProvider instanceof UserProfileDecorator) {
+            // query the user provider from the source user storage provider for additional attribute metadata
+            UserProfileDecorator decorator = (UserProfileDecorator) userProvider;
+            return decorator.decorateUserProfile(providerId, profileMetadata).stream()
+                    .collect(Collectors.toMap(AttributeMetadata::getName, Function.identity()));
+        }
+
+        return Collections.emptyMap();
     }
 
     private SimpleImmutableEntry<String, List<String>> createAttribute(String name) {
@@ -417,14 +467,15 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         Stream<String> valuesStream = Optional.ofNullable(values).orElse(EMPTY_VALUE).stream().filter(Objects::nonNull);
 
-        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+        // do not normalize the username if a federated user because we need to respect the format from the external identity store
+        if ((UserModel.USERNAME.equals(name) && !isFederated()) || UserModel.EMAIL.equals(name)) {
             valuesStream = valuesStream.map(KeycloakModelUtils::toLowerCaseSafe);
         }
 
         return valuesStream.collect(Collectors.toList());
     }
 
-    private boolean isAllowUnmanagedAttribute() {
+    protected boolean isAllowUnmanagedAttribute() {
         UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
 
         if (unmanagedAttributePolicy == null) {
@@ -443,11 +494,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy);
     }
 
-    private void setUserName(Map<String, List<String>> newAttributes, List<String> lowerCaseEmailList) {
-        if (isServiceAccountUser()) {
-            return;
-        }
-        newAttributes.put(UserModel.USERNAME, lowerCaseEmailList);
+    protected void setUserName(Map<String, List<String>> newAttributes, List<String> values) {
+        newAttributes.put(UserModel.USERNAME, values);
     }
 
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
@@ -469,10 +517,6 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         if (isManagedAttribute(name)) {
-            return true;
-        }
-
-        if (isServiceAccountUser()) {
             return true;
         }
 
@@ -517,7 +561,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         return unmanagedAttributes;
     }
 
-    private AttributeMetadata createUnmanagedAttributeMetadata(String name) {
+    protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {
         return new AttributeMetadata(name, Integer.MAX_VALUE) {
             final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
 
@@ -533,5 +577,9 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                         || (UnmanagedAttributePolicy.ADMIN_EDIT.equals(unmanagedAttributePolicy) && context.getContext().isAdminContext());
             }
         };
+    }
+
+    private boolean isFederated() {
+        return user != null && user.isFederated();
     }
 }

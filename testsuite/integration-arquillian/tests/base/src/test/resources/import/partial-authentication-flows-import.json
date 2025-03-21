@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "realm": "partial-authentication-flows-import",
+  "authenticationFlows": [
+    {
+      "alias": "X.509 browser",
+      "description": "Browser-based authentication",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ]
+}

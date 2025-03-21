@@ -32,6 +32,7 @@ public class Event {
     private EventType type;
 
     private String realmId;
+    private String realmName;
 
     private String clientId;
 
@@ -77,6 +78,14 @@ public class Event {
         this.realmId = maxLength(realmId, 255);
     }
 
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
+    }
+
     public String getClientId() {
         return clientId;
     }
@@ -98,7 +107,7 @@ public class Event {
     }
 
     public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+        this.sessionId = maxLength(sessionId, 255);
     }
 
     public String getIpAddress() {
@@ -131,6 +140,7 @@ public class Event {
         clone.time = time;
         clone.type = type;
         clone.realmId = realmId;
+        clone.realmName = realmName;
         clone.clientId = clientId;
         clone.userId = userId;
         clone.sessionId = sessionId;

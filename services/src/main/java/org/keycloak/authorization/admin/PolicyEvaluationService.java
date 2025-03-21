@@ -142,11 +142,11 @@ public class PolicyEvaluationService {
 
     private EvaluationDecisionCollector evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
         List<ResourcePermission> permissions = createPermissions(evaluationRequest, evaluationContext, authorization, request);
-        
+
         if (permissions.isEmpty()) {
             return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
         }
-        
+
         return authorization.evaluators().from(permissions, evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
     }
 
@@ -191,27 +191,33 @@ public class PolicyEvaluationService {
             Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer, scopeRepresentation.getName())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, resource.getId());
+                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer, resource.getId());
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
+            } else if (resource.getName() != null) {
+                Resource resourceModel = storeFactory.getResourceStore().findByName(resourceServer, resource.getName());
+                if (resourceModel != null) {
+                    return new ArrayList<>(Arrays.asList(
+                            Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
+                }
             } else if (resource.getType() != null) {
                 return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
-            } else {
-                if (scopes.isEmpty()) {
-                    return Stream.empty();
-                }
-
-                List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
-
-                if (resources.isEmpty()) {
-                    return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
-                }
-
-
-                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
-                        scopes, authorization, request));
             }
+
+            if (scopes.isEmpty()) {
+                return Stream.empty();
+            }
+
+            List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
+
+            if (resources.isEmpty()) {
+                return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
+            }
+
+
+            return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
+                    scopes, authorization, request));
         }).collect(Collectors.toList());
     }
 
@@ -261,7 +267,7 @@ public class PolicyEvaluationService {
         UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(realm, subject);
-            
+
             if (userModel == null) {
                 userModel = keycloakSession.users().getUserByUsername(realm, subject);
             }
@@ -283,7 +289,7 @@ public class PolicyEvaluationService {
                     userSession = new UserSessionManager(keycloakSession).createUserSession(authSession.getParentSession().getId(), realm, userModel,
                             userModel.getUsername(), "127.0.0.1", "passwd", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
-                    AuthenticationManager.setClientScopesInSession(authSession);
+                    AuthenticationManager.setClientScopesInSession(keycloakSession, authSession);
                     ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
 
                     accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, clientModel, userModel, userSession, clientSessionCtx);

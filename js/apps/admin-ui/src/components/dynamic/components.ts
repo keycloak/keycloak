@@ -1,4 +1,5 @@
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
+import { FunctionComponent } from "react";
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
@@ -13,48 +14,63 @@ import { RoleComponent } from "./RoleComponent";
 import { ScriptComponent } from "./ScriptComponent";
 import { StringComponent } from "./StringComponent";
 import { TextComponent } from "./TextComponent";
+import { UrlComponent } from "./UrlComponent";
+import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
+import { IntComponent } from "./IntComponent";
+import { NumberComponent } from "./NumberComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
   isNew?: boolean;
   stringify?: boolean;
+  convertToName: (name: string) => string;
 };
 
-const ComponentTypes = [
-  "String",
-  "Text",
-  "boolean",
-  "List",
-  "Role",
-  "Script",
-  "Map",
-  "Group",
-  "MultivaluedList",
-  "ClientList",
-  "MultivaluedString",
-  "File",
-  "Password",
-] as const;
+export type NumberComponentProps = ComponentProps & {
+  min?: number;
+  max?: number;
+};
 
-export type Components = (typeof ComponentTypes)[number];
+type ComponentType =
+  | "String"
+  | "Text"
+  | "Integer"
+  | "Number"
+  | "boolean"
+  | "List"
+  | "Role"
+  | "Script"
+  | "Map"
+  | "Group"
+  | "MultivaluedList"
+  | "ClientList"
+  | "UserProfileAttributeList"
+  | "MultivaluedString"
+  | "File"
+  | "Password"
+  | "Url";
 
 export const COMPONENTS: {
-  [index in Components]: (props: ComponentProps) => JSX.Element;
+  [index in ComponentType]: FunctionComponent<ComponentProps>;
 } = {
   String: StringComponent,
   Text: TextComponent,
   boolean: BooleanComponent,
+  Integer: IntComponent,
+  Number: NumberComponent,
   List: ListComponent,
   Role: RoleComponent,
   Script: ScriptComponent,
   Map: MapComponent,
   Group: GroupComponent,
   ClientList: ClientSelectComponent,
+  UserProfileAttributeList: UserProfileAttributeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
   Password: PasswordComponent,
+  Url: UrlComponent,
 } as const;
 
-export const isValidComponentType = (value: string): value is Components =>
+export const isValidComponentType = (value: string): value is ComponentType =>
   value in COMPONENTS;

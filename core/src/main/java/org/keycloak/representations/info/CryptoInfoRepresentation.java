@@ -20,11 +20,6 @@
 package org.keycloak.representations.info;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.util.KeystoreUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,20 +32,6 @@ public class CryptoInfoRepresentation {
     private List<String> clientSignatureSymmetricAlgorithms;
 
     private List<String> clientSignatureAsymmetricAlgorithms;
-
-    public static CryptoInfoRepresentation create(List<String> clientSignatureSymmetricAlgorithms, List<String> clientSignatureAsymmetricAlgorithms) {
-        CryptoInfoRepresentation info = new CryptoInfoRepresentation();
-
-        CryptoProvider cryptoProvider = CryptoIntegration.getProvider();
-        info.cryptoProvider = cryptoProvider.getClass().getSimpleName();
-        info.supportedKeystoreTypes = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
-                .map(KeystoreUtil.KeystoreFormat::toString)
-                .collect(Collectors.toList());
-        info.clientSignatureSymmetricAlgorithms = clientSignatureSymmetricAlgorithms;
-        info.clientSignatureAsymmetricAlgorithms = clientSignatureAsymmetricAlgorithms;
-
-        return info;
-    }
 
     public String getCryptoProvider() {
         return cryptoProvider;

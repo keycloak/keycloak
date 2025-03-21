@@ -22,12 +22,12 @@ import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.StoreConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationChildBuilder;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,10 +42,7 @@ class TestCacheManagerFactory {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
         gcb = gcb.clusteredDefault();
         gcb.transport().clusterName("test-clustering-" + threadId);
-        // For Infinispan 10, we go with the JBoss marshalling.
-        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-        gcb.serialization().marshaller(new JBossUserMarshaller());
+        Marshalling.configure(gcb);
         gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + threadId).enable();
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
@@ -74,7 +71,6 @@ class TestCacheManagerFactory {
                 .remoteCacheName(cacheName)
                 .rawValues(true)
                 .forceReturnValues(false)
-                .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
                 .protocolVersion(ProtocolVersion.PROTOCOL_VERSION_29)
                 .addServer()
                     .host(host)

@@ -36,18 +36,19 @@ public class WelcomePage extends AuthServer {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "passwordConfirmation")
+    @FindBy(id = "password-confirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(id = "create-button")
+    @FindBy(tagName = "button")
     private WebElement createButton;
 
     @FindBy(css = ".welcome-header h1")
     private WebElement welcomeMessage;
 
     public boolean isPasswordSet() {
-        return !(driver.getPageSource().contains("Please create an initial admin user to get started.") ||
-                 driver.getPageSource().contains("You need local access to create the initial admin user."));
+        return !(driver.getPageSource().contains("Create a temporary administrative user") ||
+                driver.getPageSource().contains("You will need local access to create the temporary administrative user.") ||
+                driver.getPageSource().contains("you first create a temporary administrative user. Later, to harden security, create a new permanent administrative user"));
     }
 
     public void setPassword(String username, String password) {

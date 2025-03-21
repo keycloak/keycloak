@@ -34,10 +34,8 @@ import org.keycloak.social.github.GitHubIdentityProviderFactory;
 import org.keycloak.social.gitlab.GitLabIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.instagram.InstagramIdentityProviderFactory;
-import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInOIDCIdentityProviderFactory;
 import org.keycloak.social.microsoft.MicrosoftIdentityProviderFactory;
-import org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory;
 import org.keycloak.social.openshift.OpenshiftV4IdentityProviderFactory;
 import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
@@ -45,6 +43,7 @@ import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -72,10 +71,8 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             GitLabIdentityProviderFactory.PROVIDER_ID,
             GoogleIdentityProviderFactory.PROVIDER_ID,
             InstagramIdentityProviderFactory.PROVIDER_ID,
-            LinkedInIdentityProviderFactory.PROVIDER_ID,
             LinkedInOIDCIdentityProviderFactory.PROVIDER_ID,
             MicrosoftIdentityProviderFactory.PROVIDER_ID,
-            OpenshiftV3IdentityProviderFactory.PROVIDER_ID,
             OpenshiftV4IdentityProviderFactory.PROVIDER_ID,
             PayPalIdentityProviderFactory.PROVIDER_ID,
             StackoverflowIdentityProviderFactory.PROVIDER_ID,
@@ -175,7 +172,12 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             } else if (variable.startsWith("CLAIM.")) {
                 String name = variable.substring("CLAIM.".length());
                 Object value = AbstractClaimMapper.getClaimValue(context, name);
-                if (value == null) value = "";
+                if (value == null) {
+                    value = "";
+                } else if (value instanceof Collection && ((Collection<?>) value).size() == 1) {
+                    // In case the value is list with single value, it might be preferred to avoid converting whole collection toString, but rather use value like "foo" instead of "[foo]"
+                    value = ((Collection<?>) value).iterator().next();
+                }
                 m.appendReplacement(sb, transformer.apply(value.toString()));
             } else {
                 m.appendReplacement(sb, m.group(1));

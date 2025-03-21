@@ -49,7 +49,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -204,6 +204,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         List<Permission> permissions = authzClient.authorization("marta", "password").getPermissions(request);
         assertFalse(permissions.isEmpty());
+        assertTrue(permissions.get(0) instanceof Permission);
     }
 
     public void testResourceServerAsAudience(String clientId, String resourceServerClientId, String authzConfigFile) throws Exception {
@@ -212,7 +213,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         request.setResourceId("Resource A");
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(clientId).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(clientId, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         String ticket = authzClient.protection().permission().create(request).getTicket();
 
         // Ticket is opaque to client or resourceServer. The audience should be just an authorization server itself

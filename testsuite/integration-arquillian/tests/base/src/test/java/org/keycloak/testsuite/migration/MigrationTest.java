@@ -19,9 +19,7 @@ package org.keycloak.testsuite.migration;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import jakarta.ws.rs.NotFoundException;
@@ -30,11 +28,10 @@ import java.util.List;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
- * Test for DB migration with legacy JPA store
+ * Test for DB migration with the JPA store
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@EnableFeature(Feature.DECLARATIVE_USER_PROFILE)
 public class MigrationTest extends AbstractMigrationTest {
 
     @Override
@@ -72,6 +69,23 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo21_x();
         testMigrationTo22_x();
         testMigrationTo23_x(true);
-        testMigrationTo24_x(true);
+        testMigrationTo24_x(true, true);
+        testMigrationTo25_0_0();
+        testMigrationTo26_0_0(true);
+        testMigrationTo26_1_0(true);
+    }
+
+    @Test
+    @Migration(versionPrefix = "24.")
+    public void migration24_xTest() throws Exception{
+        testMigratedData(false);
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
+
+        testMigrationTo25_0_0();
+        testMigrationTo26_0_0(true);
+        testMigrationTo26_1_0(true);
     }
 }

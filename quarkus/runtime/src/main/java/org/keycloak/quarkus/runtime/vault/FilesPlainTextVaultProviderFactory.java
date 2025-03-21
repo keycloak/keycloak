@@ -32,11 +32,6 @@ public class FilesPlainTextVaultProviderFactory extends org.keycloak.vault.Files
     }
 
     @Override
-    public boolean isSupported() {
-        return false;
-    }
-
-    @Override
     public boolean isSupported(Config.Scope config) {
         return getId().equals(Configuration.getRawValue("kc.vault"));
     }

@@ -31,9 +31,15 @@ import java.util.function.Function;
 public class ReadOnlyUserModelDelegate extends UserModelDelegate {
 
     private final Function<String, RuntimeException> exceptionCreator;
+    private Boolean enabled;
 
     public ReadOnlyUserModelDelegate(UserModel delegate) {
         this(delegate, ReadOnlyException::new);
+    }
+
+    public ReadOnlyUserModelDelegate(UserModel delegate, boolean enabled) {
+        this(delegate, ReadOnlyException::new);
+        this.enabled = enabled;
     }
 
     public ReadOnlyUserModelDelegate(UserModel delegate, Function<String, RuntimeException> exceptionCreator) {
@@ -49,6 +55,14 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
     @Override
     public void setEnabled(boolean enabled) {
         throw readOnlyException("enabled");
+    }
+
+    @Override
+    public boolean isEnabled() {
+        if (enabled == null) {
+            return super.isEnabled();
+        }
+        return enabled;
     }
 
     @Override
@@ -142,7 +156,7 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
     }
 
     private RuntimeException readOnlyException(String detail) {
-        String message = String.format("Not possible to write '%s' when updating user '%s'", detail, getUsername());
+        String message = String.format("The user is read-only. Not possible to write '%s' when updating user '%s'.", detail, getUsername());
         return exceptionCreator.apply(message);
     }
 }

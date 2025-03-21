@@ -175,7 +175,7 @@ public class LDAPQuery implements AutoCloseable {
                 result.add(ldapObject);
             }
         } catch (Exception e) {
-            throw new ModelException("LDAP Query failed", e);
+            throw new ModelException("Failed to fetch results from the LDAP [" + ldapFedProvider.getModel().getName() + "] provider", e);
         }
 
         return result;

@@ -66,9 +66,8 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 	  		String username = getJsonProperty(profile, "username");
 			String legacyId = getJsonProperty(profile, LEGACY_ID_FIELD);
 
-			BrokeredIdentityContext user = new BrokeredIdentityContext(id);
+			BrokeredIdentityContext user = new BrokeredIdentityContext(id, getConfig());
 			user.setUsername(username);
-			user.setIdpConfig(getConfig());
 			user.setIdp(this);
 			if (legacyId != null && !legacyId.isEmpty()) {
 				user.setLegacyId(legacyId);

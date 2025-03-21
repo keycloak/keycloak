@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 /**
  * A simple utility class for trimming test output (if successful).
  *
- * Created to shrink down the output for Travis.
+ * Created to shrink down the output for GitHub Actions.
  *
  * Created by st on 03/07/17.
  */

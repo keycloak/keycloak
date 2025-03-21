@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -50,6 +51,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -190,7 +192,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         RealmRepresentation permissionRealm = testContext.getTestRealmReps().stream().filter(realm -> {
             return realm.getRealm().equals(REALM_NAME);
         }).findFirst().get();
-        adminClient.realms().create(permissionRealm);
+        importRealm(permissionRealm);
 
         removeTestUsers();
         createTestUsers();
@@ -302,33 +304,25 @@ public class PermissionsTest extends AbstractKeycloakTest {
             }
         }, Resource.REALM, false, true);
 
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
-                .setAttribute(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString())
-                .update()) {
-            RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
-            assertGettersEmpty(realm);
-            assertNull(realm.isRegistrationEmailAsUsername());
-            assertNull(realm.getAttributes());
+        RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
+        assertGettersEmpty(realm);
+        assertNull(realm.isRegistrationEmailAsUsername());
+        assertNull(realm.getAttributes());
 
-            realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
-            assertNotNull(realm.isRegistrationEmailAsUsername());
-            assertNotNull(realm.getAttributes());
-            assertNotNull(realm.getAttributes().get(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED));
+        realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
+        assertNotNull(realm.isRegistrationEmailAsUsername());
 
-            realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
-            assertNotNull(realm.isRegistrationEmailAsUsername());
-            assertNotNull(realm.getAttributes());
-            assertNotNull(realm.getAttributes().get(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED));
+        realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
+        assertNotNull(realm.isRegistrationEmailAsUsername());
 
-            // query users only if granted through fine-grained admin
-            realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
-            assertNull(realm.isRegistrationEmailAsUsername());
-            assertNull(realm.getAttributes());
-        }
+        // query users only if granted through fine-grained admin
+        realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
+        assertNull(realm.isRegistrationEmailAsUsername());
+        assertNull(realm.getAttributes());
 
         // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
         for (String role : AdminRoles.ALL_QUERY_ROLES) {
-            invoke(realm -> clients.get(role).realms().realm(REALM_NAME).toRepresentation(), clients.get(role), true);
+            invoke(realmm -> clients.get(role).realms().realm(REALM_NAME).toRepresentation(), clients.get(role), true);
         }
 
         invoke(new Invocation() {
@@ -343,7 +337,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.deleteSession("nosuch");
+                realm.deleteSession("nosuch", false);
             }
         }, Resource.USER, true);
         invoke(new Invocation() {
@@ -382,7 +376,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.testLDAPConnection("nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch"));
+                TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
+                        "nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch");
+                response.set(realm.testLDAPConnection(config.getAction(), config.getConnectionUrl(), config.getBindDn(),
+                        config.getBindCredential(), config.getUseTruststoreSpi(), config.getConnectionTimeout()));
+                response.set(realm.testLDAPConnection(config));
             }
         }, Resource.REALM, true);
 
@@ -1144,17 +1142,17 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.REALM, true);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.flows().copy("nosuch", Collections.<String, String>emptyMap()));
+                response.set(realm.flows().copy("nosuch", Collections.<String, Object>emptyMap()));
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.flows().addExecutionFlow("nosuch", Collections.<String, String>emptyMap());
+                realm.flows().addExecutionFlow("nosuch", Collections.<String, Object>emptyMap());
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.flows().addExecution("nosuch", Collections.<String, String>emptyMap());
+                realm.flows().addExecution("nosuch", Collections.<String, Object>emptyMap());
             }
         }, Resource.REALM, true);
         invoke(new Invocation() {
@@ -1162,6 +1160,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.flows().getExecutions("nosuch");
             }
         }, Resource.REALM, false);
+        invoke((RealmResource realm) -> realm.flows().getExecution("nosuch"), Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.flows().updateExecutions("nosuch", new AuthenticationExecutionInfoRepresentation());
@@ -1467,6 +1466,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
+                realm.users().get(user.getId()).getUnmanagedAttributes();
+            }
+        }, Resource.USER, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
                 realm.users().get(user.getId()).update(user);
             }
         }, Resource.USER, true);
@@ -1762,6 +1766,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.components().query("nosuch");
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.clientRegistrationPolicy().getProviders();
             }
         }, Resource.REALM, false);
         invoke(new InvocationWithResponse() {
@@ -2064,7 +2073,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
     }
 
     private void assertGettersEmpty(RealmRepresentation rep) {
-        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty");
+        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty", "getDisplayNameHtml", 
+            "getDisplayName", "getDefaultLocale", "getSupportedLocales");
     }
 
     private void assertGettersEmpty(ClientRepresentation rep) {

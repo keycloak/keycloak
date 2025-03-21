@@ -21,8 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderFactory;
 
 import java.io.File;
@@ -31,9 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
@@ -50,7 +49,7 @@ public class ExportImportManager {
     private final KeycloakSession session;
 
     private ExportProvider exportProvider;
-    private ImportProvider importProvider;
+    private List<ImportProvider> importProviders = List.of();
 
     public ExportImportManager(KeycloakSession session) {
         this.sessionFactory = session.getKeycloakSessionFactory();
@@ -71,26 +70,28 @@ public class ExportImportManager {
             }
         } else if (ExportImportConfig.ACTION_IMPORT.equals(exportImportAction)) {
             String providerId = System.getProperty(PROVIDER, Config.scope("import").get("importer", PROVIDER_DEFAULT));
-            importProvider = session.getProvider(ImportProvider.class, providerId);
+            ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
             if (importProvider == null) {
                 throw new RuntimeException("Import provider '" + providerId + "' not found");
             }
+            importProviders = List.of(importProvider);
+        } else if (ExportImportConfig.getDir().isPresent()) { // import at startup
+            ExportImportConfig.setStrategy(Strategy.IGNORE_EXISTING);
+            ExportImportConfig.setReplacePlaceholders(true);
+            // enables logging of what is imported
+            ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+            importProviders = getStartupImportProviders();
         }
-    }
-
-    public boolean isRunImport() {
-        return importProvider != null;
     }
 
     public boolean isImportMasterIncluded() {
-        if (!isRunImport()) {
-            throw new IllegalStateException("Import not enabled");
-        }
-        try {
-            return importProvider.isMasterRealmExported();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return importProviders.stream().anyMatch(provider -> {
+                    try {
+                        return provider.isMasterRealmExported();
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to run import", e);
+                    }
+                });
     }
 
     public boolean isRunExport() {
@@ -98,27 +99,31 @@ public class ExportImportManager {
     }
 
     public void runImport() {
-        try {
-            importProvider.importModel();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to run import", e);
-        }
+        importProviders.forEach(ip -> {
+            try {
+                ip.importModel();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to run import", e);
+            }
+        });
     }
 
-    public void runImportAtStartup(String dir) throws IOException {
-        ExportImportConfig.setReplacePlaceholders(true);
-        ExportImportConfig.setAction("import");
+    private List<ImportProvider> getStartupImportProviders() {
+        var dirProp = ExportImportConfig.getDir();
+        if (dirProp.isEmpty()) {
+            return List.of();
+        }
+        String dir = dirProp.get();
 
         Stream<ProviderFactory> factories = sessionFactory.getProviderFactoriesStream(ImportProvider.class);
 
-        for (ProviderFactory factory : factories.collect(Collectors.toList())) {
+        return factories.flatMap(factory -> {
             String providerId = factory.getId();
 
             if ("dir".equals(providerId)) {
-                ExportImportConfig.setDir(dir);
-                ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
-                importProvider.importModel();
-            } else if ("singleFile".equals(providerId)) {
+                return Stream.of(session.getProvider(ImportProvider.class, providerId));
+            }
+            if ("singleFile".equals(providerId)) {
                 Set<String> filesToImport = new HashSet<>();
 
                 File[] files = Paths.get(dir).toFile().listFiles();
@@ -140,22 +145,12 @@ public class ExportImportManager {
                     filesToImport.add(file.getAbsolutePath());
                 }
 
-                for (String file : filesToImport) {
-                    ExportImportConfig.setFile(file);
-                    KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-                        @Override
-                        public void run(KeycloakSession session) {
-                            ImportProvider importProvider = session.getProvider(ImportProvider.class, providerId);
-                            try {
-                                importProvider.importModel();
-                            } catch (IOException cause) {
-                                throw new RuntimeException(cause);
-                            }
-                        }
-                    });
+                if (factory instanceof ImportProviderFactory) {
+                    return filesToImport.stream().map(file -> ((ImportProviderFactory)factory).create(session, Map.of(ExportImportConfig.FILE, file)));
                 }
             }
-        }
+            return Stream.empty();
+        }).toList();
     }
 
     public void runExport() {

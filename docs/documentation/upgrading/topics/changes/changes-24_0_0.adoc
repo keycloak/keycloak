@@ -1,0 +1,511 @@
+= Changes to the Welcome theme
+
+The 'welcome' theme has has been updated to use a new layout and now uses PatternFly 5, rather than PatternFly 3. If you are extending the theme, or providing your own, you may need to update it as follows:
+
+== Migrate from PatternFly 3 to PatternFly 5
+
+The welcome theme was one of the more outdated themes in {project_name}. It was originally based on PatternFly 3, but has now been updated to use PatternFly 5, skipping a major version in the process. If your custom theme extends the built-in theme, you will need to update it to use PatternFly 5 syntax. Consult the https://www.patternfly.org/get-started/develop/[PatternFly 5 documentation] for details.
+
+If you are still using PatternFly 3 in your own custom theme (not extending the built-in one), you can continue to use it, but PatternFly 3 support will be removed in a future release, so you should consider migrating to PatternFly 5 as soon as possible.
+
+== Automatic redirect to the Admin Console
+
+If the Admin Console is enabled, the welcome page will automatically redirect to it if the administrative user already exists. This behavior can be modified by setting the `redirectToAdmin` in your `theme.properties` file. By default, the property is set to `false`, unless you are extending the built-in theme, in which case, the property is set to `true`.
+
+== The `documentationUrl` and `displayCommunityLinks` properties have been removed.
+
+These properties were previously used for navigational elements that are now no longer present. If you are extending the built-in theme, you will need to remove these properties from your `theme.properties` file, as they no longer have any effect.
+
+== Assets are now loaded from 'common' resources
+
+Images such as the background, logo and favicon are now loaded from the 'common' resources, rather than the theme resources. This change means that if you are extending the built-in theme, and are overwriting these images, you will need to move them to the 'common' resources of your theme, and update your `theme.properties` file to include the new paths:
+
+[source,properties]
+----
+# This defaults to 'common/keycloak' if not set.
+import=common/your-theme-name
+----
+
+= Changes to the Account Console theme customization
+
+If you were previously extending the now deprecated version 2 of the Account Console theme, you will need to update your theme to use the new version 3 of the Account Console theme. The new version of the Account Console theme comes with some changes in regards to how it is customized. To start with a clean slate, you can follow the new https://github.com/keycloak/keycloak-quickstarts/tree/release/24.0/extension/extend-account-console[customization quickstart].
+
+To move your custom theme start by changing the `parent` to the new theme:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If you have any custom React components, you will import React directly, rather than using a relative path:
+
+[source,js]
+----
+// Before
+import * as React from "../../../../common/keycloak/web_modules/react.js";
+
+// After
+import React from "react";
+----
+
+
+If you are using `content.json` to customize the theme there are some changes to the structure of the file, specifically:
+
+* The `content` property has been renamed to `children`.
+* The `id`, `icon` and `componentName` properties have been removed, as `modulePath` provides the same functionality.
+
+= Keycloak JS imports might need to be updated
+
+If you are loading Keycloak JS directly from the {project_name} server, this section can be safely ignored. If you are loading Keycloak JS from the NPM package and are using a bundler like Webpack, Vite, and so on, you might need to make some changes to your code. The Keycloak JS package now uses the https://webpack.js.org/guides/package-exports/[`exports` field] in the package.json file. This means that you might have to change your imports:
+
+[source,js]
+----
+// Before
+import Keycloak from 'keycloak-js/dist/keycloak.js';
+import AuthZ from 'keycloak-js/dist/keycloak-authz.js';
+
+// After
+import Keycloak from 'keycloak-js';
+import AuthZ from 'keycloak-js/authz';
+----
+
+= Features Changes
+
+It is no longer allowed to have the same feature in both the `--features` and `--features-disabled` list.  The feature should appear in only one list.
+
+The usage of unversioned feature names, such as `docker`, in the `--features` list will allow for the most supported / latest feature version to be enabled for you. 
+If you need more predictable behavior across releases, reference the particular version you want instead, such as `docker:v1`.
+
+= User Profile Changes
+
+== User profile enabled by default
+
+The user profile feature is now enabled by default. The  `declarative-user-profile`feature is no longer available, because the user profile is assumed to be enabled.
+Therefore, the *User Profile Enabled* switch is removed from the *Realm Settings* and replaced by *Unmanaged attributes*.
+When migrating from previous version, the behavior is as follows:
+
+* For the deployments where *User Profile Enabled* was set to *ON*, *Unmanaged attributes* will be set to *OFF* after the upgrade. As a result, only user attributes supported explicitly
+by user profile will be allowed.
+
+* For the deployments where the *User Profile Enabled* was set to *OFF* (which was also the default settings for the deployments with `declarative-user-profile` feature disabled, which was the default),
+*Unmanaged attributes* will be set to *ON*` after the upgrade. As a result, the behavior should be basically the same as in previous versions with the user profile disabled. 
+The *Attributes* tab will remain in the user details part of the Admin Console. Also users can now set arbitrary attributes through UI pages such as the registration page and update profile page  as long as 
+a particular custom theme supports it. The custom themes should work as before as well. However, consider updating your themes to use the user-profile and
+maybe even remove your custom themes if those themes were need to add custom attributes. See the subsequent section on themes. Also, consider toggling *Unmanaged attributes* to *OFF* or enable this switch only for
+administrators so that you can rely on mainly on using managed attributes.
+
+See the link:{adminguide_link}#user-profile[User Profile Documentation] for the details about the *Unmanaged attributes*.
+
+== Default validations
+
+Default user profile configuration comes with a set of default validations for the basic predefined fields. Those validations were not present in previous versions when the `declarative-user-profile` feature was disabled by default.
+If you have issues due to backward compatibility, you can change the default validators according to your needs. The default validators are as follows:
+
+* The`username`, `email`, `firstName` and `lastName` attributes have a maximum length of 255 characters. These validations were indirectly present in previous versions as well
+because of the database constraint on the table `USER_ENTITY` for those fields with a maximum length of 255 characters. However, when using user storage providers, it might be possible before to use longer values.
+
+* The `username` attribute has a minimum length of three characters. Username has also `username-prohibited-characters` and `up-username-not-idn-homograph` validator by default, which were not present in previous versions.
+See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that username is not editable by default unless you have the realm switch `Edit username enabled`.
+This change means that existing users with incorrect usernames should still work and they will not be enforced to update their usernames. But new users will be enforced to use correct usernames
+during their registration or creation by the admin REST API.
+
+* The `firstName` and `lastName` attributes have the `person-name-prohibited-characters` validator on them, which were not present in previous versions.
+See the link:{adminguide_link}#user-profile[Validation section of the User Profile Documentation] for the details about those attributes. Note that both first
+name and last name are editable by default, so users, who already have such incorrect first/last name from a previous version will be forced to update them when updating their user profiles.
+
+== User attribute names with strange characters
+
+In previous versions, you could create a user with attribute names such as `some:attribute` or `some/attribute`. The user profile intentionally does not allow you to create
+attributes with such strange names in the user profile configuration. So you may need to configure `Unmanaged attributes` for your realm and enable unmanaged attributes for administrators
+(ideally) or for end users (if really needed). Although it is strongly preferred to avoid using such attribute names.
+
+== Verify Profile required action enabled by default
+
+The `verify-profile` required action is enabled by default for new realms. However, when you migrate from a previous version, your existing realms will have the same state of this `verify-profile` action as before, which
+usually means disabled as it was disabled by default in previous versions. For the details about this required action, see the link:{adminguide_link}#user-profile[User Profile Documentation].
+
+== Breaking changes to the User Profile SPI
+
+If you are using the User Profile SPI in your extension, you might be impacted by the API changes introduced in this release.
+
+The `org.keycloak.userprofile.Attributes` interface includes the following changes:
+
+* Method `getValues` was renamed to `get` to make it more aligned with the same operation from a regular Java `Map`
+* Method `isRootAttribute` was moved to the utility class `org.keycloak.userprofile.UserProfileUtil.isRootAttribute`
+* Method `getFirstValue` was renamed to `getFirst` to make it less verbose
+* Method `getReadable(boolean)` was removed and now all attributes (including root attributes) are returned whenever they have read rights.
+
+== Changes to Freemarker templates to render pages based on the user profile and realm
+
+In this release, the following templates were updated to make it possible to dynamically render attributes based
+on the user profile configuration set to a realm:
+
+* `login-update-profile.ftl`
+* `register.ftl`
+* `update-email.ftl`
+
+These templates are responsible for rendering the update profile (when the *Update Profile* required action is enabled for a user), 
+the registration, and the update email (when the *UPDATE_EMAIL* feature is enabled) pages, respectively.
+
+If you use a custom theme to change these templates, they will function as expected because only the content is updated.
+However, we recommend you to take a look at how to configure a link:{adminguide_link}#user-profile[{declarative user profile}] and possibly avoid
+changing the built-in templates by using all the capabilities provided by this feature.
+
+Also, the templates used by the `declarative-user-profile` feature to render the pages for the same flows are no longer necessary and removed in this release:
+
+* `update-user-profile.ftl`
+* `register-user-profile.ftl`
+
+If you were using the `declarative-user-profile` feature in a previous release with customizations to the above templates,
+update the `login-update-profile.ftl` and `register.ftl` accordingly.
+
+== New Freemarker template for the update profile page at first login through a broker
+
+In this release, the server will render the update profile page when the user is authenticating through a broker for the
+first time using the `idp-review-user-profile.ftl` template.
+
+In previous releases, the template used to update the profile during the first broker login flow was the `login-update-profile.ftl`, the same used
+to update the profile when users are authenticating to a realm.
+
+By using separate templates for each flow, a more clear distinction exist as to which flow a template is actually used rather than sharing a same template,
+and potentially introduce unexpected changes and behavior that should only affect pages for a specific flow.
+
+If you have customizations to the `login-update-profile.ftl` template to customize how users update their profiles when authenticating through a broker, make sure to move your changes
+to the new template.
+
+= Truststore Changes
+
+The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated. Therefore, use the new default location for truststore material, `conf/truststores`, or specify your desired paths by using the `truststore-paths` option. For details, see the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+The `tls-hostname-verifier` property should be used instead of the `spi-truststore-file-hostname-verification-policy` property.
+
+A collateral effect of the changes is that now the truststore provider is always configured with some certificates (at least the default java trusted certificates are present). This new behavior can affect other parts of {project_name}.
+
+For example, *webauthn* registration can fail if *attestation conveyance* was configured to *Direct* validation. Previously, if the truststore provider was not configured the incoming certificate was not validated. But now this validation is always performed. The registration fails with `invalid cert path` error as the certificate chain sent by the dongle is not trusted by {project_name}. The Certificate Authorities of the authenticator need to be present in the truststore provider to correctly perform the attestation.
+
+= Deprecated `--proxy` option
+
+The `--proxy` option has been deprecated and will be removed in a future release. The following table explains how the deprecated option maps to supported options.
+
+[%autowidth,cols="a,a"]
+|===
+| Deprecated usage | New usage
+
+|`kc.sh` (no `proxy` option set)
+|`kc.sh`
+|`kc.sh --proxy none`
+|`kc.sh`
+|`kc.sh --proxy edge`
+|`kc.sh --proxy-headers forwarded\|xforwarded --http-enabled true`
+|`kc.sh --proxy passthrough`
+|`kc.sh --hostname-port 80\|443` (depending if HTTPS is used)
+|`kc.sh --proxy reencrypt`
+|`kc.sh --proxy-headers forwarded\|xforwarded`
+|===
+
+NOTE: For hardened security, the `--proxy-headers` option does not allow selecting both `forwarded` and `xforwarded` values at the same time (as it was
+the case before for `--proxy edge` and `--proxy reencrypt`).
+
+WARNING: When using the proxy headers option, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively.
+To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+You can also set the proxy headers when using the Operator:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to the previous behavior by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
+= Changes to the user representation in both Admin API and Account contexts
+
+Both `org.keycloak.representations.idm.UserRepresentation` and `org.keycloak.representations.account.UserRepresentation` representation classes have changed
+so that the root user attributes (such as `username`, `email`, `firstName`, `lastName`, and `locale`) have a consistent representation when fetching or sending
+the representation payload to the Admin and Account APIS, respectively.
+
+The `username`, `email`, `firstName`, `lastName`, and `locale` attributes were moved to a new `org.keycloak.representations.idm.AbstractUserRepresentation` base class.
+
+Also the `getAttributes` method is targeted for representing only custom attributes, so you should not expect any root attribute in the map returned by this method. This method is
+mainly targeted for clients when updating or fetching any custom attribute for a give user.
+
+In order to resolve all the attributes including the root attributes, a new `getRawAttributes` method was added so that the resulting map also includes the root attributes. However,
+this method is not available from the representation payload and it is targeted to be used by the server when managing user profiles.
+
+= `https-client-auth` is a build time option
+
+Option `https-client-auth` had been treated as a run time option, however this is not supported by Quarkus. The option needs to be handled at build time instead.
+
+= Sequential loading of offline sessions and remote sessions
+
+Starting with this release, the first member of a {project_name} cluster will load remote sessions sequentially instead of in parallel.
+If offline session preloading is enabled, those will be loaded sequentially as well.
+
+The previous code led to high resource-consumption across the cluster at startup and was challenging to analyze in production environments and could lead to complex failure scenarios if a node was restarted during loading.
+Therefore, it was changed to sequential session loading.
+
+For offline sessions, the default in this and previous versions of {project_name} is to load those sessions on demand, which scales better with a lot of offline sessions than the attempt to preload them in parallel. Setups that use this default setup are not affected by the change of the loading strategy for offline sessions.
+Setups that have offline session preloading enabled should migrate to a setup where offline-session preloading is disabled.
+
+= Deprecated offline session preloading
+
+The default behavior of {project_name} is to load offline sessions on demand.
+The old behavior to preload them at startup is now deprecated, as preloading them at startup does not scale well with a growing number of sessions, and increases {project_name} memory usage.
+The old behavior will be removed in a future release.
+
+To re-enable old behavior while it is deprecated and not removed yet, use the feature flag and the SPI option as shown below:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features-enabled offline-session-preloading --spi-user-sessions-infinispan-preload-offline-sessions-from-database=true
+----
+
+The API of `UserSessionProvider` deprecated the method `getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId)`.
+Instead of this method, use `getOfflineUserSessionByBrokerUserIdStream(RealmModel, String brokerUserId)` to first get the sessions of a user, and then filter by the broker session ID as needed.
+
+= Infinispan metrics use labels for cache manager and cache names
+
+When enabling metrics for {project_name}'s embedded caches, the metrics now use labels for the cache manager and the cache names.
+
+.Old metric example without labels
+----
+vendor_cache_manager_keycloak_cache_sessions_statistics_approximate_entries_in_memory{cache="sessions",node="..."}
+----
+
+.New metric example with labels
+----
+vendor_statistics_approximate_entries_in_memory{cache="sessions",cache_manager="keycloak",node="..."}
+----
+
+To revert the change for an installation, use a custom Infinispan XML configuration and change the configuration as follows:
+
+----
+<metrics names-as-tags="false" />
+----
+
+= User attribute value length extension
+
+As of this release, {project_name} supports storing and searching by user attribute values longer than 255 characters, which was previously a limitation.
+
+In setups where users are allowed to update attributes, for example, via the account console, prevent denial of service attacks by adding validations.
+Ensure that no unmanaged attributes are allowed and all editable attributes have a validation that limits the input length.
+
+For unmanaged attributes, the maximum length is 2048 characters.
+For managed attributes, the default maximum length is 2048 characters. Administrator can change this by adding a validator of type `length`.
+
+WARNING: {project_name} caches user-related objects in its internal caches.
+Using longer attributes increases the memory that is consumed by the cache.
+Therefore, limiting the size of the length attributes is recommended.
+Consider storing large objects outside {project_name} and reference them by ID or URL.
+
+This change adds new indexes on the tables `USER_ATTRIBUTE` and `FED_USER_ATTRIBUTE`.
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+NOTE: The newly added indexes `USER_ATTR_LONG_VALUES_LOWER_CASE` and `FED_USER_ATTR_LONG_VALUES_LOWER_CASE` may exceed the maximum limit of 30 characters set by Oracle, 
+in case the database is running in compatibility mode. Since Oracle version 12.2, there is a support for longer index names.
+
+== Additional migration steps for LDAP
+
+This is for installations that match all the following criteria:
+
+* User attributes in the LDAP directory are larger than 2048 characters or binary attributes that are larger than 1500 bytes.
+* The attributes are changed by admins or users via the admin console, the APIs or the account console.
+
+To be able to enable changing those attributes via UI and REST APIs, perform the following steps:
+
+. Declare the attributes identified above as managed attributes in the user profile of the realm.
+. Define a `length` validator for each attribute added in the previous step specifying the desired minimum and maximum length of the attribute value.
+For binary values, add 33 percent to the expected binary length to count in the overhead for {project_name}'s internal base64 encoding of binary values.
+
+== Additional migration steps for custom user storage providers
+
+This is for installations that match all the following criteria:
+
+* Running MariaDB or MySQL as a database for {project_name}.
+* Entries in table `FED_USER_ATTRIBUTE` with contents in the `VALUE` column that are larger than 2048 characters.
+This table is used for custom user providers which have federation enabled.
+* The long attributes are changed by admins or users via the admin console or the account console.
+
+To be able to enable changing those attributes via UI and REST APIs,  perform the following steps:
+
+. Declare the attributes identified above as managed attributes in the user profile of the realm.
+. Define a `length` validator for each attribute added in the previous step specifying the desired minimum and maximum length of the attribute value.
+
+= The Admin send-verify-email API now uses the same email verification template
+
+----
+PUT /admin/realms/{realm-name}/users/{id}/send-verify-email
+----
+
+In this release, the API will use the `email-verification.ftl` template instead of `executeActions.ftl`.
+
+.Before upgrading
+----
+Perform the following action(s): Verify Email
+----
+
+.After upgrading
+----
+Confirm validity of e-mail address email@example.org.
+----
+
+If you have customized the `executeActions.ftl` template to modify how users verify their email using this API, ensure that you transfer your modifications to the new template.
+
+A new parameter called `lifespan` will be introduced to allow overriding of the default lifespan value (12 hours).
+
+If you prefer the previous behavior, use the `execute-actions-email` API as follows.
+
+----
+PUT /admin/realms/{realm-name}/users/{id}/execute-actions-email
+
+["VERIFY_EMAIL"]
+----
+
+= Removal of the deprecated mode for SAML encryption
+
+The compatibility mode for SAML encryption introduced in version 21 is now removed. The system property `keycloak.saml.deprecated.encryption` is not managed anymore by the server. The clients which still used the old signing key for encryption should update it from the new IDP configuration metadata.
+
+= Changes to Password Hashing
+
+In this release, we adapted the password hashing defaults to match the https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2[OWASP recommendations for Password Storage].
+
+As part of this change, the default password hashing provider has changed from `pbkdf2-sha256` to `pbkdf2-sha512`.
+Also, the number of default hash iterations for `pbkdf2` based password hashing algorithms changed as follows:
+[%autowidth,cols="a,a,>a,>a"]
+|===
+| Provider ID | Algorithm | Old Iterations | New Iterations
+
+| `pbkdf2`   | `PBKDF2WithHmacSHA1` | 20.000 | 1.300.000
+| `pbkdf2-sha256` | `PBKDF2WithHmacSHA256` | 27.500 | 600.000
+| `pbkdf2-sha512` | `PBKDF2WithHmacSHA512` | 30.000 | 210.000
+|===
+
+If a realm does not explicitly configure a password policy with `hashAlgorithm` and `hashIterations`, then
+the new configuration will take effect on the next password based login, or when a user password is created or updated.
+
+== Performance of new password hashing configuration
+
+Tests on a machine with an Intel i9-8950HK CPU (12) @ 4.800GHz yielded the following &#8960; time differences for hashing 1000 passwords (averages from 3 runs).
+Note that the average duration for the `PBKDF2WithHmacSHA1` was computed with a lower number of passwords due to the long runtime.
+[%autowidth,cols="a,a,>a,>a,>a"]
+|===
+| Provider ID | Algorithm | Old duration | New duration | Difference
+
+| `pbkdf2` | `PBKDF2WithHmacSHA1`   | 122ms | 3.114ms | +2.992ms
+| `pbkdf2-sha256` | `PBKDF2WithHmacSHA256` |  20ms |   451ms |   +431ms
+| `pbkdf2-sha512` | `PBKDF2WithHmacSHA512` |  33ms |   224ms |   +191ms
+|===
+
+Users of the `pbkdf2` provider might need to explicitly reduce the
+number of hash iterations to regain acceptable performance.
+This can be done by configuring the hash iterations explicitly in the password policy of the realm.
+
+== Expected increased overall CPU usage and temporary increased database activity
+
+The Concepts for sizing CPU and memory resources in the {project_name} High Availability guide have been updated to reflect the new hashing defaults.
+The CPU usage per password-based login in our tests increased by the factor of five, which includes both the changed password hashing and unchanged TLS connection handling.
+The overall CPU increase should be around the factor of two to three due to the averaging effect of {project_name}'s other activities like refreshing access tokens and client credential grants.
+Still, this depends on the unique workload of an installation.
+
+After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
+As this clears the user from {project_name}'s internal cache, you will also see an increased read activity on the database level.
+This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
+
+== How to keep using the old pbkdf2-sha256 password hashing?
+
+To keep the old password hashing for a realm, specify `hashAlgorithm` and `hashIterations` explicitly in the
+realm password policy.
+
+* `Hashing Algorithm: pbkdf2-sha256`
+* `Hashing Iterations: 27500`
+
+= Operator Referenced Resource Polling
+
+Secrets and ConfigMaps referenced via the Keycloak CR will now be polled for changes, rather than watched via the api server. It may take around 1 minute for changes to be detected.
+
+This was done so to not require label manipulation on those resources. After upgrading if any Secret still has the operator.keycloak.org/component label, it may be removed or ignored.
+
+= Renaming JPA provider configuration options for migration
+
+After removal of the Map Store the following configuration options were renamed:
+
+* `spi-connections-jpa-legacy-initialize-empty` to `spi-connections-jpa-quarkus-initialize-empty`
+* `spi-connections-jpa-legacy-migration-export` to `spi-connections-jpa-quarkus-migration-export`
+* `spi-connections-jpa-legacy-migration-strategy` to `spi-connections-jpa-quarkus-migration-strategy`
+
+= Renaming model modules
+
+After removal of the Map Store the following modules were renamed:
+
+* `org.keycloak:keycloak-model-legacy-private` to `org.keycloak:keycloak-model-storage-private`
+* `org.keycloak:keycloak-model-legacy-services` to `org.keycloak:keycloak-model-storage-services`
+
+and `org.keycloak:keycloak-model-legacy` module was deprecated and will be removed in the next release in favour of `org.keycloak:keycloak-model-storage` module.
+
+= Temporary lockout log replaced with event
+
+There is now a new event `USER_DISABLED_BY_TEMPORARY_LOCKOUT` when a user is temporarily locked out by the brute force protector.
+The log with ID `KC-SERVICES0053` has been removed as the new event offers the information in a structured form.
+
+As it is a success event, the new event is logged by default at the `DEBUG` level.
+Use the setting `spi-events-listener-jboss-logging-success-level` as described in the link:{adminguide_eventlistener_link}[{adminguide_eventlistener_name} chapter in the {adminguide_name}] to change the log level of all success events.
+
+To trigger custom actions or custom log entries, write a custom event listener as described in the Event Listener SPI in the link:{developerguide_link}[{developerguide_name}].
+
+= Operator Customization Property Keys
+
+The property keys used by the operator for advanced configuration have changed from `operator.keycloak` to `kc.operator.keycloak`.
+
+= Keycloak CR resources options
+
+When no `resources` options are specified in the Keycloak CR and KeycloakRealmImport CR, default values are used.
+The default `requests` memory for Keycloak deployment and the realm import Job is set to `1700MiB`, and the `limits` memory is set to `2GiB`.
+
+= Updates to cookies
+
+As part of refactoring cookie handling in {project_name} there are some changes to how cookies are set:
+
+* All cookies will now have the secure attribute set if the request is through a secure context
+* `WELCOME_STATE_CHECKER` cookies now set `SameSite=Strict`
+
+For custom extensions there may be some changes needed:
+
+* `LocaleSelectorProvider.KEYCLOAK_LOCALE` is deprecated as cookies are now managed through the CookieProvider
+* `HttpResponse.setWriteCookiesOnTransactionComplete` has been removed
+* `HttpCookie` is deprecated, please use `NewCookie.Builder` instead
+* `ServerCookie` is deprecated, please use `NewCookie.Builder` instead
+
+= Internal algorithm changed from HS256 to HS512
+
+The algorithm that {project_name} uses to sign internal tokens (a JWT which is consumed by {project_name} itself, for example a refresh or action token) is being changed from `HS256` to the more secure `HS512`. A new key provider named `hmac-generated-hs512` is now added for realms. Note that in migrated realms the old `hmac-generated` provider and the old `HS256` key are maintained and still validate tokens issued before the upgrade. The `HS256` provider can be manually deleted when no more old tokens exist following the {adminguide_link}#rotating-keys[rotating keys guidelines].
+
+= Different JVM memory settings when running in a container
+
+The JVM options `-Xms` and `-Xmx` were replaced by `-XX:InitialRAMPercentage` and `-XX:MaxRAMPercentage` when running in a container.
+Instead of the static maximum heap size settings, {project_name} specifies the maximum as 70% of the total container memory.
+
+As the heap size is dynamically calculated based on the total container memory, you should *always set the memory limit* for the container.
+
+WARNING: If the memory limit is not set, the memory consumption rapidly increases as the maximum heap size grows up to 70% of the total container memory.
+
+For more details, see the https://www.keycloak.org/server/containers#_specifying_different_memory_settings[Running Keycloak in a container] guide.
+
+ifeval::[{project_community}==true]
+= GELF log handler has been deprecated
+
+With sunsetting of the https://github.com/mp911de/logstash-gelf[underlying library] providing integration
+with GELF, {project_name} will no longer support the GELF log handler out-of-the-box. This feature will be removed in a future
+release. If you require an external log management, consider using file log parsing.
+endif::[]

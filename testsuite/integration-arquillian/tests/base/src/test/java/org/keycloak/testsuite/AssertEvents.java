@@ -27,8 +27,13 @@ import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantTypeFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -38,8 +43,10 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
@@ -80,7 +87,11 @@ public class AssertEvents implements TestRule {
     }
 
     public EventRepresentation poll() {
-        EventRepresentation event = fetchNextEvent();
+        return poll(0);
+    }
+
+    public EventRepresentation poll(int seconds) {
+        EventRepresentation event = fetchNextEvent(seconds);
         Assert.assertNotNull("Event expected", event);
 
         return event;
@@ -131,7 +142,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(AuthorizationCodeGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
@@ -159,7 +170,7 @@ public class AssertEvents implements TestRule {
                 .client(clientId)
                 .user(userId)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(DeviceGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
@@ -168,7 +179,7 @@ public class AssertEvents implements TestRule {
 
     public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
         return expect(EventType.REFRESH_TOKEN)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
@@ -192,7 +203,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectRegister(String username, String email) {
         return expectRegister(username, email, DEFAULT_CLIENT_ID);
     }
-    
+
     public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)
@@ -202,6 +213,15 @@ public class AssertEvents implements TestRule {
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
+    }
+
+    public ExpectedEvent expectIdentityProviderFirstLogin(RealmRepresentation realm, String identityProvider, String idpUsername) {
+        return expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .client("broker-app")
+                .realm(realm)
+                .user((String)null)
+                .detail(Details.IDENTITY_PROVIDER, identityProvider)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, idpUsername);
     }
 
     public ExpectedEvent expectRegisterError(String username, String email) {
@@ -221,7 +241,7 @@ public class AssertEvents implements TestRule {
     public ExpectedEvent expectAuthReqIdToToken(String codeId, String sessionId) {
         return expect(EventType.AUTHREQID_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.TOKEN_ID, isAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
@@ -359,7 +379,43 @@ public class AssertEvents implements TestRule {
         }
 
         public EventRepresentation assertEvent() {
-            return assertEvent(poll());
+            return assertEvent(false, 0);
+        }
+
+        public EventRepresentation assertEvent(boolean ignorePreviousEvents) {
+            return assertEvent(ignorePreviousEvents, 0);
+        }
+
+        /**
+         * Assert the expected event was sent to the listener by Keycloak server. Returns this event.
+         *
+         * @param ignorePreviousEvents if true, test will ignore all the events, which were already present. Test will poll the events from the queue until it finds the event of expected type
+         * @param seconds The seconds to wait for the next event to come
+         * @return the expected event
+         */
+        public EventRepresentation assertEvent(boolean ignorePreviousEvents, int seconds) {
+            if (expected.getError() != null && ! expected.getType().endsWith("_ERROR")) {
+                expected.setType(expected.getType() + "_ERROR");
+            }
+
+            if (ignorePreviousEvents) {
+                // Consider 25 as a "limit" for maximum number of events in the queue for now
+                List<String> presentedEventTypes = new LinkedList<>();
+                for (int i = 0 ; i < 25 ; i++) {
+                    EventRepresentation event = fetchNextEvent(seconds);
+                    if (event != null) {
+                        if (expected.getType().equals(event.getType())) {
+                            return assertEvent(event);
+                        } else {
+                            presentedEventTypes.add(event.getType());
+                        }
+                    }
+                }
+                Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
+                return null; // Unreachable code
+            } else {
+                return assertEvent(poll());
+            }
         }
 
         public EventRepresentation assertEvent(EventRepresentation actual) {
@@ -413,6 +469,24 @@ public class AssertEvents implements TestRule {
             @Override
             public void describeTo(Description description) {
                 description.appendText("Not an UUID");
+            }
+        };
+    }
+
+    public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
+        return new TypeSafeMatcher<String>() {
+            @Override
+            protected boolean matchesSafely(String item) {
+                String[] items = item.split(":");
+                if (items.length != 2) return false;
+                // Grant type shortcut starts at character 4th char and is 2-chars long
+                if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
+                return isUUID().matches(items[1]);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("Not a Token ID with expected grant: " + expectedGrantShortcut);
             }
         };
     }
@@ -480,5 +554,27 @@ public class AssertEvents implements TestRule {
 
     private EventRepresentation fetchNextEvent() {
         return context.testingClient.testing().pollEvent();
+    }
+
+    private EventRepresentation fetchNextEvent(int seconds) {
+        if (seconds <= 0) {
+            return fetchNextEvent();
+        }
+
+        final long millis = TimeUnit.SECONDS.toMillis(seconds);
+        final long start = Time.currentTimeMillis();
+        do {
+            try {
+                EventRepresentation event = fetchNextEvent();
+                if (event != null) {
+                    return event;
+                }
+                // wait a bit to receive the event
+                TimeUnit.MILLISECONDS.sleep(millis / 10L);
+            } catch (InterruptedException e) {
+                // no-op
+            }
+        } while (Time.currentTimeMillis() - start < millis);
+        return null;
     }
 }

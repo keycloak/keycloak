@@ -1,12 +1,15 @@
 package org.keycloak.it.utils;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
+import io.restassured.RestAssured;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.output.OutputFrame.OutputType;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.RemoteDockerImage;
@@ -15,36 +18,57 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
+    private static class BackupConsumer implements Consumer<OutputFrame> {
+
+        final ToStringConsumer stdOut = new ToStringConsumer();
+        final ToStringConsumer stdErr = new ToStringConsumer();
+
+        @Override
+        public void accept(OutputFrame t) {
+            if (t.getType() == OutputType.STDERR) {
+                stdErr.accept(t);
+            } else if (t.getType() == OutputType.STDOUT) {
+                stdOut.accept(t);
+            }
+        }
+    }
+
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
-    private boolean debug;
-    private boolean manualStop;
+    private final boolean debug;
+    private final boolean manualStop;
+    private final int requestPort;
+    private final Integer[] exposedPorts;
+
     private int exitCode = -1;
 
     private String stdout = "";
     private String stderr = "";
-    private ToStringConsumer backupConsumer = new ToStringConsumer();
-    private File dockerScriptFile = new File("../../container/ubi-null.sh");
+    private BackupConsumer backupConsumer = new BackupConsumer();
+    private final File dockerScriptFile = new File("../../container/ubi-null.sh");
 
     private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
 
-    private Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
-    private Map<String, String> envVars = new HashMap<>();
+    private final Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
+    private final Map<String, String> envVars = new HashMap<>();
 
-    public DockerKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
+    public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts) {
         this.debug = debug;
         this.manualStop = manualStop;
+        this.requestPort = requestPort;
+        this.exposedPorts = IntStream.of(exposedPorts).boxed().toArray(Integer[]::new);
     }
 
     @Override
@@ -52,7 +76,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
-    private GenericContainer getKeycloakContainer() {
+    private GenericContainer<?> getKeycloakContainer() {
         File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
 
         if (!distributionFile.exists()) {
@@ -77,12 +101,12 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             image = new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
         }
 
-        return new GenericContainer(image)
+        return new GenericContainer<>(image)
                 .withEnv(envVars)
-                .withExposedPorts(8080)
+                .withExposedPorts(exposedPorts)
                 .withStartupAttempts(1)
                 .withStartupTimeout(Duration.ofSeconds(120))
-                .waitingFor(Wait.forListeningPort());
+                .waitingFor(Wait.forListeningPorts(8080));
     }
 
     @Override
@@ -93,7 +117,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             this.stdout = "";
             this.stderr = "";
             this.containerId = null;
-            this.backupConsumer = new ToStringConsumer();
+            this.backupConsumer = new BackupConsumer();
 
             keycloakContainer = getKeycloakContainer();
 
@@ -106,31 +130,31 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             waitForStableOutput();
         } catch (Exception cause) {
             this.exitCode = -1;
-            this.stdout = backupConsumer.toUtf8String();
-            this.stderr = backupConsumer.toUtf8String();
+            this.stdout = backupConsumer.stdOut.toUtf8String();
+            this.stderr = backupConsumer.stdErr.toUtf8String();
             cleanupContainer();
             keycloakContainer = null;
             LOGGER.warn("Failed to start Keycloak container", cause);
         } finally {
             if (!manualStop) {
-                envVars.clear();
+                stop();
             }
         }
 
-        trySetRestAssuredPort();
+        setRequestPort();
 
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
     }
 
-    private void trySetRestAssuredPort() {
-        try {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            Class<?> restAssured = classLoader.loadClass("io.restassured.RestAssured");
-            Field port = restAssured.getDeclaredField("port");
-            port.set(null, keycloakContainer.getMappedPort(8080));
-        } catch (Exception ignore) {
-            // keeping the workaround to set the container port to restassured
-            // TODO: better way to expose the port to tests
+    @Override
+    public void setRequestPort() {
+        setRequestPort(requestPort);
+    }
+
+    @Override
+    public void setRequestPort(int port) {
+        if (keycloakContainer != null) {
+            RestAssured.port = keycloakContainer.getMappedPort(port);
         }
     }
 
@@ -181,14 +205,18 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private void cleanupContainer() {
         if (containerId != null) {
             try {
-                final String finalContainerId = containerId;
                 Runnable reaper = new Runnable() {
                     @Override
                     public void run() {
                         try {
+                            if (containerId == null) {
+                                return;
+                            }
                             DockerClient dockerClient = DockerClientFactory.lazyClient();
                             dockerClient.killContainerCmd(containerId).exec();
                             dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).withForce(true).exec();
+                        } catch (NotFoundException notFound) {
+                            LOGGER.debug("Container is already cleaned up, no additional cleanup required");
                         } catch (Exception cause) {
                             throw new RuntimeException("Failed to stop and remove container", cause);
                         }
@@ -205,7 +233,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null && keycloakContainer.isRunning()) {
             return keycloakContainer.getLogs(OutputFrame.OutputType.STDOUT);
         } else if (this.stdout.isEmpty()) {
-            return backupConsumer.toUtf8String();
+            return backupConsumer.stdOut.toUtf8String();
         } else {
             return this.stdout;
         }
@@ -220,7 +248,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (keycloakContainer != null && keycloakContainer.isRunning()) {
             return keycloakContainer.getLogs(OutputFrame.OutputType.STDERR);
         } else if (this.stderr.isEmpty()) {
-            return backupConsumer.toUtf8String();
+            return backupConsumer.stdErr.toUtf8String();
         } else {
             return this.stderr;
         }
@@ -253,9 +281,15 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (type.isInstance(this)) {
-            return (D) this;
+            return type.cast(this);
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
     }
+
+    @Override
+    public void clearEnv() {
+        this.envVars.clear();
+    }
+
 }

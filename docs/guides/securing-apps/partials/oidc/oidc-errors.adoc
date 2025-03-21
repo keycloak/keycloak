@@ -1,0 +1,9 @@
+
+[[_oidc-errors]]
+== {project_name} specific errors
+
+{project_name} server can send errors to the client application in the OIDC authentication response with parameters `error=temporarily_unavailable` and `error_description=authentication_expired`.
+{project_name} sends this error when a user is authenticated and has an SSO session, but the authentication session expired in the current browser tab and hence the {project_name} server cannot automatically do SSO
+re-authentication of the user and redirect back to client with a successful response. When a client application receives this type of error, it is ideal to retry authentication immediately and send a new
+OIDC authentication request to the {project_name} server, which should typically always authenticate the user due to the SSO session and redirect back. For more details, see
+the link:{adminguide_link}#_authentication-sessions[{adminguide_name}].

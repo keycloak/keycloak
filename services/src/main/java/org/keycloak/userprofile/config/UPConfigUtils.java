@@ -19,9 +19,12 @@ package org.keycloak.userprofile.config;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,7 +51,7 @@ import org.keycloak.validate.Validators;
 
 /**
  * Utility methods to work with User Profile Configurations
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
@@ -59,6 +62,7 @@ public class UPConfigUtils {
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
     private static final Set<String> PSEUDOROLES = new HashSet<>();
+    public static final Pattern ATTRIBUTE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9\\._\\-]+");
 
     static {
         PSEUDOROLES.add(ROLE_ADMIN);
@@ -87,7 +91,7 @@ public class UPConfigUtils {
      * @throws IOException if JSON configuration can't be loaded (eg due to JSON format errors etc)
      */
     public static UPConfig parseConfig(String rawConfig) throws IOException {
-        return readConfig(new ByteArrayInputStream(rawConfig.getBytes("UTF-8")));
+        return readConfig(new ByteArrayInputStream(rawConfig.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
@@ -110,13 +114,13 @@ public class UPConfigUtils {
         errors.addAll(validateAttributeGroups(config));
         return errors;
     }
-    
+
     private static List<String> validateAttributeGroups(UPConfig config) {
         long groupsWithoutName = config.getGroups().stream().filter(g -> g.getName() == null).collect(Collectors.counting());
-        
+
         if (groupsWithoutName > 0) {
             String errorMessage = "Name is mandatory for groups, found " + groupsWithoutName + " group(s) without name.";
-            return Collections.singletonList(errorMessage);            
+            return Collections.singletonList(errorMessage);
         }
         return Collections.emptyList();
     }
@@ -126,13 +130,11 @@ public class UPConfigUtils {
         Set<String> groups = config.getGroups().stream()
                 .map(g -> g.getName())
                 .collect(Collectors.toSet());
-        
+
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
             errors.addAll(validateRootAttributes(config));
-        } else {
-            errors.add("UserProfile configuration without 'attributes' section is not allowed");
         }
 
         return errors;
@@ -198,13 +200,13 @@ public class UPConfigUtils {
         if (attributeConfig.getSelector() != null) {
             validateScopes(attributeConfig.getSelector().getScopes(), "selector.scopes", attributeName, errors, session);
         }
-        
+
         if (attributeConfig.getGroup() != null) {
             if (!groups.contains(attributeConfig.getGroup())) {
                 errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");
             }
         }
-        
+
         if (attributeConfig.getAnnotations()!=null) {
             validateAnnotations(attributeConfig.getAnnotations(), errors, attributeName);
         }
@@ -239,7 +241,7 @@ public class UPConfigUtils {
      * @return
      */
     public static boolean isValidAttributeName(String attributeName) {
-        return Pattern.matches("[a-zA-Z0-9\\._\\-]+", attributeName);
+        return ATTRIBUTE_NAME_PATTERN.matcher(attributeName).matches();
     }
 
     /**
@@ -247,7 +249,7 @@ public class UPConfigUtils {
      *
      * @param roles to validate
      * @param fieldName we are validating for use in error messages
-     * @param errors to ass error message into
+     * @param errors to pass error message into
      * @param attributeName we are validating for use in error messages
      */
     private static void validateRoles(Set<String> roles, String fieldName, List<String> errors, String attributeName) {
@@ -293,19 +295,39 @@ public class UPConfigUtils {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
-    public static String readDefaultConfig() {
-        try (InputStream is = UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
+    public static String readSystemDefaultConfig() {
+        try (InputStream is = getSystemDefaultConfig()) {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
         }
     }
 
-    public static UPConfig parseDefaultConfig() {
-        try {
-            return JsonSerialization.readValue(readDefaultConfig(), UPConfig.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse default user profile configuration", e);
+    public static UPConfig parseSystemDefaultConfig() {
+        return parseConfig(getSystemDefaultConfig());
+    }
+
+    public static UPConfig parseConfig(Path configPath) {
+        if (configPath == null) {
+            throw new IllegalArgumentException("Null configPath");
         }
+
+        try (InputStream is = new FileInputStream(configPath.toFile())) {
+            return parseConfig(is);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+        }
+    }
+
+    private static UPConfig parseConfig(InputStream is) {
+        try {
+            return JsonSerialization.readValue(is, UPConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse default user profile configuration stream", e);
+        }
+    }
+
+    private static InputStream getSystemDefaultConfig() {
+        return UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE);
     }
 }

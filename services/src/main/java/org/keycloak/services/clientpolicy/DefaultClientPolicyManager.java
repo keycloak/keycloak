@@ -18,16 +18,13 @@
 package org.keycloak.services.clientpolicy;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
-import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
@@ -42,11 +39,9 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     private static final Logger logger = Logger.getLogger(DefaultClientPolicyManager.class);
 
     private final KeycloakSession session;
-    private final Supplier<List<ClientProfileRepresentation>> globalClientProfilesSupplier;
 
-    public DefaultClientPolicyManager(KeycloakSession session, Supplier<List<ClientProfileRepresentation>> globalClientProfilesSupplier) {
+    public DefaultClientPolicyManager(KeycloakSession session) {
         this.session = session;
-        this.globalClientProfilesSupplier = globalClientProfilesSupplier;
     }
 
     @Override
@@ -143,7 +138,8 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         ClientProfilesRepresentation clientProfiles =  ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
 
         for (String profileName : policy.getProfiles()) {
-            ClientProfile profile = ClientPoliciesUtil.getClientProfileModel(session, realm, clientProfiles, globalClientProfilesSupplier.get(), profileName);
+            ClientProfile profile = ClientPoliciesUtil.getClientProfileModel(session, realm, clientProfiles,
+                    ClientPoliciesUtil.getGlobalClientProfiles(session), profileName);
             if (profile == null) {
                 logger.tracev("PROFILE NOT FOUND :: policy name = {0}, profile name = {1}", policy.getName(), profileName);
                 continue;
@@ -212,7 +208,8 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
             if (clientProfiles == null) {
                 throw new ClientPolicyException("Passing null clientProfiles not allowed");
             }
-            ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesForUpdate(session, realm, clientProfiles, globalClientProfilesSupplier.get());
+            ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesForUpdate(session, realm, clientProfiles,
+                    ClientPoliciesUtil.getGlobalClientProfiles(session));
             String validatedJsonString = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
             ClientPoliciesUtil.setClientProfilesJsonString(realm, validatedJsonString);
             logger.tracev("UPDATE PROFILES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
@@ -227,7 +224,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         try {
             ClientProfilesRepresentation clientProfiles = ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
             if (includeGlobalProfiles) {
-                clientProfiles.setGlobalProfiles(new LinkedList<>(globalClientProfilesSupplier.get()));
+                clientProfiles.setGlobalProfiles(ClientPoliciesUtil.getGlobalClientProfiles(session));
             }
 
             if (logger.isTraceEnabled()) {
@@ -250,7 +247,8 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
             if (clientPolicies == null) {
                 throw new ClientPolicyException("Passing null clientPolicies not allowed");
             }
-            ClientPoliciesRepresentation clientPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesForUpdate(session, realm, clientPolicies, globalClientProfilesSupplier.get());
+            ClientPoliciesRepresentation clientPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesForUpdate(session, realm, clientPolicies,
+                    ClientPoliciesUtil.getGlobalClientProfiles(session), ClientPoliciesUtil.getGlobalClientPolicies(session));
             validatedJsonString = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(clientPoliciesRep);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
@@ -261,9 +259,12 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     @Override
-    public ClientPoliciesRepresentation getClientPolicies(RealmModel realm) throws ClientPolicyException {
+    public ClientPoliciesRepresentation getClientPolicies(RealmModel realm, boolean includeGlobalPolicies) throws ClientPolicyException {
         try {
             ClientPoliciesRepresentation clientPolicies = ClientPoliciesUtil.getClientPoliciesRepresentation(session, realm);
+            if (includeGlobalPolicies) {
+                clientPolicies.setGlobalPolicies(ClientPoliciesUtil.getGlobalClientPolicies(session));
+            }
             if (logger.isTraceEnabled()) {
                 logger.tracev("GET POLICIES :: realm = {0}, GET = {1}", realm.getName(), JsonSerialization.writeValueAsString(clientPolicies));
             }
@@ -283,7 +284,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
             ClientProfilesRepresentation filteredOutProfiles = getClientProfiles(realm, false);
             rep.setParsedClientProfiles(filteredOutProfiles);
 
-            ClientPoliciesRepresentation filteredOutPolicies = getClientPolicies(realm);
+            ClientPoliciesRepresentation filteredOutPolicies = getClientPolicies(realm, false);
             rep.setParsedClientPolicies(filteredOutPolicies);
         } catch (ClientPolicyException cpe) {
             throw new IllegalStateException("Exception during export client profiles or client policies", cpe);

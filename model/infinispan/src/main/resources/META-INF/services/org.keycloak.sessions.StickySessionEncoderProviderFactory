@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory
+org.keycloak.models.sessions.infinispan.remote.RemoteStickySessionEncoderProviderFactory

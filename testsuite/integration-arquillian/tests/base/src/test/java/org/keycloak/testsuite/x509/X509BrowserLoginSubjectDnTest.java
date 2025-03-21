@@ -17,17 +17,12 @@
 
 package org.keycloak.testsuite.x509;
 
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -38,28 +33,17 @@ import org.openqa.selenium.WebDriver;
 public class X509BrowserLoginSubjectDnTest extends AbstractX509AuthenticationTest {
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
-    }
-
-    @BeforeClass
-    public static void checkAssumption() {
-        try {
-            CertificateFactory.getInstance("X.509", "SUN");
-        }
-        catch (CertificateException | NoSuchProviderException e) {
-            Assume.assumeNoException("Test assumes the SUN security provider", e);
-        }
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @BeforeClass
     public static void onBeforeTestClass() {
-        configurePhantomJS("/ca.crt", "/certs/clients/test-user-san@localhost.cert.pem",
-                           "/certs/clients/test-user@localhost.key.pem", "password");
+        configureHtmlUnit("/certs/clients/test-user-san-cert-test-user-key@localhost.p12");
     }
 
     private String setup(boolean canonicalDnEnabled) throws Exception {

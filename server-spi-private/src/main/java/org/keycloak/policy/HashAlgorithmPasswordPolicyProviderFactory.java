@@ -32,6 +32,8 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
 
     private KeycloakSession session;
 
+    private String defaultHashAlgorithm;
+
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
         this.session = session;
@@ -44,6 +46,7 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        defaultHashAlgorithm = factory.getProviderFactory(PasswordHashProvider.class).getId();
     }
 
     @Override
@@ -77,7 +80,7 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
 
     @Override
     public String getDefaultConfigValue() {
-        return PasswordPolicy.HASH_ALGORITHM_DEFAULT;
+        return defaultHashAlgorithm;
     }
 
     @Override
@@ -87,12 +90,14 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
 
     @Override
     public Object parseConfig(String value) {
-        String providerId = value != null && value.length() > 0 ? value : PasswordPolicy.HASH_ALGORITHM_DEFAULT;
-        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, providerId);
+        if (value == null) {
+            throw new PasswordPolicyConfigException("Password hashing provider id must be set");
+        }
+        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, value);
         if (provider == null) {
             throw new PasswordPolicyConfigException("Password hashing provider not found");
         }
-        return providerId;
+        return value;
     }
 
 }

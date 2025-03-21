@@ -1,5 +1,6 @@
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -8,42 +9,34 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  ValidatedOptions,
+  TextInput,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { toClient } from "../../clients/routes/Client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { toDedicatedScope } from "../../clients/routes/DedicatedScopeDetails";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 export default function MappingDetails() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
-  const { id, mapperId } = useParams<MapperParams>();
+  const { id, mapperId, viewMode } = useParams<MapperParams>();
   const form = useForm();
-  const {
-    register,
-    setValue,
-    formState: { errors },
-    handleSubmit,
-  } = form;
+  const { setValue, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
   const [config, setConfig] = useState<{
     protocol?: string;
@@ -53,14 +46,13 @@ export default function MappingDetails() {
   const navigate = useNavigate();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
-  const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
-  const isUpdating = !!mapperId.match(isGuid);
+  const isUpdating = viewMode === "edit";
 
   const isOnClientScope = !!useMatch(MapperRoute.path);
   const toDetails = () =>
     isOnClientScope
       ? toClientScope({ realm, id, tab: "mappers" })
-      : toClient({ realm, clientId: id, tab: "mappers" });
+      : toDedicatedScope({ realm, clientId: id, tab: "mappers" });
 
   useFetch(
     async () => {
@@ -159,19 +151,23 @@ export default function MappingDetails() {
     try {
       const mapping = { ...config, ...convertFormValuesToObject(formMapping) };
       if (isUpdating) {
-        isOnClientScope
-          ? await adminClient.clientScopes.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            )
-          : await adminClient.clients.updateProtocolMapper(
-              { id, mapperId },
-              { id: mapperId, ...mapping },
-            );
+        if (isOnClientScope) {
+          await adminClient.clientScopes.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        } else {
+          await adminClient.clients.updateProtocolMapper(
+            { id, mapperId },
+            { id: mapperId, ...mapping },
+          );
+        }
       } else {
-        isOnClientScope
-          ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
-          : await adminClient.clients.addProtocolMapper({ id }, mapping);
+        if (isOnClientScope) {
+          await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
+        } else {
+          await adminClient.clients.addProtocolMapper({ id }, mapping);
+        }
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {
@@ -200,59 +196,47 @@ export default function MappingDetails() {
         }
       />
       <PageSection variant="light">
-        <FormAccess
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="manage-clients"
-        >
-          <FormGroup label={t("mapperType")} fieldId="mapperType">
-            <KeycloakTextInput
-              type="text"
-              id="mapperType"
-              name="mapperType"
-              isReadOnly
-              value={mapping?.name}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("name")}
-            labelIcon={
-              <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
-            }
-            fieldId="name"
-            isRequired
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("required")}
+        <FormProvider {...form}>
+          <FormAccess
+            isHorizontal
+            onSubmit={handleSubmit(save)}
+            role="manage-clients"
           >
-            <KeycloakTextInput
-              id="name"
-              isReadOnly={isUpdating}
-              validated={
-                errors.name ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              {...register("name", { required: true })}
+            <FormGroup label={t("mapperType")} fieldId="mapperType">
+              <TextInput
+                type="text"
+                id="mapperType"
+                name="mapperType"
+                readOnlyVariant="default"
+                value={mapping?.name}
+              />
+            </FormGroup>
+            <TextControl
+              name="name"
+              label={t("name")}
+              labelIcon={t("mapperNameHelp")}
+              readOnlyVariant={isUpdating ? "default" : undefined}
+              rules={{ required: t("required") }}
             />
-          </FormGroup>
-          <FormProvider {...form}>
             <DynamicComponents
               properties={mapping?.properties || []}
               isNew={!isUpdating}
+              stringify
             />
-          </FormProvider>
-          <ActionGroup>
-            <Button variant="primary" type="submit">
-              {t("save")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => <Link {...props} to={toDetails()} />}
-            >
-              {t("cancel")}
-            </Button>
-          </ActionGroup>
-        </FormAccess>
+            <ActionGroup>
+              <Button variant="primary" type="submit" data-testid="save">
+                {t("save")}
+              </Button>
+              <Button
+                data-testid="cancel"
+                variant="link"
+                component={(props) => <Link {...props} to={toDetails()} />}
+              >
+                {t("cancel")}
+              </Button>
+            </ActionGroup>
+          </FormAccess>
+        </FormProvider>
       </PageSection>
     </>
   );

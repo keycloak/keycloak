@@ -28,35 +28,35 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="ADMIN_EVENT_ENTITY")
 public class AdminEventEntity {
-    
+
     @Id
     @Column(name="ID", length = 36)
     private String id;
-    
+
     @Column(name="ADMIN_EVENT_TIME")
     private long time;
-    
+
     @Column(name="REALM_ID")
     private String realmId;
-    
+
     @Column(name="OPERATION_TYPE")
     private String operationType;
 
     @Column(name="RESOURCE_TYPE", length = 64)
     private String resourceType;
-    
+
     @Column(name="AUTH_REALM_ID")
     private String authRealmId;
-    
+
     @Column(name="AUTH_CLIENT_ID")
     private String authClientId;
 
     @Column(name="AUTH_USER_ID")
     private String authUserId;
-    
+
     @Column(name="IP_ADDRESS")
     private String authIpAddress;
-    
+
     @Column(name="RESOURCE_PATH")
     private String resourcePath;
 
@@ -65,6 +65,9 @@ public class AdminEventEntity {
 
     @Column(name="ERROR")
     private String error;
+
+    @Column(name="DETAILS_JSON")
+    private String detailsJson;
 
     public String getId() {
         return id;
@@ -160,5 +163,13 @@ public class AdminEventEntity {
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public String getDetailsJson() {
+        return detailsJson;
+    }
+
+    public void setDetailsJson(String detailsJson) {
+        this.detailsJson = detailsJson;
     }
 }

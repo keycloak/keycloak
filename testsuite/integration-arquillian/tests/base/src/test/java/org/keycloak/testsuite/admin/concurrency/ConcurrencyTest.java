@@ -35,12 +35,14 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.junit.Ignore;
 
@@ -163,11 +165,18 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
             c = realm.clients().get(id).toRepresentation();
             assertNotNull(c);
-            assertTrue("Client " + name + " not found in client list",
-              realm.clients().findAll().stream()
-                .map(ClientRepresentation::getClientId)
-                .filter(Objects::nonNull)
-                .anyMatch(name::equals));
+
+            int findAttempts = 1;
+            if (StoreProvider.getCurrentProvider().equals(StoreProvider.DEFAULT)) {
+                findAttempts = 5;
+            }
+            boolean clientFound = IntStream.range(0, findAttempts)
+                    .anyMatch(i -> realm.clients().findAll().stream()
+                            .map(ClientRepresentation::getClientId)
+                            .filter(Objects::nonNull)
+                            .anyMatch(name::equals));
+
+            assertTrue("Client " + name + " not found in client list after " + findAttempts + " attempts", clientFound);
         }
     }
 
@@ -193,11 +202,18 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
             c = client.toRepresentation();
             assertNotNull(c);
-            assertTrue("Client " + name + " not found in client list",
-              clients.findAll().stream()
-                .map(ClientRepresentation::getClientId)
-                .filter(Objects::nonNull)
-                .anyMatch(name::equals));
+
+            int findAttempts = 1;
+            if (StoreProvider.getCurrentProvider().equals(StoreProvider.DEFAULT)) {
+                findAttempts = 5;
+            }
+            boolean clientFound = IntStream.range(0, findAttempts)
+                    .anyMatch(i -> clients.findAll().stream()
+                            .map(ClientRepresentation::getClientId)
+                            .filter(Objects::nonNull)
+                            .anyMatch(name::equals));
+
+            assertTrue("Client " + name + " not found in client list after " + findAttempts + " attempts", clientFound);
 
             client.remove();
             try {
@@ -235,17 +251,11 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             c = realm.groups().group(id).toRepresentation();
             assertNotNull(c);
 
-            boolean retry = true;
-            int i = 0;
-            do {
-                List<String> groups = realm.groups().groups().stream()
-                    .map(GroupRepresentation::getName)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-                retry = !groups.contains(name);
-                i++;
-            } while(retry && i < 3);
-            assertFalse("Group " + name + " [" + id + "] " + " not found in group list", retry);
+            assertTrue("Group " + name + " [" + id + "] " + " not found in group list",
+                    realm.groups().groups().stream()
+                            .map(GroupRepresentation::getName)
+                            .filter(Objects::nonNull)
+                            .anyMatch(name::equals));
         }
     }
 

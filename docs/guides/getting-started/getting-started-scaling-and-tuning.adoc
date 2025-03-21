@@ -1,0 +1,90 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Scaling"
+summary="Get started with {project_name} scaling and tuning">
+
+After starting {project_name}, consider adapting your instance to the required load using these scaling and tuning guidelines:
+
+- minimize resource utilization
+- achieve target response times
+- minimize database pool contention
+- resolve out of memory errors, or excessive garbage collection overhead
+- provide higher availability via horizontal scaling
+
+== Vertical Scaling
+
+As you monitor your {project_name} workload, check to see if the CPU or memory is under or over utilized. Consult <@links.ha id="concepts-memory-and-cpu-sizing" /> to better tune the resources available to the Java Virtual Machine (JVM).
+
+Before increasing the amount of memory available to the JVM, in particular when experiencing an out of memory error, it is best to determine what is contributing to the increased footprint using a heap dump. Excessive response times may also indicate the HTTP work queue is too large and tuning for load shedding would be better than simply providing more memory. See the following section.
+
+=== Common Tuning Options
+
+{project_name} automatically adjusts the number of used threads based upon how many cores you make available. Manually changing the thread count can improve overall throughput. For more details,  see <@links.ha id="concepts-threads" />. However, changing the thread count must be done in conjunction with other JVM resources, such as database connections;  otherwise, you may be moving a bottleneck somewhere else. For more details, see <@links.ha id="concepts-database-connections" />.
+
+To limit memory utilization of queued work and to provide for load shedding, see <@links.ha id="concepts-threads" anchor="load-shedding" />.
+
+If you are experiencing timeouts in obtaining database connections, you should consider increasing the number of connections available. For more details, see <@links.ha id="concepts-database-connections" />.
+
+=== Vertical Autoscaling
+
+Some platforms, such as Kubernetes, provide mechanisms to vertically autoscale.  Vertical autoscaling is not recommended for {project_name} if it requires restarting the server instance, which is currently the case for Java on Kubernetes. You can consider instead providing higher CPU and/or memory limits to allow your JVM to adapt within those limits as needed.
+
+== Horizontal Scaling
+
+A single {project_name} instance is susceptible to availability issues. If the instance goes down, you experience a full outage until another instance comes up. By running two or more cluster members on different machines, you greatly increase the availability of {project_name}.
+
+A single JVM has a limit on how many concurrent requests it can handle. Additional server instances can provide roughly linear scaling of throughput until associated resources, such as the database or distributed caching, limit that scaling.
+
+In general, consider allowing the {project_name} Operator to handle horizontal scaling concerns. When using the Operator, set the Keycloak custom resource `spec.instances` as desired to horizontally scale.  For more details, see <@links.ha id="deploy-keycloak-kubernetes" />.
+
+If you are not using the Operator, please review the following:
+
+* Higher availability is possible of your instances are on separate machines. On Kubernetes, use Pod anti-affinitity to enforce this.
+
+* Use distributed caching; for multi-site clusters, use external caching for cluster members to share the same state. For details on the relevant configuration, see <@links.server id="caching" />. The embedded Infinispan cache has horizontal scaling considerations including:
+
+- Your instances need a way to discover each other. For more information, see discovery in <@links.server id="caching" />.
+- This cache is not optimal for clusters that span multiple availability zones, which are also called stretch clusters. For embedded Infinispan cache, work to have all instances in one availability zone. The goal is to avoid unnecessary round-trips in the communication that would amplify in the response times. On Kubernetes, use Pod affinity to enforce this grouping of Pods.
+- This cache does not gracefully handle multiple members joining or leaving concurrently. In particular, members leaving at the same time can lead to data loss. On Kubernetes, you can use a StatefulSet with the default serial handling to ensure Pods are started and stopped sequentially.
+
+To avoid losing service availability when a whole site is unavailable, see the high availability guide for more information on a multi-site deployment. See <@links.ha id="introduction" />.
+
+=== Horizontal Autoscaling
+
+Horizontal autoscaling allows for adding or removing {project_name} instances on demand. Keep in mind that startup times will not be instantaneous and that optimized images should be used to minimize the start time.
+
+When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the Infinispan caches, which can get expensive if many entries exist in those caches.
+To minimize this time we limit number of entries in session related caches to 10000 by default. Note, this optimization is possible only if `persistent-user-sessions` feature is not explicitly disabled in your configuration.
+
+On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler]. For example to scale on average CPU utilization:
+
+[source,yaml]
+----
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: keycloak-hpa
+  namespace: keycloak-cluster
+spec:
+  scaleTargetRef:
+    apiVersion: k8s.keycloak.org/v2alpha1
+    kind: Keycloak
+    name: keycloak
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+----
+
+NOTE: Scaling on memory is generally not needed with persistent sessions enabled, and should not be needed at all when using remote {jdgserver_name}. If you are using persistent sessions or remote {jdgserver_name} and you experience memory issues, it is best to fully diagnose the problem and revisit the <@links.ha id="concepts-memory-and-cpu-sizing" /> guide. Adjusting the memory request and limit is preferable to horizontal scaling.
+
+Consult the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[Kubernetes docs] for additional information, including the usage of https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/#autoscaling-on-multiple-metrics-and-custom-metrics[custom metrics].
+
+</@tmpl.guide>

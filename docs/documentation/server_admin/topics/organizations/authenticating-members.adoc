@@ -1,0 +1,123 @@
+[id="authenticating-members_{context}"]
+
+=  Authenticating members
+[role="_abstract"]
+When you enable organizations for a realm, user authentication is changed. If the user is recognized to be
+authenticating in the context of an organization, the authentication flow changes on a per-organization basis.
+
+When a realm is created, the authentication flows are automatically updated to enable specific steps to authenticate and onboard organization members. The authentication flows updated are:
+
+* *browser*
+
+* *first broker login*
+
+The main change to the *browser* flow is that it defaults to an identity-first login so that users are identified before prompting for their credentials.
+Concerning the first broker login flow, the main change is automatically adding the users as organization members once they authenticate through the identity provider associated with an organization and successfully complete the flow.
+
+The choice to use an identity-first login or not depends on the existence of an organization in a realm.
+If no organizations exist, the user follows the usual steps to authenticate using the username and password,
+or any other step configured in the browser flow. Otherwise, the user is asked first for a username or email to continue authenticating to a realm.
+
+The identity-first login main goal is to identify the user:
+
+* Is the user an existing or a new user?
+* Is the user a member of any organization within a realm?
+* If an organization member, is the user linked to any identity provider associated with the organization?
+
+Depending on the outcome when identifying the user, the authentication flow changes to either proceed with authentication
+by asking for the user's credentials or eventually redirect the user automatically to authenticate within the organization security
+boundaries through an identity provider.
+
+== Understanding the identity-first login
+
+In addition to identifying the user once the username is provided, the identity-first login is also responsible for:
+
+* Matching an email domain to an organization.
+* Deciding if the authentication flow should continue or not if an account already exists for the username provided
+* Deciding how the user should be authenticated depending on how the domains and the identity providers are configured to an organization
+* Seamlessly authenticating users through an identity provider associated with an organization if the email domain matches the domain set to the identity provider
+
+The identity-first login provides the same capabilities that are provided by the usual login page with the username and
+password fields. Users can still self-register by clicking the register link or choose any identity or social
+broker that is not linked to an organization in that realm.
+
+.Identity-first login page
+image:images/organizations-identity-first-login.png[alt="Identity-first login page"]
+
+In the case of a user that does not exist, if that user tries to authenticate using an email domain that matches an organization domain,
+the identity-first login page appears again with a message that the username provided is not valid.
+At this point, no need exists to ask the user for credentials.
+
+.Identity-first when user does not exist
+image:images/organizations-identity-first-error.png[alt="Identity-first login error"]
+
+Several options exist to register the user allowing that user to authenticate to the realm and join an organization.
+
+If the realm has the self-registration setting enabled, the user can click the *Register* link at the identity-first login page
+and create an account at the realm.
+After that, the administrator can send an invitation link to the user or manually add the user as a member of an organization.
+For more details, see <<_managing_members_,Managing members>>.
+
+If the organization has an identity provider without a domain and the *Hide on login page* setting is *OFF*, users can also click
+the identity provider link at the identity-first login page to automatically create an account and join an organization
+once they authenticate through the identity provider.
+For more details, see <<_managing_identity_provider_,Managing identity providers>>.
+
+In a similar situation to the previous section, the organization may have an identity provider set with one of the organization domains.
+In this situation, the user is redirected to the identity provider if that user's email matches a specific domain from the organization.
+Once the flow completes, an account is created and the user joins the organization.
+
+== Configuring existing authentication flows
+
+As previously mentioned for new realms, authentication flows are automatically updated with the necessary steps
+to support organizations and authenticate their members. For existing realms, in addition to enabling organizations to the
+realm, you also need to manually update your existing (custom) authenticating flows.
+
+Change the *browser* flow by following these steps:
+
+.Procedure
+. Duplicate the current flow bound to the *Browser flow* binding type to avoid breaking the flow you are currently using
+. Click *Add sub-flow* and give it a name such as *My Organization*
+. Move the newly added *My Organization* sub-flow to execute right after the *Identity Provider Redirector* execution step.
+The main point here is that the sub-flow should happen before any other sub-flow or execution step that authenticates the
+user using whatever credentials you support in your realm. Once added, change the *Requirement* to *Alternative*.
+. Click *Add sub-flow* in the *My Organization* sub-flow and give it a name such as *My Organization - Conditional*. Once added, change the *Requirement* to *Conditional*.
+. Click *Add condition* in the *My Organization - Conditional* sub-flow and select *Condition - user configured*. Once added, change the *Requirement* to *Required*.
+. Click *Add step* in the *My Organization - Conditional* sub-flow and select the *Organization Identity-First Login
+* execution step. Once added, change the *Requirement* to *Alternative*.
+. Bind the authentication flow to the *Browser* binding type.
+
+.Organizations browser flow
+image:images/organizations-browser-flow.png[alt="Organizations browser flow"]
+
+Once you enable the <<_enabling_organization_,Organizations>> setting to the realm and create
+at least a single organization, you should be able to see the identity-first login page and start using organizations
+in your realm.
+
+Change the *first broker login* flow by following these steps:
+
+.Procedure
+. Duplicate the current flow bound to the *First broker login flow* bind type to avoid breaking the flow you are currently using
+. Click *Add sub-flow* and give it a name such as `Organization Member - Conditional`. Once added, change the *Requirement* to *Conditional*.
+. Click *Add condition* in the *Organization Member - Conditional* sub-flow and select *Condition - user configured*. Once added, change the *Requirement* to *Required*.
+. Click *Add step* in the *Organization Member - Conditional* sub-flow and select the *Organization Member Onboard* execution step. Once added, change the *Requirement* to *Required*.
+. Bind the authentication flow to the *First broker login* binding type.
+
+.Organizations first broker flow
+image:images/organizations-first-broker-flow.png[alt="Organizations first broker flow"]
+
+You should now be able to authenticate using any identity provider associated with an organization
+and have the user joining the organization as a member as soon as they complete the first browser login flow.
+
+== Configuring how users authenticate
+
+If the flow supports organizations, you can configure some of the steps to change how users authenticate to the realm.
+
+For example, some use cases will require users to authenticate to a realm only if they are a member of any or a specific organization in the realm.
+
+To enable this behavior, you need to enable the `Requires user membership` setting on the `Organization Identity-First Login` execution step by clicking on its settings.
+
+If enabled, and after the user provides the username or email in the identity-first login page, the server will
+try to resolve a organization where the user is a member by looking at any existing membership or based on the semantics of the <<_mapping_organization_claims_,organization>> scope,
+if requested by the client. If not a member of an organization, an error page will be shown.
+

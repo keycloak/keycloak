@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -94,7 +95,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -240,8 +241,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -267,8 +268,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -445,7 +446,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertTrue(hasPermission("marta", "password", resource.getId()));
         assertFalse(hasPermission("kolo", "password", resource.getId()));
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         PermissionResponse permissionResponse = authzClient.protection().permission().create(new PermissionRequest(resource.getId()));
         AuthorizationRequest request = new AuthorizationRequest();
@@ -477,7 +478,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         // the addition of a new scope still grants access to resource and any scope
         assertFalse(hasPermission("kolo", "password", resource.getId()));
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         permissionResponse = authzClient.protection().permission().create(new PermissionRequest(resource.getId(), "Scope A"));
         request = new AuthorizationRequest();
 
@@ -578,7 +579,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -633,7 +634,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -699,7 +700,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -781,7 +782,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -828,7 +829,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().resource().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -930,7 +931,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -1007,7 +1008,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         ScopePermissionsResource scopePermissions = authorization.permissions().scope();
         scopePermissions.create(scopePermission1).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
         
@@ -1200,7 +1201,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(scopePersmission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
 
         AuthorizationRequest request = new AuthorizationRequest();
@@ -1316,7 +1317,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
         assertEquals(10, permissions.size());
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
 
         request = new AuthorizationRequest();
         request.addPermission("resource-type-owner:type-one");
@@ -1379,7 +1380,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             martaResource = response.readEntity(ResourceRepresentation.class);
         }
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -1398,7 +1399,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
         }
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
 
         request = new AuthorizationRequest();
@@ -1513,7 +1514,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertThat(scopes, Matchers.containsInAnyOrder("update"));
         }
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
 
         // marta can still access her resource
         response = authzClient.authorization(accessToken).authorize(request);
@@ -1529,7 +1530,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).remove();
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
 
         try {
             // back to original setup, permissions not granted by the type resource
@@ -1579,7 +1580,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             martaResource = response.readEntity(ResourceRepresentation.class);
         }
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -1598,7 +1599,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
         }
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
 
         request = new AuthorizationRequest();
@@ -1695,7 +1696,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertThat(scopes, Matchers.containsInAnyOrder("update"));
         }
 
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
 
         // marta can still access her resource
         response = authzClient.authorization(accessToken).authorize(request);
@@ -1711,7 +1712,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).remove();
-        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
 
         try {
             // back to original setup, permissions not granted by the type resource
@@ -1927,7 +1928,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).scope("offline_access").doGrantAccessTokenRequest("secret", "offlineuser", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").scope("offline_access").doPasswordGrantRequest("offlineuser", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
@@ -1999,8 +2000,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         oauth.doLogin("marta", "password");
 
         // Token request
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         AccessToken token = toAccessToken(response.getAccessToken());
 
         assertEquals(PUBLIC_TEST_CLIENT, token.getOtherClaims().get("custom_claim"));
@@ -2023,10 +2024,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testRefreshTokenFromClientOtherThanAudience() throws Exception {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, null);
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
 
@@ -2038,12 +2039,38 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertEquals(RESOURCE_SERVER_TEST, token.getAudience()[0]);
         assertFalse(token.getAuthorization().getPermissions().isEmpty());
 
-        accessTokenResponse = oauth.doRefreshTokenRequest(authorizationResponse.getRefreshToken(), null);
+        accessTokenResponse = oauth.doRefreshTokenRequest(authorizationResponse.getRefreshToken());
         assertNotNull(accessTokenResponse.getAccessToken());
         assertNotNull(accessTokenResponse.getRefreshToken());
         token = toAccessToken(authorizationResponse.getToken());
         assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
         assertFalse(token.getAuthorization().getPermissions().isEmpty());
+    }
+
+    @Test
+    public void testTokenExpirationRenewalWhenIssuingTokens() {
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+        assertNotNull(accessTokenResponse.getAccessToken());
+        assertNotNull(accessTokenResponse.getRefreshToken());
+
+        try {
+            for (int i = 0; i < 3; i++) {
+                AuthorizationRequest request = new AuthorizationRequest();
+                request.setAudience(RESOURCE_SERVER_TEST);
+                AuthorizationResponse authorizationResponse = getAuthzClient(PUBLIC_TEST_CLIENT_CONFIG).authorization(accessTokenResponse.getAccessToken()).authorize(request);
+                AccessToken refreshToken = toAccessToken(authorizationResponse.getRefreshToken());
+                AccessToken accessTokenToken = toAccessToken(authorizationResponse.getToken());
+                assertEquals(refreshToken.getExp() - refreshToken.getIat(), 1800);
+                assertEquals(accessTokenToken.getExp() - accessTokenToken.getIat(), 300);
+                setTimeOffset(i);
+            }
+        } finally {
+            resetTimeOffset();
+        }
     }
 
     @Test
@@ -2073,7 +2100,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().resource().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
@@ -2129,7 +2156,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().resource().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -2180,7 +2207,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         authorization.permissions().scope().create(permission).close();
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest("kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -2389,6 +2416,65 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .getScopes().contains("entity:read")));
     }
 
+    @Test
+    public void testSameResultRegardlessOPermissionParameterValue() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("scope1", "scope2");
+        resource.setOwnerManagedAccess(true);
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.addUser("marta");
+
+        authorization.policies().user().create(policy).close();
+
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(KeycloakModelUtils.generateId());
+        representation.addScope("scope1");
+        representation.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(representation).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
+
+        ticket.setResource(resource.getId());
+        ticket.setRequesterName("marta");
+        ticket.setGranted(true);
+        ticket.setScopeName("scope1");
+
+        authzClient.protection().permission().create(ticket);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(resource.getId());
+        AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(request);
+        AccessToken rpt = toAccessToken(response.getToken());
+        ResourceRepresentation finalResource = resource;
+        List<Permission> permissions = rpt.getAuthorization().getPermissions().stream().filter(permission -> permission.getResourceId().equals(finalResource.getId())).collect(Collectors.toList());
+        assertEquals(1, permissions.size());
+        assertEquals(1, permissions.get(0).getScopes().size());
+        assertEquals("scope1", permissions.get(0).getScopes().iterator().next());
+
+        request = new AuthorizationRequest();
+        request.addPermission(resource.getName());
+        response = authzClient.authorization("marta", "password").authorize(request);
+        rpt = toAccessToken(response.getToken());
+        permissions = rpt.getAuthorization().getPermissions().stream().filter(permission -> permission.getResourceId().equals(finalResource.getId())).collect(Collectors.toList());
+        assertEquals(1, permissions.size());
+        assertEquals(1, permissions.get(0).getScopes().size());
+        assertEquals("scope1", permissions.get(0).getScopes().iterator().next());
+    }
+
     private void testRptRequestWithResourceName(String configFile) {
         Metadata metadata = new Metadata();
 
@@ -2413,7 +2499,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request.addPermission("Resource 1");
 
-        String accessToken = new OAuthClient().realm("authz-test").clientId(testClientId).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(testClientId, "secret").doPasswordGrantRequest("marta", "password").getAccessToken();
         AuthorizationResponse response = getAuthzClient(configFile).authorization(accessToken).authorize(request);
         AccessToken rpt = toAccessToken(response.getToken());
 
@@ -2421,7 +2507,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private boolean hasPermission(String userName, String password, String resourceId, String... scopeIds) throws Exception {
-        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", userName, password).getAccessToken();
+        String accessToken = oauth.newConfig().realm("authz-test").client(RESOURCE_SERVER_TEST, "secret").doPasswordGrantRequest(userName, password).getAccessToken();
         AuthorizationResponse response = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(accessToken).authorize(new AuthorizationRequest());
         AccessToken rpt = toAccessToken(response.getToken());
         Authorization authz = rpt.getAuthorization();

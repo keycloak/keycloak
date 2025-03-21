@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Key locator for a bunch of keys. It can be initializaed with or without
+ * Key locator for a bunch of keys. It can be initialized with or without
  * key names.
  *
  * @author <a href="mailto:hmlnarik@redhat.com">Hynek Mlnařík</a>

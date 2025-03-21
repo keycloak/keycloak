@@ -11,6 +11,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,15 +30,13 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             cacheDir = initCacheDir();
         }
 
-        return new GzipResourceEncodingProvider(session, cacheDir);
+        return new GzipResourceEncodingProvider(cacheDir);
     }
 
     @Override
     public void init(Config.Scope config) {
         String e = config.get("excludedContentTypes", "image/png image/jpeg");
-        for (String s : e.split(" ")) {
-            excludedContentTypes.add(s);
-        }
+        excludedContentTypes.addAll(Arrays.asList(e.split(" ")));
     }
 
     @Override

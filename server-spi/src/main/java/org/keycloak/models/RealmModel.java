@@ -22,6 +22,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,13 @@ public interface RealmModel extends RoleContainerModel {
     interface IdentityProviderRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         IdentityProviderModel getRemovedIdentityProvider();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface RealmAttributeUpdateEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getAttributeName();
+        String getAttributeValue();
         KeycloakSession getKeycloakSession();
     }
 
@@ -105,6 +113,18 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
+    boolean isOrganizationsEnabled();
+
+    void setOrganizationsEnabled(boolean organizationsEnabled);
+
+    boolean isAdminPermissionsEnabled();
+
+    void setAdminPermissionsEnabled(boolean adminPermissionsEnabled);
+
+    boolean isVerifiableCredentialsEnabled();
+
+    void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
+
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
@@ -119,15 +139,26 @@ public interface RealmModel extends RoleContainerModel {
     String getAttribute(String name);
     default Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Integer.valueOf(v) : defaultValue;
     }
     default Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Long.valueOf(v) : defaultValue;
     }
     default Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.valueOf(v) : defaultValue;
+        return v != null && !v.isEmpty() ? Boolean.valueOf(v) : defaultValue;
+    }
+    default <V extends Enum<V>> V getAttribute(String name, Class<V> enumClass, V defaultValue) {
+        String value = getAttribute(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException e) {
+            return defaultValue;
+        }
     }
     Map<String, String> getAttributes();
 
@@ -136,6 +167,10 @@ public interface RealmModel extends RoleContainerModel {
     void setBruteForceProtected(boolean value);
     boolean isPermanentLockout();
     void setPermanentLockout(boolean val);
+    int getMaxTemporaryLockouts();
+    void setMaxTemporaryLockouts(int val);
+    RealmRepresentation.BruteForceStrategy getBruteForceStrategy();
+    void setBruteForceStrategy(RealmRepresentation.BruteForceStrategy val);
     int getMaxFailureWaitSeconds();
     void setMaxFailureWaitSeconds(int val);
     int getWaitIncrementSeconds();
@@ -373,6 +408,9 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
+    AuthenticationFlowModel getFirstBrokerLoginFlow();
+    void setFirstBrokerLoginFlow(AuthenticationFlowModel flow);
+
     /**
      * Returns authentications flows as a stream.
      * @return Stream of {@link AuthenticationFlowModel}. Never returns {@code null}.
@@ -411,6 +449,12 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
 
+    RequiredActionConfigModel getRequiredActionConfigById(String id);
+    RequiredActionConfigModel getRequiredActionConfigByAlias(String alias);
+    void removeRequiredActionProviderConfig(RequiredActionConfigModel model);
+    void updateRequiredActionConfig(RequiredActionConfigModel model);
+    Stream<RequiredActionConfigModel> getRequiredActionConfigsStream();
+
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
@@ -426,32 +470,82 @@ public interface RealmModel extends RoleContainerModel {
 
     /**
      * Returns identity providers as a stream.
+     *
      * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
+     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream()} instead.
      */
+    @Deprecated
     Stream<IdentityProviderModel> getIdentityProvidersStream();
 
+    /**
+     * @deprecated Use {@link IdentityProviderStorageProvider#getByAlias(String)} instead.
+     */
+    @Deprecated
     IdentityProviderModel getIdentityProviderByAlias(String alias);
+
+    /**
+     * @deprecated Use {@link IdentityProviderStorageProvider#create(IdentityProviderModel)} instead.
+     */
+    @Deprecated
     void addIdentityProvider(IdentityProviderModel identityProvider);
+
+    /**
+     * @deprecated Use {@link IdentityProviderStorageProvider#remove(String)} instead.
+     */
+    @Deprecated
     void removeIdentityProviderByAlias(String alias);
+
+    /**
+     * @deprecated Use {@link IdentityProviderStorageProvider#update(IdentityProviderModel)} instead.
+     */
+    @Deprecated
     void updateIdentityProvider(IdentityProviderModel identityProvider);
 
     /**
      * Returns identity provider mappers as a stream.
      * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
+     * @deprecated Use {@link IDPProvider#getMappersStream()} instead.
      */
+    @Deprecated
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream();
 
     /**
      * Returns identity provider mappers by the provided alias as a stream.
      * @param brokerAlias {@code String} Broker's alias to filter results.
      * @return Stream of {@link IdentityProviderMapperModel} Never returns {@code null}.
+     * @deprecated Use {@link IDPProvider#getMappersByAliasStream(String)} instead.
      */
+    @Deprecated
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias);
 
+    /**
+     * @deprecated Use {@link IDPProvider#createMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
+
+    /**
+     * @deprecated Use {@link IDPProvider#removeMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     void removeIdentityProviderMapper(IdentityProviderMapperModel mapping);
+
+    /**
+     * @deprecated Use {@link IDPProvider#updateMapper(IdentityProviderMapperModel)} instead.
+     */
+    @Deprecated
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
+
+    /**
+     * @deprecated Use {@link IDPProvider#getMapperById(String)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel getIdentityProviderMapperById(String id);
+
+    /**
+     * @deprecated Use {@link IDPProvider#getMapperByName(String, String)} instead.
+     */
+    @Deprecated
     IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
@@ -480,7 +574,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Removes given component. Will call preRemove() method of ComponentFactory.
      * Also calls {@code this.removeComponents(component.getId())}.
-     * 
+     *
      * @param component to be removed
      */
     void removeComponent(ComponentModel component);
@@ -601,6 +695,14 @@ public interface RealmModel extends RoleContainerModel {
      */
     void setDefaultRole(RoleModel role);
 
+    ClientModel getAdminPermissionsClient();
+
+    void setAdminPermissionsClient(ClientModel client);
+
+    /**
+     * @deprecated use {@link IdentityProviderStorageProvider#isIdentityFederationEnabled()} instead.
+     */
+    @Deprecated
     boolean isIdentityFederationEnabled();
 
     boolean isInternationalizationEnabled();
@@ -678,7 +780,7 @@ public interface RealmModel extends RoleContainerModel {
     ClientScopeModel addClientScope(String name);
 
     /**
-     * Creates new client scope with the given internal ID and name. 
+     * Creates new client scope with the given internal ID and name.
      * If given name contains spaces, those are replaced by underscores.
      * @param id {@code String} id of the client scope.
      * @param name {@code String} name of the client scope.
@@ -701,10 +803,10 @@ public interface RealmModel extends RoleContainerModel {
     ClientScopeModel getClientScopeById(String id);
 
     /**
-     * Adds given client scope among default/optional client scopes of this realm. 
+     * Adds given client scope among default/optional client scopes of this realm.
      * The scope will be assigned to each new client.
      * @param clientScope to be added
-     * @param defaultScope if {@code true} the scope will be added among default client scopes, 
+     * @param defaultScope if {@code true} the scope will be added among default client scopes,
      * if {@code false} it will be added among optional client scopes
      */
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
@@ -727,16 +829,16 @@ public interface RealmModel extends RoleContainerModel {
 
     /**
      * Returns default client scopes of this realm either default ones or optional ones.
-     * @param defaultScope if {@code true} default client scopes are returned, 
+     * @param defaultScope if {@code true} default client scopes are returned,
      * if {@code false} optional client scopes are returned.
      * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
 
     /**
-     * Adds a role as a composite to default role of this realm. 
+     * Adds a role as a composite to default role of this realm.
      * @param role to be added
-     */ 
+     */
     default void addToDefaultRoles(RoleModel role) {
         getDefaultRole().addCompositeRole(role);
     }

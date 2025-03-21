@@ -1,5 +1,3 @@
-import { Language } from "@patternfly/react-code-editor";
-
 import { FileUploadForm, FileUploadFormProps } from "./FileUploadForm";
 
 export type JsonFileUploadProps = Omit<
@@ -13,7 +11,7 @@ export const JsonFileUpload = ({ onChange, ...props }: JsonFileUploadProps) => {
   const handleChange = (value: string) => {
     try {
       onChange(JSON.parse(value));
-    } catch (error) {
+    } catch {
       onChange({});
       console.warn("Invalid json, ignoring value using {}");
     }
@@ -22,7 +20,7 @@ export const JsonFileUpload = ({ onChange, ...props }: JsonFileUploadProps) => {
   return (
     <FileUploadForm
       {...props}
-      language={Language.json}
+      language="json"
       extension=".json"
       onChange={handleChange}
     />

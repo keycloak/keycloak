@@ -79,7 +79,6 @@ import jakarta.xml.ws.soap.SOAPFaultException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -148,7 +147,7 @@ public class SamlClient {
             @Override
             public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlResponseFromForm(responsePage);
             }
@@ -176,7 +175,7 @@ public class SamlClient {
             @Override
             public String extractRelayState(CloseableHttpResponse response) throws IOException {
                 assertThat(response, statusCodeIsHC(Response.Status.OK));
-                String responsePage = EntityUtils.toString(response.getEntity(), "UTF-8");
+                String responsePage = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
                 response.close();
                 return extractSamlRelayStateFromForm(responsePage);
             }
@@ -200,10 +199,13 @@ public class SamlClient {
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
 
-                    if (privateKeyStr != null && publicKeyStr != null) {
+                    if (privateKeyStr != null && (publicKeyStr != null || certificateStr != null)) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
-                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        PublicKey publicKey = publicKeyStr != null? org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr) : null;
                         X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                        if (publicKey == null) {
+                            publicKey = cert.getPublicKey();
+                        }
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                                 .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
@@ -224,14 +226,7 @@ public class SamlClient {
                     parameters.add(new BasicNameValuePair(RELAY_STATE, relayState));
                 }
 
-                UrlEncodedFormEntity formEntity;
-
-                try {
-                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
-
+                UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
                 post.setEntity(formEntity);
 
                 return post;
@@ -329,10 +324,13 @@ public class SamlClient {
             public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr, String certificateStr) {
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
-                    if (privateKeyStr != null && publicKeyStr != null) {
+                    if (privateKeyStr != null && (publicKeyStr != null || certificateStr != null)) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
-                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        PublicKey publicKey = publicKeyStr != null? org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr) : null;
                         X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                        if (publicKey == null) {
+                            publicKey = cert.getPublicKey();
+                        }
                         binding.signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                                 .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();

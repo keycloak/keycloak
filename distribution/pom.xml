@@ -41,9 +41,7 @@
     </properties>
 
     <modules>
-        <module>adapters</module>
         <module>saml-adapters</module>
-        <module>feature-packs</module>
         <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>

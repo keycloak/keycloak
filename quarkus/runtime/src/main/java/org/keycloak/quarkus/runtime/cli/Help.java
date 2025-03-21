@@ -17,7 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static org.keycloak.quarkus.runtime.cli.OptionRenderer.undecorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
+import static org.keycloak.utils.StringUtil.removeSuffix;
 import static picocli.CommandLine.Help.Column.Overflow.SPAN;
 import static picocli.CommandLine.Help.Column.Overflow.WRAP;
 
@@ -25,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
@@ -39,7 +43,7 @@ public final class Help extends CommandLine.Help {
     private static final int HELP_WIDTH = 100;
     private static final String DEFAULT_OPTION_LIST_HEADING = "Options:";
     private static final String DEFAULT_COMMAND_LIST_HEADING = "Commands:";
-    private boolean allOptions;
+    private static boolean ALL_OPTIONS;
 
     Help(CommandLine.Model.CommandSpec commandSpec, ColorScheme colorScheme) {
         super(commandSpec, colorScheme);
@@ -153,29 +157,39 @@ public final class Help extends CommandLine.Help {
     }
 
     private boolean isVisible(OptionSpec option) {
-        if (option.description().length == 0) {
-            // do not show options without a description
+        if (option.description().length == 0 || option.hidden()) {
+            // do not show options without a description nor hidden
             return false;
         }
 
-        PropertyMapper<?> mapper = getMapper(option.longestName());
+        if (ALL_OPTIONS) {
+            return true;
+        }
+
+        String optionName = undecorateDuplicitOptionName(option.longestName());
+
+        OptionCategory category = null;
+        if (option.group() != null && option.group().heading() != null) {
+            category = OptionCategory.fromHeading(removeSuffix(option.group().heading(), ":"));
+        }
+        String kcKey = PropertyMappers.getKcKeyFromCliKey(optionName).orElse(null);
+        if (kcKey == null) {
+            return true;
+        }
+        PropertyMapper<?> mapper = getMapper(kcKey, category);
 
         if (mapper == null) {
-            // only filter mapped options, defaults to the hidden marker
-            return !option.hidden();
+            final var disabledMapper = PropertyMappers.getDisabledMapper(kcKey);
+
+            // Show disabled mappers, which do not have a description when they're enabled
+            return disabledMapper.flatMap(PropertyMapper::getEnabledWhen).isEmpty();
         }
 
-        boolean isUnsupportedOption = !PropertyMappers.isSupported(mapper);
-
-        if (isUnsupportedOption) {
-            // unsupported options removed from help if all options are not requested
-            return !option.hidden() && allOptions;
-        }
-
-        return !option.hidden();
+        // unsupported options removed from help if all options are not requested
+        return PropertyMappers.isSupported(mapper);
     }
 
-    public void setAllOptions(boolean allOptions) {
-        this.allOptions = allOptions;
+    public static void setAllOptions(boolean allOptions) {
+        ALL_OPTIONS = allOptions;
     }
 }

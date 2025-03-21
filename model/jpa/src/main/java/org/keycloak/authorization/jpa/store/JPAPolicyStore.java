@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
@@ -42,7 +43,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import jakarta.persistence.LockModeType;
@@ -83,7 +83,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void delete(RealmModel realm, String id) {
+    public void delete(String id) {
         PolicyEntity policy = entityManager.find(PolicyEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (policy != null) {
             this.entityManager.remove(policy);
@@ -92,7 +92,7 @@ public class JPAPolicyStore implements PolicyStore {
 
 
     @Override
-    public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
+    public Policy findById(ResourceServer resourceServer, String id) {
         if (id == null) {
             return null;
         }
@@ -130,7 +130,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServer, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -139,7 +139,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+    public List<Policy> find(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
@@ -200,7 +200,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<Policy> list = new LinkedList<>();
         PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
         for (String id : result) {
-            Policy policy = policyStore.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            Policy policy = policyStore.findById(resourceServer, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -219,7 +219,7 @@ public class JPAPolicyStore implements PolicyStore {
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
         closing(query.getResultStream()
-                .map(entity -> storeFactory.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, entity.getId()))
+                .map(entity -> storeFactory.findById(resourceServer, entity.getId()))
                 .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
@@ -255,7 +255,7 @@ public class JPAPolicyStore implements PolicyStore {
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
         for (PolicyEntity entity : query.getResultList()) {
-            list.add(storeFactory.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, entity.getId()));
+            list.add(storeFactory.findById(resourceServer, entity.getId()));
         }
 
         return list;
@@ -296,7 +296,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServer, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -306,7 +306,6 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findDependentPolicies(ResourceServer resourceServer, String policyId) {
-
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByDependentPolices", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -316,11 +315,26 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServer, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
         }
         return list;
+    }
+
+    @Override
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue) {
+        TypedQuery<String> query = entityManager.createNamedQuery("findDependentPolicyByResourceTypeAndConfig", String.class);
+
+        query.setParameter("serverId", resourceServer.getId());
+        query.setParameter("resourceType", resourceType);
+        query.setParameter("associatedPolicyType", associatedPolicyType);
+        query.setParameter("configKey", configKey);
+        query.setParameter("configValue", "%" + configValue + "%");
+
+        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+
+        return query.getResultStream().map((id) -> policyStore.findById(resourceServer, id)).filter(Objects::nonNull);
     }
 }

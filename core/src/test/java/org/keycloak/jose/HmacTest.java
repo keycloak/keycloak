@@ -21,14 +21,12 @@ import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.rule.CryptoInitRule;
 
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.util.UUID;

@@ -17,8 +17,16 @@
 
 package org.keycloak.jose.jwk;
 
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
+
+import java.security.Key;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Collections;
 import java.util.List;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -26,24 +34,32 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JWKBuilder {
 
+    // internal util class only loaded for jdk versions with EdEC support
+    protected static final EdECUtils EdEC_UTILS;
+
+    static {
+        EdECUtils tmp;
+        try {
+            // check if the impl class for EdEC can be loaded in the runtime
+            tmp = (EdECUtils) Class.forName("org.keycloak.jose.jwk.EdECUtilsImpl")
+                    .getDeclaredConstructor().newInstance();
+        } catch(Throwable e) {
+            // not supported implementation
+            tmp = new EdECUtilsUnsupportedImpl();
+        }
+        EdEC_UTILS = tmp;
+    }
+
     public static final KeyUse DEFAULT_PUBLIC_KEY_USE = KeyUse.SIG;
 
-    private String kid;
+    protected String kid;
 
-    private String algorithm;
+    protected String algorithm;
 
     private JWKBuilder() {
     }
@@ -63,14 +79,14 @@ public class JWKBuilder {
     }
 
     public JWK rs256(PublicKey key) {
-        algorithm(Algorithm.RS256);
+        this.algorithm = Algorithm.RS256;
         return rsa(key);
     }
 
     public JWK rsa(Key key) {
         return rsa(key, null, KeyUse.SIG);
     }
-    
+
     public JWK rsa(Key key, X509Certificate certificate) {
         return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
     }
@@ -116,6 +132,10 @@ public class JWKBuilder {
     }
 
     public JWK ec(Key key, KeyUse keyUse) {
+        return this.ec(key, null, keyUse);
+    }
+
+    public JWK ec(Key key, List<X509Certificate> certificates, KeyUse keyUse) {
         ECPublicKey ecKey = (ECPublicKey) key;
 
         ECPublicJWK k = new ECPublicJWK();
@@ -130,7 +150,23 @@ public class JWKBuilder {
         k.setCrv("P-" + fieldSize);
         k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
         k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
-        
+
+        if (certificates != null && !certificates.isEmpty()) {
+            String[] certificateChain = new String[certificates.size()];
+            for (int i = 0; i < certificates.size(); i++) {
+                certificateChain[i] = PemUtils.encodeCertificate(certificates.get(i));
+            }
+            k.setX509CertificateChain(certificateChain);
+        }
+
         return k;
+    }
+
+    public JWK okp(Key key) {
+        return okp(key, DEFAULT_PUBLIC_KEY_USE);
+    }
+
+    public JWK okp(Key key, KeyUse keyUse) {
+        return EdEC_UTILS.okp(kid, algorithm, key, keyUse);
     }
 }

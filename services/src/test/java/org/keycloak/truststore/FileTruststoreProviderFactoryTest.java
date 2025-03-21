@@ -36,7 +36,7 @@ public class FileTruststoreProviderFactoryTest {
         factory.init(ScopeUtil.createScope(new HashMap<>()));
         TruststoreProvider provider = factory.create(null);
         assertNotNull(provider.getTruststore());
-        assertEquals(HostnameVerificationPolicy.WILDCARD, provider.getPolicy());
+        assertEquals(HostnameVerificationPolicy.DEFAULT, provider.getPolicy());
     }
 
     @Test

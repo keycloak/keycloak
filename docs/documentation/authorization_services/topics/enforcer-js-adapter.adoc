@@ -1,23 +1,37 @@
 [[_enforcer_js_adapter]]
-= JavaScript integration
+= JavaScript integration for Policy Enforcer
 
 The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
 This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.
 
-You can obtain this library from a running a {project_name} Server instance by including the following `script` tag in your web page:
+You can obtain this library by installing it https://www.npmjs.com/package/keycloak-js[from NPM]:
 
-[source,html,subs="attributes+"]
+[source,bash]
 ----
-<script src="http://...{kc_js_path}/keycloak-authz.js"></script>
+npm install keycloak-js
 ----
+
 Next, you can create a `KeycloakAuthorization` instance as follows:
 
 [source,javascript]
 ----
-const keycloak = ... // obtain a Keycloak instance from keycloak.js library
+import Keycloak from "keycloak-js";
+import KeycloakAuthorization from "keycloak-js/authz";
+
+const keycloak = new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
+
 const authorization = new KeycloakAuthorization(keycloak);
+
+await keycloak.init();
+
+// Now you can use the authorization object to interact with the server.
 ----
-The *keycloak-authz.js* library provides two main features:
+
+The `keycloak-js/authz` library provides two main features:
 
 * Obtain permissions from the server using a permission ticket, if you are accessing a UMA protected resource server.
 
@@ -35,8 +49,8 @@ responds with a *401* status code and a `WWW-Authenticate` header.
 [source,bash,subs="attributes+"]
 ----
 HTTP/1.1 401 Unauthorized
-WWW-Authenticate: UMA realm="${realm}",
-    as_uri="https://${host}:${port}{kc_realms_path}/${realm}",
+WWW-Authenticate: UMA realm="${realm-name}",
+    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
     ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 ----
 
@@ -48,22 +62,21 @@ and use the library to send an authorization request as follows:
 [source,javascript]
 ----
 // prepare a authorization request with the permission ticket
-const authorizationRequest = {};
-authorizationRequest.ticket = ticket;
+const authorizationRequest = { ticket };
 
 // send the authorization request, if successful retry the request
-Identity.authorization.authorize(authorizationRequest).then(function (rpt) {
+authorization.authorize(authorizationRequest).then((rpt) => {
     // onGrant
-}, function () {
+}, () => {
     // onDeny
-}, function () {
+}, () => {
     // onError
 });
 ----
 
 The `authorize` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
@@ -71,13 +84,13 @@ Most applications should use the `onGrant` callback to retry a request after a 4
 
 == Obtaining entitlements
 
-The ```keycloak-authz.js``` library provides an `entitlement` function that you can use to obtain an RPT from the server by providing
+The `keycloak-js/authz` library provides an `entitlement` function that you can use to obtain an RPT from the server by providing
 the resources and scopes your client wants to access.
 
 .Example about how to obtain an RPT with permissions for all resources and scopes the user can access
 [source,javascript]
 ----
-authorization.entitlement('my-resource-server-id').then(function (rpt) {
+authorization.entitlement("my-resource-server-id").then((rpt) => {
     // onGrant callback function.
     // If authorization was successful you'll receive an RPT
     // with the necessary permissions to access the resource server
@@ -87,13 +100,13 @@ authorization.entitlement('my-resource-server-id').then(function (rpt) {
 .Example about how to obtain an RPT with permissions for specific resources and scopes
 [source,javascript]
 ----
-authorization.entitlement('my-resource-server', {
-    "permissions": [
+authorization.entitlement("my-resource-server", {
+    permissions: [
         {
-            "id" : "Some Resource"
+            id: "Some Resource"
         }
     ]
-}).then(function (rpt) {
+}).then((rpt) => {
     // onGrant
 });
 ----
@@ -102,13 +115,13 @@ When using the `entitlement` function, you must provide the _client_id_ of the r
 
 The `entitlement` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
 
-* `onGrant`: The first argument of the function. If authorization was successful and the server returned an RPT with the requested permissions, the callback receives the RPT.
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
 == Authorization request
 
-Both ```authorize``` and ```entitlement``` functions accept an authorization request object. This object can be set with the following
+Both `authorize` and `entitlement` functions accept an authorization request object. This object can be set with the following
 properties:
 
 * *permissions*
@@ -118,10 +131,10 @@ An array of objects representing the resource and scopes. For instance:
 [source,javascript]
 ----
 const authorizationRequest = {
-   "permissions": [
+   permissions: [
        {
-           "id" : "Some Resource",
-           "scopes" : ["view", "edit"]
+           id: "Some Resource",
+           scopes: ["view", "edit"]
        }
    ]
 }

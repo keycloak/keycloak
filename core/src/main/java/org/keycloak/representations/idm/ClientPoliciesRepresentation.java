@@ -30,6 +30,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class ClientPoliciesRepresentation {
     protected List<ClientPolicyRepresentation> policies = new ArrayList<>();
+    private List<ClientPolicyRepresentation> globalPolicies;
 
     public List<ClientPolicyRepresentation> getPolicies() {
         return policies;
@@ -37,6 +38,14 @@ public class ClientPoliciesRepresentation {
 
     public void setPolicies(List<ClientPolicyRepresentation> policies) {
         this.policies = policies;
+    }
+
+    public List<ClientPolicyRepresentation> getGlobalPolicies() {
+        return globalPolicies;
+    }
+
+    public void setGlobalPolicies(List<ClientPolicyRepresentation> globalPolicies) {
+        this.globalPolicies = globalPolicies;
     }
 
     @Override

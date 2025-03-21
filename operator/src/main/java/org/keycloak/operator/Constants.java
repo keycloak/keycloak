@@ -35,11 +35,10 @@ public final class Constants {
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
-    public static final String KEYCLOAK_COMPONENT_LABEL = "operator.keycloak.org/component";
-    public static final String KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION = "operator.keycloak.org/watched-secret-hash";
-    public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
-    public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
     public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";
+    public static final String KEYCLOAK_RECREATE_UPDATE_ANNOTATION = "operator.keycloak.org/recreate-update";
+    public static final String KEYCLOAK_UPDATE_REASON_ANNOTATION = "operator.keycloak.org/update-reason";
+    public static final String KEYCLOAK_UPDATE_REVISION_ANNOTATION = "operator.keycloak.org/update-revision";
 
     public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
 
@@ -50,8 +49,7 @@ public final class Constants {
     public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
             new ValueOrSecret("health-enabled", "true"),
             new ValueOrSecret("cache", "ispn"),
-            new ValueOrSecret("cache-stack", "kubernetes"),
-            new ValueOrSecret("proxy", "passthrough")
+            new ValueOrSecret("cache-stack", "kubernetes")
     );
 
 
@@ -62,14 +60,26 @@ public final class Constants {
     public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
     public static final String KEYCLOAK_SERVICE_SUFFIX = "-service";
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
+    public static final String KEYCLOAK_DISCOVERY_TCP_PORT_NAME = "tcp";
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+    public static final Integer KEYCLOAK_JGROUPS_DATA_PORT = 7800;
+    public static final Integer KEYCLOAK_JGROUPS_FD_PORT = 57800;
+    public static final String KEYCLOAK_JGROUPS_PROTOCOL = "TCP";
+    public static final Integer KEYCLOAK_MANAGEMENT_PORT = 9000;
+    public static final String KEYCLOAK_MANAGEMENT_PORT_NAME = "management";
 
     public static final String KEYCLOAK_INGRESS_SUFFIX = "-ingress";
 
     public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
     public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
 
-    public static final String TRUSTSTORES_FOLDER = "/opt/keycloak/conf/truststores";
+    public static final String CONFIG_FOLDER = "/opt/keycloak/conf";
+    public static final String TRUSTSTORES_FOLDER = CONFIG_FOLDER + "/truststores";
+    public static final String CACHE_CONFIG_SUBFOLDER = "cache";
+    public static final String CACHE_CONFIG_FOLDER = CONFIG_FOLDER + "/" + CACHE_CONFIG_SUBFOLDER;
 
-    public static String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
+    public static final String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
+    public static final String KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY = "http-management-relative-path";
+
+    public static final String KEYCLOAK_NETWORK_POLICY_SUFFIX = "-network-policy";
 }

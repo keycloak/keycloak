@@ -23,7 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -97,6 +97,10 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
         String hostAddress = session.getContext().getConnection().getRemoteAddr();
 
+        verifyHost(hostAddress);
+    }
+
+    protected void verifyHost(String hostAddress) throws ClientRegistrationPolicyException {
         logger.debugf("Verifying remote host : %s", hostAddress);
 
         List<String> trustedHosts = getTrustedHosts();
@@ -130,19 +134,8 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
 
     protected List<String> getTrustedDomains() {
-        List<String> trustedHostsConfig = componentModel.getConfig().getList(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS);
-        List<String> domains = new LinkedList<>();
-
-        for (String hostname : trustedHostsConfig) {
-            if (hostname.startsWith("*.")) {
-                hostname = hostname.substring(2);
-                domains.add(hostname);
-            }
-        }
-
-        return domains;
+        return componentModel.getConfig().getList(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS);
     }
-
 
     protected String verifyHostInTrustedHosts(String hostAddress, List<String> trustedHosts) {
         for (String confHostName : trustedHosts) {
@@ -162,23 +155,39 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         return null;
     }
 
+    private boolean checkTrustedDomain(String hostname, String trustedDomain) {
+        if (trustedDomain.startsWith("*.")) {
+            String domain = trustedDomain.substring(2);
+            return hostname.equals(domain) || hostname.endsWith("." + domain);
+        }
+        return hostname.equals(trustedDomain);
+    }
 
     protected String verifyHostInTrustedDomains(String hostAddress, List<String> trustedDomains) {
-        if (!trustedDomains.isEmpty()) {
-            try {
-                String hostname = InetAddress.getByName(hostAddress).getHostName();
+        try {
+            InetAddress address = InetAddress.getByName(hostAddress);
+            String hostname = address.getHostName();
 
-                logger.debugf("Trying verify request from address '%s' of host '%s' by domains", hostAddress, hostname);
+            logger.debugf("Trying verify request from address '%s' of host '%s' by domains", hostAddress, hostname);
 
-                for (String confDomain : trustedDomains) {
-                    if (hostname.endsWith(confDomain)) {
-                        logger.debugf("Successfully verified host '%s' by trusted domain '%s'", hostname, confDomain);
-                        return hostname;
-                    }
-                }
-            } catch (UnknownHostException uhe) {
-                logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains", hostAddress);
+            if (hostname.equals(address.getHostAddress())) {
+                logger.debugf("The hostAddress '%s' was not resolved to a hostname", hostAddress);
+                return null;
             }
+
+            if (Arrays.stream(InetAddress.getAllByName(hostname)).filter(a -> address.equals(a)).findAny().isEmpty()) {
+                logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
+                return null;
+            }
+
+            for (String confDomain : trustedDomains) {
+                if (checkTrustedDomain(hostname, confDomain)) {
+                    logger.debugf("Successfully verified host '%s' by trusted domain '%s'", hostname, confDomain);
+                    return hostname;
+                }
+            }
+        } catch (UnknownHostException uhe) {
+            logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains", hostAddress);
         }
 
         return null;
@@ -260,7 +269,7 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
         }
 
         for (String trustedDomain : trustedDomains) {
-            if (host.endsWith(trustedDomain)) {
+            if (checkTrustedDomain(host, trustedDomain)) {
                 return true;
             }
         }

@@ -80,7 +80,7 @@ public class DeployedScriptOIDCProtocolMapper extends ScriptBasedOIDCProtocolMap
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
     }
 

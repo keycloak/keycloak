@@ -49,6 +49,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
         realm.setSsoSessionMaxLifespan(36000);
@@ -65,6 +66,8 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -83,6 +86,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
         IntStream.range(0, 20 * CLIENTS_COUNT).parallel()
                 .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
+                    session.getContext().setRealm(realm);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
 
                     UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
@@ -114,6 +118,10 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
             return null;
         });
 
-        inComittedTransaction((Consumer<KeycloakSession>) session -> session.realms().removeRealm(realmId));
+        inComittedTransaction((Consumer<KeycloakSession>) session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            session.realms().removeRealm(realmId);
+        });
     }
 }

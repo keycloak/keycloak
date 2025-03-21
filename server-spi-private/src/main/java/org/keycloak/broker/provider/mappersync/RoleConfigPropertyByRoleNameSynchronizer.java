@@ -18,10 +18,12 @@
 package org.keycloak.broker.provider.mappersync;
 
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -29,8 +31,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-public class RoleConfigPropertyByRoleNameSynchronizer
-        extends AbstractConfigPropertySynchronizer<RoleModel.RoleNameChangeEvent> {
+public class RoleConfigPropertyByRoleNameSynchronizer implements ConfigSynchronizer<RoleModel.RoleNameChangeEvent> {
 
     public static final RoleConfigPropertyByRoleNameSynchronizer INSTANCE =
             new RoleConfigPropertyByRoleNameSynchronizer();
@@ -45,25 +46,17 @@ public class RoleConfigPropertyByRoleNameSynchronizer
     }
 
     @Override
-    public RealmModel extractRealm(RoleModel.RoleNameChangeEvent event) {
-        return event.getRealm();
+    public void handleEvent(RoleModel.RoleNameChangeEvent event) {
+        // first find all mappers that have a role config property that maps exactly to the changed path.
+        String currentRoleValue = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getPreviousName());
+        event.getKeycloakSession().identityProviders().getMappersStream(Map.of(ConfigConstants.ROLE, currentRoleValue), null, null)
+                .forEach(idpMapper -> {
+                    String newRoleValue = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getNewName());
+                    idpMapper.getConfig().put(ConfigConstants.ROLE, newRoleValue);
+                    logEventProcessed(ConfigConstants.ROLE, currentRoleValue, newRoleValue, event.getRealm().getName(),
+                            idpMapper.getName(), idpMapper.getIdentityProviderAlias());
+                    event.getKeycloakSession().identityProviders().updateMapper(idpMapper);
+                });
+
     }
-
-    @Override
-    public String getConfigPropertyName() {
-        return ConfigConstants.ROLE;
-    }
-
-    @Override
-    protected void updateConfigPropertyIfNecessary(RoleModel.RoleNameChangeEvent event, String currentPropertyValue,
-            Consumer<String> propertyUpdater) {
-
-        String previousRoleQualifier =
-                KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getPreviousName());
-        if (previousRoleQualifier.equals(currentPropertyValue)) {
-            String newRoleQualifier = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getNewName());
-            propertyUpdater.accept(newRoleQualifier);
-        }
-    }
-
 }

@@ -94,7 +94,7 @@ public class SSSDFederationProviderFactory implements UserStorageProviderFactory
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return AvailabilityChecker.isAvailable();
     }
 }

@@ -58,6 +58,12 @@ public class EventBean {
         return details;
     }
 
+    public String getDetail(String name) {
+        return event.getDetails() != null
+                ? event.getDetails().get(name)
+                : null;
+    }
+
     public static class DetailBean {
 
         private Map.Entry<String, String> entry;

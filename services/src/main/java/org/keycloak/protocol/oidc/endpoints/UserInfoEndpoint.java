@@ -56,8 +56,8 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
@@ -77,9 +77,10 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * @author pedroigor
@@ -99,6 +100,8 @@ public class UserInfoEndpoint {
     private Cors cors;
     private TokenForUserInfo tokenForUserInfo = new TokenForUserInfo();
 
+    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
+
     public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
@@ -112,7 +115,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @OPTIONS
     public Response issueUserInfoPreflight() {
-        return Cors.add(this.request, Response.ok()).auth().preflight().build();
+        return Cors.builder().auth().preflight().add(Response.ok());
     }
 
     @Path("/")
@@ -170,6 +173,7 @@ public class UserInfoEndpoint {
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
         if (tokenForUserInfo.getToken() == null) {
+            event.detail(Details.REASON, "Missing token");
             event.error(Errors.INVALID_TOKEN);
             throw error.unauthorized();
         }
@@ -186,8 +190,10 @@ public class UserInfoEndpoint {
             token = verifier.verify().getToken();
 
             if (!TokenUtil.hasScope(token.getScope(), OAuth2Constants.SCOPE_OPENID)) {
+                String errorMessage = "Missing openid scope";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.ACCESS_DENIED);
-                throw error.insufficientScope("Missing openid scope");
+                throw error.insufficientScope(errorMessage);
             }
 
             clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -205,13 +211,16 @@ public class UserInfoEndpoint {
             if (clientModel == null) {
                 cors.allowAllOrigins();
             }
+            event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_TOKEN);
             throw error.invalidToken("Token verification failed");
         }
 
         if (!clientModel.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            String errorMessage = "Wrong client protocol";
+            event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CLIENT);
-            throw error.invalidToken("Wrong client protocol");
+            throw error.invalidToken(errorMessage);
         }
 
         session.getContext().setClient(clientModel);
@@ -223,7 +232,14 @@ public class UserInfoEndpoint {
             throw error.invalidToken("Client disabled");
         }
 
-        UserSessionModel userSession = UserSessionUtil.findValidSession(session, realm, token, event, clientModel);
+        event.session(token.getSessionId());
+        UserSessionUtil.UserSessionValidationResult userSessionValidation = UserSessionUtil.findValidSessionForAccessToken(session, realm, token, clientModel, (invalidUserSession -> {}));
+        if (userSessionValidation.getError() != null) {
+            event.error(userSessionValidation.getError());
+            throw error.invalidToken(userSessionValidation.getError());
+        }
+
+        UserSessionModel userSession = userSessionValidation.getUserSession();
 
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
@@ -243,21 +259,36 @@ public class UserInfoEndpoint {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
+                String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
+                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken("Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
+                throw error.invalidToken(errorMessage);
             }
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            String authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
+            String[] split = WHITESPACES.split(authHeader.trim());
+            String bearerPart = split[0];
+            if (!bearerPart.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                String errorMessage = "The access token type is DPoP but Authorization Header is not DPoP";
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.NOT_ALLOWED);
+                throw error.invalidToken(errorMessage);
+            }
+
             if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
                 try {
                     DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                     DPoPUtil.validateBinding(token, dPoP);
                 } catch (VerificationException ex) {
-                    event.detail("detail", ex.getMessage()).error(Errors.NOT_ALLOWED);
-                    throw error.invalidToken("DPoP proof and token binding verification failed");
+                    String errorMessage = "DPoP proof and token binding verification failed";
+                    event.detail(Details.REASON, errorMessage + ": " + ex.getMessage());
+                    event.error(Errors.NOT_ALLOWED);
+                    throw error.invalidToken(errorMessage);
                 }
             }
+
         }
 
         // Existence of authenticatedClientSession for our client already handled before
@@ -312,7 +343,7 @@ public class UserInfoEndpoint {
 
         event.success();
 
-        return cors.builder(responseBuilder).build();
+        return cors.add(responseBuilder);
     }
 
     private String jweFromContent(String content, String jweContentType) {
@@ -336,9 +367,9 @@ public class UserInfoEndpoint {
         Key encryptionKek = keyWrapper.getPublicKey();
         String encryptionKekId = keyWrapper.getKid();
         try {
-            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, content.getBytes("UTF-8"), algAlgorithm,
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, content.getBytes(StandardCharsets.UTF_8), algAlgorithm,
                     encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider, jweContentType);
-        } catch (JWEException | UnsupportedEncodingException e) {
+        } catch (JWEException e) {
             throw new RuntimeException(e);
         }
         return encryptedToken;
@@ -353,7 +384,7 @@ public class UserInfoEndpoint {
     }
 
     private void setupCors() {
-        cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
         error.cors(cors);
     }
 

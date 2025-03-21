@@ -17,7 +17,12 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -77,7 +82,11 @@ public class ClientScopesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation( summary = "Get client scopes belonging to the realm Returns a list of client scopes belonging to the realm")
+    @Operation(summary = "Get client scopes belonging to the realm Returns a list of client scopes belonging to the realm")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<ClientScopeRepresentation> getClientScopes() {
         auth.clients().requireListClientScopes();
 
@@ -98,10 +107,16 @@ public class ClientScopesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation( summary = "Create a new client scope Client Scope’s name must be unique!")
+    @Operation(summary = "Create a new client scope Client Scope’s name must be unique!")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
         ClientScopeResource.validateClientScopeName(rep.getName());
+        ClientScopeResource.validateClientScopeProtocol(rep.getProtocol());
         ClientScopeResource.validateDynamicClientScope(rep);
         try {
             ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);

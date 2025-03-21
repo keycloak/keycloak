@@ -2,6 +2,7 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -89,6 +90,11 @@ public class ClientManager {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setImplicitFlowEnabled(enable);
             clientResource.update(app);
+            return this;
+        }
+
+        public ClientManagerBuilder alwaysUseLightweightAccessToken(boolean enable) {
+            updateAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(enable));
             return this;
         }
 

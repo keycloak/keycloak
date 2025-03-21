@@ -30,7 +30,7 @@ import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -70,11 +70,15 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test01SpnegoLoginCRTSuccess() throws Exception {
         // Login as user from realm KC2.COM . Realm KEYCLOAK.ORG will trust us
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
+
+        // Logout
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
+        events.poll();
     }
 
 
@@ -82,20 +86,24 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test02SpnegoLoginCorrectKerberosPrincipalUserFound() throws Exception {
         // Login as kerberos user jduke@KC2.COM. Ensure I am logged as user "jduke2" from realm KC2.COM (not as user jduke@KEYCLOAK.ORG)
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
         assertUser("jduke2", "jduke2@kc2.com", "Java", "Duke", "jduke@KC2.COM", false);
 
         // Logout
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         events.poll();
 
         // Another login to check the scenario when user is in local storage
         tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
+
+        // Logout
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
+        events.poll();
     }
 
     // Issue 20045 - username/password form login
@@ -109,6 +117,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
 
         // User jduke@KEYCLOAK.ORG
         Assert.assertTrue(testAppHelper.login("jduke", "theduke"));
+
+        // Logout
+        testAppHelper.logout();
+        events.poll();
     }
 
     // Test with "Kerberos Principal attribute name" set to empty value (backwards compatibility).
@@ -117,14 +129,14 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, null));
 
         // Keycloak will lookup user just based on 1st part of kerberos principal. Hence for "jduke@KC2.COM", it will lookup user "jduke"
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke", "theduke2");
+        AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");
         assertUser("jduke", "jduke@keycloak.org", "Java", "Duke", null, false);
 
         // Logout
-        oauth.openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
         events.poll();
 
         // This refers to same user as above login
@@ -132,6 +144,10 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");
+
+        // Logout
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
+        events.poll();
     }
 
     @Test

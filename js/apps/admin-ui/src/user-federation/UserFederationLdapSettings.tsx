@@ -1,5 +1,10 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
+  KeycloakSpinner,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   PageSection,
   Tab,
@@ -9,16 +14,12 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { useAdminClient } from "../admin-client";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch } from "../utils/useFetch";
 import {
   LdapComponentRepresentation,
   UserFederationLdapForm,
@@ -27,13 +28,14 @@ import {
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
 import {
   UserFederationLdapParams,
-  UserFederationLdapTab,
   toUserFederationLdap,
 } from "./routes/UserFederationLdap";
 import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function UserFederationLdapSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const { realm } = useRealm();
@@ -57,11 +59,12 @@ export default function UserFederationLdapSettings() {
     [id, refreshCount],
   );
 
-  const useTab = (tab: UserFederationLdapTab) =>
-    useRoutableTab(toUserFederationLdap({ realm, id: id!, tab }));
-
-  const settingsTab = useTab("settings");
-  const mappersTab = useTab("mappers");
+  const settingsTab = useRoutableTab(
+    toUserFederationLdap({ realm, id: id!, tab: "settings" }),
+  );
+  const mappersTab = useRoutableTab(
+    toUserFederationLdap({ realm, id: id!, tab: "mappers" }),
+  );
 
   const setupForm = (component: ComponentRepresentation) => {
     form.reset(component);
@@ -101,7 +104,7 @@ export default function UserFederationLdapSettings() {
         editMode={component.config?.editMode}
         save={() => form.handleSubmit(onSubmit)()}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           defaultLocation={toUserFederationLdap({
             realm,

@@ -26,6 +26,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -35,7 +36,8 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RegisterPage extends AbstractPage {
+public class RegisterPage extends LanguageComboboxAwarePage
+{
 
     @Page
     private AccountFields.AccountErrors accountErrors;
@@ -43,34 +45,34 @@ public class RegisterPage extends AbstractPage {
     @Page
     private PasswordFields.PasswordErrors passwordErrors;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
 
-    @FindBy(id = "username")
+    @FindBy(name = "username")
     private WebElement usernameInput;
 
-    @FindBy(id = "password")
+    @FindBy(name = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirm")
+    @FindBy(name = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(id = "department")
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(id = "termsAccepted")
+    @FindBy(name = "termsAccepted")
     private WebElement termsAcceptedInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     @FindBy(className = "instruction")
@@ -102,9 +104,11 @@ public class RegisterPage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        emailInput.clear();
-        if (email != null) {
-            emailInput.sendKeys(email);
+        if (isEmailPresent()) {
+            emailInput.clear();
+            if (email != null) {
+                emailInput.sendKeys(email);
+            }
         }
 
         usernameInput.clear();
@@ -135,11 +139,11 @@ public class RegisterPage extends AbstractPage {
 
         if (attributes != null) {
             for (Entry<String, String> attribute : attributes.entrySet()) {
-                driver.findElement(By.id(Constants.USER_ATTRIBUTES_PREFIX + attribute.getKey())).sendKeys(attribute.getValue());
+                driver.findElement(By.name(Constants.USER_ATTRIBUTES_PREFIX + attribute.getKey())).sendKeys(attribute.getValue());
             }
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
@@ -175,11 +179,11 @@ public class RegisterPage extends AbstractPage {
             passwordConfirmInput.sendKeys(passwordConfirm);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void clickBackToLogin() {
-        backToLoginLink.click();
+        UIUtils.clickLink(backToLoginLink);
     }
 
     public String getAlertError() {
@@ -200,7 +204,7 @@ public class RegisterPage extends AbstractPage {
     }
 
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
 
     public String getFirstName() {
@@ -237,7 +241,23 @@ public class RegisterPage extends AbstractPage {
 
     public boolean isDepartmentPresent() {
         try {
-            return driver.findElement(By.id("department")).isDisplayed();
+            return driver.findElement(By.name("department")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isEmailPresent() {
+        try {
+            return driver.findElement(By.name("email")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.name("username")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }
@@ -245,7 +265,7 @@ public class RegisterPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Register");
+        return isCurrent("Register");
     }
 
     public AccountFields.AccountErrors getInputAccountErrors(){
@@ -256,15 +276,14 @@ public class RegisterPage extends AbstractPage {
         return passwordErrors;
     }
 
-    @Override
-    public void open() {
-        oauth.openRegistrationForm();
-        assertCurrent();
-    }
-
     public void openWithLoginHint(String loginHint) {
-        oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
+        oauth.registrationForm().loginHint(loginHint).open();
         assertCurrent();
     }
 
+    public void assertCurrent(String orgName) {
+        String name = getClass().getSimpleName();
+        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
+                isCurrent("Create an account to join the " + orgName + " organization"));
+    }
 }

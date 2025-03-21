@@ -161,7 +161,7 @@ public class SSSDTest extends AbstractBaseSSSDTest {
         BadRequestException e = Assert.assertThrows(BadRequestException.class,
                 () -> realm.users().get(users.iterator().next().getId()).update(user));
         ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User is read only!", error.getErrorMessage());
+        Assert.assertEquals("error-user-attribute-read-only", error.getErrorMessage());
     }
 
     @Test

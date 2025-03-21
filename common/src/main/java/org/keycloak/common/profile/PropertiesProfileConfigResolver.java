@@ -21,7 +21,15 @@ public class PropertiesProfileConfigResolver implements ProfileConfigResolver {
     @Override
     public Profile.ProfileName getProfileName() {
         String profile = getter.apply("keycloak.profile");
-        return profile != null ? Profile.ProfileName.valueOf(profile.toUpperCase()) : null;
+
+        if (profile != null) {
+            try {
+                return Profile.ProfileName.valueOf(profile.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new ProfileException(String.format("Invalid profile '%s' specified via 'keycloak.profile' property", profile));
+            }
+        }
+        return null;
     }
 
     @Override
@@ -46,6 +54,6 @@ public class PropertiesProfileConfigResolver implements ProfileConfigResolver {
     }
 
     public static String getPropertyKey(String feature) {
-        return "keycloak.profile.feature." + feature.replaceAll("-", "_");
+        return "keycloak.profile.feature." + feature.replaceAll("[-:]", "_");
     }
 }

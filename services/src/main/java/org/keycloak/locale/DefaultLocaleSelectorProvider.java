@@ -17,13 +17,16 @@
 package org.keycloak.locale;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
+import org.keycloak.theme.Theme;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -40,6 +43,11 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user) {
+        return resolveLocale(realm, user, null);
+    }
+
+    @Override
+    public Locale resolveLocale(RealmModel realm, UserModel user, Theme.Type themeType) {
         HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
@@ -47,7 +55,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return Locale.ENGLISH;
         }
 
-        Locale userLocale = getUserLocale(realm, session, user, requestHeaders);
+        Locale userLocale = getUserLocale(realm, session, user, requestHeaders, themeType);
         if (userLocale != null) {
             return userLocale;
         }
@@ -60,7 +68,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return Locale.ENGLISH;
     }
 
-    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {
+    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders, Theme.Type themeType) {
         Locale locale;
 
         locale = getUserSelectedLocale(realm, session);
@@ -71,6 +79,10 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         locale = getUserProfileSelection(realm, user);
         if (locale != null) {
             return locale;
+        }
+
+        if(Theme.Type.EMAIL.equals(themeType)) {
+            return null;
         }
 
         locale = getClientSelectedLocale(realm, session);
@@ -131,12 +143,12 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        Cookie localeCookie = httpHeaders.getCookies().get(LOCALE_COOKIE);
+        String localeCookie = session.getProvider(CookieProvider.class).get(CookieType.LOCALE);
         if (localeCookie == null) {
             return null;
         }
 
-        return findLocale(realm, localeCookie.getValue());
+        return findLocale(realm, localeCookie);
     }
 
     private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {

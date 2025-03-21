@@ -29,6 +29,7 @@ interface UserBaseQuery {
   firstName?: string;
   lastName?: string;
   username?: string;
+  q?: string;
 }
 
 export interface UserQuery extends PaginationQuery, SearchQuery, UserBaseQuery {
@@ -491,6 +492,15 @@ export class Users extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/{id}/consents/{clientId}",
     urlParamKeys: ["id", "clientId"],
+  });
+
+  public getUnmanagedAttributes = this.makeRequest<
+    { id: string },
+    Record<string, string[]>
+  >({
+    method: "GET",
+    path: "/{id}/unmanagedAttributes",
+    urlParamKeys: ["id"],
   });
 
   constructor(client: KeycloakAdminClient) {

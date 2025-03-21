@@ -1,9 +1,0 @@
-{
-    "realm": "Test",
-    "auth-server-url": "/auth",
-    "ssl-required": "external",
-    "resource": "app-profile-jee",
-    "credentials": {
-        "secret": "4f36f31a-be9d-4f92-b982-425301bac5df"
-    }
-}

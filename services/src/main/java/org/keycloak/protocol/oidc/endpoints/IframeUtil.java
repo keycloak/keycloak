@@ -25,9 +25,15 @@ import org.keycloak.services.util.CacheControlUtil;
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
+import java.util.function.Supplier;
 
 public class IframeUtil {
+
     public static Response returnIframeFromResources(String fileName, String version, KeycloakSession session) {
+        return returnIframe(version, session, () -> IframeUtil.class.getResourceAsStream(fileName));
+    }
+
+    public static Response returnIframe(String version, KeycloakSession session, Supplier<Object> responseEntityProvider) {
         CacheControl cacheControl;
         if (version != null) {
             if (!version.equals(Version.RESOURCES_VERSION)) {
@@ -38,7 +44,7 @@ public class IframeUtil {
             cacheControl = CacheControlUtil.noCache();
         }
 
-        InputStream resource = IframeUtil.class.getResourceAsStream(fileName);
+        Object resource = responseEntityProvider.get();
         if (resource != null) {
             session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
             return Response.ok(resource).cacheControl(cacheControl).build();

@@ -99,7 +99,7 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
         property.setHelpText("User attribute name to store XPath value. Use " + UserModel.EMAIL + ", " + UserModel.FIRST_NAME + ", and " + UserModel.LAST_NAME + " for e-mail, first and last name, respectively.");
-        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
     }
 

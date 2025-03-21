@@ -23,20 +23,19 @@ import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.spi.AuthenticationError;
-import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -45,8 +44,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -105,10 +102,18 @@ public class SendUsernameServlet {
     }
 
     @GET
+    @Path("change-session-id")
+    public Response changeSessionId() throws IOException {
+        System.out.println("In SendUsername Servlet changeSessionId()");
+        final String sessionId = httpServletRequest.changeSessionId();
+
+        return Response.ok(sessionId).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
+    }
+
+    @GET
     @Path("getAssertionFromDocument")
     public Response getAssertionFromDocument() throws IOException, TransformerException {
         sentPrincipal = httpServletRequest.getUserPrincipal();
-        DocumentBuilderFactory domFact = DocumentBuilderFactory.newInstance();
         Document doc = ((SamlPrincipal) sentPrincipal).getAssertionDocument();
         String xml = "";
         if (doc != null) {

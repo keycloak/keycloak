@@ -23,9 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -42,14 +46,61 @@ public class AcrUtils {
         return getAcrValues(claimsParam, null, true);
     }
 
-    public static List<String> getAcrValues(String claimsParam, String acrValuesParam, ClientModel client) {
-        List<String> fromParams = getAcrValues(claimsParam, acrValuesParam, false);
-        if (!fromParams.isEmpty()) {
-            return fromParams;
-        }
 
-        // Fallback to default ACR values of client (if configured)
-        return getDefaultAcrValues(client);
+    public static List<String> getAcrValues(String claimsParam, String acrValuesParam, ClientModel client) {
+        List<String> acrValues = getAcrValues(claimsParam, acrValuesParam, false);
+
+        if (acrValues.isEmpty()) {
+            // Fallback to default ACR values of client (if configured)
+            acrValues = getDefaultAcrValues(client);
+        }
+        return enforceMinimumAcr(acrValues, client);
+    }
+
+    public static List<String> enforceMinimumAcr(List<String> acrValues, ClientModel client) {
+        String minimumAcr = getMinimumAcrValue(client);
+
+        // If a minimum is set, we need to validate the client didn't request a lower ACR
+        if (minimumAcr != null) {
+            List<String> acrCopy = new ArrayList<>(acrValues);
+            Map<String, Integer> acrMap = getAcrLoaMap(client);
+            Integer minimumLoa = getLoaForAcr(minimumAcr, acrMap, client);
+            if (minimumLoa == null) {
+                LOGGER.warnf("ACR '%s' can not be mapped to a LoA value.", minimumAcr);
+            } else {
+                // Remove all ACRs lower than the minimum
+                Iterator<String> iterator = acrCopy.iterator();
+                while (iterator.hasNext()) {
+                    String acrValue = iterator.next();
+                    Integer loa = getLoaForAcr(acrValue, acrMap, client);
+                    if (loa == null) {
+                        LOGGER.warnf("ACR '%s' can not be mapped to a LoA value.", acrValue);
+                        iterator.remove();
+                    } else if (loa < minimumLoa) {
+                        iterator.remove();
+                    }
+                }
+                // All ACRs lower than the minimum are gone, if we have none left, add our minimum
+                if (acrCopy.isEmpty()) {
+                    acrCopy.add(minimumAcr);
+                }
+            }
+            return acrCopy;
+        }
+        return acrValues;
+    }
+
+    private static Integer getLoaForAcr(String acr, Map<String, Integer> acrMap, ClientModel client) {
+        Integer loa = acrMap.get(acr);
+        if (loa == null) {
+            Optional<Integer> loaFromFlows = LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                    .filter(l -> acr.equals(String.valueOf(l)))
+                    .findFirst();
+            if (loaFromFlows.isPresent()) {
+                loa = loaFromFlows.get();
+            }
+        }
+        return loa;
     }
 
     private static List<String> getAcrValues(String claimsParam, String acrValuesParam, boolean essential) {
@@ -102,7 +153,7 @@ public class AcrUtils {
         try {
             return JsonSerialization.readValue(map, new TypeReference<Map<String, Integer>>() {});
         } catch (IOException e) {
-            LOGGER.warnf("Invalid client configuration (ACR-LOA map) for client '%s'", client.getClientId());
+            LOGGER.warnf("Invalid client configuration (ACR-LOA map) for client '%s'. Error details: %s", client.getClientId(), e.getMessage());
             return Collections.emptyMap();
         }
     }
@@ -119,7 +170,7 @@ public class AcrUtils {
         try {
             return JsonSerialization.readValue(map, new TypeReference<Map<String, Integer>>() {});
         } catch (IOException e) {
-            LOGGER.warn("Invalid realm configuration (ACR-LOA map)");
+            LOGGER.warnf("Invalid realm configuration (ACR-LOA map). Details: %s", e.getMessage());
             return Collections.emptyMap();
         }
     }
@@ -151,5 +202,9 @@ public class AcrUtils {
 
     public static List<String> getDefaultAcrValues(ClientModel client) {
         return OIDCAdvancedConfigWrapper.fromClientModel(client).getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+    }
+
+    public static String getMinimumAcrValue(ClientModel client) {
+        return OIDCAdvancedConfigWrapper.fromClientModel(client).getMinimumAcrValue();
     }
 }

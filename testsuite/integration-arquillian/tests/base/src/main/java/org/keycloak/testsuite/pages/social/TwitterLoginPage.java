@@ -18,25 +18,40 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import java.util.List;
+
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class TwitterLoginPage extends AbstractSocialLoginPage {
+    private static final String signInBtnLocator = "allow";
 
-    @FindBy(xpath = "//input[@type='text' and @name='text']")
+    @FindBy(xpath = "//input[@type='text']")
     private WebElement usernameInput;
 
     @FindBy(xpath = "//input[@type='password']")
     private WebElement passwordInput;
 
+    @FindBy(id = signInBtnLocator)
+    private WebElement signInBtn;
+
     @Override
     public void login(String user, String password) {
         // new login page is two phase login (username and then password) and it
         // needs lots of JS, twitter does not work with default HtmlUnit driver
+
+       List<WebElement> signInBtn = driver.findElements(By.id(signInBtnLocator));
+        if (signInBtn.size() > 0) {
+            signInBtn.get(0).click();
+        }
+
+        pause(3000);
         usernameInput.clear();
         usernameInput.sendKeys(user);
         usernameInput.sendKeys(Keys.RETURN);
@@ -46,5 +61,6 @@ public class TwitterLoginPage extends AbstractSocialLoginPage {
         passwordInput.clear();
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
+
     }
 }

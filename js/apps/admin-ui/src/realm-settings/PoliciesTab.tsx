@@ -1,5 +1,12 @@
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import {
+  Action,
+  KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -13,52 +20,67 @@ import {
   Title,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { omit } from "lodash-es";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
-import { useFetch } from "../utils/useFetch";
+import { translationFormatter } from "../utils/translationFormatter";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toClientPolicies } from "./routes/ClientPolicies";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
 
 import "./realm-settings-section.css";
 
+type ClientPolicy = ClientPolicyRepresentation & {
+  global?: boolean;
+};
+
 export const PoliciesTab = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
-  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
-  const [selectedPolicy, setSelectedPolicy] =
-    useState<ClientPolicyRepresentation>();
+  const [policies, setPolicies] = useState<ClientPolicy[]>();
+  const [selectedPolicy, setSelectedPolicy] = useState<ClientPolicy>();
   const [key, setKey] = useState(0);
   const [code, setCode] = useState<string>();
-  const [tablePolicies, setTablePolicies] =
-    useState<ClientPolicyRepresentation[]>();
+  const [tablePolicies, setTablePolicies] = useState<ClientPolicy[]>();
   const refresh = () => setKey(key + 1);
 
   const form = useForm<Record<string, boolean>>({ mode: "onChange" });
 
   useFetch(
-    () => adminClient.clientPolicies.listPolicies(),
-    (policies) => {
-      setPolicies(policies.policies),
-        setTablePolicies(policies.policies || []),
-        setCode(prettyPrintJSON(policies.policies));
+    () =>
+      adminClient.clientPolicies.listPolicies({
+        includeGlobalPolicies: true,
+      }),
+    (allPolicies) => {
+      const globalPolicies = allPolicies.globalPolicies?.map(
+        (globalPolicies) => ({
+          ...globalPolicies,
+          global: true,
+        }),
+      );
+
+      const policies = allPolicies.policies?.map((policies) => ({
+        ...policies,
+        global: false,
+      }));
+
+      const allClientPolicies = globalPolicies?.concat(policies ?? []);
+
+      setPolicies(allClientPolicies);
+      setTablePolicies(allClientPolicies || []);
+      setCode(prettyPrintJSON(allClientPolicies));
     },
     [key],
   );
@@ -68,16 +90,19 @@ export const PoliciesTab = () => {
   const saveStatus = async () => {
     const switchValues = form.getValues();
 
-    const updatedPolicies = policies?.map<ClientPolicyRepresentation>(
-      (policy) => {
+    const updatedPolicies = policies
+      ?.filter((policy) => {
+        return !policy.global;
+      })
+      .map<ClientPolicyRepresentation>((policy) => {
         const enabled = switchValues[policy.name!];
-
-        return {
+        const enabledPolicy = {
           ...policy,
           enabled,
         };
-      },
-    );
+        delete enabledPolicy.global;
+        return enabledPolicy;
+      });
 
     try {
       await adminClient.clientPolicies.updatePolicy({
@@ -90,53 +115,8 @@ export const PoliciesTab = () => {
     }
   };
 
-  const ClientPolicyDetailLink = ({ name }: ClientPolicyRepresentation) => (
-    <Link to={toEditClientPolicy({ realm, policyName: name! })}>{name}</Link>
-  );
-
-  const SwitchRenderer = ({
-    clientPolicy,
-  }: {
-    clientPolicy: ClientPolicyRepresentation;
-  }) => {
-    const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-      titleKey: "disablePolicyConfirmTitle",
-      messageKey: "disablePolicyConfirm",
-      continueButtonLabel: "disable",
-      onConfirm: () => {
-        form.setValue(clientPolicy.name!, false);
-        saveStatus();
-      },
-    });
-
-    return (
-      <>
-        <DisableConfirm />
-        <Controller
-          name={clientPolicy.name!}
-          data-testid={`${clientPolicy.name!}-switch`}
-          defaultValue={clientPolicy.enabled}
-          control={form.control}
-          render={({ field }) => (
-            <Switch
-              label={t("enabled")}
-              labelOff={t("disabled")}
-              isChecked={field.value}
-              onChange={(value) => {
-                if (!value) {
-                  toggleDisableDialog();
-                } else {
-                  field.onChange(value);
-                  saveStatus();
-                }
-              }}
-              aria-label={clientPolicy.name!}
-            />
-          )}
-        />
-      </>
-    );
-  };
+  const normalizePolicy = (policy: ClientPolicy): ClientPolicyRepresentation =>
+    omit(policy, "global");
 
   const save = async () => {
     if (!code) {
@@ -144,11 +124,20 @@ export const PoliciesTab = () => {
     }
 
     try {
-      const obj: ClientPolicyRepresentation[] = JSON.parse(code);
+      const obj: ClientPolicy[] = JSON.parse(code);
+
+      const changedPolicies = obj
+        .filter((policy) => !policy.global)
+        .map((policy) => normalizePolicy(policy));
+
+      const changedGlobalPolicies = obj
+        .filter((policy) => policy.global)
+        .map((policy) => normalizePolicy(policy));
 
       try {
         await adminClient.clientPolicies.updatePolicy({
-          policies: obj,
+          policies: changedPolicies,
+          globalPolicies: changedGlobalPolicies,
         });
         addAlert(t("updateClientPoliciesSuccess"), AlertVariant.success);
         refresh();
@@ -157,7 +146,7 @@ export const PoliciesTab = () => {
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
-      addError("updateClientPoliciesError", error);
+      addError("invalidJsonClientPoliciesError", error);
     }
   };
 
@@ -169,9 +158,15 @@ export const PoliciesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      const updatedPolicies = policies?.filter(
-        (policy) => policy.name !== selectedPolicy?.name,
-      );
+      const updatedPolicies = policies
+        ?.filter((policy) => {
+          return !policy.global && policy.name !== selectedPolicy?.name;
+        })
+        .map<ClientPolicyRepresentation>((policy) => {
+          const newPolicy = { ...policy };
+          delete newPolicy.global;
+          return newPolicy;
+        });
 
       try {
         await adminClient.clientPolicies.updatePolicy({
@@ -180,7 +175,7 @@ export const PoliciesTab = () => {
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError(t("deleteClientPolicyError"), error);
+        addError("deleteClientPolicyError", error);
       }
     },
   });
@@ -206,7 +201,7 @@ export const PoliciesTab = () => {
               label={t("policiesConfigTypes.formView")}
               id="formView-policiesView"
               data-testid="formView-policiesView"
-              className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
             />
           </FlexItem>
           <FlexItem>
@@ -250,6 +245,7 @@ export const PoliciesTab = () => {
               </Button>
             </ToolbarItem>
           }
+          isRowDisabled={(value) => !!value.global}
           actions={[
             {
               title: t("delete"),
@@ -257,42 +253,52 @@ export const PoliciesTab = () => {
                 toggleDeleteDialog();
                 setSelectedPolicy(item);
               },
-            } as Action<ClientPolicyRepresentation>,
+            } as Action<ClientPolicy>,
           ]}
           columns={[
             {
               name: "name",
-              cellRenderer: ClientPolicyDetailLink,
+              cellRenderer: ({ name }: ClientPolicyRepresentation) => (
+                <Link to={toEditClientPolicy({ realm, policyName: name! })}>
+                  {name}
+                </Link>
+              ),
             },
             {
               name: "enabled",
               displayKey: "status",
               cellRenderer: (clientPolicy) => (
-                <SwitchRenderer clientPolicy={clientPolicy} />
+                <SwitchRenderer
+                  clientPolicy={clientPolicy}
+                  form={form}
+                  saveStatus={saveStatus}
+                  onConfirm={() => {
+                    form.setValue(clientPolicy.name!, false);
+                    saveStatus();
+                  }}
+                />
               ),
             },
             {
               name: "description",
+              cellFormatters: [translationFormatter(t)],
             },
           ]}
         />
       ) : (
         <>
-          <div className="pf-u-mt-md pf-u-ml-lg">
+          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
             <CodeEditor
-              isLineNumbersVisible
-              isLanguageLabelVisible
-              isReadOnly={false}
-              code={code}
-              language={Language.json}
-              height="30rem"
-              onChange={setCode}
+              value={code}
+              language="json"
+              onChange={(value) => setCode(value)}
+              height={480}
             />
           </div>
-          <div className="pf-u-mt-md">
+          <div className="pf-v5-u-mt-md">
             <Button
               variant={ButtonVariant.primary}
-              className="pf-u-mr-md pf-u-ml-lg"
+              className="pf-v5-u-mr-md pf-v5-u-ml-lg"
               data-testid="jsonEditor-policies-saveBtn"
               onClick={save}
             >
@@ -310,6 +316,57 @@ export const PoliciesTab = () => {
           </div>
         </>
       )}
+    </>
+  );
+};
+
+type SwitchRendererProps = {
+  clientPolicy: ClientPolicy;
+  form: UseFormReturn<Record<string, boolean>>;
+  saveStatus: () => void;
+  onConfirm: () => void;
+};
+
+const SwitchRenderer = ({
+  clientPolicy,
+  form,
+  saveStatus,
+  onConfirm,
+}: SwitchRendererProps) => {
+  const { t } = useTranslation();
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "disablePolicyConfirmTitle",
+    messageKey: "disablePolicyConfirm",
+    continueButtonLabel: "disable",
+    onConfirm,
+  });
+
+  return (
+    <>
+      <DisableConfirm />
+      <Controller
+        name={clientPolicy.name!}
+        data-testid={`${clientPolicy.name!}-switch`}
+        defaultValue={clientPolicy.enabled}
+        control={form.control}
+        render={({ field }) => (
+          <Switch
+            label={t("enabled")}
+            labelOff={t("disabled")}
+            isChecked={field.value}
+            isDisabled={clientPolicy.global}
+            onChange={(_event, value) => {
+              if (!value) {
+                toggleDisableDialog();
+              } else {
+                field.onChange(value);
+                saveStatus();
+              }
+            }}
+            aria-label={clientPolicy.name!}
+          />
+        )}
+      />
     </>
   );
 };

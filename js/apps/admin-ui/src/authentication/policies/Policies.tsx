@@ -1,18 +1,19 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useFetch } from "@keycloak/keycloak-ui-shared";
 import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { useAdminClient } from "../../admin-client";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
 import { PasswordPolicy } from "./PasswordPolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
 
 export const Policies = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const [subTab, setSubTab] = useState(1);
   const { realm: realmName } = useRealm();
@@ -45,6 +46,7 @@ export const Policies = () => {
     >
       <Tab
         id="passwordPolicy"
+        data-testid="passwordPolicy"
         eventKey={1}
         title={<TabTitleText>{t("passwordPolicy")}</TabTitleText>}
       >
@@ -52,6 +54,7 @@ export const Policies = () => {
       </Tab>
       <Tab
         id="otpPolicy"
+        data-testid="otpPolicy"
         eventKey={2}
         title={<TabTitleText>{t("otpPolicy")}</TabTitleText>}
       >
@@ -59,6 +62,7 @@ export const Policies = () => {
       </Tab>
       <Tab
         id="webauthnPolicy"
+        data-testid="webauthnPolicy"
         eventKey={3}
         title={<TabTitleText>{t("webauthnPolicy")}</TabTitleText>}
       >
@@ -66,6 +70,7 @@ export const Policies = () => {
       </Tab>
       <Tab
         id="webauthnPasswordlessPolicy"
+        data-testid="webauthnPasswordlessPolicy"
         eventKey={4}
         title={<TabTitleText>{t("webauthnPasswordlessPolicy")}</TabTitleText>}
       >

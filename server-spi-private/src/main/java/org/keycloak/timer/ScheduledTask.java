@@ -17,13 +17,15 @@
 
 package org.keycloak.timer;
 
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface ScheduledTask {
+public interface ScheduledTask extends KeycloakSessionTask {
 
-    void run(KeycloakSession session);
+    default String getTaskName() {
+        return getClass().getSimpleName();
+    }
 
 }

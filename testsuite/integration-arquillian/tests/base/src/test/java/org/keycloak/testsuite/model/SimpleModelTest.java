@@ -69,6 +69,7 @@ public class SimpleModelTest extends AbstractKeycloakTest {
 
             RealmModel realm = session2.realms().getRealmByName("foo");
             Assert.assertNotNull(realm);
+            session2.getContext().setRealm(realm);
 
             realm.setAttribute("bar", "baz");
 
@@ -79,6 +80,7 @@ public class SimpleModelTest extends AbstractKeycloakTest {
 
             RealmModel realm = session3.realms().getRealmByName("foo");
             Assert.assertNotNull(realm);
+            session3.getContext().setRealm(realm);
 
             String attrValue = realm.getAttribute("bar");
             Assert.assertEquals("baz", attrValue);
@@ -93,6 +95,7 @@ public class SimpleModelTest extends AbstractKeycloakTest {
 
             RealmModel realm = session4.realms().getRealmByName("foo");
             Assert.assertNotNull(realm);
+            session4.getContext().setRealm(realm);
 
             String attrValue = realm.getAttribute("bar");
             Assert.assertEquals("baz", attrValue);

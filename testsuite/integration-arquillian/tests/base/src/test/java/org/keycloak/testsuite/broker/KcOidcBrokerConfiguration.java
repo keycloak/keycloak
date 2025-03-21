@@ -75,10 +75,10 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         client.setSecret(CLIENT_SECRET);
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint/*"));
+                "/auth/realms/" + consumerRealmName() + "/broker/" + getIDPAlias() + "/endpoint/*"));
 
         client.setAdminUrl(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint");
+                "/auth/realms/" + consumerRealmName() + "/broker/" + getIDPAlias() + "/endpoint");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
 
@@ -188,7 +188,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-        IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
+        IdentityProviderRepresentation idp = createIdentityProvider(getIDPAlias(), IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
         applyDefaultConfiguration(config, syncMode);
@@ -201,6 +201,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         config.put("clientId", CLIENT_ID);
         config.put("clientSecret", CLIENT_SECRET);
         config.put("prompt", "login");
+        config.put(OIDCIdentityProviderConfig.ISSUER, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME);
         config.put("authorizationUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/auth");
         config.put("tokenUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/token");
         config.put("logoutUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/logout");

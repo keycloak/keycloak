@@ -1,10 +1,9 @@
 import { Button, FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -25,6 +24,8 @@ export const LdapSettingsAdvanced = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsAdvancedProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
 
   const { realm } = useRealm();
@@ -81,7 +82,7 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-enable-ldapv3-password"}
                 data-testid="ldapv3-password"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -111,7 +112,7 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-validate-password-policy"}
                 data-testid="password-policy"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -141,11 +142,40 @@ export const LdapSettingsAdvanced = ({
                 id={"kc-trust-email"}
                 data-testid="trust-email"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
                 aria-label={t("trustEmail")}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
+        <FormGroup
+          label={t("connectionTrace")}
+          labelIcon={
+            <HelpItem
+              helpText={t("connectionTraceHelp")}
+              fieldLabelId="connectionTrace"
+            />
+          }
+          fieldId="kc-connection-trace"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.connectionTrace"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id={"kc-connection-trace"}
+                data-testid="connection-trace"
+                isDisabled={false}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("connectionTrace")}
               />
             )}
           ></Controller>

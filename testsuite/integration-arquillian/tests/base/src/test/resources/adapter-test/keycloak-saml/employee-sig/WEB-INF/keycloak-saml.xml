@@ -25,10 +25,12 @@
         forceAuthentication="false">
         <Keys>
             <Key signing="true" >
-                <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
-                    <PrivateKey alias="http://localhost:8080/employee-sig/" password="test123"/>
-                    <Certificate alias="http://localhost:8080/employee-sig/"/>
-                </KeyStore>
+                <PrivateKeyPem>
+                    MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC+bNiR4IasHerrZihVxg47K79VL9hJAXmOlVZA36e4M04FYeftmyaY/g3qlH0uM2OaXQAm5FRLWYVnf6HvsF/S5XBT8L+VmC/LF+CxKTEsJDq6RecH/btAr7v/tC5pgNIyOkt0mIfKgp+b+n6eVXCVMn69SWvmAVK/Zsc8z60iHRiLg9b+gRcpo8Uj336gN3NfElzUfBzcroKfU40nXThWsFs96xHSM0myAIa+iGf+c1kEev1784522kFoi2GMM7VHCWyjJUpLp23oqb2FYK/RyDVaAUN43ljQhbNDD7kAygZamXl2KFAI6LIp1HiqfoNZTKcpk4q0FEBooGZz4Xi5AgMBAAECggEAQAE92epp2bhEmdLAg/QKHIFb0jo+rGs+fFpdn3iNWzCDbPO3jPm1Q39BFjPKz5ieReg0gN4GJz1zxZH00CesTaqo0s381z9L8SuZbnK2AGw9ARc1zE3QfrGSsyPQ5c1S2WcWrZ4HJl45X6gWnwmAyeUrDFx9U9XmBkd5eEslmm0wfF782sGPwhVrscZngLZIo9bXmdZTbJtwuh3xtq3nbRWltIK9lLqRniDmYE/DcpxuVDSXfa0+uht/6MQExVohKugKZjUhmXESw+hbWJ6QxDaOyHtNQ35oN5ae2DcZcO5Lj+fURDv/H5ifMi80gWCjVFEsUEaSJJT4kOBdpUutsQKBgQDqkcj/Gctu3Z0Y8plnNR+gzVvo7kcTzPUk4aOIYronAWgrKMXhWbgpB/iP4+zV45BF5oVRK/ngayosPVGOHqFzM/oPHhYQH5b+YEU01DwhA3TpeamNCm3z/wrvvCzM1gvjKoPgQh6yuehYX1k6zI8kKz4RvqTvcPj9OskB/Iu7UwKBgQDP0pgyYcawS/dD1xDldLHorAeruKy5EieR1YEF4GTMUBAjsTHPLlVmYrEfPIeJtbv4AhSXCrPCgdSBJ0Z/sLXWWoq5iVd4G8NQAPEd/pz82mtvN5K63JGih2TXKFtxNdsjoIqyBrXaiSifNXcG0gVxz0/juvKrT0vTxsU7xXaGQwKBgQDnoYZlwkcM93JGTGoHbIIK/D8iSQmPF/mLrfUanMNN+SmwVNbyrPIaMnDVRjF9FPZG0Fgdy9s4LRq8DOEYAk9Tv6PSgdcvnMIx90bf4CRwRUWRuD4htIbXRqa6DYv/ye57KGSJc0F1I/e4LI+kbJN9F+Z3B1c/ysNU7FPJzmT9WQKBgQCBLuVQnBrHx9DiKLPmDg3xFc6G3frv5+sU6eST5JKDtljx9tmBccnAJST4x8VwwrkfRxvJb+uhwtZ3mhRml0/Q+OM2xbrLfGaCOrOm83hebN9PePoKkcUthIAYhoug6dtYYBkW5LjyKURJAxED+lVME5QTeUgTWO1HrU05BFvSxQKBgQDM3mkN40xPcYzp4ZI/DpD/I5ynIM66GbxIDS3WyNBHD249WUR9ybhOIPGXpCFqWmIM9DE5FWJTgxLMdeSAPByCpPlxO5jDiG7S/FWKDDdsi9fdct1AXXg0tQfDHOarThxPTJSWyPFmGghfkwM9/hu/Zzmxr+l7EwaTI6Q2dTKGVQ==
+                </PrivateKeyPem>
+                <CertificatePem>
+                    MIIDATCCAemgAwIBAgIIOQ5fb1mWXb4wDQYJKoZIhvcNAQELBQAwLjEsMCoGA1UEAxMjaHR0cDovL2xvY2FsaG9zdDo4MDgwL2VtcGxveWVlLXNpZy8wIBcNMjQwNjIyMTAwMjI3WhgPMjEyNDA1MjkxMDAyMjdaMC4xLDAqBgNVBAMTI2h0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9lbXBsb3llZS1zaWcvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvmzYkeCGrB3q62YoVcYOOyu/VS/YSQF5jpVWQN+nuDNOBWHn7ZsmmP4N6pR9LjNjml0AJuRUS1mFZ3+h77Bf0uVwU/C/lZgvyxfgsSkxLCQ6ukXnB/27QK+7/7QuaYDSMjpLdJiHyoKfm/p+nlVwlTJ+vUlr5gFSv2bHPM+tIh0Yi4PW/oEXKaPFI99+oDdzXxJc1Hwc3K6Cn1ONJ104VrBbPesR0jNJsgCGvohn/nNZBHr9e/OOdtpBaIthjDO1RwlsoyVKS6dt6Km9hWCv0cg1WgFDeN5Y0IWzQw+5AMoGWpl5dihQCOiyKdR4qn6DWUynKZOKtBRAaKBmc+F4uQIDAQABoyEwHzAdBgNVHQ4EFgQUyPCcw2DKgLMQKLpHfIwjjG+yXsAwDQYJKoZIhvcNAQELBQADggEBAFwjt6JAPc3EQt4S0AjrDlzO6Mt/JuDPaJclrgwjFCQQhdonwpdX3gwSlABGOA337/DZv+lQLeunZlt94ORsBMt2RWWmhVXPF1baBaxpJodyC8k5FHyrNepoNKhqoiSsFiNH3929kN8DCk+SV+z5y55wJ9iIsi9pPYS3yO7kRYZqyZRRtY8iVPoHPCIYsKLGRFBL7iF6QEJx7C9Qml2sOnU5HmMlsDSfrOm+D0BcjBizcqPbt/vdYZlEQT76TCUHWIf+HHXTFquHjORRgb4Z6lFEE+MzO3HgduzM6NncrcS57cLkxirOIDZ5v1bnc/x18VIEy/RupXFRmG9bUCvkcBQ=
+                </CertificatePem>
             </Key>
         </Keys>
         <PrincipalNameMapping policy="FROM_NAME_ID"/>

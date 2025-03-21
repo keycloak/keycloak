@@ -21,18 +21,24 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -50,8 +56,14 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -67,9 +79,10 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -82,6 +95,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -95,6 +109,8 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -112,7 +128,9 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
+import static java.util.Optional.ofNullable;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
@@ -122,13 +140,7 @@ public class RepresentationToModel {
 
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
-        KeycloakContext context = session.getContext();
-        try {
-            context.setRealm(newRealm);
-            session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
-        } finally {
-            context.setRealm(null);
-        }
+        session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, skipUserDependent);
     }
 
     public static void importRoles(RolesRepresentation realmRoles, RealmModel realm) {
@@ -317,17 +329,14 @@ public class RepresentationToModel {
         logger.debugv("Create client: {0}", resourceRep.getClientId());
 
         ClientModel client = resourceRep.getId() != null ? realm.addClient(resourceRep.getId(), resourceRep.getClientId()) : realm.addClient(resourceRep.getClientId());
-        if (resourceRep.getName() != null) client.setName(resourceRep.getName());
-        if (resourceRep.getDescription() != null) client.setDescription(resourceRep.getDescription());
-        if (resourceRep.isEnabled() != null) client.setEnabled(resourceRep.isEnabled());
-        if (resourceRep.isAlwaysDisplayInConsole() != null) client.setAlwaysDisplayInConsole(resourceRep.isAlwaysDisplayInConsole());
-        client.setManagementUrl(resourceRep.getAdminUrl());
-        if (resourceRep.isSurrogateAuthRequired() != null)
-            client.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        if (resourceRep.getRootUrl() != null) client.setRootUrl(resourceRep.getRootUrl());
-        if (resourceRep.getBaseUrl() != null) client.setBaseUrl(resourceRep.getBaseUrl());
-        if (resourceRep.isBearerOnly() != null) client.setBearerOnly(resourceRep.isBearerOnly());
-        if (resourceRep.isConsentRequired() != null) client.setConsentRequired(resourceRep.isConsentRequired());
+
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && resourceRep.getType() != null) {
+            ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+            ClientType clientType = mgr.getClientType(realm, resourceRep.getType());
+            client = clientType.augment(client);
+        }
+
+        updateClientProperties(client, resourceRep, true);
 
         // Backwards compatibility only
         if (resourceRep.isDirectGrantsOnly() != null) {
@@ -336,61 +345,9 @@ public class RepresentationToModel {
             client.setDirectAccessGrantsEnabled(resourceRep.isDirectGrantsOnly());
         }
 
-        if (resourceRep.isStandardFlowEnabled() != null)
-            client.setStandardFlowEnabled(resourceRep.isStandardFlowEnabled());
-        if (resourceRep.isImplicitFlowEnabled() != null)
-            client.setImplicitFlowEnabled(resourceRep.isImplicitFlowEnabled());
-        if (resourceRep.isDirectAccessGrantsEnabled() != null)
-            client.setDirectAccessGrantsEnabled(resourceRep.isDirectAccessGrantsEnabled());
-        if (resourceRep.isServiceAccountsEnabled() != null)
-            client.setServiceAccountsEnabled(resourceRep.isServiceAccountsEnabled());
-
-        if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
-        if (resourceRep.isFrontchannelLogout() != null)
-            client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
-
-        // set defaults to openid-connect if no protocol specified
-        if (resourceRep.getProtocol() != null) {
-            client.setProtocol(resourceRep.getProtocol());
-        } else {
-            client.setProtocol(OIDC);
-        }
-        if (resourceRep.getNodeReRegistrationTimeout() != null) {
-            client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
-        } else {
-            client.setNodeReRegistrationTimeout(-1);
-        }
-
-        if (resourceRep.getNotBefore() != null) {
-            client.setNotBefore(resourceRep.getNotBefore());
-        }
-
-        if (resourceRep.getClientAuthenticatorType() != null) {
-            client.setClientAuthenticatorType(resourceRep.getClientAuthenticatorType());
-        } else {
-            client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
-        }
-
-        // adding secret if the client isn't public nor bearer only
-        if (Objects.nonNull(resourceRep.getSecret())) {
-            client.setSecret(resourceRep.getSecret());
-        } else {
-            if (client.isPublicClient() || client.isBearerOnly()) {
-                client.setSecret(null);
-            } else {
-                KeycloakModelUtils.generateSecret(client);
-            }
-        }
-
-        if (resourceRep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {
-                client.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-
         if ("saml".equals(resourceRep.getProtocol())
                 && (resourceRep.getAttributes() == null
-                    || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+                || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             client.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(resourceRep.getClientId()));
         }
 
@@ -412,35 +369,6 @@ public class RepresentationToModel {
             }
         }
 
-
-        if (resourceRep.getRedirectUris() != null) {
-            for (String redirectUri : resourceRep.getRedirectUris()) {
-                client.addRedirectUri(redirectUri);
-            }
-        }
-        if (resourceRep.getWebOrigins() != null) {
-            for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debugv("Client: {0} webOrigin: {1}", resourceRep.getClientId(), webOrigin);
-                client.addWebOrigin(webOrigin);
-            }
-        } else {
-            // add origins from redirect uris
-            if (resourceRep.getRedirectUris() != null) {
-                Set<String> origins = new HashSet<String>();
-                for (String redirectUri : resourceRep.getRedirectUris()) {
-                    logger.debugv("add redirect-uri to origin: {0}", redirectUri);
-                    if (redirectUri.startsWith("http")) {
-                        String origin = UriUtils.getOrigin(redirectUri);
-                        logger.debugv("adding default client origin: {0}", origin);
-                        origins.add(origin);
-                    }
-                }
-                if (origins.size() > 0) {
-                    client.setWebOrigins(origins);
-                }
-            }
-        }
-
         if (resourceRep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
                 client.registerNode(entry.getKey(), entry.getValue());
@@ -456,7 +384,6 @@ public class RepresentationToModel {
             }
 
             MigrationUtils.updateProtocolMappers(client);
-
         }
 
         if (resourceRep.getClientTemplate() != null) {
@@ -464,34 +391,7 @@ public class RepresentationToModel {
             addClientScopeToClient(realm, client, clientTemplateName, true);
         }
 
-        if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
-                client.removeClientScope(clientScope);
-            }
-
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
-                client.removeClientScope(clientScope);
-            }
-        }
-
-        if (resourceRep.getDefaultClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
-                addClientScopeToClient(realm, client, clientScopeName, true);
-            }
-        }
-        if (resourceRep.getOptionalClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
-                addClientScopeToClient(realm, client, clientScopeName, false);
-            }
-        }
-
-        if (resourceRep.isFullScopeAllowed() != null) {
-            client.setFullScopeAllowed(resourceRep.isFullScopeAllowed());
-        } else {
-            client.setFullScopeAllowed(!client.isConsentRequired());
-        }
+        updateClientScopes(resourceRep, client);
 
         client.updateClient();
         resourceRep.setId(client.getId());
@@ -509,43 +409,25 @@ public class RepresentationToModel {
     }
 
     public static void updateClient(ClientRepresentation rep, ClientModel resource, KeycloakSession session) {
+
+        if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES)) {
+            if (!ObjectUtil.isEqualOrBothNull(resource.getType(), rep.getType())) {
+                throw ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE.exception();
+            }
+            if (rep.getType() != null) {
+                RealmModel realm = session.getContext().getRealm();
+                ClientTypeManager mgr = session.getProvider(ClientTypeManager.class);
+                ClientType clientType = mgr.getClientType(realm, rep.getType());
+                resource = clientType.augment(resource);
+            }
+        }
+
         String newClientId = rep.getClientId();
         String previousClientId = resource.getClientId();
-        if (newClientId != null) resource.setClientId(newClientId);
-        if (rep.getName() != null) resource.setName(rep.getName());
-        if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-        if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
-        if (rep.isAlwaysDisplayInConsole() != null) resource.setAlwaysDisplayInConsole(rep.isAlwaysDisplayInConsole());
-        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
-        if (rep.isConsentRequired() != null) resource.setConsentRequired(rep.isConsentRequired());
-        if (rep.isStandardFlowEnabled() != null) resource.setStandardFlowEnabled(rep.isStandardFlowEnabled());
-        if (rep.isImplicitFlowEnabled() != null) resource.setImplicitFlowEnabled(rep.isImplicitFlowEnabled());
-        if (rep.isDirectAccessGrantsEnabled() != null)
-            resource.setDirectAccessGrantsEnabled(rep.isDirectAccessGrantsEnabled());
-        if (rep.isServiceAccountsEnabled() != null) resource.setServiceAccountsEnabled(rep.isServiceAccountsEnabled());
-        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
-        if (rep.isFullScopeAllowed() != null) resource.setFullScopeAllowed(rep.isFullScopeAllowed());
-        if (rep.isFrontchannelLogout() != null) resource.setFrontchannelLogout(rep.isFrontchannelLogout());
-        if (rep.getRootUrl() != null) resource.setRootUrl(rep.getRootUrl());
-        if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
-        if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
-        if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
-        if (rep.getNodeReRegistrationTimeout() != null)
-            resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
-        if (rep.getClientAuthenticatorType() != null)
-            resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
 
-        if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                resource.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
-                resource.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
+        if (newClientId != null) resource.setClientId(newClientId);
+
+        updateClientProperties(resource, rep, false);
 
         if ("saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
@@ -567,46 +449,20 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getNotBefore() != null) {
-            resource.setNotBefore(rep.getNotBefore());
-        }
-
-        List<String> redirectUris = rep.getRedirectUris();
-        if (redirectUris != null) {
-            resource.setRedirectUris(new HashSet<>(redirectUris));
-        }
-
-        List<String> webOrigins = rep.getWebOrigins();
-        if (webOrigins != null) {
-            resource.setWebOrigins(new HashSet<>(webOrigins));
-        }
-
         if (rep.getRegisteredNodes() != null) {
             for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
                 resource.registerNode(entry.getKey(), entry.getValue());
             }
         }
 
-        if (resource.isPublicClient() || resource.isBearerOnly()) {
-            resource.setSecret(null);
-        } else {
-            String currentSecret = resource.getSecret();
-            String newSecret = rep.getSecret();
-
-            if (newSecret == null && currentSecret == null) {
-                KeycloakModelUtils.generateSecret(resource);
-            } else if (newSecret != null) {
-                resource.setSecret(newSecret);
-            }
-        }
-
         resource.updateClient();
 
         if (!Objects.equals(newClientId, previousClientId)) {
+            ClientModel finalResource = resource;
             ClientModel.ClientIdChangeEvent event = new ClientModel.ClientIdChangeEvent() {
                 @Override
                 public ClientModel getUpdatedClient() {
-                    return resource;
+                    return finalResource;
                 }
 
                 @Override
@@ -626,6 +482,125 @@ public class RepresentationToModel {
             };
             session.getKeycloakSessionFactory().publish(event);
         }
+    }
+
+    /**
+     * Update client properties and process any {@link ClientTypeException} validation errors combining into one to be thrown.
+     *
+     * @param client {@link ClientModel} to update
+     * @param rep {@link ClientRepresentation} to apply updates.
+     * @param isNew  Whether the client is new or not (needed because some getters cannot return null).
+     */
+    private static void updateClientProperties(ClientModel client, ClientRepresentation rep, boolean isNew) {
+        List<Supplier<ClientTypeException>> clientPropertyUpdates = new LinkedList<Supplier<ClientTypeException>>() {{
+            /**
+             * Values from the ClientRepresentation take precedence.
+             * Then values from the ClientModel (these may be augmented from the client type configuration).
+             * Otherwise, we can choose some sane default.
+              */
+            add(updatePropertyAction(client::setName, rep::getName, client::getName));
+            add(updatePropertyAction(client::setDescription, rep::getDescription, client::getDescription));
+            add(updatePropertyAction(client::setType, rep::getType, client::getType));
+            add(updatePropertyAction(client::setEnabled, rep::isEnabled, client::isEnabled));
+            add(updatePropertyAction(client::setAlwaysDisplayInConsole, rep::isAlwaysDisplayInConsole, client::isAlwaysDisplayInConsole));
+            add(updatePropertyAction(client::setManagementUrl, rep::getAdminUrl, client::getManagementUrl));
+            add(updatePropertyAction(client::setSurrogateAuthRequired, rep::isSurrogateAuthRequired, client::isSurrogateAuthRequired));
+            add(updatePropertyAction(client::setRootUrl, rep::getRootUrl, client::getRootUrl));
+            add(updatePropertyAction(client::setBaseUrl, rep::getBaseUrl, client::getBaseUrl));
+            add(updatePropertyAction(client::setBearerOnly, rep::isBearerOnly, client::isBearerOnly));
+            add(updatePropertyAction(client::setConsentRequired, rep::isConsentRequired, client::isConsentRequired));
+            add(updatePropertyAction(client::setStandardFlowEnabled, rep::isStandardFlowEnabled, client::isStandardFlowEnabled));
+            add(updatePropertyAction(client::setImplicitFlowEnabled, rep::isImplicitFlowEnabled, client::isImplicitFlowEnabled));
+            add(updatePropertyAction(client::setDirectAccessGrantsEnabled, rep::isDirectAccessGrantsEnabled, client::isDirectAccessGrantsEnabled));
+            add(updatePropertyAction(client::setServiceAccountsEnabled, rep::isServiceAccountsEnabled, client::isServiceAccountsEnabled));
+            add(updatePropertyAction(client::setPublicClient, rep::isPublicClient, client::isPublicClient));
+            add(updatePropertyAction(client::setFrontchannelLogout, rep::isFrontchannelLogout, client::isFrontchannelLogout));
+            add(updatePropertyAction(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
+            // Fields with defaults if not initially provided
+            add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
+            add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistrationTimeout(client, isNew)));
+            add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
+            add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
+            // Client Secret
+            add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
+            // Redirect uris / Web origins
+            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+        }};
+
+        // Extended client attributes
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                clientPropertyUpdates.add(
+                    updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
+            }
+        }
+
+        List<ClientTypeException> propertyUpdateExceptions = clientPropertyUpdates
+                .stream()
+                .map(Supplier::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (propertyUpdateExceptions.size() > 0) {
+            Object[] paramsWithFailures = propertyUpdateExceptions.stream().map(ClientTypeException::getParameters).flatMap(Stream::of).toArray();
+            throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception(paramsWithFailures);
+        }
+    }
+
+    private static Boolean defaultFullScopeAllowed(ClientModel client, boolean isNew) {
+        // If the client is newly created and the value is set to true, the value must be augmented through a
+        // client type configuration, so do not update. Yet if new and false, the field MAY be controlled through a
+        // client type. We can only attempt to set the sane default based on consent required.
+        return isNew && !client.isFullScopeAllowed() ? !client.isConsentRequired() : client.isFullScopeAllowed();
+    }
+
+    private static Integer defaultNodeReRegistrationTimeout(ClientModel client, boolean isNew) {
+        // If the client is newly created and the value is 0, the client MAY not be augmented with a client type.
+        if (isNew && Objects.equals(client.getNodeReRegistrationTimeout(), 0)) {
+            // Return the sane default.
+            return -1;
+        }
+        // Update client request without an overriding value or is new and augmented with a client type,
+        // do not attempt to update.
+        return client.getNodeReRegistrationTimeout();
+    }
+
+    private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
+        if (client.isPublicClient() || client.isBearerOnly()) {
+            // Clear out the secret with null
+            return null;
+        }
+
+        // adding secret if the client isn't public nor bearer only
+        String currentSecret = client.getSecret();
+        String newSecret = rep.getSecret();
+
+        if (newSecret == null && currentSecret == null) {
+            return KeycloakModelUtils.generateSecret(client);
+        } else if (newSecret != null) {
+            return newSecret;
+        }
+        // Do not change current secret.
+        return currentSecret;
+    }
+
+    private static Set<String> defaultWebOrigins(ClientModel client) {
+        Set<String> webOrigins = client.getWebOrigins();
+        if (webOrigins != null && !webOrigins.isEmpty()) {
+            return webOrigins;
+        }
+
+        Set<String> redirectUris = client.getRedirectUris();
+        if (redirectUris == null || redirectUris.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        return client.getRedirectUris()
+                .stream()
+                .filter(uri -> uri.startsWith("http"))
+                .map(UriUtils::getOrigin)
+                .collect(Collectors.toSet());
     }
 
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
@@ -655,6 +630,68 @@ public class RepresentationToModel {
                 resource.removeProtocolMapper(entryToDelete.getValue());
             }
         }
+    }
+
+    public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
+        if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
+                client.removeClientScope(clientScope);
+            }
+
+            // First remove all default/built in client scopes
+            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
+                client.removeClientScope(clientScope);
+            }
+        }
+
+        if (resourceRep.getDefaultClientScopes() != null) {
+            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
+                addClientScopeToClient(client.getRealm(), client, clientScopeName, true);
+            }
+        }
+        if (resourceRep.getOptionalClientScopes() != null) {
+            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
+                addClientScopeToClient(client.getRealm(), client, clientScopeName, false);
+            }
+        }
+    }
+
+    /**
+     * Create Supplier to update property.
+     * Captures and returns {@link ClientTypeException} if thrown by the setter.
+     *
+     * @param modelSetter setter to call.
+     * @param representationGetter getter supplying the property update.
+     * @return {@link Supplier<T>} resulting whether a {@link ClientTypeException} was thrown.
+     * @param <T> Type of property.
+     */
+    private static <T> Supplier<ClientTypeException> updateProperty(Consumer<T> modelSetter, Supplier<T> representationGetter) {
+        return () -> {
+            try {
+                T value = representationGetter.get();
+                modelSetter.accept(value);
+            } catch (ClientTypeException cte) {
+                return cte;
+            }
+            return null;
+        };
+    }
+
+    /**
+     * Create an update property action, passing the first non-null value supplied to the setter, in argument order.
+     *
+     * @param modelSetter {@link Consumer<T>} The setter to call.
+     * @param getters {@link Supplier<T>} to query for the first non-null value.
+     * @return {@link Supplier} with results of operation.
+     * @param <T> Type of property.
+     */
+    @SafeVarargs
+    private static <T> Supplier<ClientTypeException> updatePropertyAction(Consumer<T> modelSetter, Supplier<T>... getters) {
+        Stream<T> firstNonNullSupplied = Stream.of(getters)
+                .map(Supplier::get)
+                .filter(Objects::nonNull);
+        return updateProperty(modelSetter, () -> firstNonNullSupplied.findFirst().orElse(null));
     }
 
     private static String generateProtocolNameKey(String protocol, String name) {
@@ -750,7 +787,9 @@ public class RepresentationToModel {
                         session.getContext().setRealm(realm);
                         user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
                     } catch (ModelException ex) {
-                        throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+                        PasswordPolicyNotMetException passwordPolicyNotMetException = new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+                        passwordPolicyNotMetException.setParameters(ex.getParameters());
+                        throw passwordPolicyNotMetException;
                     } finally {
                         session.getContext().setRealm(origRealm);
                     }
@@ -813,16 +852,16 @@ public class RepresentationToModel {
     public static IdentityProviderModel toModel(RealmModel realm, IdentityProviderRepresentation representation, KeycloakSession session) {
         IdentityProviderFactory providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                 IdentityProvider.class, representation.getProviderId());
-        
+
         if (providerFactory == null) {
             providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(
                     SocialIdentityProvider.class, representation.getProviderId());
         }
-        
+
         if (providerFactory == null) {
             throw new IllegalArgumentException("Invalid identity provider id [" + representation.getProviderId() + "]");
         }
-        
+
         IdentityProviderModel identityProviderModel = providerFactory.createConfig();
 
         identityProviderModel.setInternalId(representation.getInternalId());
@@ -831,34 +870,40 @@ public class RepresentationToModel {
         identityProviderModel.setProviderId(representation.getProviderId());
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setLinkOnly(representation.isLinkOnly());
+        identityProviderModel.setHideOnLogin(representation.isHideOnLogin());
+        // remove the legacy hide on login attribute if present.
+        String hideOnLoginAttr = representation.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
+        if (hideOnLoginAttr != null) identityProviderModel.setHideOnLogin(Boolean.parseBoolean(hideOnLoginAttr));
         identityProviderModel.setTrustEmail(representation.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
+        updateOrganizationBroker(representation, session);
+        identityProviderModel.setOrganizationId(representation.getOrganizationId());
         identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
-        if (flowAlias == null) {
-            flowAlias = DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
+        if (flowAlias == null || flowAlias.trim().isEmpty()) {
+            identityProviderModel.setFirstBrokerLoginFlowId(null);
+        } else {
+            AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
+            if (flowModel == null) {
+                throw new ModelException("No available authentication flow with alias: " + flowAlias);
+            }
+            identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
         }
-
-        AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
-        if (flowModel == null) {
-            throw new ModelException("No available authentication flow with alias: " + flowAlias);
-        }
-        identityProviderModel.setFirstBrokerLoginFlowId(flowModel.getId());
 
         flowAlias = representation.getPostBrokerLoginFlowAlias();
-        if (flowAlias == null || flowAlias.trim().length() == 0) {
+        if (flowAlias == null || flowAlias.trim().isEmpty()) {
             identityProviderModel.setPostBrokerLoginFlowId(null);
         } else {
-            flowModel = realm.getFlowByAlias(flowAlias);
+            AuthenticationFlowModel flowModel = realm.getFlowByAlias(flowAlias);
             if (flowModel == null) {
                 throw new ModelException("No available authentication flow with alias: " + flowAlias);
             }
             identityProviderModel.setPostBrokerLoginFlowId(flowModel.getId());
         }
-        
+
         identityProviderModel.validate(realm);
 
         return identityProviderModel;
@@ -937,7 +982,9 @@ public class RepresentationToModel {
         model.setFlowId(rep.getFlowId());
 
         model.setAuthenticator(rep.getAuthenticator());
-        model.setPriority(rep.getPriority());
+        if (rep.getPriority() != null) {
+            model.setPriority(rep.getPriority());
+        }
         model.setParentFlow(rep.getParentFlow());
         model.setAuthenticatorFlow(rep.isAuthenticatorFlow());
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
@@ -1020,7 +1067,7 @@ public class RepresentationToModel {
             Set<String> keys = new HashSet<>(rep.getConfig().keySet());
             for (String k : keys) {
                 if (!internal && !providerConfiguration.containsKey(k)) {
-                    break;
+                    continue;
                 }
 
                 List<String> values = rep.getConfig().get(k);
@@ -1081,11 +1128,11 @@ public class RepresentationToModel {
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
         DecisionStrategy decisionStrategy = rep.getDecisionStrategy();
-        
+
         if (decisionStrategy == null) {
             decisionStrategy = DecisionStrategy.UNANIMOUS;
         }
-        
+
         resourceServer.setDecisionStrategy(decisionStrategy);
 
         for (ScopeRepresentation scope : rep.getScopes()) {
@@ -1120,7 +1167,6 @@ public class RepresentationToModel {
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        RealmModel realm = resourceServer.getRealm();
 
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
@@ -1140,7 +1186,7 @@ public class RepresentationToModel {
                         Policy policy = policyStore.findByName(resourceServer, policyName);
 
                         if (policy == null) {
-                            policy = policyStore.findById(realm, resourceServer, policyName);
+                            policy = policyStore.findById(resourceServer, policyName);
                         }
 
                         if (policy == null) {
@@ -1160,7 +1206,7 @@ public class RepresentationToModel {
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.findById(realm, resourceServer, policyRepresentation.getId());
+            Policy policy = policyStore.findById(resourceServer, policyRepresentation.getId());
 
             if (policy == null) {
                 policy = policyStore.findByName(resourceServer, policyRepresentation.getName());
@@ -1185,6 +1231,7 @@ public class RepresentationToModel {
         model.setDescription(representation.getDescription());
         model.setDecisionStrategy(representation.getDecisionStrategy());
         model.setLogic(representation.getLogic());
+        model.setResourceType(representation.getResourceType());
 
         Set resources = representation.getResources();
         Set scopes = representation.getScopes();
@@ -1203,6 +1250,8 @@ public class RepresentationToModel {
                         throw new RuntimeException(e);
                     }
                 }
+
+                representation.setResources(resources);
             }
 
             if (scopes == null) {
@@ -1215,6 +1264,8 @@ public class RepresentationToModel {
                         throw new RuntimeException(e);
                     }
                 }
+
+                representation.setScopes(scopes);
             }
 
             if (policies == null) {
@@ -1227,6 +1278,8 @@ public class RepresentationToModel {
                         throw new RuntimeException(e);
                     }
                 }
+
+                representation.setPolicies(policies);
             }
 
             model.setConfig(policy.getConfig());
@@ -1234,14 +1287,14 @@ public class RepresentationToModel {
 
         StoreFactory storeFactory = authorization.getStoreFactory();
 
-        updateResources(resources, model, storeFactory);
-        updateScopes(scopes, model, storeFactory);
-        updateAssociatedPolicies(policies, model, storeFactory);
+        updateResources(representation, model, authorization);
+        updateScopes(representation, model, storeFactory);
+        updateAssociatedPolicies(representation, model, storeFactory);
 
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
 
         if (provider == null) {
-            throw new RuntimeException("Could find policy provider with type [" + model.getType() + "]");
+            throw new RuntimeException("Couldn't find policy provider with type [" + model.getType() + "]");
         }
 
         if (representation instanceof PolicyRepresentation) {
@@ -1258,154 +1311,177 @@ public class RepresentationToModel {
         return model;
     }
 
-    private static void updateScopes(Set<String> scopeIds, Policy policy, StoreFactory storeFactory) {
-        if (scopeIds != null) {
-            if (scopeIds.isEmpty()) {
-                for (Scope scope : new HashSet<Scope>(policy.getScopes())) {
-                    policy.removeScope(scope);
-                }
-                return;
+    private static void updateScopes(AbstractPolicyRepresentation representation, Policy policy, StoreFactory storeFactory) {
+        Set<String> scopeIds = representation.getScopes();
+
+        if (scopeIds == null) {
+            return;
+        }
+
+        if (scopeIds.isEmpty()) {
+            for (Scope scope : new HashSet<Scope>(policy.getScopes())) {
+                policy.removeScope(scope);
             }
-            ResourceServer resourceServer = policy.getResourceServer();
-            RealmModel realm = resourceServer.getRealm();
-            for (String scopeId : scopeIds) {
-                boolean hasScope = false;
-
-                for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
-                    if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
-                        hasScope = true;
-                    }
-                }
-                if (!hasScope) {
-                    Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, scopeId);
-
-                    if (scope == null) {
-                        scope = storeFactory.getScopeStore().findByName(resourceServer, scopeId);
-                        if (scope == null) {
-                            throw new RuntimeException("Scope with id or name [" + scopeId + "] does not exist");
-                        }
-                    }
-
-                    policy.addScope(scope);
-                }
-            }
+            return;
+        }
+        ResourceServer resourceServer = policy.getResourceServer();
+        for (String scopeId : scopeIds) {
+            boolean hasScope = false;
 
             for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
-                boolean hasScope = false;
+                if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
+                    hasScope = true;
+                }
+            }
+            if (!hasScope) {
+                Scope scope = storeFactory.getScopeStore().findById(resourceServer, scopeId);
 
-                for (String scopeId : scopeIds) {
-                    if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
-                        hasScope = true;
+                if (scope == null) {
+                    scope = storeFactory.getScopeStore().findByName(resourceServer, scopeId);
+                    if (scope == null) {
+                        throw new RuntimeException("Scope with id or name [" + scopeId + "] does not exist");
                     }
                 }
-                if (!hasScope) {
-                    policy.removeScope(scopeModel);
+
+                policy.addScope(scope);
+            }
+        }
+
+        for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
+            boolean hasScope = false;
+
+            for (String scopeId : scopeIds) {
+                if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
+                    hasScope = true;
                 }
+            }
+            if (!hasScope) {
+                policy.removeScope(scopeModel);
             }
         }
 
         policy.removeConfig("scopes");
     }
 
-    private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
+    private static void updateAssociatedPolicies(AbstractPolicyRepresentation representation, Policy policy, StoreFactory storeFactory) {
         ResourceServer resourceServer = policy.getResourceServer();
-        RealmModel realm = resourceServer.getRealm();
+        Set<String> policyIds = representation.getPolicies();
 
-        if (policyIds != null) {
-            if (policyIds.isEmpty()) {
-                for (Policy associated: new HashSet<Policy>(policy.getAssociatedPolicies())) {
-                    policy.removeAssociatedPolicy(associated);
-                }
-                return;
+        if (policyIds == null) {
+            return;
+        }
+
+        if (policyIds.isEmpty()) {
+            for (Policy associated: new HashSet<Policy>(policy.getAssociatedPolicies())) {
+                policy.removeAssociatedPolicy(associated);
             }
+            return;
+        }
 
-            PolicyStore policyStore = storeFactory.getPolicyStore();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
 
-            for (String policyId : policyIds) {
-                boolean hasPolicy = false;
-
-                for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
-                    if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
-                        hasPolicy = true;
-                    }
-                }
-
-                if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(realm, resourceServer, policyId);
-
-                    if (associatedPolicy == null) {
-                        associatedPolicy = policyStore.findByName(resourceServer, policyId);
-                        if (associatedPolicy == null) {
-                            throw new RuntimeException("Policy with id or name [" + policyId + "] does not exist");
-                        }
-                    }
-
-                    policy.addAssociatedPolicy(associatedPolicy);
-                }
-            }
+        for (String policyId : policyIds) {
+            boolean hasPolicy = false;
 
             for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
-                boolean hasPolicy = false;
+                if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
+                    hasPolicy = true;
+                }
+            }
 
-                for (String policyId : policyIds) {
-                    if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
-                        hasPolicy = true;
+            if (!hasPolicy) {
+                Policy associatedPolicy = policyStore.findById(resourceServer, policyId);
+
+                if (associatedPolicy == null) {
+                    associatedPolicy = policyStore.findByName(resourceServer, policyId);
+                    if (associatedPolicy == null) {
+                        throw new RuntimeException("Policy with id or name [" + policyId + "] does not exist");
                     }
                 }
-                if (!hasPolicy) {
-                    policy.removeAssociatedPolicy(policyModel);
+
+                policy.addAssociatedPolicy(associatedPolicy);
+            }
+        }
+
+        for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
+            boolean hasPolicy = false;
+
+            for (String policyId : policyIds) {
+                if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
+                    hasPolicy = true;
                 }
+            }
+            if (!hasPolicy) {
+                policy.removeAssociatedPolicy(policyModel);
             }
         }
 
         policy.removeConfig("applyPolicies");
     }
 
-    private static void updateResources(Set<String> resourceIds, Policy policy, StoreFactory storeFactory) {
-        if (resourceIds != null) {
-            if (resourceIds.isEmpty()) {
-                for (Resource resource : new HashSet<>(policy.getResources())) {
-                    policy.removeResource(resource);
-                }
-            }
-            ResourceServer resourceServer = policy.getResourceServer();
-            RealmModel realm = resourceServer.getRealm();
+    private static void updateResources(AbstractPolicyRepresentation representation, Policy policy, AuthorizationProvider authorization) {
+        Set<String> resourceIds = representation.getResources();
 
-            for (String resourceId : resourceIds) {
-                boolean hasResource = false;
-                for (Resource resourceModel : new HashSet<>(policy.getResources())) {
-                    if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
-                        hasResource = true;
-                    }
-                }
-                if (!hasResource && !"".equals(resourceId)) {
-                    Resource resource = storeFactory.getResourceStore().findById(realm, resourceServer, resourceId);
+        if (resourceIds == null) {
+            return;
+        }
 
-                    if (resource == null) {
-                        resource = storeFactory.getResourceStore().findByName(resourceServer, resourceId);
-                        if (resource == null) {
-                            throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
-                        }
-                    }
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        KeycloakSession session = authorization.getKeycloakSession();
+        ResourceServer resourceServer = policy.getResourceServer();
 
-                    policy.addResource(resource);
-                }
-            }
-
-            for (Resource resourceModel : new HashSet<>(policy.getResources())) {
-                boolean hasResource = false;
-
-                for (String resourceId : resourceIds) {
-                    if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
-                        hasResource = true;
-                    }
-                }
-
-                if (!hasResource) {
-                    policy.removeResource(resourceModel);
-                }
+        if (resourceIds.isEmpty()) {
+            for (Resource resource : new HashSet<>(policy.getResources())) {
+                AdminPermissionsSchema.SCHEMA.removeResource(resource, policy, authorization);
             }
         }
+
+        resourceIds = resourceIds.stream().map(id -> {
+            Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getType(), policy.getResourceType(), id);
+
+            if (resource == null) {
+                return id;
+            }
+
+            return resource.getId();
+        }).collect(Collectors.toSet());
+
+        for (String resourceId : resourceIds) {
+            boolean hasResource = false;
+            for (Resource resourceModel : new HashSet<>(policy.getResources())) {
+                if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
+                    hasResource = true;
+                }
+            }
+            if (!hasResource && !"".equals(resourceId)) {
+                Resource resource = storeFactory.getResourceStore().findById(resourceServer, resourceId);
+
+                if (resource == null) {
+                    resource = storeFactory.getResourceStore().findByName(resourceServer, resourceId);
+                    if (resource == null) {
+                        throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
+                    }
+                }
+
+                policy.addResource(resource);
+            }
+        }
+
+        for (Resource resourceModel : new HashSet<>(policy.getResources())) {
+            boolean hasResource = false;
+
+            for (String resourceId : resourceIds) {
+                if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
+                    hasResource = true;
+                }
+            }
+
+            if (!hasResource) {
+                AdminPermissionsSchema.SCHEMA.removeResource(resourceModel, policy, authorization);
+            }
+        }
+
+        AdminPermissionsSchema.SCHEMA.addUResourceTypeResource(session, resourceServer, policy, representation.getResourceType());
 
         policy.removeConfig("resources");
     }
@@ -1445,7 +1521,7 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(realm, resourceServer, resource.getId());
+            existing = resourceStore.findById(resourceServer, resource.getId());
         } else {
             existing = resourceStore.findByName(resourceServer, resource.getName(), ownerId);
         }
@@ -1512,14 +1588,14 @@ public class RepresentationToModel {
     public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization) {
         return toModel(scope, resourceServer, authorization, true);
     }
-    
+
     public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization, boolean updateIfExists) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(resourceServer.getRealm(), resourceServer, scope.getId());
+            existing = scopeStore.findById(resourceServer, scope.getId());
         } else {
             existing = scopeStore.findByName(resourceServer, scope.getName());
         }
@@ -1545,13 +1621,13 @@ public class RepresentationToModel {
 
     public static PermissionTicket toModel(PermissionTicketRepresentation representation, ResourceServer resourceServer, AuthorizationProvider authorization) {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getRealm(), resourceServer, representation.getId());
+        PermissionTicket ticket = ticketStore.findById(resourceServer, representation.getId());
         boolean granted = representation.isGranted();
 
         if (granted && !ticket.isGranted()) {
             ticket.setGrantedTimestamp(System.currentTimeMillis());
         } else if (!granted) {
-            ticketStore.delete(resourceServer.getRealm(), ticket.getId());
+            ticketStore.delete(ticket.getId());
         }
 
         return ticket;
@@ -1602,5 +1678,61 @@ public class RepresentationToModel {
         representation.setClientId(client.getId());
 
         return toModel(representation, authorization, client);
+    }
+
+    private static void updateOrganizationBroker(IdentityProviderRepresentation representation, KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+            return;
+        }
+
+        IdentityProviderModel existing = Optional.ofNullable(session.identityProviders().getByAlias(representation.getAlias()))
+                        .orElse(session.identityProviders().getById(representation.getInternalId()));
+        String repOrgId = representation.getOrganizationId() != null ? representation.getOrganizationId() :
+                representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        String orgId = existing != null ? existing.getOrganizationId() : repOrgId;
+
+        if (orgId != null) {
+            OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = provider.getById(orgId);
+
+            if (org == null || (repOrgId != null && provider.getById(repOrgId) == null)) {
+                throw new IllegalArgumentException("Organization associated with broker does not exist");
+            }
+
+            String domain = representation.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+
+            if (StringUtil.isBlank(domain)) {
+                representation.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+            } else if (org.getDomains().map(OrganizationDomainModel::getName).noneMatch(domain::equals)) {
+                throw new IllegalArgumentException("Domain does not match any domain from the organization");
+            }
+
+            // make sure the link to an organization does not change
+            representation.setOrganizationId(orgId);
+        }
+    }
+
+    public static OrganizationModel toModel(OrganizationRepresentation rep, OrganizationModel model) {
+        if (rep == null) {
+            return null;
+        }
+
+        model.setName(rep.getName());
+        model.setAlias(rep.getAlias());
+        model.setEnabled(rep.isEnabled());
+        model.setRedirectUrl(rep.getRedirectUrl());
+        model.setDescription(rep.getDescription());
+        model.setAttributes(rep.getAttributes());
+        model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
+                .filter(Objects::nonNull)
+                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
+                .map(RepresentationToModel::toModel)
+                .collect(Collectors.toSet()));
+
+        return model;
+    }
+
+    public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
+        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
     }
 }

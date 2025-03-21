@@ -32,37 +32,7 @@
 
     <modules>
         <module>wildfly-modules</module>
-        <module>wildfly-jakarta-modules</module>
+        <module>wildfly-adapter-zip</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <!-- Jakarta Build for WF.version >= 27 -->
-            <id>wildfly-saml-adapter-jakarta-build</id>
-            <activation>
-                <property>
-                    <!-- TODO: use proper activation of this profile
-                    <name>wildfly.jakarta.adapters</name>
-                    -->
-                    <name>!todo-wildfly.jakarta.adapters</name>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly-adapter-jakarta-zip</module>
-            </modules>
-        </profile>
-        <profile>
-            <!-- non Jakarta Build for WF.version <= 23 -->
-            <id>wildfly-saml-adapter-build</id>
-            <activation>
-                <property>
-                    <name>!wildfly.jakarta.adapters</name>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly-adapter-zip</module>
-            </modules>
-        </profile>
-    </profiles>
 
 </project>

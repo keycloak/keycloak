@@ -23,13 +23,9 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.util.Map;
 
@@ -38,9 +34,6 @@ import java.util.Map;
  */
 @Entity
 @Table(name="IDENTITY_PROVIDER")
-@NamedQueries({
-        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias")
-})
 public class IdentityProviderEntity {
 
     @Id
@@ -48,9 +41,8 @@ public class IdentityProviderEntity {
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     protected String internalId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    protected RealmEntity realm;
+    @Column(name = "REALM_ID")
+    protected String realmId;
 
     @Column(name="PROVIDER_ID")
     private String providerId;
@@ -73,6 +65,9 @@ public class IdentityProviderEntity {
     @Column(name="LINK_ONLY")
     private boolean linkOnly;
 
+    @Column(name="HIDE_ON_LOGIN")
+    private boolean hideOnLogin;
+
     @Column(name="ADD_TOKEN_ROLE")
     protected boolean addReadTokenRoleOnCreate;
 
@@ -84,6 +79,9 @@ public class IdentityProviderEntity {
 
     @Column(name="POST_BROKER_LOGIN_FLOW_ID")
     private String postBrokerLoginFlowId;
+
+    @Column(name="ORGANIZATION_ID")
+    private String organizationId;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -107,12 +105,12 @@ public class IdentityProviderEntity {
         this.providerId = providerId;
     }
 
-    public RealmEntity getRealm() {
-        return this.realm;
+    public String getRealmId() {
+        return this.realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public String getAlias() {
@@ -169,6 +167,22 @@ public class IdentityProviderEntity {
 
     public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
         this.postBrokerLoginFlowId = postBrokerLoginFlowId;
+    }
+
+    public String getOrganizationId() {
+        return this.organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
+    }
+
+    public boolean isHideOnLogin() {
+        return this.hideOnLogin;
+    }
+
+    public void setHideOnLogin(boolean hideOnLogin) {
+        this.hideOnLogin = hideOnLogin;
     }
 
     public Map<String, String> getConfig() {

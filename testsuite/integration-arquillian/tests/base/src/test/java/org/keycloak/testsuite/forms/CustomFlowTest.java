@@ -52,7 +52,7 @@ import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -212,7 +212,7 @@ public class CustomFlowTest extends AbstractFlowTest {
     @Test
     public void testRequiredAfterAlternative() {
         AuthenticationManagementResource authMgmtResource = testRealm().flows();
-        Map<String, String> params = new HashMap();
+        Map<String, Object> params = new HashMap<>();
         String flowAlias = "Browser Flow With Extra";
         params.put("newName", flowAlias);
         Response response = authMgmtResource.copy("browser", params);
@@ -306,7 +306,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         oauth.openLoginForm();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -336,7 +336,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         state.setClientId("unknown");
         testingClient.testing().updateAuthenticator(state);
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user", "password");
         assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
@@ -354,21 +354,16 @@ public class CustomFlowTest extends AbstractFlowTest {
         testingClient.testing().updateAuthenticator(state);
 
         // Test throwing exception from the client authenticator. No error details should be displayed
-        oauth.addCustomParameter(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error");
-        try {
-            response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
-            assertEquals(400, response.getStatusCode());
-            assertEquals("unauthorized_client", response.getError());
-            assertEquals("Unexpected error when authenticating client", response.getErrorDescription());
-        } finally {
-            oauth.removeCustomParameter(PassThroughClientAuthenticator.TEST_ERROR_PARAM);
-        }
+        response = oauth.passwordGrantRequest("test-user", "password").param(PassThroughClientAuthenticator.TEST_ERROR_PARAM, "Some Random Error").send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals("unauthorized_client", response.getError());
+        assertEquals("Unexpected error when authenticating client", response.getErrorDescription());
     }
 
 
     private void grantAccessToken(String clientId, String login) throws Exception {
 
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", login, "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(login, "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -391,7 +386,7 @@ public class CustomFlowTest extends AbstractFlowTest {
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
-        OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());

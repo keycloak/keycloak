@@ -1,15 +1,14 @@
-import { saveAs } from "file-saver";
-import { cloneDeep } from "lodash-es";
-import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
-import { flatten } from "flat";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-
+import { saveAs } from "file-saver";
+import { flatten } from "flat";
+import { cloneDeep } from "lodash-es";
+import { FieldValues, Path, PathValue, UseFormSetValue } from "react-hook-form";
 import {
+  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
-  KeyValueType,
 } from "./components/key-value-form/key-value-convert";
 import { ReplaceString } from "./utils/types";
 
@@ -84,9 +83,10 @@ export function convertAttributeNameToForm<T>(
   name: string,
 ): PathValue<T, Path<T>> {
   const index = name.indexOf(".");
-  return `${name.substring(0, index)}.${beerify(
-    name.substring(index + 1),
-  )}` as PathValue<T, Path<T>>;
+  return `${name.substring(0, index)}.${beerify(name.substring(index + 1))}` as PathValue<
+    T,
+    Path<T>
+  >;
 }
 
 export const beerify = <T extends string>(name: T) =>
@@ -156,6 +156,17 @@ export const upperCaseFormatter =
     return (value ? toUpperCase(value) : undefined) as string;
   };
 
+export const capitalizeFirstLetterFormatter =
+  (): IFormatter => (data?: IFormatterValueType) => {
+    const value = data?.toString();
+
+    return (
+      value
+        ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+        : undefined
+    ) as string;
+  };
+
 export const alphaRegexPattern = /[^A-Za-z]/g;
 
 export const emailRegexPattern =
@@ -168,4 +179,14 @@ export const prettyPrintJSON = (value: any) => JSON.stringify(value, null, 2);
 export const addTrailingSlash = (url: string) =>
   url.endsWith("/") ? url : url + "/";
 
-export const generateId = () => Math.floor(Math.random() * 1000);
+export const localeToDisplayName = (locale: string, displayLocale: string) => {
+  try {
+    return new Intl.DisplayNames([displayLocale], { type: "language" }).of(
+      // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
+      // Once the existing locales have been moved, this code can be removed.
+      locale === "zh-CN" ? "zh-HANS" : locale === "zh-TW" ? "zh-HANT" : locale,
+    );
+  } catch {
+    return locale;
+  }
+};

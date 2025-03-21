@@ -32,13 +32,13 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     @FindBy(id = "input-error-username")
     private WebElement usernameError;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-success")
+    @FindBy(css = "[class='pf-v5-c-success'], [class='alert-success']")
     private WebElement emailSuccessMessage;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement emailErrorMessage;
 
     @FindBy(partialLinkText = "Back to Login")
@@ -48,22 +48,18 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     private WebElement infoWrapper;
 
     public void changePassword() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void changePassword(String username) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
-    }
-
-    public void open() {
-        throw new UnsupportedOperationException();
     }
 
     public String getSuccessMessage() {
@@ -91,7 +87,7 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
     }
 
     public void backToLogin() {
-        backToLogin.click();
+        UIUtils.clickLink(backToLogin);
     }
 
     public String getInfoMessage() {

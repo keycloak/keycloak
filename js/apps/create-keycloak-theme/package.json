@@ -1,0 +1,23 @@
+{
+  "name": "create-keycloak-theme",
+  "version": "999.0.0-SNAPSHOT",
+  "description": "Create a new Keycloak ui project based on a template",
+  "main": "create.js",
+  "type": "module",
+  "scripts": {
+    "start": "node create.js"
+  },
+  "bin": {
+    "create-keycloak-theme": "./create.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "fs-extra": "^11.3.0",
+    "mustache": "^4.2.0",
+    "simple-git": "^3.27.0"
+  }
+}

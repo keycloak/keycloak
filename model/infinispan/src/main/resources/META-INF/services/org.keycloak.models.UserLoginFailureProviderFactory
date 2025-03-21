@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory
+org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory

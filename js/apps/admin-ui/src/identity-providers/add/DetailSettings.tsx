@@ -1,12 +1,18 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
+  Action,
+  KeycloakDataTable,
+  ScrollForm,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Button,
   ButtonVariant,
   Divider,
   DropdownItem,
-  DropdownSeparator,
   Form,
   PageSection,
   Tab,
@@ -23,30 +29,23 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { ScrollForm } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -66,6 +65,7 @@ import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
+import { AdminEvents } from "../../events/AdminEvents";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -83,6 +83,8 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
@@ -206,7 +208,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
-          <DropdownSeparator key="separator" />,
+          <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
           </DropdownItem>,
@@ -248,6 +250,8 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -276,9 +280,10 @@ export default function DetailSettings() {
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const { hasAccess } = useAccess();
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -320,13 +325,16 @@ export default function DetailSettings() {
   const settingsTab = useTab("settings");
   const mappersTab = useTab("mappers");
   const permissionsTab = useTab("permissions");
+  const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
+    const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
         p.config.authnContextClassRefs,
       );
+    const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
         p.config.authnContextDeclRefs,
@@ -342,6 +350,12 @@ export default function DetailSettings() {
           providerId,
         },
       );
+      if (origAuthnContextClassRefs) {
+        p.config!.authnContextClassRefs = origAuthnContextClassRefs;
+      }
+      if (origAuthnContextDeclRefs) {
+        p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
+      }
       reset(p);
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
@@ -395,6 +409,7 @@ export default function DetailSettings() {
 
   const isOIDC = provider.providerId!.includes("oidc");
   const isSAML = provider.providerId!.includes("saml");
+  const isSocial = !isOIDC && !isSAML;
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -430,7 +445,7 @@ export default function DetailSettings() {
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
+          {isSocial && <GeneralSettings create={false} id={providerId} />}
           {isOIDC && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
           {providerInfo && (
@@ -445,7 +460,7 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} />
-          <Form isHorizontal className="pf-u-py-lg">
+          <Form isHorizontal className="pf-v5-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />
           </Form>
@@ -505,7 +520,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
@@ -514,7 +529,7 @@ export default function DetailSettings() {
           >
             <ScrollForm
               label={t("jumpToSection")}
-              className="pf-u-px-lg"
+              className="pf-v5-u-px-lg"
               sections={sections}
             />
           </Tab>
@@ -605,6 +620,18 @@ export default function DetailSettings() {
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           )}
+          {realmRepresentation?.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents
+                  resourcePath={`identity-provider/instances/${alias}`}
+                />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </FormProvider>

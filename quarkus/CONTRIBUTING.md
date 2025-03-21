@@ -144,7 +144,7 @@ The test suite has two main types of tests:
 * `distribution`
 
 The `jvm` tests execute both the test class and server within the same JVM. While the `distribution` tests execute the server
-by running the distribution in a separte JVM.
+by running the distribution in a separate JVM.
 
 The `distribution` tests are marked as such using the `DistributionTest` annotation. If not marked with this annotation, the test is a `JVM` test.
 
@@ -236,6 +236,10 @@ It is also possible to change to a snapshot version by running:
 ```bash
 ./set-quarkus-version.sh
 ```
+
+After setting the version, please verify that:
+
+* `org.apache.maven` dependencies used by the test suite (and arquillian) are the same from the new Quarkus version 
 
 ### Run a local build
 

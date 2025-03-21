@@ -28,11 +28,10 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 /**
@@ -76,14 +75,13 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode node) {
 		JsonNode profile = node.get("items").get(0);
 
-		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"), getConfig());
 
 		String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
 		user.setUsername(username);
 		user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
 		// email is not provided
 		// user.setEmail(getJsonProperty(profile, "email"));
-		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
@@ -119,7 +117,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 					}
 					String[] pe = path.split("/");
 					if (pe.length >= 3) {
-						return URLDecoder.decode(pe[2], "UTF-8");
+						return URLDecoder.decode(pe[2], StandardCharsets.UTF_8);
 					} else {
 						log.warn("Stackoverflow profile URL path is without third part: " + profileURL);
 					}

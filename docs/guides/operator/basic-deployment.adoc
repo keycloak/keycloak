@@ -52,11 +52,13 @@ spec:
     spec:
       containers:
         - name: postgresql-db
-          image: postgres:latest
+          image: postgres:15
           volumeMounts:
             - mountPath: /data
               name: cache-volume
           env:
+            - name: POSTGRES_USER
+              value: testuser
             - name: POSTGRES_PASSWORD
               value: testpassword
             - name: PGDATA
@@ -97,6 +99,10 @@ For development purposes, this {section} will use `test.keycloak.org`.
 When running on OpenShift, with ingress enabled, and with the spec.ingress.classname set to openshift-default, you may leave the spec.hostname.hostname unpopulated in the Keycloak CR.
 The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
 If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.
+
+NOTE: If you set the `hostname-admin`, or the deprecated `hostname-admin-url`, even if you enable ingress, no ingress will be created specifically for admin access. 
+Admin access via a separate hostname is generally expected to have access restrictions, which are not currently expressible via the Keycloak CR. 
+Also the default ingress does not prevent accessing admin endpoints, so you may not want to enable ingress handling via the Keycloak CR at all when you have a separate hostname for admin endpoints.       
 
 ==== TLS Certificate and key
 
@@ -152,6 +158,8 @@ spec:
     tlsSecret: example-tls-secret
   hostname:
     hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
 ----
 
 Apply the changes:
@@ -185,7 +193,9 @@ CONDITION: RollingUpdate
 
 === Accessing the {project_name} deployment
 
-The {project_name} deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+The {project_name} deployment can be exposed through a basic Ingress accessible through the provided hostname.
+
+On installations with multiple default IngressClass instances
 or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
 
 Edit YAML file `example-kc.yaml`:
@@ -224,7 +234,12 @@ Apply the changes:
 ----
 kubectl apply -f example-kc.yaml
 ----
-You can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
+You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. A Keycloak CR on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable the built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
+
+[source,yaml]
+----
+$ oc create route reencrypt --service=<keycloak-cr-name>-service --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
+----
 
 For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
 
@@ -232,6 +247,34 @@ For debugging and development purposes, consider directly connecting to the {pro
 ----
 kubectl port-forward service/example-kc-service 8443:8443
 ----
+
+==== Configuring the reverse proxy settings matching your Ingress Controller
+
+The Operator supports configuring which of the reverse proxy headers should be accepted by server, which includes
+`Forwarded` and `X-Forwarded-*` headers.
+
+If you Ingress implementation sets and overwrites either `Forwarded` or `X-Forwarded-*` headers, you can reflect that
+in the Keycloak CR as follows:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
+WARNING: When using the `proxy.headers` field, make sure your Ingress properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your Ingress Controller. Consider configuring it for
+either reencrypt or edge TLS termination as passthrough TLS doesn't allow the Ingress to modify the requests headers.
+Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+For more details refer to the <@links.server id="reverseproxy"/> guide.
 
 === Accessing the Admin Console
 

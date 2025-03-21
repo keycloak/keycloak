@@ -1,37 +1,14 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Optional eslint cache
-.eslintcache
-
-# Keycloak server
-server
+# frontend-maven-plugin
+node
 
 # Wireit
 .wireit
 
 # Vite
 dist
-dist-ssr
-*.local
 
-# Distribution
-*.tgz
-npm-dist
+# ESLint
+.eslintcache
+
+# NPM
+node_modules

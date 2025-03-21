@@ -12,6 +12,8 @@ summary="Get started with {project_name} on Docker">
 
 == Before you start
 
+include::templates/hw-requirements.adoc[]
+
 Make sure you have Docker installed.
 
 include::templates/start-keycloak-container.adoc[]

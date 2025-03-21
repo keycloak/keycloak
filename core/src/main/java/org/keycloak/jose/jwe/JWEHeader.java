@@ -18,6 +18,7 @@
 package org.keycloak.jose.jwe;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwk.ECPublicJWK;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -41,7 +43,6 @@ public class JWEHeader implements JOSEHeader {
     @JsonProperty("zip")
     private String compressionAlgorithm;
 
-
     @JsonProperty("typ")
     private String type;
 
@@ -50,6 +51,15 @@ public class JWEHeader implements JOSEHeader {
 
     @JsonProperty("kid")
     private String keyId;
+
+    @JsonProperty("epk")
+    private ECPublicJWK ephemeralPublicKey;
+
+    @JsonProperty("apu")
+    private String agreementPartyUInfo;
+
+    @JsonProperty("apv")
+    private String agreementPartyVInfo;
 
     public JWEHeader() {
     }
@@ -73,6 +83,19 @@ public class JWEHeader implements JOSEHeader {
         this.compressionAlgorithm = compressionAlgorithm;
         this.keyId = keyId;
         this.contentType = contentType;
+    }
+
+    public JWEHeader(String algorithm, String encryptionAlgorithm, String compressionAlgorithm, String keyId, String contentType, 
+            String type, ECPublicJWK ephemeralPublicKey, String agreementPartyUInfo, String agreementPartyVInfo) {
+        this.algorithm = algorithm;
+        this.encryptionAlgorithm = encryptionAlgorithm;
+        this.compressionAlgorithm = compressionAlgorithm;
+        this.keyId = keyId;
+        this.type = type;
+        this.contentType = contentType;
+        this.ephemeralPublicKey = ephemeralPublicKey;
+        this.agreementPartyUInfo = agreementPartyUInfo;
+        this.agreementPartyVInfo = agreementPartyVInfo;
     }
 
     public String getAlgorithm() {
@@ -105,21 +128,102 @@ public class JWEHeader implements JOSEHeader {
         return keyId;
     }
 
+    public ECPublicJWK getEphemeralPublicKey() {
+        return ephemeralPublicKey;
+    }
+
+    public String getAgreementPartyUInfo() {
+        return agreementPartyUInfo;
+    }
+
+    public String getAgreementPartyVInfo() {
+        return agreementPartyVInfo;
+    }
+
     private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
     }
 
     public String toString() {
         try {
             return mapper.writeValueAsString(this);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
-
-
     }
 
+    public JWEHeaderBuilder toBuilder() {
+        return builder().algorithm(algorithm).encryptionAlgorithm(encryptionAlgorithm)
+                .compressionAlgorithm(compressionAlgorithm).type(type).contentType(contentType)
+                .keyId(keyId).ephemeralPublicKey(ephemeralPublicKey).agreementPartyUInfo(agreementPartyUInfo)
+                .agreementPartyVInfo(agreementPartyVInfo);
+    }
+
+    public static JWEHeaderBuilder builder() {
+        return new JWEHeaderBuilder();
+    }
+
+    public static class JWEHeaderBuilder {
+        private String algorithm = null;
+        private String encryptionAlgorithm = null;
+        private String compressionAlgorithm = null;
+        private String type = null;
+        private String contentType = null;
+        private String keyId = null;
+        private ECPublicJWK ephemeralPublicKey = null;
+        private String agreementPartyUInfo = null;
+        private String agreementPartyVInfo = null;
+
+        public JWEHeaderBuilder algorithm(String algorithm) {
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        public JWEHeaderBuilder encryptionAlgorithm(String encryptionAlgorithm) {
+            this.encryptionAlgorithm = encryptionAlgorithm;
+            return this;
+        }
+
+        public JWEHeaderBuilder compressionAlgorithm(String compressionAlgorithm) {
+            this.compressionAlgorithm = compressionAlgorithm;
+            return this;
+        }
+
+        public JWEHeaderBuilder type(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public JWEHeaderBuilder contentType(String contentType) {
+            this.contentType = contentType;
+            return this;
+        }
+
+        public JWEHeaderBuilder keyId(String keyId) {
+            this.keyId = keyId;
+            return this;
+        }
+
+        public JWEHeaderBuilder ephemeralPublicKey(ECPublicJWK ephemeralPublicKey) {
+            this.ephemeralPublicKey = ephemeralPublicKey;
+            return this;
+        }
+
+        public JWEHeaderBuilder agreementPartyUInfo(String agreementPartyUInfo) {
+            this.agreementPartyUInfo = agreementPartyUInfo;
+            return this;
+        }
+
+        public JWEHeaderBuilder agreementPartyVInfo(String agreementPartyVInfo) {
+            this.agreementPartyVInfo = agreementPartyVInfo;
+            return this;
+        }
+
+        public JWEHeader build() {
+            return new JWEHeader(algorithm, encryptionAlgorithm, compressionAlgorithm, keyId, contentType,
+                    type, ephemeralPublicKey, agreementPartyUInfo, agreementPartyVInfo);
+        }
+    }
 }

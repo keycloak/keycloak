@@ -17,57 +17,63 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.keycloak.cluster.ClusterProvider;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.SecretGenerator;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
+import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
+import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
-import org.keycloak.models.utils.SessionExpiration;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
-    private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProvider.class);
-
     private final KeycloakSession session;
-    private final Cache<String, RootAuthenticationSessionEntity> cache;
     private final InfinispanKeyGenerator keyGenerator;
     private final int authSessionsLimit;
-    protected final InfinispanKeycloakTransaction tx;
+    protected final Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache;
+    protected final InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator,
-                                                   Cache<String, RootAuthenticationSessionEntity> cache, int authSessionsLimit) {
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session, RemoteCacheInvoker remoteCacheInvoker, InfinispanKeyGenerator keyGenerator,
+                                                   Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache, int authSessionsLimit,  SerializeExecutionsByKey<String> serializer) {
         this.session = session;
-        this.cache = cache;
         this.keyGenerator = keyGenerator;
         this.authSessionsLimit = authSessionsLimit;
 
-        this.tx = new InfinispanKeycloakTransaction();
+        this.cache = cache;
+        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, remoteCacheInvoker, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlistAfterCompletion(sessionTx);
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
     }
+
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
@@ -78,27 +84,24 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm, String id) {
-        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity();
-        entity.setId(id);
+        RootAuthenticationSessionEntity entity = new RootAuthenticationSessionEntity(id);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
-        tx.put(cache, id, entity, expirationSeconds, TimeUnit.SECONDS);
-
+        SessionUpdateTask<RootAuthenticationSessionEntity> createAuthSessionTask = Tasks.addIfAbsentSync();
+        sessionTx.addTask(entity.getId(), createAuthSessionTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
         return wrap(realm, entity);
     }
 
 
     private RootAuthenticationSessionAdapter wrap(RealmModel realm, RootAuthenticationSessionEntity entity) {
-        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity, authSessionsLimit);
+        return entity == null ? null : new RootAuthenticationSessionAdapter(session, this, realm, entity, authSessionsLimit);
     }
 
 
     private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
-        // Chance created in this transaction
-        RootAuthenticationSessionEntity entity = tx.get(cache, authSessionId);
-        return entity;
+        SessionEntityWrapper<RootAuthenticationSessionEntity> entityWrapper = sessionTx.get(authSessionId);
+        return entityWrapper==null ? null : entityWrapper.getEntity();
     }
 
     @Override
@@ -120,10 +123,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
     protected void onRealmRemovedEvent(String realmId) {
-        Iterator<Map.Entry<String, RootAuthenticationSessionEntity>> itr = CacheDecorators.localCache(cache)
+        Iterator<Map.Entry<String, SessionEntityWrapper<RootAuthenticationSessionEntity>>> itr = CacheDecorators.localCache(cache)
                 .entrySet()
                 .stream()
-                .filter(RootAuthenticationSessionPredicate.create(realmId))
+                .filter(SessionWrapperPredicate.create(realmId))
                 .iterator();
 
         while (itr.hasNext()) {
@@ -142,10 +145,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 //                ClusterProvider.DCNotify.ALL_DCS);
     }
 
-    protected void onClientRemovedEvent(String realmId, String clientUuid) {
-
-    }
-
 
     @Override
     public void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {
@@ -156,7 +155,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(
           InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
-          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), compoundId.getClientUUID(), authNotesFragment),
+          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), authNotesFragment),
           true,
           ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );
@@ -172,7 +171,8 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
-        tx.remove(cache, authenticationSession.getId());
+        SessionUpdateTask<RootAuthenticationSessionEntity> removeTask = Tasks.removeSync();
+        sessionTx.addTask(authenticationSession.getId(), removeTask);
     }
 
     @Override
@@ -180,12 +180,20 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     }
 
-    public Cache<String, RootAuthenticationSessionEntity> getCache() {
+    public Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> getCache() {
         return cache;
     }
 
+    public InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> getRootAuthSessionTransaction() {
+        return sessionTx;
+    }
 
-    protected String generateTabId() {
-        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
+    @Override
+    public void migrate(String modelVersion) {
+        if ("26.1.0".equals(modelVersion)) {
+            InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
+            Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+            CompletionStages.join(ComponentRegistry.componentOf(authSessionsCache, PersistenceManager.class).clearAllStores(PersistenceManager.AccessMode.BOTH));
+        }
     }
 }

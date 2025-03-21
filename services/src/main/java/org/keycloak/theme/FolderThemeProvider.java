@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class FolderThemeProvider implements ThemeProvider {
 
-    private File themesDir;
+    private final File themesDir;
 
     public FolderThemeProvider(File themesDir) {
         this.themesDir = themesDir;
@@ -42,30 +42,20 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
-        if (themesDir == null) {
-            return null;
-        }
-
         File themeDir = getThemeDir(name, type);
-        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
+        return themeDir != null ? new FolderTheme(themeDir, name, type) : null;
     }
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
-        if (themesDir == null) {
+        if (themesDir == null || !themesDir.isDirectory()) {
             return Collections.emptySet();
         }
 
-        final String typeName = type.name().toLowerCase();
-        File[] themeDirs = themesDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
-            }
-        });
-        if (themeDirs != null) {
-            Set<String> names = new HashSet<String>();
-            for (File themeDir : themeDirs) {
+        File[] themes = themesDir.listFiles(f -> f.isDirectory() && new File(f, type.name().toLowerCase()).isDirectory());
+        if (themes != null && themes.length > 0) {
+            Set<String> names = new HashSet<>();
+            for (File themeDir : themes) {
                 names.add(themeDir.getName());
             }
             return names;
@@ -76,7 +66,7 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        return themesDir != null ? getThemeDir(name, type).isDirectory() : false;
+        return getThemeDir(name, type) != null;
     }
 
     @Override
@@ -84,15 +74,18 @@ public class FolderThemeProvider implements ThemeProvider {
     }
 
     private File getThemeDir(String name, Theme.Type type) {
-        File f = new File(themesDir, name + File.separator + type.name().toLowerCase());
-        try {
-            if (!f.getCanonicalPath().startsWith(themesDir.getCanonicalPath() + File.separator)) {
-                return null;
-            }
-        } catch (IOException e) {
+        if (themesDir == null || !themesDir.isDirectory()) {
             return null;
         }
-        return f;
+
+        File[] themes = themesDir.listFiles(f -> f.isDirectory() && f.getName().equals(name));
+        if (themes != null && themes.length == 1) {
+            File themeTypeDir = new File(themes[0], type.name().toLowerCase());
+            if (themeTypeDir.isDirectory()) {
+                return themeTypeDir;
+            }
+        }
+        return null;
     }
 
 }

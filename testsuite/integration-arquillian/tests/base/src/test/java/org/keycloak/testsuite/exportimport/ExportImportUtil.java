@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -251,7 +252,7 @@ public class ExportImportUtil {
             } else if ("google1".equals(federatedIdentityRep.getIdentityProvider())) {
                 googleFound = true;
                 Assert.assertEquals("google1", federatedIdentityRep.getUserId());
-                Assert.assertEquals("mysocialuser@gmail.com", federatedIdentityRep.getUserName());
+                Assert.assertEquals("mySocialUser@gmail.com", federatedIdentityRep.getUserName());
             } else if ("twitter1".equals(federatedIdentityRep.getIdentityProvider())) {
                 twitterFound = true;
                 Assert.assertEquals("twitter1", federatedIdentityRep.getUserId());
@@ -260,9 +261,15 @@ public class ExportImportUtil {
         }
         Assert.assertTrue(facebookFound && twitterFound && googleFound);
 
-        UserRepresentation foundSocialUser =  testingClient.testing().getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
+        // make sure the username format is the same when importing
+        UserResource socialUserLowercase = realmRsc.users().get(findByUsername(realmRsc, "lowercasesocialuser").getId());
+        List<FederatedIdentityRepresentation> socialLowercaseLinks = socialUserLowercase.getFederatedIdentity();
+        Assert.assertEquals(1, socialLowercaseLinks.size());
+        Assert.assertEquals("lowercasesocialuser@gmail.com", socialLowercaseLinks.get(0).getUserName());
+
+        UserRepresentation foundSocialUser =  testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
         Assert.assertEquals(foundSocialUser.getUsername(), socialUser.toRepresentation().getUsername());
-        Assert.assertNull(testingClient.testing().getUserByFederatedIdentity(realm.getRealm(), "facebook", "not-existing", "not-existing"));
+        Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook", "not-existing", "not-existing"));
 
         Assert.assertEquals("facebook1", facebookIdentityRep.getUserId());
         Assert.assertEquals("fbuser1", facebookIdentityRep.getUserName());
@@ -282,8 +289,8 @@ public class ExportImportUtil {
         Assert.assertEquals("3025", smtpConfig.get("port"));
 
         // Test identity providers
-        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProviders();
-        Assert.assertEquals(3, identityProviders.size());
+        List<IdentityProviderRepresentation> identityProviders = realmRsc.identityProviders().findAll();
+        Assert.assertEquals(4, identityProviders.size());
         IdentityProviderRepresentation google = null;
         for (IdentityProviderRepresentation idpRep : identityProviders) {
             if (idpRep.getAlias().equals("google1")) google = idpRep;
@@ -293,7 +300,7 @@ public class ExportImportUtil {
         Assert.assertEquals("google", google.getProviderId());
         Assert.assertTrue(google.isEnabled());
         Assert.assertEquals("googleId", google.getConfig().get("clientId"));
-        Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
+        Assert.assertEquals("**********", google.getConfig().get("clientSecret")); // secret is masked in GET call
 
         //////////////////
         // Test federation providers
@@ -325,15 +332,15 @@ public class ExportImportUtil {
         /////////////////
 
         // Assert that federation link wasn't created during import
-        Assert.assertNull(testingClient.testing().getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
+        Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
 
         // Test builtin authentication flows
-        AuthenticationFlowRepresentation clientFlow = testingClient.testing().getClientAuthFlow(realm.getRealm());
+        AuthenticationFlowRepresentation clientFlow = testingClient.testing(realm.getRealm()).getClientAuthFlow(realm.getRealm());
         Assert.assertEquals(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW, clientFlow.getAlias());
         Assert.assertNotNull(realmRsc.flows().getFlow(clientFlow.getId()));
         Assert.assertTrue(realmRsc.flows().getExecutions(clientFlow.getAlias()).size() > 0);
 
-        AuthenticationFlowRepresentation resetFlow = testingClient.testing().getResetCredFlow(realm.getRealm());
+        AuthenticationFlowRepresentation resetFlow = testingClient.testing(realm.getRealm()).getResetCredFlow(realm.getRealm());
         Assert.assertEquals(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, resetFlow.getAlias());
         Assert.assertNotNull(realmRsc.flows().getFlow(resetFlow.getId()));
         Assert.assertTrue(realmRsc.flows().getExecutions(resetFlow.getAlias()).size() > 0);
@@ -410,13 +417,13 @@ public class ExportImportUtil {
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
 
-        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) { 
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
-            Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-            UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+            Assert.assertNull(testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
+            UserRepresentation otherAppSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
             Assert.assertNotNull(otherAppSA);
             Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
-            UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+            UserRepresentation testAppAuthzSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
             Assert.assertNotNull(testAppAuthzSA);
             Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
 
@@ -465,7 +472,7 @@ public class ExportImportUtil {
         if (mappers == null) {
             return null;
         }
-        
+
         for (ProtocolMapperRepresentation mapper : mappers) {
             if (mapper.getProtocol().equals(type) &&
                 mapper.getName().equals(name)) {
@@ -724,6 +731,8 @@ public class ExportImportUtil {
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
           OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE,
           OIDCLoginProtocolFactory.ACR_SCOPE,
+          OIDCLoginProtocolFactory.BASIC_SCOPE,
+          ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE,
           SamlProtocolFactory.SCOPE_ROLE_LIST
         ));
 
@@ -745,7 +754,8 @@ public class ExportImportUtil {
           OAuth2Constants.SCOPE_EMAIL,
           OIDCLoginProtocolFactory.ROLES_SCOPE,
           OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE,
-          OIDCLoginProtocolFactory.ACR_SCOPE
+          OIDCLoginProtocolFactory.ACR_SCOPE,
+          OIDCLoginProtocolFactory.BASIC_SCOPE
         ));
 
         Set<String> optionalClientScopes = realm.getDefaultOptionalClientScopes()

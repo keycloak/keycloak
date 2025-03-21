@@ -17,23 +17,58 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.KeycloakMain;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
+
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin = new DryRunMixin();
+
     @Override
     public void run() {
         doBeforeRun();
-        CommandLine cmd = spec.commandLine();
         validateConfig();
-        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr(), cmd.getParseResult().originalArgs().toArray(new String[0]));
-    }
 
+        if (isDevProfile()) {
+            picocli.getOutWriter().println(Ansi.AUTO.string(
+                    "@|bold,red Running the server in development mode. DO NOT use this configuration in production.|@"));
+        }
+        if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+            picocli.start();
+        }
+    }
+    
     protected void doBeforeRun() {
 
     }
+
+    @Override
+    protected void validateConfig() {
+        super.validateConfig(); // we want to run the generic validation here first to check for unknown options
+        HttpPropertyMappers.validateConfig();
+        HostnameV2PropertyMappers.validateConfig();
+    }
+
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        EnumSet<OptionCategory> excludedCategories = excludedCategories();
+        return super.getOptionCategories().stream().filter(optionCategory -> !excludedCategories.contains(optionCategory)).collect(Collectors.toList());
+    }
+
+    protected EnumSet<OptionCategory> excludedCategories() {
+        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+
 }

@@ -23,7 +23,6 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -95,30 +94,6 @@ public class JsonParserTest {
         nested = (Map<String, String>)test.getOtherClaims().get("nested");
         Assert.assertNotNull(nested);
         Assert.assertNotNull(nested.get("foo"));
-    }
-
-    @Test
-    public void testParsingSystemProps() throws IOException {
-        System.setProperty("my.host", "foo");
-        System.setProperty("con.pool.size", "200");
-        System.setProperty("allow.any.hostname", "true");
-        System.setProperty("socket.timeout.millis", "6000");
-        System.setProperty("connection.timeout.millis", "7000");
-        System.setProperty("connection.ttl.millis", "500");
-
-        InputStream is = getClass().getClassLoader().getResourceAsStream("keycloak.json");
-
-        AdapterConfig config = JsonSerialization.readValue(is, AdapterConfig.class, true);
-        Assert.assertEquals("http://foo:8080/auth", config.getAuthServerUrl());
-        Assert.assertEquals("external", config.getSslRequired());
-        Assert.assertEquals("angular-product${non.existing}", config.getResource());
-        Assert.assertTrue(config.isPublicClient());
-        Assert.assertTrue(config.isAllowAnyHostname());
-        Assert.assertEquals(100, config.getCorsMaxAge());
-        Assert.assertEquals(200, config.getConnectionPoolSize());
-        Assert.assertEquals(6000L, config.getSocketTimeout());
-        Assert.assertEquals(7000L, config.getConnectionTimeout());
-        Assert.assertEquals(500L, config.getConnectionTTL());
     }
 
     static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");

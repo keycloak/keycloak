@@ -18,6 +18,8 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.AuthenticationFlowModel;
+
 /**
  * Callback to be triggered during various lifecycle events of authentication flow.
  *
@@ -40,7 +42,9 @@ public interface AuthenticationFlowCallback extends Authenticator {
     /**
      * Triggered after the top authentication flow is successfully finished.
      * It is really suitable for last verification of successful authentication
+     *
+     * @param topFlow which was successfully finished
      */
-    default void onTopFlowSuccess() {
+    default void onTopFlowSuccess(AuthenticationFlowModel topFlow) {
     }
 }

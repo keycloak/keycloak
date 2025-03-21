@@ -29,7 +29,7 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
     private String providerName;
     private String displayName;
     private String linkedUsername;
-    
+
     @JsonIgnore
     private String guiOrder;
 
@@ -48,7 +48,7 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
     public void setConnected(boolean connected) {
         this.connected = connected;
     }
-    
+
     public boolean isSocial() {
         return this.isSocial;
     }
@@ -91,10 +91,10 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
 
     @Override
     public int compareTo(LinkedAccountRepresentation rep) {
-        if (this.getGuiOrder() == null) return -1;
-        if (rep.getGuiOrder() == null) return 1;
-        
-        return rep.getGuiOrder().compareTo(this.getGuiOrder());
+        if (this.getGuiOrder() == null) return 1;
+        if (rep.getGuiOrder() == null) return -1;
+
+        return Integer.valueOf(this.getGuiOrder()).compareTo(Integer.valueOf(rep.getGuiOrder()));
     }
-    
+
 }

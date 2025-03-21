@@ -16,12 +16,15 @@
  */
 package org.keycloak.authorization.admin.representation;
 
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.admin.PolicyEvaluationService;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
@@ -29,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
@@ -45,8 +49,10 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,7 +80,7 @@ public class PolicyEvaluationResponseBuilder {
 
         Collection<Result> results = decision.getResults();
 
-        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
+        if (results.isEmpty() || results.stream().flatMap(result -> result.getResults().stream()).allMatch(evaluationResult -> evaluationResult.getEffect().equals(Effect.DENY))) {
             response.setStatus(DecisionEffect.DENY);
         } else {
             response.setStatus(DecisionEffect.PERMIT);
@@ -124,6 +130,12 @@ public class PolicyEvaluationResponseBuilder {
                     policyRep.getPolicy().setScopes(result.getPermission().getResource().getScopes().stream().map(Scope::getName).collect(Collectors.toSet()));
                 }
 
+                if (Effect.PERMIT.equals(policy.getEffect())) {
+                    rep.setAllowedScopes(policy.getPolicy().getScopes().stream().map(ModelToRepresentation::toRepresentation).toList());
+                }
+
+                policyRep.setResourceType(policy.getPolicy().getResourceType());
+
                 policies.add(policyRep);
             }
 
@@ -147,18 +159,49 @@ public class PolicyEvaluationResponseBuilder {
                 result.setStatus(DecisionEffect.PERMIT);
             }
 
-            List<ScopeRepresentation> scopes = result.getScopes();
+            List<ScopeRepresentation> scopes = new ArrayList<>(result.getScopes());
 
             if (DecisionEffect.PERMIT.equals(result.getStatus())) {
                 result.setAllowedScopes(scopes);
+            } else {
+                result.setDeniedScopes(scopes);
+            }
+
+            result.setAllowedScopes(new ArrayList<>(result.getAllowedScopes()));
+
+            List<ScopeRepresentation> allowedScopes = result.getAllowedScopes();
+
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(),resourceServer.getId())
+                    && allowedScopes.size() == 1
+                    && allowedScopes.stream().map(ScopeRepresentation::getName).anyMatch(AdminPermissionsSchema.VIEW::equals)
+                    && result.getScopes().stream().map(ScopeRepresentation::getName).anyMatch(AdminPermissionsSchema.VIEW::equals)) {
+                response.setStatus(DecisionEffect.PERMIT);
+                result.setDeniedScopes(new ArrayList<>(result.getDeniedScopes()));
+                result.getDeniedScopes().removeIf((s) -> AdminPermissionsSchema.VIEW.equals(s.getName()));
+            } else {
+                allowedScopes.removeAll(result.getDeniedScopes());
+
+                if (!result.getScopes().isEmpty() && allowedScopes.stream().noneMatch(result.getScopes()::contains)) {
+                    response.setStatus(DecisionEffect.DENY);
+                }
             }
 
             if (resource.getId() != null) {
+                String resourceType = result.getPolicies().stream().map(PolicyResultRepresentation::getResourceType).filter(Objects::nonNull).findAny().orElse(null);
+                String resourceName = AdminPermissionsSchema.SCHEMA.getResourceName(authorization.getKeycloakSession(), resourceServer, resourceType, evaluationResultRepresentation.getResource().getName());
+
                 if (!scopes.isEmpty()) {
-                    result.getResource().setName(evaluationResultRepresentation.getResource().getName() + " with scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
+                    result.getResource().setName(resourceName + " with scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
                 } else {
-                    result.getResource().setName(evaluationResultRepresentation.getResource().getName());
+                    result.getResource().setName(resourceName);
                 }
+                Resource model = authorization.getStoreFactory().getResourceStore().findById(resourceServer, resource.getId());
+                result.getDeniedScopes().addAll(model.getScopes().stream()
+                        .map(ModelToRepresentation::toRepresentation)
+                        .filter(Predicate.not(scopes::contains))
+                        .filter(Predicate.not(allowedScopes::contains))
+                        .toList()
+                );
             } else {
                 result.getResource().setName("Any Resource with Scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
             }
@@ -195,7 +238,7 @@ public class PolicyEvaluationResponseBuilder {
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getRealm(), resourceServer, filters, -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

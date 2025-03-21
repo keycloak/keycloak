@@ -23,29 +23,38 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -53,16 +62,17 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
+public class FlowOverrideTest extends AbstractFlowTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";
     public static final String TEST_APP_FLOW = "test-app-flow";
@@ -195,17 +205,12 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testWithClientBrowserOverride() throws Exception {
         oauth.clientId(TEST_APP_FLOW);
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         Assert.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
-        driver.findElement(By.name("submit1")).click();
+        UIUtils.clickLink(driver.findElement(By.name("submit1")));
 
 
         loginPage.assertCurrent();
@@ -215,6 +220,11 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    @Test
+    public void testRemovedFlowOverrideByClientThenFallbackToToNoOverrideBrowserFlow() {
+        testWithRemovedFlowOverrideByClient(AuthenticationFlowBindings.BROWSER_BINDING, this::testNoOverrideBrowser);
     }
 
     // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
@@ -233,12 +243,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     private void testNoOverrideBrowser(String clientId) {
         oauth.clientId(clientId);
-        String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
-
-        //Thread.sleep(10000000);
-
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
 
         loginPage.assertCurrent();
 
@@ -254,9 +259,14 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         testDirectGrantNoOverride("test-app");
     }
 
+    @Test
+    public void testRemovedFlowOverrideByClientThenFallbackToNoOverrideDirectGrantFlow() {
+        testWithRemovedFlowOverrideByClient(AuthenticationFlowBindings.DIRECT_GRANT_BINDING, this::testNoOverrideBrowser);
+    }
+
     private void testDirectGrantNoOverride(String clientId) {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password
@@ -306,7 +316,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     public void testGrantAccessTokenWithClientOverride() throws Exception {
         String clientId = TEST_APP_DIRECT_OVERRIDE;
         Client httpClient = AdminClientUtil.createResteasyClient();
-        String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
+        String grantUri = oauth.getEndpoints().getToken();
         WebTarget grantTarget = httpClient.target(grantUri);
 
         {   // test no password
@@ -370,5 +380,35 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         clientRep = query.get(0);
         Assert.assertEquals(browserFlowId, clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING));
 
+    }
+
+    private void testWithRemovedFlowOverrideByClient(String binding, Consumer<String> testNoOverride) {
+        ClientResource clientResource = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        Assert.assertNotNull(clientResource);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        String newFlowAlias = "Copy of Browser Flow";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        AuthenticationFlowRepresentation newFlow = findFlowByAlias(newFlowAlias);
+
+        try {
+            // 1. set a flow override for client
+            clientRep.setAuthenticationFlowBindingOverrides(Map.of(binding, newFlow.getId()));
+            clientResource.update(clientRep);
+
+            // 2. remove the flow through database, since we could not delete the flow which is used by client
+            testingClient.server("test").run(session -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, newFlow.getId(), LockModeType.PESSIMISTIC_WRITE);
+                em.remove(entity);
+                em.flush();
+            });
+
+            // 3. login with client
+            testNoOverride.accept(clientRep.getClientId());
+        } finally {
+            clientRep.setAuthenticationFlowBindingOverrides(Map.of(binding, ""));
+            clientResource.update(clientRep);
+        }
     }
 }

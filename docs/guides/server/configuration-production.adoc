@@ -16,10 +16,20 @@ This {section} describes the general areas of configuration required for a produ
 
 To configure secure communication channels for {project_name}, see <@links.server id="enabletls"/> and <@links.server id="outgoinghttp"/>.
 
+To secure the cache communication for {project_name}, see <@links.server id="caching"/>.
+
 == The hostname for {project_name}
 In a production environment, {project_name} instances usually run in a private network, but {project_name} needs to expose certain public facing endpoints to communicate with the applications to be secured.
 
 For details on the endpoint categories and instructions on how to configure the public hostname for them, see <@links.server id="hostname"/>.
+
+=== Exposing the {project_name} Administration APIs and UI on a different hostname
+
+It is considered a best practice to expose the {project_name} Administration REST API and Console on a different hostname or context-path than the one used for the public frontend URLs that are used e.g. by login flows. This separation ensures that the Administration interfaces are not exposed to the public internet, which reduces the attack surface.
+
+WARNING: Access to REST APIs needs to be blocked on the reverse proxy level, if they are not intended to be publicly exposed.
+
+For details, see <@links.server id="hostname"/>.
 
 == Reverse proxy in a distributed environment
 Apart from <@links.server id="hostname"/>, production environments usually include a reverse proxy / load balancer component. It separates and unifies access to the network used by your company or organization. For a {project_name} production environment, this component is recommended.
@@ -32,7 +42,7 @@ A production environment should protect itself from an overload situation, so th
 One way of doing this is rejecting additional requests once a certain threshold is reached.
 
 Load shedding should be implemented on all levels, including the load balancers in your environment.
-In addition to that, there is a feature in Keycloak to limit the number of requests that can't be processed right away and need to be queued.
+In addition to that, there is a feature in {project_Name} to limit the number of requests that can't be processed right away and need to be queued.
 By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
@@ -46,6 +56,17 @@ To ensure that users can continue to log in when a {project_name} instance goes 
 {project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. When deployed to a cluster, the embedded Infinispan server communication should be secured. You secure this communication either by enabling authentication and encryption or by isolating the network used for cluster communication.
 
 To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
+
+=== Secure network communication
+
+JGroups supports Java SSL sockets for TCP communication.
+Check <@links.server id="caching" anchor="securing-cache-communication"/> for more information on how to configure TLS and the alternatives available for UDP communication.
+
+=== Configure Firewall ports
+
+A set of network ports must be open to allow a healthy network communication between {project_name} servers.
+See <@links.server id="caching" anchor="network-ports"/>.
+It describes what ports need to be open and their usage.
 
 == Configure {project_name} Server with IPv4 or IPv6
 The system properties `java.net.preferIPv4Stack` and `java.net.preferIPv6Addresses` are used to configure the JVM for use with IPv4 or IPv6 addresses.
@@ -61,5 +82,14 @@ For example, to change the IP stack preference to IPv4, set an environment varia
 ----
 export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=true"
 ----
+
+To set up the server for IPv6 only, set an environment variable as follows for the distributed caches to form a cluster:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
+See <@links.server id="caching" anchor="network-bind-address"/> for more details.
 
 </@tmpl.guide>

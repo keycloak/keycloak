@@ -19,6 +19,8 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -48,6 +50,7 @@ public class JWTClientValidator {
     private final ClientAuthenticationFlowContext context;
     private final RealmModel realm;
     private final int currentTime;
+    private final String clientAuthenticatorProviderId;
 
     private MultivaluedMap<String, String> params;
     private String clientAssertion;
@@ -55,10 +58,13 @@ public class JWTClientValidator {
     private JsonWebToken token;
     private ClientModel client;
 
-    public JWTClientValidator(ClientAuthenticationFlowContext context) {
+    private static final int ALLOWED_CLOCK_SKEW = 15; // sec
+
+    public JWTClientValidator(ClientAuthenticationFlowContext context, String clientAuthenticatorProviderId) {
         this.context = context;
         this.realm = context.getRealm();
         this.currentTime = Time.currentTime();
+        this.clientAuthenticatorProviderId = clientAuthenticatorProviderId;
     }
 
     public boolean clientAssertionParametersValidation() {
@@ -134,6 +140,11 @@ public class JWTClientValidator {
             return false;
         }
 
+        if (!clientAuthenticatorProviderId.equals(client.getClientAuthenticatorType())) {
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+            return false;
+        }
+
         return true;
     }
 
@@ -161,13 +172,19 @@ public class JWTClientValidator {
     public void validateToken() {
         if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken");
 
-        if (!token.isActive()) {
+        if (!token.isActive(ALLOWED_CLOCK_SKEW)) {
             throw new RuntimeException("Token is not active");
         }
 
         // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-        if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
-            throw new RuntimeException("Token is not active");
+        if (token.getExp() == null || token.getExp() <= 0) { // in case of "exp" not exist
+            if (token.getIat() + ALLOWED_CLOCK_SKEW + 10 < currentTime) { // consider "exp" = 10, client's clock delays from Keycloak's clock
+                throw new RuntimeException("Token is not active");
+            }
+        } else {
+            if ((token.getIat() != null && token.getIat() > 0) && token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) { // consider client's clock is ahead from Keycloak's clock
+                throw new RuntimeException("Token was issued in the future");
+            }
         }
 
         if (token.getId() == null) {
@@ -180,7 +197,7 @@ public class JWTClientValidator {
         if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
+        long lifespanInSecs = Math.max(Optional.ofNullable(token.getExp()).orElse(0L) - currentTime, 10);
         if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
             logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
 

@@ -25,8 +25,10 @@ import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,25 +40,25 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @Page
     private UpdateProfileErrors errorsPage;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
-    
-    @FindBy(id = "department")
+
+    @FindBy(name = "department")
     private WebElement departmentInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
-    
+
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     public void update(String firstName, String lastName) {
@@ -94,7 +96,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getLastName() {
         return lastNameInput.getAttribute("value");
     }
-    
+
     public String getEmail() {
         return emailInput.getAttribute("value");
     }
@@ -114,19 +116,21 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public UpdateProfileErrors getInputErrors() {
         return errorsPage;
     }
-    
+
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
 
-    public WebElement getFieldById(String fieldId) {
+    public WebElement getElementById(String fieldId) {
         try {
-            return driver.findElement(By.id(fieldId));
-        } catch (NoSuchElementException nsee) {
+            By id = By.id(fieldId);
+            WaitUtils.waitUntilElement(id);
+            return driver.findElement(id);
+        } catch (NoSuchElementException | TimeoutException ignore) {
             return null;
         }
     }
-    
+
     public boolean isDepartmentPresent() {
         try {
           isDepartmentEnabled();
@@ -136,17 +140,47 @@ public class LoginUpdateProfilePage extends AbstractPage {
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean isCancelDisplayed() {
         try {
             return cancelAIAButton.isDisplayed();
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public void setAttribute(String elementId, String value) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            element.clear();
+            element.sendKeys(value);
+        }
+    }
+
+    public void clickAddAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-add-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public void clickRemoveAttributeValue(String elementId) {
+        WebElement element = getElementById("kc-remove-" + elementId);
+
+        if (element != null) {
+            element.click();
+        }
+    }
+
+    public String getAttribute(String elementId) {
+        WebElement element = getElementById(elementId);
+
+        if (element != null) {
+            return element.getAttribute("value");
+        }
+
+        return null;
     }
 
     public static class Update {
@@ -229,7 +263,7 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
         @FindBy(id = "input-error-lastname")
         private WebElement inputErrorLastName;
-        
+
         @FindBy(id = "input-error-lastName")
         private WebElement inputErrorLastNameDynamic;
 

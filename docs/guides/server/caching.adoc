@@ -5,8 +5,7 @@
 
 <@tmpl.guide
 title="Configuring distributed caches"
-summary="Understand how to configure the caching layer"
-includedOptions="cache cache-*">
+summary="Understand how to configure the caching layer">
 
 {project_name} is designed for high availability and multi-node clustered setups.
 The current distributed cache implementation is built on top of https://infinispan.org[Infinispan], a high-performance, distributable in-memory data grid.
@@ -14,11 +13,12 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches are using a UDP transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. {project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+By default, caches use the `jdbc-ping` stack which is based upon a TCP transport and uses the configured database to track nodes joining the cluster.
+{project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
-<@kc.build parameters="--cache=ispn"/>
+<@kc.start parameters="--cache=ispn"/>
 
 When you start {project_name} in development mode, by using the `start-dev` command, {project_name} uses only local caches and distributed caches are completely disabled by implicitly setting the `--cache=local` option.
 The `local` cache mode is intended only for development and testing purposes.
@@ -26,7 +26,7 @@ The `local` cache mode is intended only for development and testing purposes.
 == Configuring caches
 {project_name} provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
 
-The cache configuration is a regular https://infinispan.org/docs/stable/titles/configuring/configuring.html[Infinispan configuration file].
+The cache configuration is a regular {infinispan_configuring_docs}[Infinispan configuration file].
 
 The following table gives an overview of the specific caches {project_name} uses.
 You configure these caches in `conf/cache-ispn.xml`:
@@ -39,12 +39,13 @@ You configure these caches in `conf/cache-ispn.xml`:
 |users|Local|Cache persisted user data
 |authorization|Local|Cache persisted authorization data
 |keys|Local|Cache external public keys
+|crl|Local|Cache for X.509 authenticator CRLs
 |work|Replicated|Propagate invalidation messages across nodes
 |authenticationSessions|Distributed|Caches authentication sessions, created/destroyed/expired during the authentication process
-|sessions|Distributed|Caches user sessions, created upon successful authentication and destroyed during logout, token revocation, or due to expiration
-|clientSessions|Distributed|Caches client sessions, created upon successful authentication to a specific client and destroyed during logout, token revocation, or due to expiration
-|offlineSessions|Distributed|Caches offline user sessions, created upon successful authentication and destroyed during logout, token revocation, or due to expiration
-|offlineClientSessions|Distributed|Caches client sessions, created upon successful authentication to a specific client and destroyed during logout, token revocation, or due to expiration
+|sessions|Distributed|Cache persisted user session data
+|clientSessions|Distributed|Cache persisted client session data
+|offlineSessions|Distributed|Cache persisted offline user session data
+|offlineClientSessions|Distributed|Cache persisted offline client session data
 |loginFailures|Distributed|keep track of failed logins, fraud detection
 |actionTokens|Distributed|Caches action Tokens
 |===
@@ -90,33 +91,74 @@ to the node where their sessions were initially created. By doing that, you are 
 CPU, memory, and network utilization.
 
 .User sessions
-
 Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
-authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session
-is created too, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
+authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
 
 User and client sessions are automatically destroyed whenever the user performs a logout, the client performs a token revocation, or due to reaching their expiration time.
 
-The following caches are used to store both user and client sessions:
+The session data are stored in the database by default and loaded on-demand to the following caches:
 
-* sessions
-* clientSessions
+* `sessions`
+* `clientSessions`
 
-By relying on a distributable cache, user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without loosing their state. However, production-ready deployments should always consider session affinity and favor redirecting users
+By relying on a distributable cache, cached user and client sessions are available to any node in the cluster so that users can be redirected
+to any node without the need to load session data from the database. However, production-ready deployments should always consider session affinity and favor redirecting users
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
+These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
+The internal caches will run with only a single owner for each cache entry.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
+
+.Volatile user sessions
+
+By default, user sessions are stored in the database and loaded on-demand to the cache.
+It is possible to configure {project_name} to store user sessions in the cache only and minimize the database utilization.
+
+Since all the sessions in this setup are stored in-memory, there are two side effects related to this:
+
+* Losing sessions on when all {project_name} nodes restart.
+* Increased memory consumption.
+
+Follow these steps to enable this setup:
+
+1. Since the cache is the only source of truth for user and client sessions, configure caches to not limit the number of entries and to replicate each entry to at least two nodes. To do so, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) for caches `sessions` and `clientSessions` with the following update:
++
+--
+* Remove the `+<memory max-count="..."/>+`
+* Change `owners` attribute of the `distributed-cache` tag to 2 or more
+--
++
+An example of the resulting configuration for the `sessions` cache would look as follows.
++
+[source,xml]
+----
+<distributed-cache name="sessions" owners="2">
+    <expiration lifespan="-1"/>
+</distributed-cache>
+----
+2. Disable `persistent-user-sessions` feature using the following command:
++
+----
+bin/kc.sh start --features-disabled=persistent-user-sessions ...
+----
+
+[NOTE]
+====
+Disabling `persistent-user-sessions` is not possible when `multi-site` feature is enabled.
+====
+
+.Offline user sessions
 As an OpenID Connect Provider, the server is also capable of authenticating users and issuing offline tokens. Similarly to regular user and client sessions,
-when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session. However, due to the nature
-of offline tokens, offline sessions are handled differently as they are long-lived and should survive a complete cluster shutdown. Because of that, they are also persisted to the database.
+when an offline token is issued by the server upon successful authentication, the server also creates an offline user session and an offline client session.
 
 The following caches are used to store offline sessions:
 
 * offlineSessions
 * offlineClientSessions
 
-Upon a cluster restart, offline sessions are lazily loaded from the database and kept in a shared cache using the two caches above.
+Similarly to regular user and client sessions caches, also the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
+Consider trade-off between memory consumption and the database utilization and set different sizes for the caches, edit {project_name}'s cache config file (`conf/cache-ispn.xml`) to set a `+<memory max-count="..."/>+` for those caches.
 
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
@@ -126,14 +168,21 @@ This cache is needed for the Brute Force Protection feature to work in a multi-n
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
 The `actionTokens` distributed cache is used to track metadata about action tokens.
 
+=== Configuring cache maximum size
+In order to reduce memory usage, it's possible to place an upper bound on the number of entries which are stored in a given
+cache. To specify an upper bound of on a cache, you must provide the following command line argument
+`--cache-embedded-$\{CACHE_NAME}-max-count=`, with `$\{CACHE_NAME}` replaced with the name of the cache you would like to
+apply the upper bound to. For example, to apply an upper-bound of `1000` to the `offlineSessions` cache you would configure
+`--cache-embedded-offline-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
+`actionToken`, `authenticationSessions`, `loginFailures`, `work`.
+
 === Configuring caches for availability
 
 Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.
 
-Each distributed cache has two owners per default, which means that two nodes have a copy of the specific cache entries.
+Each distributed cache, that is a primary source of truth of the data (`authenticationSessions`, `loginFailures` and `actionTokens`) has two owners per default, which means that two nodes have a copy of the specific cache entries.
 Non-owner nodes query the owners of a specific cache to obtain data.
 When both owner nodes are offline, all data is lost.
-This situation usually leads to users being logged out at the next request and having to log in again.
 
 The default number of owners is enough to survive 1 node (owner) failure in a cluster setup with at least three nodes. You are free
 to change the number of owners accordingly to better fit into your availability requirements. To change the number of owners, open `conf/cache-ispn.xml` and change the value for `owners=<value>` for the distributed caches to your desired value.
@@ -142,124 +191,180 @@ to change the number of owners accordingly to better fit into your availability 
 
 To specify your own cache configuration file, enter this command:
 
-<@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
+<@kc.start parameters="--cache-config-file=my-cache-file.xml"/>
 
 The configuration file is relative to the `conf/` directory.
 
+=== CLI options for remote server
+
+For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
+Once any of the declared CLI parameters are present, it is expected there is no configuration related to remote store present in the XML file.
+
+==== Connecting to an insecure Infinispan server
+
+WARNING: Disabling security is not recommended in production!
+
+In a development or test environment, it is easier to start an unsecured Infinispan server.
+For these use case, the CLI options `cache-remote-tls-enabled` disables the encryption (TLS) between {project_name} and {jdgserver_name}.
+{project_name} will fail to start if the {jdgserver_name} server is configured to accept only encrypted connections.
+
+The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the {jdgserver_name} server without presenting any credentials.
+If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
+
 == Transport stacks
-Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
+
+Transport stacks ensure that {project_name} nodes in a cluster communicate in a reliable fashion.
 {project_name} supports a wide range of transport stacks:
 
 <@opts.expectedValues option="cache-stack"/>
 
 To apply a specific cache stack, enter this command:
 
-<@kc.build parameters="--cache-stack=<stack>"/>
+<@kc.start parameters="--cache-stack=<stack>"/>
 
-The default stack is set to `udp` when distributed caches are enabled.
+The default stack is set to `jdbc-ping` when distributed caches are enabled, which is backwards compatible with the defaults in the 26.x release stream of {project_name}.
 
 === Available transport stacks
 
-The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` build option:
+The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` runtime option:
 
 [%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
 
-|tcp|TCP|MPING (uses UDP multicast).
-|udp|UDP|UDP multicast
+|`jdbc-ping`|TCP|Database registry using the JGroups `JDBC_PING2` protocol.
+|`jdbc-ping-udp` (deprecated)|UDP|Database registry using the JGroups `JDBC_PING2` protocol.
 |===
 
-The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
+The following table shows transport stacks that are available using the `--cache-stack` runtime option and a minimum configuration:
 
 [%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
 
-|kubernetes|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
+|`kubernetes`|TCP|DNS resolution using the JGroups `DNS_PING` protocol. It requires to set `jgroups.dns.query` to the headless service FQDN.
+|`tcp` (deprecated)|TCP|IP multicast using the JGroups `MPING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
+|`udp` (deprecated)|UDP|IP multicast using the JGroups `PING` protocol. See below on how to configure a unique `jgroups.mcast_addr` or `jgroups.mcast_port` for each cluster.
 |===
 
-=== Additional transport stacks
-The following table shows transport stacks that are supported by {project_name}, but need some extra steps to work.
-Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the `google` stack if you want to run {project_name} on top of the Google Kubernetes engine.
-In that case, use the `kubernetes` stack.
-Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as UDP.
+When using the `tcp`, `udp` or `jdbc-ping-udp` stack, each cluster must use a different multicast address and/or port so that their nodes form distinct clusters.
+By default, {project_name} uses `239.6.7.8` as multicast address for `jgroups.mcast_addr` and `46655` for the multicast port `jgroups.mcast_port`.
 
-[%autowidth]
+NOTE: Use `-D<property>=<value>` to pass the properties via the `JAVA_OPTS_APPEND` environment variable or in the CLI command.
+
+// Keeping this paragraph in 26.x as stacks like `ec2` where mentioned in the 26.0 docs.
+// Should be removed for 27.0 when `jdbc-ping` is the general purpose default for everyone.
+====
+*Additional Stacks*
+
+It is recommended to use one of the stacks available above.
+Additional stacks are provided by Infinispan, but it is outside the scope of this guide how to configure them.
+Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinispan cluster transport] and {infinispan_embedding_docs}#customizing-jgroups-stacks_cluster-transport[Customizing JGroups stacks] for further documentation.
+====
+
+== Securing transport stacks
+
+Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration
+No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack.
+
+[NOTE]
+====
+If you are using a transport stack based on `UDP` or `TCP_NIO2`, proceed as follows to configure the encryption of the transport stack:
+
+. Set the option `cache-embedded-mtls-enabled` to `false`.
+. Follow the documentation in http://jgroups.org/manual5/index.html#ENCRYPT[JGroups Encryption documentation] and {infinispan_embedding_docs}#secure-cluster-transport[Encrypting cluster transport].
+====
+
+With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
+The keys and the certificate are stored in the database so they are available to all nodes.
+By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
+Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
+
+=== Proving your own keys and certificates
+
+Although not recommended for standard setups, if it is essential in a specific setup, you can configure the keystore with the certificate for the transport stack manually. `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
+The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
+To restrict unauthorized access, always use a self-signed certificate for each {project_name} deployment.
+
+== Network Ports
+
+To ensure a healthy {project_name} clustering, some network ports need to be open.
+The table below shows the TCP ports that need to be open for the `jdbc-ping` stack, and a description of the traffic that goes through it.
+
 |===
-|Stack name|Transport protocol|Discovery
+|Port |Property | Description
 
-|ec2|TCP|NATIVE_S3_PING
-|google|TCP|GOOGLE_PING2
-|azure|TCP|AZURE_PING
+m|7800
+m|jgroups.bind.port
+|Unicast data transmission.
+
+m|57800
+m|jgroups.fd.port-offset
+|Failure detection by protocol `FD_SOCK2`.
+It listens to the abrupt closing of a socket to suspect a {project_name} server failure.
+The `jgroups.fd.port-offset` property defines the offset from the `jgroups.bind.port`.
+
 |===
 
-Cloud vendor specific stacks have additional dependencies for {project_name}.
-For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
+NOTE: Use `-D<property>=<value>` to modify the ports above in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
-To provide the dependencies to {project_name}, put the respective JAR in the `providers` directory and build Keycloak by entering this command:
+[#network-bind-address]
+== Network bind address
 
-<@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
+To ensure a healthy {project_name} clustering, the network port must be bound on an interface that is accessible from all other nodes of the cluster.
 
-=== Custom transport stacks
-If none of the available transport stacks are enough for your deployment, you are able to change your cache configuration file
-and define your own transport stack.
+By default, it picks a site local (non-routable) IP address, for example, from the 192.168.0.0/16 or 10.0.0.0/8 address range.
 
-For more details, see https://infinispan.org/docs/stable/titles/server/server.html#using-inline-jgroups-stacks_cluster-transport[Using inline JGroups stacks].
+To override the address, set the `jgroups.bind.address` property.
 
-.defining a custom transport stack
-[source]
+NOTE: Use `-Djgroups.bind.address=<IP>` to modify the bind address in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
+
+To set up for IPv6 only and have {project_name} pick the bind address automatically, use the following settings:
+
+[source,bash]
 ----
-<jgroups>
-    <stack name="my-encrypt-udp" extends="udp">
-    <SSL_KEY_EXCHANGE keystore_name="server.jks"
-        keystore_password="password"
-        stack.combine="INSERT_AFTER"
-        stack.position="VERIFY_SUSPECT2"/>
-        <ASYM_ENCRYPT asym_keylength="2048"
-        asym_algorithm="RSA"
-        change_key_on_coord_leave = "false"
-        change_key_on_leave = "false"
-        use_external_key_exchange = "true"
-        stack.combine="INSERT_BEFORE"
-        stack.position="pbcast.NAKACK2"/>
-    </stack>
-</jgroups>
-
-<cache-container name="keycloak">
-    <transport lock-timeout="60000" stack="my-encrypt-udp"/>
-    ...
-</cache-container>
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
 ----
 
-By default, the value set to the `cache-stack` option has precedence over the transport stack you define in the cache configuration file.
-If you are defining a custom stack, make sure the `cache-stack` option is not used for the custom changes to take effect.
+== Running instances on different networks
 
-== Securing cache communication
-The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and Transport stack encryption. For more information about securing cache communication, see the https://infinispan.org/docs/dev/titles/security/security.html#[Infinispan security guide].
+If you run {project_name} instances on different networks, for example behind firewalls or in containers, the different instances will not be able to reach each other by their local IP address.
+In such a case, set up a port forwarding rule (sometimes called "`virtual server`") to their local IP address.
+
+When using port forwarding, use the following properties so each node correctly advertises its external address to the other nodes:
+
+|===
+|Property | Description
+
+m|jgroups.external_port
+|Port that other instances in the {project_name} cluster should use to contact this node.
+
+m|jgroups.external_addr
+|IP address that other instances in the {project_name} should use to contact this node.
+
+|===
+
+NOTE: Use `-D<property>=<value>` set this in your `JAVA_OPTS_APPEND` environment variable or in your CLI command.
 
 == Exposing metrics from caches
 
-By default, metrics from caches are not automatically exposed when the metrics are enabled.
-For more details about how to enable metrics, see <@links.server id="configuration-metrics"/>.
+Metrics from caches are automatically exposed when the metrics are enabled.
 
-To enable global metrics for all caches within the `cache-container`, you need to change your cache configuration file (e.g.: `conf/cache-ispn.xml`) to enable `statistics` at the `cache-container` level as follows:
+To enable histograms for the cache metrics, set `cache-metrics-histograms-enabled` to `true`.
+While these metrics provide more insights into the latency distribution, collecting them might have a performance impact, so you should be cautious to activate them in an already saturated system.
 
-.enabling metrics for all caches
-[source]
-----
-<cache-container name="keycloak" statistics="true">
-    ...
-</cache-container>
-----
+<@kc.start parameters="--metrics-enabled=true --cache-metrics-histograms-enabled=true"/>
 
-Similarly, you can enable metrics individually for each cache by enabling `statistics` as follows:
+For more details about how to enable metrics, see <@links.observability id="configuration-metrics"/>.
 
-.enabling metrics for a specific cache
-----
-<local-cache name="realms" statistics="true">
-    ...
-</local-cache>
-----
+<@opts.printRelevantOptions includedOptions="cache cache-*" excludedOptions="cache-embedded-* cache-remote-*">
+
+=== Embedded Cache
+<@opts.includeOptions includedOptions="cache-embedded-*"/>
+
+=== Remote Cache
+<@opts.includeOptions includedOptions="cache-remote-*"/>
+
+</@opts.printRelevantOptions>
 
 </@tmpl.guide>

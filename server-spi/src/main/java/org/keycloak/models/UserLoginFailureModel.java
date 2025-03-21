@@ -29,6 +29,8 @@ public interface UserLoginFailureModel {
    void setFailedLoginNotBefore(int notBefore);
    int getNumFailures();
    void incrementFailures();
+   int getNumTemporaryLockouts();
+   void incrementTemporaryLockouts();
    void clearFailures();
    long getLastFailure();
    void setLastFailure(long lastFailure);

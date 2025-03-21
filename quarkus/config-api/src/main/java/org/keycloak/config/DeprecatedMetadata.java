@@ -17,7 +17,9 @@
 
 package org.keycloak.config;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -25,24 +27,34 @@ import java.util.Set;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class DeprecatedMetadata {
-    private final Set<String> newOptionsKeys;
+    private final List<String> newOptionsKeys;
     private final String note;
+    private final Set<String> deprecatedValues;
 
-    public DeprecatedMetadata() {
-        newOptionsKeys = Collections.emptySet();
-        note = null;
-    }
-
-    public DeprecatedMetadata(Set<String> newOptionsKeys, String note) {
-        this.newOptionsKeys = newOptionsKeys == null ? Collections.emptySet() : Collections.unmodifiableSet(newOptionsKeys);
+    private DeprecatedMetadata(List<String> newOptionsKeys, String note, Set<String> deprecatedValues) {
+        this.newOptionsKeys = newOptionsKeys;
         this.note = note;
+        this.deprecatedValues = deprecatedValues;
     }
 
-    public Set<String> getNewOptionsKeys() {
+    public static DeprecatedMetadata deprecateOption(String note, String... newOptionsKeys) {
+        return new DeprecatedMetadata(Arrays.asList(newOptionsKeys), note, Set.of());
+    }
+
+    public static DeprecatedMetadata deprecateValues(String note, String... values) {
+        return new DeprecatedMetadata(Collections.emptyList(), note,
+                Collections.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(values))));
+    }
+
+    public List<String> getNewOptionsKeys() {
         return newOptionsKeys;
     }
 
     public String getNote() {
         return note;
+    }
+
+    public Set<String> getDeprecatedValues() {
+        return deprecatedValues;
     }
 }

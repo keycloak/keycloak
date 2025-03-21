@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.util;
 
-import io.appium.java_client.android.AndroidDriver;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -11,15 +11,15 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.openqa.selenium.chrome.ChromeDriver;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.log;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -45,7 +45,7 @@ public final class UIUtils {
 
     public static boolean currentTitleEquals(String url) {
         try {
-            (new WebDriverWait(getCurrentDriver(), 5)).until(ExpectedConditions.titleIs(url));
+            (new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(5))).until(ExpectedConditions.titleIs(url));
         }
         catch (TimeoutException e) {
             return false;
@@ -69,17 +69,79 @@ public final class UIUtils {
         performOperationWithPageReload(() -> getCurrentDriver().navigate().refresh());
     }
 
+    /**
+     * The method executes click or sendKeys(Keys.ENTER) in the element.
+     * In the chrome driver click is emulated by pressing the ENTER key. Since
+     * the upgrade to chrome 128 some clicks are missed and that triggers CI
+     * failures. The method is intended to be used for buttons and links which
+     * accept clicking by pressing the ENTER key. If the element passed does
+     * not allow clicking using keys use the {@link #click(WebElement) click}
+     * method.
+     *
+     * @param element The element to click
+     */
     public static void clickLink(WebElement element) {
+        clickElement(element, Keys.ENTER);
+    }
+
+    /**
+     * Same than clickLink but it does not perform any wait after clicking or sending the
+     * enter key.
+     *
+     * @param element The element to click
+     */
+    public static void clickLinkWithoutWait(WebElement element) {
+        clickLinkWithoutWait(element, Keys.ENTER);
+    }
+
+    private static void clickElement(WebElement element, CharSequence key) {
         WebDriver driver = getCurrentDriver();
 
         waitUntilElement(element).is().clickable();
 
-        if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
-                                                                        // even though it is. In this case we just move the cursor and click.
-            performOperationWithPageReload(() -> new Actions(driver).click(element).perform());
+        performOperationWithPageReload(BrowserDriverUtil.isDriverChrome(driver)
+                ? () -> element.sendKeys(key)
+                : element::click);
+    }
+
+    private static void clickLinkWithoutWait(WebElement element, CharSequence key) {
+        WebDriver driver = getCurrentDriver();
+
+        waitUntilElement(element).is().clickable();
+
+        if (BrowserDriverUtil.isDriverChrome(driver)) {
+            element.sendKeys(key);
+        } else {
+            element.click();
         }
-        else {
-            performOperationWithPageReload(element::click);
+    }
+
+    /**
+     * The method executes click in the element. This method always uses click and
+     * is not emulated by key pressing in chrome.
+     *
+     * @param element The element to click
+     */
+    public static void click(WebElement element) {
+        waitUntilElement(element).is().clickable();
+        performOperationWithPageReload(element::click);
+    }
+
+    /**
+     * The method switches the checkbox to the expected state.
+     *
+     * It looks that since chrome 128, the single click sometimes does
+     * not work (See also similar issue {@link #clickLink(WebElement)}, so it is possible repeated multiple times until it reach
+     * the desired state
+     *
+     * @param checkbox Checkbox element to enable or disable
+     * @param enable If true, the checkbox should be switched to enabled (checked). If false, the checkbox should be switched to disabled (unchecked)
+     */
+    public static void switchCheckbox(WebElement checkbox, boolean enable) {
+        boolean current = checkbox.isSelected();
+        if (current != enable) {
+            clickElement(checkbox, Keys.SPACE);
+            Assert.assertNotEquals("Checkbox " + checkbox + " is still in the state " + current + " after click.", current, checkbox.isSelected());
         }
     }
 
@@ -143,10 +205,6 @@ public final class UIUtils {
         }
 
         WebDriver driver = getCurrentDriver();
-        if (driver instanceof AndroidDriver) {
-            AndroidDriver androidDriver = (AndroidDriver) driver;
-            androidDriver.hideKeyboard(); // stability improvement
-        }
     }
 
     /**
@@ -157,15 +215,6 @@ public final class UIUtils {
      */
     public static String getTextFromElement(WebElement element) {
         String text = element.getText();
-        if (getCurrentDriver() instanceof SafariDriver) {
-            try {
-                // Safari on macOS doesn't comply with WebDriver specs yet again - getText() retrieves hidden text by CSS.
-                text = element.findElement(By.xpath("./span[not(contains(@class,'ng-hide'))]")).getText();
-            } catch (NoSuchElementException e) {
-                // no op
-            }
-            return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
-        }
         return text;
     }
 
@@ -250,7 +299,7 @@ public final class UIUtils {
     }
 
     public static String getRawPageSource(WebDriver driver) {
-        if (driver instanceof FirefoxDriver) {
+        if ((driver instanceof FirefoxDriver) || (driver instanceof ChromeDriver)) {
             // firefox has some weird "bug" – it wraps xml in html
             return driver.findElement(By.tagName("body")).getText();
         }

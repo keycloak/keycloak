@@ -24,7 +24,6 @@ import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AmrUtils;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
@@ -38,7 +37,7 @@ import java.util.ArrayList;
  * This protocol mapper sets the 'amr' claim on the OIDC tokens to the reference values configured on the
  * completed authenticators found in the user session notes.
  */
-public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, EnvironmentDependentProviderFactory {
+public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
     private static final Logger logger = Logger.getLogger(AmrProtocolMapper.class);
 
@@ -103,10 +102,5 @@ public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, realmModel);
         logger.debugf("amr %s set in token", refs);
         return refs;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return true;
     }
 }

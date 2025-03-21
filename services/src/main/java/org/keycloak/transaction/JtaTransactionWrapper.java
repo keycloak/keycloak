@@ -17,7 +17,7 @@
 package org.keycloak.transaction;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.provider.ExceptionConverter;
 
@@ -37,18 +37,28 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     protected Transaction ut;
     protected Transaction suspended;
     protected Exception ended;
-    protected KeycloakSessionFactory factory;
+    protected KeycloakSession session;
+    private final RequestContextHelper requestContextHelper;
 
-    public JtaTransactionWrapper(KeycloakSessionFactory factory, TransactionManager tm) {
+    public JtaTransactionWrapper(KeycloakSession session, TransactionManager tm) {
         this.tm = tm;
-        this.factory = factory;
+        this.session = session;
+        this.requestContextHelper = RequestContextHelper.getContext(session);
         try {
 
             suspended = tm.suspend();
-            logger.debug("new JtaTransactionWrapper");
-            logger.debugv("was existing? {0}", suspended != null);
+
             tm.begin();
             ut = tm.getTransaction();
+
+            if (logger.isDebugEnabled()) {
+                String messageToLog = "new JtaTransactionWrapper. Was existing transaction suspended: " + (suspended != null);
+                if (suspended != null) {
+                    messageToLog = messageToLog + " Suspended transaction: " + suspended + ". ";
+                }
+                logMessage(messageToLog);
+            }
+
             //ended = new Exception();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -56,12 +66,14 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     }
 
     public void handleException(Throwable e) {
+        logger.debug(getDetailedMessage("Exception during transaction operation."), e);
+
         if (e instanceof RollbackException) {
             e = e.getCause() != null ? e.getCause() : e;
         }
         final Throwable finalE = e;
 
-        factory.getProviderFactoriesStream(ExceptionConverter.class)
+        session.getKeycloakSessionFactory().getProviderFactoriesStream(ExceptionConverter.class)
                 .map(factory -> ((ExceptionConverter) factory).convert(finalE))
                 .filter(Objects::nonNull)
                 .forEach(throwable -> {
@@ -86,7 +98,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void commit() {
         try {
-            logger.debug("JtaTransactionWrapper  commit");
+            logMessage("JtaTransactionWrapper  commit.");
             tm.commit();
         } catch (Exception e) {
             handleException(e);
@@ -98,7 +110,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void rollback() {
         try {
-            logger.debug("JtaTransactionWrapper rollback");
+            logMessage("JtaTransactionWrapper rollback.");
             tm.rollback();
         } catch (Exception e) {
             handleException(e);
@@ -149,15 +161,34 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
 
     protected void end() {
         ended = null;
-        logger.debug("JtaTransactionWrapper end");
+        logMessage("JtaTransactionWrapper end.");
         if (suspended != null) {
             try {
-                logger.debug("JtaTransactionWrapper resuming suspended");
+                logger.debugf("JtaTransactionWrapper resuming suspended user transaction: %s", suspended);
                 tm.resume(suspended);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
+    }
+
+    private void logMessage(String messageBase) {
+        if (logger.isTraceEnabled()) {
+            String msg = getDetailedMessage(messageBase);
+
+            // Log the detailed messages in "debug" level for backwards compatibility, but just if "Trace" level is enabled
+            logger.debug(msg);
+        } else if (logger.isDebugEnabled()) {
+            logger.debug(messageBase + " Request Context: " + requestContextHelper.getContextInfo());
+        }
+    }
+
+    private String getDetailedMessage(String messageBase) {
+        String msg = messageBase + " Request context: " + requestContextHelper.getDetailedContextInfo();
+        if (ut != null) {
+            msg = msg + ", Transaction: " + ut;
+        }
+        return msg;
     }
 }

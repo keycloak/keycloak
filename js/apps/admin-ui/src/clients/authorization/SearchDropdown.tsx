@@ -1,20 +1,16 @@
-import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
   Dropdown,
-  DropdownToggle,
   Form,
-  FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
+  MenuToggle,
 } from "@patternfly/react-core";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 
 import "./search-dropdown.css";
@@ -26,166 +22,169 @@ export type SearchForm = {
   type?: string;
   uri?: string;
   owner?: string;
+  resourceType?: string;
 };
 
 type SearchDropdownProps = {
-  types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
+  resources?: UserRepresentation[];
+  types?: PolicyRepresentation[];
   search: SearchForm;
   onSearch: (form: SearchForm) => void;
-  isResource?: boolean;
+  type: "resource" | "policy" | "permission" | "adminPermission";
 };
 
 export const SearchDropdown = ({
+  resources,
   types,
   search,
   onSearch,
-  isResource = false,
+  type,
 }: SearchDropdownProps) => {
   const { t } = useTranslation();
+  const form = useForm<SearchForm>({
+    mode: "onChange",
+    defaultValues: search,
+  });
+
   const {
-    register,
-    control,
     reset,
     formState: { isDirty },
     handleSubmit,
-  } = useForm<SearchForm>({ mode: "onChange" });
+  } = form;
 
   const [open, toggle] = useToggle();
-  const [typeOpen, toggleType] = useToggle();
+  const [resourceScopes, setResourceScopes] = useState<string[]>([]);
+  const selectedType = useWatch({ control: form.control, name: "type" });
+  const [key, setKey] = useState(0);
 
   const submit = (form: SearchForm) => {
     toggle();
     onSearch(form);
   };
 
-  useEffect(() => reset(search), [search]);
+  useEffect(() => {
+    const type = types?.find((item) => item.type === selectedType);
+    setResourceScopes(type?.scopes || []);
+  }, [selectedType, types]);
 
-  const typeOptions = (value?: string) => [
-    <SelectOption key="empty" value="">
-      {t("allTypes")}
-    </SelectOption>,
-    ...(types || []).map((type) => (
-      <SelectOption
-        selected={type.type === value}
-        key={type.type}
-        value={type.type}
-      >
-        {type.name}
-      </SelectOption>
-    )),
-  ];
+  useEffect(() => {
+    reset(search);
+    setKey((prevKey) => prevKey + 1);
+  }, [search]);
 
   return (
     <Dropdown
-      data-testid="searchdropdown_dorpdown"
-      className="pf-u-ml-md"
-      toggle={
-        <DropdownToggle
-          onToggle={toggle}
+      onOpenChange={toggle}
+      toggle={(ref) => (
+        <MenuToggle
+          data-testid="searchdropdown_dorpdown"
+          ref={ref}
+          onClick={toggle}
           className="keycloak__client_authentication__searchdropdown"
         >
-          {t("searchForPermission")}
-        </DropdownToggle>
-      }
+          {type === "resource" && t("searchClientAuthorizationResource")}
+          {type === "policy" && t("searchClientAuthorizationPolicy")}
+          {(type === "permission" || type === "adminPermission") &&
+            t("searchClientAuthorizationPermission")}
+        </MenuToggle>
+      )}
       isOpen={open}
     >
-      <Form
-        isHorizontal
-        className="keycloak__client_authentication__searchdropdown_form"
-        onSubmit={handleSubmit(submit)}
-      >
-        <FormGroup label={t("name")} fieldId="name">
-          <KeycloakTextInput
-            id="name"
-            data-testid="searchdropdown_name"
-            {...register("name")}
-          />
-        </FormGroup>
-        {isResource && (
-          <>
-            <FormGroup label={t("type")} fieldId="type">
-              <KeycloakTextInput
-                id="type"
-                data-testid="searchdropdown_type"
-                {...register("type")}
-              />
-            </FormGroup>
-            <FormGroup label={t("uris")} fieldId="uri">
-              <KeycloakTextInput
-                id="uri"
-                data-testid="searchdropdown_uri"
-                {...register("uri")}
-              />
-            </FormGroup>
-            <FormGroup label={t("owner")} fieldId="owner">
-              <KeycloakTextInput
-                id="owner"
-                data-testid="searchdropdown_owner"
-                {...register("owner")}
-              />
-            </FormGroup>
-          </>
-        )}
-        {!isResource && (
-          <FormGroup label={t("resource")} fieldId="resource">
-            <KeycloakTextInput
-              id="resource"
-              data-testid="searchdropdown_resource"
-              {...register("resource")}
+      <FormProvider {...form}>
+        <Form
+          key={key}
+          isHorizontal
+          className="keycloak__client_authentication__searchdropdown_form"
+          onSubmit={handleSubmit(submit)}
+        >
+          <TextControl name="name" label={t("name")} />
+          {type === "resource" && (
+            <>
+              <TextControl name="type" label={t("type")} />
+              <TextControl name="uris" label={t("uris")} />
+              <TextControl name="owner" label={t("owner")} />
+            </>
+          )}
+          {type !== "resource" &&
+            type !== "policy" &&
+            type !== "adminPermission" && (
+              <TextControl name="resource" label={t("resource")} />
+            )}
+          {type !== "policy" && type !== "adminPermission" && (
+            <TextControl name="scope" label={t("scope")} />
+          )}
+          {type !== "resource" && (
+            <SelectControl
+              name={type !== "adminPermission" ? "type" : "resourceType"}
+              label={type !== "adminPermission" ? t("type") : t("resourceType")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={[
+                ...(type !== "adminPermission"
+                  ? [{ key: "", value: t("allTypes") }]
+                  : []),
+                ...(Array.isArray(types)
+                  ? types.map(({ type, name }) => ({
+                      key: type!,
+                      value: name! || type!,
+                    }))
+                  : []),
+              ]}
             />
-          </FormGroup>
-        )}
-        <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
-            id="scope"
-            data-testid="searchdropdown_scope"
-            {...register("scope")}
-          />
-        </FormGroup>
-        {!isResource && (
-          <FormGroup label={t("type")} fieldId="type">
-            <Controller
-              name="type"
-              defaultValue=""
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="type"
-                  onToggle={toggleType}
-                  onSelect={(event, value) => {
-                    event.stopPropagation();
-                    field.onChange(value);
-                    toggleType();
-                  }}
-                  selections={field.value || t("allTypes")}
-                  variant={SelectVariant.single}
-                  aria-label={t("type")}
-                  isOpen={typeOpen}
-                >
-                  {typeOptions(field.value)}
-                </Select>
-              )}
+          )}
+          {type === "adminPermission" && (
+            <SelectControl
+              name={"resource"}
+              label={t("resource")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={[
+                ...(resources || []).map(({ id, username }) => ({
+                  key: id!,
+                  value: username!,
+                })),
+              ]}
             />
-          </FormGroup>
-        )}
-        <ActionGroup>
-          <Button
-            variant="primary"
-            type="submit"
-            data-testid="search-btn"
-            isDisabled={!isDirty}
-          >
-            {t("search")}
-          </Button>
-          <Button
-            variant="link"
-            data-testid="revert-btn"
-            onClick={() => onSearch({})}
-          >
-            {t("clear")}
-          </Button>
-        </ActionGroup>
-      </Form>
+          )}
+          {type === "adminPermission" && (
+            <SelectControl
+              name={"scope"}
+              label={t("authorizationScope")}
+              controller={{
+                defaultValue: "",
+              }}
+              options={[
+                ...(resourceScopes || []).map((resourceScope) => ({
+                  key: resourceScope!,
+                  value: resourceScope!,
+                })),
+              ]}
+            />
+          )}
+          <ActionGroup>
+            <Button
+              variant="primary"
+              type="submit"
+              data-testid="search-btn"
+              isDisabled={!isDirty}
+            >
+              {t("search")}
+            </Button>
+            <Button
+              variant="link"
+              data-testid="revert-btn"
+              onClick={() => {
+                reset({});
+                onSearch({});
+              }}
+            >
+              {t("clear")}
+            </Button>
+          </ActionGroup>
+        </Form>
+      </FormProvider>
     </Dropdown>
   );
 };

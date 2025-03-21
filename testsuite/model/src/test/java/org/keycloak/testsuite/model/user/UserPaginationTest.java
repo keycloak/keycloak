@@ -43,6 +43,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -57,13 +58,15 @@ public class UserPaginationTest extends KeycloakModelTest {
             } else {
                 userFederationId2 = res.getId();
             }
-            
+
             log.infof("Added %s user federation provider: %s", fs.getName(), res.getId());
         }));
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -72,7 +75,7 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, Constants.DEFAULT_MAX_RESULTS) // Default values used in UsersResource
                         .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(8));
 
         expectedStorageCalls(
@@ -86,7 +89,7 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, 6)
                         .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(6));
 
 
@@ -127,7 +130,7 @@ public class UserPaginationTest extends KeycloakModelTest {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
                 session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 5, 6)
                 .collect(Collectors.toList()));
-        
+
         assertThat(list, hasSize(3));
 
         expectedStorageCalls(

@@ -14,7 +14,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -26,7 +25,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 //OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
 public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
@@ -47,14 +46,14 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String loginUser = "john-doh@localhost";
         String loginPassword = "password";
         String clientSecret = "password";
-        
+
     	String expectedScope = "openid profile email";
     	
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
-        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
+        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
     }
     
     @Test
@@ -69,9 +68,9 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
-        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
+        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
     }
 
     @Test
@@ -105,14 +104,14 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.scope("phone");
         oauth.doLogin(loginUser, loginPassword);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        expectSuccessfulResponseFromTokenEndpoint(code, "phone", clientSecret);
+        String code = oauth.parseLoginResponse().getCode();
+        expectSuccessfulResponseFromTokenEndpoint(code, "phone");
 
-        oauth.openLogout();
+        oauth.openLogoutForm();
         oauth.scope(null);
         oauth.doLogin(loginUser, loginPassword);
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        expectSuccessfulResponseFromTokenEndpoint(code, "", clientSecret);
+        code = oauth.parseLoginResponse().getCode();
+        expectSuccessfulResponseFromTokenEndpoint(code, "");
 
         for (ClientScopeRepresentation scope : scopes) {
             client.addDefaultClientScope(scope.getId());
@@ -123,7 +122,6 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     public void failTokenNotExistingScope() throws Exception {
         String loginUser = "john-doh@localhost";
         String loginPassword = "password";
-        String clientSecret = "password";
 
         ClientsResource clients = realmsResouce().realm("test").clients();
         ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
@@ -139,19 +137,19 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
 
         oauth.openid(false);
         oauth.scope("user phone");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
         
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope("user");
-        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
 
         assertNotNull(response.getError());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
 
         oauth.scope(null);
-        response = oauth.doGrantAccessTokenRequest(clientSecret, loginUser, loginPassword);
+        response = oauth.doPasswordGrantRequest(loginUser, loginPassword);
 
         assertNotNull(response.getAccessToken());
 
@@ -172,9 +170,9 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
-        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
+        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
     }
 
     @Test
@@ -201,9 +199,9 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
         
-        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
+        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
 
         // Login with 'user' scope
         requestedScope = "user address phone";
@@ -212,16 +210,16 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         oauth.scope(requestedScope);
         oauth.doLogin(loginUser, loginPassword);
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        code = oauth.parseLoginResponse().getCode();
 
-        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope, clientSecret);
+        expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
 
         // Cleanup
         ApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").removeOptionalClientScope(userScopeId);
     }
     
-    private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope, String clientSecret) throws Exception {
-    	OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+    private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope) throws Exception {
+    	AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
         log.info("expectedScopes = " + expectedScope);
         log.info("receivedScopes = " + response.getScope());
@@ -229,6 +227,6 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
     	Collection<String> receivedScopes = Arrays.asList(response.getScope().split(" "));
     	Assert.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
 
-        oauth.doLogout(response.getRefreshToken(), clientSecret);
+        oauth.doLogout(response.getRefreshToken());
     }
 }

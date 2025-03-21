@@ -17,25 +17,41 @@
  */
 package org.keycloak.authorization.policy.provider.role;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
+import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RolePolicyProvider implements PolicyProvider {
+public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPolicyProvider {
 
     private final BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction;
+
+    private static final Logger logger = Logger.getLogger(RolePolicyProvider.class);
 
     public RolePolicyProvider(BiFunction<Policy, AuthorizationProvider, RolePolicyRepresentation> representationFunction) {
         this.representationFunction = representationFunction;
@@ -44,28 +60,45 @@ public class RolePolicyProvider implements PolicyProvider {
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-        Set<RolePolicyRepresentation.RoleDefinition> roleIds = representationFunction.apply(policy, evaluation.getAuthorizationProvider()).getRoles();
+        RolePolicyRepresentation policyRep = representationFunction.apply(policy, evaluation.getAuthorizationProvider());
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         Identity identity = evaluation.getContext().getIdentity();
+
+        if (isGranted(realm, authorizationProvider, policyRep, identity)) {
+            evaluation.grant();
+        }
+
+        logger.debugf("policy %s evaluated with status %s on identity %s", policy.getName(), evaluation.getEffect(), identity.getId());
+    }
+
+    private boolean isGranted(RealmModel realm, AuthorizationProvider authorizationProvider, RolePolicyRepresentation policyRep, Identity identity) {
+        Set<RolePolicyRepresentation.RoleDefinition> roleIds = policyRep.getRoles();
+        boolean granted = false;
 
         for (RolePolicyRepresentation.RoleDefinition roleDefinition : roleIds) {
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
             if (role != null) {
-                boolean hasRole = hasRole(identity, role, realm);
+                boolean isFetchRoles = policyRep.isFetchRoles() != null && policyRep.isFetchRoles();
+                boolean hasRole = hasRole(identity, role, realm, authorizationProvider, isFetchRoles);
 
-                if (!hasRole && roleDefinition.isRequired()) {
-                    evaluation.deny();
-                    return;
+                if (!hasRole && roleDefinition.isRequired() != null && roleDefinition.isRequired()) {
+                    return false;
                 } else if (hasRole) {
-                    evaluation.grant();
+                    granted = true;
                 }
             }
         }
+
+        return granted;
     }
 
-    private boolean hasRole(Identity identity, RoleModel role, RealmModel realm) {
+    private boolean hasRole(Identity identity, RoleModel role, RealmModel realm, AuthorizationProvider authorizationProvider, boolean fetchRoles) {
+        if (fetchRoles) {
+            UserModel subject = getSubject(identity, realm, authorizationProvider);
+            return subject != null && subject.hasRole(role);
+        }
         String roleName = role.getName();
         if (role.isClientRole()) {
             ClientModel clientModel = realm.getClientById(role.getContainerId());
@@ -74,8 +107,56 @@ public class RolePolicyProvider implements PolicyProvider {
         return identity.hasRealmRole(roleName);
     }
 
+    private UserModel getSubject(Identity identity, RealmModel realm, AuthorizationProvider authorizationProvider) {
+        KeycloakSession session = authorizationProvider.getKeycloakSession();
+        UserProvider users = session.users();
+        UserModel user = users.getUserById(realm, identity.getId());
+
+        if (user == null) {
+            Entry sub = identity.getAttributes().getValue(JsonWebToken.SUBJECT);
+
+            if (sub == null || sub.isEmpty()) {
+                return null;
+            }
+
+            return users.getUserById(realm, sub.asString(0));
+        }
+
+        return user;
+    }
+
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+        StoreFactory storeFactory = provider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        List<RoleModel> subjectRoles = subject.getRoleMappingsStream().toList();
+        Stream<Policy> policies = Stream.of();
+
+        for (RoleModel role : subjectRoles) {
+            policies = Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", role.getId()));
+        }
+
+        return policies;
+    }
+
+    @Override
+    public boolean evaluate(KeycloakSession session, Policy policy, UserModel adminUser) {
+        RealmModel realm = session.getContext().getRealm();
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        return isGranted(realm, authorizationProvider, representationFunction.apply(policy, authorizationProvider), new UserModelIdentity(realm, adminUser));
+    }
+
+    @Override
+    public boolean supports(Policy policy) {
+        return RolePolicyProviderFactory.ID.equals(policy.getType());
     }
 }

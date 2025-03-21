@@ -1,28 +1,22 @@
 import type AuthenticatorConfigInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
   Tooltip,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../../utils/useFetch";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import type { ExpandableExecution } from "../execution-model";
 
@@ -38,6 +32,8 @@ type ExecutionConfigModalProps = {
 export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
@@ -47,12 +43,7 @@ export const ExecutionConfigModal = ({
     useState<AuthenticatorConfigInfoRepresentation>();
 
   const form = useForm<ExecutionConfigModalForm>();
-  const {
-    register,
-    setValue,
-    handleSubmit,
-    formState: { errors },
-  } = form;
+  const { setValue, handleSubmit } = form;
 
   // default config all executions should have
   const defaultConfigProperties = execution.authenticationFlow
@@ -165,34 +156,14 @@ export const ExecutionConfigModal = ({
           onClose={() => setShow(false)}
         >
           <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
-            <FormGroup
-              label={t("alias")}
-              fieldId="alias"
-              helperTextInvalid={t("required")}
-              validated={
-                errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-              }
-              isRequired
-              labelIcon={
-                <HelpItem
-                  helpText={t("authenticationAliasHelp")}
-                  fieldLabelId="alias"
-                />
-              }
-            >
-              <KeycloakTextInput
-                isReadOnly={!!config}
-                id="alias"
-                data-testid="alias"
-                validated={
-                  errors.alias
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                {...register("alias", { required: true })}
-              />
-            </FormGroup>
             <FormProvider {...form}>
+              <TextControl
+                name="alias"
+                label={t("alias")}
+                labelIcon={t("authenticationAliasHelp")}
+                rules={{ required: t("required") }}
+                isDisabled={!!config}
+              />
               <DynamicComponents
                 stringify
                 properties={configDescription.properties || []}
@@ -213,7 +184,7 @@ export const ExecutionConfigModal = ({
               </Button>
               {config && (
                 <Button
-                  className="pf-u-ml-4xl"
+                  className="pf-v5-u-ml-4xl"
                   data-testid="clear"
                   variant={ButtonVariant.link}
                   onClick={async () => {

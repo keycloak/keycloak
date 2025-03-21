@@ -12,7 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -66,7 +65,7 @@ public final class XmlUtil {
     }
 
     /**
-     * Applys a xpathExpression to a xml-Document and return a {@link NodeList} with the results.
+     * Applies a xpathExpression to a xml-Document and return a {@link NodeList} with the results.
      *
      * @param _xpathExpression xpath expression
      * @param _xmlDocumentOrNode document or node
@@ -219,8 +218,8 @@ public final class XmlUtil {
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
             transformer.transform(new DOMSource(_docOrNode),
-                 new StreamResult(new OutputStreamWriter(_outStream, "UTF-8")));
-        } catch (UnsupportedEncodingException | TransformerException _ex) {
+                 new StreamResult(new OutputStreamWriter(_outStream, StandardCharsets.UTF_8)));
+        } catch (TransformerException _ex) {
             throw new IOException("Could not print Document or Node.", _ex);
         }
 

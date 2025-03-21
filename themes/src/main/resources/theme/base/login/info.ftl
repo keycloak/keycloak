@@ -2,7 +2,7 @@
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         <#if messageHeader??>
-        ${messageHeader}
+            ${kcSanitize(msg("${messageHeader}"))?no_esc}
         <#else>
         ${message.summary}
         </#if>

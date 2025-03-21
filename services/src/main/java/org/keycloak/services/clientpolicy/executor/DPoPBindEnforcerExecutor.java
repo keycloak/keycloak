@@ -85,6 +85,12 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
+        if (!Profile.isFeatureEnabled(Feature.DPOP)) {
+            logger.warnf("DPoP executor is used, but DPOP feature is disabled. So DPOP is not enforced for the clients. " +
+                    "Please enable DPOP feature in order to be able to have DPOP checks applied.");
+            return;
+        }
+
         HttpRequest request = session.getContext().getHttpRequest();
         switch (context.getEvent()) {
             case REGISTER:
@@ -105,7 +111,6 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
                 break;
             case TOKEN_REVOKE:
                 checkTokenRevoke((TokenRevokeContext) context, request);
-                break;
             default:
                 return;
         }

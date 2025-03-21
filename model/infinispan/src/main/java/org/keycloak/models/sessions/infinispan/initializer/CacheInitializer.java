@@ -28,9 +28,6 @@ public abstract class CacheInitializer {
 
     private static final Logger log = Logger.getLogger(CacheInitializer.class);
 
-    public void initCache() {
-    }
-
     public void loadSessions() {
         Instant loadingMustContinueBy = Instant.now().plusSeconds(getStalledTimeoutInSeconds());
         boolean loadingStalledInPreviousStep = false;

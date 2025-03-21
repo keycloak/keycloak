@@ -1,0 +1,7 @@
+health
+configuration-metrics
+event-metrics
+keycloak-service-level-indicators
+metrics-for-troubleshooting
+tracing
+grafana-dashboards

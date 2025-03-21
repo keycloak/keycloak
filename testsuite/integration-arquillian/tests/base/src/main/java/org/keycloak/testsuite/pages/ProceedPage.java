@@ -39,11 +39,6 @@ public class ProceedPage extends AbstractPage {
         return driver.getPageSource().contains("kc-info-message") && proceedLink.isDisplayed();
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
     public void clickProceedLink() {
         proceedLink.click();
     }

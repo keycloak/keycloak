@@ -21,12 +21,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
@@ -49,21 +49,18 @@ public interface PolicyStore {
     /**
      * Deletes a policy from the underlying persistence mechanism.
      *
-     * @param realm the realm that the removed policy belongs to. Cannot be {@code null}
      * @param id the id of the policy to delete
      */
-    void delete(RealmModel realm, String id);
+    void delete(String id);
 
     /**
      * Returns a {@link Policy} with the given <code>id</code>
      *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer the resource server. Ignored if {@code null}.
-     * @param id the identifier of the policy
+     * @param id             the identifier of the policy
      * @return a policy with the given identifier.
      */
-    Policy findById(RealmModel realm, ResourceServer resourceServer, String id);
+    Policy findById(ResourceServer resourceServer, String id);
 
     /**
      * Returns a {@link Policy} with the given <code>name</code>
@@ -85,17 +82,14 @@ public interface PolicyStore {
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     *
-     * @param realm the realm. Cannot be {@code null}.
      * @param resourceServer the identifier of a resource server. Ignored if {@code null}.
-     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
-     * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param attributes     a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
+     * @param firstResult    first result to return. Ignored if negative or {@code null}.
+     * @param maxResults     maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of policies that belong to the given resource server
-     *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
+    List<Policy> find(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Resource}
@@ -189,9 +183,11 @@ public interface PolicyStore {
     /**
      * Returns a list of {@link Policy} that depends on another policy with the given <code>id</code>.
      *
-     * @param resourceServer the resource server
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param id the id of the policy to query its dependents
      * @return a list of policies that depends on the a policy with the given identifier
      */
     List<Policy> findDependentPolicies(ResourceServer resourceServer, String id);
+
+    Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue);
 }

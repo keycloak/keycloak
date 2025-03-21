@@ -16,10 +16,12 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import java.io.InputStream;
+import java.io.StringWriter;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.function.Function;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
@@ -27,12 +29,19 @@ import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SSODescriptorType;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
+import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -44,6 +53,8 @@ import org.w3c.dom.NodeList;
  * @since Jan 31, 2011
  */
 public class SAMLMetadataUtil {
+
+    public static final String UTF8_BOM = "\uFEFF";
 
     /**
      * Get the {@link X509Certificate} from the KeyInfo
@@ -106,8 +117,9 @@ public class SAMLMetadataUtil {
         return null;
     }
 
-    public static EntityDescriptorType parseEntityDescriptorType(InputStream inputStream) throws ParsingException {
-        Object parsedObject = SAMLParser.getInstance().parse(inputStream);
+    public static EntityDescriptorType parseEntityDescriptorType(String descriptor) throws ParsingException {
+        descriptor = removeUTF8BOM(descriptor);
+        Object parsedObject = SAMLParser.getInstance().parse(StaxParserUtil.getXMLEventReader(descriptor));
         EntityDescriptorType entityType;
 
         if (EntitiesDescriptorType.class.isInstance(parsedObject)) {
@@ -152,5 +164,44 @@ public class SAMLMetadataUtil {
             }
         }
         return descriptor;
+    }
+
+    public static String removeUTF8BOM(String s) {
+        if (s.startsWith(UTF8_BOM)) {
+            s = s.substring(1);
+        }
+        return s;
+    }
+
+    public static String writeEntityDescriptorType(EntityDescriptorType type) throws ProcessingException {
+        final StringWriter sw = new StringWriter();
+        final SAMLMetadataWriter writer = new SAMLMetadataWriter(StaxUtil.getXMLStreamWriter(sw));
+        writer.writeEntityDescriptor(type);
+        return sw.toString();
+    }
+
+    public static String signEntityDescriptorType(EntityDescriptorType type, SignatureAlgorithm sigAlg,
+            String kid, X509Certificate certificate, KeyPair keyPair) throws ProcessingException, ConfigurationException, ParsingException {
+        if (type.getID() == null) {
+            type.setID(IDGenerator.create("ID_"));
+        }
+
+        // write descriptor to XML
+        final String descriptor = writeEntityDescriptorType(type);
+
+        // create the document from the XML
+        final Document metadataDocument = DocumentUtil.getDocument(descriptor);
+        final SAML2Signature signatureHelper = new SAML2Signature();
+        signatureHelper.setSignatureMethod(sigAlg.getXmlSignatureMethod());
+        signatureHelper.setDigestMethod(sigAlg.getXmlSignatureDigestMethod());
+        signatureHelper.setX509Certificate(certificate);
+
+        final Node nextSibling = metadataDocument.getDocumentElement().getFirstChild();
+        signatureHelper.setNextSibling(nextSibling);
+
+        // sign the document
+        signatureHelper.signSAMLDocument(metadataDocument, kid, keyPair, CanonicalizationMethod.EXCLUSIVE);
+
+        return DocumentUtil.getDocumentAsString(metadataDocument);
     }
 }

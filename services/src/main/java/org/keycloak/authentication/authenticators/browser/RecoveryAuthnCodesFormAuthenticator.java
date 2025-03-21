@@ -27,6 +27,9 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
 public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
+    public static final String GENERATED_RECOVERY_AUTHN_CODES_NOTE = "RecoveryAuthnCodes.generatedRecoveryAuthnCodes";
+    public static final String GENERATED_AT_NOTE = "RecoveryAuthnCodes.generatedAt";
+
     public RecoveryAuthnCodesFormAuthenticator(KeycloakSession keycloakSession) {
     }
 
@@ -48,15 +51,22 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         MultivaluedMap<String, String> formParamsMap = authnFlowContext.getHttpRequest().getDecodedFormParameters();
         String recoveryAuthnCodeUserInput = formParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
 
-        if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)) {
-            authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
-                    RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
-                    RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
-            return result;
-        }
-        RealmModel targetRealm = authnFlowContext.getRealm();
         UserModel authenticatedUser = authnFlowContext.getUser();
-        if (!isDisabledByBruteForce(authnFlowContext, authenticatedUser)) {
+        boolean disabledByBruteForce = isDisabledByBruteForce(authnFlowContext, authenticatedUser);
+        if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)
+                || "true".equals(authnFlowContext.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID))) {
+            // the brute force lock might be lifted in the meantime -> we need to clear the auth session note
+            if (!disabledByBruteForce) {
+                authnFlowContext.getAuthenticationSession().removeAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID);
+            } else {
+                authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
+                        RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
+                        RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
+                return result;
+            }
+        }
+
+        if (!disabledByBruteForce) {
             boolean isValid = authenticatedUser.credentialManager().isValid(
                     UserCredentialModel.buildFromBackupAuthnCode(recoveryAuthnCodeUserInput.replace("-", "")));
             if (!isValid) {
@@ -81,6 +91,9 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                     authenticatedUser.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
                 }
             }
+        }
+        else {
+            authnFlowContext.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
         }
         return result;
     }

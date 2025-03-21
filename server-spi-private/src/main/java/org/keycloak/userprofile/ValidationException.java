@@ -35,109 +35,133 @@ import org.keycloak.validate.ValidationError;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class ValidationException extends RuntimeException implements Consumer<ValidationError> {
+public final class ValidationException extends RuntimeException {
 
-	private final Map<String, List<Error>> errors = new HashMap<>();
+    private final Map<String, List<Error>> errors;
 
-	public List<Error> getErrors() {
-		return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {
-			l.addAll(r);
-			return l;
-		}, (l, r) -> l);
-	}
+    public ValidationException(ValidationError error) {
+        errors = Map.of(error.getMessage(), List.of(new Error(error)));
+    }
 
-	public boolean hasError(String... types) {
-		if (types.length == 0) {
-			return !errors.isEmpty();
-		}
+    private ValidationException(Map<String, List<Error>> errors) {
+        this.errors = errors;
+    }
 
-		for (String type : types) {
-			if (errors.containsKey(type)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public List<Error> getErrors() {
+        return errors.values().stream().reduce(new ArrayList<>(), (l, r) -> {
+            l.addAll(r);
+            return l;
+        }, (l, r) -> l);
+    }
 
-	/**
-	 * Checks if there are validation errors related to the attribute with the given {@code name}.
-	 *
-	 * @param name
-	 * @return
-	 */
-	public boolean isAttributeOnError(String... name) {
-		if (name.length == 0) {
-			return !errors.isEmpty();
-		}
+    public boolean hasError(String... types) {
+        if (types.length == 0) {
+            return !errors.isEmpty();
+        }
 
-		List<String> names = Arrays.asList(name);
+        for (String type : types) {
+            if (errors.containsKey(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-		return errors.values().stream().flatMap(Collection::stream).anyMatch(error -> names.contains(error.getAttribute()));
-	}
+    /**
+     * Checks if there are validation errors related to the attribute with the given {@code name}.
+     *
+     * @param name
+     * @return
+     */
+    public boolean isAttributeOnError(String... name) {
+        if (name.length == 0) {
+            return !errors.isEmpty();
+        }
 
-	@Override
-	public void accept(ValidationError error) {
-		addError(error);
-	}
+        List<String> names = Arrays.asList(name);
 
-	void addError(ValidationError error) {
-		List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
-		errors.add(new Error(error));
-	}
+        return errors.values().stream().flatMap(Collection::stream).anyMatch(error -> names.contains(error.getAttribute()));
+    }
 
-	@Override
-	public String toString() {
-		return "ValidationException [errors=" + errors + "]";
-	}
+    @Override
+    public String toString() {
+        return "ValidationException [errors=" + errors + "]";
+    }
 
-	@Override
-	public String getMessage() {
-		return toString();
-	}
+    @Override
+    public String getMessage() {
+        return toString();
+    }
 
-	public Response.Status getStatusCode() {
-		for (Map.Entry<String, List<Error>> entry : errors.entrySet()) {
-			for (Error error : entry.getValue()) {
-				if (!Response.Status.BAD_REQUEST.equals(error.getStatusCode())) {
-					return error.getStatusCode();
-				}
-			}
-		}
-		return Response.Status.BAD_REQUEST;
-	}
+    /**
+     * Creating a light-weight consumer of validation errors to avoid creating an empty exception which has an expensive stack trace without having the need for it.
+     */
+    public static class ValidationExceptionBuilder implements Consumer<ValidationError> {
 
-	public static class Error implements Serializable {
+        private final Map<String, List<Error>> errors = new HashMap<>();
 
-		private final ValidationError error;
+        @Override
+        public void accept(ValidationError error) {
+            addError(error);
+        }
 
-		public Error(ValidationError error) {
-			this.error = error;
-		}
+        void addError(ValidationError error) {
+            List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
+            errors.add(new Error(error));
+        }
 
-		public String getAttribute() {
-			return error.getInputHint();
-		}
+        public boolean hasError() {
+            return !errors.isEmpty();
+        }
 
-		public String getMessage() {
-			return error.getMessage();
-		}
-		
-		public Object[] getMessageParameters() {
-			return error.getInputHintWithMessageParameters();
-		}
+        public ValidationException build() {
+            return new ValidationException(errors);
+        }
+    }
 
-		@Override
-		public String toString() {
-			return "Error [error=" + error + "]";
-		}
+    public Response.Status getStatusCode() {
+        for (Map.Entry<String, List<Error>> entry : errors.entrySet()) {
+            for (Error error : entry.getValue()) {
+                if (!Response.Status.BAD_REQUEST.equals(error.getStatusCode())) {
+                    return error.getStatusCode();
+                }
+            }
+        }
+        return Response.Status.BAD_REQUEST;
+    }
 
-		public String getFormattedMessage(BiFunction<String, Object[], String>  messageFormatter) {
-			return messageFormatter.apply(getMessage(), getMessageParameters());
-		}
+    public static class Error implements Serializable {
 
-		public Response.Status getStatusCode() {
-			return error.getStatusCode();
-		}
-	}
+        private final ValidationError error;
+
+        public Error(ValidationError error) {
+            this.error = error;
+        }
+
+        public String getAttribute() {
+            return error.getInputHint();
+        }
+
+        public String getMessage() {
+            return error.getMessage();
+        }
+
+        public Object[] getMessageParameters() {
+            return error.getInputHintWithMessageParameters();
+        }
+
+        @Override
+        public String toString() {
+            return "Error [error=" + error + "]";
+        }
+
+        public String getFormattedMessage(BiFunction<String, Object[], String>  messageFormatter) {
+            return messageFormatter.apply(getMessage(), getMessageParameters());
+        }
+
+        public Response.Status getStatusCode() {
+            return error.getStatusCode();
+        }
+    }
 
 }

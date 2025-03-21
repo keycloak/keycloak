@@ -28,13 +28,17 @@ export const AccessTokenDialog = ({
     >
       <Alert
         title={t("copyInitialAccessToken")}
-        titleHeadingLevel="h2"
+        component="h2"
         isInline
         variant={AlertVariant.warning}
       />
-      <Form className="pf-u-mt-md">
+      <Form className="pf-v5-u-mt-md">
         <FormGroup label={t("initialAccessToken")} fieldId="initialAccessToken">
-          <ClipboardCopy id="initialAccessToken" isReadOnly>
+          <ClipboardCopy
+            id="initialAccessToken"
+            data-testid="initialAccessToken"
+            isReadOnly
+          >
             {token}
           </ClipboardCopy>
         </FormGroup>

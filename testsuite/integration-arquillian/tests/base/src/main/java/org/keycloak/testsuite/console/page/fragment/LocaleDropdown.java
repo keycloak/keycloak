@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.console.page.fragment;
 
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.logging.Logger;
@@ -11,8 +9,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
@@ -40,24 +36,12 @@ public class LocaleDropdown {
 
     public void selectByText(String text) {
         // open the menu
-        if (driver instanceof IOSDriver) { // TODO: Fix this! It's a very, very, ... very nasty hack for Safari on iOS - see KEYCLOAK-7947
-            ((IOSDriver) driver).executeScript("arguments[0].setAttribute('style', 'display: block')", dropDownMenu);
-        } else if (driver instanceof AndroidDriver) { // Android needs to tap (no cursor)
-            currentLocaleLink.click();
-        } else {
-            Actions actions = new Actions(driver);
-            log.info("Moving mouse cursor to the localization menu");
-            actions.moveToElement(currentLocaleLink, -10, 0)
-                    .moveToElement(currentLocaleLink).perform();
-        }
+        Actions actions = new Actions(driver);
+        log.info("Moving mouse cursor to the localization menu");
+        actions.moveToElement(currentLocaleLink, -10, 0)
+                .moveToElement(currentLocaleLink).perform();
 
         // click desired locale
         clickLink(dropDownMenu.findElement(By.xpath("./li/a[text()='" + text + "']")));
-    }
-
-    public void selectAndAssert(String text) {
-        assertNotEquals(text, getSelected());
-        selectByText(text);
-        assertEquals(text, getSelected());
     }
 }

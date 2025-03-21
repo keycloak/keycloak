@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -23,6 +25,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +65,12 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {}
+
+    @Before
+    public void configureUserProfile() {
+        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
+    }
 
     private void createUsers() {
         GroupRepresentation subGroup = GroupBuilder.create().name(SUBGROUP).build();

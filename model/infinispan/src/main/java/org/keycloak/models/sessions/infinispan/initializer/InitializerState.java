@@ -17,19 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.jboss.logging.Logger;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * Note that this state is <b>NOT</b> thread safe. Currently it is only used from single thread so it's fine
@@ -37,7 +35,7 @@ import org.infinispan.commons.marshall.SerializeWith;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(InitializerState.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.INITIALIZER_STATE)
 public class InitializerState extends SessionEntity {
 
     private static final Logger log = Logger.getLogger(InitializerState.class);
@@ -52,7 +50,8 @@ public class InitializerState extends SessionEntity {
         log.debugf("segmentsCount: %d", segmentsCount);
     }
 
-    private InitializerState(String realmId, int segmentsCount, BitSet segments) {
+    @ProtoFactory
+    InitializerState(String realmId, int segmentsCount, BitSet segments) {
         super(realmId);
         this.segmentsCount = segmentsCount;
         this.segments = segments;
@@ -64,8 +63,14 @@ public class InitializerState extends SessionEntity {
      * Getter for the segments count.
      * @return The number of segments of the state
      */
+    @ProtoField(2)
     public int getSegmentsCount() {
         return segmentsCount;
+    }
+
+    @ProtoField(3)
+    BitSet getSegments() {
+        return segments;
     }
 
     /** Return true just if computation is entirely finished (all segments are true) */
@@ -125,46 +130,8 @@ public class InitializerState extends SessionEntity {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final InitializerState other = (InitializerState) obj;
-        if (this.segmentsCount != other.segmentsCount) {
-            return false;
-        }
-        if ( ! Objects.equals(this.segments, other.segments)) {
-            return false;
-        }
-        return true;
+        InitializerState other = (InitializerState) obj;
+        return this.segmentsCount == other.segmentsCount && Objects.equals(this.segments, other.segments);
     }
 
-    public static class ExternalizerImpl implements Externalizer<InitializerState> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, InitializerState value) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(value.getRealmId(), output);
-            output.writeInt(value.segmentsCount);
-            MarshallUtil.marshallByteArray(value.segments.toByteArray(), output);
-        }
-
-        @Override
-        public InitializerState readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public InitializerState readObjectVersion1(ObjectInput input) throws IOException {
-            return new InitializerState(
-              MarshallUtil.unmarshallString(input),
-              input.readInt(),
-              BitSet.valueOf(MarshallUtil.unmarshallByteArray(input))
-            );
-        }
-
-    }
 }

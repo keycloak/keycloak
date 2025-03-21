@@ -83,8 +83,9 @@ public class AllowedWebOriginsProtocolMapper extends AbstractOIDCProtocolMapper 
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        if (!includeInAccessToken(mappingModel)){
+        boolean shouldUseLightweightToken = getShouldUseLightweightToken(session);
+        boolean includeInAccessToken = shouldUseLightweightToken ?  OIDCAttributeMapperHelper.includeInLightweightAccessToken(mappingModel) : includeInAccessToken(mappingModel);
+        if (!includeInAccessToken){
             return token;
         }
         setWebOrigin(token, session, clientSessionCtx);

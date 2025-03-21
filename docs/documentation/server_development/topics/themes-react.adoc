@@ -1,0 +1,65 @@
+[[_theme_react]]
+== Themes based on React
+
+The admin console and account console are based on React.
+To fully customize these you can use the React based npm packages.
+There are two packages:
+
+* `@keycloak/keycloak-admin-ui`: This is the base theme for the admin console.
+* `@keycloak/keycloak-account-ui`: This is the base theme for the account console.
+
+Both packages are available on npm.
+
+=== Installing the packages
+
+To install the packages, run the following command:
+
+[source,bash]
+----
+pnpm install @keycloak/keycloak-account-ui
+----
+
+=== Using the packages
+
+To use these pages you'll need to add KeycloakProvider in your component hierarchy to setup what client, realm and url to use.
+
+[source,javascript]
+----
+import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+
+//...
+
+<KeycloakProvider environment={{
+      serverBaseUrl: "http://localhost:8080",
+      realm: "master",
+      clientId: "security-admin-console"
+  }}>
+  {/* rest of your application */}
+</KeycloakProvider>
+----
+
+=== Translating the pages
+
+The pages are translated using the `i18next` library.
+You can set it up as described on their [website](https://react.i18next.com/).
+If you want to use the translations that are provided then you need to add `i18next-fetch-backend` to your project and add:
+
+[source,javascript]
+----
+backend: {
+  loadPath: `http://localhost:8080/resources/master/account/{lng}}`,
+  parse: (data: string) => {
+    const messages = JSON.parse(data);
+
+    return Object.fromEntries(
+      messages.map(({ key, value }) => [key, value])
+    );
+  },
+},
+----
+
+=== Using the pages
+
+All "pages" are React components that can be used in your application.
+To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
+Or have a look at the [quick start](https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.

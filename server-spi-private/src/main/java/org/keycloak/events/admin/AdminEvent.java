@@ -17,6 +17,9 @@
 
 package org.keycloak.events.admin;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -25,8 +28,10 @@ public class AdminEvent {
     private String id;
 
     private long time;
-    
+
     private String realmId;
+
+    private String realmName;
 
     private AuthDetails authDetails;
 
@@ -42,18 +47,22 @@ public class AdminEvent {
     private String representation;
 
     private String error;
-    
+
+    private Map<String, String> details;
+
     public AdminEvent() {}
     public AdminEvent(AdminEvent toCopy) {
         this.id = toCopy.getId();
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
+        this.realmName = toCopy.getRealmName();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
         this.resourceType = toCopy.getResourceTypeAsString();
         this.operationType = toCopy.getOperationType();
         this.resourcePath = toCopy.getResourcePath();
         this.representation = toCopy.getRepresentation();
         this.error = toCopy.getError();
+        this.details = toCopy.getDetails() == null ? null : new HashMap<>(toCopy.getDetails());
     }
 
     /**
@@ -81,7 +90,7 @@ public class AdminEvent {
     public void setTime(long time) {
         this.time = time;
     }
-    
+
     /**
      * Returns the id of the realm
      *
@@ -93,6 +102,17 @@ public class AdminEvent {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    /**
+     * @return the name of the realm
+     */
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 
     /**
@@ -201,5 +221,13 @@ public class AdminEvent {
      */
     public void setResourceTypeAsString(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

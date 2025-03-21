@@ -6,8 +6,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * OpenShift 4 Identity Provider configuration class.

@@ -352,12 +352,14 @@ public class RealmRolesTest extends AbstractAdminTest {
 
         List<UserRepresentation> roleUserMembers = roleResource.getUserMembers(0, 1);
         assertEquals(Collections.singletonList("test-role-member"), extractUsernames(roleUserMembers));
+        Assert.assertNotNull("Not in full representation", roleUserMembers.get(0).getNotBefore());
 
-        roleUserMembers = roleResource.getUserMembers(1, 1);
+        roleUserMembers = roleResource.getUserMembers(true, 1, 1);
         assertThat(roleUserMembers, hasSize(1));
         assertEquals(Collections.singletonList("test-role-member2"), extractUsernames(roleUserMembers));
+        Assert.assertNull("Not in brief representation", roleUserMembers.get(0).getNotBefore());
 
-        roleUserMembers = roleResource.getUserMembers(2, 1);
+        roleUserMembers = roleResource.getUserMembers(true, 2, 1);
         assertThat(roleUserMembers, is(empty()));
     }
 

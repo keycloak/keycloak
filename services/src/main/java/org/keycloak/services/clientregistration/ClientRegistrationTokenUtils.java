@@ -20,7 +20,6 @@ package org.keycloak.services.clientregistration;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -31,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -56,8 +56,7 @@ public class ClientRegistrationTokenUtils {
 
             regToken.type(auth.getJwt().getType());
             regToken.id(auth.getJwt().getId());
-            regToken.issuedAt(Time.currentTime());
-            regToken.expiration(0);
+            regToken.issuedNow();
             regToken.issuer(auth.getJwt().getIssuer());
             regToken.audience(auth.getJwt().getIssuer());
 
@@ -91,9 +90,9 @@ public class ClientRegistrationTokenUtils {
         }
 
         String kid;
-        JsonWebToken jwt;
+        AccessToken jwt;
         try {
-            TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
                     .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
@@ -117,13 +116,13 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
-        jwt.issuedAt(Time.currentTime());
-        jwt.expiration(expiration);
+        jwt.issuedNow();
+        jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
 
@@ -137,10 +136,10 @@ public class ClientRegistrationTokenUtils {
     protected static class TokenVerification {
 
         private final String kid;
-        private final JsonWebToken jwt;
+        private final AccessToken jwt;
         private final RuntimeException error;
 
-        public static TokenVerification success(String kid, JsonWebToken jwt) {
+        public static TokenVerification success(String kid, AccessToken jwt) {
             return new TokenVerification(kid, jwt, null);
         }
 
@@ -148,7 +147,7 @@ public class ClientRegistrationTokenUtils {
             return new TokenVerification(null,null, error);
         }
 
-        private TokenVerification(String kid, JsonWebToken jwt, RuntimeException error) {
+        private TokenVerification(String kid, AccessToken jwt, RuntimeException error) {
             this.kid = kid;
             this.jwt = jwt;
             this.error = error;
@@ -158,7 +157,7 @@ public class ClientRegistrationTokenUtils {
             return kid;
         }
 
-        public JsonWebToken getJwt() {
+        public AccessToken getJwt() {
             return jwt;
         }
 

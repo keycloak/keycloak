@@ -17,8 +17,6 @@
 
 package org.keycloak.events.jpa;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
@@ -34,14 +32,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import org.keycloak.util.JsonSerialization;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -49,9 +49,6 @@ import java.util.stream.Collectors;
  */
 public class JpaEventStoreProvider implements EventStoreProvider {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static final TypeReference<Map<String, String>> mapType = new TypeReference<Map<String, String>>() {
-    };
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
 
     private final KeycloakSession session;
@@ -84,34 +81,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clearExpiredEvents() {
-        // By default, realm provider is always "jpa", so we can optimize and delete all events in single SQL, assuming that realms are saved in the DB as well.
-        // Fallback to model API just with different realm provider than "jpa" (This is never the case in standard Keycloak installations)
         int numDeleted = 0;
         long currentTimeMillis = Time.currentTimeMillis();
-        if (KeycloakModelUtils.isRealmProviderJpa(session)) {
 
-            // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
-            for (Long expiration : eventExpirations) {
-                List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
-                        .setParameter("expiration", expiration)
-                        .getResultList();
-                int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
-                        .setParameter("realmIds", realmIds)
-                        .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                        .executeUpdate();
-                logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
-                numDeleted += currentNumDeleted;
-            }
-            logger.debugf("Cleared %d expired events in all realms", numDeleted);
-        } else {
-            session.realms().getRealmsStream().forEach(realm -> {
-                if (realm.isEventsEnabled() && realm.getEventsExpiration() > 0) {
-                    long olderThan = Time.currentTimeMillis() - realm.getEventsExpiration() * 1000;
-                    clear(realm, olderThan);
-                }
-            });
+        // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
+        List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
+        for (Long expiration : eventExpirations) {
+            List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
+                    .setParameter("expiration", expiration)
+                    .getResultList();
+            int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
+                    .setParameter("realmIds", realmIds)
+                    .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
+                    .executeUpdate();
+            logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
+            numDeleted += currentNumDeleted;
         }
+        logger.debugf("Cleared %d expired events in all realms", numDeleted);
     }
 
     @Override
@@ -159,11 +145,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         eventEntity.setSessionId(event.getSessionId());
         eventEntity.setIpAddress(event.getIpAddress());
         eventEntity.setError(event.getError());
-        try {
-            eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
-        } catch (IOException ex) {
-            logger.error("Failed to write log details", ex);
-        }
+        setDetails(eventEntity::setDetailsJson, event.getDetails());
         return eventEntity;
     }
 
@@ -178,15 +160,10 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         event.setSessionId(eventEntity.getSessionId());
         event.setIpAddress(eventEntity.getIpAddress());
         event.setError(eventEntity.getError());
-        try {
-            Map<String, String> details = mapper.readValue(eventEntity.getDetailsJson(), mapType);
-            event.setDetails(details);
-        } catch (IOException ex) {
-            logger.error("Failed to read log details", ex);
-        }
+        setDetails(event::setDetails, eventEntity.getDetailsJson());
         return event;
     }
-    
+
     private AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
         adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
@@ -201,10 +178,13 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
         adminEventEntity.setError(adminEvent.getError());
-        
+
         if (includeRepresentation) {
             adminEventEntity.setRepresentation(adminEvent.getRepresentation());
         }
+
+        setDetails(adminEventEntity::setDetailsJson, adminEvent.getDetails());
+
         return adminEventEntity;
     }
 
@@ -222,20 +202,23 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
-        
+
         if (adminEventEntity.getRepresentation() != null) {
             adminEvent.setRepresentation(adminEventEntity.getRepresentation());
         }
+
+        setDetails(adminEvent::setDetails, adminEventEntity.getDetailsJson());
+
         return adminEvent;
     }
-    
+
     private static void setAuthDetails(AdminEventEntity adminEventEntity, AuthDetails authDetails) {
         adminEventEntity.setAuthRealmId(authDetails.getRealmId());
         adminEventEntity.setAuthClientId(authDetails.getClientId());
         adminEventEntity.setAuthUserId(authDetails.getUserId());
         adminEventEntity.setAuthIpAddress(authDetails.getIpAddress());
     }
-    
+
     private static void setAuthDetails(AdminEvent adminEvent, AdminEventEntity adminEventEntity) {
         AuthDetails authDetails = new AuthDetails();
         authDetails.setRealmId(adminEventEntity.getAuthRealmId());
@@ -273,5 +256,25 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                     .executeUpdate();
             logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
+    }
+
+    private static void setDetails(Consumer<String> setter, Map<String, String> details) {
+        if (details != null) {
+            try {
+                setter.accept(JsonSerialization.writeValueAsString(details));
+            } catch (IOException e) {
+                logger.error("Failed to write event details", e);
+            }
+        }
+    }
+
+    private static void setDetails(Consumer<Map<String, String>> setter, String details) {
+        if (details != null) {
+            try {
+                setter.accept(JsonSerialization.readValue(details, Map.class));
+            } catch (IOException e) {
+                logger.error("Failed to read event details", e);
+            }
+        }
     }
 }

@@ -8,9 +8,8 @@ import {
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -24,12 +23,15 @@ type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
 };
 
 export default function AddSamlConnect() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const id = "saml";
 
   const form = useForm<DiscoveryIdentityProvider>({
     defaultValues: { alias: id, config: { allowCreate: "true" } },
+    mode: "onChange",
   });
   const {
     handleSubmit,

@@ -8,7 +8,8 @@ import java.util.List;
 public interface KeycloakDistribution {
 
     String SCRIPT_CMD = Environment.isWindows() ? "kc.bat" : "kc.sh";
-    String SCRIPT_CMD_INVOKABLE = Environment.isWindows() ? SCRIPT_CMD : "./"+SCRIPT_CMD;
+
+    String SCRIPT_KCADM_CMD = Environment.isWindows() ? "kcadm.bat" : "kcadm.sh";
 
     CLIResult run(List<String> arguments);
     default CLIResult run(String... arguments) {
@@ -26,6 +27,10 @@ public interface KeycloakDistribution {
     boolean isDebug();
 
     boolean isManualStop();
+
+    void setRequestPort();
+
+    void setRequestPort(int port);
 
     default String[] getCliArgs(List<String> arguments) {
         throw new RuntimeException("Not implemented");
@@ -64,4 +69,6 @@ public interface KeycloakDistribution {
     }
 
     <D extends KeycloakDistribution> D unwrap(Class<D> type);
+
+    void clearEnv();
 }

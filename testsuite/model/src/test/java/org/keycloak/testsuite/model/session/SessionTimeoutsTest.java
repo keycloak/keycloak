@@ -17,12 +17,20 @@
 package org.keycloak.testsuite.model.session;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -30,11 +38,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -54,11 +64,22 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 @RequireProvider(RealmProvider.class)
 public class SessionTimeoutsTest extends KeycloakModelTest {
 
+    @ClassRule
+    public static final TestRule SKIPPED_PROFILES = (base, description) -> {
+        // Embedded caches with the Remote Store uses asynchronous code with event listeners, making the test failing randomly.
+        // It is a deprecated configuration for cross-site, so we skip the tests.
+        Assume.assumeFalse(InfinispanUtils.isEmbeddedInfinispan() && getParameters(HotRodServerRule.class).findFirst().isPresent());
+        return base;
+    };
+
     private String realmId;
 
     @Override
     public void createEnvironment(KeycloakSession s) {
+        super.createEnvironment(s);
+
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -72,11 +93,10 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     public void cleanEnvironment(KeycloakSession s) {
         InfinispanTestUtil.revertTimeService(s);
         RealmModel realm = s.realms().getRealm(realmId);
-        UserModel user1 = s.users().getUserByUsername(realm, "user1");
-        s.sessions().removeUserSessions(realm);
-        s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));
+        s.getContext().setRealm(realm);
+        new RealmManager(s).removeRealm(realm);
 
-        s.realms().removeRealm(realmId);
+        super.cleanEnvironment(s);
     }
 
     protected static UserSessionModel createUserSession(KeycloakSession session, RealmModel realm, UserModel user, boolean offline) {
@@ -154,6 +174,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         try {
             final String[] sessions = inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
 
                 UserModel user = session.users().getUserByUsername(realm, "user1");
                 UserSessionModel userSession = createUserSession(session, realm, user, offline);
@@ -263,6 +284,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
             for (int i = 0; i < refreshTimes; i++) {
                 offset += 1500;
                 setTimeOffset(offset);
+                int time = Time.currentTime();
                 withRealm(realmId, (session, realm) -> {
                     // refresh sessions before user session expires => both session should exist
                     ClientModel client = realm.getClientByClientId("test-app");
@@ -270,10 +292,29 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                     Assert.assertNotNull(userSession);
                     AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                     Assert.assertNotNull(clientSession);
-                    userSession.setLastSessionRefresh(Time.currentTime());
-                    clientSession.setTimestamp(Time.currentTime());
+                    userSession.setLastSessionRefresh(time);
+                    clientSession.setTimestamp(time);
                     return null;
                 });
+
+                if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+                    // The persistent session will write the update data asynchronously, wait for it to arrive.
+                    Retry.executeWithBackoff(iteration -> {
+                        withRealm(realmId, (session, realm) -> {
+                            UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
+                            UserSessionModel userSessionModel = provider.loadUserSession(realm, sessions[0], offline);
+                            Assert.assertNotNull(userSessionModel);
+                            Assert.assertEquals(userSessionModel.getLastSessionRefresh(), time);
+
+                            // refresh sessions before user session expires => both session should exist
+                            ClientModel client = realm.getClientByClientId("test-app");
+                            AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
+                            Assert.assertNotNull(clientSession);
+                            Assert.assertEquals(clientSession.getTimestamp(), time);
+                            return null;
+                        });
+                    }, 10, 10);
+                }
             }
 
             offset += 2100;
@@ -297,6 +338,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 Assert.assertNull(getUserSession(session, realm, sessions[0], offline));
                 return null;
             });
+            processExpiration(true);
+            processExpiration(false);
         } finally {
             setTimeOffset(0);
         }
@@ -368,14 +411,26 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
      * @param offline boolean Indicates where we work with offline sessions
      */
     private void allowXSiteReplication(boolean offline) {
-        HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
-        if (hotRodServer != null) {
-            String cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-            while (hotRodServer.getHotRodCacheManager().getCache(cacheName).size() != hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {}
-            }
+        var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
+        if (hotRodServer.isEmpty()) {
+            return;
         }
+
+        var cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+        var cache1 = hotRodServer.get().getHotRodCacheManager().getCache(cacheName);
+        var cache2 = hotRodServer.get().getHotRodCacheManager2().getCache(cacheName);
+        eventually(() -> "Wrong cache size. Site1: " + cache1.keySet() + ", Site2: " + cache2.keySet(),
+                () -> cache1.size() == cache2.size(), 10000, 10, TimeUnit.MILLISECONDS);
+    }
+
+    private void processExpiration(boolean offline) {
+        var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
+        if (hotRodServer.isEmpty()) {
+            return;
+        }
+        // force expired entries to be removed from memory
+        var cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+        hotRodServer.get().getHotRodCacheManager().getCache(cacheName).getAdvancedCache().getExpirationManager().processExpiration();
+        hotRodServer.get().getHotRodCacheManager2().getCache(cacheName).getAdvancedCache().getExpirationManager().processExpiration();
     }
 }

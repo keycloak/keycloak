@@ -36,6 +36,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesC
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
@@ -44,14 +45,17 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectImplici
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.Response;
 
@@ -70,7 +74,9 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -93,6 +99,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
@@ -101,6 +108,7 @@ import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
@@ -117,14 +125,17 @@ import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationE
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -608,26 +619,32 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             // Check login.
-            OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
             Assert.assertNull(loginResponse.getError());
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            String code = oauth.parseLoginResponse().getCode();
 
             // Check token obtaining.
-            OAuthClient.AccessTokenResponse accessTokenResponse;
+            AccessTokenResponse accessTokenResponse;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                accessTokenResponse = oauth.doAccessTokenRequest(code, TEST_CLIENT_SECRET, client);
+                oauth.httpClient().set(client);
+                accessTokenResponse = oauth.doAccessTokenRequest(code);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                oauth.httpClient().reset();
             }
             assertEquals(200, accessTokenResponse.getStatusCode());
 
             // Check token refresh.
-            OAuthClient.AccessTokenResponse accessTokenResponseRefreshed;
+            AccessTokenResponse accessTokenResponseRefreshed;
             try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
-                accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), TEST_CLIENT_SECRET, client);
+                oauth.httpClient().set(client);
+                accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } finally {
+                oauth.httpClient().reset();
             }
             assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
             assertNull(accessTokenResponseRefreshed.getRefreshToken());
@@ -744,8 +761,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         oauth.clientId(clientPublicId);
         oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        assertEquals("invalid client access type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+        assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.parseLoginResponse().getError());
+        assertEquals("invalid client access type", oauth.parseLoginResponse().getErrorDescription());
     }
 
     @Test
@@ -824,6 +841,40 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException cpe) {
             fail();
         }
+    }
+
+    @Test
+    public void testConsentRequiredExecutorWithClientRolesCondition() throws Exception {
+        // register profiles with consent-required executor
+        updateProfiles(new ClientProfilesBuilder().addProfile(
+                new ClientProfileBuilder().createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, createConsentRequiredExecutorConfig(true))
+                        .toRepresentation()).toString());
+
+        // register policies with the client-roles condition to sample-client-role
+        updatePolicies(new ClientPoliciesBuilder().addPolicy(
+                new ClientPolicyBuilder().createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(Arrays.asList(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString());
+
+        // Client is allowed to be created without consent because no roles at creation time
+        String clientId = generateSuffixedName("consent-app");
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            clientRep.setConsentRequired(Boolean.FALSE);
+        });
+        Assert.assertFalse(getClientByAdmin(cid).isConsentRequired());
+
+        // add the role to the client to execute condition
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // update with consent to false should be updated to true by autoconfigure
+        updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+            cRep.setConsentRequired(Boolean.FALSE);
+        });
+        Assert.assertTrue(getClientByAdmin(cid).isConsentRequired());
     }
 
     @Test
@@ -936,8 +987,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
-        oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD, null);
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         assertEquals(400, response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
@@ -1159,27 +1210,26 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // send an authorization request
         oauth.scope("openid" + " " + "microprofile-jwt");
-        oauth.request(request);
-        oauth.clientId(clientId);
-        oauth.nonce(nonce);
+        oauth.client(clientId, clientSecret);
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("The intent is not bound with the client", oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        oauth.loginForm().nonce(nonce).request(request).open();
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
         assertEquals(204, r.getStatus());
 
         // send an authorization request
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().request(request).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // check an authorization response
         EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentFragment().get(OAuth2Constants.CODE);
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
+        String code = oauth.parseLoginResponse().getCode();
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         JWSInput idToken = new JWSInput(authzResponse.getIdToken());
         ObjectMapper mapper = JsonSerialization.mapper;
         JsonParser parser = mapper.getFactory().createParser(idToken.readContentAsString());
@@ -1188,7 +1238,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // send a token request
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // check a token response
         assertEquals(200, response.getStatusCode());
@@ -1201,7 +1251,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(intentId, clientBoundIntentId);
 
         // logout
-        oauth.doLogout(response.getRefreshToken(), clientSecret);
+        oauth.doLogout(response.getRefreshToken());
         events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
 
         // create a request object with invalid claims
@@ -1214,10 +1264,10 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         request = new JWSBuilder().jsonContent(oidcRequest).none();
 
         // send an authorization request
-        oauth.request(request);
-        oauth.openLoginForm();
-        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        oauth.loginForm().request(request).open();
+        authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
+        assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
     }
 
     @Test
@@ -1272,17 +1322,109 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             // revert test client instance settings the same as OAuthClient.init
             oauth.openid(true);
             oauth.responseType(OIDCResponseType.CODE);
-            oauth.nonce(null);
         }
+    }
+
+    @Test
+    public void testClientGrantTypeCondition() throws Exception {
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String id = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setServiceAccountsEnabled(true);
+            clientRep.setImplicitFlowEnabled(true);
+            clientRep.setStandardFlowEnabled(true);
+            clientRep.setAttributes(Map.of(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, "true"));
+        });
+        oauth.client(clientId, clientSecret);
+
+        //auth code
+        successfulLogin(clientId, clientSecret);
+
+        configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.AUTHORIZATION_REQUEST, List.of(OAuth2Constants.AUTHORIZATION_CODE));
+        oauth.openLogoutForm();
+        oauth.openLoginForm();
+        MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(Objects.requireNonNull(driver.getCurrentUrl())).getQuery());
+        assertEquals(ClientPolicyEvent.AUTHORIZATION_REQUEST.toString(), queryParams.getFirst("error"));
+        assertEquals("Exception thrown intentionally", queryParams.getFirst("error_description"));
+        revertToBuiltinPolicies();
+
+        //password
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST, List.of(OAuth2Constants.PASSWORD));
+        response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertGrantTypeBlock(response, ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST);
+        revertToBuiltinPolicies();
+
+        //client credentials
+        response = oauth.clientCredentialsGrantRequest().send();
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST, List.of(OAuth2Constants.CLIENT_CREDENTIALS));
+        response = oauth.clientCredentialsGrantRequest().send();
+        assertGrantTypeBlock(response, ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST);
+        revertToBuiltinPolicies();
+
+        //refresh
+        response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        response = oauth.refreshRequest(response.getRefreshToken()).send();
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.TOKEN_REFRESH, List.of(OAuth2Constants.REFRESH_TOKEN));
+        response = oauth.refreshRequest(response.getRefreshToken()).send();
+        assertGrantTypeBlock(response, ClientPolicyEvent.TOKEN_REFRESH);
+        revertToBuiltinPolicies();
+
+        //token exchange
+        response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        response = oauth.tokenExchangeRequest(response.getAccessToken()).send();
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+
+        configureClientPolicyToBlockGrantTypes(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST, List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+        response = oauth.tokenExchangeRequest(response.getAccessToken()).send();
+        assertGrantTypeBlock(response, ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST);
+        revertToBuiltinPolicies();
+    }
+
+    private void assertGrantTypeBlock(AccessTokenResponse response, ClientPolicyEvent event){
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(event.toString(), response.getError());
+        assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    private void configureClientPolicyToBlockGrantTypes(ClientPolicyEvent event, List<String> grantTypes) throws Exception {
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profilo")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(List.of(event)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policy with condition on client scope optional-scope2
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Policy", Boolean.TRUE)
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(grantTypes))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
     }
 
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce, String expectedError, String expectedErrorDescription) {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
-        oauth.nonce(nonce);
-        oauth.openLoginForm();
-        assertEquals(expectedError, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
-        assertEquals(expectedErrorDescription, oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+        oauth.loginForm().nonce(nonce).open();
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        assertEquals(expectedError, authorizationEndpointResponse.getError());
+        assertEquals(expectedErrorDescription, authorizationEndpointResponse.getErrorDescription());
     }
 
 }

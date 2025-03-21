@@ -5,7 +5,7 @@ For a given realm, you can change the appearance of any UI in {project_name} by 
 
 .Procedure
 
-. Click *Realm setting* in the menu.
+. Click *Realm settings* in the menu.
 . Click the *Themes* tab.
 +
 .Themes tab
@@ -17,7 +17,7 @@ Login theme::
   Username password entry, OTP entry, new user registration, and other similar screens related to login.
 
 Account theme::
-  Each user has a User Account Management UI.
+  The console used by the user to manage his or her account.
 
 Admin console theme::
   The skin of the {project_name} Admin Console.

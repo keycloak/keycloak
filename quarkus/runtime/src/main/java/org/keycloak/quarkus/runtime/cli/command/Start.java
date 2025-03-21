@@ -17,20 +17,17 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -45,7 +42,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
     public static final String NAME = "start";
 
     @CommandLine.Mixin
-    OptimizedMixin optimizedMixin;
+    OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
@@ -55,27 +52,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        devProfileNotAllowedError();
-    }
-
-    private void devProfileNotAllowedError() {
-        if (isDevProfileNotAllowed()) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+        Environment.updateProfile(true);
+        if (Environment.isDevProfile()) {
+            throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
-    }
-
-    public static boolean isDevProfileNotAllowed() {
-        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
-        Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
-
-        setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
-
-        return Environment.isDevProfile();
-    }
-
-    @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
 
     @Override
@@ -86,5 +66,19 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @Override
     public String getName() {
         return NAME;
+    }
+
+    public static void fastStart(Picocli picocli, boolean dryRun) {
+        try {
+            Start start = new Start();
+            Environment.setParsedCommand(start);
+            PropertyMappers.sanitizeDisabledMappers();
+            start.optimizedMixin.optimized = true;
+            start.dryRunMixin.dryRun = dryRun;
+            start.setPicocli(picocli);
+            start.run();
+        } catch (PropertyException | ProfileException e) {
+            picocli.usageException(e.getMessage(), e.getCause());
+        }
     }
 }

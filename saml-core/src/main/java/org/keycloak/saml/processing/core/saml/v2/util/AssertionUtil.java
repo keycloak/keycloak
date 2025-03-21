@@ -59,7 +59,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.stream.XMLEventReader;
 
@@ -315,7 +314,7 @@ public class AssertionUtil {
     }
 
     protected static Element getSignature(Element element) {
-        return DocumentUtil.getDirectChildElement(element, XMLSignature.XMLNS, "Signature");
+        return XMLSignatureUtil.getSignature(element);
     }
 
     /**
@@ -363,7 +362,7 @@ public class AssertionUtil {
      * out of sync.
      *
      * @param assertion
-     * @param clockSkewInMilis in miliseconds
+     * @param clockSkewInMilis in milliseconds
      *
      * @return
      *
@@ -429,7 +428,7 @@ public class AssertionUtil {
      * out of sync.
      *
      * @param assertion
-     * @param clockSkewInMilis in miliseconds
+     * @param clockSkewInMilis in milliseconds
      *
      * @return
      *

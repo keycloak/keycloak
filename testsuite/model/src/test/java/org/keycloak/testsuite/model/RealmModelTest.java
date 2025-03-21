@@ -51,15 +51,22 @@ public class RealmModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "realm");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        this.removeRealm(s, realmId);
+        if (realm1Id != null) this.removeRealm(s, realm1Id);
+        if (realm2Id != null) this.removeRealm(s, realm2Id);
+    }
+
+    private void removeRealm(KeycloakSession s, String realmId) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
-        if (realm1Id != null) s.realms().removeRealm(realm1Id);
-        if (realm2Id != null) s.realms().removeRealm(realm2Id);
     }
 
     @Test
@@ -134,8 +141,7 @@ public class RealmModelTest extends KeycloakModelTest {
         });
 
         // Remove realm 2
-        inComittedTransaction( (Consumer<KeycloakSession>)  keycloakSession -> keycloakSession.realms().removeRealm(realm2Id));
-
+        inComittedTransaction( (Consumer<KeycloakSession>)  keycloakSession -> this.removeRealm(keycloakSession, realm2Id));
 
         // ResourceServer in realm1 must still exist
         ResourceServer resourceServer = withRealm(realm1Id, (keycloakSession, realmModel) -> {

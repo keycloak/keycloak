@@ -29,6 +29,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 
 import javax.naming.AuthenticationException;
@@ -487,6 +488,9 @@ public class LDAPOperationManager {
         LdapContext authCtx = null;
         StartTlsResponse tlsResponse = null;
 
+        var tracing = session.getProvider(TracingProvider.class);
+        tracing.startSpan(LDAPOperationManager.class, "authenticate");
+
         try {
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
@@ -507,7 +511,7 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password.toCharArray(), sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
@@ -518,17 +522,17 @@ public class LDAPOperationManager {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
-
+            tracing.error(ae);
             throw ae;
         } catch(RuntimeException re){
             if (logger.isDebugEnabled()) {
                 logger.debugf(re, "LDAP Connection TimeOut for DN [%s]", dn);
             }
-            
+            tracing.error(re);
             throw re;
-
         } catch (Exception e) {
             logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
+            tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
             if (tlsResponse != null) {
@@ -546,6 +550,7 @@ public class LDAPOperationManager {
                     e.printStackTrace();
                 }
             }
+            tracing.endSpan();
         }
     }
 
@@ -600,7 +605,7 @@ public class LDAPOperationManager {
         }
     }
 
-    public void createSubContext(final LdapName name, final Attributes attributes) {
+    public String createSubContext(final LdapName name, final Attributes attributes) {
         try {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Creating entry [%s] with attributes: [", name);
@@ -622,14 +627,22 @@ public class LDAPOperationManager {
                 logger.tracef("]");
             }
 
-            execute(new LdapOperation<Void>() {
+            return execute(new LdapOperation<>() {
                 @Override
-                public Void execute(LdapContext context) throws NamingException {
+                public String execute(LdapContext context) throws NamingException {
                     DirContext subcontext = context.createSubcontext(name, attributes);
-
-                    subcontext.close();
-
-                    return null;
+                    try {
+                        String uuidLDAPAttributeName = config.getUuidLDAPAttributeName();
+                        Attribute id = subcontext.getAttributes("", new String[]{uuidLDAPAttributeName}).get(uuidLDAPAttributeName);
+                        if (id == null) {
+                            throw new ModelException("Could not retrieve identifier for entry [" + name + "].");
+                        }
+                        return decodeEntryUUID(id.get());
+                    } catch (NamingException ne) {
+                        throw new ModelException("Could not retrieve identifier for entry [" + name + "].", ne);
+                    } finally {
+                        subcontext.close();
+                    }
                 }
 
 
@@ -713,13 +726,25 @@ public class LDAPOperationManager {
             start = Time.currentTimeMillis();
         }
 
+        var tracing = session.getProvider(TracingProvider.class);
+        var span = tracing.startSpan(LDAPOperationManager.class, "execute");
+
         try {
+            if (span.isRecording()) {
+                span.setAttribute(Context.PROVIDER_URL, context.getEnvironment().get(Context.PROVIDER_URL).toString());
+                span.setAttribute("operation", operation.toString());
+            }
+
             if (decorator != null) {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
             return operation.execute(context);
+        } catch (NamingException e) {
+            tracing.error(e);
+            throw e;
         } finally {
+            tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
 

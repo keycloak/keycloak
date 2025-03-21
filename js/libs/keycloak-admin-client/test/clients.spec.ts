@@ -27,7 +27,7 @@ describe("Clients", () => {
     // create client and also test it
     // NOTICE: to be clear, clientId stands for the property `clientId` of client
     // clientUniqueId stands for property `id` of client
-    const clientId = faker.internet.userName();
+    const clientId = faker.internet.username();
     const createdClient = await kcAdminClient.clients.create({
       clientId,
     });
@@ -82,7 +82,7 @@ describe("Clients", () => {
 
   it("delete single client", async () => {
     // create another one for delete test
-    const clientId = faker.internet.userName();
+    const clientId = faker.internet.username();
     const { id } = await kcAdminClient.clients.create({
       clientId,
     });
@@ -103,7 +103,7 @@ describe("Clients", () => {
    */
   describe("client roles", () => {
     before(async () => {
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       // create a client role
       const { roleName: createdRoleName } =
         await kcAdminClient.clients.createRole({
@@ -172,7 +172,7 @@ describe("Clients", () => {
     });
 
     it("delete a client role", async () => {
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       // create a client role
       await kcAdminClient.clients.createRole({
         id: currentClient.id,
@@ -293,7 +293,7 @@ describe("Clients", () => {
           clientScopeId: clientScopeId!,
           id: id!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -302,7 +302,7 @@ describe("Clients", () => {
         await kcAdminClient.clientScopes.delByName({
           name: dummyClientScope.name!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -387,7 +387,7 @@ describe("Clients", () => {
           clientScopeId: clientScopeId!,
           id: id!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
 
@@ -396,7 +396,7 @@ describe("Clients", () => {
         await kcAdminClient.clientScopes.delByName({
           name: dummyClientScope.name!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -480,7 +480,7 @@ describe("Clients", () => {
           id: clientUniqueId!,
           mapperId: mapperId!,
         });
-      } catch (e) {
+      } catch {
         // ignore
       }
     });
@@ -649,7 +649,7 @@ describe("Clients", () => {
             id: id!,
             roleName: dummyRoleName,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       });
@@ -762,7 +762,7 @@ describe("Clients", () => {
 
       it("get JSON with payload of examples", async () => {
         const { id: clientUniqueId } = currentClient;
-        const username = faker.internet.userName();
+        const username = faker.internet.username();
         const user = await kcAdminClient.users.create({
           username,
         });
@@ -804,7 +804,7 @@ describe("Clients", () => {
           await kcAdminClient.roles.delByName({
             name: dummyRoleName,
           });
-        } catch (e) {
+        } catch {
           // ignore
         }
       });
@@ -1019,7 +1019,7 @@ describe("Clients", () => {
     });
 
     before("create test user", async () => {
-      const username = faker.internet.userName();
+      const username = faker.internet.username();
       user = await kcAdminClient.users.create({
         username,
       });
@@ -1097,6 +1097,30 @@ describe("Clients", () => {
         scopeId: scopes[0].id!,
       });
       expect(result).to.deep.equal([]);
+    });
+
+    it("list permission scope", async () => {
+      permission = await kcAdminClient.clients.createPermission(
+        {
+          id: currentClient.id!,
+          type: "scope",
+        },
+        {
+          name: permissionConfig.name,
+          // @ts-ignore
+          resources: [resource._id],
+          policies: [policy.id!],
+          scopes: scopes.map((scope) => scope.id!),
+        },
+      );
+
+      const p = await kcAdminClient.clients.listPermissionScope({
+        id: currentClient.id!,
+        name: permissionConfig.name,
+      });
+
+      expect(p.length).to.be.eq(1);
+      expect(p[0].name).to.be.eq(permissionConfig.name);
     });
 
     it("import resource", async () => {

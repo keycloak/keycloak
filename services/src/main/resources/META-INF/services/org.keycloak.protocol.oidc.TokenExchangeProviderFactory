@@ -1,2 +1,3 @@
-org.keycloak.protocol.oidc.DefaultTokenExchangeProviderFactory
+org.keycloak.protocol.oidc.tokenexchange.V1TokenExchangeProviderFactory
+org.keycloak.protocol.oidc.tokenexchange.StandardTokenExchangeProviderFactory
 

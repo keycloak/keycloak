@@ -28,11 +28,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,14 +50,22 @@ public class Profile {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
-        ACCOUNT2("Account Management Console 2", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console 3", Type.PREVIEW, Feature.ACCOUNT_API),
 
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
+
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
+
+        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.EXPERIMENTAL, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
-        ADMIN2("New Admin Console", Type.DEFAULT, Feature.ADMIN_API),
+        ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
+
+        LOGIN_V2("New Login Theme", Type.DEFAULT, 2),
+
+        LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1),
+
+        QUICK_THEME("WYSIWYG theme configuration tool", Type.EXPERIMENTAL, 1),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
@@ -63,7 +73,8 @@ public class Profile {
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -73,8 +84,6 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
-
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
 
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
@@ -82,58 +91,90 @@ public class Profile {
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
-        KERBEROS("Kerberos", KerberosJdkProvider.getProvider().isKerberosAvailable() ? Type.DEFAULT : Type.DISABLED_BY_DEFAULT),
+        KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
         RECOVERY_CODES("Recovery codes", Type.PREVIEW),
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 
-        JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak server", Type.DEFAULT),
-
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
         DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
-
-        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        MULTI_SITE("Multi-site support", Type.PREVIEW),
+        MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT),
+
+        CLUSTERLESS("Store all session data, work cache and login failure data in an external Infinispan cluster.", Type.EXPERIMENTAL),
+
+        CLIENT_TYPES("Client Types", Type.EXPERIMENTAL),
+
+        HOSTNAME_V2("Hostname Options V2", Type.DEFAULT, 2),
+
+        PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT),
+
+        OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+
+        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
+
+        DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
+
+        ORGANIZATION("Organization support within realms", Type.DEFAULT),
+
+        PASSKEYS("Passkeys", Type.PREVIEW),
+
+        CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
+
+        USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
+
+        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
+
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ;
 
         private final Type type;
         private final String label;
+        private final String unversionedKey;
+        private final String key;
+        private final BooleanSupplier isAvailable;
 
         private Set<Feature> dependencies;
         private int version;
 
         Feature(String label, Type type, Feature... dependencies) {
-            this(label, type, 1, dependencies);
+            this(label, type, 1, null, dependencies);
         }
 
-        /**
-         * allowNameKey should be false for new versioned features to disallow using a legacy name, like account2
-         */
         Feature(String label, Type type, int version, Feature... dependencies) {
+            this(label, type, version, null, dependencies);
+        }
+
+        Feature(String label, Type type, int version, BooleanSupplier isAvailable, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
-            if (this.version > 1 && !this.name().endsWith("_V" + version)) {
-                throw new IllegalStateException("It is expected that the enum name ends with the version");
+            this.isAvailable = isAvailable;
+            this.key = name().toLowerCase().replaceAll("_", "-");
+            if (this.name().endsWith("_V" + version)) {
+                unversionedKey = key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            } else {
+                this.unversionedKey = key;
+                if (this.version > 1) {
+                    throw new IllegalStateException("It is expected that the enum name ends with the version");
+                }
             }
             this.dependencies = Arrays.stream(dependencies).collect(Collectors.toSet());
         }
 
         /**
-         * Get the key that uniquely identifies this feature, may be used by users if
-         * allowNameKey is true.
+         * Get the key that uniquely identifies this feature
          * <p>
          * {@link #getVersionedKey()} should instead be shown to users where possible.
          */
         public String getKey() {
-            return name().toLowerCase().replaceAll("_", "-");
+            return key;
         }
 
         /**
@@ -141,11 +182,7 @@ public class Profile {
          * will share this key.
          */
         public String getUnversionedKey() {
-            String key = getKey();
-            if (version == 1) {
-                return key;
-            }
-            return key.substring(0, key.length() - (String.valueOf(version).length() + 2));
+            return unversionedKey;
         }
 
         /**
@@ -171,6 +208,10 @@ public class Profile {
             return version;
         }
 
+        public boolean isAvailable() {
+            return isAvailable == null || isAvailable.getAsBoolean();
+        }
+
         public enum Type {
             // in priority order
             DEFAULT("Default"),
@@ -192,9 +233,11 @@ public class Profile {
         }
     }
 
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey())));
+
     private static final Logger logger = Logger.getLogger(Profile.class);
 
-    private static Profile CURRENT;
+    private static volatile Profile CURRENT;
 
     private final ProfileName profileName;
 
@@ -217,6 +260,11 @@ public class Profile {
             Feature enabledFeature = null;
             if (unversionedConfig == FeatureConfig.ENABLED) {
                 enabledFeature = entry.getValue().iterator().next();
+                if (!enabledFeature.isAvailable()) {
+                    throw new ProfileException(String.format("Feature %s cannot be enabled as it is not available.", unversionedFeature));
+                }
+            } else if (unversionedConfig == FeatureConfig.DISABLED && ESSENTIAL_FEATURES.contains(unversionedFeature)) {
+                throw new ProfileException(String.format("Feature %s cannot be disabled.", unversionedFeature));
             }
 
             // now check each feature version to ensure consistency and select any features enabled by default
@@ -236,13 +284,17 @@ public class Profile {
                                         enabledFeature.getVersionedKey(), f.getVersionedKey()));
                     }
                     // even if something else was enabled by default, explicitly enabling a lower priority feature takes precedence
+                    if (!f.isAvailable()) {
+                        throw new ProfileException(String.format("Feature %s cannot be enabled as it is not available.", f.getVersionedKey()));
+                    }
                     enabledFeature = f;
                     isExplicitlyEnabledFeature = true;
                     break;
                 case DISABLED:
                     throw new ProfileException("Feature " + f.getVersionedKey() + " should not be disabled using a versioned key.");
                 default:
-                    if (unversionedConfig == FeatureConfig.UNCONFIGURED && enabledFeature == null && isEnabledByDefault(profile, f)) {
+                    if (unversionedConfig == FeatureConfig.UNCONFIGURED && enabledFeature == null
+                            && isEnabledByDefault(profile, f) && f.isAvailable()) {
                         enabledFeature = f;
                     }
                     break;
@@ -270,9 +322,9 @@ public class Profile {
         }
     }
 
-    private static ProfileConfigResolver.FeatureConfig getFeatureConfig(String unversionedFeature,
+    private static ProfileConfigResolver.FeatureConfig getFeatureConfig(String feature,
             ProfileConfigResolver... resolvers) {
-        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(unversionedFeature))
+        ProfileConfigResolver.FeatureConfig configuration = Arrays.stream(resolvers).map(r -> r.getFeatureConfig(feature))
                 .filter(r -> !r.equals(ProfileConfigResolver.FeatureConfig.UNCONFIGURED))
                 .findFirst()
                 .orElse(ProfileConfigResolver.FeatureConfig.UNCONFIGURED);
@@ -294,13 +346,13 @@ public class Profile {
      */
     private static Map<String, TreeSet<Feature>> getOrderedFeatures() {
         if (FEATURES == null) {
-            // "natural" ordering low to high between two features
-            Comparator<Feature> comparator = Comparator.comparing(Feature::getType).thenComparingInt(Feature::getVersion);
+            // "natural" ordering low to high between two features (type has precedence and then reversed version is used)
+            Comparator<Feature> comparator = Comparator.comparing(Feature::getType).thenComparing(Comparator.comparingInt(Feature::getVersion).reversed());
             // aggregate the features by unversioned key
             HashMap<String, TreeSet<Feature>> features = new HashMap<>();
             Stream.of(Feature.values()).forEach(f -> features.compute(f.getUnversionedKey(), (k, v) -> {
                 if (v == null) {
-                    v = new TreeSet<>(comparator.reversed()); // we want the highest priority first
+                    v = new TreeSet<>(comparator);
                 }
                 v.add(f);
                 return v;
@@ -312,6 +364,10 @@ public class Profile {
 
     public static Set<String> getAllUnversionedFeatureNames() {
         return Collections.unmodifiableSet(getOrderedFeatures().keySet());
+    }
+
+    public static Set<String> getDisableableUnversionedFeatureNames() {
+        return getOrderedFeatures().keySet().stream().filter(f -> !ESSENTIAL_FEATURES.contains(f)).collect(Collectors.toSet());
     }
 
     /**
@@ -341,6 +397,10 @@ public class Profile {
 
     public static Profile getInstance() {
         return CURRENT;
+    }
+
+    public static void reset() {
+        CURRENT = null;
     }
 
     public static boolean isFeatureEnabled(Feature feature) {

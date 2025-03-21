@@ -127,6 +127,10 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         return targetAttribute(GeneralConstants.SAML_RESPONSE_KEY);
     }
 
+    public ModifySamlResponseStepBuilder targetAttributeSamlArtifact() {
+        return targetAttribute(GeneralConstants.SAML_ARTIFACT_KEY);
+    }
+
     public URI targetUri() {
         return targetUri;
     }

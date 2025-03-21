@@ -2,44 +2,38 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import java.util.Optional;
-
-import static java.util.Optional.of;
-import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
+
+import java.util.Optional;
 
 final class DatabasePropertyMappers {
 
     private DatabasePropertyMappers(){}
 
-    public static PropertyMapper[] getDatabasePropertyMappers() {
+    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
-                        .mapFrom("db")
-                        .transformer(DatabasePropertyMappers::transformDialect)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformDialect)
                         .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
-                        .mapFrom("db")
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getXaOrNonXaDriver)
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
                         .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
-                        .transformer(DatabasePropertyMappers::resolveDatabaseVendor)
                         .to("quarkus.datasource.db-kind")
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
-                        .mapFrom("db")
-                        .transformer(DatabasePropertyMappers::getDatabaseUrl)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
@@ -78,6 +72,7 @@ final class DatabasePropertyMappers {
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MIN_SIZE)
                         .to("quarkus.datasource.jdbc.min-size")
+                        .transformer(DatabasePropertyMappers::transformMinPoolSize)
                         .paramLabel("size")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
@@ -87,60 +82,32 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static Optional<String> getDatabaseUrl(Optional<String> value, ConfigSourceInterceptorContext c) {
-        Optional<String> url = Database.getDefaultUrl(value.get());
-
-        if (url.isPresent()) {
-            return url;
-        }
-
-        return value;
+    private static String getDatabaseUrl(String value, ConfigSourceInterceptorContext c) {
+        return Database.getDefaultUrl(value).orElse(null);
     }
 
-    private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
-        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+    private static String getXaOrNonXaDriver(String value, ConfigSourceInterceptorContext context) {
+        Optional<String> xaEnabledConfigValue = Configuration.getOptionalKcValue(TransactionOptions.TRANSACTION_XA_ENABLED);
+        boolean isXaEnabled = xaEnabledConfigValue.map(Boolean::parseBoolean).orElse(false);
 
-        Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
-
-        if (driver.isPresent()) {
-            return driver;
-        }
-
-        return value;
+        return Database.getDriver(value, isXaEnabled).orElse(null);
     }
 
-    private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
-
-        if (databaseKind.isPresent()) {
-            return databaseKind;
-        }
-
-        addInitializationException(invalidDatabaseVendor(db.get(), Database.getDatabaseAliases()));
-
-        return of("h2");
+    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
+        return Database.getDatabaseKind(db).orElse(null);
     }
 
-    private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
-        if (db.isEmpty()) {
-            return of("dev-file");
-        }
-
-        return db;
-    }
-
-    private static Optional<String> resolveUsername(Optional<String> value, ConfigSourceInterceptorContext context) {
+    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return of("sa");
+            return "sa";
         }
 
         return value;
     }
 
-    private static Optional<String> resolvePassword(Optional<String> value, ConfigSourceInterceptorContext context) {
+    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return of("password");
+            return "password";
         }
 
         return value;
@@ -148,23 +115,18 @@ final class DatabasePropertyMappers {
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
         String db = Configuration.getConfig().getConfigValue("kc.db").getValue();
-        return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
+        return Database.getDatabaseKind(db).filter(DatabaseKind.H2::equals).isPresent();
     }
 
-    private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
-
-        if (databaseKind.isEmpty()) {
-            return db;
-        }
-
-        Optional<String> dialect = Database.getDialect(db.get());
-
-        if (dialect.isPresent()) {
-            return dialect;
-        }
-
-        return Database.getDialect("dev-file");
+    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
+        return Database.getDialect(db).orElse(null);
     }
 
+    /**
+     * For H2 databases we must ensure that the min-pool size is at least one so that the DB is not shutdown until the
+     * Agroal connection pool is closed on Keycloak shutdown.
+     */
+    private static String transformMinPoolSize(String min, ConfigSourceInterceptorContext context) {
+        return isDevModeDatabase(context) && (min == null || "0".equals(min)) ? "1" : min;
+    }
 }

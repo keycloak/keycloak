@@ -17,15 +17,11 @@
 
 package org.keycloak.models;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.models.utils.MapperTypeSerializer;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Specifies a mapping from broker login to user data.
@@ -35,9 +31,6 @@ import java.util.stream.Collectors;
  */
 public class IdentityProviderMapperModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
-
-    private static final TypeReference<List<StringPair>> MAP_TYPE_REPRESENTATION = new TypeReference<List<StringPair>>() {
-    };
 
     protected String id;
     protected String name;
@@ -96,17 +89,7 @@ public class IdentityProviderMapperModel implements Serializable {
 
     public Map<String, List<String>> getConfigMap(String configKey) {
         String configMap = config.get(configKey);
-
-        try {
-            List<StringPair> map = JsonSerialization.readValue(configMap, MAP_TYPE_REPRESENTATION);
-            return map.stream().collect(
-                    Collectors.collectingAndThen(
-                            Collectors.groupingBy(StringPair::getKey,
-                                    Collectors.mapping(StringPair::getValue, Collectors.toUnmodifiableList())),
-                            Collections::unmodifiableMap));
-        } catch (IOException e) {
-            throw new RuntimeException("Could not deserialize json: " + configMap, e);
-        }
+        return MapperTypeSerializer.deserialize(configMap);
     }
 
     @Override
@@ -124,26 +107,5 @@ public class IdentityProviderMapperModel implements Serializable {
     @Override
     public int hashCode() {
         return id.hashCode();
-    }
-
-    static class StringPair {
-        private String key;
-        private String value;
-
-        public String getKey() {
-            return key;
-        }
-
-        public void setKey(String key) {
-            this.key = key;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
     }
 }

@@ -291,10 +291,12 @@ public interface PicketLinkLogger {
     /**
      * @param tag
      * @param foundElementTag
+     * @param line
+     * @param column
      *
      * @return
      */
-    RuntimeException parserExpectedTag(String tag, String foundElementTag);
+    RuntimeException parserExpectedTag(String tag, String foundElementTag, Integer line, Integer column);
 
     /**
      * @param ns

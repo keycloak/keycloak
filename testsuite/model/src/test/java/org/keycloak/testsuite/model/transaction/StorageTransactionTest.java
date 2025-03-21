@@ -37,6 +37,7 @@ public class StorageTransactionTest extends KeycloakModelTest {
     @Override
     protected void createEnvironment(KeycloakSession s) {
         RealmModel r = s.realms().createRealm("1");
+        s.getContext().setRealm(r);
         r.setDefaultRole(s.roles().addRealmRole(r, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + r.getName()));
         r.setAttribute("k1", "v1");
         r.setSsoSessionIdleTimeout(1000);
@@ -47,6 +48,8 @@ public class StorageTransactionTest extends KeycloakModelTest {
 
     @Override
     protected void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 

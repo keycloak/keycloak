@@ -7,6 +7,7 @@ export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
   cancelLabel: string;
   buttonTitle: string | ReactNode;
   buttonVariant?: ButtonProps["variant"];
+  buttonTestRole?: string;
   isDisabled?: boolean;
   onContinue: () => void;
   component?: React.ElementType<any> | React.ComponentType<any>;
@@ -20,6 +21,7 @@ export const ContinueCancelModal = ({
   buttonTitle,
   isDisabled,
   buttonVariant,
+  buttonTestRole,
   onContinue,
   component = Button,
   children,
@@ -34,6 +36,7 @@ export const ContinueCancelModal = ({
         variant={buttonVariant}
         onClick={() => setOpen(true)}
         isDisabled={isDisabled}
+        data-testrole={buttonTestRole}
       >
         {buttonTitle}
       </Component>

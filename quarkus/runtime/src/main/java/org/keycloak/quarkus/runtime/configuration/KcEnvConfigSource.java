@@ -18,51 +18,51 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import io.smallrye.config.PropertiesConfigSource;
+
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
-import io.smallrye.config.EnvConfigSource;
+// Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
+// leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to
+// how equals() is implemented. We don't need that here as we do our own mapping.
+public class KcEnvConfigSource extends PropertiesConfigSource {
 
-public class KcEnvConfigSource extends EnvConfigSource {
+    public static final String NAME = "KcEnvVarConfigSource";
 
     public KcEnvConfigSource() {
-        super(buildProperties(), 500);
+        super(buildProperties(), NAME, 500);
     }
 
     private static Map<String, String> buildProperties() {
         Map<String, String> properties = new HashMap<>();
-        String kcPrefix = replaceNonAlphanumericByUnderscores(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase());
+        String kcPrefix = replaceNonAlphanumericByUnderscores(NS_KEYCLOAK_PREFIX.toUpperCase());
 
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
 
             if (key.startsWith(kcPrefix)) {
-                properties.put(key, value);
+                String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
 
-                PropertyMapper mapper = PropertyMappers.getMapper(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
 
-                if (mapper != null) {
-                    String to = mapper.getTo();
-
-                    if (to != null) {
-                        properties.put(to, value);
-                    }
-
-                    properties.put(mapper.getFrom(), value);
+                if (mapper != null && mapper.hasWildcard()) {
+                    // special case - wildcards don't follow the default conversion rule
+                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
+                            .orElseThrow();
                 }
+
+                properties.put(transformedKey, value);
             }
         }
 
         return properties;
-    }
-
-    @Override
-    public String getName() {
-        return "KcEnvVarConfigSource";
     }
 }

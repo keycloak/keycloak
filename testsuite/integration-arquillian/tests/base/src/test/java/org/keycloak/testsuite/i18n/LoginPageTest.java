@@ -16,23 +16,20 @@
  */
 package org.keycloak.testsuite.i18n;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Locale;
-
+import jakarta.ws.rs.core.Response;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
@@ -46,18 +43,23 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.pages.LoginPage;
-
-import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.openqa.selenium.Cookie;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Locale;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -83,6 +85,11 @@ public class LoginPageTest extends AbstractI18NTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Before
+    public void before() {
+        setRealmInternationalization(true);
+    }
+    
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
@@ -111,42 +118,46 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void uiLocalesParameter() {
-        loginPage.open();
+        oauth.loginForm().open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
         //test if cookie works
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("en de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("en de").open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("fr de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("fr de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
     }
 
     @Test
-    public void htmlLangAttribute() {
+    public void htmlLangAttributeWithInternationalizationEnabled() {
         loginPage.open();
         assertEquals("en", loginPage.getHtmlLanguage());
 
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("de", loginPage.getHtmlLanguage());
     }
 
     @Test
+    public void htmlLangAttributeWithInternationalizationDisabled() {
+        setRealmInternationalization(false);
+
+        loginPage.open();
+        assertEquals("en", loginPage.getHtmlLanguage());
+    }
+
+    @Test
     public void acceptLanguageHeader() throws IOException {
-        try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
+        try(CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
             ResteasyClient client = ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder()).httpEngine(engine).build();
 
@@ -167,9 +178,10 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void testIdentityProviderCapitalization(){
         loginPage.open();
-        assertEquals("GitHub", loginPage.findSocialButton("github").getText());
-        assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
-        assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+        // contains even name of sub-item - svg element in this case
+        assertThat(loginPage.findSocialButton("github").getText(), is("GitHub"));
+        assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
+        assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
     }
 
 
@@ -194,7 +206,7 @@ public class LoginPageTest extends AbstractI18NTest {
         changePasswordPage.changePassword("password", "password");
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 
@@ -202,7 +214,7 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void languageChangeConsentScreen() {
         // Set client, which requires consent
-        oauth.clientId("third-party");
+        oauth.client("third-party", "password");
 
         loginPage.open();
 
@@ -218,10 +230,10 @@ public class LoginPageTest extends AbstractI18NTest {
         grantPage.accept();
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         // Revert client
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Test
@@ -231,7 +243,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        Cookie localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        Cookie localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         assertEquals("de", localeCookie.getValue());
 
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
@@ -251,8 +263,8 @@ public class LoginPageTest extends AbstractI18NTest {
         UserRepresentation userRep = user.toRepresentation();
         assertEquals("de", userRep.getAttributes().get("locale").get(0));
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         loginPage.open();
@@ -269,14 +281,14 @@ public class LoginPageTest extends AbstractI18NTest {
         userRep = user.toRepresentation();
         Assert.assertNull(userRep.getAttributes());
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        code = oauth.parseLoginResponse().getCode();
+        idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
         loginPage.open();
 
         // Cookie should be removed as last user to login didn't have a locale
-        localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        localeCookie = driver.manage().getCookieNamed(CookieType.LOCALE.getName());
         Assert.assertNull(localeCookie);
     }
 
@@ -351,7 +363,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
         final String realmLocalizationMessageKey = "loginAccountTitle";
         final String realmLocalizationMessageValue = "Localization Test";
-        
+
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
         loginPage.open();
         assertThat(driver.getPageSource(), containsString(realmLocalizationMessageValue));
@@ -359,6 +371,20 @@ public class LoginPageTest extends AbstractI18NTest {
         testRealm().localization().deleteRealmLocalizationText(locale, realmLocalizationMessageKey);
         loginPage.open();
         assertThat(driver.getPageSource(), not(containsString(realmLocalizationMessageValue)));
+    }
+
+    @Test
+    public void realmLocalizationMessagesUsedDuringErrorHandling() {
+        final String locale = Locale.ENGLISH.toLanguageTag();
+
+        final String realmLocalizationMessageKey = "errorTitle";
+        final String realmLocalizationMessageValue = "We are really sorry...";
+
+        saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
+        String nonExistingUrl = oauth.loginForm().build().split("protocol")[0] + "incorrect-path";
+        driver.navigate().to(nonExistingUrl);
+
+        assertThat(driver.getPageSource(), containsString(realmLocalizationMessageValue));
     }
 
     private void saveLocalizationText(String locale, String key, String value) {
@@ -380,5 +406,12 @@ public class LoginPageTest extends AbstractI18NTest {
         pageSource = driver.getPageSource();
         assertThat(pageSource, containsString(expectedEnglishMessage));
         assertThat(pageSource, not(containsString(expectedGermanMessage)));
+    }
+
+    private void setRealmInternationalization(final boolean enabled) {
+        final var realmResource = testRealm();
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setInternationalizationEnabled(enabled);
+        realmResource.update(realm);
     }
 }

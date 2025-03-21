@@ -12,7 +12,7 @@ To manually determine a license, clone/checkout the source code at the tag or co
 
 ## How to store license info
 
-Typically, each zip that gets distibuted to users needs to contain a license XML and individual license files, plus an html file generated at build time.
+Typically, each zip that gets distributed to users needs to contain a license XML and individual license files, plus an html file generated at build time.
 
 The XML and individual files are maintained in git. When you change or add a dependency that is a part of:
 

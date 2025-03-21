@@ -42,6 +42,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.ProfileAssume;
@@ -49,7 +50,10 @@ import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.HttpClientUtils;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
@@ -235,12 +239,12 @@ public class AuthServerTestEnricher {
                     .filter(c -> c.getQualifier().startsWith("cache-server-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
                     .forEach(containerInfo -> {
-                        
+
                         log.info(String.format("cache container: %s", containerInfo.getQualifier()));
-                        
+
                         int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
                         int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
-                        
+
                         suiteContext.addCacheServerInfo(dcIndex, containerInfo);
                     });
 
@@ -294,6 +298,8 @@ public class AuthServerTestEnricher {
         }
 
         if (START_MIGRATION_CONTAINER) {
+            suiteContext.getMigrationContext().setRunningMigrationTest(true);
+
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
@@ -375,7 +381,7 @@ public class AuthServerTestEnricher {
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         // this property can be used to skip start of auth-server before suite
-        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test
         if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
             log.debug("Skipping the start of auth server before suite");
             return;
@@ -436,7 +442,7 @@ public class AuthServerTestEnricher {
         log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
-        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"));
+        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);
         String dbUser = System.getProperty(prefix + "user");
         String dbPassword = System.getProperty(prefix + "password");
 
@@ -692,7 +698,7 @@ public class AuthServerTestEnricher {
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
-        OAuthClient oAuthClient = new OAuthClient();
+        OAuthClient oAuthClient = new OAuthClient(HttpClientUtils.createDefault(), null);
         oAuthClientProducer.set(oAuthClient);
     }
 

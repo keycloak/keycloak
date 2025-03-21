@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="94.245636mm"
+   height="84.631065mm"
+   viewBox="0 0 94.245636 84.631065"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   sodipodi:docname="bug-triage-verify.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.71713664"
+     inkscape:cx="217.53177"
+     inkscape:cy="261.45645"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="Triangle"
+       refX="3"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-47.624998,-79.375002)">
+    <rect
+       style="fill:#ffcc00;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect1"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="79.507294"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="67.641609"
+       y="84.33329"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="67.641609"
+         y="84.33329">Triage</tspan></text>
+    <rect
+       style="fill:#ffaaaa;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect2"
+       width="39.6875"
+       height="7.9375"
+       x="102.05084"
+       y="105.97511"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="121.93163"
+       y="110.81346"
+       id="text2"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="121.93163"
+         y="110.81346"
+         id="tspan3">question</tspan></text>
+    <rect
+       style="fill:#cccccc;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect3"
+       width="39.6875"
+       height="7.9375"
+       x="102.05084"
+       y="94.4049"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="121.89107"
+       y="99.278526"
+       id="text5"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="121.89107"
+         y="99.278526"
+         id="tspan6">Update team/area</tspan></text>
+    <rect
+       style="fill:#333333;stroke:#333333;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect71"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="94.4049"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+       x="67.593987"
+       y="99.267944"
+       id="text72"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+         x="67.593987"
+         y="99.267944"
+         id="tspan72">Correct team/area?</tspan></text>
+    <rect
+       style="fill:#333333;stroke:#333333;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect73"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="105.97511"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+       x="67.664543"
+       y="110.90342"
+       id="text73"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+         x="67.664543"
+         y="110.90342"
+         id="tspan73">Ask for help?</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 87.3125,98.37365 h 14.73834"
+       id="path74"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect74"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="96.468216"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.708817"
+       y="99.590736"
+       id="text74"><tspan
+         sodipodi:role="line"
+         id="tspan74"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.708817"
+         y="99.590736">No</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect75"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="96.468216"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.708817"
+       y="99.590736"
+       id="text75"><tspan
+         sodipodi:role="line"
+         id="tspan75"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.708817"
+         y="99.590736">No</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       id="path17"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-end="#rect2"
+       d="m 87.3125,109.74848 14.73834,0.0833" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect80"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="108.03842"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.621094"
+       y="111.16094"
+       id="text80"><tspan
+         sodipodi:role="line"
+         id="tspan80"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.621094"
+         y="111.16094">No</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect81"
+       width="6.5790653"
+       height="3.8108783"
+       x="91.39682"
+       y="108.03842"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.716339"
+       y="111.16094"
+       id="text81"><tspan
+         sodipodi:role="line"
+         id="tspan81"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.716339"
+         y="111.16094">Yes</tspan></text>
+    <rect
+       style="fill:#ffaaaa;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect82"
+       width="39.6875"
+       height="7.9375"
+       x="102.05084"
+       y="117.54532"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="121.89459"
+       y="122.76114"
+       id="text82"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="121.89459"
+         y="122.76114"
+         id="tspan82">old-release</tspan></text>
+    <rect
+       style="fill:#333333;stroke:#333333;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect83"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="117.54532"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+       x="67.535782"
+       y="122.76114"
+       id="text83"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+         x="67.535782"
+         y="122.76114"
+         id="tspan83">Recent release?</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       id="path82"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       d="M 87.312504,121.51407 H 102.05084" />
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect84"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="119.60863"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.621094"
+       y="122.73116"
+       id="text84"><tspan
+         sodipodi:role="line"
+         id="tspan84"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.621094"
+         y="122.73116">No</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect85"
+       width="6.5790653"
+       height="3.8108783"
+       x="91.39682"
+       y="119.60863"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.716339"
+       y="122.73116"
+       id="text85"><tspan
+         sodipodi:role="line"
+         id="tspan85"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.716339"
+         y="122.73116">No</tspan></text>
+    <rect
+       style="fill:#ffaaaa;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect86"
+       width="39.6875"
+       height="7.9375"
+       x="102.05084"
+       y="129.11554"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="121.85403"
+       y="134.0262"
+       id="text86"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="121.85403"
+         y="134.0262"
+         id="tspan86">missing-info</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       id="path86"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       d="M 87.312504,133.08428 H 102.05084" />
+    <rect
+       style="fill:#333333;stroke:#333333;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect87"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="129.11554"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+       x="67.652191"
+       y="134.38603"
+       id="text87"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+         x="67.652191"
+         y="134.38603"
+         id="tspan87">Sufficient info?</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect88"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="131.17885"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.621094"
+       y="134.30138"
+       id="text88"><tspan
+         sodipodi:role="line"
+         id="tspan88"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.621094"
+         y="134.30138">No</tspan></text>
+    <rect
+       style="fill:#ffaaaa;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect90"
+       width="39.6875"
+       height="7.9375"
+       x="102.05084"
+       y="140.68575"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="121.91753"
+       y="145.90332"
+       id="text90"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="121.91753"
+         y="145.90332"
+         id="tspan90">invalid</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       id="path90"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       d="M 87.312504,144.65449 H 102.05084" />
+    <rect
+       style="fill:#333333;stroke:#333333;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect91"
+       width="39.6875"
+       height="7.9375"
+       x="47.75729"
+       y="140.68575"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+       x="67.664543"
+       y="145.54173"
+       id="text91"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:1.05833"
+         x="67.664543"
+         y="145.54173"
+         id="tspan91">Valid bug?</tspan></text>
+    <rect
+       style="fill:#ffffff;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect92"
+       width="5.3056197"
+       height="3.8108783"
+       x="92.033539"
+       y="142.74905"
+       rx="1.3229166"
+       ry="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="94.621094"
+       y="145.87158"
+       id="text92"><tspan
+         sodipodi:role="line"
+         id="tspan92"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="94.621094"
+         y="145.87158">No</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.610158,87.444794 0.01566,6.816235"
+       id="path97"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect1" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 121.89459,94.4049 0,-10.928856 h -34.4498"
+       id="path98"
+       inkscape:connector-type="orthogonal"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#rect3"
+       inkscape:connection-end="#rect1" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.555225,102.16267 0.0706,3.59712"
+       id="path111"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.555225,113.75241 0.0706,3.59712"
+       id="path112"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.555225,125.39734 0.0706,3.59712"
+       id="path113"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.555225,136.85955 0.0706,3.59712"
+       id="path114"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#aade87;stroke:#1a1a1a;stroke-width:0.264583;stroke-linecap:butt;stroke-dasharray:none"
+       id="rect17"
+       width="39.422916"
+       height="7.9375"
+       x="47.889584"
+       y="155.93628"
+       ry="1.3229166"
+       rx="1.3229166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:center;text-anchor:middle;fill:#ececec;stroke-width:1.05833"
+       x="67.535774"
+       y="160.75697"
+       id="text17"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52778px;font-family:'Red Hat Display';-inkscape-font-specification:'Red Hat Display';text-align:center;text-anchor:middle;fill:#1a1a1a;stroke-width:1.05833"
+         x="67.535774"
+         y="160.75697"
+         id="tspan17">Prioritize</tspan></text>
+    <path
+       style="display:inline;fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 67.588283,148.84589 0.01566,6.81624"
+       id="path18"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

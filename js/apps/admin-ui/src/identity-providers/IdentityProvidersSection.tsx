@@ -1,16 +1,26 @@
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
 import {
+  Action,
+  IconMapper,
+  KeycloakDataTable,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   AlertVariant,
   Badge,
   Button,
   ButtonVariant,
   CardTitle,
+  Checkbox,
   Dropdown,
   DropdownGroup,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
   Gallery,
+  MenuToggle,
   PageSection,
   Split,
   SplitItem,
@@ -23,21 +33,15 @@ import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { IconMapper } from "ui-shared";
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
+import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import { upperCaseFormatter } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
@@ -61,7 +65,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
         <Badge
           key={`${identityProvider.providerId}-disabled`}
           isRead
-          className="pf-u-ml-sm"
+          className="pf-v5-u-ml-sm"
         >
           {t("disabled")}
         </Badge>
@@ -70,7 +74,31 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
   );
 };
 
+const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
+  const { t } = useTranslation();
+  const { realm } = useRealm();
+
+  if (!identityProvider?.organizationId) {
+    return "—";
+  }
+
+  return (
+    <Link
+      key={identityProvider.providerId}
+      to={toEditOrganization({
+        realm,
+        id: identityProvider.organizationId,
+        tab: "identityProviders",
+      })}
+    >
+      {t("organization")}
+    </Link>
+  );
+};
+
 export default function IdentityProvidersSection() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
@@ -81,6 +109,7 @@ export default function IdentityProvidersSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
+  const [hide, setHide] = useState(false);
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
   const [hasProviders, setHasProviders] = useState(false);
@@ -100,12 +129,13 @@ export default function IdentityProvidersSection() {
     const params: IdentityProvidersQuery = {
       first: first!,
       max: max!,
+      realmOnly: hide,
     };
     if (search) {
       params.search = search;
     }
     const providers = await adminClient.identityProviders.find(params);
-    return sortBy(providers, ["config.guiOrder", "alias"]);
+    return providers;
   };
 
   const navigateToCreate = (providerId: string) =>
@@ -123,18 +153,19 @@ export default function IdentityProvidersSection() {
           <DropdownItem
             key={provider.id}
             value={provider.id}
-            component={
-              <Link
-                to={toIdentityProviderCreate({
+            component="a"
+            data-testid={provider.id}
+            onClick={() =>
+              navigate(
+                toIdentityProviderCreate({
                   realm,
                   providerId: provider.id,
-                })}
-                data-testid={provider.id}
-              >
-                {provider.name}
-              </Link>
+                }),
+              )
             }
-          />
+          >
+            {provider.name}
+          </DropdownItem>
         ))}
       </DropdownGroup>
     ));
@@ -162,6 +193,7 @@ export default function IdentityProvidersSection() {
       <DeleteConfirm />
       {manageDisplayDialog && (
         <ManageOrderDialog
+          hideRealmBasedIdps={hide}
           onClose={() => {
             setManageDisplayDialog(false);
             refresh();
@@ -175,7 +207,7 @@ export default function IdentityProvidersSection() {
       />
       <PageSection
         variant={!hasProviders ? "default" : "light"}
-        className={!hasProviders ? "" : "pf-u-p-0"}
+        className={!hasProviders ? "" : "pf-v5-u-p-0"}
       >
         {!hasProviders && (
           <>
@@ -185,11 +217,11 @@ export default function IdentityProvidersSection() {
             {Object.keys(identityProviders).map((group) => (
               <Fragment key={group}>
                 <TextContent>
-                  <Text className="pf-u-mt-lg" component={TextVariants.h2}>
+                  <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
                     {group}:
                   </Text>
                 </TextContent>
-                <hr className="pf-u-mb-lg" />
+                <hr className="pf-v5-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard
@@ -221,20 +253,35 @@ export default function IdentityProvidersSection() {
             searchPlaceholderKey="searchForProvider"
             toolbarItem={
               <>
+                <ToolbarItem alignSelf="center">
+                  <Checkbox
+                    label={t("hideOrganizationLinkedIdps")}
+                    id="hideOrganizationLinkedIdps"
+                    data-testid="hideOrganizationLinkedIdps"
+                    isChecked={hide}
+                    onChange={(_event, check) => {
+                      setHide(check);
+                      refresh();
+                    }}
+                  />
+                </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
-                    toggle={
-                      <DropdownToggle
-                        onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        isPrimary
+                    onOpenChange={(isOpen) => setAddProviderOpen(isOpen)}
+                    toggle={(ref) => (
+                      <MenuToggle
+                        ref={ref}
+                        onClick={() => setAddProviderOpen(!addProviderOpen)}
+                        variant="primary"
                       >
                         {t("addProvider")}
-                      </DropdownToggle>
-                    }
+                      </MenuToggle>
+                    )}
                     isOpen={addProviderOpen}
-                    dropdownItems={identityProviderOptions()}
-                  />
+                  >
+                    <DropdownList>{identityProviderOptions()}</DropdownList>
+                  </Dropdown>
                 </ToolbarItem>
 
                 <ToolbarItem>
@@ -268,7 +315,29 @@ export default function IdentityProvidersSection() {
                 displayKey: "providerDetails",
                 cellFormatters: [upperCaseFormatter()],
               },
+              {
+                name: "organizationId",
+                displayKey: "linkedOrganization",
+                cellRenderer: OrganizationLink,
+              },
             ]}
+            emptyState={
+              <ListEmptyState
+                message={t("identityProviders")}
+                instructions={t("emptyRealmBasedIdps")}
+                isSearchVariant
+                secondaryActions={[
+                  {
+                    text: t("clearAllFilters"),
+                    onClick: () => {
+                      setHide(false);
+                      refresh();
+                    },
+                    type: ButtonVariant.link,
+                  },
+                ]}
+              />
+            }
           />
         )}
       </PageSection>

@@ -36,6 +36,16 @@
             }
         },
         {
+            "providerId" : "github",
+            "alias" : "github1",
+            "enabled": true,
+            "config": {
+                "syncMode": "IMPORT",
+                "clientId": "googleId",
+                "clientSecret": "googleSecret"
+            }
+        },
+        {
             "providerId" : "facebook",
             "alias" : "facebook1",
             "enabled": true,
@@ -236,6 +246,17 @@
                     "identityProvider": "google1",
                     "userId": "google1",
                     "userName": "mySocialUser@gmail.com"
+                }
+            ]
+        },
+        {
+            "username": "lowercasesocialuser",
+            "enabled": true,
+            "federatedIdentities": [
+                {
+                    "identityProvider": "github1",
+                    "userId": "github1",
+                    "userName": "lowercasesocialuser@gmail.com"
                 }
             ]
         },

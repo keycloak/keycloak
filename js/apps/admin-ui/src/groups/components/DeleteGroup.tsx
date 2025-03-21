@@ -1,9 +1,8 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { ButtonVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 
 type DeleteConfirmProps = {
@@ -19,6 +18,8 @@ export const DeleteGroup = ({
   toggleDialog,
   refresh,
 }: DeleteConfirmProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 

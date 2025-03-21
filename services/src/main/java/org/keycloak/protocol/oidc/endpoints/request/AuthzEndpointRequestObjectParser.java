@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jwe.JWE;
@@ -42,6 +41,7 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
     private final JsonNode requestParams;
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) {
+        super(session);
         this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class);
 
         if (this.requestParams == null) {

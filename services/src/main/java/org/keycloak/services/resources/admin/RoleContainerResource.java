@@ -18,12 +18,17 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
-import jakarta.ws.rs.NotFoundException;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -34,9 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -46,12 +49,14 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -67,9 +72,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.keycloak.services.ErrorResponseException;
 
 /**
  * @resource Roles
@@ -106,7 +109,11 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Get all roles for the realm or client")
+    @Operation(summary = "Get all roles for the realm or client")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<RoleRepresentation> getRoles(@QueryParam("search") @DefaultValue("") String search,
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
@@ -138,12 +145,19 @@ public class RoleContainerResource extends RoleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Create a new role for the realm or client")
+    @Operation(summary = "Create a new role for the realm or client")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response createRole(final RoleRepresentation rep) {
         auth.roles().requireManage(roleContainer);
 
         if (rep.getName() == null) {
-            throw new BadRequestException();
+            throw new BadRequestException("role has no name");
         }
 
         try {
@@ -179,7 +193,7 @@ public class RoleContainerResource extends RoleResource {
                         }
                         realmRoles.add(realmRole);
                     }
-                    RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
+                    realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                 }
 
                 Map<String, List<String>> compositeClientRoles = composites.getClient();
@@ -200,14 +214,14 @@ public class RoleContainerResource extends RoleResource {
                             }
                             clientRoles.add(clientRole);
                         }
-                        RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
+                        clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
                     }
                 }
             }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(Encode.encodePathSegmentAsIs(role.getName())).build()).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
@@ -224,7 +238,12 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Get a role by name")
+    @Operation(summary = "Get a role by name")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public RoleRepresentation getRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
 
@@ -245,7 +264,13 @@ public class RoleContainerResource extends RoleResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Delete a role by name")
+    @Operation(summary = "Delete a role by name")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void deleteRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -278,7 +303,13 @@ public class RoleContainerResource extends RoleResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Update a role by name")
+    @Operation(summary = "Update a role by name")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response updateRole(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName, final RoleRepresentation rep) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -312,8 +343,12 @@ public class RoleContainerResource extends RoleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Add a composite to the role")
-    @APIResponse(responseCode = "204", description = "No Content")
+    @Operation(summary = "Add a composite to the role")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void addComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -334,7 +369,12 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Get composites of the role")
+    @Operation(summary = "Get composites of the role")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Stream<RoleRepresentation> getRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -355,7 +395,12 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Get realm-level roles of the role's composite")
+    @Operation(summary = "Get realm-level roles of the role's composite")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Stream<RoleRepresentation> getRealmRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName) {
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
@@ -377,7 +422,12 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Get client-level roles for the client that are in the role's composite")
+    @Operation(summary = "Get client-level roles for the client that are in the role's composite")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Stream<RoleRepresentation> getClientRoleComposites(final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
                                                                 final @PathParam("client-uuid") String clientUuid) {
         auth.roles().requireView(roleContainer);
@@ -404,7 +454,12 @@ public class RoleContainerResource extends RoleResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Remove roles from the role's composite")
+    @Operation(summary = "Remove roles from the role's composite")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public void deleteComposites(
                                    final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
                                    @Parameter(description = "roles to remove") List<RoleRepresentation> roles) {
@@ -429,8 +484,14 @@ public class RoleContainerResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @Operation(summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public ManagementPermissionReference getManagementPermissions(final @PathParam("role-name") String roleName) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireView(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -457,8 +518,14 @@ public class RoleContainerResource extends RoleResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @Operation(summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-name") String roleName, ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
@@ -481,6 +548,7 @@ public class RoleContainerResource extends RoleResource {
      * @param roleName the role name.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @return a non-empty {@code Stream} of users.
      */
     @Path("{role-name}/users")
@@ -488,8 +556,14 @@ public class RoleContainerResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Returns a stream of users that have the specified role name.")
+    @Operation(summary = "Returns a stream of users that have the specified role name.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Stream<UserRepresentation> getUsersInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
+                                                    @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
                                                     @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
         
@@ -502,8 +576,11 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
 
+        final Function<UserModel, UserRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
+                ? ModelToRepresentation::toBriefRepresentation
+                : user -> ModelToRepresentation.toRepresentation(session, realm, user);
         return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map(user -> ModelToRepresentation.toRepresentation(session, realm, user));
+                .map(toRepresentation);
     }
     
     /**
@@ -521,7 +598,12 @@ public class RoleContainerResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
-    @Operation( summary = "Returns a stream of groups that have the specified role name")
+    @Operation(summary = "Returns a stream of groups that have the specified role name")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Stream<GroupRepresentation> getGroupsInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
                                                     @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults,

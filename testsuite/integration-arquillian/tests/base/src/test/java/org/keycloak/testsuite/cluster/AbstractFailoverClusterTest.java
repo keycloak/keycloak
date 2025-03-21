@@ -32,7 +32,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
@@ -138,8 +138,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
     }
 
     protected void logout() {
-        String logoutUrl = oauth.getLogoutUrl().build();
-        driver.navigate().to(logoutUrl);
+        oauth.openLogoutForm();
 
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
@@ -151,7 +150,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     protected Cookie verifyLoggedIn(Cookie sessionCookieForVerification) {
         // verify on realm path
-        URLUtils.navigateToUri(AUTH_SERVER_ROOT + "/realms/test");
+        URLUtils.navigateToUri(AUTH_SERVER_ROOT + "/realms/test/");
         Cookie sessionCookieOnRealmPath = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookieOnRealmPath);
         assertEquals(sessionCookieOnRealmPath.getValue(), sessionCookieForVerification.getValue());

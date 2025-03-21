@@ -1,4 +1,9 @@
-import { Wizard } from "@patternfly/react-core";
+import {
+  useWizardContext,
+  Wizard,
+  WizardFooter,
+  WizardStep,
+} from "@patternfly/react-core/";
 import { useTranslation } from "react-i18next";
 
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
@@ -6,36 +11,50 @@ import { SettingsCache } from "./shared/SettingsCache";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useForm } from "react-hook-form";
 
+const UserFedKerberosFooter = () => {
+  const { t } = useTranslation();
+  const { activeStep, goToNextStep, goToPrevStep, close } = useWizardContext();
+  return (
+    <WizardFooter
+      activeStep={activeStep}
+      onNext={goToNextStep}
+      onBack={goToPrevStep}
+      onClose={close}
+      isBackDisabled={activeStep.index === 1}
+      backButtonText={t("back")}
+      nextButtonText={t("next")}
+      cancelButtonText={t("cancel")}
+    />
+  );
+};
+
 export const UserFederationKerberosWizard = () => {
   const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
 
-  const steps = [
-    {
-      name: t("requiredSettings"),
-      component: (
+  return (
+    <Wizard height="100%" footer={<UserFedKerberosFooter />}>
+      <WizardStep
+        name={t("requiredSettings")}
+        id="kerberosRequiredSettingsStep"
+      >
         <KerberosSettingsRequired
           form={form}
           showSectionHeading
           showSectionDescription
         />
-      ),
-    },
-    {
-      name: t("cacheSettings"),
-      component: (
+      </WizardStep>
+      <WizardStep
+        name={t("cacheSettings")}
+        id="cacheSettingsStep"
+        footer={{
+          backButtonText: t("back"),
+          nextButtonText: t("finish"),
+          cancelButtonText: t("cancel"),
+        }}
+      >
         <SettingsCache form={form} showSectionHeading showSectionDescription />
-      ),
-      nextButtonText: t("finish"), // TODO: needs to disable until cache policy is valid
-    },
-  ];
-
-  return (
-    <Wizard
-      // Because this is an inline wizard, this title and description should be put into the page. Specifying them here causes the wizard component to make a header that would be used on a modal.
-      // title={t("addKerberosWizardTitle")}
-      // description={helpText("addKerberosWizardDescription")}
-      steps={steps}
-    />
+      </WizardStep>
+    </Wizard>
   );
 };

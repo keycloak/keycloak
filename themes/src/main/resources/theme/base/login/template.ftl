@@ -1,6 +1,7 @@
+<#import "footer.ftl" as loginFooter>
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}"<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
+<html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
 <head>
     <meta charset="utf-8">
@@ -29,25 +30,38 @@
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <script type="importmap">
+        {
+            "imports": {
+                "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
+            }
+        }
+    </script>
+    <script src="${url.resourcesPath}/js/menu-button-links.js" type="module"></script>
     <#if scripts??>
         <#list scripts as script>
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <script type="module">
+        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
+
+        startSessionPolling(
+          "${url.ssoLoginInOtherTabsUrl?no_esc}"
+        );
+    </script>
     <#if authenticationSession??>
         <script type="module">
-            import { checkCookiesAndSetTimer } from "${url.resourcesPath}/js/authChecker.js";
+            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
 
-            checkCookiesAndSetTimer(
-              "${authenticationSession.authSessionId}",
-              "${authenticationSession.tabId}",
-              "${url.ssoLoginInOtherTabsUrl}"
+            checkAuthSession(
+                "${authenticationSession.authSessionIdHash}"
             );
         </script>
     </#if>
 </head>
 
-<body class="${properties.kcBodyClass!}">
+<body class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
 <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!}">
         <div id="kc-header-wrapper"
@@ -58,13 +72,15 @@
             <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
                 <div class="${properties.kcLocaleMainClass!}" id="kc-locale">
                     <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
-                        <div id="kc-locale-dropdown" class="${properties.kcLocaleDropDownClass!}">
-                            <a href="#" id="kc-current-locale-link">${locale.current}</a>
-                            <ul class="${properties.kcLocaleListClass!}">
+                        <div id="kc-locale-dropdown" class="menu-button-links ${properties.kcLocaleDropDownClass!}">
+                            <button tabindex="1" id="kc-current-locale-link" aria-label="${msg("languages")}" aria-haspopup="true" aria-expanded="false" aria-controls="language-switch1">${locale.current}</button>
+                            <ul role="menu" tabindex="-1" aria-labelledby="kc-current-locale-link" aria-activedescendant="" id="language-switch1" class="${properties.kcLocaleListClass!}">
+                                <#assign i = 1>
                                 <#list locale.supported as l>
-                                    <li class="${properties.kcLocaleListItemClass!}">
-                                        <a class="${properties.kcLocaleItemClass!}" href="${l.url}">${l.label}</a>
+                                    <li class="${properties.kcLocaleListItemClass!}" role="none">
+                                        <a role="menuitem" id="language-${i}" class="${properties.kcLocaleItemClass!}" href="${l.url}">${l.label}</a>
                                     </li>
+                                    <#assign i++>
                                 </#list>
                             </ul>
                         </div>
@@ -141,7 +157,7 @@
                   <div class="${properties.kcFormGroupClass!}">
                       <input type="hidden" name="tryAnotherWay" value="on"/>
                       <a href="#" id="try-another-way"
-                         onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                         onclick="document.forms['kc-select-try-another-way-form'].requestSubmit();return false;">${msg("doTryAnotherWay")}</a>
                   </div>
               </form>
           </#if>
@@ -158,6 +174,7 @@
         </div>
       </div>
 
+      <@loginFooter.content/>
     </div>
   </div>
 </body>

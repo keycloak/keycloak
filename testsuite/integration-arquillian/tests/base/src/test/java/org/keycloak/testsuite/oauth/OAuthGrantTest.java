@@ -21,7 +21,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -44,7 +43,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.openqa.selenium.By;
@@ -97,15 +96,15 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void oauthGrantAcceptTest() {
-        oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.accept();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin()
                 .client(THIRD_PARTY_APP)
@@ -114,7 +113,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String sessionId = loginEvent.getSessionId();
 
-        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
+        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
 
         String tokenString = accessToken.getAccessToken();
         Assert.assertNotNull(tokenString);
@@ -143,15 +142,14 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     @Test
     public void oauthGrantCancelTest() {
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
 
         grantPage.cancel();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.ERROR));
-        assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("access_denied", oauth.parseLoginResponse().getError());
 
         events.expectLogin()
                 .client(THIRD_PARTY_APP)
@@ -165,7 +163,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     public void oauthGrantNotShownWhenAlreadyGranted() throws IOException {
         // Grant permissions on grant screen
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
         grantPage.accept();
@@ -206,7 +204,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     public void oauthGrantAddAnotherScope() throws IOException {
         // Grant permissions on grant screen
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         // Create new clientScope and add to client
         RealmResource appRealm = adminClient.realm(REALM_NAME);
@@ -278,7 +276,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         // Assert clientScope not on grant screen when not requested
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
         Assert.assertFalse(grants.contains("foo-scope"));
@@ -292,7 +290,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         oauth.scope("foo-scope");
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         grants = grantPage.getDisplayedGrants();
         Assert.assertTrue(grants.contains("foo-scope"));
@@ -350,15 +348,14 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
                 .assertEvent();
 
-        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
 
         events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
                 .client(THIRD_PARTY_APP)
                 .assertEvent();
 
-        String logoutUrl = oauth.getLogoutUrl().idTokenHint(res.getIdToken()).build();
-        driver.navigate().to(logoutUrl);
+        oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
         events.expectLogout(loginEvent.getSessionId()).client(THIRD_PARTY_APP).removeDetail(Details.REDIRECT_URI).assertEvent();
 
@@ -412,7 +409,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         // Login
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "foo-addr");
         grantPage.accept();
@@ -455,7 +452,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     @Test
     public void oauthGrantExpiredAuthSession() throws Exception {
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
 
@@ -491,7 +488,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         // Display consent screen --- assert email, then profile
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
         List<String> displayedScopes = grantPage.getDisplayedGrants();
@@ -521,14 +518,14 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     public void oauthGrantUserNotLoggedOutAfterConsentRevoke() throws Exception {
         // Login
         oauth.clientId(THIRD_PARTY_APP);
-        oauth.doLoginGrant(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         // Confirm consent screen
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin()
                 .client(THIRD_PARTY_APP)

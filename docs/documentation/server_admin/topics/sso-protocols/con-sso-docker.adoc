@@ -27,4 +27,4 @@ NOTE: {project_name} does not create a browser SSO session after successful auth
 
 {project_name} has one endpoint for all Docker auth v2 requests.
 
-`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/docker-v2`
+`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/docker-v2/auth`
