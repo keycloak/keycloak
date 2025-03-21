@@ -1,10 +1,8 @@
-= Configuring Keycloak as a Verifiable Credential Issuer
-:toc: right
-:icons: font
+== Configuring Keycloak as a Verifiable Credential Issuer
 
-{project_name} provides support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance)].
+{project_name} provides support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance].
 
-== Introduction
+=== Introduction
 
 This chapter provides step-by-step instructions for configuring Keycloak as a Verifiable Credential Issuer using the OpenID for Verifiable Credential Issuance (OID4VCI) protocol. It outlines the process for setting up a Keycloak instance to securely issue and manage Verifiable Credentials (VCs), supporting decentralized identity solutions.
 
@@ -29,7 +27,7 @@ This chapter covers the following technical configurations:
 - Configuring a credential builder for VC formatting.
 - Verifying the configuration using the issuer metadata endpoint.
 
-== Prerequisites
+=== Prerequisites
 
 Ensure the following requirements are met before configuring Keycloak as a Verifiable Credential Issuer:
 
@@ -55,7 +53,7 @@ Refer to the following Keycloak documentation sections for detailed steps on:
 - https://www.keycloak.org/docs/latest/server_admin/#proc-creating-oidc-client_server_administration_guide[Creating a Client^]
 - https://www.keycloak.org/securing-apps/token-exchange#_internal_internal_making_request[Obtaining an Access Token^]
 
-== Configuration Steps
+=== Configuration Steps
 
 Follow these steps to configure Keycloak as a Verifiable Credential Issuer. Each section is detailed with procedures, explanations, and examples where applicable.
 
@@ -338,7 +336,7 @@ This is a **sample configuration**.
 You can **register multiple credential builders** for different VC formats **(e.g., JWT, JSON-LD, etc.)**.
 ====
 
-== Verify the Configuration
+=== Verify the Configuration
 
 Validate the setup by accessing the **issuer metadata endpoint**:
 
