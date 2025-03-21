@@ -49,6 +49,9 @@ export const FileComponent = ({
             onTextChange={(value) => {
               field.onChange(value);
             }}
+            onDataChange={(_, value) => {
+              field.onChange(value);
+            }}
           />
         )}
       />
