@@ -21,6 +21,7 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -60,8 +61,11 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
+        CredentialEntity entity = em.find(CredentialEntity.class, cred.getId(), LockModeType.PESSIMISTIC_WRITE);
         if (!checkCredentialEntity(entity, user)) return;
+        if (!cred.checkCurrentCredential(toModel(entity))) {
+            throw new ModelIllegalStateException("Current credential not valid for update");
+        }
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setUserLabel(cred.getUserLabel());
         entity.setType(cred.getType());

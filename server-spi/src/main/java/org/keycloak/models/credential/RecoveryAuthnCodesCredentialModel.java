@@ -4,9 +4,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodeRepresentation;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesCredentialData;
 import org.keycloak.models.credential.dto.RecoveryAuthnCodesSecretData;
@@ -15,6 +13,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
 
@@ -53,6 +52,29 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean checkCurrentCredential(CredentialModel current) {
+        // check parent method
+        boolean result = super.checkCurrentCredential(current);
+        if (!result) {
+            return false;
+        }
+        // convert current to recovery codes credential
+        RecoveryAuthnCodesCredentialModel currentRecoveryAuthnCodes = createFromCredentialModel(current);
+        // check a new credential code is assigned with all the codes
+        if (credentialData.getRemainingCodes() == credentialData.getTotalCodes()) {
+            return true;
+        }
+        // change in label
+        if (credentialData.getRemainingCodes() == currentRecoveryAuthnCodes.credentialData.getRemainingCodes()
+                && Objects.equals(getCreatedDate(), currentRecoveryAuthnCodes.getCreatedDate())
+                && !Objects.equals(getUserLabel(), currentRecoveryAuthnCodes.getUserLabel())) {
+            return true;
+        }
+        // final check is for code used, one code should be removed
+        return credentialData.getRemainingCodes() + 1 == currentRecoveryAuthnCodes.credentialData.getRemainingCodes();
     }
 
     public static RecoveryAuthnCodesCredentialModel createFromValues(List<String> originalGeneratedCodes, long generatedAt,

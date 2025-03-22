@@ -2,6 +2,7 @@ package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
@@ -108,8 +109,12 @@ public class RecoveryAuthnCodesCredentialProvider
                     String nextRecoveryCode = nextRecoveryAuthnCode.get().getEncodedHashedValue();
                     if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, nextRecoveryCode)) {
                         credentialModel.removeRecoveryAuthnCode();
-                        user.credentialManager().updateStoredCredential(credentialModel);
-                        return true;
+                        try {
+                            user.credentialManager().updateStoredCredential(credentialModel);
+                            return true;
+                        } catch (ModelIllegalStateException e) {
+                            // the recovery code was updated simultaneously, just continue and return false
+                        }
                     }
 
                 }

@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.Base64;
@@ -304,6 +305,18 @@ public class CredentialModel implements Serializable {
 
     public String getFederationLink() {
         return federationLink;
+    }
+
+    /**
+     * Method called when the credential model is updated to check if the update
+     * is consistent or some other simultaneous update broke the consistency.
+     * Default implementation checks the type of the credential is the same.
+     *
+     * @param current The current credential model read from the DB
+     * @return true if it can be updated, false if not
+     */
+    public boolean checkCurrentCredential(CredentialModel current) {
+        return Objects.equals(getType(), current.getType());
     }
 
     private Map<String, Object> readMapFromJson(boolean secret) {
