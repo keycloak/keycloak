@@ -23,11 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
@@ -51,9 +54,11 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -73,6 +78,7 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
@@ -95,7 +101,7 @@ public class DPoPUtil {
 
     public static final String DPOP_HTTP_HEADER = "DPoP";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
-    private static final String DPOP_ATH_ALG = "RS256";
+    public static final String DPOP_ATH_ALG = "RS256";
 
     public static final Set<String> DPOP_SUPPORTED_ALGS = Stream.of(
         Algorithm.ES256,
@@ -258,6 +264,43 @@ public class DPoPUtil {
             throw new VerificationException("DPoP verification failure: " + ex.getMessage(), ex);
         }
 
+    }
+
+    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
+
+    public static TokenVerifier<AccessToken> withDPoPVerifier(TokenVerifier<AccessToken> verifier, RealmModel realm, DPoPUtil.Validator validator) {
+        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            verifier = verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP))
+                    .withChecks(token -> {
+                        String[] split = WHITESPACES.split(validator.authHeader);
+                        String typeString = split[0];
+                        if (!typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                            throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
+                        }
+                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                            throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
+                        }
+                        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
+                        if (clientModel == null) {
+                            throw new VerificationException("Client not found");
+                        }
+                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                            throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
+                        }
+                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                            if (validator.accessToken == null) {
+                                throw new VerificationException("Access Token not set for validator");
+                            }
+                            DPoP dPoP = validator.validate();
+                            DPoPUtil.validateBinding(token, dPoP);
+                            if (!Objects.equals(token.getConfirmation().getKeyThumbprint(), dPoP.getThumbprint())) {
+                                throw new VerificationException("DPoP Proof public key thumbprint does not match dpop_jkt");
+                            }
+                        }
+                        return true;
+                    });
+        }
+        return verifier;
     }
 
     public static void validateBinding(AccessToken token, DPoP dPoP) throws VerificationException {
@@ -490,6 +533,7 @@ public class DPoPUtil {
         private String method;
         private String dPoP;
         private String accessToken;
+        private String authHeader;
         private int clockSkew = DEFAULT_ALLOWED_CLOCK_SKEW;
         private int lifetime = DEFAULT_PROOF_LIFETIME;
 
@@ -503,6 +547,7 @@ public class DPoPUtil {
             this.uri = request.getUri().getAbsolutePath();
             this.method = request.getHttpMethod();
             this.dPoP = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
+            this.authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
             return this;
         }
 
