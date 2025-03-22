@@ -157,10 +157,9 @@ public class BruteForceUsersResource {
             Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             userModels = userModels.filter(usersEvaluator::canView);
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
         return userModels.map(user -> {
