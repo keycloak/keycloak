@@ -327,8 +327,11 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        // TODO: the previous assumption that this would be clean is based upon ignoring properties that came
+        // from classpath based files. Now that the configuration is in test/resources/conf there are visible
+        // runtime entries
+        //assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
     }

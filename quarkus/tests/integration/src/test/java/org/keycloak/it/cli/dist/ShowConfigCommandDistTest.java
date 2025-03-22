@@ -13,6 +13,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -103,6 +104,7 @@ public class ShowConfigCommandDistTest {
         result.assertBuild();
 
         distribution.setEnvVar("KC_LOG", "file");
+        distribution.copyOrReplaceFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
         result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
 
@@ -111,7 +113,6 @@ public class ShowConfigCommandDistTest {
         result.assertMessage("(quarkus.properties)");
         result.assertMessage("(Persisted)");
         result.assertMessage("(config-keystore)");
-        result.assertMessage("(classpath keycloak.conf)");
         result.assertMessage("(keycloak-keystore.conf)");
     }
 }

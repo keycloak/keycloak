@@ -45,6 +45,10 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
         return resolve(context::restart, context::proceed, name, false);
     }
 
+    public static ConfigValue proceed(ConfigSourceInterceptorContext context, String name) {
+        return resolve(context::proceed, context::proceed, name, false);
+    }
+
     private static <T> T resolve(Function<String, T> resolver, Function<String, T> nonRecursiveResolver, String name, boolean startNew) {
         LinkedHashSet<String> recursing = recursions.get();
         if (recursing == null && startNew) {
