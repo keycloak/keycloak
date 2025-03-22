@@ -340,7 +340,7 @@ public class OAuthClient {
         WaitUtils.waitForPageToLoad();
         WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
         waitUntilElement(linkAccountButton).is().clickable();
-        linkAccountButton.click();
+        UIUtils.clickLink(linkAccountButton);
 
         WaitUtils.waitForPageToLoad();
         fillLoginForm(username, password, false);
@@ -385,10 +385,10 @@ public class OAuthClient {
         passwordField.sendKeys(password);
 
         if (rememberMe) {
-            driver.findElement(By.id("rememberMe")).click();
+            UIUtils.switchCheckbox(driver.findElement(By.id("rememberMe")), true);
         }
 
-        driver.findElement(By.name("login")).click();
+        UIUtils.clickLink(driver.findElement(By.name("login")));
 
     }
 
@@ -412,7 +412,7 @@ public class OAuthClient {
 
         WebElement submitButton = driver.findElement(By.cssSelector("input[type=\"submit\"]"));
         waitUntilElement(submitButton).is().clickable();
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void doLoginGrant(String username, String password) {
