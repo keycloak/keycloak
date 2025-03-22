@@ -84,7 +84,7 @@
       ]
     },
     "build-lib": {
-      "command": "LIB=true vite build",
+      "command": "cross-env LIB=true vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
