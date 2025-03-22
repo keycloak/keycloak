@@ -1,10 +1,11 @@
+import { label } from "@keycloak/keycloak-ui-shared";
 import {
   Nav,
   NavGroup,
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
-import { FormEvent } from "react";
+import { FormEvent, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
@@ -16,9 +17,14 @@ import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 
 import "./page-nav.css";
 
-type LeftNavProps = { title: string; path: string; id?: string };
+type LeftNavProps = {
+  title: string;
+  path: string;
+  id?: string;
+  fallback?: ReactNode;
+};
 
-const LeftNav = ({ title, path, id }: LeftNavProps) => {
+const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
@@ -35,7 +41,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
       : hasAccess(route.handle.access));
 
   if (!accessAllowed) {
-    return null;
+    return fallback;
   }
 
   const name = "nav-item" + path.replace("/", "-");
@@ -63,7 +69,7 @@ export const PageNav = () => {
   const pages =
     componentTypes?.["org.keycloak.services.ui.extend.UiPageProvider"];
   const navigate = useNavigate();
-  const { realmRepresentation } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
 
   type SelectedItem = {
     groupId: number | string;
@@ -95,6 +101,17 @@ export const PageNav = () => {
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
+          <NavGroup aria-label={t("currentRealm")} title={t("currentRealm")}>
+            <LeftNav
+              title={label(t, realmRepresentation?.displayName, realm)}
+              path="/realms"
+              fallback={
+                <li>
+                  <span className="pf-v5-c-nav__link">{realm}</span>
+                </li>
+              }
+            />
+          </NavGroup>
           {showManage && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&
