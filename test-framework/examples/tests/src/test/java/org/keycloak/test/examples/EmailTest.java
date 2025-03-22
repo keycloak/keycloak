@@ -3,6 +3,8 @@ package org.keycloak.test.examples;
 import com.nimbusds.oauth2.sdk.GeneralException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
@@ -50,6 +52,7 @@ public class EmailTest {
         mail.waitForIncomingEmail(1);
         MimeMessage lastReceivedMessage = mail.getLastReceivedMessage();
         Assertions.assertEquals("Login error", lastReceivedMessage.getSubject());
+        MatcherAssert.assertThat(lastReceivedMessage.getMessageID(), Matchers.endsWith("@keycloak.org>"));
     }
 
     public static class EmailSenderRealmConfig implements RealmConfig {
