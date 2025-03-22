@@ -95,6 +95,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "policyUri",
                       "tosUri",
                       "access.token.signed.response.alg",
+                      "access.token.header.type.rfc9068",
                       "id.token.signed.response.alg",
                       "id.token.encrypted.response.alg",
                       "id.token.encrypted.response.enc",

@@ -77,6 +77,8 @@ public final class OIDCConfigAttributes {
 
     public static final String USE_LOWER_CASE_IN_TOKEN_RESPONSE = "token.response.type.bearer.lower-case";
 
+    public static final String USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE = "access.token.header.type.rfc9068";
+
     public static final String ID_TOKEN_AS_DETACHED_SIGNATURE  = "id.token.as.detached.signature";
 
     public static final String AUTHORIZATION_SIGNED_RESPONSE_ALG = "authorization.signed.response.alg";
