@@ -57,7 +57,7 @@
       ]
     },
     "build-lib": {
-      "command": "LIB=true vite build",
+      "command": "cross-env LIB=true vite build",
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-admin-client:build"
@@ -117,6 +117,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.8.1",
+    "cross-env": "^7.0.3",
     "jsdom": "^26.0.0",
     "lightningcss": "^1.29.3",
     "ts-node": "^10.9.2",
