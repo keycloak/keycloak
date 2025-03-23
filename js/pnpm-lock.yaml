@@ -129,6 +129,9 @@ importers:
       '@vitejs/plugin-react-swc':
         specifier: ^3.8.1
         version: 3.8.1(vite@6.2.2(@types/node@22.13.10)(lightningcss@1.29.3)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       lightningcss:
         specifier: ^1.29.3
         version: 1.29.3
