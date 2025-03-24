@@ -103,6 +103,10 @@ The Keycloak outgoing link:{adminguide_email_name}[SMTP mail configuration] now 
 Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
 The token is gathered using Client Credentials Grant.
 
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/srose[Sebastian Rose] for the contribution.
+endif::[]
+
 = New client configuration for access token header type
 
 A new admin setting has been added: Clients -> Advanced -> Fine grain OpenID Connect configuration -> Use "at+jwt" as access token header type
@@ -110,3 +114,7 @@ A new admin setting has been added: Clients -> Advanced -> Fine grain OpenID Con
 If enabled, access tokens will get header type `at+jwt` in compliance with https://datatracker.ietf.org/doc/html/rfc9068#section-2.1[rfc9068#section-2.1]. Otherwise, the access token header type will be `JWT`.
 
 This setting is turned off by default.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/laurids[Laurids Møller Jepsen] for the contribution.
+endif::[]
