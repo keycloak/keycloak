@@ -69,7 +69,15 @@ Auth Token Client Secret::
   Only needed when *Authentication Type* 'token' is selected.
   Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
-== Configuration for Microsoft Azure and Office365
+ifeval::[{project_community}==true]
+
+== XOAUTH2 email configuration with third-party vendors
+
+Following section contains some hints on how to configure {project_name} email settings to use XOAUTH2 based authentication with some known third-party software SMTP servers.
+
+NOTE: {project_name} is not officially supported and tested with the XOAUTH2 third-party email providers below. Please consider the instructions below just as a best effort.
+
+=== Configuration for Microsoft Azure and Office365
 
 Microsoft Azure allows 'Client Credentials Grant' using a client secret to gather an access token.
 Microsoft Office365 supports SMTP with XOAUTH2 to authenticate with the gathered token.
@@ -79,7 +87,7 @@ Links to relevant Microsoft documentation:
 - https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac[Usage of role base access control for applications in exchange online]
 - Settings in https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth[Authenticate an IMAP, POP or SMTP connection using OAuth]
 
-The following way setting up keycloak to send mails with Azure and Office365 has been verified by a test.
+The following way setting up {project_name} to send mails with Azure and Office365 has been verified by a test.
 There might be other variants to achieve the same depending on your environment.
 
 From::
@@ -113,11 +121,13 @@ Replace ApplicationId with the id of your application in Azure, usually a UUID.
 Auth Token ClientSecret::
 `<Secret configured>`
 
-== Configuration for Google Mail
+=== Configuration for Google Mail
 
-Not supported by Keycloak yet, because Google decided to not allow client-secrets for the Client Credentials Grant.
+Not supported by {project_name} yet, because Google decided to not allow client-secrets for the Client Credentials Grant.
 
-== Configuration for AWS
+=== Configuration for AWS
 
 XOAUTH2 is not supported by the AWS-SMTP service.
 The AWS-service requires to use a password.
+
+endif::[]
