@@ -299,11 +299,14 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Try to find user by username or email for authentication
+     * If "Login with email" is enabled and the given username contains '@',
+     * attempts to find the user by email for authentication.
      *
-     * @param realm    realm
-     * @param username username or email of user
-     * @return found user
+     * Otherwise, or if not found, attempts to find the user by username.
+     *
+     * @param realm the realm to search within
+     * @param username the username or email of the user
+     * @return the found user if present; otherwise, {@code null}
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {

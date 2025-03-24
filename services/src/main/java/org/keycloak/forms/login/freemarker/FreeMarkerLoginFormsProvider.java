@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
 import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -261,7 +262,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("totp", totpBean);
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
-                attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
+                // generate the recovery codes and assign to the auth session
+                RecoveryAuthnCodesBean recoveryAuthnCodesBean = new RecoveryAuthnCodesBean();
+                attributes.put("recoveryAuthnCodesConfigBean", recoveryAuthnCodesBean);
+                authenticationSession.setAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_RECOVERY_AUTHN_CODES_NOTE, recoveryAuthnCodesBean.getGeneratedRecoveryAuthnCodesAsString());
+                authenticationSession.setAuthNote(RecoveryAuthnCodesFormAuthenticator.GENERATED_AT_NOTE, Long.toString(recoveryAuthnCodesBean.getGeneratedAt()));
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
                 attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));

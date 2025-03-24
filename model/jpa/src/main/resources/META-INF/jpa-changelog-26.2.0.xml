@@ -29,4 +29,15 @@
         </createTable>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.2.0-26106">
+        <addColumn tableName="CREDENTIAL">
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
+        </addColumn>
+        <modifySql dbms="mssql">
+            <!-- ensure that existing rows also get the new values on mssql -->
+            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
+    </changeSet>
+
 </databaseChangeLog>

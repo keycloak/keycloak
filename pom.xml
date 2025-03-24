@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.19.2</quarkus.version>
-        <quarkus.build.version>3.19.2</quarkus.build.version>
+        <quarkus.version>3.20.0.CR1</quarkus.version>
+        <quarkus.build.version>3.20.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -114,7 +114,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <log4j2-api.version>2.24.3</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
-        <resteasy.version>6.2.11.Final</resteasy.version>
+        <resteasy.version>6.2.12.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
         <slf4j.version>2.0.6</slf4j.version>
@@ -179,7 +179,7 @@
         <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
 
         <!-- Test -->
-        <greenmail.version>2.1.0-alpha-1</greenmail.version>
+        <greenmail.version>2.1.3</greenmail.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>

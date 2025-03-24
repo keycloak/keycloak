@@ -31,6 +31,8 @@ public class ExportImportConfig {
     public static final String ACTION_EXPORT = "export";
     public static final String ACTION_IMPORT = "import";
 
+    public static final String SINGLE_TRANSACTION = PREFIX + "single-transaction";
+
     public static final String PROVIDER = PREFIX + "provider";
     public static final String PROVIDER_DEFAULT = "dir";
 
@@ -61,15 +63,15 @@ public class ExportImportConfig {
     public static String getAction() {
         return System.getProperty(ACTION);
     }
-    
+
     public static String getStrategy() {
         return System.getProperty(STRATEGY);
     }
-    
+
     public static String setStrategy(Strategy strategy) {
         return System.setProperty(STRATEGY, strategy.toString());
     }
-    
+
     public static Optional<String> getDir() {
         return Optional.ofNullable(System.getProperty(DIR));
     }
@@ -106,9 +108,19 @@ public class ExportImportConfig {
     public static void setReplacePlaceholders(boolean replacePlaceholders) {
         System.setProperty(REPLACE_PLACEHOLDERS, String.valueOf(replacePlaceholders));
     }
-    
+
     public static void reset() {
         Stream.of(FILE, DIR, ACTION, STRATEGY, REPLACE_PLACEHOLDERS)
                 .forEach(prop -> System.getProperties().remove(prop));
     }
+
+    public static void setSingleTransaction(boolean b) {
+        System.setProperty(SINGLE_TRANSACTION, String.valueOf(b));
+    }
+
+    public static boolean isSingleTransaction() {
+        return Boolean.getBoolean(SINGLE_TRANSACTION);
+    }
+
+
 }

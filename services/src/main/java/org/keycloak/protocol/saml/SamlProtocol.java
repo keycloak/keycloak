@@ -364,29 +364,44 @@ public class SamlProtocol implements LoginProtocol {
         return SamlProtocol.SAML_POST_BINDING.equals(note);
     }
 
-    protected boolean isLogoutPostBindingForClient(AuthenticatedClientSessionModel clientSession) {
+    public static String getLogoutBindingTypeForClientSession(AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
         String logoutRedirectUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
+        String logoutArtifactUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE);
 
-        if (logoutPostUrl == null || logoutPostUrl.trim().isEmpty()) {
-            // if we don't have a redirect uri either, return true and default to the admin url + POST binding
-            return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
+        boolean postUrlSet = !(logoutPostUrl == null || logoutPostUrl.trim().isEmpty());
+        boolean redirectUrlSet = !(logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
+        boolean artifactUrlSet = !(logoutArtifactUrl == null || logoutArtifactUrl.trim().isEmpty());
+
+        // Default to Redirect
+        String bindingType = SAML_REDIRECT_BINDING;
+
+        // fall back to post binding if no redirect URL is set
+        if (postUrlSet && !redirectUrlSet) {
+            bindingType = SAML_POST_BINDING;
         }
 
-        if (samlClient.forcePostBinding()) {
-            return true; // configured to force a post binding and post binding logout url is not null
+        // evaluate how the user logged in
+        if (clientSession != null) {
+            String sessionBinding = clientSession.getNote(SAML_BINDING);
+            if (SAML_ARTIFACT_BINDING.equals(sessionBinding) && artifactUrlSet) {
+                bindingType = SAML_ARTIFACT_BINDING;
+            }
         }
 
-        String bindingType = clientSession.getNote(SAML_BINDING);
+        // client configured to force artifact binding and artifactUrl for logout is set
+        if (samlClient.forceArtifactBinding() && artifactUrlSet) {
+            bindingType = SAML_ARTIFACT_BINDING;
+        }
 
-        // if the login binding was POST, return true
-        if (SAML_POST_BINDING.equals(bindingType))
-            return true;
+        // client configured to force post binding and postUrl for logout ‚is set
+        if (samlClient.forcePostBinding() && postUrlSet) {
+            bindingType = SAML_POST_BINDING;
+        }
 
-        // true if we don't have a redirect binding url, so use post binding, false for redirect binding
-        return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
+        return bindingType;
     }
 
     protected String getNameIdFormat(SamlClient samlClient, AuthenticationSessionModel authSession) {
@@ -665,7 +680,7 @@ public class SamlProtocol implements LoginProtocol {
             // we do not allow this URL to be set through the management URL (it is a purely backend-oriented URL)
             logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE);
             return logoutServiceUrl == null || logoutServiceUrl.trim().equals("") ? null : logoutServiceUrl;
-        } else if (!backChannelLogout && useArtifactForLogout(client)) {
+        } else if (!backChannelLogout && (SAML_ARTIFACT_BINDING.equals(bindingType) || useArtifactForLogout(client))) {
             // backchannel logout doesn't support sending artifacts
             logoutServiceUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE);
         } else if (SAML_POST_BINDING.equals(bindingType)) {
@@ -680,7 +695,8 @@ public class SamlProtocol implements LoginProtocol {
             return null;
         return ResourceAdminManager.resolveUri(session, client.getRootUrl(), logoutServiceUrl);
     }
-    
+
+
     public static boolean useArtifactForLogout(ClientModel client) {
         return new SamlClient(client).forceArtifactBinding()
                 && client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE) != null;
@@ -691,15 +707,15 @@ public class SamlProtocol implements LoginProtocol {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         try {
-            boolean postBinding = isLogoutPostBindingForClient(clientSession);
-            String bindingUri = getLogoutServiceUrl(session, client, postBinding ? SAML_POST_BINDING : SAML_REDIRECT_BINDING, false);
+            String logoutBindingType = getLogoutBindingTypeForClientSession(clientSession);
+            String bindingUri = getLogoutServiceUrl(session, client, logoutBindingType, false);
             if (bindingUri == null) {
                 logger.warnf("Failed to logout client %s, skipping this client.  Please configure the logout service url in the admin console for your client applications.", client.getClientId());
                 return null;
             }
 
             NodeGenerator[] extensions = new NodeGenerator[]{};
-            if (!postBinding) {
+            if (!SAML_POST_BINDING.equals(logoutBindingType)) {
                 if (samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
                     KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                     String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
@@ -707,17 +723,16 @@ public class SamlProtocol implements LoginProtocol {
                 }
             }
             LogoutRequestType logoutRequest = createLogoutRequest(bindingUri, clientSession, client, extensions);
-            JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient, "true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get())));
+            JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient, SAML_ARTIFACT_BINDING.equals(logoutBindingType));
 
             //If this session uses artifact binding, send an artifact instead of the LogoutRequest
-            if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))
-                    && useArtifactForLogout(client)) {
+            if (SAML_ARTIFACT_BINDING.equals(logoutBindingType)) {
                 clientSession.setAction(CommonClientSessionModel.Action.LOGGING_OUT.name());
                 return buildArtifactAuthenticatedResponse(clientSession, bindingUri, logoutRequest, binding);
             }
 
             Document samlDocument = SAML2Request.convert(logoutRequest);
-            if (postBinding) {
+            if (SAML_POST_BINDING.equals(logoutBindingType)) {
                 // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
                 return binding.postBinding(samlDocument).request(bindingUri);
             } else {
@@ -1025,7 +1040,7 @@ public class SamlProtocol implements LoginProtocol {
             throw new ProcessingException(e);
         }
     }
-    
+
     protected String buildArtifactAndStoreResponse(SAML2Object statusResponseType, UserSessionModel userSession) throws ArtifactResolverProcessingException, ConfigurationException, ProcessingException {
         String clientIdThatInitiatedLogout = userSession.getNote(SAML_LOGOUT_INITIATOR_CLIENT_ID);
         userSession.removeNote(SAML_LOGOUT_INITIATOR_CLIENT_ID);
@@ -1037,7 +1052,7 @@ public class SamlProtocol implements LoginProtocol {
 
         return buildArtifactAndStoreResponse(statusResponseType, clientSessionModel);
     }
-    
+
     protected String buildArtifactAndStoreResponse(SAML2Object saml2Object, AuthenticatedClientSessionModel clientSessionModel) throws ArtifactResolverProcessingException, ProcessingException, ConfigurationException {
         String entityId = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString();
         ArtifactResponseType artifactResponseType = SamlProtocolUtils.buildArtifactResponse(saml2Object, SAML2NameIDBuilder.value(getResponseIssuer(realm)).build());
@@ -1050,7 +1065,7 @@ public class SamlProtocol implements LoginProtocol {
         notes.put(USER_SESSION_ID, clientSessionModel.getUserSession().getId());
         notes.put(CLIENT_SESSION_ID, clientSessionModel.getClient().getId());
         getSingleUseStore().put(artifact, realm.getAccessCodeLifespan(), notes);
-        
+
         return artifact;
     }
 

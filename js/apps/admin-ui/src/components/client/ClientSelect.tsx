@@ -9,10 +9,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../dynamic/components";
+import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
+import { useParams } from "react-router-dom";
 
 type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
   isRequired?: boolean;
+  clientKey?: keyof ClientRepresentation;
 };
 
 export const ClientSelect = ({
@@ -23,6 +26,7 @@ export const ClientSelect = ({
   isDisabled = false,
   isRequired,
   variant = "typeahead",
+  clientKey = "clientId",
 }: ClientSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -30,6 +34,7 @@ export const ClientSelect = ({
 
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
   const [search, setSearch] = useState("");
+  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
     () => {
@@ -49,8 +54,8 @@ export const ClientSelect = ({
   return (
     <SelectControl
       name={name!}
-      label={t(label!)}
-      labelIcon={t(helpText!)}
+      label={tab !== "evaluation" ? t(label!) : t("client")}
+      labelIcon={tab !== "evaluation" ? t(helpText!) : t("selectClient")}
       controller={{
         defaultValue: defaultValue || "",
         rules: {
@@ -63,10 +68,9 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
-      options={clients.map(({ id, clientId }) => ({
-        key: id!,
-        value: clientId!,
-        label: clientId,
+      options={clients.map((client) => ({
+        key: client[clientKey] as string,
+        value: client.clientId!,
       }))}
     />
   );

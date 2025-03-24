@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
@@ -113,31 +114,45 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
         String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
         String propertyName = mapperModel.getConfig().get(SUBJECT_PROPERTY_CONFIG_KEY);
         ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
-        if (clientModel == null || !clientModel.getProtocol().equals(OID4VCLoginProtocolFactory.PROTOCOL_ID)) {
+        if (clientModel == null) {
+            LOGGER.warnf("Client %s not found in realm.", client);
             return;
         }
 
-        ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(),
-                userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList());
+        // Retrieve only the roles assigned to the user for this specific client
+        List<RoleModel> userRoles = userSessionModel.getUser().getClientRoleMappingsStream(clientModel).toList();
+        if (userRoles.isEmpty()) {
+            LOGGER.debugf("No roles assigned to client '%s'. Skipping claim assignment.", client);
+            return;
+        }
+
+        // Create ClientRoleModel and convert to roles claim
+        ClientRoleModel clientRoleModel = new ClientRoleModel(clientModel.getClientId(), userRoles);
         Role rolesClaim = toRolesClaim(clientRoleModel);
         if (rolesClaim.getNames().isEmpty()) {
+            LOGGER.debugf("No valid role names found for client '%s'. Skipping claim assignment.", client);
             return;
         }
-        var modelMap = OBJECT_MAPPER.convertValue(toRolesClaim(clientRoleModel), Map.class);
 
-        if (claims.containsKey(propertyName)) {
-            if (claims.get(propertyName) instanceof Set rolesProperty) {
-                rolesProperty.add(modelMap);
-                claims.put(propertyName, rolesProperty);
-            } else {
-                LOGGER.warnf("Incompatible types for property %s. The mapper will not set the roles for client %s",
-                        propertyName, client);
-            }
-        } else {
-            // needs to be mutable
-            Set roles = new HashSet();
+        Map<String, Object> modelMap = OBJECT_MAPPER.convertValue(rolesClaim, new TypeReference<>() {});
+
+        Object existingProperty = claims.get(propertyName);
+        if (existingProperty == null) {
+            Set<Map<String, Object>> roles = new HashSet<>();
             roles.add(modelMap);
             claims.put(propertyName, roles);
+        } else if (existingProperty instanceof Set<?> rawSet) {
+            if (rawSet.stream().allMatch(item -> item instanceof Map<?, ?>)) {
+                @SuppressWarnings("unchecked")
+                Set<Map<String, Object>> rolesProperty = (Set<Map<String, Object>>) rawSet;
+                rolesProperty.add(modelMap);
+            } else {
+                LOGGER.warnf("Claim '%s' contains incompatible types. Expected Set<Map<String, Object>>, found '%s'. Skipping role assignment for client '%s'.",
+                        propertyName, existingProperty.getClass().getSimpleName(), client);
+            }
+        } else {
+            LOGGER.warnf("Claim '%s' is of type '%s', expected Set. Skipping role assignment for client '%s'.",
+                    propertyName, existingProperty.getClass().getSimpleName(), client);
         }
     }
 

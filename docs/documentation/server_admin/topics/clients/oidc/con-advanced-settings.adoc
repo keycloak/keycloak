@@ -104,7 +104,7 @@ DPoP binds an access token and a refresh token together with the public part of 
 
 This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
 
-If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the workflow is:
+If the client switch `Require Demonstrating Proof of Possession (DPoP) header in token requests` is on, the workflow is:
 
 . A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
 . {project_name} requests a DPoP proof.
@@ -113,7 +113,7 @@ If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the wor
 
 If verification fails, {project_name} rejects the token.
 
-If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
+If the switch `Require Demonstrating Proof of Possession (DPoP) header in token requests` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
 and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
 on if you want to make sure that particular client always uses DPoP binding.
 

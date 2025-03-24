@@ -104,7 +104,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(IMPERSONATE));
 
         // create user permission forbidding the impersonation for userAlice
-        String cannotImpersonateAlice = createPermission(client, Logic.NEGATIVE, userAlice.getId(), usersType, Set.of(IMPERSONATE)).getName();
+        String cannotImpersonateAlice = createPermission(client, userAlice.getId(), usersType, Set.of(IMPERSONATE)).getName();
 
         // even though "myadmin" has permission to impersonate all users in realm it should be denied to impersonate userAlice
         try {
@@ -117,7 +117,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         // remove the negative permission
         String cannotImpersonateAliceId = getScopePermissionsResource(client).findByName(cannotImpersonateAlice).getId();
         getScopePermissionsResource(client).findById(cannotImpersonateAliceId).remove();
-        
+
         // need to create a separate client for the impersonation call, otherwise next usage of the 'realmAdminClient' would throw 401
         try (Keycloak adminClient = KeycloakBuilder.builder()
                 .serverUrl("http://localhost:8080")
@@ -205,7 +205,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client,"Only My Admin User Policy", myadmin.getId());
         createAllPermission(client, usersType, allowMyAdminPermission, Set.of(VIEW));
 
-        UserPolicyRepresentation denyMyAdminAccessingHisAccountPermission = createUserPolicy(realm, client,"Not My Admin User Policy", myadmin.getId(), Logic.NEGATIVE);
+        UserPolicyRepresentation denyMyAdminAccessingHisAccountPermission = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadmin.getId());
         createPermission(client, myadmin.getId(), usersType, Set.of(VIEW), denyMyAdminAccessingHisAccountPermission);
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertEquals(1, search.size());
@@ -235,7 +235,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testViewUserPermissionDenyByDefault() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
-        UserPolicyRepresentation disallowMyAdmin = createUserPolicy(realm, client,"Not My Admin User Policy", myadminId, Logic.NEGATIVE);
+        UserPolicyRepresentation disallowMyAdmin = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadminId);
         createAllPermission(client, usersType, disallowMyAdmin, Set.of(VIEW));
 
         UserPolicyRepresentation allowAliceOnlyForMyAdmin = createUserPolicy(realm, client,"My Admin User Policy", myadminId);

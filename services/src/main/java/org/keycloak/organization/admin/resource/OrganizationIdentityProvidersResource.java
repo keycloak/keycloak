@@ -36,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -74,6 +75,7 @@ public class OrganizationIdentityProvidersResource {
     @Operation(summary = "Adds the identity provider with the specified id to the organization",
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
                 "or if it is already associated with the organization, an error response is returned")
+    @RequestBody(description = "Payload should contain only id or alias of the identity provider to be associated with the organization (id or alias without quotes).", required = true)
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),

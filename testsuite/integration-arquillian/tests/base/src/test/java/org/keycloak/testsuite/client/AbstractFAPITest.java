@@ -41,6 +41,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.keycloak.OAuth2Constants;
@@ -63,6 +64,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -81,10 +83,17 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     @Page
     protected AppPage appPage;
 
+    protected PkceGenerator pkceGenerator;
+
     @BeforeClass
     public static void verifySSL() {
         // FAPI requires SSL and does not makes sense to test it with disabled SSL
         Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
+    }
+
+    @After
+    public void resetPkce() {
+        pkceGenerator = null;
     }
 
     @Override
@@ -121,9 +130,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
                 expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
     }
 
-    protected String loginUserAndGetCode(String clientId, boolean fragmentResponseModeExpected) {
+    protected String loginUserAndGetCode(String clientId, String nonce, boolean fragmentResponseModeExpected) {
         oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
@@ -134,9 +143,9 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         return code;
     }
 
-    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId) {
+    protected String loginUserAndGetCodeInJwtQueryResponseMode(String clientId, String nonce) {
         oauth.clientId(clientId);
-        oauth.doLogin(TEST_USERNAME, TEST_USERSECRET);
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).request(request).requestUri(requestUri).doLogin(TEST_USERNAME, TEST_USERSECRET);
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
@@ -187,13 +196,13 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         Assert.assertEquals(expectedError, errorPage.getError());
     }
 
-    protected AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, String codeVerifier, Supplier<CloseableHttpClient> httpClientSupplier) {
+    protected AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-            if (codeVerifier != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+            if (pkceGenerator != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, pkceGenerator.getCodeVerifier()));
             }
             parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));

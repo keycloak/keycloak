@@ -174,6 +174,14 @@ public class Keycloak implements AutoCloseable {
     @Override
     public void close() {
         closed = true;
+        if (tokenManager != null) {
+            try {
+                tokenManager.logout();
+            } catch (RuntimeException e) {
+                // do our best closing the session but logout can fail because multiple reasons:
+                // shared jakarta client closed, realm removed or disabled, client removed or disabled,...
+            }
+        }
         client.close();
     }
 

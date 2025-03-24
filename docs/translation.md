@@ -27,6 +27,18 @@ To ensure consistency and quality across translations, please adhere to the foll
 - Maintain consistency with existing translations.
 - Translate text accurately, ensuring that the meaning is preserved.
 
+### Handling of single quotes (`'`)
+
+Whenever messages are formatted in the backend, Keycloak uses Java's MessageFormat to replace placeholders. This uses single quotes (`'`) as an escape mechanism. 
+
+Therefore, use typographic quotes like `‘` and `’` where possible.
+
+To avoid problems, automatic checks ensure the following:
+
+* In all "base" themes, where message keys are evaluated in the backend, no single quote (`'`) must be used standalone as it would not print when used in Java's MessageFormat. For legacy messages, a double single quote (`''`) can be used to print a single quote. 
+
+* In all UI themes, where message keys are evaluated in the frontend, a single quote (`'`) must only be used standalone, and a double single (`''`) must not be used.
+
 ### Spanish translations
 
 - Use the formal "usted" form instead of the informal "vos or tu" (i.e., avoid tuteo), ensuring a more formal tone.
@@ -69,6 +81,8 @@ The following translations are available in Weblate. If you have any questions o
 * Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
 * Spanish: [herver1971](https://github.com/herver1971) && [anthieni](https://github.com/anthieni)
 * Slovenian: [mathmul](https://github.com/mathmul) && [SaraPristovnik](https://github.com/SaraPristovnik)
+* Italian: [GioviQ](https://github.com/GioviQ) && [EdoardoTona](https://github.com/EdoardoTona)
+* Romanian: [edwint88](https://github.com/edwint88) && [liviuroman](https://github.com/liviuroman)
 
 To add a new language, see the section "Steps to Add a new language to Weblate" below.
 
@@ -127,3 +141,5 @@ We rely on volunteers like you to take the initiative in steering the translatio
 | [Catalan](https://hosted.weblate.org/projects/keycloak/-/ca/)   | ![Translation status](https://hosted.weblate.org/widget/keycloak/account-ui/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/admin-ui/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseaccount/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseadmin/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseemail/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baselogin/ca/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/-/ca/svg-badge.svg) |
 | [Spanish](https://hosted.weblate.org/projects/keycloak/-/es/)   | ![Translation status](https://hosted.weblate.org/widget/keycloak/account-ui/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/admin-ui/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseaccount/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseadmin/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseemail/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baselogin/es/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/-/es/svg-badge.svg) |
 | [Slovenian](https://hosted.weblate.org/projects/keycloak/-/sl/) | ![Translation status](https://hosted.weblate.org/widget/keycloak/account-ui/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/admin-ui/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseaccount/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseadmin/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseemail/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baselogin/sl/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/-/sl/svg-badge.svg) |
+| [Italian](https://hosted.weblate.org/projects/keycloak/-/it/)   | ![Translation status](https://hosted.weblate.org/widget/keycloak/account-ui/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/admin-ui/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseaccount/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseadmin/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseemail/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baselogin/it/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/-/it/svg-badge.svg) |
+| [Romanian](https://hosted.weblate.org/projects/keycloak/-/ro/)  | ![Translation status](https://hosted.weblate.org/widget/keycloak/account-ui/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/admin-ui/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseaccount/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseadmin/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baseemail/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/theme-baselogin/ro/svg-badge.svg) | ![Translation status](https://hosted.weblate.org/widget/keycloak/-/ro/svg-badge.svg) |

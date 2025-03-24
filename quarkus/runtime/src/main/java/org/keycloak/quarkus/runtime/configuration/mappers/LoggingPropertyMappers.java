@@ -7,14 +7,12 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import io.quarkus.runtime.configuration.MemorySizeConverter;
-import io.smallrye.config.ConfigValue;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
@@ -127,7 +125,7 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.category.\"<categories>\".level")
                         .validator(LoggingPropertyMappers::validateCategoryLogLevel)
                         .wildcardKeysTransformer(LoggingPropertyMappers::getConfiguredLogCategories)
-                        .transformer((v,c) -> toLevel(v).getName())
+                        .transformer((v,c) -> v == null ? null : toLevel(v).getName())
                         .wildcardMapFrom(LoggingOptions.LOG_LEVEL, LoggingPropertyMappers::resolveCategoryLogLevelFromParentLogLevelOption) // a fallback to log-level
                         .paramLabel("level")
                         .build(),
@@ -245,6 +243,9 @@ public final class LoggingPropertyMappers {
             categoryLevel = parts[0];
         } else if (parts.length == 2) {
             category = parts[0];
+            if (!WildcardPropertyMapper.isValidWildcardValue(category)) {
+                throw new PropertyException("logging category '%s' is not valid".formatted(category));
+            }
             categoryLevel = parts[1];
         } else {
             throw new PropertyException(Messages.invalidLogCategoryFormat(level));
@@ -267,8 +268,8 @@ public final class LoggingPropertyMappers {
         return DEFAULT_ROOT_LOG_LEVEL; // defaults are not resolved in the mapper if transformer is present, so doing it explicitly here
     }
 
-    private static Set<String> getConfiguredLogCategories(Set<String> categories) {
-        for (CategoryLevel categoryLevel : parseRootLogLevel(null)) {
+    private static Set<String> getConfiguredLogCategories(String value, Set<String> categories) {
+        for (CategoryLevel categoryLevel : parseRootLogLevel(value)) {
             if (categoryLevel.category != null) {
                 categories.add(categoryLevel.category);
             }
@@ -285,20 +286,12 @@ public final class LoggingPropertyMappers {
     }
 
     private static String resolveCategoryLogLevelFromParentLogLevelOption(String category, String parentLogLevelValue, ConfigSourceInterceptorContext context) {
-        String rootLevel = DEFAULT_ROOT_LOG_LEVEL;
         for (CategoryLevel categoryLevel : parseRootLogLevel(parentLogLevelValue)) {
             if (category.equals(categoryLevel.category)) {
                 return categoryLevel.levelName;
-            } else if (categoryLevel.category == null) {
-                rootLevel = categoryLevel.levelName;
             }
         }
-
-        // If KC property is not set and the 'log-level' does not override the specific category, use value from Quarkus or properties files
-        return Optional.ofNullable(context.proceed("quarkus.log.category.\"" + category + "\".level"))
-                .map(ConfigValue::getValue)
-                .map(level -> !level.equals("inherit") ? level : null)
-                .orElse(rootLevel);
+        return null;
     }
 
     private static List<CategoryLevel> parseRootLogLevel(String values) {

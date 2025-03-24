@@ -382,14 +382,15 @@ NOTE: The `tracing-jdbc-enabled` is not promoted as a first-class citizen as it 
 
 For more details about tracing, see <@links.observability id="tracing" />.
 
-=== Network Policies (Preview)
+=== Network Policies
 
 NetworkPolicies allow you to specify rules for traffic flow within your cluster, and also between Pods and the outside world.
-Your cluster must use a network plugin that supports NetworkPolicy enforcement.
+Your cluster must use a network plugin that supports NetworkPolicy enforcement to restrict the network traffic.
 
-The operator can automatically create a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
+The operator automatically creates a NetworkPolicy to deny access to the clustering port of your {project_name} Pods.
 The HTTP(S) endpoint is open to traffic from any namespace and the outside world.
-To enable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak CR, as shown in the example below.
+
+To disable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak CR, as shown in the example below.
 
 .Keycloak CR with Network Policies enabled
 [source,yaml]
@@ -400,12 +401,12 @@ metadata:
   name: example-kc
 spec:
   networkPolicy:
-    enabled: true
+    enabled: false
 ----
 
-The above example allows traffic from all sources.
+By default, traffic to the HTTP endpoints and the management endpoint is allowed from all sources.
 The Keycloak CR can be extended to include a list of rules for each of the endpoints exposed by {project_name}.
-These rules specify from where (the source) the traffic is allowed and it's possible to communicate with the {project_name} Pods.
+These rules specify from where (the source) the traffic is allowed, and it is possible to communicate with the {project_name} Pods.
 
 .Extended Network Policy configuration
 [source,yaml]
@@ -471,79 +472,5 @@ The traffic from outside the OpenShift cluster goes through these pods.
 They need to access {project_name} to scrape the available metrics.
 
 Check the https://kubernetes.io/docs/concepts/services-networking/network-policies/[Kubernetes Network Policies documentation] for more information about NetworkPolicies.
-
-=== Managing Keycloak Operator Updates (Preview)
-
-The Keycloak Operator offers updates strategies to control how the Operator handles changes to the Keycloak CR.
-
-[CAUTION]
-====
-While on preview stage, the feature `rolling-updates` must be enabled.
-Otherwise, the {project_name} Operator will fail.
-====
-
-**Supported Updates Types:**
-Rolling Updates:: Update the StatefulSet in a rolling fashion, minimizing downtime (requires multiple replicas).
-Recreate Updates:: Scale down the StatefulSet before applying updates, causing temporary downtime.
-
-==== Configuring the Update Strategy
-
-The update strategy is specified within the `spec` section of the Keycloak CR YAML definition.
-
-[source,yaml]
-----
-apiVersion: k8s.keycloak.org/v2alpha1
-kind: Keycloak
-metadata:
-  name: example-kc
-spec:
-  features:
-    enabled:
-      - rolling-updates # <1>
-  update:
-    strategy: RecreateOnImageChange|Auto # <2>
-----
-<1> Enable preview feature `rolling-updates`.
-<2> Set the desired update strategy here (Recreate in this example).
-
-[%autowidth]
-.Possible field values
-|===
-|Value |Downtime? |Description
-
-|`RecreateOnImageChange` (default)
-|On image name or tag change
-|Mimics Keycloak 26.1 or older behavior.
-When the image field changes, the StatefulSet is scaled down before applying the new image.
-
-|`Auto`
-|On incompatible changes
-|The {project_name} Operator detects if a rolling or recreate upgrade is possible.
-
-|===
-
-===== CR Statuses =====
-
-The Keycloak CR status of type `RecreateUpdateUsed` indicates the type of update strategy employed during the last update operation.
-The `lastTransitionTime` field indicates when the last update occurred.
-
-[%autowidth]
-.Condition statuses
-|===
-|Status |Description
-
-m|Unknown
-|The initial state.
-It means no update has taken place.
-
-m|False
-|The rolling update type was used in the last update.
-
-m|True
-|The recreate update type was used in the last update.
-The `message` field explains why this strategy was chosen.
-
-|===
-
 
 </@tmpl.guide>

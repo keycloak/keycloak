@@ -41,6 +41,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-junit5-config</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-ui</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>

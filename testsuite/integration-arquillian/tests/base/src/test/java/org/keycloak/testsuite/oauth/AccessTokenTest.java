@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -88,9 +89,11 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 
 import jakarta.ws.rs.client.Client;
@@ -136,6 +139,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    private HttpGet get;
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -284,6 +288,28 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testTokenResponseUsingRfc9068HeaderType() throws Exception {
+        ClientsResource clients = realmsResouce().realm("test").clients();
+        ClientRepresentation client = clients.findByClientId(oauth.getClientId()).get(0);
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRfc9068AccessTokenHeaderType(true);
+        clients.get(client.getId()).update(client);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+            JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
+            assertEquals("at+jwt", header.getType());
+        } finally {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRfc9068AccessTokenHeaderType(false);
+            clients.get(client.getId()).update(client);
+        }
+    }
+
     // KEYCLOAK-3692
     @Test
     public void accessTokenWrongCode() throws Exception {
@@ -428,6 +454,23 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         events.clear();
 
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(60);
+    }
+
+    @Test
+    public void bearerAccessTokenAsDPoPOnUserInfoEndpoint() throws IOException {
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        loginEvent.getSessionId();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assert.assertEquals(200, response.getStatusCode());
+
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        get.addHeader(HttpHeaders.AUTHORIZATION, "DPoP" + " " + response.getAccessToken());
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+
+        assertEquals(401, userInfoResponse.getStatusCode());
     }
 
     @Test

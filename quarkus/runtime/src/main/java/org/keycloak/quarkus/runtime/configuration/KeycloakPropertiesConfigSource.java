@@ -17,6 +17,9 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -33,23 +36,16 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-
 /**
  * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
-    
+
     public static final int PROPERTIES_FILE_ORDINAL = 475;
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
@@ -122,8 +118,9 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         public Path getConfigurationFile() {
             String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
 
-            if (filePath == null)
+            if (filePath == null) {
                 filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
+            }
 
             if (filePath == null) {
                 String homeDir = Environment.getHomeDir();
@@ -147,36 +144,23 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     private static Map<String, String> transform(Map<String, String> properties) {
         Map<String, String> result = new HashMap<>(properties.size());
-        properties.keySet().forEach(k -> {
-            String key = transformKey(k);
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
-            //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
-            if (mapper != null
-                    || key.contains(NS_KEYCLOAK_PREFIX + "spi")
-                    || key.contains(NS_KEYCLOAK_PREFIX + "feature")) {
-                String value = properties.get(k);
-
-                result.put(key, value);
-
-                if (mapper != null && key.charAt(0) != '%') {
-                    result.put(getMappedPropertyName(key), value);
-                }
-            }
+        properties.entrySet().forEach(entry -> {
+            String key = transformKey(entry.getKey());
+            result.put(key, entry.getValue());
         });
 
         return result;
     }
 
     /**
-     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest
-     * path is to just have the "kc" namespace for Keycloak-specific properties.
+     * Only kc properties can be in keycloak.conf
      *
      * @param key the key to transform
      * @return the same key but prefixed with the namespace
      */
     private static String transformKey(String key) {
-        String namespace;
+        String namespace = NS_KEYCLOAK;
         String[] keyParts = DOT_SPLIT.split(key);
         String extension = keyParts[0];
         String profile = "";
@@ -186,12 +170,6 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
             profile = String.format("%s.", keyParts[0]);
             extension = keyParts[1];
             transformed = key.substring(key.indexOf('.') + 1);
-        }
-
-        if (extension.equalsIgnoreCase(NS_QUARKUS)) {
-            return key;
-        } else {
-            namespace = NS_KEYCLOAK;
         }
 
         return profile + namespace + "." + transformed;

@@ -246,11 +246,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -280,7 +277,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         }
 
         {
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "legal", "secret", params);
+            oauth.client("legal", "secret");
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -306,7 +304,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Assert.assertTrue(roles.contains("example"));
         }
         {
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "illegal", "secret", params);
+            oauth.client("illegal", "secret");
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
             Assert.assertEquals(403, response.getStatusCode());
         }
     }
@@ -325,11 +324,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(accessToken, SAML_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_ENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -373,11 +369,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_AND_ENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_AND_ENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -419,11 +412,8 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         {
-            response = oauth.doTokenExchange(accessToken, SAML_UNSIGNED_AND_UNENCRYPTED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_UNSIGNED_AND_UNENCRYPTED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -464,13 +454,10 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "user");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
 
         // client-exchanger can impersonate from token "user" to user "impersonated-user" and to "target" client
         {
-            params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).requestedSubject("impersonated-user").send();
 
             String exchangedTokenString = response.getAccessToken();
             String assertionXML = new String(Base64Url.decode(exchangedTokenString), StandardCharsets.UTF_8);
@@ -512,13 +499,9 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         Assert.assertEquals(token.getPreferredUsername(), "bad-impersonator");
         Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        Map<String, String> params = new HashMap<>();
-        params.put(OAuth2Constants.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE);
-
         // test that user does not have impersonator permission
         {
-            params.put(OAuth2Constants.REQUESTED_SUBJECT, "impersonated-user");
-            response = oauth.doTokenExchange(accessToken, SAML_SIGNED_TARGET, "client-exchanger", "secret", params);
+            response = oauth.tokenExchangeRequest(accessToken).audience(SAML_SIGNED_TARGET).requestedTokenType(OAuth2Constants.SAML2_TOKEN_TYPE).requestedSubject("impersonated-user").send();
             Assert.assertEquals(403, response.getStatusCode());
         }
     }

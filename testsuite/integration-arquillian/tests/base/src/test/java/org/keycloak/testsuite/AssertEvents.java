@@ -414,7 +414,7 @@ public class AssertEvents implements TestRule {
                 Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
                 return null; // Unreachable code
             } else {
-                return assertEvent(poll());
+                return assertEvent(poll(seconds));
             }
         }
 
@@ -452,6 +452,11 @@ public class AssertEvents implements TestRule {
             }
 
             return actual;
+        }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + ":" + expected.getType();
         }
     }
 

@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -17,12 +19,36 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
     @FindBy(id = "saveRecoveryAuthnCodesBtn")
     private WebElement saveRecoveryAuthnCodesButton;
 
-    @FindBy(id="kcRecoveryCodesConfirmationCheck")
+    @FindBy(id = "kcRecoveryCodesConfirmationCheck")
     private WebElement kcRecoveryCodesConfirmationCheck;
 
+    @FindBy(name = "generatedRecoveryAuthnCodes")
+    private WebElement generatedRecoveryAuthnCodesHidden;
+
+    @FindBy(name = "generatedAt")
+    private WebElement generatedAtHidden;
+
     public void clickSaveRecoveryAuthnCodesButton() {
-        kcRecoveryCodesConfirmationCheck.click();
-        saveRecoveryAuthnCodesButton.click();
+        UIUtils.switchCheckbox(kcRecoveryCodesConfirmationCheck, true);
+        UIUtils.clickLink(saveRecoveryAuthnCodesButton);
+    }
+
+    public String getGeneratedRecoveryAuthnCodesHidden() {
+        return generatedRecoveryAuthnCodesHidden.getAttribute("value");
+    }
+
+    public void setGeneratedRecoveryAuthnCodesHidden(String codes) {
+        final JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("document.getElementsByName('generatedRecoveryAuthnCodes')[0].value='" + codes + "'");
+    }
+
+    public String getGeneratedAtHidden() {
+        return generatedAtHidden.getAttribute("value");
+    }
+
+    public void setGeneratedAtHidden(String at) {
+        final JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("document.getElementsByName('generatedAt')[0].value='" + at + "'");
     }
 
     public List<String> getRecoveryAuthnCodes() {

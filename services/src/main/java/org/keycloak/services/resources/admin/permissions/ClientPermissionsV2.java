@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +43,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
@@ -122,7 +126,7 @@ public class ClientPermissionsV2 extends ClientPermissions {
     }
 
     @Override
-    public Set<String> getClientsWithPermission(String scope) {
+    public Set<String> getClientIdsWithViewPermission(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
@@ -135,11 +139,13 @@ public class ClientPermissionsV2 extends ClientPermissions {
 
         Set<String> granted = new HashSet<>();
 
-        resourceStore.findByType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, resource -> {
-            if (hasGrantedPermission(resource, scope)) {
-                granted.add(resource.getName());
-            }
-        });
+        policyStore.findByResourceType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE).stream()
+                .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
+                .forEach(resource -> {
+                    if (hasGrantedPermission(resource, scope)) {
+                        granted.add(resource.getName());
+                    }
+                });
 
         return granted;
     }
@@ -224,9 +230,11 @@ public class ClientPermissionsV2 extends ClientPermissions {
         Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
         List<String> expectedScopes = Arrays.asList(scope);
         for (Permission permission : permissions) {
-            for (String s : permission.getScopes()) {
-                if (expectedScopes.contains(s)) {
-                    return true;
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String s : permission.getScopes()) {
+                    if (expectedScopes.contains(s)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -246,7 +254,21 @@ public class ClientPermissionsV2 extends ClientPermissions {
             return false;
         }
 
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        List<ResourcePermission> expected = new ArrayList<>();
+
+        if (policyStore.findByResource(server, resource).isEmpty()) {
+            // TODO: client scope permissions are evaluated based on any permission granted to any client in a realm
+            // this won't scale and instead we should just enforce access when actually mapping roles where the client is known
+            policyStore.findByResourceType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, policy -> {
+                for (Resource r : policy.getResources()) {
+                    expected.add(new ResourcePermission(r, r.getScopes(), server));
+                }
+            });
+        } else {
+            expected.add(new ResourcePermission(resource, resource.getScopes(), server));
+        }
+
+        Collection<Permission> permissions = root.evaluatePermission(expected, server);
         List<String> expectedScopes = Arrays.asList(scope);
         for (Permission permission : permissions) {
             for (String s : permission.getScopes()) {
@@ -259,25 +281,15 @@ public class ClientPermissionsV2 extends ClientPermissions {
         return false;
     }
 
-    private EvaluationContext getEvaluationContext(ClientModel authorizedClient, AccessToken token) {
-        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient, token);
-        return new DefaultEvaluationContext(identity, session) {
-            @Override
-            public Map<String, Collection<String>> getBaseAttributes() {
-                Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                attributes.put("kc.client.id", List.of(authorizedClient.getClientId()));
-                return attributes;
-            }
-        };
-    }
-
     private boolean hasGrantedPermission(Resource resource, String scope) {
         ResourceServer server = root.realmResourceServer();
         Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
         for (Permission permission : permissions) {
-            for (String s : permission.getScopes()) {
-                if (scope.equals(s)) {
-                    return true;
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String s : permission.getScopes()) {
+                    if (scope.equals(s)) {
+                        return true;
+                    }
                 }
             }
         }

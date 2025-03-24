@@ -34,7 +34,6 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -45,6 +44,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import java.security.KeyPair;
@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
@@ -73,6 +72,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
     private String validRedirectUri;
 
+    private PkceGenerator pkceGenerator;
+
     @Before
     public void setupValidateRedirectUri() {
         validRedirectUri = AssertEvents.DEFAULT_REDIRECT_URI.replace("localhost", "127.0.0.1");
@@ -88,11 +89,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     public void revertPolicies() throws ClientPolicyException {
         oauth.openid(true);
         oauth.responseType(OIDCResponseType.CODE);
-        oauth.nonce(null);
-        oauth.codeChallenge(null);
-        oauth.codeChallengeMethod(null);
-        oauth.dpopProof(null);
         updatePolicies("{}");
+        pkceGenerator = null;
     }
 
     @Test
@@ -109,7 +107,8 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         // setup profiles and policies
         setupPolicyOAuth2_1PublicClientForAllClient();
 
-        setValidPkce(clientId);
+        oauth.client(clientId);
+        pkceGenerator = PkceGenerator.s256();
 
         // implicit grant
         testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, generateNonce()
@@ -160,9 +159,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1PublicClientForAllClient();
 
         oauth.redirectUri(validRedirectUri);
-        oauth.codeChallenge(null);
-        oauth.codeChallengeMethod(null);
-        oauth.codeVerifier(null);
+        pkceGenerator = null;
         failLoginByNotFollowingPKCE(clientId);
     }
 
@@ -196,7 +193,9 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         }
 
         // authorization with invalid redirect_uri request - fail
-        setValidPkce(clientId);
+        oauth.client(clientId);
+        pkceGenerator = PkceGenerator.s256();
+
         oauth.redirectUri("https://localhost/app");
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());
@@ -215,24 +214,22 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1PublicClientForAllClient();
 
         // authorization request - success
-        setValidPkce(clientId);
         oauth.client(clientId);
+        pkceGenerator = PkceGenerator.s256();
         oauth.redirectUri(validRedirectUri);
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        oauth.loginForm().codeChallenge(pkceGenerator).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // token request with DPoP Proof - success
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
         String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
         String code = oauth.parseLoginResponse().getCode();
-        oauth.dpopProof(dpopProofEcEncoded);
-        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse response = oauth.accessTokenRequest(code).dpopProof(dpopProofEcEncoded).codeVerifier(pkceGenerator.getCodeVerifier()).send();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
 
         // token refresh request with DPoP Proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEcEncoded);
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
 
         // userinfo request with DPoP Proof - success
@@ -244,8 +241,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         // revoke token with a valid DPoP proof - success
         dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getRevocation(), (long) Time.currentTime(), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
-        oauth.dpopProof(dpopProofEcEncoded);
-        assertTrue(oauth.tokenRevocationRequest(response.getAccessToken()).accessToken().send().isSuccess());
+        assertTrue(oauth.tokenRevocationRequest(response.getAccessToken()).accessToken().dpopProof(dpopProofEcEncoded).send().isSuccess());
 
         oauth.logoutForm().idTokenHint(response.getIdToken()).open();
     }
@@ -274,21 +270,11 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
     private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce) {
         oauth.openid(isOpenid);
         oauth.responseType(responseType);
-        oauth.nonce(nonce);
         oauth.redirectUri(validRedirectUri);
-        oauth.openLoginForm();
+        oauth.loginForm().nonce(nonce).codeChallenge(pkceGenerator).open();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Implicit/Hybrid flow is prohibited.", authorizationEndpointResponse.getErrorDescription());
-    }
-
-    private void setValidPkce(String clientId) throws Exception {
-        oauth.client(clientId);
-        String codeVerifier = PkceUtils.generateCodeVerifier();
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.codeVerifier(codeVerifier);
     }
 
     private String generateNonce() {

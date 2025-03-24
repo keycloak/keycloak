@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
  */
 public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
+    public static final String ID = "role";
     private RolePolicyProvider provider = new RolePolicyProvider(this::toRepresentation);
 
     @Override
@@ -193,7 +194,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     @Override
     public String getId() {
-        return "role";
+        return ID;
     }
 
     private Set<RoleDefinition> getRoles(String rawRoles, RealmModel realm) {

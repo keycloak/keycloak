@@ -56,7 +56,9 @@ import java.util.Locale;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -116,26 +118,23 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void uiLocalesParameter() {
-        loginPage.open();
+        oauth.loginForm().open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
         //test if cookie works
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("en de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("en de").open();
         assertEquals("English", loginPage.getLanguageDropdownText());
 
-        oauth.uiLocales("fr de");
         driver.manage().deleteAllCookies();
-        loginPage.open();
+        oauth.loginForm().uiLocales("fr de").open();
         assertEquals("Deutsch", loginPage.getLanguageDropdownText());
     }
 
@@ -144,8 +143,7 @@ public class LoginPageTest extends AbstractI18NTest {
         loginPage.open();
         assertEquals("en", loginPage.getHtmlLanguage());
 
-        oauth.uiLocales("de");
-        loginPage.open();
+        oauth.loginForm().uiLocales("de").open();
         assertEquals("de", loginPage.getHtmlLanguage());
     }
 
@@ -180,9 +178,10 @@ public class LoginPageTest extends AbstractI18NTest {
     @Test
     public void testIdentityProviderCapitalization(){
         loginPage.open();
-        assertEquals("GitHub", loginPage.findSocialButton("github").getText());
-        assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
-        assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+        // contains even name of sub-item - svg element in this case
+        assertThat(loginPage.findSocialButton("github").getText(), is("GitHub"));
+        assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
+        assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
     }
 
 

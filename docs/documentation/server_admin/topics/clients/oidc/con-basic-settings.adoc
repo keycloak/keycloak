@@ -66,6 +66,8 @@ For client-side clients that perform browser logins. As it is not possible to en
 
 *Service account roles*:: If enabled, this client can authenticate to {project_name} and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of `Client Credentials Grant` for this client.
 
+*Standard Token Exchange*:: If enabled, this client can use the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
+
 *Auth 2.0 Device Authorization Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_server_administration_guide[Device Authorization Grant].
 
 *OIDC CIBA Grant*:: If enabled, this client can use the OIDC xref:con-oidc-auth-flows_{context}[Client Initiated Backchannel Authentication Grant].

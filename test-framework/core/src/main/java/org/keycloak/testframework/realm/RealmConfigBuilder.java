@@ -4,7 +4,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.userprofile.config.UPConfig;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +33,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder name(String name) {
         rep.setRealm(name);
+        return this;
+    }
+
+    public RealmConfigBuilder displayName(String displayName) {
+        rep.setDisplayName(displayName);
         return this;
     }
 
@@ -153,6 +157,21 @@ public class RealmConfigBuilder {
         config.put("port", Integer.toString(port));
         config.put("from", from);
         rep.setSmtpServer(config);
+        return this;
+    }
+
+    public RealmConfigBuilder organizationsEnabled(boolean organizationsEnabled) {
+        rep.setOrganizationsEnabled(organizationsEnabled);
+        return this;
+    }
+
+    public RealmConfigBuilder bruteForceProtected(boolean enabled) {
+        rep.setBruteForceProtected(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder failureFactor(int count) {
+        rep.setFailureFactor(count);
         return this;
     }
 

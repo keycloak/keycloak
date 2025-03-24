@@ -43,6 +43,7 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuth
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
@@ -167,8 +168,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         Response response = testRealm().users().create(userRep);
         Assert.assertEquals(201, response.getStatus());
         response.close();
-
-        oauth.kcAction(null);
     }
 
     private String getAcrToLoaMappingForClient() throws IOException {
@@ -322,6 +321,25 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void stepupAuthenticationNoAuthSessionCookie() {
+        // logging in to level 1
+        openLoginFormWithAcrClaim(true, "silver");
+        authenticateWithUsernamePassword();
+        assertLoggedInWithAcr("silver");
+        // doing step-up authentication to level 2
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+        // going back to login again, otp should be presented as by default max-age is 0
+        openLoginFormWithAcrClaim(true, "gold");
+        // remove the auth session cookie emulating a browser restart in which this cookie is lost
+        driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithTotp();
+        assertLoggedInWithAcr("gold");
+    }
+
+    @Test
     public void stepupToUnknownEssentialAcrFails() {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsernamePassword();
@@ -336,7 +354,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsernamePassword();
         assertLoggedInWithAcr("silver");
-        oauth.claims(null);
         oauth.openLoginForm();
         assertLoggedInWithAcr("silver"); // Return silver without need to re-authenticate due maxAge for "silver" condition did not timed-out yet
     }
@@ -577,7 +594,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("3");
 
         // Re-auth 1: Should be automatically authenticated and still return "3"
-        oauth.claims(null);
         oauth.openLoginForm();
         assertLoggedInWithAcr("3");
 
@@ -644,20 +660,17 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("3");
 
         // Send request with prompt=login . User should be asked to re-authenticate with level 1
-        oauth.claims(null);
-        oauth.prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
-        oauth.openLoginForm();
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
         reauthenticateWithPassword();
         assertLoggedInWithAcr("silver");
 
         // Request with prompt=login together with "acr=2" . User should be asked to re-authenticate with level 2
-        openLoginFormWithAcrClaim(true, "gold");
+        oauth.loginForm().claims(claims(true, "gold")).prompt("login").open();
         reauthenticateWithPassword();
         authenticateWithTotp();
         assertLoggedInWithAcr("gold");
 
         // Request with "acr=3", but without prompt. User should be automatically authenticated
-        oauth.prompt(null);
         openLoginFormWithAcrClaim(true, "3");
         assertLoggedInWithAcr("3");
     }
@@ -784,8 +797,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         TokenCtx token1 = assertLoggedInWithAcr("silver");
 
         // Add "kc_action" for setup another OTP. Existing OTP authentication should be required. No offer for recovery-codes as they are different level
-        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-        oauth.openLoginForm();
+        oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(false);
 
@@ -797,8 +809,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
-        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-        oauth.openLoginForm();
+        oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(true);
         List<String> availableOtps = loginTotpPage.getAvailableOtpCredentials();
@@ -837,8 +848,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         TokenCtx token1 = assertLoggedInWithAcr("silver");
 
         // Setup another OTP (requires login with existing OTP)
-        oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-        oauth.openLoginForm();
+        oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
@@ -849,8 +859,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         String otp2CredentialId = getCredentialIdByLabel("totp2-label");
 
         // Delete OTP credential requires level2. Re-authentication is required (because of max_age=0 for level2 evaluated during re-authentication)
-        oauth.kcAction(getKcActionParamForDeleteCredential(otp2CredentialId));
-        oauth.openLoginForm();
+        oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(otp2CredentialId)).open();
         loginTotpPage.assertCurrent();
         authenticateWithTotp();
 
@@ -874,8 +883,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
             // Trying to delete existing OTP. Should require authentication with this OTP
             String otpCredentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
-            oauth.kcAction(getKcActionParamForDeleteCredential(otpCredentialId));
-            oauth.openLoginForm();
+            oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(otpCredentialId)).open();
             Assert.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
             authenticateWithTotp();
 
@@ -887,8 +895,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             assertLoggedInWithAcr("gold");
 
             // Trying to add OTP. No 2nd factor should be required as user doesn't have any
-            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-            oauth.openLoginForm();
+            oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
             totpSetupPage.assertCurrent();
             String totp2Secret = totpSetupPage.getTotpSecret();
             totpSetupPage.configure(totp.generateTOTP(totp2Secret), "totp2-label");
@@ -900,8 +907,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             // Add "kc_action" for setup recovery codes. OTP should be required
-            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-            oauth.openLoginForm();
+            oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()).open();
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
             setupRecoveryAuthnCodesPage.assertCurrent();
@@ -911,8 +917,7 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
             // Removing recovery-code credential. User required to authenticate with 2nd-factor. He can choose between OTP or recovery-codes
             String recoveryCodesId = getCredentialIdByType(RecoveryAuthnCodesCredentialModel.TYPE);
-            oauth.kcAction(getKcActionParamForDeleteCredential(recoveryCodesId));
-            oauth.openLoginForm();
+            oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(recoveryCodesId)).open();
             loginTotpPage.assertCurrent();
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
@@ -1080,15 +1085,17 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     public static void openLoginFormWithAcrClaim(OAuthClient oauth, boolean essential, String... acrValues) {
+        oauth.loginForm().claims(claims(essential, acrValues)).open();
+    }
+
+    public static ClaimsRepresentation claims(boolean essential, String... acrValues) {
         ClaimsRepresentation.ClaimValue<String> acrClaim = new ClaimsRepresentation.ClaimValue<>();
         acrClaim.setEssential(essential);
         acrClaim.setValues(Arrays.asList(acrValues));
 
         ClaimsRepresentation claims = new ClaimsRepresentation();
         claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
-
-        oauth.claims(claims);
-        oauth.openLoginForm();
+        return claims;
     }
 
     private void authenticateWithUsernamePassword() {

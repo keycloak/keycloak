@@ -41,11 +41,12 @@
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.8.0.Final</arquillian-core.version>
+        <arquillian-core.version>1.9.3.Final</arquillian-core.version>
+        <arquillian.protocol.servlet.jakarta.version>10.0.0.Final</arquillian.protocol.servlet.jakarta.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
-        <selenium.version>4.25.0</selenium.version>
-        <selenium.htmlunit3.version>4.23.0</selenium.htmlunit3.version>
+        <selenium.version>4.28.1</selenium.version>
+        <selenium.htmlunit3.version>4.28.0</selenium.htmlunit3.version>
         <arquillian-drone.version>3.0.0-alpha.8</arquillian-drone.version>
         <arquillian-graphene.version>3.0.0-alpha.4</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>

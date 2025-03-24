@@ -383,7 +383,7 @@ class KeycloakProcessor {
                 Properties properties = descriptor.getProperties();
                 // register a listener for customizing the unit configuration at runtime
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
-                        .setInitListener(recorder.createUserDefinedUnitListener(properties.getProperty(AvailableSettings.JAKARTA_JTA_DATASOURCE))));
+                        .setInitListener(recorder.createUserDefinedUnitListener(properties.getProperty(AvailableSettings.DATASOURCE))));
                 userManagedEntities.addAll(descriptor.getManagedClassNames());
             }
         }

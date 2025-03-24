@@ -65,7 +65,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     Keycloak realmAdminClient;
 
     private final String groupName = "top_group";
-    private final GroupRepresentation topGroup = new GroupRepresentation();;
+    private final GroupRepresentation topGroup = new GroupRepresentation();
 
     @BeforeEach // cannot use @BeforeAll, realm is not initializaed yet
     public void onBefore() {

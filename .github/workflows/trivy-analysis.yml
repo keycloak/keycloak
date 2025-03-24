@@ -7,6 +7,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+  
 jobs:
 
   analysis:
@@ -17,12 +20,14 @@ jobs:
       matrix:
         container: [keycloak, keycloak-operator]
       fail-fast: false
+    permissions:
+      security-events: write # Required for SARIF uploads
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: quay.io/keycloak/${{ matrix.container }}:nightly
           format: sarif

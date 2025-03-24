@@ -54,6 +54,8 @@
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
+:adminguide_email_name: Configuring email for a realm
+:adminguide_email_link: {adminguide_link}#_email
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
 :bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
 :client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
@@ -132,3 +134,5 @@
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
 :securing_apps_java_policy_enforcer_link: https://www.keycloak.org/securing-apps/policy-enforcer
 :securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_token_exchange_link: https://www.keycloak.org/securing-apps/token-exchange
+:securing_apps_token_exchange_name: Token exchange Documentation

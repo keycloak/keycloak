@@ -37,16 +37,16 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
             String cliKey = unmatched[0];
 
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(cliKey);
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(cliKey);
 
-            final boolean isDisabledOption = mapper == null && PropertyMappers.isDisabledMapper(cliKey);
+            Optional<PropertyMapper<?>> disabled = PropertyMappers.getKcKeyFromCliKey(cliKey).flatMap(PropertyMappers::getDisabledMapper);
+
             final BooleanSupplier isUnknownOption = () -> mapper == null || !(cmd.getCommand() instanceof AbstractCommand);
 
-            if (isDisabledOption) {
-                var enabledWhen = PropertyMappers.getDisabledMapper(cliKey)
-                        .map(PropertyMapper::getEnabledWhen)
-                        .filter(Optional::isPresent)
-                        .map(desc -> format(". %s", desc.get()))
+            if (mapper == null && disabled.isPresent()) {
+                var enabledWhen = disabled
+                        .flatMap(PropertyMapper::getEnabledWhen)
+                        .map(desc -> format(". %s", desc))
                         .orElse("");
 
                 errorMessage = format("Disabled option: '%s'%s", cliKey, enabledWhen);

@@ -74,7 +74,7 @@ public class Profile {
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
-        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.EXPERIMENTAL, 2),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -131,7 +131,7 @@ public class Profile {
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 
-        ROLLING_UPDATES("Rolling Updates", Type.PREVIEW),
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ;
 
         private final Type type;

@@ -32,6 +32,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.Theme;
 import org.keycloak.tracing.TracingAttributes;
@@ -286,5 +287,27 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public Token getBearerToken() {
         return bearerToken;
+    }
+
+    @Override
+    public UserModel getUser() {
+        UserModel user = null;
+
+        if (bearerToken instanceof JsonWebToken jwt) {
+            String issuer = jwt.getIssuer();
+            String realmName = issuer.substring(issuer.lastIndexOf("/") + 1);
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            user = session.users().getUserById(realm, jwt.getSubject());
+        }
+
+        if (user == null) {
+            user = userSession == null ? null : userSession.getUser();
+        }
+
+        if (user != null) {
+            return user;
+        }
+
+        throw new IllegalStateException("Could not resolve subject");
     }
 }

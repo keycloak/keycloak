@@ -50,6 +50,8 @@ public interface Details {
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
+    String TOKEN_TYPE = "token_type";
+    String TOKEN_ISSUED_FOR = "token_issued_for";
     String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
@@ -60,6 +62,7 @@ public interface Details {
     String REASON = "reason";
     String GRANTED_CLIENT = "granted_client";
     String REVOKED_CLIENT = "revoked_client";
+    String TOKEN_EXCHANGE_REVOKED_CLIENTS = "token_exchange_revoked_clients";
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
     String SCOPE = "scope";

@@ -34,7 +34,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
-import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.HttpMethod;
@@ -121,8 +120,6 @@ public class AccountLoader {
         }
 
         AccessToken accessToken = authResult.getToken();
-
-        UserSessionUtil.checkTokenIssuedAt(client.getRealm(), accessToken, authResult.getSession(), event, authResult.getClient());
 
         if (accessToken.getAudience() == null || accessToken.getResourceAccess(client.getClientId()) == null) {
             // transform for introspection to get the required claims

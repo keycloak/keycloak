@@ -24,8 +24,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.smallrye.config.PropertiesConfigSource;
+
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 // Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
 // leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to
@@ -47,24 +49,17 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
             String value = entry.getValue();
 
             if (key.startsWith(kcPrefix)) {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+                String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
 
-                if (mapper != null) {
-                    mapper = mapper.forEnvKey(key);
+                PropertyMapper<?> mapper = PropertyMappers.getMapper(transformedKey);
 
-                    String to = mapper.getTo();
-
-                    if (to != null) {
-                        properties.put(to, value);
-                    }
-
-                    properties.put(mapper.getFrom(), value);
+                if (mapper != null && mapper.hasWildcard()) {
+                    // special case - wildcards don't follow the default conversion rule
+                    transformedKey = ((WildcardPropertyMapper<?>) mapper).getKcKeyForEnvKey(key, transformedKey)
+                            .orElseThrow();
                 }
-                else {
-                    // most probably an SPI but could be also something else
-                    String transformedKey = NS_KEYCLOAK_PREFIX + key.substring(kcPrefix.length()).toLowerCase().replace("_", "-");
-                    properties.put(transformedKey, value);
-                }
+
+                properties.put(transformedKey, value);
             }
         }
 
