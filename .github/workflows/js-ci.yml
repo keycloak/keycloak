@@ -260,7 +260,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: admin-ui-playwright-report
+          name: admin-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/admin-ui/playwright-report
           retention-days: 30
 
@@ -268,7 +268,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
+          name: admin-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
 
   check:
