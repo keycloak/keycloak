@@ -100,7 +100,7 @@ import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
-
+import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
@@ -705,6 +705,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+                if(!UsernameProhibitedCharactersValidator.INSTANCE.validate(ldapUsername).isValid()){
+            return null;
+        }
         if (importType == null) {
             importType = ImportType.FORCED;
         }
