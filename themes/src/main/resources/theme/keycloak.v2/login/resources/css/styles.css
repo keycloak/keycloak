@@ -12,6 +12,10 @@
                          "main"
 }
 
+.pf-v5-c-login__main-header {
+    border-top: 4px solid var(--keycloak-card-top-color);
+}
+
 /* Info section - top margin + bottom padding */
 .pf-v5-c-login__main-footer-band:first-child {
     margin-block-start: var(--pf-v5-global--spacer--lg);
@@ -35,10 +39,6 @@ div.kc-logo-text {
     background-repeat: no-repeat;
     background-size: contain;
     margin: 0 auto;
-}
-
-.kc-card {
-    border-top: 4px solid var(--keycloak-card-top-color);
 }
 
 div.kc-logo-text span {
