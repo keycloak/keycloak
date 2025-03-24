@@ -162,15 +162,19 @@ public class UserInfoEndpoint {
     private Response issueUserInfo() {
         cors.allowAllOrigins();
 
-        try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
-        } catch (ClientPolicyException cpe) {
-            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
-        }
-
         EventBuilder event = new EventBuilder(realm, session, clientConnection)
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
+
+        try {
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
+        }
 
         if (tokenForUserInfo.getToken() == null) {
             event.detail(Details.REASON, "Missing token");

@@ -160,7 +160,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         oauth.redirectUri(validRedirectUri);
         pkceGenerator = null;
-        failLoginByNotFollowingPKCE(clientId);
+        failLoginByNotFollowingPKCEWithoutClientPolicyValidation(clientId);
     }
 
     @Test

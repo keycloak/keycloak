@@ -176,7 +176,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
         setupPolicyOAuth2_1ConfidentialClientForAllClient();
 
         oauth.redirectUri(validRedirectUri);
-        failLoginByNotFollowingPKCE(clientId);
+        failLoginByNotFollowingPKCEWithoutClientPolicyValidation(clientId);
     }
 
     @Test
