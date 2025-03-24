@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.Profile;
@@ -34,7 +35,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -63,6 +63,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -119,7 +120,7 @@ public class ClientsResource {
                                                  @Parameter(description = "the max results to return") @QueryParam("max") Integer maxResults) {
         auth.clients().requireList();
 
-        boolean canView = auth.clients().canView();
+        boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
 
         if (searchQuery != null) {

@@ -714,10 +714,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public long getClientsCount(RealmModel realm) {
-        final Long res = em.createNamedQuery("getRealmClientsCount", Long.class)
-          .setParameter("realm", realm.getId())
-          .getSingleResult();
-        return res == null ? 0l : res;
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+
+        queryBuilder.select(builder.count(root.get("id")));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
     }
 
     @Override
@@ -904,12 +915,24 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
+        return closing(getClientIdsStream(realm, firstResult, maxResults).map(id -> new ClientModelLazyDelegate.WithId(session, realm, id)));
+    }
 
-        query.setParameter("realm", realm.getId());
-        Stream<String> clients = paginateQuery(query, firstResult, maxResults).getResultStream();
+    private Stream<String> getClientIdsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+        queryBuilder.select(root.get("id"));
 
-        return closing(clients.map(id -> (ClientModel) new ClientModelLazyDelegate.WithId(session, realm, id)));
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
+
+        return paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream();
     }
 
     @Override
@@ -957,12 +980,22 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
-        TypedQuery<String> query = em.createNamedQuery("searchClientsByClientId", String.class);
-        query.setParameter("clientId", clientId);
-        query.setParameter("realm", realm.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+        queryBuilder.select(root.get("id"));
 
-        Stream<String> results = paginateQuery(query, firstResult, maxResults).getResultStream();
-        return closing(results.map(id -> (ClientModel) new ClientModelLazyDelegate.WithId(session, realm, id)));
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+        predicates.add(builder.like(builder.lower(root.get("clientId")), builder.lower(builder.literal("%" + clientId + "%"))));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
+
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
+
+        Stream<String> results = paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream();
+        return closing(results.map(id -> new ClientModelLazyDelegate.WithId(session, realm, id)));
     }
 
     @Override
@@ -1011,6 +1044,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
             }
         }
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
 
         Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
         queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("clientId")));
@@ -1067,13 +1102,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public void removeClients(RealmModel realm) {
-        TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
-        query.setParameter("realm", realm.getId());
-        List<String> clients = query.getResultList();
-        for (String client : clients) {
-            // No need to go through cache. Clients were already invalidated
-            removeClient(realm, client);
-        }
+        closing(getClientIdsStream(realm, -1, -1)).forEach((id) -> removeClient(realm, id));
     }
 
     @Override
