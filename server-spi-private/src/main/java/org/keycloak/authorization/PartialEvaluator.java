@@ -189,13 +189,15 @@ public class PartialEvaluator {
         if (realm.getName().equals(Config.getAdminRealm())) {
             clientId = realm.getMasterAdminClient().getClientId();
         } else {
-            clientId = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getClientId();
+            ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            clientId = client == null ? null : client.getClientId();
         }
 
-        ClientModel client = session.clients().getClientByClientId(realm, clientId);
+        // client probably removed when removing the realm
+        ClientModel client = clientId == null ? null : session.clients().getClientByClientId(realm, clientId);
 
         if (client == null) {
-            return false;
+            return true;
         }
 
         if (resourceType.equals(AdminPermissionsSchema.USERS) || resourceType.equals(AdminPermissionsSchema.GROUPS)) {

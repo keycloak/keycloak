@@ -112,10 +112,11 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
                 .filter((g) -> Set.of("group-0", "group-15", "group-30", "group-45").contains(g.getName()))
                 .map(GroupRepresentation::getId)
                 .collect(Collectors.toSet());
+        assertFalse(notAllowedGroups.isEmpty());
         createPermission(client, notAllowedGroups, GROUPS_RESOURCE_TYPE, Set.of(VIEW), notMyAdminPolicy);
         search = realmAdminClient.realm(realm.getName()).groups().groups();
         assertFalse(search.isEmpty());
-        assertTrue(search.stream().map(GroupRepresentation::getName).noneMatch(notAllowedGroups::contains));
+        assertTrue(search.stream().map(GroupRepresentation::getId).noneMatch(notAllowedGroups::contains));
     }
 
     @Test
