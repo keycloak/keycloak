@@ -21,7 +21,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.22.0",
+    "@eslint/js": "^9.23.0",
     "@types/node": "^22.13.11",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
