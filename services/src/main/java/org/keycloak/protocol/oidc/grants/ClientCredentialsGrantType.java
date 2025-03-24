@@ -132,7 +132,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenRequestContext(formParams, clientSessionCtx.getClientSession()));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -164,7 +166,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

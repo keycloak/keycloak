@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -232,6 +233,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new BackchannelAuthenticationRequestContext(endpointRequest, request, params));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 

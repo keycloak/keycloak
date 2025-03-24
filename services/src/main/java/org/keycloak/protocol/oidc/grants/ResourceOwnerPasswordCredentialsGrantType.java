@@ -82,7 +82,9 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         try {
             session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsContext(formParams));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
@@ -156,7 +158,9 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         try {
             session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsResponseContext(formParams, clientSessionCtx, responseBuilder));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }

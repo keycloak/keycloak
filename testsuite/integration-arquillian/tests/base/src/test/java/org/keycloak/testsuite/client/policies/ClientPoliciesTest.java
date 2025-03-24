@@ -1026,6 +1026,10 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             oauth.openLoginForm();
             assertTrue(errorPage.isCurrent());
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
+            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                            Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                            ERR_MSG_REQ_NOT_ALLOWED).client((String) null).user((String) null).assertEvent();
+
             revertToBuiltinProfiles();
             successfulLoginAndLogout(clientBetaId, "secretBeta");
         } catch (Exception e) {
@@ -1216,6 +1220,10 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
+        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                "The intent is not bound with the client").client(clientId).user((String) null)
+                .assertEvent();
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
@@ -1268,6 +1276,10 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
+        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                        "no claim for an intent value for ID token").client(clientId)
+                .user((String) null).assertEvent();
     }
 
     @Test

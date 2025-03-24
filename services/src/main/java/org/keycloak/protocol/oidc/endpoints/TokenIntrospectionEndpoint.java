@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
@@ -102,6 +103,10 @@ public class TokenIntrospectionEndpoint {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
             token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
         }
 

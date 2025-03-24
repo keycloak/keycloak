@@ -560,7 +560,7 @@ public class AuthenticationManager {
 
     private static Response frontchannelLogoutClientSession(KeycloakSession session, RealmModel realm,
       AuthenticatedClientSessionModel clientSession, AuthenticationSessionModel logoutAuthSession,
-      UriInfo uriInfo, HttpHeaders headers) {
+      UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         UserSessionModel userSession = clientSession.getUserSession();
         ClientModel client = clientSession.getClient();
 
@@ -577,6 +577,11 @@ public class AuthenticationManager {
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext());
         } catch (ClientPolicyException cpe) {
+            event.event(EventType.LOGOUT);
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
@@ -691,7 +696,7 @@ public class AuthenticationManager {
         return finishBrowserLogout(session, realm, userSession, uriInfo, connection, headers);
     }
 
-    private static Response browserLogoutAllClients(UserSessionModel userSession, KeycloakSession session, RealmModel realm, HttpHeaders headers, UriInfo uriInfo, AuthenticationSessionModel logoutAuthSession) {
+    private static Response browserLogoutAllClients(UserSessionModel userSession, KeycloakSession session, RealmModel realm, HttpHeaders headers, UriInfo uriInfo, AuthenticationSessionModel logoutAuthSession, EventBuilder event) {
         Map<Boolean, List<AuthenticatedClientSessionModel>> acss = userSession.getAuthenticatedClientSessions().values().stream()
           .filter(clientSession -> !Objects.equals(AuthenticationSessionModel.Action.LOGGED_OUT.name(), clientSession.getAction())
                                 && !Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), clientSession.getAction()))
@@ -703,7 +708,7 @@ public class AuthenticationManager {
 
         final List<AuthenticatedClientSessionModel> redirectClients = acss.get(true) == null ? Collections.emptyList() : acss.get(true);
         for (AuthenticatedClientSessionModel nextRedirectClient : redirectClients) {
-            Response response = frontchannelLogoutClientSession(session, realm, nextRedirectClient, logoutAuthSession, uriInfo, headers);
+            Response response = frontchannelLogoutClientSession(session, realm, nextRedirectClient, logoutAuthSession, uriInfo, headers, event);
             if (response != null) {
                 return response;
             }
@@ -715,8 +720,8 @@ public class AuthenticationManager {
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
-
-        Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
+        EventBuilder event = new EventBuilder(realm, session, connection);
+        Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession, event);
         if (response != null) {
             return response;
         }
@@ -728,13 +733,11 @@ public class AuthenticationManager {
         expireRememberMeCookie(session);
 
         String method = userSession.getNote(KEYCLOAK_LOGOUT_PROTOCOL);
-        EventBuilder event = new EventBuilder(realm, session, connection);
         LoginProtocol protocol = session.getProvider(LoginProtocol.class, method);
         protocol.setRealm(realm)
                 .setHttpHeaders(headers)
                 .setUriInfo(uriInfo)
                 .setEventBuilder(event);
-
 
         response = protocol.finishBrowserLogout(userSession, logoutAuthSession);
 

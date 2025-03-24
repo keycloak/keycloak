@@ -105,4 +105,7 @@ public interface Details {
     String LOGOUT_TRIGGERED_BY_REQUIRED_ACTION = "logout_triggered_by_required_action";
     String ACCESS_TOKEN_EXPIRATION_TIME = "access_token_expiration_time";
     String AGE_OF_REFRESH_TOKEN = "age_of_refresh_token";
+
+    String CLIENT_POLICY_ERROR = "client_policy_error";
+    String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
 }
