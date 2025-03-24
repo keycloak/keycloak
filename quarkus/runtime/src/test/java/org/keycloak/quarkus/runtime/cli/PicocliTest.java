@@ -321,7 +321,7 @@ public class PicocliTest extends AbstractConfigurationTest {
      * Runs a fake build to setup the state of the persisted build properties
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void build(String... args) {
+    private NonRunningPicocli build(String... args) {
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
             Environment.setRebuildCheck(); // auto-build
         }
@@ -329,8 +329,10 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertTrue(nonRunningPicocli.reaug);
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("first-class"));
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
+        return nonRunningPicocli;
     }
 
     @Test
@@ -565,5 +567,23 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--proxy-headers=forwarded", "--proxy-protocol-enabled=true");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(" protocol cannot be enabled when using the `proxy-headers` option"));
+    }
+
+    @Test
+    public void derivedPropertyUsage() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=first-class", "--spi-hostname-v2-hostname=second-class", "--http-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void testDerivedShowConfig() {
+        NonRunningPicocli nonRunningPicocli = build("build", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true");
+
+        nonRunningPicocli = pseudoLaunch("show-config");
+        // first class kc form should show up
+        assertThat(nonRunningPicocli.getOutString(), containsString("kc.event-metrics-user-enabled"));
+        // second class kc form should not
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("kc.spi-events-listener-micrometer-user-event-metrics-enabled")));
     }
 }
