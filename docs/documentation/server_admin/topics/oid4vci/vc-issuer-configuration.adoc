@@ -1,10 +1,17 @@
-== Configuring Keycloak as a Verifiable Credential Issuer
+== Configuring {project_name} as a Verifiable Credential Issuer
+
++
+[IMPORTANT]
+====
+This is an experimental feature and should not be used in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
+====
++
 
 {project_name} provides support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance].
 
 === Introduction
 
-This chapter provides step-by-step instructions for configuring Keycloak as a Verifiable Credential Issuer using the OpenID for Verifiable Credential Issuance (OID4VCI) protocol. It outlines the process for setting up a Keycloak instance to securely issue and manage Verifiable Credentials (VCs), supporting decentralized identity solutions.
+This chapter provides step-by-step instructions for configuring {project_name} as a Verifiable Credential Issuer using the OpenID for Verifiable Credential Issuance (OID4VCI) protocol. It outlines the process for setting up a {project_name} instance to securely issue and manage Verifiable Credentials (VCs), supporting decentralized identity solutions.
 
 === What are Verifiable Credentials (VCs)?
 
@@ -12,7 +19,7 @@ Verifiable Credentials (VCs) are cryptographically signed, tamper-evident data s
 
 === What is OID4VCI?
 
-OpenID for Verifiable Credential Issuance (OID4VCI) is an extension of the OpenID Connect (OIDC) protocol. It defines a standardized, interoperable framework for credential issuers to deliver VCs to holders, who can then present them to verifiers. OID4VCI leverages Keycloak's existing authentication and authorization capabilities to streamline VC issuance.
+OpenID for Verifiable Credential Issuance (OID4VCI) is an extension of the OpenID Connect (OIDC) protocol. It defines a standardized, interoperable framework for credential issuers to deliver VCs to holders, who can then present them to verifiers. OID4VCI leverages {project_name}'s existing authentication and authorization capabilities to streamline VC issuance.
 
 === Scope of This Chapter
 
@@ -29,11 +36,11 @@ This chapter covers the following technical configurations:
 
 === Prerequisites
 
-Ensure the following requirements are met before configuring Keycloak as a Verifiable Credential Issuer:
+Ensure the following requirements are met before configuring {project_name} as a Verifiable Credential Issuer:
 
-=== Keycloak Instance
+=== {project_name} Instance
 
-A running Keycloak server with the OID4VCI feature enabled.
+A running {project_name} server with the OID4VCI feature enabled.
 
 To enable the feature, add the following flag to the startup command:
 
@@ -48,24 +55,24 @@ Verify activation by checking the server logs for the `OID4VC_VCI` initializatio
 
 An access token is required to authenticate API requests.
 
-Refer to the following Keycloak documentation sections for detailed steps on:
+Refer to the following {project_name} documentation sections for detailed steps on:
 
-- https://www.keycloak.org/docs/latest/server_admin/#proc-creating-oidc-client_server_administration_guide[Creating a Client^]
-- https://www.keycloak.org/securing-apps/token-exchange#_internal_internal_making_request[Obtaining an Access Token^]
+- https://www.{project_name}.org/docs/latest/server_admin/#proc-creating-oidc-client_server_administration_guide[Creating a Client^]
+- https://www.{project_name}.org/securing-apps/token-exchange#_internal_internal_making_request[Obtaining an Access Token^]
 
 === Configuration Steps
 
-Follow these steps to configure Keycloak as a Verifiable Credential Issuer. Each section is detailed with procedures, explanations, and examples where applicable.
+Follow these steps to configure {project_name} as a Verifiable Credential Issuer. Each section is detailed with procedures, explanations, and examples where applicable.
 
 === Creating a Realm
 
-A realm in Keycloak is a logical container that manages users, clients, roles, and authentication flows.
+A realm in {project_name} is a logical container that manages users, clients, roles, and authentication flows.
 For Verifiable Credential (VC) issuance, create a dedicated realm to ensure isolation and maintain a clear separation of functionality.
 
 [NOTE]
 ====
-For detailed instructions on creating a realm, refer to the Keycloak documentation:
-https://www.keycloak.org/docs/latest/server_admin/index.html#proc-creating-a-realm_server_administration_guide[Creating a Realm^].
+For detailed instructions on creating a realm, refer to the {project_name} documentation:
+https://www.{project_name}.org/docs/latest/server_admin/index.html#proc-creating-a-realm_server_administration_guide[Creating a Realm^].
 ====
 
 === Creating a User Account
@@ -74,20 +81,20 @@ A test user is required to simulate credential issuance and verify the setup.
 
 [NOTE]
 ====
-For step-by-step instructions on creating a user, refer to the Keycloak documentation:
-https://www.keycloak.org/docs/latest/server_admin/index.html#assembly-managing-users_server_administration_guide[Creating a User^].
+For step-by-step instructions on creating a user, refer to the {project_name} documentation:
+https://www.{project_name}.org/docs/latest/server_admin/index.html#assembly-managing-users_server_administration_guide[Creating a User^].
 ====
 
 Ensure that the user has a valid username, email, and password. If the password should not be reset upon first login, disable the "Temporary" toggle during password configuration.
 
 === Key Management Configuration
 
-Keycloak uses cryptographic keys for signing and encrypting Verifiable Credentials (VCs). To ensure secure and standards-compliant issuance, configure **ECDSA (ES256) for signing**, **RSA (RS256) for signing**, and **RSA-OAEP for encryption** using a keystore.
+{project_name} uses cryptographic keys for signing and encrypting Verifiable Credentials (VCs). To ensure secure and standards-compliant issuance, configure **ECDSA (ES256) for signing**, **RSA (RS256) for signing**, and **RSA-OAEP for encryption** using a keystore.
 
 [NOTE]
 ====
-For a detailed guide on configuring realm keys, refer to the Keycloak documentation:
-https://www.keycloak.org/docs/latest/server_admin/#realm_keys[Managing Realm Keys^].
+For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
+https://www.{project_name}.org/docs/latest/server_admin/#realm_keys[Managing Realm Keys^].
 ====
 
 ==== Configuring Key Providers
@@ -106,14 +113,14 @@ Each key must be registered as a **java-keystore provider** within the **Realm S
 
 [WARNING]
 ====
-Ensure the keystore file is **securely stored** and accessible to the Keycloak server. Use **strong passwords** to protect both the keystore and the private keys.
+Ensure the keystore file is **securely stored** and accessible to the {project_name} server. Use **strong passwords** to protect both the keystore and the private keys.
 ====
 
 === Registering Realm Attributes
 
-Realm attributes define metadata for Verifiable Credentials (VCs), such as **expiration times, supported formats, and scope definitions**. These attributes allow Keycloak to issue VCs with predefined settings.
+Realm attributes define metadata for Verifiable Credentials (VCs), such as **expiration times, supported formats, and scope definitions**. These attributes allow {project_name} to issue VCs with predefined settings.
 
-Since the **Keycloak Admin Console does not support direct attribute creation**, use the **Keycloak Admin REST API** to configure these attributes.
+Since the **{project_name} Admin Console does not support direct attribute creation**, use the **{project_name} Admin REST API** to configure these attributes.
 
 ==== Define Realm Attributes
 
@@ -161,7 +168,7 @@ This is a **sample configuration**. You can define **additional attributes** dep
 
 ==== Import Realm Attributes
 
-Use the following `curl` command to import the attributes into Keycloak:
+Use the following `curl` command to import the attributes into {project_name}:
 
 [source,bash]
 ----
@@ -173,7 +180,7 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci" \
 
 [NOTE]
 ====
-- Replace `$ACCESS_TOKEN` with a valid **Keycloak Admin API access token**.
+- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
 - **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
 - If updating an existing realm, use `PUT` instead of `POST`.
 ====
@@ -182,7 +189,7 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci" \
 
 Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). These scopes use **protocol mappers** to map specific claims into VCs.
 
-Since the **Keycloak Admin Console does not support direct client scope creation with mappers**, use the **Keycloak Admin REST API**.
+Since the **{project_name} Admin Console does not support direct client scope creation with mappers**, use the **{project_name} Admin REST API**.
 
 ==== Define a Client Scope with a Mapper
 
@@ -239,7 +246,7 @@ You can define **additional protocol mappers** to support different claim mappin
 
 ==== Import the Client Scope
 
-Use the following `curl` command to import the client scope into Keycloak:
+Use the following `curl` command to import the client scope into {project_name}:
 
 [source,bash]
 ----
@@ -251,7 +258,7 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/client-scopes" \
 
 [NOTE]
 ====
-- Replace `$ACCESS_TOKEN` with a valid **Keycloak Admin API access token**.
+- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
 - **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
 - If updating an existing scope, use `PUT` instead of `POST`.
 ====
@@ -300,7 +307,7 @@ curl -k -X POST "https://localhost:8443/admin/realms/oid4vc-vci/clients" \
 === Create a Credential Builder Component
 
 A **Credential Builder** is responsible for formatting Verifiable Credentials (VCs), such as **SD-JWT**.
-This component must be **registered in Keycloak** using the **Admin REST API**.
+This component must be **registered in {project_name}** using the **Admin REST API**.
 
 ==== Register the Credential Builder
 
@@ -320,7 +327,7 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/components" \
 
 [NOTE]
 ====
-- Replace `$ACCESS_TOKEN` with a valid **Keycloak Admin API access token**.
+- Replace `$ACCESS_TOKEN` with a valid **{project_name} Admin API access token**.
 - **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
 ====
 
@@ -328,7 +335,7 @@ curl -X POST "https://localhost:8443/admin/realms/oid4vc-vci/components" \
 
 - **name** – The identifier for the credential builder.
 - **providerId** – Specifies the **VC format** (e.g., `vc+sd-jwt`).
-- **providerType** – Points to the Keycloak **Credential Builder class** used for VC issuance.
+- **providerType** – Points to the {project_name} **Credential Builder class** used for VC issuance.
 
 [IMPORTANT]
 ====
@@ -354,8 +361,8 @@ A successful response returns a JSON object containing details such as:
 
 == Conclusion
 
-You have successfully configured **Keycloak as a Verifiable Credential Issuer** using the **OID4VCI protocol**.
-This setup leverages Keycloak's robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
+You have successfully configured **{project_name} as a Verifiable Credential Issuer** using the **OID4VCI protocol**.
+This setup leverages {project_name}'s robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
 
 For a **complete reference implementation**, see our sample project:
-https://github.com/adorsys/keycloak-ssi-deployment/tree/main[Keycloak SSI Deployment^].
+https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
