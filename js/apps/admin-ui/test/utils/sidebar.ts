@@ -1,8 +1,9 @@
 import { Page } from "@playwright/test";
+import { clickTableRowItem } from "./table";
 
 export async function goToRealm(page: Page, realmName: string) {
-  await page.getByTestId("realmSelector").click();
-  await page.getByRole("menuitem", { name: realmName }).click();
+  await page.getByTestId("nav-item-realms").click();
+  await clickTableRowItem(page, realmName);
 }
 
 export async function goToOrganizations(page: Page) {
