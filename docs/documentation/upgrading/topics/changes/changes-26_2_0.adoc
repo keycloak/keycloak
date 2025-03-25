@@ -89,6 +89,42 @@ the https://datatracker.ietf.org/doc/html/rfc6749#section-6[OAuth2 specification
 Currently, it is not supported to request offline tokens or exchange a refresh token when the subject token was issued from an offline session. The recommended approach is to exchange for access tokens instead of
 refresh token when possible.
 
+=== Fine-grained admin permissions supported
+
+Starting with this release, {project_name} introduces *fine-grained admin permissions V2*, offering an improved and more flexible authorization model for administrative permissions.
+
+* FGAP:V2 feature is enabled by default.
+* FGAP:V1 feature remains in preview and can be enabled using `--features=admin-fine-grained-authz:v1`. However, V1 may be deprecated and removed in a future releases.
+
+==== Migration from V1 to V2
+
+Due to fundamental changes in the permission model, **automatic migration from V1 to V2 is not available**. To simplify the transition:
+
+* A new `admin-permissions` client is introduced. This client is created when you enable the capability for the realm. The client holds the authorization model for FGAP:V2.
+* The existing FGAP:V1 authorization model remains unchanged within the `realm-management` client.
+* Administrators must _recreate permissions and policies_ using the new model, which can be configured in the updated *Permissions* section of the Admin Console.
+
+==== Key Differences Between FGAP:V1 and FGAP:V2
+
+* Realm-level enablement: 
+  ** FGAP:V2 can be enabled for a realm using the new *Admin Permissions* switch in *Realm Settings*.
+* Centralized management:
+  ** The resource-specific *Permissions* tabs (for users, groups, clients, and roles) have been removed.
+  ** A new *Permissions* section provides centralized management for all administrative permissions from a single place in the Admin Console.
+* Explicit operation scoping:
+  ** Transitive dependencies between permissions have been removed.
+  ** Administrators must now explicitly assign each required permission.
+  ** Example: To both view and manage a resource, both *view* and *manage* scopes for a permissions must be assigned separately.
+* Permission model changes:
+  ** The *user-impersonated* user permission has been _removed_.
+* Flexible resource scoping:
+  ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
+  ** Administrators can now define permissions for:
+    *** A *specific resource*
+    *** A *set of selected resources*
+    *** *All resources* of a given type
+    *** This applies to *all resource types*: clients, users,groups, and roles.
+
 === LDAP provider now can store new users, groups, and roles in a sub-DN of the base DN
 
 When adding new users, groups, or roles, the LDAP provider would always store them in the same base DN configured for the searches. However, in some deployments admins may want to configure a broader DN with `subtree` scope to fetch users (or groups/roles) from multiple sub-DNs, but they don't want new users (or groups/roles) to be stored in this base DN in LDAP. Instead, they would like to chose one of the sub-DNs for that.

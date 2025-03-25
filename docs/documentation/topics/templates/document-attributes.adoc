@@ -48,6 +48,8 @@
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_eventlistener_name: Event listener
 :adminguide_eventlistener_link: {adminguide_link}#event-listener
+:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
 :adminguide_clearcache_name: Clearing Server Caches
