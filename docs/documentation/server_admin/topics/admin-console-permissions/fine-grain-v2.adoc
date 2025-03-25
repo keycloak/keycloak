@@ -1,0 +1,227 @@
+[[_fine_grain_permissions]]
+
+=== Fine grained admin permissions V2
+
+Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
+restricted admin accounts that have more fine grained permissions. {project_name} allows you to define
+and assign restricted access permissions for managing a realm. 
+
+Here are some key points to understand about fine-grained admin permissions:
+
+* Fine grained admin permissions were implemented on top of link:{authorizationguide_link}[Authorization Services].  
+  It is highly recommended that you read up on those features before diving into fine grained permissions.
+* Fine grained permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> or 
+  realm-specific admin API and admins defined within those realms. You cannot define cross-realm fine grained permissions.
+* Fine grained permissions are used to grant additional permissions. You cannot override the
+  default behavior of the built-in admin roles.
+
+[NOTE]
+====
+To maximize the effectiveness of fine-grained admin permissions while minimizing the impact of broad admin roles, 
+it is recommended to assign the `query-clients`, `query-groups`, and `query-users` roles (along with roles required 
+for realm management) to allow querying. All other administrative access could be managed through fine-grained permissions.
+====
+
+Administrators can manage access to the following resource types:
+
+* `Clients`
+* `Groups`
+* `Roles`
+* `Users`
+
+Administrators can create permissions managing access to all resources of a given type, e.g. 
+`All users`, as well as permissions for individual resource objects. For instance a specific group or set of groups. 
+
+Each resource type has a set of associated actions (authorization scopes) that define what operations can be performed. 
+For example, in the `Users` resource type, actions include `view`, `manage`, `map-roles`, `manage-group-membership` or
+`impersonate`.
+
+==== Enabling admin permissions
+
+To enable fine-grained admin permissions for a realm, follow these steps:
+
+* Log in to the Admin Console.
+* Navigate to `Realm settings`
+* Enable the `Admin Permissions` switch and click `Save`
+
+image:images/fine-grain-enable.png[Fine grain enable]
+
+Once enabled, a `Permissions` section appears in the left-side menu of the administration console.
+
+image:images/fine-grain-permissions-tab.png[Fine grain permissions tab]
+
+==== Managing Permissions and Policies
+
+The `Permissions` tab provides an overview of all active permissions within a realm. From here, administrators can create, 
+update, delete, or search for permissions.
+
+===== Searching for permissions
+
+The administration console provides several ways to search for permissions, supporting the following capabilities:
+
+* Search for permissions that contain a specific string in their `Name`
+* Search for permissions of a specific resource type, such as `Users`
+* Search for permissions of a specific resource type that apply to a particular resource (e.g., `Users` resource type for user `myadmin`).
+* Search for permissions of a specific resource type with a given scope (e.g., `Users` resource type permissions with the `manage` scope).
+* Search for permissions of a specific resource type that apply to a particular resource and have a specific scope (e.g., `Users` resource 
+  type permissions with the `manage` scope for user `myadmin`).
+
+image:images/fine-grain-search.png[Fine grained permissions search]
+
+The `Policies` tab allows administrators to define conditions using different access control methods (`policy type`) to determine whether 
+a permission should be granted to an administrator attempting to access a specific resource performing some operation. It also 
+supports basic searching capability, based on policy `name` and its `type`.
+
+The `Evaluation` tab provides a testing environment where administrators can verify that permissions are correctly enforcing access 
+control as expected.
+
+The administrator could see what permissions were involved in evaluation and what the outcome is by specifying a `username` of a user they 
+want to verify, `Resource type`, resource (usermane of a `User` in this case) and optionally an authorization scope.
+
+image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
+
+In the example above it is visible that user `myadmin`, can `manage` user `user-1`. There is also information what permissions were involved 
+in the evaluation, what outcome it had and what scopes were granted or denied.
+
+==== Listing realm resources
+
+IMPORTANT: When listing or searching for realm resources (such as clients, groups, or users) via the Admin Console or Admin API, {project_name} 
+evaluates permissions that contain the `view` scope for the specific resource. For this operation, only role, user, and group policy types are 
+considered, while other policy types are ignored due to partial evaluation performed at the database level. Because of this, only policies that 
+reference the resource directly—whether through user association, group membership, or role assignment—are found and permissions assiciated with 
+those are used for evaluation.
+
+When checking whether an admin can view a specific user, all policy types are taken into account.
+
+==== Evaluation conflict resolution
+
+Permissions can have multiple policies associated with them. As the authorization model evolves, it is common for some policies within a permissionor 
+even different permissions related to a specific resource to conflict.
+
+The evaluation outcome will be "denied" whenever any permission is evaluated to "DENY." If there are multiple permissions related to the same resource, 
+all of them must grant access in order for the outcome to be "granted."
+
+IMPORTANT: Fine-grained admin permissions allow you to set up permissions for individual resources or for the resource type itself (e.g., all users, 
+all groups, etc.). If a permission or permissions related to a specific resource exist, the "all-resource" permission is *NOT* taken into account 
+during evaluation. If no specific permission exists, the fallback is to the "all-resource" permission. This approach helps solve scenarios like 
+allowing members of the `realm-admins` group to manage members of realm groups, but preventing them from managing members of the `realm-admins` group 
+themselves.
+
+==== Common use cases
+
+TODO: add more common use cases
+
+Let's say an admin wants to allow a group of admins to `manage` all users in the realm except those, which belongs to the
+administrators group. In our example, we have a realm called `test` and a group called `test-admins`. 
+
+===== Permission setup
+
+* Navigate to the `Permissions` tab in the Admin Console.
+* Click `Create permission` button and choose `Users` resource type
+* Fill the name, e.g. `"Allow managing all realm users"`
+* Choose `manage` authorization scope, keep checked `All Users`
+* Create a condition, which needs to be met to get an access by clicking `Create new policy`
+* Fill name `"Allow test-admins"`, select `Group` as `Policy type`. 
+* Click `Add groups` button and select `test-admins` group, click `Save`
+* Click `Save` on `"Create permission"` page
+
+The created permission, allows to manage all users in the realm for members of the `test-admins` group. 
+Let's exlude the members of the group itself, so that `test-admins` cannot manage other admins.
+
+* Create new permission by clicking `Create permission` button
+* This time choose `Groups` resource type
+* Fill the name, e.g. `"Disallow managing test-admins"`
+* Choose `manage-members` authorization scope.
+* Select `Specific Groups` and choose `test-admins` group
+* `Create new policy` of type `Group`
+* Fill the name `"Disallow test-admins"` and select `test-admins` group
+* Switch to `Negative Logic` for the policy, `Save` the policy
+* `Save` the permission
+
+==== Full list of permissions
+
+TODO this section needs review.
+
+This chapter defines the whole list of permission types that can be described for a realm.
+
+===== Client
+
+view::
+    Permissions that decide if an admin can view the client's configuration.
+manage::
+    Permissions that decide if an admin can view and manage the client's configuration.
+configure::
+    Reduced set of privileges to manage the client. It is like the `manage` scope except
+    the admin is not allowed to define protocol mappers, change the client template,
+    or the client's scope.
+map-roles::
+    Permissions that decide if an admin can map any role defined by the client to a user.
+    This is a shortcut, easy-of-use feature to avoid having to define policies
+    for each and every role defined by the client.
+map-roles-composite::
+    Permissions that decide if an admin can map any role defined by the client
+    as a composite to another role.
+    This is a shortcut, easy-of-use feature to avoid having to define policies
+    for each and every role defined by the client.
+map-roles-client-scope::
+    Permissions that decide if an admin can map any role defined by the client
+    to the scope of another client.
+    This is a shortcut, easy-of-use feature to avoid having to define policies
+    for each and every role defined by the client.
+
+===== Group
+
+view::
+    Permissions that decide if the admin can view information about the group.
+manage::
+    Permissions that decide if the admin can manage the configuration of the group.
+view-members::
+    Permissions that decide if the admin can view the user details of members of the group.
+manage-members::
+    Permissions that decide if the admin can manage the users that belong to this group.
+manage-membership::
+    Permissions that decide if an admin can change the membership of the group.  Add or
+    remove members from the group.
+
+===== Role
+
+map-role::
+    Permissions that decide if an admin can map this role to a user. These policies
+    only specify that the role can be mapped to a user, not that the admin is allowed
+    to perform user role mapping tasks.  The admin will also have to have manage or
+    role mapping permissions.
+map-role-composite::
+    Permissions that decide if an admin can map this role as a composite to another role.
+    An admin can define roles for a client if he has to manage permissions for that client
+    but he will not be able to add composites to those roles unless he has the
+    `map-role-composite` privileges for the role he wants to add as a composite.
+map-role-client-scope::
+    Permissions that decide if an admin can apply this role to the scope of a client.
+    Even if the admin can manage the client, he will not have permission to
+    create tokens for that client that contain this role unless this privilege
+    is granted.
+
+===== Users
+
+view::
+    Permissions that decide if an admin can view users in the realm.
+manage::
+    Permissions that decide if an admin can manage users in the realm. This
+    permission grants the admin the privilege to perform user role mappings, but
+    it does not specify which roles the admin is allowed to map. You'll need to
+    define the privilege for each role you want the admin to be able to map.
+map-roles::
+    This is a subset of the privileges granted by the `manage` scope.  In this
+    case the admin is only allowed to map roles.  The admin is not allowed to perform
+    any other user management operation.  Also, like `manage`, the roles that the
+    admin is allowed to apply must be specified per role or per set of roles if dealing
+    with client roles.
+manage-group-membership::
+    Similar to `map-roles` except that it pertains to group membership: which
+    groups a user can be added or removed from. These permissions just grant 
+    the admin permission to manage group membership, not which groups the admin 
+    is allowed to manage membership for. You'll have to specify policies for 
+    each group's `manage-members` permission.
+impersonate::
+    Permissions that decide if the admin is allowed to impersonate other users. These
+    permissions are applied to the administrator's attributes and role mappings.
