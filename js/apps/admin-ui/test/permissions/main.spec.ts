@@ -159,7 +159,7 @@ test.describe("Permissions section tests", () => {
 
     test("should search permission filter clients", async ({ page }) => {
       await openSearchPanel(page);
-      await selectItem(page, "#type", "Clients");
+      await selectItem(page, "#resourceType", "Clients");
       await clickSearchButton(page);
 
       await assertRowExists(page, "permission-1");
