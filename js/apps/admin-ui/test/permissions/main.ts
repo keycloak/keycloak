@@ -6,10 +6,6 @@ export async function goToPermissions(page: Page) {
   await page.getByTestId("nav-item-permissions").click();
 }
 
-export async function goToPolicies(page: Page) {
-  await page.getByTestId("permissionsPolicies").click();
-}
-
 export async function goToEvaluation(page: Page) {
   await page.getByTestId("permissionsEvaluation").click();
 }
@@ -38,35 +34,6 @@ export async function fillUserPermissionForm(
 
 export async function clickCreateNewPolicy(page: Page) {
   await page.getByTestId("select-createNewPolicy-button").click();
-}
-
-type PolicyForm = {
-  name: string;
-  description: string;
-  type: string;
-  user: string;
-};
-
-export async function fillPolicyForm(page: Page, data: PolicyForm) {
-  const entries = Object.entries(data);
-  for (const [key, value] of entries) {
-    if (key === "type") {
-      await selectItem(page, "#type", value);
-      continue;
-    }
-    if (key === "user") {
-      await selectItem(
-        page,
-        page.getByRole("combobox", { name: "Type to filter" }),
-        value,
-      );
-      continue;
-    }
-    await page
-      .getByRole("dialog", { name: "Create policy" })
-      .getByTestId(key)
-      .fill(value);
-  }
 }
 
 export async function clickCreatePolicySaveButton(page: Page) {

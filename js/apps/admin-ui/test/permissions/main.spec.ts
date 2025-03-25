@@ -1,24 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
+import { clickSaveButton, selectItem } from "../utils/form";
 import { login } from "../utils/login";
+import { assertNotificationMessage } from "../utils/masthead";
 import { goToRealm } from "../utils/sidebar";
+import { assertRowExists } from "../utils/table";
 import {
   clickCreateNewPolicy,
   clickCreatePermission,
   clickCreatePolicySaveButton,
   clickSearchButton,
-  fillPolicyForm,
   fillUserPermissionForm,
   goToEvaluation,
   goToPermissions,
-  goToPolicies,
   openSearchPanel,
   selectUsersResource,
 } from "./main";
-import { clickSaveButton, selectItem } from "../utils/form";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertRowExists } from "../utils/table";
+import { fillPolicyForm, goToPolicies } from "./policy";
 
 test.describe("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
@@ -48,12 +47,16 @@ test.describe("Permissions section tests", () => {
       scopes: ["view"],
     });
     await clickCreateNewPolicy(page);
-    await fillPolicyForm(page, {
-      name: "test-policy",
-      description: "test-description",
-      type: "User",
-      user: "test-user",
-    });
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-policy",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
     await clickCreatePolicySaveButton(page);
     await assertNotificationMessage(page, "Successfully created the policy");
 
@@ -154,13 +157,14 @@ test.describe("Permissions section tests", () => {
       await assertRowExists(page, "permission-2", false);
     });
 
-    test("should search permission", async ({ page }) => {
+    test("should search permission filter clients", async ({ page }) => {
       await openSearchPanel(page);
-      await page.getByTestId("name").fill("permission-1");
+      await selectItem(page, "#type", "Clients");
       await clickSearchButton(page);
 
       await assertRowExists(page, "permission-1");
       await assertRowExists(page, "permission-2", false);
+      await assertRowExists(page, "permission-3");
     });
   });
 });
