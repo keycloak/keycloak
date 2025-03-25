@@ -27,7 +27,8 @@ The following procedure adds the `Recovery Authentication Code Form` as an alter
 . Click *Authentication* in the realm menu.
 . Click the *Browser* flow.
 . Select *Duplicate* from the *Action list* to make a copy of the built-in *Browser* flow.
-. For example enter *Recovery Codes Browser* as the name of the copy.
++
+For example enter *Recovery Codes Browser* as the name of the copy.
 . Click *Duplicate*.
 . In the flow *Recovery Codes Browser Browser - Conditional OTP* click the *Add* (*+*) button and select *Add Execution*.
 . Filter to find the *Recovery Authentication Code Form* and *Add* the execution.
