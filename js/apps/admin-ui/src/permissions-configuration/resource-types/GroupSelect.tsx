@@ -70,7 +70,7 @@ export const GroupSelect = ({
           isRequired
             ? {
                 validate: (value?: GroupRepresentation[]) =>
-                  value && value.filter(({ id }) => id).length > 0,
+                  value && value.length > 0,
               }
             : undefined
         }

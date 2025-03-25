@@ -13,7 +13,7 @@ type ResourceTypeProps = {
   resourceType: string;
 };
 
-const COMPONENTS: {
+export const COMPONENTS: {
   [index: string]: (props: any) => JSX.Element;
 } = {
   users: UserSelect,

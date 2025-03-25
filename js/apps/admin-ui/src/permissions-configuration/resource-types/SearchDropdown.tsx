@@ -54,6 +54,7 @@ export const SearchDropdown = ({
   const selectedType = useWatch({
     control: form.control,
     name: "resourceType",
+    defaultValue: "",
   });
   const [key, setKey] = useState(0);
   const ref = useRef("clients");
@@ -101,10 +102,13 @@ export const SearchDropdown = ({
             controller={{
               defaultValue: "",
             }}
-            options={types.map(({ type, name }) => ({
-              key: type!,
-              value: name! || type!,
-            }))}
+            options={[
+              { key: "", value: t("choose") },
+              ...types.map(({ type, name }) => ({
+                key: type!,
+                value: name! || type!,
+              })),
+            ]}
             onSelect={(value, onChange) => {
               if (ref.current !== value) {
                 ref.current = value as string;
@@ -113,23 +117,28 @@ export const SearchDropdown = ({
               onChange(value);
             }}
           />
-          <ResourceType
-            resourceType={selectedType || "clients"}
-            withEnforceAccessTo={false}
-          />
-          <SelectControl
-            name={"scope"}
-            label={t("authorizationScope")}
-            controller={{
-              defaultValue: "",
-            }}
-            options={[
-              ...(resourceScopes || []).map((resourceScope) => ({
-                key: resourceScope!,
-                value: resourceScope!,
-              })),
-            ]}
-          />
+          {selectedType !== "" && (
+            <>
+              <ResourceType
+                resourceType={selectedType || "clients"}
+                withEnforceAccessTo={false}
+              />
+              <SelectControl
+                name={"scope"}
+                label={t("authorizationScope")}
+                controller={{
+                  defaultValue: "",
+                }}
+                options={[
+                  ...(resourceScopes || []).map((resourceScope) => ({
+                    key: resourceScope!,
+                    value: resourceScope!,
+                  })),
+                ]}
+              />
+            </>
+          )}
+
           <ActionGroup>
             <Button
               variant="primary"
