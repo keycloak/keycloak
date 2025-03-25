@@ -51,7 +51,10 @@ export const SearchDropdown = ({
 
   const [open, toggle] = useToggle();
   const [resourceScopes, setResourceScopes] = useState<string[]>([]);
-  const selectedType = useWatch({ control: form.control, name: "type" });
+  const selectedType = useWatch({
+    control: form.control,
+    name: "resourceType",
+  });
   const [key, setKey] = useState(0);
   const ref = useRef("clients");
 
@@ -93,7 +96,7 @@ export const SearchDropdown = ({
         >
           <TextControl name="name" label={t("name")} />
           <SelectControl
-            name="type"
+            name="resourceType"
             label={t("type")}
             controller={{
               defaultValue: "",
