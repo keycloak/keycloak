@@ -17,8 +17,12 @@
 
 package org.keycloak.marshalling;
 
+import java.util.List;
+
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
+import org.infinispan.commons.util.ServiceFinder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.protostream.SerializationContextInitializer;
 
 /**
  * Ids of the protostream type.
@@ -44,6 +48,19 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 public final class Marshalling {
 
     public static final String PROTO_SCHEMA_PACKAGE = "keycloak";
+
+    private static List<SerializationContextInitializer> SCHEMAS;
+
+    public static List<SerializationContextInitializer> getSchemas() {
+        if (SCHEMAS == null) {
+            setSchemas(ServiceFinder.load(SerializationContextInitializer.class).stream().toList());
+        }
+        return SCHEMAS;
+    }
+
+    public static void setSchemas(List<SerializationContextInitializer> schemas) {
+        SCHEMAS = List.copyOf(schemas);
+    }
 
     private Marshalling() {
     }
@@ -166,12 +183,11 @@ public final class Marshalling {
     public static final int RELOAD_CERTIFICATE_FUNCTION = 65615;
 
     public static void configure(GlobalConfigurationBuilder builder) {
-        builder.serialization()
-                .addContextInitializer(KeycloakModelSchema.INSTANCE);
+        getSchemas().forEach(builder.serialization()::addContextInitializer);
     }
 
     public static void configure(ConfigurationBuilder builder) {
-        builder.addContextInitializer(KeycloakModelSchema.INSTANCE);
+        getSchemas().forEach(builder::addContextInitializer);
     }
 
     public static String protoEntity(Class<?> clazz) {
