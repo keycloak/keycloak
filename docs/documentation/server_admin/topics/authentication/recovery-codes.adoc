@@ -49,7 +49,7 @@ You can see more examples of 2FA configurations in <<2fa-conditional-workflow-ex
 
 ==== Creating the Recovery Codes credential
 
-Once the Recovery Codes required action is enabled and the credential type is managed in the flow, users can request to create their own codes. The action is just another <<con-required-actions_server_administration_guide,required action>> than can be used in {project_name} (directly called by the user via *Account Console* or assigned by an administrator via *Admin Console*).
+Once the Recovery Codes required action is enabled and the credential type is managed in the flow, users can request to create their own codes. The action is just another <<con-required-actions_server_administration_guide,required action>> that can be used in {project_name} (directly called by the user by using the Account Console or assigned by an administrator by using the Admin Console).
 
 The required action, when executed, generates the list of codes and presents it to the user. The action offers to print, download or copy the list of codes to help the user to store them is a safe place. In order to complete the setup the checkbox *I have saved these codes somewhere safe* should be previously ticked.
 
