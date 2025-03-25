@@ -43,7 +43,7 @@ image:images/recovery-codes-browser-flow.png[Recovery Codes Browser flow]
 . Select *Browser flow* from the drop-down list to setup this new flow as the default flow for the realm.
 . Click *Save*.
 
-With this configuration both 2FA authenticators (`OTP Form` and `Recovery Authentication Code Form`) are alternative ways of login into {project_name}. If the user has configured both credential types, the `OTP Form` will be displayed by default, but another option *Try Another Way* will be available that allows to select the *Recovery Authentication Code* to login.
+With this configuration, both 2FA authenticators (`OTP Form` and `Recovery Authentication Code Form`) are alternate ways to log into {project_name}. If the user has configured both credential types, the `OTP Form` will be displayed by default, but another option *Try Another Way* will be available that allows to select the *Recovery Authentication Code* to login.
 
 You can see more examples of 2FA configurations in <<2fa-conditional-workflow-examples, 2FA conditional workflow examples>>.
 
