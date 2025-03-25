@@ -72,7 +72,12 @@ export const UserSelect = ({
 
       return foundUsers.filter((user) => user !== undefined);
     },
-    setSelectedUsers,
+    (users) => {
+      setSelectedUsers(users);
+      if (variant !== "typeaheadMulti") {
+        setInputValue(users[0]?.username || "");
+      }
+    },
     [values],
   );
 
