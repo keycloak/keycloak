@@ -89,7 +89,7 @@ export const ResourceType = ({
       )}
       {isSpecificResources && ComponentType && (
         <ComponentType
-          name="resources"
+          name={withEnforceAccessTo ? "resources" : "resource"}
           label={`${normalizedResourceType}Resources`}
           helpText={t("resourceTypeHelpText", {
             resourceType: normalizedResourceType,
