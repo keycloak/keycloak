@@ -1,10 +1,9 @@
-[[_fine_grain_permissions]]
 
-=== Fine grain admin permissions
+=== Fine grained admin permissions V1
 
-:tech_feature_name: Fine Grain Admin Permissions
-:tech_feature_id: admin-fine-grained-authz
-include::../templates/techpreview.adoc[]
+IMPORTANT: fine-grained admin permissions V1 have been replaced by a <<_fine_grained_permissions, new version>>. 
+Version 1 of the feature is still marked as preview and is available, but it may be deprecated and removed 
+in future. To enable it, start the server with `--features=admin-fine-grained-authz:v1`.
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
 restricted admin accounts that have more fine grain permissions.  {project_name} allows you to define
@@ -297,5 +296,4 @@ manage-members::
 manage-membership::
     Policies that decide if an admin can change the membership of the group.  Add or
     remove members from the group.
-
 
