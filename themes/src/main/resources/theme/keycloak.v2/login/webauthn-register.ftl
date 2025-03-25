@@ -9,8 +9,8 @@
         <span class="${properties.kcWebAuthnKeyIcon!}"></span>
         ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
     <#elseif section = "form">
-
-        <form id="register" action="${url.loginAction}" method="post">
+    <div class="${properties.kcFormClass!}">
+        <form id="register" action="${url.loginAction}" method="post" >
             <div class="${properties.kcFormGroupClass!}">
                 <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
                 <input type="hidden" id="attestationObject" name="attestationObject"/>
@@ -47,15 +47,15 @@
             });
         </script>
 
-        <div class="pf-v5-u-py-lg ${properties.kcFormClass!}">
-            <@buttons.actionGroup>
-                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey" />
+            <@buttons.actionGroup horizontal=true>
+                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>
                 <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
-                    <form action="${url.loginAction}" id="kc-webauthn-settings-form" method="post">
-                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass"]/>
+                    <form class="${properties.kcFormClass!}" action="${url.loginAction}"
+                          id="kc-webauthn-settings-form" method="post">
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"]/>
                     </form>
                 </#if>
             </@buttons.actionGroup>
-        </div>
+    </div>
     </#if>
 </@layout.registrationLayout>

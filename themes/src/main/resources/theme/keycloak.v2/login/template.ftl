@@ -18,7 +18,8 @@
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
       </div>
-    </@field.group>
+    </div>
+  </@field.group>
 </#macro>
 
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
