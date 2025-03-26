@@ -173,17 +173,9 @@ public class RealmsAdminResource {
                     .success();
 
             return Response.created(location).build();
-        } catch (ModelDuplicateException e) {
-            logger.error("Conflict detected", e);
-            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
-            throw ErrorResponse.exists("Conflict detected. See logs for details");
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);
-            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
-        } catch (ModelIllegalStateException e) {
-            logger.error(e.getMessage(), e);
-            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
