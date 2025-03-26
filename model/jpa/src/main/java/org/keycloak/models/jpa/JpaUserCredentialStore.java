@@ -30,6 +30,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
+import java.util.Comparator;
 import java.util.List;
 import jakarta.persistence.LockModeType;
 
@@ -40,6 +41,8 @@ import java.util.stream.Stream;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
+ * Manages credential storage for locally stored users.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -72,12 +75,25 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = createCredentialEntity(realm, user, cred);
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (userEntity != null) {
+            userEntity.getCredentials().add(entity);
+        }
         return toModel(entity);
+    }
+
+    private UserEntity userInEntityManagerContext(String id) {
+        UserEntity user = em.getReference(UserEntity.class, id);
+        return em.contains(user) ? user : null;
     }
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = removeCredentialEntity(realm, user, id);
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (entity != null && userEntity != null) {
+            userEntity.getCredentials().remove(entity);
+        }
         return entity != null;
     }
 
@@ -89,7 +105,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         return model;
     }
 
-    CredentialModel toModel(CredentialEntity entity) {
+    protected CredentialModel toModel(CredentialEntity entity) {
         CredentialModel model = new CredentialModel();
         model.setId(entity.getId());
         model.setType(entity.getType());
@@ -123,6 +139,13 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        UserEntity userEntity = userInEntityManagerContext(user.getId());
+        if (userEntity != null) {
+            // user already in persistence context, no need to execute a query
+            return userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
+                    .sorted(Comparator.comparingInt(CredentialEntity::getPriority))
+                    .map(this::toModel);
+        }
         return getStoredCredentialsStream(realm, user).filter(credential -> Objects.equals(type, credential.getType()));
     }
 
@@ -138,7 +161,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     }
 
-    CredentialEntity createCredentialEntity(RealmModel realm, UserModel user, CredentialModel cred) {
+    protected CredentialEntity createCredentialEntity(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = new CredentialEntity();
         String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
         entity.setId(id);
@@ -159,7 +182,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         return entity;
     }
 
-    CredentialEntity removeCredentialEntity(RealmModel realm, UserModel user, String id) {
+    protected CredentialEntity removeCredentialEntity(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = em.find(CredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (!checkCredentialEntity(entity, user)) return null;
 
@@ -229,7 +252,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         return true;
     }
 
-    private boolean checkCredentialEntity(CredentialEntity entity, UserModel user) {
+    protected boolean checkCredentialEntity(CredentialEntity entity, UserModel user) {
         return entity != null && entity.getUser() != null && entity.getUser().getId().equals(user.getId());
     }
 
