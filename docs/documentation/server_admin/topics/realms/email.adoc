@@ -73,9 +73,9 @@ ifeval::[{project_community}==true]
 
 == XOAUTH2 email configuration with third-party vendors
 
-Following section contains some hints on how to configure {project_name} email settings to use XOAUTH2 based authentication with some known third-party software SMTP servers.
+The following section contains some hints on how to configure {project_name} email settings to use XOAUTH2 based authentication with some known third-party software SMTP servers.
 
-NOTE: {project_name} is not officially supported and tested with the XOAUTH2 third-party email providers below. Please consider the instructions below just as a best effort.
+NOTE: This section has been contributed by the Keycloak community. As the Keycloak core team does not have means to test third-party providers, it is provided as-is. If you find this documentation outdated or incomplete, please contribute to improve it.
 
 === Configuration for Microsoft Azure and Office365
 
