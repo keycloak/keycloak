@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.group;
+package org.keycloak.tests.admin.group;
 
 import jakarta.ws.rs.core.Response;
-import java.util.*;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.GroupProvider;
@@ -34,143 +34,200 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class GroupMappersTest extends AbstractGroupTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = loadTestRealm(testRealms);
+    @InjectRealm(config = GroupMappersTestRealmConfig.class)
+    ManagedRealm managedRealm;
 
-        testRealmRep.setEventsEnabled(true);
+    private static final String CLIENT_ID = "my-app";
+    private static final String CLIENT_SECRET = "password";
+    private static final String CLIENT_ROLE = "customer-user";
+    private static final String TOP_GROUP = "topGroup";
+    private static final String TOP_ATTRIBUTE = "topAttribute";
+    private static final String LEVEL_2_ATTRIBUTE = "level2Attribute";
+    private static final String LEVEL_2_GROUP = "level2group";
+    private static final String TOP_GROUP_USER = "topGroupUser";
+    private static final String LEVEL_2_GROUP_USER = "level2GroupUser";
 
-        ClientRepresentation client = getClientByAlias(testRealmRep, "test-app");
-        Assert.assertNotNull("test-app client exists", client);
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGroupMappers() {
+        {
+            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
 
-        client.setDirectAccessGrantsEnabled(true);
-
-        List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
-        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
-        mapper.setName("groups");
-        mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups.groups");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        mapper.setConfig(config);
-        mappers.add(mapper);
-
-        mapper = new ProtocolMapperRepresentation();
-        mapper.setName("topAttribute");
-        mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        config = new HashMap<>();
-        config.put(ProtocolMapperUtils.USER_ATTRIBUTE, "topAttribute");
-        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "topAttribute");
-        config.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        mapper.setConfig(config);
-        mappers.add(mapper);
-
-        mapper = new ProtocolMapperRepresentation();
-        mapper.setName("level2Attribute");
-        mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        config = new HashMap<>();
-        config.put(ProtocolMapperUtils.USER_ATTRIBUTE, "level2Attribute");
-        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "level2Attribute");
-        config.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        mapper.setConfig(config);
-        mappers.add(mapper);
-
-        client.setProtocolMappers(mappers);
-    }
-
-    private ClientRepresentation getClientByAlias(RealmRepresentation testRealmRep, String alias) {
-        for (ClientRepresentation client: testRealmRep.getClients()) {
-            if (alias.equals(client.getClientId())) {
-                return client;
-            }
+            AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
+            Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
+            Assertions.assertNotNull(token.getOtherClaims().get("groups"));
+            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
+            MatcherAssert.assertThat(groups.get("groups"), Matchers.contains(TOP_GROUP));
+            Assertions.assertEquals("true", token.getOtherClaims().get(TOP_ATTRIBUTE));
         }
-        return null;
+        {
+            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+
+            AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
+            Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
+            Assertions.assertTrue(token.getRealmAccess().getRoles().contains("admin"));
+            Assertions.assertTrue(token.getResourceAccess(CLIENT_ID).getRoles().contains(CLIENT_ROLE));
+            Assertions.assertNotNull(token.getOtherClaims().get("groups"));
+            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
+            MatcherAssert.assertThat(groups.get("groups"), Matchers.contains(LEVEL_2_GROUP));
+            Assertions.assertEquals("true", token.getOtherClaims().get(TOP_ATTRIBUTE));
+            Assertions.assertEquals("true", token.getOtherClaims().get(LEVEL_2_ATTRIBUTE));
+        }
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testGroupMappers() throws Exception {
-        RealmResource realm = adminClient.realms().realm("test");
-        {
-            UserRepresentation user = realm.users().search("topGroupUser", -1, -1).get(0);
-
-            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));
-            Assert.assertNotNull(token.getOtherClaims().get("groups"));
-            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
-            MatcherAssert.assertThat(groups.get("groups"), Matchers.contains("topGroup"));
-            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
-        }
-        {
-            UserRepresentation user = realm.users().search("level2GroupUser", -1, -1).get(0);
-
-            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));
-            Assert.assertTrue(token.getRealmAccess().getRoles().contains("admin"));
-            Assert.assertTrue(token.getResourceAccess("test-app").getRoles().contains("customer-user"));
-            Assert.assertNotNull(token.getOtherClaims().get("groups"));
-            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
-            MatcherAssert.assertThat(groups.get("groups"), Matchers.contains("level2group"));
-            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
-            Assert.assertEquals("true", token.getOtherClaims().get("level2Attribute"));
-        }
-    }
-
-    @Test
-    public void testGroupMappersWithSlash() throws Exception {
-        RealmResource realm = adminClient.realms().realm("test");
-        GroupRepresentation topGroup = realm.getGroupByPath("/topGroup");
-        Assert.assertNotNull(topGroup);
+    public void testGroupMappersWithSlash() {
+        RealmResource realm = managedRealm.admin();
+        GroupRepresentation topGroup = realm.getGroupByPath("/" + TOP_GROUP);
+        Assertions.assertNotNull(topGroup);
         GroupRepresentation childSlash = new GroupRepresentation();
         childSlash.setName("child/slash");
-        try (Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash)) {
-            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            childSlash.setId(ApiUtil.getCreatedId(response));
-        }
-        List<UserRepresentation> users = realm.users().search("level2GroupUser", true);
-        Assert.assertEquals(1, users.size());
-        UserRepresentation user = users.iterator().next();
+        Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash);
+        childSlash.setId(ApiUtil.getCreatedId(response));
+
+        UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
         realm.users().get(user.getId()).joinGroup(childSlash.getId());
 
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(realm, "test-app").getProtocolMappers();
+        ClientResource client = ApiUtil.findClientByClientId(realm, CLIENT_ID);
+        ProtocolMappersResource protocolMappers = client.getProtocolMappers();
         ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
                 protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");
+        Assertions.assertNotNull(groupsMapper);
         groupsMapper.getConfig().put("full.path", Boolean.TRUE.toString());
         protocolMappers.update(groupsMapper.getId(), groupsMapper);
 
-        try {
-            AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
-            Assert.assertNotNull(token.getOtherClaims().get("groups"));
-            Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
-            MatcherAssert.assertThat(groups.get("groups"), Matchers.containsInAnyOrder(
-                    KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, "topGroup", "level2group"),
-                    KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, "topGroup", "child/slash")));
-        } finally {
-            realm.users().get(user.getId()).leaveGroup(childSlash.getId());
-            realm.groups().group(childSlash.getId()).remove();
-            groupsMapper.getConfig().remove("full.path");
-            protocolMappers.update(groupsMapper.getId(), groupsMapper);
+        groupsMapper.getConfig().remove("full.path");
+        managedRealm.cleanup().add(r -> {
+            r.users().get(user.getId()).leaveGroup(childSlash.getId());
+            r.groups().group(childSlash.getId()).remove();
+            r.clients().get(client.toRepresentation().getId())
+                    .getProtocolMappers().update(groupsMapper.getId(), groupsMapper);
+        });
+
+        AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
+        Assertions.assertNotNull(token.getOtherClaims().get("groups"));
+        Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
+        MatcherAssert.assertThat(groups.get("groups"), Matchers.containsInAnyOrder(
+                KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, TOP_GROUP, LEVEL_2_GROUP),
+                KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, TOP_GROUP, "child/slash")));
+    }
+
+    private static class GroupMappersTestRealmConfig implements RealmConfig {
+
+        private List<ProtocolMapperRepresentation> createMappers() {
+            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+            ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+            mapper.setName("groups");
+            mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
+            mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            Map<String, String> config = new HashMap<>();
+            config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups.groups");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            mapper.setConfig(config);
+            mappers.add(mapper);
+
+            mapper = new ProtocolMapperRepresentation();
+            mapper.setName(TOP_ATTRIBUTE);
+            mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+            mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            config = new HashMap<>();
+            config.put(ProtocolMapperUtils.USER_ATTRIBUTE, TOP_ATTRIBUTE);
+            config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, TOP_ATTRIBUTE);
+            config.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            mapper.setConfig(config);
+            mappers.add(mapper);
+
+            mapper = new ProtocolMapperRepresentation();
+            mapper.setName(LEVEL_2_ATTRIBUTE);
+            mapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+            mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            config = new HashMap<>();
+            config.put(ProtocolMapperUtils.USER_ATTRIBUTE, LEVEL_2_ATTRIBUTE);
+            config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, LEVEL_2_ATTRIBUTE);
+            config.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+            mapper.setConfig(config);
+            mappers.add(mapper);
+            return mappers;
+        }
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            List<ProtocolMapperRepresentation> mappers = createMappers();
+
+            realm.addClient(CLIENT_ID)
+                    .enabled(true)
+                    .secret(CLIENT_SECRET)
+                    .directAccessGrants()
+                    .protocolMappers(mappers);
+
+            realm.eventsEnabled(true)
+                    .clientRoles(CLIENT_ID, CLIENT_ROLE);
+
+            GroupRepresentation subGroup = GroupConfigBuilder.create()
+                    .name(LEVEL_2_GROUP)
+                    .realmRoles("admin")
+                    .clientRole(CLIENT_ID, CLIENT_ROLE)
+                    .attribute(LEVEL_2_ATTRIBUTE, "true")
+                    .build();
+
+
+            GroupRepresentation subGroup2 = GroupConfigBuilder.create()
+                    .name("level2group2")
+                    .realmRoles("admin")
+                    .clientRole(CLIENT_ID, CLIENT_ROLE)
+                    .attribute(LEVEL_2_ATTRIBUTE, "true")
+                    .build();
+
+            realm.addGroup(TOP_GROUP)
+                    .attribute(TOP_ATTRIBUTE, "true")
+                    .realmRoles("user")
+                    .subGroups(subGroup, subGroup2);
+
+            realm.addUser(TOP_GROUP_USER)
+                    .name("John", "Doe")
+                    .enabled(true)
+                    .email("top@redhat.com")
+                    .password("password")
+                    .groups(TOP_GROUP);
+
+            realm.addUser(LEVEL_2_GROUP_USER)
+                    .name("Jane", "Doe")
+                    .enabled(true)
+                    .email("level2@redhat.com")
+                    .password("password")
+                    .groups("topGroup/level2group");
+
+            return realm;
         }
     }
 }
