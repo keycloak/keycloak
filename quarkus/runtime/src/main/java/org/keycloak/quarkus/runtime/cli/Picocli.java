@@ -433,8 +433,8 @@ public class Picocli {
                 throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                warn(format("The following run time options were found, but will be ignored during build time: %s\n",
-                        String.join(", ", ignoredRunTime)), getOutWriter());
+                info(format("The following run time options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)));
             }
 
             if (!disabledBuildTime.isEmpty()) {
@@ -582,6 +582,11 @@ public class Picocli {
 
     public void warn(String text) {
         warn(text, getOutWriter());
+    }
+
+    public void info(String text) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        getOutWriter().println(defaultColorScheme.apply("INFO: ", Arrays.asList(Style.fg_green, Style.bold)) + text);
     }
 
     private static void warn(String text, PrintWriter outwriter) {

@@ -327,8 +327,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
     }
