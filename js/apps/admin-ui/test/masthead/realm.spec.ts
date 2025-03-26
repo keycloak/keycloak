@@ -49,7 +49,7 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(
       page,
-      "Could not create realm Conflict detected. See logs for details",
+      "Could not create realm Realm master already exists",
     );
   });
 
