@@ -2,18 +2,22 @@
 
 === Fine grained admin permissions V2
 
-Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
-restricted admin accounts that have more fine grained permissions. {project_name} allows you to define
-and assign restricted access permissions for managing a realm. 
+The Fine-Grained Admin Permissions feature allows server administrators to delegate realm management to other administrators, 
+the realm administrators. Different than the regular Role-Based Access Control Mechanism provided through the Global and 
+Realm specific roles (<<_master_realm_access_control, Master realm access control>>), this feature provides a more fine-grained 
+control over how realm resources can be accessed and managed based on a well-defined set of operations that can be performed 
+on them.
+
+By relying on a Policy-Based Access Control, server administrators can define permissions to realm resources such as users, 
+groups, and clients, using different policy types, or access control methods, so that a realm administrator is limited to 
+access a subset of realm resources and their operations.
 
 Here are some key points to understand about fine-grained admin permissions:
 
-* Fine grained admin permissions were implemented on top of link:{authorizationguide_link}[Authorization Services].  
-  It is highly recommended that you read up on those features before diving into fine grained permissions.
 * Fine grained permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> or 
   realm-specific admin API and admins defined within those realms. You cannot define cross-realm fine grained permissions.
-* Fine grained permissions are used to grant additional permissions. You cannot override the
-  default behavior of the built-in admin roles.
+* Fine grained permissions are used to grant additional permissions. You cannot override the default behavior of the 
+  built-in admin roles.
 
 [NOTE]
 ====
@@ -21,6 +25,8 @@ To maximize the effectiveness of fine-grained admin permissions while minimizing
 it is recommended to assign the `query-clients`, `query-groups`, and `query-users` roles (along with roles required 
 for realm management) to allow querying. All other administrative access could be managed through fine-grained permissions.
 ====
+
+==== Understanding the Realm Resource Types
 
 Administrators can manage access to the following resource types:
 
@@ -36,9 +42,9 @@ Each resource type has a set of associated actions (authorization scopes) that d
 For example, in the `Users` resource type, actions include `view`, `manage`, `map-roles`, `manage-group-membership` or
 `impersonate`.
 
-==== Enabling admin permissions
+==== Enabling admin permissions to a realm
 
-To enable fine-grained admin permissions for a realm, follow these steps:
+To enable fine-grained admin permissions to a realm, follow these steps:
 
 * Log in to the Admin Console.
 * Navigate to `Realm settings`
@@ -50,12 +56,33 @@ Once enabled, a `Permissions` section appears in the left-side menu of the admin
 
 image:images/fine-grain-permissions-tab.png[Fine grain permissions tab]
 
-==== Managing Permissions and Policies
+==== Managing Permissions
 
 The `Permissions` tab provides an overview of all active permissions within a realm. From here, administrators can create, 
 update, delete, or search for permissions.
 
-===== Searching for permissions
+The `Policies` tab allows administrators to define conditions using different access control methods (`policy type`) to determine whether 
+a permission should be granted to an administrator attempting to access a specific resource performing some operation. It also 
+supports basic searching capability, based on policy `name` and its `type`. Fine grained admin permissions were implemented on top of 
+Authorization services. Read more about :{authorizationguide_link}#_policy_overview[Managing policies] in the Authorization services 
+documentation. 
+
+===== Defining permissions for viewing realm resources
+
+IMPORTANT: When listing or searching for realm resources (such as clients, groups, or users) via the Admin Console or Admin API, {project_name} 
+evaluates permissions that contain the `view` scope for the specific resource. For this operation, only role, user, and group policy types are 
+considered, while other policy types are ignored due to partial evaluation performed at the database level. Because of this, only policies that 
+reference the resource directly—whether through user association, group membership, or role assignment—are found and permissions assiciated with 
+those are used for evaluation.
+
+When checking whether an admin can view a specific user, all policy types are taken into account.
+
+The partial evaluation mechanism helps identify and load relevant permissions from the database by using the resource 
+identifiers that the realm administrator has permission to `view`. These identifiers are then applied in the subsequent 
+database query to fetch the actual stream of resources. Currently, partial evaluation is only supported for non-federated 
+resources, which is a limitation of the current implementation.
+
+===== Searching Permissions
 
 The administration console provides several ways to search for permissions, supporting the following capabilities:
 
@@ -68,32 +95,7 @@ The administration console provides several ways to search for permissions, supp
 
 image:images/fine-grain-search.png[Fine grained permissions search]
 
-The `Policies` tab allows administrators to define conditions using different access control methods (`policy type`) to determine whether 
-a permission should be granted to an administrator attempting to access a specific resource performing some operation. It also 
-supports basic searching capability, based on policy `name` and its `type`.
-
-The `Evaluation` tab provides a testing environment where administrators can verify that permissions are correctly enforcing access 
-control as expected.
-
-The administrator could see what permissions were involved in evaluation and what the outcome is by specifying a `username` of a user they 
-want to verify, `Resource type`, resource (usermane of a `User` in this case) and optionally an authorization scope.
-
-image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
-
-In the example above it is visible that user `myadmin`, can `manage` user `user-1`. There is also information what permissions were involved 
-in the evaluation, what outcome it had and what scopes were granted or denied.
-
-==== Listing realm resources
-
-IMPORTANT: When listing or searching for realm resources (such as clients, groups, or users) via the Admin Console or Admin API, {project_name} 
-evaluates permissions that contain the `view` scope for the specific resource. For this operation, only role, user, and group policy types are 
-considered, while other policy types are ignored due to partial evaluation performed at the database level. Because of this, only policies that 
-reference the resource directly—whether through user association, group membership, or role assignment—are found and permissions assiciated with 
-those are used for evaluation.
-
-When checking whether an admin can view a specific user, all policy types are taken into account.
-
-==== Evaluation conflict resolution
+===== Resolving conflicting permissions
 
 Permissions can have multiple policies associated with them. As the authorization model evolves, it is common for some policies within a permissionor 
 even different permissions related to a specific resource to conflict.
@@ -107,9 +109,20 @@ during evaluation. If no specific permission exists, the fallback is to the "all
 allowing members of the `realm-admins` group to manage members of realm groups, but preventing them from managing members of the `realm-admins` group 
 themselves.
 
-==== Common use cases
+==== Evaluating Permissions
 
-TODO: add more common use cases
+The `Evaluation` tab provides a testing environment where administrators can verify that permissions are correctly enforcing access 
+control as expected.
+
+The administrator could see what permissions were involved in evaluation and what the outcome is by specifying a `username` of a user they 
+want to verify, `Resource type`, resource (usermane of a `User` in this case) and optionally an authorization scope.
+
+image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
+
+In the example above it is visible that user `myadmin`, can `manage` user `user-1`. There is also information what permissions were involved 
+in the evaluation, what outcome it had and what scopes were granted or denied.
+
+==== Understanding some common use cases
 
 Let's say an admin wants to allow a group of admins to `manage` all users in the realm except those, which belongs to the
 administrators group. In our example, we have a realm called `test` and a group called `test-admins`. 
@@ -137,6 +150,7 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 * Fill the name `"Disallow test-admins"` and select `test-admins` group
 * Switch to `Negative Logic` for the policy, `Save` the policy
 * `Save` the permission
+
 
 ==== Full list of permissions
 
@@ -223,5 +237,4 @@ manage-group-membership::
     is allowed to manage membership for. You'll have to specify policies for 
     each group's `manage-members` permission.
 impersonate::
-    Permissions that decide if the admin is allowed to impersonate other users. These
-    permissions are applied to the administrator's attributes and role mappings.
+    Permissions that decide if the admin is allowed to impersonate other users.
