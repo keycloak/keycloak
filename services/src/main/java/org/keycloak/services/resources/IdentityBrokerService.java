@@ -554,7 +554,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
                 .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
                 .detail(Details.IDENTITY_PROVIDER, providerAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
         boolean shouldMigrateId = false;
@@ -879,7 +880,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         event.detail(Details.IDENTITY_PROVIDER, providerAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         if (isDebugEnabled()) {
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
