@@ -1,11 +1,15 @@
 package org.keycloak.models.utils;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -43,4 +47,17 @@ public class RecoveryAuthnCodesUtils {
         return Stream.generate(code).limit(QUANTITY_OF_CODES_TO_GENERATE).collect(Collectors.toList());
     }
 
+    /**
+     * Checks the user storage for the credential. If not found it will look for the credential in the local storage
+     *
+     * @param user - User model
+     * @return - a optional  credential model
+     */
+    public static Optional<CredentialModel> getCredential(UserModel user) {
+        return user.credentialManager()
+                .getFederatedCredentialsStream()
+                .filter(c -> RecoveryAuthnCodesCredentialModel.TYPE.equals(c.getType()))
+                .findFirst()
+                .or(() -> user.credentialManager().getStoredCredentialsByTypeStream(RecoveryAuthnCodesCredentialModel.TYPE).findFirst());
+    }
 }
