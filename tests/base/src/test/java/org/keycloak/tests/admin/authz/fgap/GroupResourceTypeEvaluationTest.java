@@ -123,7 +123,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         // allow my admin to manage members of the group where Alice is member of
-        createGroupPermission(topGroup, Set.of(MANAGE_MEMBERS), allowMyAdminPermission);
+        createGroupPermission(topGroup, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), allowMyAdminPermission);
 
         // my admin should be able to see Alice due to her membership and MANAGE_MEMBERS permission
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);

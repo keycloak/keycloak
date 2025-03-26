@@ -353,7 +353,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testTransitiveUserPermissions() {
         //create all-users manage permission for "myadmin"
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(MANAGE));
+        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // with manage permission it is possible also view
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
