@@ -247,7 +247,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         final String forceLogin = config != null? config.getConfig().get(FORCE_LOGIN) : null;
         if (forceLogin == null || FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
             // default is only-federated, return true only for federated users
-            return !StorageId.isLocalStorage(user.getId()) || user.getFederationLink() != null;
+            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
         } else if (Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
             return Boolean.TRUE;
         } else if (Boolean.FALSE.toString().equalsIgnoreCase(forceLogin)) {
