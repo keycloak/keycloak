@@ -428,12 +428,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void testDatabaseDialectSetExplicitly() {
-        ConfigArgsConfigSource.setCliArgs("--db-dialect=user-defined");
-        assertEquals("user-defined", createConfig().getRawValue("kc.db-dialect"));
-    }
-
-    @Test
     public void testTransactionTypeChangesDriver() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--transaction-xa-enabled=false");
         assertTrue(ConfigArgsConfigSource.getAllCliArgs().contains("--db=mssql"));

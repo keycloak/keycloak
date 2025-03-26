@@ -502,6 +502,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHiddenCliConfigValueWithNoDescription() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-dialect=user-defined");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("user-defined", nonRunningPicocli.config.getConfigValue("kc.db-dialect").getValue());
+    }
+
+    @Test
     public void buildDBWithOptimized() {
         build("build", "--db=mariadb");
 
