@@ -218,7 +218,7 @@ export default function RealmSection() {
                 {whoAmI.canCreateRealm() && (
                   <Button
                     onClick={() => setOpenNewRealm(true)}
-                    data-testid="create"
+                    data-testid="add-realm"
                   >
                     {t("createRealm")}
                   </Button>
