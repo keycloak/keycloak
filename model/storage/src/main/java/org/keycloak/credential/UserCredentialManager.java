@@ -63,9 +63,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
         List<CredentialInput> toValidate = new LinkedList<>(inputs);
 
-        String providerId = user.getFederationLink();
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
             if (model == null || !model.isEnabled()) return false;
 
             CredentialInputValidator validator = getStorageProviderInstance(model, CredentialInputValidator.class);
@@ -83,10 +82,9 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     @Override
     public boolean updateCredential(CredentialInput input) {
         if (!StorageId.isLocalStorage(user.getId())) throwExceptionIfInvalidUser(user);
-        String providerId = user.getFederationLink();
 
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
             if (model == null || !model.isEnabled()) return false;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
@@ -130,10 +128,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
 
     @Override
     public Stream<CredentialModel> getFederatedCredentialsStream() {
-        String providerId = user.getFederationLink();
-
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
 
             if (model == null || !model.isEnabled()) {
                 return Stream.empty();
@@ -176,9 +172,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     @Override
     public void disableCredentialType(String credentialType) {
         if (!StorageId.isLocalStorage(user.getId())) throwExceptionIfInvalidUser(user);
-        String providerId = user.getFederationLink();
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
             if (model == null || !model.isEnabled()) return;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
@@ -195,9 +190,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     @Override
     public Stream<String> getDisableableCredentialTypesStream() {
         Stream<String> types = Stream.empty();
-        String providerId = user.getFederationLink();
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
             if (model == null || !model.isEnabled()) return types;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
@@ -254,9 +248,8 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     private UserStorageCredentialConfigured isConfiguredThroughUserStorage(RealmModel realm, UserModel user, String type) {
-        String providerId = user.getFederationLink();
-        if (providerId != null) {
-            UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
+        if (user.isFederated()) {
+            UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
             if (model == null || !model.isEnabled()) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;
 
             CredentialInputValidator validator = getStorageProviderInstance(model, CredentialInputValidator.class);

@@ -348,7 +348,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         CachedUser cached;
         UserAdapter adapter;
 
-        if (delegate.getFederationLink() != null) {
+        if (delegate.isFederated()) {
             ComponentModel component = realm.getComponent(delegate.getFederationLink());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {

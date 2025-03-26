@@ -340,7 +340,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private Map<String, AttributeMetadata> getUserStorageProviderMetadata(UserProfileMetadata profileMetadata) {
-        if (user == null || (StorageId.isLocalStorage(user.getId()) && user.getFederationLink() == null)) {
+        if (user == null || (StorageId.isLocalStorage(user.getId()) && !user.isFederated())) {
             // new user or not a user from a storage provider other than local
             return Collections.emptyMap();
         }
