@@ -24,6 +24,7 @@ export const keycloakLanguageDetector: LanguageDetectorModule = {
 
 export const i18n = createInstance({
   fallbackLng: DEFAULT_LOCALE,
+  nsSeparator: false,
   interpolation: {
     escapeValue: false,
   },
