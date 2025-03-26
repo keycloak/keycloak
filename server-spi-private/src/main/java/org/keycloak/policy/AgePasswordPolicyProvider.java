@@ -42,8 +42,7 @@ public class AgePasswordPolicyProvider implements PasswordPolicyProvider {
 
     @Override
     public PolicyError validate(String user, String password) {
-        RealmModel realm = session.getContext().getRealm();
-        return validate(realm, session.users().getUserByUsername(realm, user), password);
+        return null;
     }
 
     @Override
