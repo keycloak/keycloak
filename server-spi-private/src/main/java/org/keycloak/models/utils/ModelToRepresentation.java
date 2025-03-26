@@ -49,14 +49,15 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.account.LocalizedMessage;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -671,25 +672,23 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    private static LocalizedMessage toLocalizedMessage(CredentialMetadata.LocalizedMessage message) {
+        if (message == null) {
+            return null;
+        }
+        String[] parameters = message.getParameters() != null
+                ? Arrays.stream(message.getParameters()).map(Object::toString).toArray(String[]::new)
+                : null;
+        return new LocalizedMessage(message.getKey(), parameters);
+    }
+
     public static CredentialMetadataRepresentation toRepresentation(CredentialMetadata credentialMetadata) {
         CredentialMetadataRepresentation rep = new CredentialMetadataRepresentation();
 
         rep.setCredential(ModelToRepresentation.toRepresentation(credentialMetadata.getCredentialModel()));
-        try {
-            rep.setInfoMessage(credentialMetadata.getInfoMessage() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getInfoMessage()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping info message", e);
-        }
-        try {
-            rep.setWarningMessageDescription(credentialMetadata.getWarningMessageDescription() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageDescription()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping warning message desc", e);
-        }
-        try {
-            rep.setWarningMessageTitle(credentialMetadata.getWarningMessageTitle() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageTitle()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping warning message title", e);
-        }
+        rep.setInfoMessage(toLocalizedMessage(credentialMetadata.getInfoMessage()));
+        rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
+        rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
         return rep;
     }
 
