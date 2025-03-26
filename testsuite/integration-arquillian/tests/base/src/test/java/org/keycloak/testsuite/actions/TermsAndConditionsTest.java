@@ -186,14 +186,8 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
             assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));
         }
-        assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
-        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("You need to accept the Terms and Conditions to continue"));
-        Assert.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
 
-        WebElement tryAgainButton = DroneUtils.getCurrentDriver().findElement(By.tagName("button"));
-        assertThat(tryAgainButton.getText(), equalTo("Try again"));
-        UIUtils.click(tryAgainButton);
-
+        // Redirect error to account-console, which starts authentication again
         loginPage.assertCurrent();
     }
 

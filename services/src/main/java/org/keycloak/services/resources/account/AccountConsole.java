@@ -266,6 +266,9 @@ public class AccountConsole implements AccountResourceProvider {
         UriBuilder uriBuilder = UriBuilder.fromUri(OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString())
                 .queryParam(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID)
                 .queryParam(OAuth2Constants.REDIRECT_URI, targetUri)
+                // dummy state param to make it usable with secure-session client policy.
+                // Once bootstrapped the account-console frontend will send the actual state with the authorize request.
+                .queryParam(OAuth2Constants.STATE, UUID.randomUUID().toString())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE, pkceChallenge)
                 .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
