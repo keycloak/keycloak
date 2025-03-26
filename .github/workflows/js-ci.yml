@@ -241,7 +241,7 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v1,transient-users &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v2,transient-users &> ~/server.log &
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin

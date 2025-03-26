@@ -1,15 +1,19 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
-  SelectControl,
+  FormErrorText,
+  HelpItem,
   SelectVariant,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
+import { Button, FormGroup } from "@patternfly/react-core";
+import { MinusCircleIcon } from "@patternfly/react-icons";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../../components/dynamic/components";
-import { PermissionsConfigurationTabsParams } from "../routes/PermissionsConfigurationTabs";
-import { useParams } from "react-router-dom";
+import { GroupPickerDialog } from "../../components/group/GroupPickerDialog";
 
 type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
@@ -23,42 +27,122 @@ export const GroupSelect = ({
   defaultValue,
   isDisabled = false,
   isRequired,
-  variant = "typeahead",
 }: GroupSelectProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const {
+    control,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
+  const values: string[] = getValues(name!);
+  const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
-  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
     () => {
-      return adminClient.groups.find();
+      if (values && values.length > 0) {
+        return Promise.all(
+          (values as string[]).map((id) => adminClient.groups.findOne({ id })),
+        );
+      }
+      return Promise.resolve([]);
     },
-    (groups) => setGroups(groups),
+    (groups) => {
+      setGroups(groups.flat().filter((g) => g) as GroupRepresentation[]);
+    },
     [],
   );
 
   return (
-    <SelectControl
-      name={name!}
-      label={tab !== "evaluation" ? t(label!) : t("group")}
-      labelIcon={tab !== "evaluation" ? t(helpText!) : t("selectGroup")}
-      controller={{
-        defaultValue: defaultValue || "",
-        rules: {
-          required: {
-            value: isRequired || false,
-            message: t("required"),
-          },
-        },
-      }}
-      variant={variant}
-      isDisabled={isDisabled}
-      options={groups.map(({ id, name }) => ({
-        key: id!,
-        value: name!,
-        label: name,
-      }))}
-    />
+    <FormGroup
+      label={t(label!)}
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId="groups" />}
+      fieldId="groups"
+      isRequired={isRequired}
+    >
+      <Controller
+        name={name!}
+        control={control}
+        defaultValue={defaultValue}
+        rules={
+          isRequired
+            ? {
+                validate: (value?: GroupRepresentation[]) =>
+                  value && value.length > 0,
+              }
+            : undefined
+        }
+        render={({ field }) => (
+          <>
+            {open && (
+              <GroupPickerDialog
+                type="selectMany"
+                text={{
+                  title: "addGroupsToGroupPolicy",
+                  ok: "add",
+                }}
+                onConfirm={(selectGroup) => {
+                  field.onChange([
+                    ...(field.value || []),
+                    ...(selectGroup || []).map(({ id }) => id),
+                  ]);
+                  setGroups([...groups, ...(selectGroup || [])]);
+                  setOpen(false);
+                }}
+                onClose={() => {
+                  setOpen(false);
+                }}
+                filterGroups={groups}
+              />
+            )}
+            <Button
+              data-testid="select-group-button"
+              isDisabled={isDisabled}
+              variant="secondary"
+              onClick={() => {
+                setOpen(true);
+              }}
+            >
+              {t("addGroups")}
+            </Button>
+          </>
+        )}
+      />
+      {groups.length > 0 && (
+        <Table variant="compact">
+          <Thead>
+            <Tr>
+              <Th>{t("groups")}</Th>
+              <Th aria-hidden="true" />
+            </Tr>
+          </Thead>
+          <Tbody>
+            {groups.map((group) => (
+              <Tr key={group.id}>
+                <Td>{group.path}</Td>
+                <Td>
+                  <Button
+                    variant="link"
+                    className="keycloak__client-authorization__policy-row-remove"
+                    icon={<MinusCircleIcon />}
+                    onClick={() => {
+                      setValue(name!, [
+                        ...(groups || []).filter(({ id }) => id !== group.id),
+                      ]);
+                      setGroups([
+                        ...groups.filter(({ id }) => id !== group.id),
+                      ]);
+                    }}
+                  />
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      )}
+      {errors.groups && <FormErrorText message={t("requiredGroups")} />}
+    </FormGroup>
   );
 };

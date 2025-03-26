@@ -19,6 +19,8 @@ import {
 } from "../utils/table";
 import {
   addClientRolesCondition,
+  addClientScopeCondition,
+  addClientUpdaterSourceHost,
   assertExists,
   checkNewClientPolicyForm as assertNewClientPolicyForm,
   assertRoles,
@@ -29,7 +31,7 @@ import {
   createNewClientPolicyFromEmptyState,
   deleteClientPolicyFromDetails,
   deleteClientPolicyItemFromTable,
-  deleteClientRolesCondition,
+  deleteCondition,
   fillClientPolicyForm,
   fillClientRolesCondition,
   goBackToPolicies,
@@ -67,7 +69,7 @@ test.describe("Realm settings client policies tab tests", () => {
   test("Complete new client form and submit", async ({ page }) => {
     await goToClientPoliciesList(page);
 
-    await createNewClientPolicyFromEmptyState(page, "New", "Test Description");
+    await createNewClientPolicyFromEmptyState(page, "New", "New Description");
     await clickSaveClientPolicy(page);
     await assertNotificationMessage(page, "New policy created");
   });
@@ -109,10 +111,10 @@ test.describe("Realm settings client policies tab tests", () => {
       page,
     }) => {
       await clickAddCondition(page);
-      await addClientRolesCondition(page, "manage-realm");
+      await addClientScopeCondition(page);
       await clickSaveConditionButton(page);
       await assertNotificationMessage(page, "Condition created successfully.");
-      await assertExists(page, "client-roles-condition-link");
+      await assertExists(page, "client-scopes-condition-link");
     });
 
     test("Should edit the client-roles condition of a client profile", async ({
@@ -135,32 +137,25 @@ test.describe("Realm settings client policies tab tests", () => {
     test("Should cancel deleting condition from a client profile", async ({
       page,
     }) => {
-      // Add a new client-roles condition
+      // Add a new condition
+      const condition = "client-updater-source-host";
+      const conditionLink = `${condition}-condition-link`;
       await clickAddCondition(page);
-      await addClientRolesCondition(page, "client-roles");
+      await addClientUpdaterSourceHost(page);
       await clickSaveConditionButton(page);
 
-      await deleteClientRolesCondition(page, "client-roles");
+      await deleteCondition(page, condition);
       await assertModalTitle(page, "Delete condition?");
       await assertModalMessage(
         page,
-        "This action will permanently delete client-roles. This cannot be undone.",
+        `This action will permanently delete ${condition}. This cannot be undone.`,
       );
       await cancelModal(page);
-      await assertExists(page, "client-roles-condition-link");
+      await assertExists(page, conditionLink);
 
-      await deleteClientRolesCondition(page, "client-roles");
+      await deleteCondition(page, condition);
       await confirmModal(page);
-      await assertExists(page, "client-roles-condition-link", false);
-    });
-
-    test("Check deleting the client policy", async ({ page }) => {
-      await goBackToPolicies(page);
-      await goToClientPoliciesList(page);
-      await deleteClientPolicyItemFromTable(page, "Test");
-      await confirmModal(page);
-      await assertNotificationMessage(page, "Client policy deleted");
-      await assertEmptyTable(page);
+      await assertExists(page, conditionLink, false);
     });
 
     test("Should not create duplicate client profile", async ({ page }) => {
@@ -174,21 +169,35 @@ test.describe("Realm settings client policies tab tests", () => {
         "The name must be unique within the realm",
       );
     });
-
-    test("Check deleting newly created client policy from create view via dropdown", async ({
-      page,
-    }) => {
-      await goBackToPolicies(page);
-      await goToClientPoliciesList(page);
-
-      await deleteClientPolicyFromDetails(page, "Test");
-      await confirmModal(page);
-      await assertNotificationMessage(page, "Client policy deleted");
-      await assertEmptyTable(page);
-    });
   });
 
   test("Check reloading JSON policies", async ({ page }) => {
     await shouldReloadJSONPolicies(page);
+  });
+
+  test.describe("Delete client policy", () => {
+    const testPolicy = "DeletablePolicy";
+    test.beforeEach(() =>
+      adminClient.createClientPolicy(testPolicy, "Test Description", realmName),
+    );
+    test.beforeEach(async ({ page }) => {
+      await goToClientPoliciesList(page);
+    });
+
+    test("Check deleting the client policy", async ({ page }) => {
+      await deleteClientPolicyItemFromTable(page, testPolicy);
+      await confirmModal(page);
+      await assertNotificationMessage(page, "Client policy deleted");
+      await assertRowExists(page, testPolicy, false);
+    });
+
+    test("Check deleting newly created client policy from create view via dropdown", async ({
+      page,
+    }) => {
+      await deleteClientPolicyFromDetails(page, testPolicy);
+      await confirmModal(page);
+      await assertNotificationMessage(page, "Client policy deleted");
+      await assertRowExists(page, testPolicy, false);
+    });
   });
 });

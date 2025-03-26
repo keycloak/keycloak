@@ -1,5 +1,6 @@
 import { Page, expect } from "@playwright/test";
 import { clickRowKebabItem } from "../utils/table";
+import { selectItem } from "../utils/form";
 
 export async function goToClientPoliciesTab(page: Page) {
   await page.getByTestId("rs-clientPolicies-tab").click();
@@ -99,6 +100,18 @@ export async function assertRoles(page: Page, role: string) {
   await expect(page.getByTestId("config.roles0")).toHaveValue(role);
 }
 
+export async function addClientScopeCondition(
+  page: Page,
+  scope: string = "Optional",
+) {
+  await selectConditionType(page, "client-scopes");
+  await selectItem(page, "#type", scope);
+}
+
+export async function addClientUpdaterSourceHost(page: Page) {
+  await selectConditionType(page, "client-updater-source-host");
+}
+
 export async function addClientRolesCondition(page: Page, role: string) {
   await selectConditionType(page, "client-roles");
   await fillClientRolesCondition(page, role);
@@ -124,7 +137,7 @@ export async function shouldEditClientScopesCondition(page: Page) {
   await page.getByTestId("save").click();
 }
 
-export async function deleteClientRolesCondition(page: Page, name: string) {
+export async function deleteCondition(page: Page, name: string) {
   await page.getByTestId(`delete-${name}-condition`).click();
 }
 

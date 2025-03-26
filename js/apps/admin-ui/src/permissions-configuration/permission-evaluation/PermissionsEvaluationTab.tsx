@@ -20,21 +20,19 @@ import {
   SplitItem,
   Title,
 } from "@patternfly/react-core";
+import { BellIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { UserSelect } from "../../components/users/UserSelect";
-import { ClientSelect } from "../../components/client/ClientSelect";
-import { GroupSelect } from "../resource-types/GroupSelect";
 import { FormAccess } from "../../components/form/FormAccess";
+import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
-import { ForbiddenSection } from "../../ForbiddenSection";
-import { BellIcon } from "@patternfly/react-icons";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
+import { ForbiddenSection } from "../../ForbiddenSection";
 import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
-import { RoleSelect } from "../resource-types/RoleSelect";
+import { PermissionEvaluationResult } from "./PermissionEvaluationResult";
+import { COMPONENTS } from "../resource-types/ResourceType";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -51,13 +49,6 @@ type Props = {
   client: ClientRepresentation;
   save: () => void;
 } & EvaluationResultRepresentation;
-
-const COMPONENTS: Record<string, React.ElementType> = {
-  users: UserSelect,
-  clients: ClientSelect,
-  groups: GroupSelect,
-  roles: RoleSelect,
-};
 
 export const PermissionsEvaluationTab = (props: Props) => {
   const { hasAccess } = useAccess();

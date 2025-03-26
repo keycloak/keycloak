@@ -1,8 +1,8 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
+  KeycloakSpinner,
   ListEmptyState,
   PaginatingTableToolbar,
   useAlerts,
@@ -29,17 +29,13 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import useToggle from "../../utils/useToggle";
-import {
-  SearchDropdown,
-  SearchForm,
-} from "../../clients/authorization/SearchDropdown";
-import { toCreatePermissionConfiguration } from "../routes/NewPermissionConfiguration";
-import { AuthorizationScopesDetails } from "../permission-configuration/AuthorizationScopesDetails";
-import { toPermissionConfigurationDetails } from "../routes/PermissionConfigurationDetails";
 import useSortedResourceTypes from "../../utils/useSortedResourceTypes";
+import useToggle from "../../utils/useToggle";
+import { AuthorizationScopesDetails } from "../permission-configuration/AuthorizationScopesDetails";
+import { SearchDropdown, SearchForm } from "../resource-types/SearchDropdown";
+import { toCreatePermissionConfiguration } from "../routes/NewPermissionConfiguration";
+import { toPermissionConfigurationDetails } from "../routes/PermissionConfigurationDetails";
 import { NewPermissionConfigurationDialog } from "./NewPermissionConfigurationDialog";
 
 type PermissionsConfigurationProps = {
@@ -65,7 +61,6 @@ export const PermissionsConfigurationTab = ({
     useState<ExpandablePolicyRepresentation[]>();
   const [selectedPermission, setSelectedPermission] =
     useState<PolicyRepresentation>();
-  const [users, setUsers] = useState<UserRepresentation[]>();
   const [search, setSearch] = useState<SearchForm>({});
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -76,24 +71,15 @@ export const PermissionsConfigurationTab = ({
 
   useFetch(
     async () => {
-      const permissions = adminClient.clients.listPermissionScope({
+      const permissions = await adminClient.clients.listPermissionScope({
         first,
         max: max + 1,
         id: clientId,
         ...search,
       });
 
-      const users = adminClient.users.find({
-        realm,
-      });
-
-      const [permissionsData, usersData] = await Promise.all([
-        permissions,
-        users,
-      ]);
-
       const processedPermissions = await Promise.all(
-        (permissionsData || []).map(async (permission) => {
+        (permissions || []).map(async (permission) => {
           const policies = await adminClient.clients.getAssociatedPolicies({
             id: clientId,
             permissionId: permission.id!,
@@ -119,14 +105,10 @@ export const PermissionsConfigurationTab = ({
         }),
       );
 
-      return {
-        permissionsData: processedPermissions,
-        usersData,
-      };
+      return processedPermissions;
     },
-    (data) => {
-      setPermissions(data.permissionsData as any[]);
-      setUsers(data.usersData);
+    (permissions) => {
+      setPermissions(permissions as any[]);
     },
     [key, search, first, max],
   );
@@ -193,11 +175,9 @@ export const PermissionsConfigurationTab = ({
               <>
                 <ToolbarItem>
                   <SearchDropdown
-                    resources={users!}
                     types={resourceTypes}
                     search={search}
                     onSearch={setSearch}
-                    type="adminPermission"
                   />
                 </ToolbarItem>
                 <ToolbarItem>
