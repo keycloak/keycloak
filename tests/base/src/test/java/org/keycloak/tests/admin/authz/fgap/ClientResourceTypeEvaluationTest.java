@@ -153,7 +153,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createPermission(client, myclient.getId(), clientsType, Set.of(MANAGE), onlyMyAdminUserPolicy);
+        createPermission(client, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
 
         // the caller can view myclient
         clientResource.toRepresentation();
@@ -263,7 +263,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(found, empty());
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(MANAGE));
+        createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
 
         // can create a new client
         realmAdminClient.realm(realm.getName()).clients().create(newClient).close();
