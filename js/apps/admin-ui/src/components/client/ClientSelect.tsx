@@ -15,6 +15,7 @@ import { useParams } from "react-router-dom";
 type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
   isRequired?: boolean;
+  clientKey?: keyof ClientRepresentation;
 };
 
 export const ClientSelect = ({
@@ -25,6 +26,7 @@ export const ClientSelect = ({
   isDisabled = false,
   isRequired,
   variant = "typeahead",
+  clientKey = "clientId",
 }: ClientSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -66,10 +68,9 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
-      options={clients.map(({ id, clientId }) => ({
-        key: id!,
-        value: clientId!,
-        label: clientId,
+      options={clients.map((client) => ({
+        key: client[clientKey] as string,
+        value: client.clientId!,
       }))}
     />
   );

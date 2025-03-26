@@ -241,7 +241,7 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v1,transient-users &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v2,transient-users &> ~/server.log &
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -260,7 +260,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: admin-ui-playwright-report
+          name: admin-ui-playwright-report-${{ matrix.browser }}
           path: js/apps/admin-ui/playwright-report
           retention-days: 30
 
@@ -268,7 +268,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
+          name: admin-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
 
   check:

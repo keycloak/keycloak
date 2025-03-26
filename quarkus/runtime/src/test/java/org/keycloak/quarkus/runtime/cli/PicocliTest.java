@@ -327,9 +327,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("ignored"));
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("first-class"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
         return nonRunningPicocli;
@@ -504,6 +504,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHiddenCliConfigValueWithNoDescription() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-dialect=user-defined");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals("user-defined", nonRunningPicocli.config.getConfigValue("kc.db-dialect").getValue());
+    }
+
+    @Test
     public void buildDBWithOptimized() {
         build("build", "--db=mariadb");
 
@@ -578,7 +585,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testDerivedShowConfig() {
-        NonRunningPicocli nonRunningPicocli = build("build", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true");
+        NonRunningPicocli nonRunningPicocli = build("build", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true", "--db=dev-file");
 
         nonRunningPicocli = pseudoLaunch("show-config");
         // first class kc form should show up

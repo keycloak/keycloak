@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -436,8 +437,12 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
     }
 
-    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder) {
-        return partialEvaluator.applyAuthorizationFilters(session, resourceType, evaluator, realm, builder, queryBuilder);
+    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+        return applyAuthorizationFilters(session, resourceType, null, realm, builder, queryBuilder, path);
+    }
+
+    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+        return partialEvaluator.applyAuthorizationFilters(session, resourceType, evaluator, realm, builder, queryBuilder, path);
     }
 
     public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {

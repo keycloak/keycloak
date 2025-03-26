@@ -179,7 +179,7 @@
         <oracle-jdbc.version>23.6.0.24.10</oracle-jdbc.version>
 
         <!-- Test -->
-        <greenmail.version>2.1.0-alpha-1</greenmail.version>
+        <greenmail.version>2.1.3</greenmail.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>

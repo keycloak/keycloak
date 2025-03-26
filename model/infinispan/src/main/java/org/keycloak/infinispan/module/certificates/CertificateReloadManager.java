@@ -186,6 +186,11 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     // testing purpose
+    public long getRotationSeconds() {
+        return rotationSeconds;
+    }
+
+    // testing purpose
     public boolean isCoordinator() {
         return cacheManager.isCoordinator();
     }

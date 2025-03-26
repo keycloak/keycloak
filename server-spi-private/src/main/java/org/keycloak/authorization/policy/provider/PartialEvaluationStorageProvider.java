@@ -22,9 +22,8 @@ import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 /**
@@ -35,7 +34,7 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 public interface PartialEvaluationStorageProvider {
 
     /**
-     * A callback method that will be called when building queries for realm resources. It returns a list of
+     * A callback method that will be called when building queries for realm resources to grant access to resources. It returns a list of
      * {@link Predicate} instances representing the filters that should be applied to queries
      * when querying realm resources.
      *
@@ -45,21 +44,23 @@ public interface PartialEvaluationStorageProvider {
     List<Predicate> getFilters(EvaluationContext evaluationContext);
 
     /**
+     * A callback method that will be called when building queries for realm resources to deny access to resources. It returns a list of
+     * {@link Predicate} instances representing the filters that should be applied to queries
+     * when querying realm resources.
+     *
+     * @param evaluationContext the evaluation context.
+     * @return the list of predicates
+     */
+    List<Predicate> getNegateFilters(EvaluationContext evaluationContext);
+
+    /**
      * An {@link EvaluationContext} instance provides access to contextual information when building a query for realm
      * resources of a given {@link ResourceType}.
      *
      * @param resourceType the type of the resource to query
      * @param criteriaQuery the query to rely on when building predicates
+     * @param path the path for the root entity
      */
-    record EvaluationContext(ResourceType resourceType, CriteriaQuery<?> criteriaQuery) {
-        public Root<?> getRootEntity() {
-            Set<Root<?>> roots = criteriaQuery.getRoots();
-
-            if (roots.size() != 1) {
-                throw new ModelIllegalStateException("Could not find any root entity from query");
-            }
-
-            return roots.iterator().next();
-        }
+    record EvaluationContext(ResourceType resourceType, CriteriaQuery<?> criteriaQuery, Path<?> path, Set<String> allowedGroupIds, Set<String> deniedGroupIds) {
     }
 }

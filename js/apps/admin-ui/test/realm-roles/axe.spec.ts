@@ -1,7 +1,6 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
-import { clickSaveButton, switchOn } from "../utils/form";
 import { login } from "../utils/login";
 import { assertAxeViolations } from "../utils/masthead";
 import { goToRealm, goToRealmRoles } from "../utils/sidebar";
@@ -9,7 +8,6 @@ import { clickTableRowItem } from "../utils/table";
 
 test.describe("Accessibility tests for realm roles", () => {
   const realmName = "role-a11y-" + uuid();
-  const role = "a11y-role-" + uuid();
   const defaultRolesMaster = "default-roles-" + realmName;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -37,23 +35,6 @@ test.describe("Accessibility tests for realm roles", () => {
 
   test("Check a11y violations on empty create role form", async ({ page }) => {
     await page.click("text=Create role");
-    await assertAxeViolations(page);
-  });
-
-  test("Check a11y violations on role details", async ({ page }) => {
-    await page.click("text=Create role");
-    await page.fill("input[name='name']", role);
-    await clickSaveButton(page);
-    await assertAxeViolations(page);
-
-    await page.click("text=Attributes");
-    await assertAxeViolations(page);
-
-    await page.click("text=Users in role");
-    await assertAxeViolations(page);
-
-    await page.click("text=Permissions");
-    await switchOn(page, "#permissionsEnabled");
     await assertAxeViolations(page);
   });
 });

@@ -1139,6 +1139,9 @@ public class RealmAdminResource {
             if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
                 settings.put("password", realm.getSmtpConfig().get("password"));
             }
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("authTokenClientSecret"))) {
+                settings.put("authTokenClientSecret", realm.getSmtpConfig().get("authTokenClientSecret"));
+            }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
         } catch (Exception e) {
             e.printStackTrace();

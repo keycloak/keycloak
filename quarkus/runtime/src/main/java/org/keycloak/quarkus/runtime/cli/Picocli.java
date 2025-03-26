@@ -26,7 +26,6 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -441,8 +440,8 @@ public class Picocli {
                 throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
                         String.join(", ", ignoredBuildTime)));
             } else if (!ignoredRunTime.isEmpty()) {
-                warn(format("The following run time options were found, but will be ignored during build time: %s\n",
-                        String.join(", ", ignoredRunTime)), getOutWriter());
+                info(format("The following run time options were found, but will be ignored during build time: %s\n",
+                        String.join(", ", ignoredRunTime)));
             }
 
             if (!disabledBuildTime.isEmpty()) {
@@ -594,6 +593,11 @@ public class Picocli {
 
     public void warn(String text) {
         warn(text, getOutWriter());
+    }
+
+    public void info(String text) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        getOutWriter().println(defaultColorScheme.apply("INFO: ", Arrays.asList(Style.fg_green, Style.bold)) + text);
     }
 
     private static void warn(String text, PrintWriter outwriter) {
@@ -789,18 +793,19 @@ public class Picocli {
                     name = decorateDuplicitOptionName(name);
                 }
 
-                String description = mapper.getDescription();
-
-                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR) || alreadyPresentArgs.contains(name)) {
-                    //when key is already added or has no description, don't add.
+                if (cSpec.optionsMap().containsKey(name) || alreadyPresentArgs.contains(name)) {
+                    //when key is already added, don't add.
                     continue;
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(getDecoratedOptionDescription(mapper))
-                        .paramLabel(mapper.getParamLabel())
                         .completionCandidates(() -> mapper.getExpectedValues().iterator())
                         .hidden(mapper.isHidden());
+
+                if (mapper.getParamLabel() != null) {
+                    optBuilder.paramLabel(mapper.getParamLabel());
+                }
 
                 if (mapper.getDefaultValue().isPresent()) {
                     optBuilder.defaultValue(Option.getDefaultValueString(mapper.getDefaultValue().get()));
@@ -834,7 +839,7 @@ public class Picocli {
     }
 
     private static String getDecoratedOptionDescription(PropertyMapper<?> mapper) {
-        StringBuilder transformedDesc = new StringBuilder(mapper.getDescription());
+        StringBuilder transformedDesc = new StringBuilder(Optional.ofNullable(mapper.getDescription()).orElse(""));
 
         if (mapper.getType() != Boolean.class && !mapper.getExpectedValues().isEmpty()) {
             List<String> decoratedExpectedValues = mapper.getExpectedValues().stream().map(value -> {

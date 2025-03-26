@@ -21,18 +21,26 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultEmailSenderProviderFactory implements EmailSenderProviderFactory {
 
+    private final Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> emailAuthenticators = new ConcurrentHashMap<>();
+
     @Override
     public EmailSenderProvider create(KeycloakSession session) {
-        return new DefaultEmailSenderProvider(session);
+        return new DefaultEmailSenderProvider(session, emailAuthenticators);
     }
 
     @Override
     public void init(Config.Scope config) {
+        emailAuthenticators.put(EmailAuthenticator.AuthenticatorType.NONE, new DefaultEmailAuthenticator());
+        emailAuthenticators.put(EmailAuthenticator.AuthenticatorType.BASIC, new PasswordAuthEmailAuthenticator());
+        emailAuthenticators.put(EmailAuthenticator.AuthenticatorType.TOKEN, new TokenAuthEmailAuthenticator());
     }
 
     @Override
@@ -41,6 +49,7 @@ public class DefaultEmailSenderProviderFactory implements EmailSenderProviderFac
 
     @Override
     public void close() {
+        emailAuthenticators.clear();
     }
 
     @Override
@@ -48,4 +57,7 @@ public class DefaultEmailSenderProviderFactory implements EmailSenderProviderFac
         return "default";
     }
 
+    public Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> getEmailAuthenticators() {
+        return emailAuthenticators;
+    }
 }

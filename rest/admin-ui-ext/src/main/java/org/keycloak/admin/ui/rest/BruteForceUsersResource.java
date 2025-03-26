@@ -145,9 +145,11 @@ public class BruteForceUsersResource {
     private Stream<BruteUser> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
-        if (!groupIds.isEmpty()) {
-            session.setAttribute(UserModel.GROUPS, groupIds);
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
+            if (!groupIds.isEmpty()) {
+                session.setAttribute(UserModel.GROUPS, groupIds);
+            }
         }
 
         return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
@@ -157,10 +159,10 @@ public class BruteForceUsersResource {
             Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
             userModels = userModels.filter(usersEvaluator::canView);
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
         return userModels.map(user -> {

@@ -36,8 +36,8 @@ import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
-import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
 import java.io.IOException;
@@ -198,7 +198,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         HashMap props = getStore(context).remove(SYS_PROPS, HashMap.class);
         System.getProperties().clear();
         System.getProperties().putAll(props);
-        TestConfigArgsConfigSource.setCliArgs(new String[0]);
+        // TODO: for in-vm tests this is not all that it takes to reset static state
+        // may want to call AbstractConfigurationTest.resetConfiguration
+        Configuration.resetConfig();
         if (databaseContainer != null && databaseContainer.isRunning()) {
             databaseContainer.stop();
             databaseContainer = null;

@@ -121,7 +121,7 @@ public final class Database {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return amendH2("jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
+                            return amendH2("jdbc:h2:file:${kc.db-url-path:${kc.home.dir:" + escapeReplacements(System.getProperty("user.home")) + "}}" + escapeReplacements(File.separator) + "${kc.data.dir:data}"
                                   + escapeReplacements(File.separator) + "h2" + escapeReplacements(File.separator)
                                   + "keycloakdb${kc.db-url-properties:}");
                         }

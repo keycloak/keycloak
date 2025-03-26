@@ -33,6 +33,7 @@ export const SingleSelectControl = <
   controller,
   labelIcon,
   isDisabled,
+  onSelect,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -91,8 +92,13 @@ export const SingleSelectControl = <
               </MenuToggle>
             )}
             onSelect={(_event, v) => {
-              const option = v?.toString();
-              onChange(Array.isArray(value) ? [option] : option);
+              const option = v?.toString()!;
+              const convertedValue = Array.isArray(value) ? [option] : option;
+              if (onSelect) {
+                onSelect(convertedValue, onChange);
+              } else {
+                onChange(convertedValue);
+              }
               setOpen(false);
             }}
             isOpen={open}

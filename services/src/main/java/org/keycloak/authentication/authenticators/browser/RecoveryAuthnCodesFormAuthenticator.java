@@ -40,7 +40,8 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .user(context.getUser());
         if (isRecoveryAuthnCodeInputValid(context)) {
             context.success();
         }
