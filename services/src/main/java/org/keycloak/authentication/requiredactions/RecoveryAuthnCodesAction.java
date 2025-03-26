@@ -2,6 +2,7 @@ package org.keycloak.authentication.requiredactions;
 
 import java.util.Arrays;
 import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -11,8 +12,6 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
 import org.keycloak.common.Profile;
-import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -25,6 +24,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import static org.keycloak.utils.CredentialHelper.createRecoveryKeyCredential;
 
 public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory, CredentialRegistrator {
 
@@ -86,12 +87,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
     public void processAction(RequiredActionContext reqActionContext) {
         EventBuilder event = reqActionContext.getEvent();
         event.event(EventType.UPDATE_CREDENTIAL);
-
-        CredentialProvider recoveryCodeCredentialProvider;
         MultivaluedMap<String, String> httpReqParamsMap;
-
-        recoveryCodeCredentialProvider = reqActionContext.getSession().getProvider(CredentialProvider.class,
-                RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
 
         event.detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
 
@@ -117,8 +113,7 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
             AuthenticatorUtil.logoutOtherSessions(reqActionContext);
         }
 
-        recoveryCodeCredentialProvider.createCredential(reqActionContext.getRealm(), reqActionContext.getUser(),
-                credentialModel);
+        createRecoveryKeyCredential(reqActionContext.getSession(), reqActionContext.getRealm(), reqActionContext.getUser(), credentialModel);
 
         reqActionContext.success();
     }

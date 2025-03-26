@@ -33,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.Objects;
@@ -69,15 +70,15 @@ public class CredentialHelper {
                 }));
     }
 
-     public static ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(KeycloakSession session, String providerId) {
-         ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
-         if (factory == null) {
-             factory = (FormActionFactory)session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
-         }
-         if (factory == null) {
-             factory = (ClientAuthenticatorFactory)session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, providerId);
-         }
-         return factory;
+    public static ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(KeycloakSession session, String providerId) {
+        ConfigurableAuthenticatorFactory factory = (AuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, providerId);
+        if (factory == null) {
+            factory = (FormActionFactory) session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, providerId);
+        }
+        if (factory == null) {
+            factory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, providerId);
+        }
+        return factory;
     }
 
     /**
@@ -103,6 +104,23 @@ public class CredentialHelper {
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
         UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
         return user.credentialManager().isValid(credential);
+    }
+
+    /**
+     * Create RecoveryKeys credential either in userStorage or local storage (Keycloak DB)
+     *
+     * @return true if credential was successfully created either in the user storage or Keycloak DB. False if error happened (EG. during HOTP validation)
+     */
+    public static void createRecoveryKeyCredential(KeycloakSession session, RealmModel realm, UserModel user, RecoveryAuthnCodesCredentialModel credentialModel) {
+        var recoveryCodeCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-recovery-authn-codes");
+        UserCredentialModel otpUserCredential = new UserCredentialModel("", credentialModel.getType(), credentialModel.getSecretData());
+
+        boolean userStorageCreated = user.credentialManager().updateCredential(otpUserCredential);
+        if (userStorageCreated) {
+            logger.debugf("Created RecoveryKeys credential for user '%s' in the user storage", user.getUsername());
+        } else {
+            recoveryCodeCredentialProvider.createCredential(realm, user, credentialModel);
+        }
     }
 
     /**
