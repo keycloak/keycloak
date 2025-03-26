@@ -112,10 +112,11 @@ class UserPermissionsV2 extends UserPermissions {
         }
 
         Resource resource = user == null ? null : resourceStore.findByName(server, user.getId());
+        String resourceType = AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
         if (resource == null) {
             // check if there is permission for "all-users". If so, load its resource and proceed with evaluation
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
 
             if (policyStore.findByResource(server, resource).isEmpty()) {
                 return false;
@@ -123,8 +124,8 @@ class UserPermissionsV2 extends UserPermissions {
         }
 
         Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server, context);
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
 
         List<String> expectedScopes = Arrays.asList(scopes);
 

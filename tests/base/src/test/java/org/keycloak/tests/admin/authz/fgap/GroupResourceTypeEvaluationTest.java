@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.keycloak.authorization.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
 import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE_MEMBERS;
@@ -41,11 +42,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -304,6 +307,58 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //check myadmin can manage membership
         realmAdminClient.realm(realm.getName()).users().get(bobId).joinGroup(topGroup.getId());
+    }
+
+    @Test
+    public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
+        UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
+        ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(MANAGE, MANAGE_MEMBERSHIP));
+        // all resource permissions grants manage scope
+        GroupsResource groups = realmAdminClient.realm(realm.getName()).groups();
+        groups.group(topGroup.getId()).update(topGroup);
+
+        ScopePermissionRepresentation resourcePermission = createPermission(client, topGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(MANAGE), allowPolicy);
+        // both all and specific resource permission grants manage scope
+        groups.group(topGroup.getId()).update(topGroup);
+
+        allResourcesPermission = getScopePermissionsResource(client).findByName(allResourcesPermission.getName());
+        allResourcesPermission.setScopes(Set.of(MANAGE_MEMBERSHIP));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission does not have the manage scope but the scope is granted by the resource permission
+        groups.group(topGroup.getId()).update(topGroup);
+
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(MANAGE_MEMBERSHIP));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // neither the all and specific resource permission grants access to the manage scope
+            groups.group(topGroup.getId()).update(topGroup);
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
+
+        allResourcesPermission.setScopes(Set.of(MANAGE));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission grants access again to manage
+        groups.group(topGroup.getId()).update(topGroup);
+
+        UserPolicyRepresentation notAllowPolicy = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin", adminUser.getId());
+        createPermission(client, topGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(MANAGE), notAllowPolicy);
+        try {
+            // a specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            groups.group(topGroup.getId()).update(topGroup);
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
+
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(MANAGE));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // the specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            // even though there is another resource permission that grants access to the scope - conflict resolution denies by default
+            groups.group(topGroup.getId()).update(topGroup);
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
     }
 
     private ScopePermissionRepresentation createAllGroupsPermission(UserPolicyRepresentation policy, Set<String> scopes) {

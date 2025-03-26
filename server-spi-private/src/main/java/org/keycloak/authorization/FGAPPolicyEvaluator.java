@@ -35,8 +35,15 @@ import org.keycloak.authorization.store.ResourceStore;
 public class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
 
     @Override
-    protected void evaluateResourceTypePolicies(Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
-        // do not evaluate permissions based on the resource type
+    protected void evaluateResourceTypePolicies(ResourcePermission permission, Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
+        String resourceType = permission.getResourceType();
+
+        if (resourceType == null || resource.getName().equals(permission.getResourceType())) {
+            return;
+        }
+
+        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+        policyStore.findByResource(resourceServer, resourceTypeResource, policyConsumer);
     }
 
     @Override

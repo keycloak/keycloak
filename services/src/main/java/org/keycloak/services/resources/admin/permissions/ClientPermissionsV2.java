@@ -214,21 +214,27 @@ public class ClientPermissionsV2 extends ClientPermissions {
         if (!root.isAdminSameRealm()) {
             return false;
         }
+
         ResourceServer server = root.realmResourceServer();
+
         if (server == null) return false;
 
+        String resourceType = AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+
         Resource resource =  resourceStore.findByName(server, client.getId(), server.getId());
+
         if (resource == null) {
             // check if there is permission for "all-clients". If so, load its resource and proceed with evaluation
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE);
+            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
 
             if (authz.getStoreFactory().getPolicyStore().findByResource(server, resource).isEmpty()) {
                 return false;
             }
         }
 
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server);
         List<String> expectedScopes = Arrays.asList(scope);
+
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
                 for (String s : permission.getScopes()) {
