@@ -115,7 +115,8 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("name", name);
 
         try {
-            return new PolicyAdapter(query.getSingleResult(), entityManager, provider.getStoreFactory());
+            PolicyEntity policy = query.getSingleResult();
+            return provider.getStoreFactory().getPolicyStore().findById(resourceServer, policy.getId());
         } catch (NoResultException ex) {
             return null;
         }
