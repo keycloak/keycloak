@@ -87,7 +87,7 @@ Links to relevant Microsoft documentation:
 - https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac[Usage of role base access control for applications in exchange online]
 - Settings in https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth[Authenticate an IMAP, POP or SMTP connection using OAuth]
 
-The following way setting up {project_name} to send mails with Azure and Office365 has been verified by a test.
+The following method for setting up {project_name} to send email with Azure and Office365 has been verified by a test.
 There might be other variants to achieve the same depending on your environment.
 
 From::
@@ -123,11 +123,11 @@ Auth Token ClientSecret::
 
 === Configuration for Google Mail
 
-Not supported by {project_name} yet, because Google decided to not allow client-secrets for the Client Credentials Grant.
+This feature is not yet supported by {project_name}, because Google does not allow client-secrets for the Client Credentials Grant.
 
 === Configuration for AWS
 
 XOAUTH2 is not supported by the AWS-SMTP service.
-The AWS-service requires to use a password.
+The AWS-service requires the use of a password.
 
 endif::[]
