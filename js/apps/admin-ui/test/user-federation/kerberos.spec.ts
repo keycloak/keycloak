@@ -129,7 +129,7 @@ test.describe("User Fed Kerberos tests", () => {
       await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(dailyPolicy)).toBeVisible();
-      await expect(page.getByText(defaultPolicy)).not.toBeVisible();
+      await expect(page.getByText(defaultPolicy)).toBeHidden();
     });
 
     test("Should set cache policy to evict_weekly", async ({ page }) => {
@@ -145,7 +145,7 @@ test.describe("User Fed Kerberos tests", () => {
       await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(weeklyPolicy)).toBeVisible();
-      await expect(page.getByText(defaultPolicy)).not.toBeVisible();
+      await expect(page.getByText(defaultPolicy)).toBeHidden();
     });
 
     test("Should set cache policy to max_lifespan", async ({ page }) => {
@@ -161,7 +161,7 @@ test.describe("User Fed Kerberos tests", () => {
       await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(lifespanPolicy)).toBeVisible();
-      await expect(page.getByText(defaultPolicy)).not.toBeVisible();
+      await expect(page.getByText(defaultPolicy)).toBeHidden();
     });
 
     test("Should set cache policy to no_cache", async ({ page }) => {
@@ -174,7 +174,7 @@ test.describe("User Fed Kerberos tests", () => {
       await clickUserFederationCard(page, firstKerberosName);
 
       await expect(page.getByText(noCachePolicy)).toBeVisible();
-      await expect(page.getByText(defaultPolicy)).not.toBeVisible();
+      await expect(page.getByText(defaultPolicy)).toBeHidden();
     });
 
     test("Should edit existing Kerberos provider and cancel", async ({
