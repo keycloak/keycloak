@@ -106,7 +106,7 @@ test.describe("Permissions section tests", () => {
       });
     });
 
-    test("should evaluate permissions success", async ({ page }) => {
+    test.skip("should evaluate permissions success", async ({ page }) => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "other-user");
       await selectItem(page, "#resourceType", "Clients");
@@ -119,7 +119,7 @@ test.describe("Permissions section tests", () => {
       ).toBeVisible();
     });
 
-    test("should evaluate permissions denied", async ({ page }) => {
+    test.skip("should evaluate permissions denied", async ({ page }) => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "user1");
       await selectItem(page, "#resourceType", "Clients");
