@@ -1,5 +1,6 @@
 import { label } from "@keycloak/keycloak-ui-shared";
 import {
+  Label,
   Nav,
   NavGroup,
   PageSidebar,
@@ -101,16 +102,17 @@ export const PageNav = () => {
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
-          <NavGroup aria-label={t("currentRealm")} title={t("currentRealm")}>
-            <LeftNav
-              title={label(t, realmRepresentation?.displayName, realm)}
-              path="/realms"
-              fallback={
-                <li>
-                  <span className="pf-v5-c-nav__link">{realm}</span>
-                </li>
-              }
-            />
+          <li>
+            <h2
+              className="pf-v5-c-nav__section-title"
+              style={{ wordWrap: "break-word" }}
+            >
+              {label(t, realmRepresentation?.displayName, realm)}{" "}
+              <Label color="blue">{t("currentRealm")}</Label>
+            </h2>
+          </li>
+          <NavGroup>
+            <LeftNav title={t("manageRealms")} path="/realms" />
           </NavGroup>
           {showManage && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
