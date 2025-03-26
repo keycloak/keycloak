@@ -15,116 +15,68 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.group;
+package org.keycloak.tests.admin.group;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.Rule;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.events.Details;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-
-import java.security.PublicKey;
-import java.util.List;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public abstract class AbstractGroupTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public abstract class AbstractGroupTest {
 
-    protected String testRealmId;
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectOAuthClient
+    OAuthClient oAuth;
 
-    @Rule
-    public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
-
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-        this.testRealmId = adminClient.realm(TEST).toRepresentation().getId();
+    AccessToken login(String username, String clientId, String clientSecret) {
+        AccessTokenResponse tokenResponse = oAuth.client(clientId, clientSecret).doPasswordGrantRequest(username, "password");
+        return oAuth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
     }
 
-    AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
-        AccessTokenResponse tokenResponse = oauth.client(clientId, clientSecret).doPasswordGrantRequest( login, "password");
+    String createGroup(ManagedRealm managedRealm, GroupRepresentation group) {
+        Response response = managedRealm.admin().groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
 
-        String accessToken = tokenResponse.getAccessToken();
-        String refreshToken = tokenResponse.getRefreshToken();
-
-        PublicKey publicKey = PemUtils.decodePublicKey(KeyUtils.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
-
-        AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, getAuthServerContextRoot() + "/auth/realms/test");
-
-        JWSInput jws = new JWSInput(refreshToken);
-        RefreshToken refreshTokenRepresentation = jws.readJsonContent(RefreshToken.class);
-
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessTokenRepresentation.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshTokenRepresentation.getId())
-                .detail(Details.USERNAME, login)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
-
-        return accessTokenRepresentation;
+        // Set ID to the original rep
+        group.setId(groupId);
+        return groupId;
     }
 
-    RealmRepresentation loadTestRealm(List<RealmRepresentation> testRealms) {
-        RealmRepresentation result = loadRealm("/testrealm.json");
-        testRealms.add(result);
-        return result;
-    }
-
-    GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
-        try (Response response = realm.groups().add(group)) {
-            String groupId = ApiUtil.getCreatedId(response);
-            getCleanup().addGroupId(groupId);
-
-            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
-
-            // Set ID to the original rep
-            group.setId(groupId);
-            return group;
-        }
-    }
-
-    void addSubGroup(RealmResource realm, GroupRepresentation parent, GroupRepresentation child) {
-        Response response = realm.groups().add(child);
-        child.setId(ApiUtil.getCreatedId(response));
-        response = realm.groups().group(parent.getId()).subGroup(child);
+    void addSubGroup(ManagedRealm managedRealm, GroupRepresentation parent, GroupRepresentation child) {
+        Response response = managedRealm.admin().groups().add(child);
+        adminEvents.skip();
+        String childUuid = ApiUtil.getCreatedId(response);
+        child.setId(childUuid);
+        response = managedRealm.admin().groups().group(parent.getId()).subGroup(child);
+        adminEvents.skip();
         response.close();
     }
 
-    RoleRepresentation createRealmRole(RealmResource realm, RoleRepresentation role) {
-        realm.roles().create(role);
-
-        RoleRepresentation created = realm.roles().get(role.getName()).toRepresentation();
-        getCleanup().addRoleId(created.getId());
+    RoleRepresentation createRealmRole(ManagedRealm managedRealm, RoleRepresentation role) {
+        managedRealm.admin().roles().create(role);
+        RoleRepresentation created = managedRealm.admin().roles().get(role.getName()).toRepresentation();
+        String createdName = created.getName();
+        managedRealm.cleanup().add(r -> r.roles().deleteRole(createdName));
         return created;
     }
 }
