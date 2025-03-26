@@ -52,8 +52,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.20.0.CR1</quarkus.version>
-        <quarkus.build.version>3.20.0.CR1</quarkus.build.version>
+        <quarkus.version>3.20.0</quarkus.version>
+        <quarkus.build.version>3.20.0</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
