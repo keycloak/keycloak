@@ -22,6 +22,7 @@ import {
   goToAttributeGroupsTab,
   goToAttributesTab,
   goToUserProfileTab,
+  switchOffIfOn,
 } from "./userprofile";
 
 test.describe("User profile tabs", () => {
@@ -144,7 +145,7 @@ test.describe("User profile tabs", () => {
 
     await goToUsers(page);
     await page.getByTestId("no-users-found-empty-action").click();
-    await expect(page.getByTestId(attrName)).not.toBeVisible();
+    await expect(page.getByTestId(attrName)).toBeHidden();
     await page.getByTestId("username").fill("testuser7");
     await page.getByTestId("user-creation-save").click();
     await assertNotificationMessage(page, "The user has been created");
@@ -167,7 +168,7 @@ test.describe("User profile tabs", () => {
     await goToUsers(page);
     await page.getByTestId("no-users-found-empty-action").click();
     await page.getByTestId("email").fill("testuser8@gmail.com");
-    await expect(page.getByTestId(attrName)).not.toBeVisible();
+    await expect(page.getByTestId(attrName)).toBeHidden();
     await page.getByTestId("user-creation-save").click();
     await assertNotificationMessage(page, "The user has been created");
 
@@ -190,6 +191,7 @@ test.describe("User profile tabs", () => {
 
     await goToRealmSettings(page);
     await goToLoginTab(page);
+    await switchOffIfOn(page, "#kc-email-as-username-switch");
 
     await goToUsers(page);
     await page.getByTestId("no-users-found-empty-action").click();
