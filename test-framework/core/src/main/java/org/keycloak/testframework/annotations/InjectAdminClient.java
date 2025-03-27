@@ -12,6 +12,8 @@ public @interface InjectAdminClient {
 
     String ref() default "";
 
+    String realmRef() default "";
+
     Mode mode() default Mode.BOOTSTRAP;
 
     String client() default "";
