@@ -20,12 +20,11 @@ package org.keycloak.services.resources.admin;
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -49,7 +48,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.common.util.TriFunction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
@@ -190,7 +192,7 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleUserinfo invoked. User: %s", user.getUsername());
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) -> {
+        return sessionAware(user, scopeParam, "", (userSession, clientSessionCtx, audienceClients) -> {
             AccessToken userInfo = new AccessToken();
             TokenManager tokenManager = new TokenManager();
 
@@ -215,18 +217,25 @@ public class ClientScopeEvaluateResource {
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
-    public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+    public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId, @QueryParam("audience") String audience) {
         auth.clients().requireView(client);
 
         UserModel user = getUserModel(userId);
 
-        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam);
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
             TokenManager tokenManager = new TokenManager();
-            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
-                    .generateAccessToken().generateIDToken().getIdToken();
+            TokenManager.AccessTokenResponseBuilder response = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+                    .generateAccessToken().generateIDToken();
+            IDToken idToken = response.getIdToken();
+
+            // Retrieve accessToken just to check the audience
+            AccessToken accessToken = response.getAccessToken();
+            validateAudience(accessToken, audienceClients);
+
+            return idToken;
         });
     }
 
@@ -253,13 +262,9 @@ public class ClientScopeEvaluateResource {
 
         logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s, Target Audience: %s", user.getUsername(), scopeParam, audience);
 
-        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
             TokenManager tokenManager = new TokenManager();
-            ClientModel[] audienceClients = getClients(audience);
-            if(audienceClients.length > 0) {
-                clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
-            }
             AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
                     .generateAccessToken().getAccessToken();
             validateAudience(accessToken, audienceClients);
@@ -267,7 +272,7 @@ public class ClientScopeEvaluateResource {
         });
     }
 
-    private<R> R sessionAware(UserModel user, String scopeParam, BiFunction<UserSessionModel, ClientSessionContext,R> function) {
+    private<R> R sessionAware(UserModel user, String scopeParam, String audienceParam, TriFunction<UserSessionModel, ClientSessionContext, ClientModel[], R> function) {
         AuthenticationSessionModel authSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
 
@@ -286,7 +291,12 @@ public class ClientScopeEvaluateResource {
             AuthenticationManager.setClientScopesInSession(session, authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
-            return function.apply(userSession, clientSessionCtx);
+            ClientModel[] audienceClients = getClients(audienceParam);
+            if (audienceClients.length > 0) {
+                clientSessionCtx.setAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, audienceClients);
+            }
+
+            return function.apply(userSession, clientSessionCtx, audienceClients);
 
         } finally {
             if (authSession != null) {
@@ -308,18 +318,13 @@ public class ClientScopeEvaluateResource {
         return clients.toArray(ClientModel[]::new);
     }
     
-    private void validateAudience(IDToken idToken, ClientModel[] requestedAudience) {
-        if(requestedAudience.length > 0 && (idToken.getAudience() == null || idToken.getAudience().length < requestedAudience.length)) {
-            String missingAudienceStr = "";
-            List<String> grantedAudience = idToken.getAudience() != null ? Arrays.asList(idToken.getAudience()) : Collections.emptyList();
-            for (ClientModel client : requestedAudience) {
-                if(!grantedAudience.contains(client.getClientId())) {
-                    if (missingAudienceStr.length() > 0) {
-                        missingAudienceStr += ", ";
-                    }
-                    missingAudienceStr += client.getClientId();
-                }
-            }
+    private void validateAudience(AccessToken accessToken, ClientModel[] requestedAudience) {
+        List<String> requestedAudienceClientIds = Stream.of(requestedAudience)
+                .map(ClientModel::getClientId)
+                .collect(Collectors.toList());
+        Set<String> missingAudience = TokenUtils.checkRequestedAudiences(accessToken, requestedAudienceClientIds);
+        if (!missingAudience.isEmpty()) {
+            String missingAudienceStr = CollectionUtil.join(missingAudience);
             throw new NotFoundException("Requested audience not available: " + missingAudienceStr);
         }
     }
