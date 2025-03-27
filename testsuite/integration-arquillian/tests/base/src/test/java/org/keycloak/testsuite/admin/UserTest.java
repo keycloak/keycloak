@@ -1602,6 +1602,29 @@ public class UserTest extends AbstractAdminTest {
         removeSampleIdentityProvider();
     }
 
+    @Test
+    public void listUsersById() {
+        String userId = createUser("multiple-user-1", "multiple-user-1@example.com");
+        String user2Id = createUser("multiple-user-2", "multiple-user-@example.com");
+        createUser("multiple-user-3", "multiple-user-3@example.com");
+
+        // Should return only correct users
+        List<UserRepresentation> users = realm.users().listByIds(false, List.of(userId, user2Id));
+        assertThat(users, hasSize(2));
+        assertThat(users.get(0).getId(), is(userId));
+        assertThat(users.get(1).getId(), is(user2Id));
+
+        // Should ignore unknown users
+        List<UserRepresentation> usersWithoutUnknowns = realm.users().listByIds(false, List.of(userId, user2Id, "randomValue"));
+        assertThat(usersWithoutUnknowns, hasSize(2));
+        assertThat(usersWithoutUnknowns.get(0).getId(), is(userId));
+        assertThat(usersWithoutUnknowns.get(1).getId(), is(user2Id));
+
+        // Should return empty list when no matches are found
+        List<UserRepresentation> empty = realm.users().listByIds(false, List.of("randomValue"));
+        assertThat(empty, hasSize(0));
+    }
+
     private void addSampleIdentityProvider() {
         addSampleIdentityProvider("social-provider-id", 0);
     }

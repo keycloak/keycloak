@@ -284,7 +284,8 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "A list of user IDs for which the user representations are to be fetched.") @QueryParam("ids") final List<String> ids) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -348,10 +349,12 @@ public class UsersResource {
 
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                             maxResults, true);
-                } else {
-                    return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
-                }
+        } else if (ids != null && !ids.isEmpty()) {
+            userModels = ids.stream().map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+        } else {
+            return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
+                    firstResult, maxResults, false);
+        }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
