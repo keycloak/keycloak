@@ -139,32 +139,6 @@ public class URLAssert {
     }
 
 
-    public static void assertGetURL(URI url, String accessToken, AssertResponseHandler handler) {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        try {
-            HttpGet get = new HttpGet(url);
-            get.setHeader("Authorization", "Bearer " + accessToken);
-
-            CloseableHttpResponse response = httpclient.execute(get);
-
-            if (response.getStatusLine().getStatusCode() != 200) {
-                throw new RuntimeException("Response status error: " + response.getStatusLine().getStatusCode() + ": " + url);
-            }
-
-            handler.assertResponse(response);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        finally {
-            try {
-                httpclient.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     public interface AssertResponseHandler {
         void assertResponse(CloseableHttpResponse response) throws IOException;
     }

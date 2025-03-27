@@ -146,14 +146,14 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder clientRoles(String client, String... roleNames) {
+    public RealmConfigBuilder clientRoles(String client, String... clientRoles) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
         rep.getRoles().setClient(Collections.combine(
                 rep.getRoles().getClient(),
                 client,
-                Arrays.stream(roleNames).map(r -> Representations.toRole(r, true))
+                Arrays.stream(clientRoles).map(r -> Representations.toRole(r, true))
         ));
         return this;
     }
@@ -163,8 +163,8 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder defaultGroups(String... defaultGroupsNames) {
-        rep.setDefaultGroups(Collections.combine(rep.getDefaultGroups(), defaultGroupsNames));
+    public RealmConfigBuilder defaultGroups(String... groupsNames) {
+        rep.setDefaultGroups(Collections.combine(rep.getDefaultGroups(), groupsNames));
         return this;
     }
 
