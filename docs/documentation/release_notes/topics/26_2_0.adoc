@@ -118,3 +118,15 @@ This setting is turned off by default.
 ifeval::[{project_community}==true]
 Many thanks to https://github.com/laurids[Laurids Møller Jepsen] for the contribution.
 endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance documentation
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received further improvements and especially the link:{adminguide_link}#_oid4vci[The documentation],
+with the steps how to try this feature.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join and provide the feedback.
+
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
+https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/IngridPuppet[Ingrid Kamga].
+endif::[]
