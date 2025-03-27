@@ -6,13 +6,12 @@ import {
   PageSidebar,
   PageSidebarBody,
 } from "@patternfly/react-core";
-import { FormEvent, ReactNode } from "react";
+import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
-import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { Environment } from "./environment";
 import { toPage } from "./page/routes";
 import { routes } from "./routes";
@@ -24,10 +23,9 @@ type LeftNavProps = {
   title: string;
   path: string;
   id?: string;
-  fallback?: ReactNode;
 };
 
-const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
+const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
@@ -44,7 +42,7 @@ const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
       : hasAccess(route.handle.access));
 
   if (!accessAllowed) {
-    return fallback;
+    return undefined;
   }
 
   const name = "nav-item" + path.replace("/", "-");
@@ -67,7 +65,6 @@ const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
 export const PageNav = () => {
   const { t } = useTranslation();
   const { environment } = useEnvironment<Environment>();
-  const { whoAmI } = useWhoAmI();
   const { hasSomeAccess } = useAccess();
   const { componentTypes } = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -102,7 +99,7 @@ export const PageNav = () => {
     "view-identity-providers",
   );
 
-  const showManageRealm = environment.masterRealm === whoAmI.getRealm();
+  const showManageRealm = environment.masterRealm === environment.realm;
 
   return (
     <PageSidebar className="keycloak__page_nav__nav">

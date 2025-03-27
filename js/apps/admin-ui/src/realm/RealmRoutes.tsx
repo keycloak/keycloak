@@ -12,7 +12,7 @@ export const RealmRoute: AppRouteObject = {
   element: <RealmSection />,
   breadcrumb: (t) => t("realms"),
   handle: {
-    access: "view-realm",
+    access: "anyone",
   },
 };
 
