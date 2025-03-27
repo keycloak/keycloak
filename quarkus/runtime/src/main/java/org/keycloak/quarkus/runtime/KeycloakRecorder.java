@@ -30,6 +30,7 @@ import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.commons.util.FileLookupFactory;
+import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -37,6 +38,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -208,5 +210,9 @@ public class KeycloakRecorder {
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
         }
+    }
+
+    public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
+        Marshalling.setSchemas(schemas);
     }
 }

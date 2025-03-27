@@ -57,6 +57,7 @@ import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTransformation;
@@ -147,6 +148,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
@@ -684,6 +686,15 @@ class KeycloakProcessor {
         hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.conf"));
     }
 
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void configureProtoStreamSchemas(KeycloakRecorder recorder) {
+        var schemas = ServiceLoader.load(SerializationContextInitializer.class).stream()
+                .map(ServiceLoader.Provider::get)
+                .toList();
+        recorder.configureProtoStreamSchemas(schemas);
+    }
+
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
             Map<String, ProviderFactory> preConfiguredProviders) {
         Config.init(new MicroProfileConfigProvider());
@@ -844,7 +855,7 @@ class KeycloakProcessor {
                     metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
                 }
 
-                metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+                metadata.setId("script-" + fileName);
 
                 String name = metadata.getName();
 
