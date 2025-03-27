@@ -120,11 +120,11 @@ public class UserManagedPermissionService {
     @NoCache
     @Produces("application/json")
     public Response find(@QueryParam("name") String name,
-                         @QueryParam("resource") String resource,
+                         @QueryParam("resource") String[] resources,
                          @QueryParam("scope") String scope,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return  delegate.findAll(null, name, "uma", null, resource, scope, true, identity.getId(), null, firstResult, maxResult);
+        return  delegate.findAll(null, name, "uma", null, resources, scope, true, identity.getId(), null, firstResult, maxResult);
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {

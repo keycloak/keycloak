@@ -17,9 +17,11 @@
 package org.keycloak.authorization.admin;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -206,7 +208,7 @@ public class PolicyService {
                             @QueryParam("name") String name,
                             @QueryParam("type") String type,
                             @QueryParam("resourceType") String resourceType,
-                            @QueryParam("resource") String resource,
+                            @QueryParam("resource") String[] resources,
                             @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
                             @QueryParam("owner") String owner,
@@ -237,29 +239,34 @@ public class PolicyService {
 
         StoreFactory storeFactory = authorization.getStoreFactory();
 
-        if (resource != null && !"".equals(resource.trim())) {
+        if (resources != null && resources.length != 0) {
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            Resource resourceModel = resourceStore.findById(resourceServer, resource);
+            List<String> resourceIds = Arrays.stream(resources).map(resource -> {
+                Resource resourceModel = resourceStore.findById(resourceServer, resource);
+                if (resourceModel == null) {
+                    Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
 
-            if (resourceModel == null) {
-                Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
+                    resourceFilters.put(Resource.FilterOption.NAME, new String[]{resource});
 
-                resourceFilters.put(Resource.FilterOption.NAME, new String[]{resource});
+                    if (owner != null) {
+                        resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
+                    }
 
-                if (owner != null) {
-                    resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
+                    return resourceStore.find(resourceServer, resourceFilters, -1, 1).stream()
+                            .limit(1)
+                            .map(Resource::getId)
+                            .findFirst()
+                            .orElse(null);
+                } else {
+                    return resourceModel.getId();
                 }
 
-                Set<String> resources = resourceStore.find(resourceServer, resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
+            }).filter(Objects::nonNull).toList();
 
-                if (resources.isEmpty()) {
-                    return Response.noContent().build();
-                }
-
-                search.put(Policy.FilterOption.RESOURCE_ID, resources.toArray(new String[resources.size()]));
-            } else {
-                search.put(Policy.FilterOption.RESOURCE_ID, new String[] {resourceModel.getId()});
+            if (resourceIds.isEmpty()) {
+                return Response.noContent().build();
             }
+            search.put(Policy.FilterOption.RESOURCE_ID, resourceIds.toArray(new String[resourceIds.size()]));
         }
 
         if (scope != null && !"".equals(scope.trim())) {
