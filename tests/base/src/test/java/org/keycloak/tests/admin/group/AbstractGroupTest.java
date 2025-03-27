@@ -64,11 +64,9 @@ public abstract class AbstractGroupTest {
 
     void addSubGroup(ManagedRealm managedRealm, GroupRepresentation parent, GroupRepresentation child) {
         Response response = managedRealm.admin().groups().add(child);
-        adminEvents.skip();
         String childUuid = ApiUtil.getCreatedId(response);
         child.setId(childUuid);
         response = managedRealm.admin().groups().group(parent.getId()).subGroup(child);
-        adminEvents.skip();
         response.close();
     }
 
