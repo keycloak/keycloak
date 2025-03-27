@@ -1,3 +1,4 @@
+[[_oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
 +
