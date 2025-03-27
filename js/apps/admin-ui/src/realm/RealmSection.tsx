@@ -34,11 +34,7 @@ export type RealmNameRepresentation = {
   displayName?: string;
 };
 
-type DropdownProps = {
-  onClick: () => void;
-};
-
-const RecentRealmsDropdown = ({ onClick }: DropdownProps) => {
+const RecentRealmsDropdown = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const recentRealms = useRecentRealms();
@@ -65,11 +61,7 @@ const RecentRealmsDropdown = ({ onClick }: DropdownProps) => {
           <DropdownItem
             key="server info"
             component={(props) => (
-              <Link
-                {...props}
-                to={toRealm({ realm: name })}
-                onClick={() => onClick()}
-              />
+              <Link {...props} to={toDashboard({ realm: name })} />
             )}
           >
             {name}
@@ -80,7 +72,8 @@ const RecentRealmsDropdown = ({ onClick }: DropdownProps) => {
   );
 };
 
-type KebabDropdownProps = DropdownProps & {
+type KebabDropdownProps = {
+  onClick: () => void;
   isDisabled?: boolean;
 };
 
@@ -226,7 +219,7 @@ export default function RealmSection() {
                 )}
               </ToolbarItem>
               <ToolbarItem>
-                <RecentRealmsDropdown onClick={() => refresh()} />
+                <RecentRealmsDropdown />
               </ToolbarItem>
               <ToolbarItem>
                 <KebabDropdown
