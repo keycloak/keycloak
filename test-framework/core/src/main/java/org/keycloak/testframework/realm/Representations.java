@@ -9,10 +9,10 @@ class Representations {
     private Representations() {
     }
 
-    static RoleRepresentation toRole(String roleName, boolean clientRole) {
+    static RoleRepresentation toRole(String roleName, boolean asClientRole) {
         RoleRepresentation role = new RoleRepresentation();
         role.setName(roleName);
-        role.setClientRole(clientRole);
+        role.setClientRole(asClientRole);
         return role;
     }
 

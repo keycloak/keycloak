@@ -196,7 +196,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             GroupRepresentation subGroup = GroupConfigBuilder.create()
                     .name(LEVEL_2_GROUP)
                     .realmRoles("admin")
-                    .clientRole(CLIENT_ID, CLIENT_ROLE)
+                    .clientRoles(CLIENT_ID, CLIENT_ROLE)
                     .attribute(LEVEL_2_ATTRIBUTE, "true")
                     .build();
 
@@ -204,7 +204,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             GroupRepresentation subGroup2 = GroupConfigBuilder.create()
                     .name("level2group2")
                     .realmRoles("admin")
-                    .clientRole(CLIENT_ID, CLIENT_ROLE)
+                    .clientRoles(CLIENT_ID, CLIENT_ROLE)
                     .attribute(LEVEL_2_ATTRIBUTE, "true")
                     .build();
 

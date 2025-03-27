@@ -34,23 +34,17 @@ public class GroupConfigBuilder {
     }
 
     public GroupConfigBuilder realmRoles(String... realmRoles) {
-        if (rep.getRealmRoles() == null) {
-            rep.setRealmRoles(new LinkedList<>());
-        }
-        rep.getRealmRoles().addAll(List.of(realmRoles));
+        rep.setRealmRoles(Collections.combine(rep.getRealmRoles(), realmRoles));
         return this;
     }
 
-    public GroupConfigBuilder clientRole(String client, String... clientRoles) {
-        if (rep.getClientRoles() == null) {
-            rep.setClientRoles(new HashMap<>());
-        }
-        rep.getClientRoles().put(client, List.of(clientRoles));
+    public GroupConfigBuilder clientRoles(String client, String... clientRoles) {
+        rep.setClientRoles(Collections.combine(rep.getClientRoles(), client, clientRoles));
         return this;
     }
 
-    public GroupConfigBuilder attribute(String name, String... values) {
-        rep.setAttributes(Collections.combine(rep.getAttributes(), name, values));
+    public GroupConfigBuilder attribute(String key, String... value) {
+        rep.setAttributes(Collections.combine(rep.getAttributes(), key, value));
         return this;
     }
 
@@ -58,17 +52,9 @@ public class GroupConfigBuilder {
         rep.setAttributes(attributes);
         return this;
     }
-//
-//    public GroupConfigBuilder singleAttribute(String name, String value) {
-//        rep.singleAttribute(name, value);
-//        return this;
-//    }
 
     public GroupConfigBuilder subGroups(GroupRepresentation... subGroups) {
-        if (rep.getSubGroups() == null) {
-            rep.setSubGroups(new LinkedList<>());
-        }
-        rep.getSubGroups().addAll(List.of(subGroups));
+        rep.setSubGroups(Collections.combine(rep.getSubGroups(), subGroups));
         return this;
     }
 
