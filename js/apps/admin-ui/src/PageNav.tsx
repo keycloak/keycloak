@@ -1,4 +1,4 @@
-import { label } from "@keycloak/keycloak-ui-shared";
+import { label, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   Label,
   Nav,
@@ -12,6 +12,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
+import { useWhoAmI } from "./context/whoami/WhoAmI";
+import { Environment } from "./environment";
 import { toPage } from "./page/routes";
 import { routes } from "./routes";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
@@ -64,6 +66,8 @@ const LeftNav = ({ title, path, id, fallback }: LeftNavProps) => {
 
 export const PageNav = () => {
   const { t } = useTranslation();
+  const { environment } = useEnvironment<Environment>();
+  const { whoAmI } = useWhoAmI();
   const { hasSomeAccess } = useAccess();
   const { componentTypes } = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -98,6 +102,8 @@ export const PageNav = () => {
     "view-identity-providers",
   );
 
+  const showManageRealm = environment.masterRealm === whoAmI.getRealm();
+
   return (
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
@@ -111,9 +117,11 @@ export const PageNav = () => {
             </span>{" "}
             <Label color="blue">{t("currentRealm")}</Label>
           </h2>
-          <NavGroup>
-            <LeftNav title={t("manageRealms")} path="/realms" />
-          </NavGroup>
+          {showManageRealm && (
+            <NavGroup>
+              <LeftNav title={t("manageRealms")} path="/realms" />
+            </NavGroup>
+          )}
           {showManage && (
             <NavGroup aria-label={t("manage")} title={t("manage")}>
               {isFeatureEnabled(Feature.Organizations) &&
