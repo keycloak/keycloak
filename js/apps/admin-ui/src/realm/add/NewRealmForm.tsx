@@ -14,8 +14,8 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { toRealm } from "../RealmRoutes";
 
 type NewRealmFormProps = {
   onClose: () => void;
@@ -52,7 +52,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
 
       refresh();
       onClose();
-      navigate(toDashboard({ realm: fields.realm }));
+      navigate(toRealm({ realm: fields.realm! }));
     } catch (error) {
       addError("saveRealmError", error);
     }

@@ -1,6 +1,17 @@
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
+import { goToRealm, goToRealms } from "../utils/sidebar";
+
+function getCurrentRealmItem(page: Page) {
+  return page.getByTestId("currentRealm");
+}
+
+export async function goToRealmSection(page: Page) {
+  const realmName = await getCurrentRealmItem(page).textContent();
+  await goToRealm(page, realmName!);
+}
 
 export async function clickCreateRealm(page: Page) {
+  await goToRealms(page);
   await page.getByTestId("add-realm").click();
 }
 
@@ -18,4 +29,16 @@ export async function clickClearResourceFile(page: Page) {
 
 export async function clickConfirmClear(page: Page) {
   await page.getByTestId("clear-button").click();
+}
+
+export async function assertCurrentRealm(
+  page: Page,
+  realmName: string,
+  not = false,
+) {
+  if (!not) {
+    await expect(getCurrentRealmItem(page)).toContainText(realmName);
+  } else {
+    await expect(getCurrentRealmItem(page)).not.toContainText(realmName);
+  }
 }

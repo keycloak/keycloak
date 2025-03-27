@@ -10,7 +10,7 @@ import { useAdminClient } from "../admin-client";
 import { useRealm } from "./realm-context/RealmContext";
 import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
-const MAX_REALMS = 5;
+const MAX_REALMS = 3;
 
 export const RecentRealmsContext = createNamedContext<
   RealmNameRepresentation[] | undefined

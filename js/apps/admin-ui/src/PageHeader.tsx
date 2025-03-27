@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import { Link, useHref } from "react-router-dom";
 import { PageHeaderClearCachesModal } from "./PageHeaderClearCachesModal";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
-import { RealmPanel } from "./components/realm-selector/RealmPanel";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { toDashboard } from "./dashboard/routes/Dashboard";
@@ -122,7 +121,6 @@ export const Header = () => {
       }}
       dropdownItems={userDropdownItems(isMasterRealm, isManager)}
       kebabDropdownItems={kebabDropdownItems(isMasterRealm, isManager)}
-      toolbar={<RealmPanel />}
       toolbarItems={[
         <ToolbarItem
           key="help"
