@@ -454,7 +454,6 @@
         }
       ]
     },
-
     {
       "clientId": "custom-audience",
       "enabled": true,
@@ -501,6 +500,18 @@
         "profile",
         "email"
       ]
+    },
+    {
+      "clientId": "direct-grant-1",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password"
+    },
+    {
+      "clientId": "direct-grant-2",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password"
     }
   ],
   "roles" : {
