@@ -14,6 +14,7 @@ export const KEY_SEPARATOR = ".";
 export const i18n: i18nType = createInstance({
   fallbackLng: DEFAULT_LOCALE,
   keySeparator: KEY_SEPARATOR,
+  nsSeparator: false,
   interpolation: {
     escapeValue: false,
   },
