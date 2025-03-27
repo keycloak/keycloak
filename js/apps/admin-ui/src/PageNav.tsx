@@ -106,7 +106,9 @@ export const PageNav = () => {
             className="pf-v5-c-nav__section-title"
             style={{ wordWrap: "break-word" }}
           >
-            {label(t, realmRepresentation?.displayName, realm)}{" "}
+            <span data-testid="currentRealm">
+              {label(t, realmRepresentation?.displayName, realm)}
+            </span>{" "}
             <Label color="blue">{t("currentRealm")}</Label>
           </h2>
           <NavGroup>

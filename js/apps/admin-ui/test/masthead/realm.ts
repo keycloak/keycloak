@@ -1,15 +1,17 @@
 import { Page, expect } from "@playwright/test";
+import { goToRealm, goToRealms } from "../utils/sidebar";
 
 function getCurrentRealmItem(page: Page) {
-  return page.getByTestId("nav-item-realms");
+  return page.getByTestId("currentRealm");
 }
 
 export async function goToRealmSection(page: Page) {
-  await getCurrentRealmItem(page).click();
+  const realmName = await getCurrentRealmItem(page).textContent();
+  await goToRealm(page, realmName!);
 }
 
 export async function clickCreateRealm(page: Page) {
-  await getCurrentRealmItem(page).click();
+  await goToRealms(page);
   await page.getByTestId("add-realm").click();
 }
 

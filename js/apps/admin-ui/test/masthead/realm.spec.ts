@@ -8,7 +8,7 @@ import {
   selectActionToggleItem,
 } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar";
+import { goToClients, goToRealmSettings } from "../utils/sidebar";
 import { assertRowExists } from "../utils/table";
 import {
   assertCurrentRealm,
@@ -72,8 +72,6 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(page, "Realm created successfully");
 
-    await page.reload();
-    await goToRealm(page, testDisabledName);
     await goToRealmSettings(page);
 
     await switchOff(page, `#${testDisabledName}-switch`);
@@ -81,7 +79,6 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(page, "Realm successfully updated");
 
-    await goToRealm(page, testDisabledName);
     await goToRealmSettings(page);
     await selectActionToggleItem(page, "Delete");
     await confirmModal(page);
