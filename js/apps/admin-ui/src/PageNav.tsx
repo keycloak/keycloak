@@ -102,15 +102,13 @@ export const PageNav = () => {
     <PageSidebar className="keycloak__page_nav__nav">
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
-          <li>
-            <h2
-              className="pf-v5-c-nav__section-title"
-              style={{ wordWrap: "break-word" }}
-            >
-              {label(t, realmRepresentation?.displayName, realm)}{" "}
-              <Label color="blue">{t("currentRealm")}</Label>
-            </h2>
-          </li>
+          <h2
+            className="pf-v5-c-nav__section-title"
+            style={{ wordWrap: "break-word" }}
+          >
+            {label(t, realmRepresentation?.displayName, realm)}{" "}
+            <Label color="blue">{t("currentRealm")}</Label>
+          </h2>
           <NavGroup>
             <LeftNav title={t("manageRealms")} path="/realms" />
           </NavGroup>
