@@ -28,19 +28,130 @@ for realm management) to allow querying. All other administrative access could b
 
 ==== Understanding the Realm Resource Types
 
-Administrators can manage access to the following resource types:
+In a realm, you can manage different types of resources such as users, groups, clients, client scopes, roles, and etc. 
+As a realm administrator, you are constantly managing these resources to manage your identities and how they authenticate 
+and authorize to a realm and your applications.
 
-* `Clients`
-* `Groups`
-* `Roles`
+Each realm resource supports a well-defined set of management operations, or actions, that can be performed on them, 
+such as view, manage, and resource-specific operations such as view-members if you take groups as an example.
+
+This feature provides the necessary mechanisms to enforce access to a well-defined set of realm resources, limited to:
+
 * `Users`
+* `Groups`
+* `Clients`
+* `Roles`
 
-Administrators can create permissions managing access to all resources of a given type, e.g. 
-`All users`, as well as permissions for individual resource objects. For instance a specific group or set of groups. 
+When managing permissions for a specific realm resource type, you can choose to do it for all resources of a given resource 
+type, such as `Users`, or for a specific realm resource, such as a specific user or set of users in the realm.
 
-Each resource type has a set of associated actions (authorization scopes) that define what operations can be performed. 
-For example, in the `Users` resource type, actions include `view`, `manage`, `map-roles`, `manage-group-membership` or
-`impersonate`.
+===== Users Resource Type
+
+The `Users` realm resource type represents the users in a realm. You can manage permissions for users based on the following 
+set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*                | *Description*
+
+| `view`                    | Defines if a realm administrator can view users.
+| `manage`                  | Defines if a realm administrator can manage users.
+| `manage-group-membership` | Defines if a realm administrator can assign or anassign users into groups.
+| `map-roles`               | Defines if a realm administrator can assign or anassign roles to users.
+| `impersonate`             | Defines if a realm administrator can impersonate other users.
+|===
+
+[NOTE]
+====
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
+  assigning only `manage` without `view` will prevent the user from being visible.  
+- The `view` operation also considers group-related permissions, specifically `view-members` for viewing group members.  
+- Similarly, the `manage` operation takes `manage-members` into account when managing group members.  
+====
+
+===== Groups Resource Type
+
+The `Groups` realm resource type represents the groups in a realm. You can manage permissions for groups based on the following 
+set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*                | *Description*
+
+| `view`                    | Defines if a realm administrator can view groups.
+| `manage`                  | Defines if a realm administrator can manage groups.
+| `view-members`            | Defines if a realm administrator can view group members. 
+| `manage-members`          | Defines if a realm administrator can manage group members.
+| `manage-membership`       | Defines if a realm administrator can add or remove members from groups.
+|===
+
+[NOTE]
+====
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
+  assigning only `manage` without `view` will prevent the group from being visible.  
+- The view-members and manage-members operations apply to the entire group hierarchy. In other words, if an administrator has 
+  permission to manage members of a group, they can also manage members of all its subgroups. This can be prevented by 
+  explicitly denying permission for specific subgroups.
+====
+
+===== Clients Resource Type
+
+The `Clients` realm resource type represents the clients in a realm. You can manage permissions for clients based on the following 
+set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*                | *Description*
+
+| `view`                    | Defines if a realm administrator can view the client’s configuration.
+| `manage`                  | Defines if a realm administrator can view and manage the client’s configuration.
+| `configure`               | (TODO: if we are removing transitive dependencies, what we do with this??) Grants limited 
+                              privileges to manage the client, excluding protocol mappers, client templates, and client scopes.
+| `map-roles`               | Defines if a realm administrator can assign any role defined by the client to a user.
+| `map-roles-composite`     | Defines if a realm administrator can assign any role defined by the client as a composite to 
+                              another role.
+| `map-roles-client-scope`  | Defines if a realm administrator can assign any role defined by the client to the scope of 
+                              another client.
+|===
+
+[NOTE]
+====
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
+  assigning only `manage` without `view` will prevent the group from being visible.
+- The `configure` operation provides a restricted set of management privileges compared to `manage`. It prevents 
+  administrators from defining protocol mappers, changing the client template, or modifying the client’s scope.  
+====
+
+===== Roles Resource Type
+
+TODO: review this section, I'm not sure how it should behave and if it's described correctly
+
+The `Roles` realm resource type represents the roles in a realm. You can manage permissions for roles based on the following set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*               | *Description*
+
+| `map-role`               | Defines if a realm administrator can assign this role to a user. This only grants permission to 
+                             map the role, not to perform user role mapping tasks. The administrator must also have `manage` 
+                             or role mapping permissions.
+| `map-role-composite`     | Defines if a realm administrator can assign this role as a composite to another role. Even if an 
+                             administrator can manage client roles, they must have `map-role-composite` privileges for the role 
+                             they want to add as a composite.
+| `map-role-client-scope`  | Defines if a realm administrator can apply this role to a client’s scope. Even if they can manage 
+                             the client, they cannot create tokens for that client containing this role unless this privilege 
+                             is granted.
+|===
+
+[NOTE]
+====
+- The `map-role` operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also 
+  have user role mapping permissions.  
+- The `map-role-composite` operation ensures that administrators cannot add a role as a composite unless explicitly granted 
+  permission.  
+- The `map-role-client-scope` operation restricts the ability to apply roles to client scopes, even if the administrator has 
+  client management privileges.
+====
 
 ==== Enabling admin permissions to a realm
 
@@ -122,6 +233,14 @@ image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
 In the example above it is visible that user `myadmin`, can `manage` user `user-1`. There is also information what permissions were involved 
 in the evaluation, what outcome it had and what scopes were granted or denied.
 
+==== Accessing a realm as a realm administrator
+
+TODO
+
+===== Granting the administrative roles to a realm administrator
+
+TODO
+
 ==== Understanding some common use cases
 
 Let's say an admin wants to allow a group of admins to `manage` all users in the realm except those, which belongs to the
@@ -151,90 +270,4 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 * Switch to `Negative Logic` for the policy, `Save` the policy
 * `Save` the permission
 
-
-==== Full list of permissions
-
-TODO this section needs review.
-
-This chapter defines the whole list of permission types that can be described for a realm.
-
-===== Client
-
-view::
-    Permissions that decide if an admin can view the client's configuration.
-manage::
-    Permissions that decide if an admin can view and manage the client's configuration.
-configure::
-    Reduced set of privileges to manage the client. It is like the `manage` scope except
-    the admin is not allowed to define protocol mappers, change the client template,
-    or the client's scope.
-map-roles::
-    Permissions that decide if an admin can map any role defined by the client to a user.
-    This is a shortcut, easy-of-use feature to avoid having to define policies
-    for each and every role defined by the client.
-map-roles-composite::
-    Permissions that decide if an admin can map any role defined by the client
-    as a composite to another role.
-    This is a shortcut, easy-of-use feature to avoid having to define policies
-    for each and every role defined by the client.
-map-roles-client-scope::
-    Permissions that decide if an admin can map any role defined by the client
-    to the scope of another client.
-    This is a shortcut, easy-of-use feature to avoid having to define policies
-    for each and every role defined by the client.
-
-===== Group
-
-view::
-    Permissions that decide if the admin can view information about the group.
-manage::
-    Permissions that decide if the admin can manage the configuration of the group.
-view-members::
-    Permissions that decide if the admin can view the user details of members of the group.
-manage-members::
-    Permissions that decide if the admin can manage the users that belong to this group.
-manage-membership::
-    Permissions that decide if an admin can change the membership of the group.  Add or
-    remove members from the group.
-
-===== Role
-
-map-role::
-    Permissions that decide if an admin can map this role to a user. These policies
-    only specify that the role can be mapped to a user, not that the admin is allowed
-    to perform user role mapping tasks.  The admin will also have to have manage or
-    role mapping permissions.
-map-role-composite::
-    Permissions that decide if an admin can map this role as a composite to another role.
-    An admin can define roles for a client if he has to manage permissions for that client
-    but he will not be able to add composites to those roles unless he has the
-    `map-role-composite` privileges for the role he wants to add as a composite.
-map-role-client-scope::
-    Permissions that decide if an admin can apply this role to the scope of a client.
-    Even if the admin can manage the client, he will not have permission to
-    create tokens for that client that contain this role unless this privilege
-    is granted.
-
-===== Users
-
-view::
-    Permissions that decide if an admin can view users in the realm.
-manage::
-    Permissions that decide if an admin can manage users in the realm. This
-    permission grants the admin the privilege to perform user role mappings, but
-    it does not specify which roles the admin is allowed to map. You'll need to
-    define the privilege for each role you want the admin to be able to map.
-map-roles::
-    This is a subset of the privileges granted by the `manage` scope.  In this
-    case the admin is only allowed to map roles.  The admin is not allowed to perform
-    any other user management operation.  Also, like `manage`, the roles that the
-    admin is allowed to apply must be specified per role or per set of roles if dealing
-    with client roles.
-manage-group-membership::
-    Similar to `map-roles` except that it pertains to group membership: which
-    groups a user can be added or removed from. These permissions just grant 
-    the admin permission to manage group membership, not which groups the admin 
-    is allowed to manage membership for. You'll have to specify policies for 
-    each group's `manage-members` permission.
-impersonate::
-    Permissions that decide if the admin is allowed to impersonate other users.
+TODO: add more use cases
