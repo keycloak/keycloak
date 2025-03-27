@@ -107,7 +107,7 @@ public class WelcomeResource {
             return createWelcomePage(null, null);
         } else {
             if (!isLocal()) {
-                ServicesLogger.LOGGER.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
+                ServicesLogger.LOGGER.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteHost());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -277,7 +277,7 @@ public class WelcomeResource {
         HttpHeaders headers = request.getHttpHeaders();
         String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
         String forwarded = headers.getHeaderString("Forwarded");
-        logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s, Forwarded header: %s", remoteAddress.toString(), localAddress.toString(), xForwardedFor, forwarded);
+        logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s, Forwarded header: %s", remoteAddress, localAddress, xForwardedFor, forwarded);
 
         // Consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for and forwarded header is empty).
         return xForwardedFor == null && forwarded == null && SecureContextResolver.isLocalAddress(remoteAddress) && SecureContextResolver.isLocalAddress(localAddress);

@@ -218,7 +218,7 @@ public class UserSessionUtil {
         }
 
         ClientConnection clientConnection = session.getContext().getConnection();
-        UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteHost(),
                 ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         // attach an auth session for the client
         attachAuthenticationSession(session, userSession, client);

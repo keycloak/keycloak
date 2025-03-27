@@ -270,7 +270,7 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
             UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
-                    clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+                    clientConnection.getRemoteHost(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(session, authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);

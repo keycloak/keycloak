@@ -116,7 +116,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
-                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
+                clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
         event.session(userSession);
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
@@ -127,7 +127,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         userSession.setNote(ServiceAccountConstants.CLIENT_ID_SESSION_NOTE, client.getClientId()); // This is for backwards compatibility
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
         userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
-        userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());
+        userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteHost());
 
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenRequestContext(formParams, clientSessionCtx.getClientSession()));
