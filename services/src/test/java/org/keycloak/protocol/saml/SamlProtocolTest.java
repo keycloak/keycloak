@@ -431,6 +431,16 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public boolean hideUserAlreadyRegisteredError() {
+            return false;
+        }
+
+        @Override
+        public void setHideUserAlreadyRegisteredError(boolean hideUserAlreadyRegisteredError) {
+
+        }
+
+        @Override
         public boolean isResetPasswordAllowed() {
             return false;
         }

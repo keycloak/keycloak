@@ -77,6 +77,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean organizationsEnabled;
     protected boolean adminPermissionsEnabled;
     protected boolean verifiableCredentialsEnabled;
+    private boolean hideUserAlreadyRegisteredError;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
@@ -196,6 +197,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         organizationsEnabled = model.isOrganizationsEnabled();
         adminPermissionsEnabled = model.isAdminPermissionsEnabled();
         verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
+        hideUserAlreadyRegisteredError = model.hideUserAlreadyRegisteredError();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
         permanentLockout = model.isPermanentLockout();
@@ -771,5 +773,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Map<String, RequiredActionConfigModel> getRequiredActionProviderConfigs() {
         return requiredActionProviderConfigs;
+    }
+
+    public boolean hideUserAlreadyRegisteredError() {
+        return hideUserAlreadyRegisteredError;
     }
 }
