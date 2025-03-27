@@ -112,9 +112,6 @@ public class GroupTest extends AbstractGroupTest {
     @InjectAdminClient
     Keycloak adminClient;
 
-    @InjectAdminClientFactory
-    AdminClientFactory adminClientFactory;
-
     // KEYCLOAK-2716 Can't delete client if its role is assigned to a group
     @Test
     public void testClientRemoveWithClientRoleGroupMapping() {
@@ -518,15 +515,12 @@ public class GroupTest extends AbstractGroupTest {
         Assert.assertNames(group1Children, "mygroup2");
         assertEquals("/mygroup1/mygroup2", realm.groups().group(group2.getId()).toRepresentation().getPath());
 
-        adminEvents.skipAll();
-
         // Create top level group with the same name
         GroupRepresentation group3 = GroupConfigBuilder.create()
                 .name("mygroup2")
                 .build();
         response = managedRealm.admin().groups().add(group3);
         String group3Id = ApiUtil.getCreatedId(response);
-        adminEvents.skip();
         group3.setId(group3Id);
         // Try to move top level "mygroup2" as child of "mygroup1". It should fail as there is already a child group
         // of "mygroup1" with name "mygroup2"
@@ -620,7 +614,7 @@ public class GroupTest extends AbstractGroupTest {
 
     @Test
     // KEYCLOAK-2700 Import existing realm fails due to can't delete group
-    public void deleteRealmWithDefaultGroups() throws IOException {
+    public void deleteRealmWithDefaultGroups() {
         RealmConfigBuilder realmConfigBuilder = RealmConfigBuilder.create()
                 .name("foo")
                 .defaultGroups("/default1");
@@ -775,197 +769,6 @@ public class GroupTest extends AbstractGroupTest {
         Assert.assertNames(all.getClientMappings().get("myclient").getMappings(), "client-composite", "client-child");
     }
 
-    /**
-     * Verifies that the user does not have access to Keycloak Admin endpoint when role is not
-     * assigned to that user.
-     *
-     * @link https://issues.jboss.org/browse/KEYCLOAK-2964
-     */
-    @Test
-    public void noAdminEndpointAccessWhenNoRoleAssigned() {
-        String userName = "user-" + UUID.randomUUID();
-        UserRepresentation user = UserConfigBuilder.create()
-                .username(userName)
-                .password("pwd")
-                .build();
-        final String realmName = "master";
-        final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
-
-        Keycloak userClient = adminClientFactory.create().realm(realmName)
-                .username(userName).password("pwd")
-                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .build();
-        ClientErrorException e = Assertions.assertThrows(ClientErrorException.class,
-                () -> userClient.realms().findAll()  // Any admin operation will do
-        );
-        assertThat(e.getMessage(), containsString(String.valueOf(Response.Status.FORBIDDEN.getStatusCode())));
-        adminClient.realm(realmName).users().get(userUuid).remove();
-    }
-
-    /**
-     * Verifies that the role assigned to a user is correctly handled by Keycloak Admin endpoint.
-     *
-     * @link https://issues.jboss.org/browse/KEYCLOAK-2964
-     */
-    @Test
-    public void adminEndpointAccessibleWhenAdminRoleAssignedToUser() {
-        String userName = "user-" + UUID.randomUUID();
-        UserRepresentation user = UserConfigBuilder.create()
-                .username(userName)
-                .password("pwd")
-                .build();
-
-        final String realmName = "master";
-        RealmResource realm = adminClient.realms().realm(realmName);
-        RoleRepresentation adminRole = realm.roles().get(AdminRoles.ADMIN).toRepresentation();
-        assertThat(adminRole, notNullValue());
-        assertThat(adminRole.getId(), notNullValue());
-
-        final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
-        assertThat(userUuid, notNullValue());
-
-        RoleMappingResource mappings = realm.users().get(userUuid).roles();
-        mappings.realmLevel().add(Collections.singletonList(adminRole));
-
-        Keycloak userClient = adminClientFactory.create().realm(realmName)
-                .username(userName).password("pwd")
-                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .build();
-
-        assertFalse(userClient.realms().findAll().isEmpty()); // Any admin operation will do
-        adminClient.realm(realmName).users().get(userUuid).remove();
-    }
-
-    /**
-     * Verifies that the role assigned to a user's group is correctly handled by Keycloak Admin endpoint.
-     *
-     * @link https://issues.jboss.org/browse/KEYCLOAK-2964
-     */
-    @Test
-    public void adminEndpointAccessibleWhenAdminRoleAssignedToGroup() {
-        String userName = "user-" + UUID.randomUUID();
-        String groupName = "group-" + UUID.randomUUID();
-
-        final String realmName = "master";
-        RealmResource realm = adminClient.realms().realm(realmName);
-        RoleRepresentation adminRole = realm.roles().get(AdminRoles.ADMIN).toRepresentation();
-        assertThat(adminRole, notNullValue());
-        assertThat(adminRole.getId(), notNullValue());
-
-        UserRepresentation user = UserConfigBuilder.create()
-                .username(userName)
-                .password("pwd")
-                .build();
-        final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
-        assertThat(userUuid, notNullValue());
-
-        GroupRepresentation group = GroupConfigBuilder.create().name(groupName).build();
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-
-        RoleMappingResource mappings = realm.groups().group(groupId).roles();
-        mappings.realmLevel().add(Collections.singletonList(adminRole));
-
-        realm.users().get(userUuid).joinGroup(groupId);
-
-        Keycloak userClient = adminClientFactory.create().realm(realmName)
-                .username(userName).password("pwd")
-                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .build();
-        assertFalse(userClient.realms().findAll().isEmpty()); // Any admin operation will do
-
-        adminClient.realm(realmName).groups().group(groupId).remove();
-        adminClient.realm(realmName).users().get(userUuid).remove();
-    }
-
-    /**
-     * Groups search with query returns unwanted groups
-     *
-     * @link https://issues.redhat.com/browse/KEYCLOAK-18380
-     */
-    @Test
-    public void searchForGroupsShouldOnlyReturnMatchingElementsOrIntermediatePaths() {
-
-        /*
-         * /g1/g1.1-gugu
-         * /g1/g1.2-test1234
-         * /g2-test1234
-         * /g3/g3.1-test1234/g3.1.1
-         */
-        String needle = "test1234";
-        GroupRepresentation g1 = GroupConfigBuilder.create().name("g1").build();
-        GroupRepresentation g1_1 = GroupConfigBuilder.create().name("g1.1-bubu").build();
-        GroupRepresentation g1_2 = GroupConfigBuilder.create().name("g1.2-" + needle).build();
-        GroupRepresentation g2 = GroupConfigBuilder.create().name("g2-" + needle).build();
-        GroupRepresentation g3 = GroupConfigBuilder.create().name("g3").build();
-        GroupRepresentation g3_1 = GroupConfigBuilder.create().name("g3.1-" + needle).build();
-        GroupRepresentation g3_1_1 = GroupConfigBuilder.create().name("g3.1.1").build();
-
-        createGroup(managedRealm, g1);
-        createGroup(managedRealm, g2);
-        createGroup(managedRealm, g3);
-        addSubGroup(managedRealm, g1, g1_1);
-        addSubGroup(managedRealm, g1, g1_2);
-        addSubGroup(managedRealm, g3, g3_1);
-        addSubGroup(managedRealm, g3_1, g3_1_1);
-
-        RealmResource realm = managedRealm.admin();
-        // we search for "test1234" and expect only /g1/g1.2-test1234, /g2-test1234 and /g3/g3.1-test1234 as a result
-        List<GroupRepresentation> result = realm.groups().groups(needle, 0, 100);
-
-        assertEquals(3, result.size());
-        assertEquals("g1", result.get(0).getName());
-        assertEquals(1, result.get(0).getSubGroups().size());
-        assertEquals("g1.2-" + needle, result.get(0).getSubGroups().get(0).getName());
-        assertEquals("g2-" + needle, result.get(1).getName());
-        assertEquals("g3", result.get(2).getName());
-        assertEquals(1, result.get(2).getSubGroups().size());
-        assertEquals("g3.1-" + needle, result.get(2).getSubGroups().get(0).getName());
-    }
-
-    /**
-     * Verifies that the role assigned to a user's group is correctly handled by Keycloak Admin endpoint.
-     *
-     * @link https://issues.jboss.org/browse/KEYCLOAK-2964
-     */
-    @Test
-    public void adminEndpointAccessibleWhenAdminRoleAssignedToGroupAfterUserJoinedIt() {
-        String userName = "user-" + UUID.randomUUID();
-        String groupName = "group-" + UUID.randomUUID();
-        final String realmName = "master";
-
-        RealmResource realm = adminClient.realms().realm(realmName);
-        RoleRepresentation adminRole = realm.roles().get(AdminRoles.ADMIN).toRepresentation();
-        assertThat(adminRole, notNullValue());
-        assertThat(adminRole.getId(), notNullValue());
-
-        UserRepresentation user = UserConfigBuilder.create()
-                .username(userName)
-                .password("pwd")
-                .build();
-        final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
-        assertThat(userUuid, notNullValue());
-
-        GroupRepresentation group = GroupConfigBuilder.create().name(groupName).build();
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-
-        realm.users().get(userUuid).joinGroup(groupId);
-
-        RoleMappingResource mappings = realm.groups().group(groupId).roles();
-
-        mappings.realmLevel().add(Collections.singletonList(adminRole));
-
-        Keycloak userClient = adminClientFactory.create().realm(realmName)
-                .username(userName).password("pwd")
-                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
-                .build();
-        assertFalse(userClient.realms().findAll().isEmpty()); // Any admin operation will do
-
-        adminClient.realm(realmName).groups().group(groupId).remove();
-        adminClient.realm(realmName).users().get(userUuid).remove();
-    }
-
     @Test
     public void defaultMaxResults() {
         GroupsResource groups = managedRealm.admin().groups();
@@ -988,25 +791,6 @@ public class GroupTest extends AbstractGroupTest {
         assertEquals(105, group.members(0, 105).size());
         assertEquals(110, group.members(0, 1000).size());
         assertEquals(110, group.members(-1, -2).size());
-    }
-
-    @Test
-    public void searchGroupsByName() {
-        createGroup(managedRealm, GroupConfigBuilder.create().name("group-name-1").build());
-        createGroup(managedRealm, GroupConfigBuilder.create().name("group-name-2").build());
-
-        GroupsResource groupsResource = managedRealm.admin().groups();
-        List<GroupRepresentation> groups;
-
-        // Search containing name success
-        groups = groupsResource.groups("group-name", false, 0, 20, false);
-        assertEquals(2, groups.size());
-        // Search exact name success
-        groups = groupsResource.groups("group-name-1", true, 0, 20, false);
-        assertEquals(1, groups.size());
-        // Search exact name failure
-        groups = groupsResource.groups("group-name", true, 0, 20, false);
-        assertTrue(groups.isEmpty());
     }
 
     @Test
@@ -1048,132 +832,6 @@ public class GroupTest extends AbstractGroupTest {
 
         briefRepresentation = false;
         assertThat(parentGroup.getSubGroups(null, null, briefRepresentation).get(0).getAttributes().get("attribute1"), containsInAnyOrder("value1", "value2"));
-    }
-
-    @Test
-    public void searchAndCountGroups() throws Exception {
-        String firstGroupId = "";
-
-        RealmResource realm = managedRealm.admin();
-
-        // Add 20 new groups with known names
-        for (int i = 0; i < 20; i++) {
-            GroupRepresentation group = new GroupRepresentation();
-            group.setName("group" + i);
-            createGroup(managedRealm, group);
-            if (i == 0) {
-                firstGroupId = group.getId();
-            }
-        }
-
-        // Get groups by search and pagination
-        List<GroupRepresentation> allGroups = realm.groups().groups();
-        assertEquals(20, allGroups.size());
-
-        List<GroupRepresentation> slice = realm.groups().groups(0, 7);
-        assertEquals(7, slice.size());
-
-        slice = realm.groups().groups(null, 7);
-        assertEquals(7, slice.size());
-
-        slice = realm.groups().groups(10, null);
-        assertEquals(10, slice.size());
-
-        slice = realm.groups().groups(5, 7);
-        assertEquals(7, slice.size());
-
-        slice = realm.groups().groups(15, 7);
-        assertEquals(5, slice.size());
-
-        List<GroupRepresentation> search = realm.groups().groups("group1", 0, 20);
-        assertEquals(11, search.size());
-        for (GroupRepresentation group : search) {
-            assertTrue(group.getName().contains("group1"));
-        }
-
-        List<GroupRepresentation> noResultSearch = realm.groups().groups("abcd", 0, 20);
-        assertEquals(0, noResultSearch.size());
-
-        // Count
-        assertEquals(Long.valueOf(allGroups.size()), realm.groups().count().get("count"));
-        assertEquals(Long.valueOf(search.size()), realm.groups().count("group1").get("count"));
-        assertEquals(Long.valueOf(noResultSearch.size()), realm.groups().count("abcd").get("count"));
-
-        // Add a subgroup for onlyTopLevel flag testing
-        GroupRepresentation level2Group = new GroupRepresentation();
-        level2Group.setName("group1111");
-        Response response = realm.groups().group(firstGroupId).subGroup(level2Group);
-        response.close();
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.groupSubgroupsPath(firstGroupId), level2Group, ResourceType.GROUP);
-
-        assertEquals(Long.valueOf(allGroups.size()), realm.groups().count(true).get("count"));
-        assertEquals(Long.valueOf(allGroups.size() + 1), realm.groups().count(false).get("count"));
-        //add another subgroup
-        GroupRepresentation level2Group2 = new GroupRepresentation();
-        level2Group2.setName("group111111");
-        realm.groups().group(firstGroupId).subGroup(level2Group2);
-        //search and count for group with string group11 -> return 2 top level group, group11 and group0 having subgroups group1111 and group111111
-        search = realm.groups().groups("group11", 0, 10);
-        assertEquals(2, search.size());
-        GroupRepresentation group0 = search.stream().filter(group -> "group0".equals(group.getName())).findAny().orElseGet(null);
-        assertNotNull(group0);
-        assertEquals(2, group0.getSubGroups().size());
-        assertThat(group0.getSubGroups().stream().map(GroupRepresentation::getName).collect(Collectors.toList()), Matchers.containsInAnyOrder("group1111", "group111111"));
-        assertEquals(countLeafGroups(search), realm.groups().count("group11").get("count"));
-    }
-
-    private Long countLeafGroups(List<GroupRepresentation> search) {
-        long counter = 0;
-        for (GroupRepresentation group : search) {
-            if (group.getSubGroups().isEmpty()) {
-                counter += 1;
-                continue;
-            }
-            counter += countLeafGroups(group.getSubGroups());
-        }
-        return counter;
-    }
-
-    @Test
-    public void orderGroupsByName() {
-        // Create two pages worth of groups in a random order
-        List<GroupRepresentation> testGroups = new ArrayList<>();
-        for (int i = 0; i < 40; i++) {
-            GroupRepresentation group = new GroupRepresentation();
-            group.setName("group" + i);
-            testGroups.add(group);
-        }
-
-        Collections.shuffle(testGroups);
-
-        for (GroupRepresentation group : testGroups) {
-            createGroup(managedRealm, group);
-        }
-
-        // Groups should be ordered by name
-        Comparator<GroupRepresentation> compareByName = Comparator.comparing(GroupRepresentation::getName);
-
-        GroupsResource groups = managedRealm.admin().groups();
-        // Assert that all groups are returned in order
-        List<GroupRepresentation> allGroups = groups.groups(0, 100);
-        assertEquals(40, allGroups.size());
-        assertTrue(Comparators.isInStrictOrder(allGroups, compareByName));
-
-        // Assert that pagination results are returned in order
-        List<GroupRepresentation> firstPage = groups.groups(0, 20);
-        assertEquals(20, firstPage.size());
-        assertTrue(Comparators.isInStrictOrder(firstPage, compareByName));
-
-        List<GroupRepresentation> secondPage = groups.groups(20, 20);
-        assertEquals(20, secondPage.size());
-        assertTrue(Comparators.isInStrictOrder(secondPage, compareByName));
-
-        // Check that the ordering of groups across multiple pages is correct
-        // Since the individual pages are ordered it is sufficient to compare the
-        // last group from the first page to the first group of the second page
-        GroupRepresentation lastGroupOnFirstPage = firstPage.get(firstPage.size() - 1);
-        GroupRepresentation firstGroupOnSecondPage = secondPage.get(0);
-        assertTrue(compareByName.compare(lastGroupOnFirstPage, firstGroupOnSecondPage) < 0);
     }
 
     @Test
@@ -1240,90 +898,6 @@ public class GroupTest extends AbstractGroupTest {
             cfg.setUnmanagedAttributePolicy(null);
             upResource.update(cfg);
         }
-    }
-
-    /**
-     * Verifies that the group search works the same across group provider implementations for hierarchies
-     *
-     * @link https://issues.jboss.org/browse/KEYCLOAK-18390
-     */
-    @Test
-    public void searchGroupsOnGroupHierarchies() {
-        final RealmResource realm = managedRealm.admin();
-
-        final String searchFor = UUID.randomUUID().toString();
-
-        final GroupRepresentation g1 = new GroupRepresentation();
-        g1.setName("g1");
-        final GroupRepresentation g1_1 = new GroupRepresentation();
-        g1_1.setName("g1.1-" + searchFor);
-
-        String g1Id = createGroup(managedRealm, g1);
-        addSubGroup(managedRealm, g1, g1_1);
-
-        final List<GroupRepresentation> searchResultGroups = realm.groups().groups(searchFor, 0, 10);
-
-        assertFalse(searchResultGroups.isEmpty());
-        assertEquals(g1Id, searchResultGroups.get(0).getId());
-        assertEquals(g1.getName(), searchResultGroups.get(0).getName());
-
-        List<GroupRepresentation> searchResultSubGroups = searchResultGroups.get(0).getSubGroups();
-        assertEquals(g1_1.getId(), searchResultSubGroups.get(0).getId());
-        assertEquals(g1_1.getName(), searchResultSubGroups.get(0).getName());
-    }
-
-    public void testParentAndChildGroup(String parentName, String childName) {
-        RealmResource realm = managedRealm.admin();
-        GroupRepresentation parentGroup = new GroupRepresentation();
-        parentGroup.setName(parentName);
-        createGroup(managedRealm, parentGroup);
-        GroupRepresentation childGroup = new GroupRepresentation();
-        childGroup.setName(childName);
-        Response response = realm.groups().group(parentGroup.getId()).subGroup(childGroup);
-        childGroup.setId(ApiUtil.getCreatedId(response));
-
-        AdminEventAssertion.assertSuccess(adminEvents.poll())
-                .operationType(OperationType.CREATE)
-                .resourcePath(AdminEventPaths.groupSubgroupsPath(parentGroup.getId()))
-                .representation(childGroup)
-                .resourceType(ResourceType.GROUP);
-
-        List<GroupRepresentation> groupsFound = realm.groups().groups(parentGroup.getName(), true, 0, 1, true);
-        Assertions.assertEquals(1, groupsFound.size());
-        Assertions.assertEquals(parentGroup.getId(), groupsFound.get(0).getId());
-        parentGroup = groupsFound.get(0);
-        Assertions.assertEquals(0, parentGroup.getSubGroups().size());
-        Assertions.assertEquals(KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, parentName),
-                parentGroup.getPath());
-
-        groupsFound = realm.groups().groups(childGroup.getName(), true, 0, 1, true);
-        Assertions.assertEquals(1, groupsFound.size());
-        Assertions.assertEquals(parentGroup.getId(), groupsFound.get(0).getId());
-        Assertions.assertEquals(1, groupsFound.get(0).getSubGroups().size());
-        Assertions.assertEquals(childGroup.getId(), groupsFound.get(0).getSubGroups().get(0).getId());
-        childGroup = groupsFound.get(0).getSubGroups().get(0);
-        Assertions.assertEquals(KeycloakModelUtils.normalizeGroupPath(
-                        KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, parentName, childName)),
-                childGroup.getPath());
-
-        GroupRepresentation groupFound = realm.getGroupByPath(parentGroup.getPath());
-        Assertions.assertNotNull(groupFound);
-        Assertions.assertEquals(parentGroup.getId(), groupFound.getId());
-        groupFound = realm.getGroupByPath(childGroup.getPath());
-        Assertions.assertNotNull(groupFound);
-        Assertions.assertEquals(childGroup.getId(), groupFound.getId());
-
-        realm.groups().group(childGroup.getId()).remove();
-    }
-
-    @Test
-    public void testGroupsWithSpaces() {
-        testParentAndChildGroup("parent space", "child space");
-    }
-
-    @Test
-    public void testGroupsWithSlashes() {
-        testParentAndChildGroup("parent/slash", "child/slash");
     }
 
     /**

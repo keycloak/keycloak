@@ -58,11 +58,6 @@ public class GroupConfigBuilder {
         rep.setAttributes(attributes);
         return this;
     }
-//
-//    public GroupConfigBuilder singleAttribute(String name, String value) {
-//        rep.singleAttribute(name, value);
-//        return this;
-//    }
 
     public GroupConfigBuilder subGroups(GroupRepresentation... subGroups) {
         if (rep.getSubGroups() == null) {
