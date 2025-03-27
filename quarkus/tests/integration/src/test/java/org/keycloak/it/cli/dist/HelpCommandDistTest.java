@@ -35,6 +35,9 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
+import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminUser;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.cli.command.Import;
@@ -133,6 +136,24 @@ public class HelpCommandDistTest {
     @Test
     @Launch({ Import.NAME, "--help-all" })
     void testImportHelpAll(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ BootstrapAdmin.NAME, "--help" })
+    void testBootstrapAdmin(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ BootstrapAdmin.NAME, BootstrapAdminUser.NAME, "--help" })
+    void testBootstrapAdminUser(CLIResult cliResult) {
+        assertHelp(cliResult);
+    }
+
+    @Test
+    @Launch({ BootstrapAdmin.NAME, BootstrapAdminService.NAME, "--help" })
+    void testBootstrapAdminService(CLIResult cliResult) {
         assertHelp(cliResult);
     }
 
