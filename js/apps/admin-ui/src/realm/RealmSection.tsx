@@ -27,6 +27,7 @@ import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { translationFormatter } from "../utils/translationFormatter";
 import NewRealmForm from "./add/NewRealmForm";
 import { toRealm } from "./RealmRoutes";
+import { toDashboard } from "../dashboard/routes/Dashboard";
 
 export type RealmNameRepresentation = {
   name: string;
@@ -241,9 +242,7 @@ export default function RealmSection() {
               transforms: [cellWidth(20)],
               cellRenderer: ({ name }) =>
                 name !== realm ? (
-                  <Link to={toRealm({ realm: name })} onClick={() => refresh()}>
-                    {name}
-                  </Link>
+                  <Link to={toDashboard({ realm: name })}>{name}</Link>
                 ) : (
                   <Popover
                     bodyContent={t("currentRealmExplain")}
