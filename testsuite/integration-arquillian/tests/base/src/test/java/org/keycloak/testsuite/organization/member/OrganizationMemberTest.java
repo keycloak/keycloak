@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.ArrayList;
@@ -475,12 +476,19 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         // assign IdP to the org
         idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
         idpRep.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
 
         try (Response response = testRealm().organizations().get(id).identityProviders().addIdentityProvider(idpAlias)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
         }
 
         //check the federated user is not a member
+        assertThat(testRealm().organizations().get(id).members().list(-1, -1), hasSize(0));
+
+        // test again this time assigning any org domain to the identity provider
+
+        idpRep.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(idpRep.getAlias()).update(idpRep);
         assertThat(testRealm().organizations().get(id).members().list(-1, -1), hasSize(0));
     }
 
