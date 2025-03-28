@@ -389,6 +389,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.getAttribute(UserModel.EMAIL).get(0).addValidators(Collections.singletonList(
                 new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID)));
 
+        metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
         return metadata;
     }
 

@@ -61,6 +61,8 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -69,7 +71,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -381,7 +382,28 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         UserRepresentation user = getUser(userId);
 
-        assertNull(user.getAttributes());
+        assertEquals(Map.of(UserModel.LOCALE, List.of("en")), user.getAttributes());
+    }
+
+    @Test
+    public void registerUserChangedLocaleSuccess() {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        errorPage.openLanguage("Deutsch");
+        assertEquals("Deutsch", errorPage.getLanguageDropdownText());
+
+        registerPage.register("firstName", "lastName", "registerGerman@localhost", "registerGerman", "password", "password");
+
+        appPage.assertCurrent();
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("registerGerman", "registerGerman@localhost").assertEvent().getUserId();
+        assertUserRegistered(userId, "registergerman", "registerGerman@localhost");
+
+        UserRepresentation user = getUser(userId);
+        assertEquals(Map.of(UserModel.LOCALE, List.of("de")), user.getAttributes());
     }
 
     @Test
@@ -820,7 +842,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             String userId = events.expectRegister("registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email")
                     .assertEvent().getUserId();
             UserRepresentation user = assertUserRegistered(userId, "registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email");
-            Assert.assertNull(user.getAttributes());
+            assertEquals(Map.of(UserModel.LOCALE, List.of("en")), user.getAttributes());
         } finally {
             configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString());
         }
