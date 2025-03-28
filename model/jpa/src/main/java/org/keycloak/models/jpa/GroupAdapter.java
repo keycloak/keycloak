@@ -23,6 +23,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -67,6 +68,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         this.realm = realm;
     }
 
+    @Override
     public GroupEntity getEntity() {
         return group;
     }
@@ -309,8 +311,10 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         entity.setGroup(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
         fireGroupUpdatedEvent();
     }
 
