@@ -290,7 +290,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         //assert fields location in form
         List<WebElement> element = driver.findElements(By.cssSelector("form#kc-register-form input"));
-        String[] labelOrder = new String[]{"lastName", "department", "username", "password", "password-confirm", "firstName", "email"};
+        String[] labelOrder = new String[]{"locale", "lastName", "department", "username", "password", "password-confirm", "firstName", "email"};
         for (int i = 0; i < labelOrder.length; i++) {
             WebElement webElement = element.get(i);
             String id = webElement.getAttribute("id");
