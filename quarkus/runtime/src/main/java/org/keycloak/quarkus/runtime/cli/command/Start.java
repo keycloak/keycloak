@@ -19,6 +19,8 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+import java.util.List;
+
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.common.profile.ProfileException;
@@ -52,7 +54,6 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        Environment.updateProfile(true);
         if (Environment.isDevProfile()) {
             throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
@@ -68,9 +69,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
         return NAME;
     }
 
-    public static void fastStart(Picocli picocli, boolean dryRun) {
+    public static void fastStart(List<String> args, Picocli picocli, boolean dryRun) {
         try {
             Start start = new Start();
+            picocli.initProfile(args, start, false);
             Environment.setParsedCommand(start);
             PropertyMappers.sanitizeDisabledMappers();
             start.optimizedMixin.optimized = true;

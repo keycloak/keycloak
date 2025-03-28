@@ -35,10 +35,8 @@ public abstract class AbstractNonServerCommand extends AbstractStartCommand impl
     HelpAllMixin helpAllMixin;
 
     @Override
-    public void run() {
-        Environment.setProfile(Environment.NON_SERVER_MODE);
-
-        super.run();
+    public String getProfile() {
+        return Environment.NON_SERVER_MODE;
     }
 
     @Override

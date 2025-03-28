@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.common.util.Environment;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -41,8 +41,8 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
     ImportRealmMixin importRealmMixin;
 
     @Override
-    protected void doBeforeRun() {
-        Environment.forceDevProfile();
+    public String getProfile() {
+        return Environment.DEV_PROFILE_VALUE;
     }
 
     @Override

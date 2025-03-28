@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -54,18 +55,17 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.Completion;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -116,15 +116,14 @@ public class Picocli {
             // recreate the command specifically for the current
             cmd = createCommandLineForCommand(cliArgs, commandLineList);
 
+            // TODO: ensure that the config has not yet been initialized
+            Environment.getParsedCommand().ifPresent(ac -> initProfile(cliArgs, ac, isRebuildCheck()));
+            PropertyMappers.sanitizeDisabledMappers();
+
             int exitCode;
             if (isRebuildCheck()) {
-                CommandLine currentCommand = null;
-                if (commandLineList.size() > 1) {
-                    currentCommand = commandLineList.get(commandLineList.size() - 1);
-                }
-                exitCode = runReAugmentationIfNeeded(cliArgs, cmd, currentCommand);
+                exitCode = runReAugmentationIfNeeded(cliArgs, cmd, Environment.getParsedCommand());
             } else {
-                PropertyMappers.sanitizeDisabledMappers();
                 exitCode = cmd.execute(argArray);
             }
 
@@ -206,58 +205,64 @@ public class Picocli {
         }
     }
 
-    private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
+    private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, Optional<AbstractCommand> command) {
         int exitCode = 0;
 
-        if (currentCommand == null) {
-            return exitCode; // possible if using --version or the user made a mistake
-        }
-
-        String currentCommandName = currentCommand.getCommandName();
-
-        if (shouldSkipRebuild(cliArgs, currentCommandName)) {
+        if (command.isEmpty() || !(command.get() instanceof AbstractStartCommand) || isHelp(cliArgs)) {
             return exitCode;
         }
 
-        // TODO: ensure that the config has not yet been initialized
-        // - there's currently no good way to do that directly on ConfigProviderResolver
-        initProfile(cliArgs, currentCommandName);
-
-        if (requiresReAugmentation(currentCommand)) {
-            PropertyMappers.sanitizeDisabledMappers();
+        if (requiresReAugmentation()) {
             exitCode = runReAugmentation(cliArgs, cmd);
         }
 
         return exitCode;
     }
 
-    protected void initProfile(List<String> cliArgs, String currentCommandName) {
-        if (currentCommandName.equals(StartDev.NAME)) {
+    /**
+     * Determine the profile
+     * For start-dev, it's always dev
+     * For rebuilding it will typically be dev or prod
+     * etc.
+     */
+    public void initProfile(List<String> cliArgs, AbstractCommand ac,
+            boolean isRebuildCheck) {
+        if (ac instanceof StartDev) {
             // force the server image to be set with the dev profile
             Environment.forceDevProfile();
-        } else {
-            Environment.updateProfile(false);
-
-            // override from the cli if specified
-            parseConfigArgs(cliArgs, (k, v) -> {
-                if (k.equals(Main.PROFILE_SHORT_NAME) || k.equals(Main.PROFILE_LONG_NAME)) {
-                    Environment.setProfile(v);
-                }
-            }, ignored -> {});
+            return;
         }
+        // override from the cli if specified
+        AtomicBoolean setProfile = new AtomicBoolean();
+        parseConfigArgs(cliArgs, (k, v) -> {
+            if (k.equals(Main.PROFILE_SHORT_NAME) || k.equals(Main.PROFILE_LONG_NAME)) {
+                Environment.setProfile(v);
+                setProfile.set(true);
+            }
+        }, ignored -> {});
+
+        if (setProfile.get()) {
+            return;
+        }
+        String profile = ac.getProfile();
+        // if not set on the cli, then rebuild defaults to prod
+        if (isRebuildCheck) {
+            profile = Environment.PROD_PROFILE_VALUE;
+        } else if (profile == null) {
+            profile = Optional
+                    .ofNullable(PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE))
+                    .orElse(Environment.PROD_PROFILE_VALUE);
+        }
+        Environment.setProfile(profile);
     }
 
-    private static boolean shouldSkipRebuild(List<String> cliArgs, String currentCommandName) {
+    private static boolean isHelp(List<String> cliArgs) {
         return cliArgs.contains("--help")
                 || cliArgs.contains("-h")
-                || cliArgs.contains("--help-all")
-                || currentCommandName.equals(Build.NAME)
-                || currentCommandName.equals(ShowConfig.NAME)
-                || currentCommandName.equals(Completion.NAME)
-                || currentCommandName.equals(UpdateCompatibility.NAME);
+                || cliArgs.contains("--help-all");
     }
 
-    private static boolean requiresReAugmentation(CommandLine cmdCommand) {
+    private static boolean requiresReAugmentation() {
         Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
         if (rawPersistedProperties.isEmpty()) {
             return true; // no build yet

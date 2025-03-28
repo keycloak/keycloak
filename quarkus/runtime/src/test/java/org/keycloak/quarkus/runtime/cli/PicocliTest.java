@@ -37,6 +37,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
@@ -92,8 +93,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected void initProfile(List<String> cliArgs, String currentCommandName) {
-            super.initProfile(cliArgs, currentCommandName);
+        public void initProfile(List<String> cliArgs, AbstractCommand ac, boolean isRebuildCheck) {
+            super.initProfile(cliArgs, ac, isRebuildCheck);
             config = createConfig();
         }
 
@@ -111,6 +112,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
+    }
+
+    @Test
+    public void testCleanStartDev() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
     }
 
     @Test
@@ -132,10 +140,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("5m",
@@ -515,6 +525,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=mariadb");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("import", "--optimized", "--dir=./", "--override=false");
+        System.out.println(nonRunningPicocli.getErrString());
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 

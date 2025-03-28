@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 
@@ -98,7 +97,7 @@ public final class Main {
             hidden = true,
             description = "Set the profile. Use 'dev' profile to enable development mode.")
     public void setProfile(String profile) {
-        Environment.setProfile(profile);
+        //Environment.setProfile(profile); -- Picocli.initProfile will determine this ahead of time
     }
 
     @Option(names = { CONFIG_FILE_SHORT_NAME, CONFIG_FILE_LONG_NAME },

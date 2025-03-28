@@ -70,9 +70,6 @@ public final class Build extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
-        if (org.keycloak.common.util.Environment.getProfile() == null) {
-            Environment.setProfile(Environment.PROD_PROFILE_VALUE);
-        }
         checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");

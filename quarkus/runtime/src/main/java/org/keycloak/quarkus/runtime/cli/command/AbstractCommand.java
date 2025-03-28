@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 
@@ -78,6 +79,14 @@ public abstract class AbstractCommand {
 
     public void setPicocli(Picocli picocli) {
         this.picocli = picocli;
+    }
+
+    /**
+     * The default profile for the command, or null if the persisted profile should be checked first
+     * @return
+     */
+    public String getProfile() {
+        return Environment.PROD_PROFILE_VALUE;
     }
 
 }
