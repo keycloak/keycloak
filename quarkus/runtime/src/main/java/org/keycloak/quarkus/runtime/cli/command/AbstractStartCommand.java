@@ -49,7 +49,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
             picocli.start();
         }
     }
-    
+
     protected void doBeforeRun() {
 
     }
@@ -58,7 +58,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
     protected void validateConfig() {
         super.validateConfig(); // we want to run the generic validation here first to check for unknown options
         HttpPropertyMappers.validateConfig();
-        HostnameV2PropertyMappers.validateConfig();
+        HostnameV2PropertyMappers.validateConfig(picocli);
     }
 
     @Override
