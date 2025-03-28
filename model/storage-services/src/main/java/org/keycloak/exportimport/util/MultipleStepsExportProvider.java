@@ -20,11 +20,11 @@ package org.keycloak.exportimport.util;
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
+import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.UserStorageUtil;
@@ -55,11 +55,17 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
     public void exportModel() {
         if (realmId != null) {
             ServicesLogger.LOGGER.realmExportRequested(realmId);
-            exportRealm(realmId);
+            exportRealmImpl(realmId);
         } else {
             ServicesLogger.LOGGER.fullModelExportRequested();
-            List<RealmModel> realms = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> session.realms().getRealmsStream().collect(Collectors.toList()));
-            for (RealmModel realm : realms) {
+            List<RealmModel>[] realms = new List[1];
+            new ExportImportSessionTask() {
+                @Override
+                protected void runExportImportTask(KeycloakSession session) throws IOException {
+                    realms[0] = session.realms().getRealmsStream().collect(Collectors.toList());
+                }
+            }.runTask(factory);
+            for (RealmModel realm : realms[0]) {
                 exportRealmImpl(realm.getName());
             }
         }
@@ -81,16 +87,12 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
         return (T) this;
     }
 
-    public void exportRealm(String realmName) {
-        exportRealmImpl(realmName);
-    }
-
     protected void exportRealmImpl(final String realmName) {
         final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
         FederatedUsersHolder federatedUsersHolder = new FederatedUsersHolder();
 
-        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+        new ExportImportSessionTask() {
 
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
@@ -111,7 +113,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                 }
             }
 
-        });
+        }.runTask(factory, Mode.BATCHED);
 
         if (usersExportStrategy != UsersExportStrategy.SKIP && !exportUsersIntoRealmFile) {
             // We need to export users now
@@ -127,7 +129,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                     usersHolder.currentPageEnd = usersHolder.totalCount;
                 }
 
-                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                new ExportImportSessionTask() {
 
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
@@ -142,7 +144,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                         logger.info("Users " + usersHolder.currentPageStart + "-" + (usersHolder.currentPageEnd -1) + " exported");
                     }
 
-                });
+                }.runTask(factory, Mode.BATCHED);
 
                 usersHolder.currentPageStart = usersHolder.currentPageEnd;
             }
@@ -161,7 +163,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                     federatedUsersHolder.currentPageEnd = federatedUsersHolder.totalCount;
                 }
 
-                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                new ExportImportSessionTask() {
 
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
@@ -176,7 +178,7 @@ public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportP
                         logger.info("Users " + federatedUsersHolder.currentPageStart + "-" + (federatedUsersHolder.currentPageEnd -1) + " exported");
                     }
 
-                });
+                }.runTask(factory, Mode.BATCHED);
 
                 federatedUsersHolder.currentPageStart = federatedUsersHolder.currentPageEnd;
             }

@@ -22,6 +22,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -456,8 +457,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         entity.setGroupId(group.getId());
         entity.setMembershipType(metadata == null ? MembershipType.UNMANAGED : metadata.getMembershipType());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
         GroupMemberJoinEvent.fire(group, session);
     }
 
@@ -513,8 +516,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         entity.setUser(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
     }
 
     @Override

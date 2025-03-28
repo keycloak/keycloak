@@ -23,6 +23,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
@@ -124,6 +125,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -145,6 +147,21 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 public class DefaultExportImportManager implements ExportImportManager {
     private final KeycloakSession session;
     private static final Logger logger = Logger.getLogger(DefaultExportImportManager.class);
+
+    public static class UserBatcher implements Consumer<KeycloakSession> {
+        private int count;
+
+        @Override
+        public void accept(KeycloakSession session) {
+            // TODO: determine what a good number is here
+            // There actually doesn't seem to be much difference with setting this
+            // higher - the important part is to clear the contexts - which could be even more optimal
+            // as detaching just users and their children
+            if (++count % 64 == 0) {
+                EntityManagers.flush(session, true);
+            }
+        };
+    }
 
     public DefaultExportImportManager(KeycloakSession session) {
         this.session = session;
@@ -442,16 +459,26 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         // create users and their role mappings and social mappings
 
-        if (rep.getUsers() != null) {
-            for (UserRepresentation userRep : rep.getUsers()) {
-                createUser(newRealm, userRep);
-            }
-        }
+        if (Optional.ofNullable(rep.getUsers()).filter(l -> !l.isEmpty()).isPresent() ||
+                Optional.ofNullable(rep.getFederatedUsers()).filter(l -> !l.isEmpty()).isPresent()) {
+            // run in a batch to mimic the behavior of directory based import
+            // this is using nested entity managers to keep the parent context clean
+            EntityManagers.runInBatch(session, () -> {
+                UserBatcher onUserAdded = new UserBatcher();
+                if (rep.getUsers() != null) {
+                    for (UserRepresentation userRep : rep.getUsers()) {
+                        createUser(newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
 
-        if (rep.getFederatedUsers() != null) {
-            for (UserRepresentation userRep : rep.getFederatedUsers()) {
-                importFederatedUser(session, newRealm, userRep);
-            }
+                if (rep.getFederatedUsers() != null) {
+                    for (UserRepresentation userRep : rep.getFederatedUsers()) {
+                        importFederatedUser(session, newRealm, userRep);
+                        onUserAdded.accept(session);
+                    }
+                }
+            }, true);
         }
 
         if (!skipUserDependent) {

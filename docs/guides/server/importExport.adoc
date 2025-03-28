@@ -10,14 +10,8 @@ In this {section}, you are going to understand the different approaches for impo
 
 [NOTE]
 ====
-Exporting and importing into single files can produce large files, so if your database contains more than 500 users, export to a directory and not a single file.
-Using a directory performs better as the directory provider uses a separate transaction for each "page" (a file of users).
-The default count of users per file and per transaction is fifty.
-Increasing this to a larger number leads to an exponentially increasing execution time.
+The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as another server instance, which may result in port or other conflicts.
 ====
-
-All {project_name} nodes need to be stopped prior to using `kc.[sh|bat] import | export` commands. This ensures that the resulting operations will have no consistency issues with concurrent requests.
-It also ensures that running an import or export command from the same machine as a server instance will not result in port or other conflicts.
 
 == Providing options for database connection parameters
 
