@@ -420,13 +420,13 @@ export class Clients extends Resource<{ realm?: string }> {
   });
 
   public evaluateGenerateAccessToken = this.makeRequest<
-    { id: string; scope: string; userId: string },
+    { id: string; scope: string; userId: string; audience: string },
     Record<string, unknown>
   >({
     method: "GET",
     path: "/{id}/evaluate-scopes/generate-example-access-token",
     urlParamKeys: ["id"],
-    queryParamKeys: ["scope", "userId"],
+    queryParamKeys: ["scope", "userId", "audience"],
   });
 
   public evaluateGenerateUserInfo = this.makeRequest<

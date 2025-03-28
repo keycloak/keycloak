@@ -29,6 +29,7 @@ export const OpenIdConnectCompatibilityModes = ({
   );
   const useRefreshTokens = watch(
     convertAttributeNameToForm<FormFields>("attributes.use.refresh.tokens"),
+    "true",
   );
   return (
     <FormAccess
