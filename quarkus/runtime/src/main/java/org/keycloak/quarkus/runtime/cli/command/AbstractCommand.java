@@ -22,17 +22,20 @@ import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-public abstract class AbstractCommand {
+public abstract class AbstractCommand implements Callable<Integer> {
 
     @Spec
     protected CommandSpec spec; // will be null for "start --optimized"
@@ -45,6 +48,39 @@ public abstract class AbstractCommand {
     protected void executionError(CommandLine cmd, String message, Throwable cause) {
         cliExecutionError(cmd, message, cause);
     }
+
+    protected String getInitProfile() {
+        String configuredProfile = org.keycloak.common.util.Environment.getProfile();
+        if (configuredProfile != null) {
+            return configuredProfile; // the profile was already set by the cli or even ENV
+        }
+        if (Environment.isRebuildCheck()) {
+            // builds default to prod, if the profile is not overriden via the cli
+            return Environment.PROD_PROFILE_VALUE;
+        }
+        // otherwise take the default profile, or what is persisted, or ultimately dev
+        return Optional.ofNullable(this.getDefaultProfile())
+                .or(() -> Optional.ofNullable(
+                        PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE)))
+                .orElse(Environment.PROD_PROFILE_VALUE);
+    }
+
+    @Override
+    public Integer call() {
+        // TODO: validate that the Configuration does not exist prior to this point
+        picocli.initProfile(getInitProfile());
+        PropertyMappers.sanitizeDisabledMappers();
+        return exitEarly().orElseGet(() -> {
+            runCommand();
+            return CommandLine.ExitCode.OK;
+        });
+    }
+
+    protected Optional<Integer> exitEarly() {
+        return Optional.empty();
+    }
+
+    abstract void runCommand();
 
     /**
      * Returns true if this command should include runtime options for the CLI.
@@ -85,7 +121,7 @@ public abstract class AbstractCommand {
      * The default profile for the command, or null if the persisted profile should be checked first
      * @return
      */
-    public String getProfile() {
+    public String getDefaultProfile() {
         return Environment.PROD_PROFILE_VALUE;
     }
 

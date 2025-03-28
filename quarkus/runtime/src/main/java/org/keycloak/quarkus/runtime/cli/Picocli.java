@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,14 +57,12 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -103,6 +100,7 @@ public class Picocli {
     private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
     private Set<PropertyMapper<?>> allowedMappers;
     private final List<String> unrecognizedArgs = new ArrayList<>();
+    private Optional<AbstractCommand> parsedCommand = Optional.empty();
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -116,15 +114,10 @@ public class Picocli {
             // recreate the command specifically for the current
             cmd = createCommandLineForCommand(cliArgs, commandLineList);
 
-            // TODO: ensure that the config has not yet been initialized
-            Environment.getParsedCommand().ifPresent(ac -> initProfile(cliArgs, ac, isRebuildCheck()));
-            PropertyMappers.sanitizeDisabledMappers();
+            int exitCode = cmd.execute(argArray);
 
-            int exitCode;
-            if (isRebuildCheck()) {
-                exitCode = runReAugmentationIfNeeded(cliArgs, cmd, Environment.getParsedCommand());
-            } else {
-                exitCode = cmd.execute(argArray);
+            if (exitCode == AbstractStartCommand.REAUG_EXIT_CODE) {
+                exitCode = runReAugmentation(cliArgs, cmd);
             }
 
             exit(exitCode);
@@ -171,6 +164,7 @@ public class Picocli {
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
                     // set current parsed command
+                    this.parsedCommand = Optional.ofNullable(ac);
                     Environment.setParsedCommand(ac);
                 }
             }
@@ -180,6 +174,10 @@ public class Picocli {
                 addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
             }
         });
+    }
+
+    public Optional<AbstractCommand> getParsedCommand() {
+        return parsedCommand;
     }
 
     private void catchParameterException(ParameterException parEx, CommandLine cmd, String[] args) {
@@ -203,76 +201,6 @@ public class Picocli {
             // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
             System.exit(exitCode);
         }
-    }
-
-    private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, Optional<AbstractCommand> command) {
-        int exitCode = 0;
-
-        if (command.isEmpty() || !(command.get() instanceof AbstractStartCommand) || isHelp(cliArgs)) {
-            return exitCode;
-        }
-
-        if (requiresReAugmentation()) {
-            exitCode = runReAugmentation(cliArgs, cmd);
-        }
-
-        return exitCode;
-    }
-
-    /**
-     * Determine the profile
-     * For start-dev, it's always dev
-     * For rebuilding it will typically be dev or prod
-     * etc.
-     */
-    public void initProfile(List<String> cliArgs, AbstractCommand ac,
-            boolean isRebuildCheck) {
-        if (ac instanceof StartDev) {
-            // force the server image to be set with the dev profile
-            Environment.forceDevProfile();
-            return;
-        }
-        // override from the cli if specified
-        AtomicBoolean setProfile = new AtomicBoolean();
-        parseConfigArgs(cliArgs, (k, v) -> {
-            if (k.equals(Main.PROFILE_SHORT_NAME) || k.equals(Main.PROFILE_LONG_NAME)) {
-                Environment.setProfile(v);
-                setProfile.set(true);
-            }
-        }, ignored -> {});
-
-        if (setProfile.get()) {
-            return;
-        }
-        String profile = ac.getProfile();
-        // if not set on the cli, then rebuild defaults to prod
-        if (isRebuildCheck) {
-            profile = Environment.PROD_PROFILE_VALUE;
-        } else if (profile == null) {
-            profile = Optional
-                    .ofNullable(PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE))
-                    .orElse(Environment.PROD_PROFILE_VALUE);
-        }
-        Environment.setProfile(profile);
-    }
-
-    private static boolean isHelp(List<String> cliArgs) {
-        return cliArgs.contains("--help")
-                || cliArgs.contains("-h")
-                || cliArgs.contains("--help-all");
-    }
-
-    private static boolean requiresReAugmentation() {
-        Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
-        if (rawPersistedProperties.isEmpty()) {
-            return true; // no build yet
-        }
-        var current = getNonPersistedBuildTimeOptions();
-
-        // everything but the optimized value must match
-        String key = Configuration.KC_OPTIMIZED;
-        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
-        return !rawPersistedProperties.equals(current);
     }
 
     /**
@@ -995,6 +923,10 @@ public class Picocli {
 
     public void build() throws Throwable {
         QuarkusEntryPoint.main();
+    }
+
+    public void initProfile(String initProfile) {
+        Environment.setProfile(initProfile);
     }
 
 }

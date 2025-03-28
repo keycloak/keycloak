@@ -58,7 +58,7 @@ import java.util.Optional;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "  Change the relative path:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
-public final class Build extends AbstractCommand implements Runnable {
+public final class Build extends AbstractCommand {
 
     public static final String NAME = "build";
 
@@ -69,7 +69,7 @@ public final class Build extends AbstractCommand implements Runnable {
     DryRunMixin dryRunMixin;
 
     @Override
-    public void run() {
+    void runCommand() {
         checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");
@@ -115,7 +115,7 @@ public final class Build extends AbstractCommand implements Runnable {
 
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
-            String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
             // we allow start-dev, and import|export|bootstrap-admin --profile=dev
             // but not start --profile=dev, nor build --profile=dev
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {

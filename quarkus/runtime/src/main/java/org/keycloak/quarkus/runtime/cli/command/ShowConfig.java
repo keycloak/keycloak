@@ -41,7 +41,7 @@ import picocli.CommandLine.Parameters;
 @Command(name = "show-config",
         header = "Print out the current configuration.",
         description = "%nPrint out the current configuration.")
-public final class ShowConfig extends AbstractCommand implements Runnable {
+public final class ShowConfig extends AbstractCommand {
 
     public static final String NAME = "show-config";
     private static final List<String> allowedSystemPropertyKeys = List.of(
@@ -54,12 +54,12 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     String filter;
 
     @Override
-    public String getProfile() {
+    public String getDefaultProfile() {
         return null;
     }
 
     @Override
-    public void run() {
+    void runCommand() {
         String profile = org.keycloak.common.util.Environment.getProfile();
 
         spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
