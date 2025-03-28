@@ -99,7 +99,7 @@ public class ProxyHostnameV2DistTest {
         assertXForwardedHeadersAreIgnored();
 
         CLIResult cliResult = (CLIResult)result;
-        cliResult.assertNoMessage(NOT_ADDRESS);
+        cliResult.assertMessage(NOT_ADDRESS); // non-ip addresses are still reported as the client ip
         cliResult.assertMessage(ADDRESS);
     }
 
