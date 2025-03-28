@@ -233,31 +233,56 @@ image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
 In the example above it is visible that user `myadmin`, can `manage` user `user-1`. There is also information what permissions were involved 
 in the evaluation, what outcome it had and what scopes were granted or denied.
 
-==== Accessing a realm as a realm administrator
+==== Accessing a Realm Admin Console as a Realm Administrator
 
-TODO
+Realm administrators can access a dedicated realm-specific Admin Console, which allows them to manage resources within their assigned realm. 
+This is separate from the main Keycloak Admin Console, which is typically used by server administrators.
 
-===== Granting the administrative roles to a realm administrator
+For more details on dedicated realm admin consoles and available roles, refer to: <<_per_realm_admin_permissions, Dedicated admin consoles>>.
 
-TODO
+To access the Admin Console, a realm administrator must have at least one of the following roles assigned, depending on the resources they 
+need to administer, along with realm-related roles such as `view-realm`:
+
+- `query-users` – Required to query realm users.  
+- `query-groups` – Required to query realm groups.  
+- `query-clients` – Required to query realm clients.  
+
+If an administrator is responsible for multiple resource types (e.g., both users and groups), they must have all corresponding `query-*` 
+roles assigned.
+
+These roles enable basic access to query resources but do not grant permission to view or modify them. To configure more fine-grained 
+administrative access, additional permissions must be granted using fine-grained admin permissions.
+
+===== Granting Administrative Roles to a Realm Administrator
+
+A realm administrator’s access must be configured by someone with permission to assign administrative roles. At a minimum, the administrator 
+must have:  
+
+- The appropriate `query-*` roles, depending on the resource types they need to administer.
+
+Beyond these foundational roles, **fine-grained admin permissions** can be used to define specific administrative capabilities. While fine-grained permissions allow for more granular control over access, they **cannot override the default behavior of built-in admin roles**.  
+This means that if an additional admin role is assigned to a realm administrator, permission evaluation will be bypassed, and access will be granted.  
 
 ==== Understanding some common use cases
 
 Let's say an admin wants to allow a group of admins to `manage` all users in the realm except those, which belongs to the
 administrators group. In our example, we have a realm called `test` and a group called `test-admins`. 
 
-===== Permission setup
+===== Allow manage users by group of admins
+
+Create user permission permission, allowing to view and manage all users in the realm for members of the `test-admins` group:
 
 * Navigate to the `Permissions` tab in the Admin Console.
 * Click `Create permission` button and choose `Users` resource type
 * Fill the name, e.g. `"Allow managing all realm users"`
-* Choose `manage` authorization scope, keep checked `All Users`
+* Choose `view` and `manage` authorization scopes, keep checked `All Users`
 * Create a condition, which needs to be met to get an access by clicking `Create new policy`
 * Fill name `"Allow test-admins"`, select `Group` as `Policy type`. 
 * Click `Add groups` button and select `test-admins` group, click `Save`
 * Click `Save` on `"Create permission"` page
 
-The created permission, allows to manage all users in the realm for members of the `test-admins` group. 
+===== Allow manage users by group of admins but not group members
+
 Let's exlude the members of the group itself, so that `test-admins` cannot manage other admins.
 
 * Create new permission by clicking `Create permission` button
@@ -270,4 +295,34 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 * Switch to `Negative Logic` for the policy, `Save` the policy
 * `Save` the permission
 
-TODO: add more use cases
+=====  Allow impersonation of users for members of admin group with specific role assigned
+
+- Create a **User Permission** for specific users (or all users) you want to allow impersonation.
+- Create a **Group Policy** allowing access to members of `test-admins`.
+- Create a **Role Policy** allowing access to users assigned the `impersonation-admin` role.
+- Assign both policies to the permission.
+
+===== Blacklist specific users from being impersonated
+
+- Create a **User Permission** for the specific users you want to prevent from being impersonated.
+- Create any **Policy** that evaluates to deny (e.g., a user policy with no users selected).
+- Assign the policy to the permission to effectively block impersonation for the selected users.
+
+===== Allow viewing users but not managing them for admins with defined role assigned
+
+- Create a **User Permission** with the `view` scope for all users.
+- Create a **Role Policy** allowing access to users with specific role assigned.
+- Do **not** assign the `manage` scope to prevent modification of user details.
+
+===== Allow managing users and role assignment for members of a group
+
+- Create a **User Permission** with the `manage`, `map-roles` scopes for all users.
+- Create a **Group Policy** allowing access to members of `test-admins`.
+
+===== Allow viewing and managing members of a group but not members of its subgroups
+
+- Create a **Group Permission** with the `view-members` and `manage-members` scopes for specific group `mygroup`.
+- Assign a e.g. **Group Policy** targeting `test-admins` to it.
+- Create another **Group Permission** with the `view-members` and `manage-members` scopes for specific group, select all subgroups of the `mygroup`.
+- Create negative **Group Policy** for `test-admins` and assign it to the "subgroups" permission.
+
