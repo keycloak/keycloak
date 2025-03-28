@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient";
 import { assertRequiredFieldError, switchOff } from "../utils/form";
@@ -8,14 +8,16 @@ import {
   selectActionToggleItem,
 } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar";
+import { goToClients, goToRealmSettings } from "../utils/sidebar";
 import { assertRowExists } from "../utils/table";
 import {
+  assertCurrentRealm,
   clickClearResourceFile,
   clickConfirmClear,
   clickCreateRealm,
   clickCreateRealmForm,
   fillRealmName,
+  goToRealmSection,
 } from "./realm";
 
 const testRealmName = `Test-realm-${uuid()}`;
@@ -70,8 +72,6 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(page, "Realm created successfully");
 
-    await page.reload();
-    await goToRealm(page, testDisabledName);
     await goToRealmSettings(page);
 
     await switchOff(page, `#${testDisabledName}-switch`);
@@ -79,16 +79,13 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(page, "Realm successfully updated");
 
-    await goToRealm(page, testDisabledName);
     await goToRealmSettings(page);
     await selectActionToggleItem(page, "Delete");
     await confirmModal(page);
 
     await assertNotificationMessage(page, "The realm has been deleted");
 
-    await expect(page.getByTestId("realmSelector")).not.toContainText(
-      testDisabledName,
-    );
+    await assertCurrentRealm(page, testDisabledName, true);
   });
 
   test("should create realm from new a realm", async ({ page }) => {
@@ -103,10 +100,9 @@ test.describe("Realm tests", () => {
 
     await assertNotificationMessage(page, "Realm created successfully");
 
-    await expect(page.getByTestId("realmSelector")).toContainText(newRealmName);
-    await expect(page.getByTestId("realmSelector")).toContainText(
-      editedRealmName,
-    );
+    await goToRealmSection(page);
+    await assertRowExists(page, newRealmName);
+    await assertRowExists(page, editedRealmName);
   });
 
   test("should create realm with special characters", async ({ page }) => {

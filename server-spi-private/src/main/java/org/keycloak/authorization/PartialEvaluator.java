@@ -32,6 +32,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.keycloak.Config;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider.EvaluationContext;
@@ -134,6 +135,9 @@ public class PartialEvaluator {
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
             policyProvider.getPermissions(session, resourceType, adminUser).forEach(permission -> {
+                if (permission.getScopes().stream().map(Scope::getName).noneMatch(name -> name.startsWith(AdminPermissionsSchema.VIEW))) {
+                    return;
+                }
                 Set<String> ids = permission.getResources().stream().map(Resource::getName).collect(Collectors.toSet());
                 Set<Policy> policies = permission.getAssociatedPolicies();
 

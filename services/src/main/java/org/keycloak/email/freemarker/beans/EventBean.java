@@ -46,6 +46,11 @@ public class EventBean {
         return event.getClientId();
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return event.getIpAddress();
     }

@@ -266,6 +266,10 @@ public class SamlService extends AuthorizationEndpointBase {
             try {
                 session.clientPolicy().triggerOnEvent(ctx);
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
                 logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }

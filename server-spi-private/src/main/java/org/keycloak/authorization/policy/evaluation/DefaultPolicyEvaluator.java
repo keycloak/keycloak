@@ -68,8 +68,8 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            evaluateResourcePolicies(policyStore, resourceServer, resource, policyConsumer);
-            evaluateResourceTypePolicies(resource, policyStore, resourceServer, policyConsumer, resourceStore);
+            evaluateResourcePolicies(permission, policyStore, resourceServer, resource, policyConsumer);
+            evaluateResourceTypePolicies(permission, resource, policyStore, resourceServer, policyConsumer, resourceStore);
         }
 
         evaluateScopePolicies(permission, policyStore, resourceServer, policyConsumer);
@@ -84,11 +84,11 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
     }
 
-    private void evaluateResourcePolicies(PolicyStore policyStore, ResourceServer resourceServer, Resource resource, Consumer<Policy> policyConsumer) {
+    private void evaluateResourcePolicies(ResourcePermission permission, PolicyStore policyStore, ResourceServer resourceServer, Resource resource, Consumer<Policy> policyConsumer) {
         policyStore.findByResource(resourceServer, resource, policyConsumer);
     }
 
-    protected void evaluateResourceTypePolicies(Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
+    protected void evaluateResourceTypePolicies(ResourcePermission permission, Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
         if (resource.getType() != null) {
             policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
 

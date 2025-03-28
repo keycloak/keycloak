@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -53,10 +54,12 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -153,7 +156,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createPermission(client, myclient.getId(), clientsType, Set.of(MANAGE), onlyMyAdminUserPolicy);
+        createPermission(client, myclient.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
 
         // the caller can view myclient
         clientResource.toRepresentation();
@@ -263,7 +266,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertThat(found, empty());
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(MANAGE));
+        createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
 
         // can create a new client
         realmAdminClient.realm(realm.getName()).clients().create(newClient).close();
@@ -362,5 +365,58 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().clientLevel(myclient.getId()).add(List.of(role));
 
         realmAdminClient.realm(realm.getName()).clients().get(myclient.getId()).roles().get("myclient-role").addComposites(List.of(subRole));
+    }
+
+    @Test
+    public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
+        ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, clientsType, allowPolicy, Set.of(MANAGE, MAP_ROLES));
+        // all resource permissions grants manage scope
+        ClientsResource clients = realmAdminClient.realm(realm.getName()).clients();
+        clients.get(myclient.getId()).update(myclient);
+
+        ScopePermissionRepresentation resourcePermission = createPermission(client, myclient.getId(), clientsType, Set.of(MANAGE), allowPolicy);
+        // both all and specific resource permission grants manage scope
+        clients.get(myclient.getId()).update(myclient);
+
+        allResourcesPermission = getScopePermissionsResource(client).findByName(allResourcesPermission.getName());
+        allResourcesPermission.setScopes(Set.of(MAP_ROLES));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission does not have the manage scope but the scope is granted by the resource permission
+        clients.get(myclient.getId()).update(myclient);
+
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(MAP_ROLES));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // neither the all and specific resource permission grants access to the manage scope
+            clients.get(myclient.getId()).update(myclient);
+            Assertions.fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
+
+        allResourcesPermission.setScopes(Set.of(MANAGE));
+        getScopePermissionsResource(client).findById(allResourcesPermission.getId()).update(allResourcesPermission);
+        // all resource permission grants access again to manage
+        clients.get(myclient.getId()).update(myclient);
+
+        UserPolicyRepresentation notAllowPolicy = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin", adminUser.getId());
+        createPermission(client, myclient.getId(), clientsType, Set.of(MANAGE), notAllowPolicy);
+        try {
+            // a specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            clients.get(myclient.getId()).update(myclient);
+            Assertions.fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
+
+        resourcePermission = getScopePermissionsResource(client).findByName(resourcePermission.getName());
+        resourcePermission.setScopes(Set.of(MAP_ROLES, MANAGE));
+        getScopePermissionsResource(client).findById(resourcePermission.getId()).update(resourcePermission);
+        try {
+            // the specific resource permission that explicitly negates access to the manage scope denies access to the scope
+            // even though there is another resource permission that grants access to the scope - conflict resolution denies by default
+            clients.get(myclient.getId()).update(myclient);
+            Assertions.fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {}
     }
 }

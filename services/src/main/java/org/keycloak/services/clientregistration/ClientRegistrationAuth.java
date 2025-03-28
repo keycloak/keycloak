@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientregistration;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -43,10 +46,6 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyM
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.TokenUtil;
-
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -158,8 +157,14 @@ public class ClientRegistrationAuth {
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientRegisterContext(context, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRegister(context, registrationAuth);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
 
         return registrationAuth;
@@ -205,8 +210,14 @@ public class ClientRegistrationAuth {
             try {
                 session.clientPolicy().triggerOnEvent(new DynamicClientViewContext(session, client, jwt, realm));
                 ClientRegistrationPolicyManager.triggerBeforeView(session, provider, authType, client);
-            } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+            } catch (ClientRegistrationPolicyException crpe) {
                 throw forbidden(crpe.getMessage());
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw forbidden(cpe.getMessage());
             }
         } else {
             throw unauthorized("Not authorized to view client. Not valid token or client credentials provided.");
@@ -224,8 +235,14 @@ public class ClientRegistrationAuth {
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdateContext(context, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeUpdate(context, regAuth, client);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
 
         return regAuth;
@@ -237,8 +254,14 @@ public class ClientRegistrationAuth {
         try {
             session.clientPolicy().triggerOnEvent(new DynamicClientUnregisterContext(session, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRemove(session, provider, chainType, client);
-        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException crpe) {
             throw forbidden(crpe.getMessage());
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw forbidden(cpe.getMessage());
         }
     }
 

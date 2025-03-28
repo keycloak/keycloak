@@ -106,14 +106,34 @@ export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
   const [key, setKey] = useState(0);
 
   useFetch(
-    () =>
-      adminClient.whoAmI.find({
-        realm: environment.realm,
-        currentRealm: realm!,
-      }),
+    async () => {
+      try {
+        return await adminClient.whoAmI.find({
+          realm: environment.realm,
+          currentRealm: realm!,
+        });
+      } catch (error) {
+        console.warn("Error fetching whoami", error);
+      }
+      return Promise.resolve(undefined);
+    },
     (me) => {
-      const whoAmI = new WhoAmI(me);
-      setWhoAmI(whoAmI);
+      if (me === undefined) {
+        setWhoAmI(
+          new WhoAmI({
+            userId: "",
+            realm: environment.realm,
+            displayName: "",
+            locale: "en",
+            temporary: false,
+            createRealm: false,
+            realm_access: {},
+          }),
+        );
+      } else {
+        const whoAmI = new WhoAmI(me);
+        setWhoAmI(whoAmI);
+      }
     },
     [key, realm],
   );

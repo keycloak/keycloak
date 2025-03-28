@@ -84,14 +84,18 @@ class GroupPermissionsV2 extends GroupPermissions {
 
     @Override
     public boolean canViewMembers(GroupModel group) {
-        if (root.users().canView()) return true;
+        if (root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
 
         return hasPermission(group.getId(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS);
     }
 
     @Override
     public boolean canManageMembers(GroupModel group) {
-        if (root.users().canManage()) return true;
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
 
         return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE_MEMBERS);
     }
@@ -107,7 +111,9 @@ class GroupPermissionsV2 extends GroupPermissions {
 
     @Override
     public Set<String> getGroupIdsWithViewPermission() {
-        if (root.users().canView()) return Collections.emptySet();
+        if (root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS)) {
+            return Collections.emptySet();
+        }
 
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
@@ -144,9 +150,10 @@ class GroupPermissionsV2 extends GroupPermissions {
         }
 
         Resource resource = groupId == null ? null : resourceStore.findByName(server, groupId);
+        String resourceType = AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 
         if (resource == null) {
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE);
+            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
 
             // check if there is a permission for "all-groups". If so, proceed with the evaluation to check scopes
             if (policyStore.findByResource(server, resource).isEmpty()) {
@@ -154,7 +161,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             }
         }
 
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server);
 
         List<String> expectedScopes = Arrays.asList(scopes);
 

@@ -248,6 +248,14 @@ public class AssertEvents implements TestRule {
                 .session(isUUID());
     }
 
+    public ExpectedEvent expectClientPolicyError(EventType eventType, String error, String reason, String clientPolicyError, String clientPolicyErrorDetail) {
+        return expect(eventType)
+                .error(error)
+                .detail(Details.REASON, reason)
+                .detail(Details.CLIENT_POLICY_ERROR, clientPolicyError)
+                .detail(Details.CLIENT_POLICY_ERROR_DETAIL, clientPolicyErrorDetail);
+    }
+
     public ExpectedEvent expect(EventType event) {
         return new ExpectedEvent()
                 .realm(defaultRealmId())

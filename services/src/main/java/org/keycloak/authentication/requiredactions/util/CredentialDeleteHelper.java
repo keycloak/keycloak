@@ -60,7 +60,7 @@ public class CredentialDeleteHelper {
     public static CredentialModel removeCredential(KeycloakSession session, UserModel user, String credentialId, Supplier<Integer> currentLoAProvider) {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
-            if (user.getFederationLink() != null) {
+            if (user.isFederated()) {
                 credential = user.credentialManager().getFederatedCredentialsStream().filter(c -> credentialId.equals(c.getId())).findAny().orElse(null);
                 if (credential != null) {
                     String type = credential.getType();

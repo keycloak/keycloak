@@ -64,7 +64,8 @@ public class OrganizationMemberValidator extends AbstractSimpleValidator impleme
         UserModel user = attributeContext.getUser();
         OrganizationModel organization = Organizations.resolveOrganization(session, user);
 
-        if (organization == null) {
+        // skip validation if we are not able to resolve org, or if user is not a member and the context is not IDP_REVIEW.
+        if (organization == null || (user != null && !UserProfileContext.IDP_REVIEW.equals(attributeContext.getContext()) && !organization.isMember(user))) {
             return;
         }
 

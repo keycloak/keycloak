@@ -41,19 +41,29 @@ public class ResourcePermission {
 
     private final Resource resource;
     private final Collection<Scope> scopes;
+    private final String resourceType;
     private ResourceServer resourceServer;
     private Map<String, Set<String>> claims;
     private boolean granted;
 
     public ResourcePermission(Resource resource, Collection<Scope> scopes, ResourceServer resourceServer) {
-        this(resource, scopes, resourceServer, null);
+        this(null, resource, scopes, resourceServer, null);
+    }
+
+    public ResourcePermission(String resourceType, Resource resource, Collection<Scope> scopes, ResourceServer resourceServer) {
+        this(resourceType, resource, scopes, resourceServer, null);
     }
 
     public ResourcePermission(Resource resource, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
-        this(resource, new LinkedHashSet<>(), resourceServer, claims);
+        this(null, resource, new LinkedHashSet<>(), resourceServer, claims);
     }
 
     public ResourcePermission(Resource resource, Collection<Scope> scopes, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
+        this(null, resource, scopes, resourceServer, claims);
+    }
+
+    public ResourcePermission(String resourceType, Resource resource, Collection<Scope> scopes, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
+        this.resourceType = resourceType;
         this.resource = resource;
         this.scopes = scopes;
         this.resourceServer = resourceServer;
@@ -63,6 +73,10 @@ public class ResourcePermission {
                 this.claims.computeIfAbsent(entry.getKey(), key -> new LinkedHashSet<>()).addAll(entry.getValue());
             }
         }
+    }
+
+    public String getResourceType() {
+        return resourceType;
     }
 
     /**

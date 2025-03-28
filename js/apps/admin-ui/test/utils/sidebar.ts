@@ -1,8 +1,16 @@
 import { Page } from "@playwright/test";
+import { clickTableRowItem } from "./table";
 
 export async function goToRealm(page: Page, realmName: string) {
-  await page.getByTestId("realmSelector").click();
-  await page.getByRole("menuitem", { name: realmName }).click();
+  const currentRealm = await page.getByTestId("currentRealm").textContent();
+  if (currentRealm !== realmName) {
+    await goToRealms(page);
+    await clickTableRowItem(page, realmName);
+  }
+}
+
+export async function goToRealms(page: Page) {
+  await page.getByTestId("nav-item-realms").click();
 }
 
 export async function goToOrganizations(page: Page) {

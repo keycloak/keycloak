@@ -302,7 +302,7 @@ public class LinkedAccountsResource {
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
+        if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.isFederated() || isPasswordSet())) {
             throw ErrorResponse.error(translateErrorMessage(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER), Response.Status.BAD_REQUEST);
         }
 

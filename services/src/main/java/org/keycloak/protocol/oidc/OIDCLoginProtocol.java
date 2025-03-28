@@ -292,6 +292,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
             try {
                 session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
