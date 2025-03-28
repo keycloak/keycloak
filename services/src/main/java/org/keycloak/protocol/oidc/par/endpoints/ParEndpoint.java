@@ -158,7 +158,9 @@ public class ParEndpoint extends AbstractParEndpoint {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw throwErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw throwErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
         }
 
         Map<String, String> params = new HashMap<>();

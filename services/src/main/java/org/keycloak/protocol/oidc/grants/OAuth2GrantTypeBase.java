@@ -133,7 +133,9 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                 event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
                 event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
-                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+                if (!cpe.isPermissiveMode()) {
+                    throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+                }
             }
         }
 

@@ -142,7 +142,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
+            if (!cpe.isPermissiveMode()) {
+                throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
+            }
         }
         checkClient(clientId);
 
@@ -207,8 +209,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
-            return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
+            if (!cpe.isPermissiveMode()) {
+                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
+                return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
+            }
         }
 
         updateAuthenticationSession();

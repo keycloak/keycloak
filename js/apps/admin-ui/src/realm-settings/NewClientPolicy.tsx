@@ -49,6 +49,7 @@ import {
   toEditClientPolicy,
 } from "./routes/EditClientPolicy";
 import { toEditClientPolicyCondition } from "./routes/EditCondition";
+import { DefaultSwitchControl } from "../components/SwitchControl";
 
 import "./realm-settings-section.css";
 
@@ -60,6 +61,7 @@ const defaultValues: FormFields = {
   conditions: [],
   enabled: true,
   profiles: [],
+  permissiveMode: false,
 };
 
 type PolicyDetailAttributes = {
@@ -339,6 +341,10 @@ export default function NewClientPolicy() {
     if (currentPolicy?.description !== undefined) {
       form.setValue("description", currentPolicy.description);
     }
+
+    if (currentPolicy?.permissiveMode !== undefined) {
+      form.setValue("permissiveMode", currentPolicy.permissiveMode);
+    }
   };
 
   const toggleModal = () => {
@@ -491,6 +497,21 @@ export default function NewClientPolicy() {
                 {...form.register("description")}
               />
             </FormGroup>
+            <Controller
+              name="permissiveMode"
+              control={form.control}
+              defaultValue={false}
+              render={({ field }) => (
+                <DefaultSwitchControl
+                  id="kc-client-policy-permissive-mode"
+                  name={field.name}
+                  label={t("permissiveMode")}
+                  data-testid="client-policy-permissive-mode"
+                  isChecked={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
             <ActionGroup>
               <Button
                 variant="primary"

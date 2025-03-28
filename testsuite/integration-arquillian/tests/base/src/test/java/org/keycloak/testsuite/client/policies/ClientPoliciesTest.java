@@ -717,6 +717,48 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testPermissiveMode() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE, Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secretBeta";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+        });
+
+        try {
+            oauth.client(clientId, TEST_CLIENT_SECRET);
+            oauth.openLoginForm();
+            AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+
+            assertNull(response.getError());
+            EventRepresentation actual = events.poll(0);
+            assertEquals(EventType.LOGIN.toString(), actual.getType());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, actual.getError());
+            assertEquals(Details.CLIENT_POLICY_ERROR, actual.getDetails().get(Details.REASON));
+            assertEquals(OAuthErrorException.INVALID_REQUEST, actual.getDetails().get(Details.CLIENT_POLICY_ERROR));
+            assertEquals(ERR_MSG_MISSING_NONCE, actual.getDetails().get(Details.CLIENT_POLICY_ERROR_DETAIL));
+        } catch (Exception e) {
+            fail();
+        }
+    }
+
+    @Test
     public void testConfidentialClientAcceptExecutorExecutor() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(

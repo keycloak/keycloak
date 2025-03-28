@@ -87,6 +87,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
@@ -326,6 +327,10 @@ public final class ClientPoliciesUtil {
         }
 
         public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled) {
+            return createPolicy(name, description, isEnabled, null);
+        }
+
+        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled, Boolean isPermissiveMode) {
             policyRep.setName(name);
             if (description != null) {
                 policyRep.setDescription(description);
@@ -335,6 +340,8 @@ public final class ClientPoliciesUtil {
             } else {
                 policyRep.setEnabled(Boolean.FALSE);
             }
+
+            policyRep.setPermissiveMode(Objects.requireNonNullElse(isPermissiveMode, Boolean.FALSE));
 
             policyRep.setConditions(new ArrayList<>());
             policyRep.setProfiles(new ArrayList<>());
