@@ -242,7 +242,8 @@ export const GroupPickerDialog = ({
                 />
               ))
             : groups
-                ?.map((g) => deepGroup(g))
+                ?.map((g) => deepGroup([g]))
+                .flat()
                 .map((g) => (
                   <GroupRow
                     key={g.id}
@@ -274,14 +275,16 @@ export const GroupPickerDialog = ({
   );
 };
 
-const deepGroup = (group: GroupRepresentation): GroupRepresentation => {
-  let result = group;
-  if (group.subGroups?.length === 1) {
-    result = deepGroup(group.subGroups[0]);
+function deepGroup(groups: GroupRepresentation[]) {
+  const flattened: GroupRepresentation[] = [];
+  for (const group of groups) {
+    flattened.push(group);
+    if (group.subGroups && group.subGroups.length > 0) {
+      flattened.push(...deepGroup(group.subGroups));
+    }
   }
-
-  return result;
-};
+  return flattened;
+}
 
 type GroupRowProps = {
   group: SelectableGroup;
