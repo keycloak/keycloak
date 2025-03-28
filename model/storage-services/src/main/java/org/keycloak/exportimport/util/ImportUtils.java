@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -112,25 +114,13 @@ public class ImportUtils {
         RealmManager realmManager = new RealmManager(session);
         realmManager.importRealm(rep, skipUserDependent);
 
+        EntityManagers.flush(session, true);
+
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);
         }
-        
-        return true;
-    }
 
-    /**
-     * Fully import realm (or more realms from particular stream)
-     *
-     * @param session
-     * @param mapper
-     * @param is
-     * @param strategy
-     * @throws IOException
-     */
-    public static void importFromStream(KeycloakSession session, ObjectMapper mapper, InputStream is, Strategy strategy) throws IOException {
-        Map<String, RealmRepresentation> realmReps = getRealmsFromStream(mapper, is);
-        importRealms(session, realmReps.values(), strategy);
+        return true;
     }
 
     public static Map<String, RealmRepresentation> getRealmsFromStream(ObjectMapper mapper, InputStream is) throws IOException {
@@ -175,11 +165,11 @@ public class ImportUtils {
 
 
     // Assuming that it's invoked inside transaction
-    public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {
+    public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is, boolean federated, Consumer<KeycloakSession> onUserCreated) throws IOException {
         RealmProvider model = session.realms();
         JsonFactory factory = mapper.getJsonFactory();
-        JsonParser parser = factory.createJsonParser(is);
-        try {
+        RealmModel realm = model.getRealmByName(realmName);
+        try (JsonParser parser = factory.createJsonParser(is)) {
             parser.nextToken();
 
             while (parser.nextToken() == JsonToken.FIELD_NAME) {
@@ -189,86 +179,29 @@ public class ImportUtils {
                     if (!currRealmName.equals(realmName)) {
                         throw new IllegalStateException("Trying to import users into invalid realm. Realm name: " + realmName + ", Expected realm name: " + currRealmName);
                     }
-                } else if ("users".equals(parser.getText())) {
+                } else if ((federated?"federatedUsers":"users").equals(parser.getText())) {
                     parser.nextToken();
 
                     if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
                         parser.nextToken();
                     }
 
-                    // TODO: support for more transactions per single users file (if needed)
-                    List<UserRepresentation> userReps = new ArrayList<UserRepresentation>();
                     while (parser.getCurrentToken() == JsonToken.START_OBJECT) {
                         UserRepresentation user = parser.readValueAs(UserRepresentation.class);
-                        userReps.add(user);
+                        if (federated) {
+                            DefaultExportImportManager.importFederatedUser(session, realm, user);
+                        } else {
+                            RepresentationToModel.createUser(session, realm, user);
+                        }
+                        onUserCreated.accept(session);
                         parser.nextToken();
                     }
-
-                    importUsers(session, model, realmName, userReps);
 
                     if (parser.getCurrentToken() == JsonToken.END_ARRAY) {
                         parser.nextToken();
                     }
                 }
             }
-        } finally {
-            parser.close();
-        }
-    }
-
-    // Assuming that it's invoked inside transaction
-    public static void importFederatedUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {
-        RealmProvider model = session.realms();
-        JsonFactory factory = mapper.getJsonFactory();
-        JsonParser parser = factory.createJsonParser(is);
-        try {
-            parser.nextToken();
-
-            while (parser.nextToken() == JsonToken.FIELD_NAME) {
-                if ("realm".equals(parser.getText())) {
-                    parser.nextToken();
-                    String currRealmName = parser.getText();
-                    if (!currRealmName.equals(realmName)) {
-                        throw new IllegalStateException("Trying to import users into invalid realm. Realm name: " + realmName + ", Expected realm name: " + currRealmName);
-                    }
-                } else if ("federatedUsers".equals(parser.getText())) {
-                    parser.nextToken();
-
-                    if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
-                        parser.nextToken();
-                    }
-
-                    // TODO: support for more transactions per single users file (if needed)
-                    List<UserRepresentation> userReps = new ArrayList<UserRepresentation>();
-                    while (parser.getCurrentToken() == JsonToken.START_OBJECT) {
-                        UserRepresentation user = parser.readValueAs(UserRepresentation.class);
-                        userReps.add(user);
-                        parser.nextToken();
-                    }
-
-                    importFederatedUsers(session, model, realmName, userReps);
-
-                    if (parser.getCurrentToken() == JsonToken.END_ARRAY) {
-                        parser.nextToken();
-                    }
-                }
-            }
-        } finally {
-            parser.close();
-        }
-    }
-
-    private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
-        RealmModel realm = model.getRealmByName(realmName);
-        for (UserRepresentation user : userReps) {
-            RepresentationToModel.createUser(session, realm, user);
-        }
-    }
-
-    private static void importFederatedUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
-        RealmModel realm = model.getRealmByName(realmName);
-        for (UserRepresentation user : userReps) {
-            DefaultExportImportManager.importFederatedUser(session, realm, user);
         }
     }
 

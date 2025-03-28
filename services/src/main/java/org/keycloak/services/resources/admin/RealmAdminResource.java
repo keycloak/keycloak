@@ -1278,7 +1278,7 @@ public class RealmAdminResource {
                         AdminEventBuilder adminEventClone = adminEvent.clone(kcSession);
                         // calling a static method to avoid using the wrong instances
                         return getPartialImportResults(requestBody, kcSession, realmClone, adminEventClone);
-                    }, false, "Partial import in realm " + realm.getName())
+                    }, "Partial import in realm " + realm.getName())
             ).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists(e.getLocalizedMessage());

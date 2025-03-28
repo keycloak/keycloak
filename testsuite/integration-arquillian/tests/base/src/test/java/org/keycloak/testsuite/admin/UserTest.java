@@ -3365,15 +3365,19 @@ public class UserTest extends AbstractAdminTest {
     public void testUpdateCredentials() {
         importTestRealms();
 
+        // both credentials have a null priority - stable ordering is not guaranteed between calls
+
         // Get user user-with-one-configured-otp and assert he has no label linked to its OTP credential
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
-        CredentialRepresentation otpCred = user.credentials().get(0);
+        CredentialRepresentation otpCred = user.credentials().stream().filter(cr -> "otp".equals(cr.getType()))
+                .findFirst().orElseThrow();
         Assert.assertNull(otpCred.getUserLabel());
 
         // Set and check a new label
         String newLabel = "the label";
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
-        Assert.assertEquals(newLabel, user.credentials().get(0).getUserLabel());
+        Assert.assertEquals(newLabel, user.credentials().stream().filter(cr -> cr.getId().equals(otpCred.getId()))
+                .findFirst().orElseThrow().getUserLabel());
     }
 
     @Test

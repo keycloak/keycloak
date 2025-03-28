@@ -119,8 +119,7 @@ public class ExportImportConfig {
     }
 
     public static boolean isSingleTransaction() {
-        return Boolean.getBoolean(SINGLE_TRANSACTION);
+        return Optional.ofNullable(System.getProperty(SINGLE_TRANSACTION)).map(Boolean::valueOf).orElse(Boolean.TRUE);
     }
-
 
 }
