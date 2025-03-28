@@ -23,13 +23,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.Profile;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -50,7 +49,6 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -324,19 +322,13 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
     }
 
     protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {
-        if (params.getAudience() != null && (responseBuilder.getAccessToken().getAudience() == null ||
-                responseBuilder.getAccessToken().getAudience().length < params.getAudience().size())) {
-            final Set<String> missingAudience = new HashSet<>(params.getAudience());
-            if (responseBuilder.getAccessToken().getAudience() != null) {
-                missingAudience.removeAll(Set.of(responseBuilder.getAccessToken().getAudience()));
-            }
-            if (!missingAudience.isEmpty()) {
-                final String missingAudienceString = CollectionUtil.join(missingAudience);
-                event.detail(Details.REASON, "Requested audience not available: " + missingAudienceString);
-                event.error(Errors.INVALID_REQUEST);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "Requested audience not available: " + missingAudienceString, Response.Status.BAD_REQUEST);
-            }
+        Set<String> missingAudience = TokenUtils.checkRequestedAudiences(responseBuilder.getAccessToken(), params.getAudience());
+        if (!missingAudience.isEmpty()) {
+            final String missingAudienceString = CollectionUtil.join(missingAudience);
+            event.detail(Details.REASON, "Requested audience not available: " + missingAudienceString);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Requested audience not available: " + missingAudienceString, Response.Status.BAD_REQUEST);
         }
     }
 
