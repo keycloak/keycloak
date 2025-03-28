@@ -34,6 +34,7 @@ import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
 import org.keycloak.representations.dpop.DPoP;
@@ -69,6 +70,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
 import org.keycloak.util.JsonSerialization;
@@ -86,7 +88,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.fail;
@@ -485,7 +486,7 @@ public final class ClientPoliciesUtil {
         return keyPair;
     }
 
-    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey) throws IOException {
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {
 
         String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
 
@@ -494,6 +495,9 @@ public final class ClientPoliciesUtil {
         dpop.setHttpMethod(htm);
         dpop.setHttpUri(htu);
         dpop.iat(iat);
+        if (accessToken != null) {
+            dpop.setAccessTokenHash(HashUtils.accessTokenHash(DPoPUtil.DPOP_ATH_ALG, accessToken, true));
+        }
 
         String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
 
