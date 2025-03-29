@@ -26,6 +26,8 @@ import java.io.Serializable;
  */
 public class OrganizationDomainModel implements Serializable {
 
+    public static final String ANY_DOMAIN = "ANY";
+
     private final String name;
     private final boolean verified;
 
