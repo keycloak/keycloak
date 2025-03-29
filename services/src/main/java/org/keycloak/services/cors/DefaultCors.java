@@ -43,16 +43,19 @@ public class DefaultCors implements Cors {
     private final HttpRequest request;
     private final HttpResponse response;
     private ResponseBuilder builder;
+    private final String defaultAllowHeaders;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
+    private Set<String> allowedHeaders;
     private Set<String> exposedHeaders;
 
     private boolean preflight;
     private boolean auth;
 
-    DefaultCors(KeycloakSession session) {
+    DefaultCors(KeycloakSession session, String defaultAllowHeaders) {
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
+        this.defaultAllowHeaders = defaultAllowHeaders;
     }
 
     @Override
@@ -110,6 +113,17 @@ public class DefaultCors implements Cors {
     }
 
     @Override
+    public Cors allowedHeaders(String... allowedHeaders) {
+        if (this.allowedHeaders == null) {
+            this.allowedHeaders = new HashSet<>();
+        }
+
+        this.allowedHeaders.addAll(Arrays.asList(allowedHeaders));
+
+        return this;
+    }
+
+    @Override
     public Cors exposedHeaders(String... exposedHeaders) {
         if (this.exposedHeaders == null) {
             this.exposedHeaders = new HashSet<>();
@@ -159,11 +173,14 @@ public class DefaultCors implements Cors {
 
         response.setHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
 
+        String accessControlAllowHeaders = CollectionUtil.isEmpty(allowedHeaders) ?
+                defaultAllowHeaders : String.format("%s, %s", defaultAllowHeaders, CollectionUtil.join(allowedHeaders));
+
         if (preflight) {
             if (auth) {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", accessControlAllowHeaders, AUTHORIZATION_HEADER));
             } else {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, accessControlAllowHeaders);
             }
         }
 
