@@ -1,6 +1,7 @@
 package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -59,6 +60,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder rootUrl(String rootUrl) {
+        rep.setRootUrl(rootUrl);
+        return this;
+    }
+
     public ClientConfigBuilder protocol(String protocol) {
         rep.setProtocol(protocol);
         return this;
@@ -105,6 +111,14 @@ public class ClientConfigBuilder {
         }
 
         rep.getDefaultClientScopes().addAll(List.of(defaultClientScopes));
+        return this;
+    }
+
+    public ClientConfigBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
+        if (rep.getProtocolMappers() == null) {
+            rep.setProtocolMappers(new LinkedList<>());
+        }
+        rep.getProtocolMappers().addAll(mappers);
         return this;
     }
 
