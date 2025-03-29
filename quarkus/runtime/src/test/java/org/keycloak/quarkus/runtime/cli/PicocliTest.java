@@ -28,7 +28,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -92,8 +91,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        protected void initProfile(List<String> cliArgs, String currentCommandName) {
-            super.initProfile(cliArgs, currentCommandName);
+        public void initProfile(String initProfile) {
+            super.initProfile(initProfile);
             config = createConfig();
         }
 
@@ -111,6 +110,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
+    }
+
+    @Test
+    public void testCleanStartDev() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
     }
 
     @Test
@@ -132,10 +138,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals("1h",
                 nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-management-certificates-reload-period=-1");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertNull(nonRunningPicocli.config.getConfigValue("quarkus.management.ssl.certificate.reload-period").getValue());
 
+        onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--https-certificates-reload-period=5m");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertEquals("5m",
@@ -279,7 +287,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void failBuildDev() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "build", "--verbose");
         assertThat(nonRunningPicocli.getErrString(), containsString("You can not 'build' the server in development mode."));
         assertEquals(CommandLine.ExitCode.SOFTWARE, nonRunningPicocli.exitCode);
     }
@@ -415,7 +423,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         System.setProperty("kc.hostname-strict", "false");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
-        assertEquals(Integer.MAX_VALUE, nonRunningPicocli.exitCode); // "running" state
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test

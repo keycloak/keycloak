@@ -98,7 +98,7 @@ public class KeycloakMain implements QuarkusApplication {
             picocli.usageException(e.getMessage(), e.getCause());
             return;
         }
-        
+
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
         }
@@ -108,7 +108,7 @@ public class KeycloakMain implements QuarkusApplication {
             // default to show help message
             cliArgs.add("-h");
         } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
-            Start.fastStart(picocli, Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)));
+            Start.fastStart(cliArgs, picocli, Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)));
             return;
         }
 

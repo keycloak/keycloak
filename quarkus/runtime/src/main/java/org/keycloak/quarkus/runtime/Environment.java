@@ -35,7 +35,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
@@ -107,21 +106,6 @@ public final class Environment {
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
         }
-    }
-
-    /**
-     * Update the profile settings based upon what was set in the system, environment, or optionally persistent values
-     */
-    public static String updateProfile(boolean usePersistent) {
-        String profile = org.keycloak.common.util.Environment.getProfile();
-        if(profile == null && usePersistent) {
-            profile = PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE);
-        }
-        if (profile == null) {
-            profile = Environment.PROD_PROFILE_VALUE;
-        }
-        setProfile(profile);
-        return profile;
     }
 
     public static boolean isDevMode() {

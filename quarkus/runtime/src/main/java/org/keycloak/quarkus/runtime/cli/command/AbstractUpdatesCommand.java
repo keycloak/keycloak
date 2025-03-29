@@ -29,11 +29,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractUpdatesCommand extends AbstractCommand {
 
     private static final int FEATURE_DISABLED_EXIT_CODE = 4;
 
@@ -52,8 +51,7 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     @Override
-    public void run() {
-        Environment.updateProfile(true);
+    void runCommand() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
             printFeatureDisabled();
             picocli.exit(FEATURE_DISABLED_EXIT_CODE);
