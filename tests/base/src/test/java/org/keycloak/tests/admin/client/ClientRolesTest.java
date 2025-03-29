@@ -15,11 +15,12 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.tests.admin.client;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import jakarta.ws.rs.ClientErrorException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -28,57 +29,69 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testsuite.util.RoleBuilder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import jakarta.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-
-import org.keycloak.testsuite.util.RoleBuilder;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ClientRolesTest extends AbstractClientTest {
+@KeycloakIntegrationTest
+public class ClientRolesTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
+    @InjectClient(config = ClientRolesClientConfig.class)
+    ManagedClient managedClient;
 
     private ClientResource clientRsc;
     private String clientDbId;
     private RolesResource rolesRsc;
 
-    @Before
+    @BeforeEach
     public void init() {
-        clientDbId = createOidcClient("roleClient");
-        clientRsc = findClientResource("roleClient");
+        clientDbId = managedClient.getId();
+        clientRsc = managedClient.admin();
         rolesRsc = clientRsc.roles();
     }
 
-    @After
-    public void tearDown() {
-        clientRsc.remove();
-    }
-
     private RoleRepresentation makeRole(String name) {
-        RoleRepresentation role = new RoleRepresentation();
-        role.setName(name);
-        return role;
+        return RoleBuilder.create()
+                .name(name)
+                .build();
     }
 
     private boolean hasRole(RolesResource rolesRsc, String name) {
@@ -91,11 +104,14 @@ public class ClientRolesTest extends AbstractClientTest {
 
     @Test
     public void testAddRole() {
-        RoleRepresentation role1 = makeRole("role1");
-        role1.setDescription("role1-description");
-        role1.setAttributes(Collections.singletonMap("role1-attr-key", Collections.singletonList("role1-attr-val")));
+        RoleRepresentation role1 = RoleBuilder.create()
+                .name("role1")
+                .description("role1-description")
+                .singleAttribute("role1-attr-key", "role1-attr-val")
+                .build();
         rolesRsc.create(role1);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role1"), role1, ResourceType.CLIENT_ROLE);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("role1"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role1"), role1, ResourceType.CLIENT_ROLE);
 
         RoleRepresentation addedRole = rolesRsc.get(role1.getName()).toRepresentation();
         assertEquals(role1.getName(), addedRole.getName());
@@ -103,27 +119,29 @@ public class ClientRolesTest extends AbstractClientTest {
         assertEquals(role1.getAttributes(), addedRole.getAttributes());
     }
 
-    @Test(expected = ClientErrorException.class)
+    @Test
     public void createRoleWithSameName() {
         RoleRepresentation role = RoleBuilder.create().name("role-a").build();
         rolesRsc.create(role);
-        rolesRsc.create(role);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("role-a"));
+        assertThrows(ClientErrorException.class, () -> rolesRsc.create(role), "Client role with the same name is not allowed");
     }
 
     @Test
     public void createRoleWithNamePattern() {
         RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
         rolesRsc.create(role);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("role-a-{pattern}"));
     }
 
     @Test
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");
         rolesRsc.create(role2);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), role2, ResourceType.CLIENT_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), role2, ResourceType.CLIENT_ROLE);
 
         rolesRsc.deleteRole("role2");
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), ResourceType.CLIENT_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), ResourceType.CLIENT_ROLE);
 
         assertFalse(hasRole(rolesRsc, "role2"));
     }
@@ -132,24 +150,27 @@ public class ClientRolesTest extends AbstractClientTest {
     public void testComposites() {
         RoleRepresentation roleA = makeRole("role-a");
         rolesRsc.create(roleA);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-a"), roleA, ResourceType.CLIENT_ROLE);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("role-a"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-a"), roleA, ResourceType.CLIENT_ROLE);
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
 
         RoleRepresentation roleB = makeRole("role-b");
         rolesRsc.create(roleB);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-b"), roleB, ResourceType.CLIENT_ROLE);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("role-b"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-b"), roleB, ResourceType.CLIENT_ROLE);
 
         RoleRepresentation roleC = makeRole("role-c");
-        testRealmResource().roles().create(roleC);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath("role-c"), roleC, ResourceType.REALM_ROLE);
+        managedRealm.admin().roles().create(roleC);
+        managedRealm.cleanup().add(r -> r.roles().deleteRole("role-c"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourcePath("role-c"), roleC, ResourceType.REALM_ROLE);
 
         List<RoleRepresentation> l = new LinkedList<>();
         l.add(rolesRsc.get("role-b").toRepresentation());
-        l.add(testRealmResource().roles().get("role-c").toRepresentation());
+        l.add(managedRealm.admin().roles().get("role-c").toRepresentation());
         rolesRsc.get("role-a").addComposites(l);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
 
         Set<RoleRepresentation> composites = rolesRsc.get("role-a").getRoleComposites();
 
@@ -163,7 +184,7 @@ public class ClientRolesTest extends AbstractClientTest {
         Assert.assertNames(clientComposites, "role-b");
 
         rolesRsc.get("role-a").deleteComposites(l);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
@@ -175,22 +196,24 @@ public class ClientRolesTest extends AbstractClientTest {
         // Create main-role we will work on
         RoleRepresentation mainRole = makeRole("main-role");
         rolesRsc.create(mainRole);
+        managedClient.cleanup().add(c -> c.roles().deleteRole("main-role"));
 
         RoleResource mainRoleRsc = rolesRsc.get("main-role");
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "main-role"), mainRole, ResourceType.CLIENT_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "main-role"), mainRole, ResourceType.CLIENT_ROLE);
 
         // Add composites
         List<RoleRepresentation> createdRoles = IntStream.range(0, 20)
                 .boxed()
                 .map(i -> makeRole("role" + i))
                 .peek(rolesRsc::create)
-                .peek(role -> assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, role.getName()), role, ResourceType.CLIENT_ROLE))
+                .peek(role -> managedClient.cleanup().add(c -> c.roles().deleteRole(role.getName())))
+                .peek(role -> AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, role.getName()), role, ResourceType.CLIENT_ROLE))
                 .map(role -> rolesRsc.get(role.getName()).toRepresentation())
                 .collect(Collectors.toList());
 
         mainRoleRsc.addComposites(createdRoles);
         mainRole = mainRoleRsc.toRepresentation();
-        RoleByIdResource roleByIdResource = adminClient.realm(TEST).rolesById();
+        RoleByIdResource roleByIdResource = managedRealm.admin().rolesById();
 
         // Search for all composites
         Set<RoleRepresentation> foundRoles = roleByIdResource.getRoleComposites(mainRole.getId());
@@ -205,19 +228,19 @@ public class ClientRolesTest extends AbstractClientTest {
         assertThat(foundRoles, hasSize(11));
 
         // Search for role1 with pagination
-        foundRoles.forEach(System.out::println);
         foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), "role1", 5, 5);
         assertThat(foundRoles, hasSize(5));
     }
 
     @Test
     public void usersInRole() {
-        String clientID = clientRsc.toRepresentation().getId();
+        String clientID = managedClient.getId();
 
         // create test role on client
         String roleName = "test-role";
         RoleRepresentation role = makeRole(roleName);
         rolesRsc.create(role);
+        managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
         assertTrue(hasRole(rolesRsc, roleName));
         List<RoleRepresentation> roleToAdd = Collections.singletonList(rolesRsc.get(roleName).toRepresentation());
 
@@ -226,9 +249,9 @@ public class ClientRolesTest extends AbstractClientTest {
         usernames.forEach(username -> {
             UserRepresentation user = new UserRepresentation();
             user.setUsername(username);
-            testRealmResource().users().create(user);
-            user = getFullUserRep(username);
-            testRealmResource().users().get(user.getId()).roles().clientLevel(clientID).add(roleToAdd);
+            String userUuid = ApiUtil.getCreatedId(managedRealm.admin().users().create(user));
+            managedRealm.cleanup().add(r -> r.users().delete(userUuid));
+            managedRealm.admin().users().get(userUuid).roles().clientLevel(clientID).add(roleToAdd);
         });
 
         // check if users have test role assigned
@@ -239,10 +262,10 @@ public class ClientRolesTest extends AbstractClientTest {
         // pagination
         List<UserRepresentation> usersInRole1 = roleResource.getUserMembers(0, 5);
         assertEquals(createUsernames(0, 5), extractUsernames(usersInRole1));
-        Assert.assertNotNull("Not in full representation", usersInRole1.get(0).getNotBefore());
+        Assertions.assertNotNull(usersInRole1.get(0).getNotBefore(), "Not in full representation");
         List<UserRepresentation> usersInRole2 = roleResource.getUserMembers(true, 5, 10);
         assertEquals(createUsernames(5, 10), extractUsernames(usersInRole2));
-        Assert.assertNull("Not in brief representation", usersInRole2.get(0).getNotBefore());
+        Assert.assertNull(usersInRole2.get(0).getNotBefore(), "Not in brief representation");
     }
 
     private static List<String> createUsernames(int startIndex, int endIndex) {
@@ -260,110 +283,123 @@ public class ClientRolesTest extends AbstractClientTest {
 
     @Test
     public void testSearchForRoles() {
-        
-        for(int i = 0; i<15; i++) {
-            String roleName = "role"+i;
+        for (int i = 0; i < 15; i++) {
+            String roleName = "role" + i;
             RoleRepresentation role = makeRole(roleName);
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);           
-        }  
-        
+            managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleName), role, ResourceType.CLIENT_ROLE);
+        }
+
         String roleNameA = "abcdef";
         RoleRepresentation roleA = makeRole(roleNameA);
         rolesRsc.create(roleA);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleNameA), roleA, ResourceType.CLIENT_ROLE);  
-        
+        managedClient.cleanup().add(c -> c.roles().deleteRole(roleNameA));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleNameA), roleA, ResourceType.CLIENT_ROLE);
+
         String roleNameB = "defghi";
         RoleRepresentation roleB = makeRole(roleNameB);
         rolesRsc.create(roleB);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleNameB), roleB, ResourceType.CLIENT_ROLE);
-        
+        managedClient.cleanup().add(c -> c.roles().deleteRole(roleNameB));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleNameB), roleB, ResourceType.CLIENT_ROLE);
+
         List<RoleRepresentation> resultSearch = rolesRsc.list("def", -1, -1);
-        assertEquals(2,resultSearch.size());
-        
+        assertEquals(2, resultSearch.size());
+
         List<RoleRepresentation> resultSearch2 = rolesRsc.list("role", -1, -1);
-        assertEquals(15,resultSearch2.size());
-        
+        assertEquals(15, resultSearch2.size());
+
         List<RoleRepresentation> resultSearchPagination = rolesRsc.list("role", 1, 5);
-        assertEquals(5,resultSearchPagination.size());
+        assertEquals(5, resultSearchPagination.size());
     }
-    
+
     @Test
     public void testPaginationRoles() {
-        
-        for(int i = 0; i<15; i++) {
-            String roleName = "role"+i;
+        for (int i = 0; i < 15; i++) {
+            String roleName = "role" + i;
             RoleRepresentation role = makeRole(roleName);
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);           
-        }  
-        
+            managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleName), role, ResourceType.CLIENT_ROLE);
+        }
+
         List<RoleRepresentation> resultSearchWithoutPagination = rolesRsc.list();
-        assertEquals(15,resultSearchWithoutPagination.size());
-        
+        assertEquals(15, resultSearchWithoutPagination.size());
+
         List<RoleRepresentation> resultSearchPagination = rolesRsc.list(1, 5);
-        assertEquals(5,resultSearchPagination.size());
-        
+        assertEquals(5, resultSearchPagination.size());
+
         List<RoleRepresentation> resultSearchPaginationIncoherentParams = rolesRsc.list(1, null);
         assertTrue(resultSearchPaginationIncoherentParams.size() >= 15);
     }
-    
+
     @Test
     public void testPaginationRolesCache() {
-        
-        for(int i = 0; i<5; i++) {
-            String roleName = "paginaterole"+i;
+        for (int i = 0; i < 5; i++) {
+            String roleName = "paginaterole" + i;
             RoleRepresentation role = makeRole(roleName);
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);        
-        }   
-       
-        List<RoleRepresentation> resultBeforeAddingRoleToTestCache = rolesRsc.list(1, 1000);  
-        
+            managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleName), role, ResourceType.CLIENT_ROLE);
+        }
+
+        List<RoleRepresentation> resultBeforeAddingRoleToTestCache = rolesRsc.list(1, 1000);
+
         // after a first call which init the cache, we add a new role to see if the result change
-        
+
         RoleRepresentation role = makeRole("anewrole");
         rolesRsc.create(role);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,"anewrole"), role, ResourceType.CLIENT_ROLE);  
-        
-        List<RoleRepresentation> resultafterAddingRoleToTestCache = rolesRsc.list(1, 1000);
-        
-        assertEquals(resultBeforeAddingRoleToTestCache.size()+1, resultafterAddingRoleToTestCache.size());
+        managedClient.cleanup().add(c -> c.roles().deleteRole("anewrole"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "anewrole"), role, ResourceType.CLIENT_ROLE);
+
+        List<RoleRepresentation> resultAfterAddingRoleToTestCache = rolesRsc.list(1, 1000);
+
+        assertEquals(resultBeforeAddingRoleToTestCache.size() + 1, resultAfterAddingRoleToTestCache.size());
     }
-    
+
     @Test
     public void getRolesWithFullRepresentation() {
-        for(int i = 0; i<5; i++) {
-            String roleName = "attributesrole"+i;
-            RoleRepresentation role = makeRole(roleName);
-            
-            Map<String, List<String>> attributes = new HashMap<String, List<String>>();
-            attributes.put("attribute1", Arrays.asList("value1","value2"));
-            role.setAttributes(attributes);
-                    
+        for (int i = 0; i < 5; i++) {
+            String roleName = "attributesrole" + i;
+            RoleRepresentation role = RoleBuilder.create()
+                    .name(roleName)
+                    .attributes(Map.of("attribute1", List.of("value1", "value2")))
+                    .build();
+
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);  
+            managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleName), role, ResourceType.CLIENT_ROLE);
         }
-        
+
         List<RoleRepresentation> roles = rolesRsc.list(false);
-        assertTrue(roles.get(0).getAttributes().containsKey("attribute1"));
+        roles.forEach(role -> assertTrue(role.getAttributes().containsKey("attribute1")));
     }
 
     @Test
     public void getRolesWithBriefRepresentation() {
-        for(int i = 0; i<5; i++) {
-            String roleName = "attributesrole"+i;
-            RoleRepresentation role = makeRole(roleName);
-            
-            Map<String, List<String>> attributes = new HashMap<String, List<String>>();
-            attributes.put("attribute1", Arrays.asList("value1","value2"));
-            role.setAttributes(attributes);
-                    
+        for (int i = 0; i < 5; i++) {
+            String roleName = "attributesrole" + i;
+            RoleRepresentation role = RoleBuilder.create()
+                    .name(roleName)
+                    .attributes(Map.of("attribute1", List.of("value1", "value2")))
+                    .build();
+
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);
+            managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+            AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, roleName), role, ResourceType.CLIENT_ROLE);
         }
-        
+
         List<RoleRepresentation> roles = rolesRsc.list();
-        assertNull(roles.get(0).getAttributes());
+        roles.forEach(role -> assertNull(role.getAttributes()));
+    }
+
+    private static class ClientRolesClientConfig implements ClientConfig {
+
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("roleClient")
+                    .name("roleClient")
+                    .protocol("openid-connect");
+        }
     }
 }
