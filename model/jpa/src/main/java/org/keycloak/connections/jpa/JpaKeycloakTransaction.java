@@ -18,7 +18,6 @@
 package org.keycloak.connections.jpa;
 
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.models.KeycloakTransaction;
 
 import jakarta.persistence.EntityManager;
@@ -49,7 +48,7 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
             logger.trace("Committing transaction");
             em.getTransaction().commit();
         } catch (PersistenceException e) {
-            throw EntityManagerProxy.convert(e.getCause() != null ? e.getCause() : e);
+            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
         }
     }
 
