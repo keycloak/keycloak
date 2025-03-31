@@ -51,7 +51,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+        return hasPermission(user, null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -60,7 +60,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission((UserModel) null, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+        return hasPermission((UserModel) null, null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -110,7 +110,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MAP_ROLES);
+        return hasPermission(user, null, AdminPermissionsSchema.MAP_ROLES);
     }
 
     @Override
@@ -119,10 +119,10 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
     }
 
-    private boolean hasPermission(UserModel user, EvaluationContext context, String... scopes) {
+    private boolean hasPermission(UserModel user, EvaluationContext context, String scope) {
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -145,14 +145,10 @@ class UserPermissionsV2 extends UserPermissions {
                 root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
                 root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
 
-        List<String> expectedScopes = List.of(scopes);
-
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
-                for (String scope : permission.getScopes()) {
-                    if (expectedScopes.contains(scope)) {
-                        return true;
-                    }
+                if (permission.getScopes().contains(scope)) {
+                    return true;
                 }
             }
         }

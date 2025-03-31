@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin.permissions;
 
 import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -34,7 +33,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,10 +42,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+class ClientPermissionsV2 extends ClientPermissions {
 
-public class ClientPermissionsV2 extends ClientPermissions {
-
-    public ClientPermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissionsV2 root) {
+    ClientPermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissionsV2 root) {
         super(session, realm, authz, root);
     }
 
@@ -67,21 +64,23 @@ public class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canManage() {
-        return super.canManage() || hasPermission(AdminPermissionsSchema.MANAGE);
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) return true;
+
+        return hasPermission(AdminPermissionsSchema.MANAGE);
     }
 
     @Override
     public boolean canView(ClientModel client) {
-        if (canView() || canConfigure(client)) {
-            return true;
-        }
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS)) return true;
 
         return hasPermission(client, AdminPermissionsSchema.VIEW);
     }
 
     @Override
     public boolean canView() {
-        return canViewClientDefault() || hasPermission(AdminPermissionsSchema.VIEW);
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS)) return true;
+
+        return hasPermission(AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class ClientPermissionsV2 extends ClientPermissions {
     public boolean canView(ClientScopeModel clientScope) {
         if (root.hasOneAdminRole(AdminRoles.VIEW_CLIENTS, AdminRoles.MANAGE_CLIENTS)) return true;
 
-        return hasPermission(AdminPermissionsSchema.VIEW) || hasPermission(AdminPermissionsSchema.MANAGE);
+        return hasPermission(AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -226,14 +225,11 @@ public class ClientPermissionsV2 extends ClientPermissions {
         }
 
         Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server);
-        List<String> expectedScopes = Arrays.asList(scope);
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
-                for (String s : permission.getScopes()) {
-                    if (expectedScopes.contains(s)) {
-                        return true;
-                    }
+                if (permission.getScopes().contains(scope)) {
+                    return true;
                 }
             }
         }
@@ -268,12 +264,10 @@ public class ClientPermissionsV2 extends ClientPermissions {
         }
 
         Collection<Permission> permissions = root.evaluatePermission(expected, server);
-        List<String> expectedScopes = Arrays.asList(scope);
+
         for (Permission permission : permissions) {
-            for (String s : permission.getScopes()) {
-                if (expectedScopes.contains(s)) {
-                    return true;
-                }
+            if (permission.getScopes().contains(scope)) {
+                return true;
             }
         }
 

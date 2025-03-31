@@ -219,7 +219,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         }
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        createPermission(client, myclient.getId(), clientsType, Set.of(CONFIGURE), onlyMyAdminUserPolicy);
+        createPermission(client, myclient.getId(), clientsType, Set.of(VIEW, CONFIGURE), onlyMyAdminUserPolicy);
 
         // the caller can view myclient
         clientResource.toRepresentation();

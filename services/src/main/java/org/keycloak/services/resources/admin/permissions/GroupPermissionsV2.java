@@ -55,7 +55,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+        return hasPermission(null, AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -64,7 +64,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW);
     }
 
     @Override
@@ -73,7 +73,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
+        return hasPermission(null, AdminPermissionsSchema.MANAGE);
     }
 
     @Override
@@ -91,7 +91,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS);
+        return hasPermission(group.getId(), AdminPermissionsSchema.VIEW_MEMBERS);
     }
 
     @Override
@@ -109,7 +109,7 @@ class GroupPermissionsV2 extends GroupPermissions {
             return true;
         }
 
-        return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MANAGE_MEMBERSHIP);
+        return hasPermission(group.getId(), AdminPermissionsSchema.MANAGE_MEMBERSHIP);
     }
 
     @Override

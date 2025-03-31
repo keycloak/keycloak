@@ -160,7 +160,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create all-groups permission for "myadmin" (so that myadmin can manage all groups in the realm)
         UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllGroupsPermission(policy, Set.of(MANAGE));
+        createAllGroupsPermission(policy, Set.of(VIEW, MANAGE));
 
         // creating group requires manage scope
         GroupRepresentation group = new GroupRepresentation();
@@ -203,7 +203,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create group permission for "myadmin" to manage the myGroup
         UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createGroupPermission(myGroup, Set.of(MANAGE), policy);
+        createGroupPermission(myGroup, Set.of(VIEW, MANAGE), policy);
 
         // myadmin shouldn't be able to update the topGroup
         try {

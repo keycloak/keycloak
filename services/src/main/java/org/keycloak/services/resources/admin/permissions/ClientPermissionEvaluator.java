@@ -159,7 +159,7 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has at least one of the {@link org.keycloak.models.AdminRoles#VIEW_CLIENTS} or {@link org.keycloak.models.AdminRoles#MANAGE_CLIENTS} roles.
      * <p/>
-     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#VIEW} or {@link org.keycloak.authorization.AdminPermissionsSchema#MANAGE}.
+     * For V2 only: Also if it has permission to {@link org.keycloak.authorization.AdminPermissionsSchema#VIEW}.
      */
     boolean canView(ClientScopeModel clientScope);
 
@@ -196,6 +196,5 @@ public interface ClientPermissionEvaluator {
      *
      * @return Stream of IDs of clients with view permission.
      */
-
     Set<String> getClientIdsWithViewPermission(String scope);
 }

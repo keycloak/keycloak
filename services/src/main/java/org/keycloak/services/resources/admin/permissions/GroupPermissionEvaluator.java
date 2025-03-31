@@ -59,8 +59,7 @@ public interface GroupPermissionEvaluator {
      * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} or
      * {@link AdminRoles#VIEW_USERS} roles.
      * <p/>
-     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW} or
-     * {@link AdminPermissionsSchema#MANAGE} the group.
+     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW} the group.
      */
     boolean canView(GroupModel group);
 
@@ -72,8 +71,7 @@ public interface GroupPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has {@link AdminRoles#MANAGE_USERS} role.
      * <p/>
-     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#VIEW} or
-     * {@link AdminPermissionsSchema#MANAGE} groups.
+     * For V2 only: Also if it has permission to {@link AdminPermissionsSchema#MANAGE} groups.
      */
     boolean canManage();
 
@@ -86,8 +84,7 @@ public interface GroupPermissionEvaluator {
      * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} or 
      * {@link AdminRoles#VIEW_USERS} roles.
      * <p/>
-     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW} or
-     * {@link AdminPermissionsSchema#MANAGE} groups.
+     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW} groups.
      */
     boolean canView();
 
@@ -102,25 +99,24 @@ public interface GroupPermissionEvaluator {
     void requireViewMembers(GroupModel group);
 
     /**
-     * Returns {@code true} if {@link UserPermissionEvaluator#canManage()} evaluates to {@code true}.
+     * Returns {@code true} if the caller has {@link AdminRoles#MANAGE_USERS} role.
      * <p/>
      * Or if it has a permission to {@link AdminPermissionsSchema#MANAGE_MEMBERS} of the group.
      */
     boolean canManageMembers(GroupModel group);
 
     /**
-     * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} role.
+     * Returns {@code true} if the caller has {@link AdminRoles#MANAGE_USERS} role.
      * <p/>
-     * Or if it has a permission to {@link AdminPermissionsSchema#MANAGE} the group or
-     * {@link AdminPermissionsSchema#MANAGE_MEMBERSHIP} of the group.
+     * Or if it has a permission to {@link AdminPermissionsSchema#MANAGE_MEMBERSHIP} of the group.
      */
     boolean canManageMembership(GroupModel group);
 
     /**
-     * Returns {@code true} if {@link UserPermissionEvaluator#canView()} evaluates to {@code true}.
+     * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} or 
+     * {@link AdminRoles#VIEW_USERS} roles.
      * <p/>
-     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW_MEMBERS} or
-     * {@link AdminPermissionsSchema#MANAGE_MEMBERS} of the group.
+     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW_MEMBERS} of the group.
      */
     boolean canViewMembers(GroupModel group);
 
