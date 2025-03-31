@@ -44,6 +44,7 @@ type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
   clientScopes?: RequiredIdValue[];
   roles?: RequiredIdValue[];
+  clients?: [];
 };
 
 type ComponentsProps = {
@@ -136,13 +137,18 @@ export const NewPermissionPolicyDialog = ({
   }, [policyTypeSelector, reset, form]);
 
   const save = async (policy: Policy) => {
-    const { groups, roles, policies, ...rest } = policy;
+    const { groups, roles, policies, clients, ...rest } = policy;
 
     const cleanedPolicy = {
       ...rest,
       ...(groups && groups.length > 0 && { groups }),
       ...(roles && roles.length > 0 && { roles }),
       ...(policies && policies.length > 0 && { policies }),
+      ...(clients && clients.length > 0 && { clients }),
+      ...(rest.type === "group" &&
+        (!groups || groups.length === 0) && { groups: [] }),
+      ...(rest.type === "client" &&
+        (!clients || clients.length === 0) && { clients: [] }),
     };
 
     try {
