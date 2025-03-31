@@ -505,7 +505,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void buildOptionWithOptimized() {
         build("build", "--metrics-enabled=true", "--db=dev-file");
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname=keycloak");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
@@ -583,8 +583,29 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void hostnameProxyValidation() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=foo");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("HTTPS is not enabled on the server, either the `hostname` should be set to a full URL or `proxy-headers` should be used"));
+    }
+
+    @Test
+    public void hostnameProxyValidationStrictFalse() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname-strict=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("With HTTPS not enabled and hostname-strict=false, cross-origin cookies will not be allowed"));
+    }
+
+    @Test
+    public void hostnameValidationHttp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=http://host");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("`hostname` is set to an HTTP hostname, cross-origin cookies will not be allowed. This is likely a misconfiguration."));
+    }
+
+    @Test
     public void derivedPropertyUsage() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=first-class", "--spi-hostname-v2-hostname=second-class", "--http-enabled=false");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
     }
