@@ -35,7 +35,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
-import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;

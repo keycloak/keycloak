@@ -63,7 +63,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;

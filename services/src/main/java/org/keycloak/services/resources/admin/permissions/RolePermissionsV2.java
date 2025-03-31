@@ -17,12 +17,16 @@
 
 package org.keycloak.services.resources.admin.permissions;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.ROLES_RESOURCE_TYPE;
+
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.ResourceWrapper;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +37,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -91,7 +96,7 @@ public class RolePermissionsV2 extends RolePermissions {
 
         Set<String> granted = new HashSet<>();
 
-        policyStore.findByResourceType(server, AdminPermissionsSchema.ROLES_RESOURCE_TYPE).stream()
+        policyStore.findByResourceType(server, ROLES_RESOURCE_TYPE).stream()
                 .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
                 .forEach(gr -> {
                     if (hasGrantedPermission(server, gr, scope)) {
@@ -102,24 +107,46 @@ public class RolePermissionsV2 extends RolePermissions {
         return granted;
     }
 
-    private boolean hasPermission(RoleModel role, String scope) {
+    private boolean hasPermission(RoleModel role, String... scopes) {
+        return hasPermission(role, null, scopes);
+    }
+
+    private boolean hasPermission(RoleModel role, EvaluationContext context, String... scopes) {
         if (!root.isAdminSameRealm()) {
             return false;
         }
+
         ResourceServer server = root.realmResourceServer();
-        if (server == null) return false;
 
-        Resource resource =  resourceStore.findByName(server, role.getId(), server.getId());
-        if (resource == null) {
-            // check if there is permission for "all-roles". If so, load its resource and proceed with evaluation
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, AdminPermissionsSchema.ROLES_RESOURCE_TYPE);
+        if (server == null) {
+            return false;
+        }
 
-            if (authz.getStoreFactory().getPolicyStore().findByResource(server, resource).isEmpty()) {
-                return false;
+        String resourceType = ROLES_RESOURCE_TYPE;
+        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
+        Resource resource = role == null ? resourceTypeResource : resourceStore.findByName(server, role.getId());
+
+        if (role != null && resource == null) {
+            resource = new ResourceWrapper(role.getId(), role.getId(), new HashSet<>(resourceTypeResource.getScopes()), server);
+        }
+
+        Collection<Permission> permissions = (context == null) ?
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
+
+        List<String> expectedScopes = List.of(scopes);
+
+        for (Permission permission : permissions) {
+            if (permission.getResourceId().equals(resource.getId())) {
+                for (String scope : permission.getScopes()) {
+                    if (expectedScopes.contains(scope)) {
+                        return true;
+                    }
+                }
             }
         }
 
-        return hasGrantedPermission(server, resource, scope);
+        return false;
     }
 
     private boolean hasGrantedPermission(ResourceServer server, Resource resource, String scope) {

@@ -16,7 +16,8 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import java.util.Arrays;
+import static org.keycloak.authorization.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,7 +32,9 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.ResourceWrapper;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.models.GroupModel;
@@ -127,7 +130,7 @@ class GroupPermissionsV2 extends GroupPermissions {
 
         Set<String> granted = new HashSet<>();
 
-        policyStore.findByResourceType(server, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE).stream()
+        policyStore.findByResourceType(server, GROUPS_RESOURCE_TYPE).stream()
                 .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
                 .forEach(gr -> {
             if (hasPermission(gr.getName(), AdminPermissionsSchema.VIEW_MEMBERS, AdminPermissionsSchema.MANAGE_MEMBERS)) {
@@ -139,6 +142,10 @@ class GroupPermissionsV2 extends GroupPermissions {
     }
 
     private boolean hasPermission(String groupId, String... scopes) {
+        return hasPermission(groupId, null, scopes);
+    }
+
+    private boolean hasPermission(String groupId, EvaluationContext context, String... scopes) {
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -149,21 +156,19 @@ class GroupPermissionsV2 extends GroupPermissions {
             return false;
         }
 
-        Resource resource = groupId == null ? null : resourceStore.findByName(server, groupId);
-        String resourceType = AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+        String resourceType = GROUPS_RESOURCE_TYPE;
+        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
+        Resource resource = groupId == null ? resourceTypeResource : resourceStore.findByName(server, groupId);
 
-        if (resource == null) {
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
-
-            // check if there is a permission for "all-groups". If so, proceed with the evaluation to check scopes
-            if (policyStore.findByResource(server, resource).isEmpty()) {
-                return false;
-            }
+        if (groupId != null && resource == null) {
+            resource = new ResourceWrapper(groupId, groupId, new HashSet<>(resourceTypeResource.getScopes()), server);
         }
 
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server);
+        Collection<Permission> permissions = (context == null) ?
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
+                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
 
-        List<String> expectedScopes = Arrays.asList(scopes);
+        List<String> expectedScopes = List.of(scopes);
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {

@@ -48,6 +48,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
 /**
@@ -692,7 +693,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     private boolean hasPermission(Resource resource, String scope) {
         ResourceServer server = root.realmResourceServer();
-        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(resource, resource.getScopes(), server), server);
+        Collection<Permission> permissions = root.evaluatePermission(new ResourcePermission(CLIENTS_RESOURCE_TYPE, resource, resource.getScopes(), server), server);
         for (Permission permission : permissions) {
             for (String s : permission.getScopes()) {
                 if (scope.equals(s)) {

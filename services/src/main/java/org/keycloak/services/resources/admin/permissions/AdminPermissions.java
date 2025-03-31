@@ -25,8 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 

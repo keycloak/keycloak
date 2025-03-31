@@ -16,17 +16,15 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.common.ClientModelIdentity;
-import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -43,16 +41,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
-
 
 public class ClientPermissionsV2 extends ClientPermissions {
-
-    private static final Logger logger = Logger.getLogger(ClientPermissionsV2.class);
 
     public ClientPermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissionsV2 root) {
         super(session, realm, authz, root);
@@ -139,7 +132,7 @@ public class ClientPermissionsV2 extends ClientPermissions {
 
         Set<String> granted = new HashSet<>();
 
-        policyStore.findByResourceType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE).stream()
+        policyStore.findByResourceType(server, CLIENTS_RESOURCE_TYPE).stream()
                 .flatMap((Function<Policy, Stream<Resource>>) policy -> policy.getResources().stream())
                 .forEach(resource -> {
                     if (hasGrantedPermission(resource, scope)) {
@@ -219,7 +212,7 @@ public class ClientPermissionsV2 extends ClientPermissions {
 
         if (server == null) return false;
 
-        String resourceType = AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+        String resourceType = CLIENTS_RESOURCE_TYPE;
 
         Resource resource =  resourceStore.findByName(server, client.getId(), server.getId());
 
@@ -255,7 +248,7 @@ public class ClientPermissionsV2 extends ClientPermissions {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
 
-        Resource resource = resourceStore.findByName(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, server.getId());
+        Resource resource = resourceStore.findByName(server, CLIENTS_RESOURCE_TYPE, server.getId());
         if (resource == null) {
             return false;
         }
@@ -265,13 +258,13 @@ public class ClientPermissionsV2 extends ClientPermissions {
         if (policyStore.findByResource(server, resource).isEmpty()) {
             // TODO: client scope permissions are evaluated based on any permission granted to any client in a realm
             // this won't scale and instead we should just enforce access when actually mapping roles where the client is known
-            policyStore.findByResourceType(server, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, policy -> {
+            policyStore.findByResourceType(server, CLIENTS_RESOURCE_TYPE, policy -> {
                 for (Resource r : policy.getResources()) {
-                    expected.add(new ResourcePermission(r, r.getScopes(), server));
+                    expected.add(new ResourcePermission(CLIENTS_RESOURCE_TYPE, r, r.getScopes(), server));
                 }
             });
         } else {
-            expected.add(new ResourcePermission(resource, resource.getScopes(), server));
+            expected.add(new ResourcePermission(CLIENTS_RESOURCE_TYPE, resource, resource.getScopes(), server));
         }
 
         Collection<Permission> permissions = root.evaluatePermission(expected, server);
