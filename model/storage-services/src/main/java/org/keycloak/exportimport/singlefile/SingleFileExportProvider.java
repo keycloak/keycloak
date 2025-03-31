@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ExportUtils;
-import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -79,7 +78,7 @@ public class SingleFileExportProvider implements ExportProvider {
                     writeToFile(realms);
                 }
             }
-        }.runTask(factory, Mode.BATCHED);
+        }.runTask(factory);
         ServicesLogger.LOGGER.exportSuccess();
     }
 

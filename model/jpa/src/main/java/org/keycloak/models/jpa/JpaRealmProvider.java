@@ -47,7 +47,6 @@ import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
@@ -1191,9 +1190,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             }
         });
 
-        if (!EntityManagers.isBatchMode()) {
-            em.flush();
-        }
+        em.flush();
         return clientScope;
     }
 
@@ -1251,10 +1248,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                 entity.setClientId(client.getId());
                 entity.setDefaultScope(defaultScope);
                 em.persist(entity);
-                if (!EntityManagers.isBatchMode()) {
-                    em.flush();
-                    em.detach(entity);
-                }
+                em.flush();
+                em.detach(entity);
             });
     }
 

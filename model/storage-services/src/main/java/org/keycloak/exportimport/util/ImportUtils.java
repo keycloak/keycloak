@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
@@ -113,8 +112,6 @@ public class ImportUtils {
 
         RealmManager realmManager = new RealmManager(session);
         realmManager.importRealm(rep, skipUserDependent);
-
-        EntityManagers.flush(session, true);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);

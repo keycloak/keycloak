@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.hibernate.exception.ConstraintViolationException;
-import org.jboss.logging.Logger;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -45,8 +44,6 @@ import jakarta.persistence.Query;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class EntityManagerProxy {
-
-    private final static Logger logger = Logger.getLogger(EntityManagerProxy.class);
 
     private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
@@ -84,26 +81,13 @@ public class EntityManagerProxy {
 
     private Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         boolean batched = EntityManagers.isBatchMode();
-        if (batched) {
-            switch (method.getName()) {
-            case "clear" -> throw new IllegalStateException("Cannot clear in batched mode");
-            case "detach", "flush" -> {
-                if (method.getName().equals("detach")) {
-                    em.flush();
-                }
-                if (logger.isTraceEnabled()) {
-                    logger.trace("detach or flush detected during a batched operation", new Exception());
-                }
-            }
-            }
-        }
         try {
             flushInBatchIfEnabled(method);
             Object result = method.invoke(em, args);
             if (batched && result instanceof Query query) {
-                // TODO: this should probably be done in the logic creating the queries
-                // userRoleMappingIds at least is running for user import
-                // and do not need to detect anything that isn't flushed
+                // TODO: it would be safer if there were a way to validate
+                // if this or disabling persist/detach where correct for a given batch
+                // and types were correct
                 query.setFlushMode(FlushModeType.COMMIT);
             }
             return result;

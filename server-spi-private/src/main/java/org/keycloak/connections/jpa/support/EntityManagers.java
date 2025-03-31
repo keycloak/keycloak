@@ -47,7 +47,7 @@ public class EntityManagers {
         }
     }
 
-    public static boolean isBatchMode() {
+    static boolean isBatchMode() {
         return Boolean.TRUE.equals(batchMode.get());
     }
 
@@ -79,15 +79,12 @@ public class EntityManagers {
     }
 
     /**
-     * Run the operation in batch mode with a pre-flush, then with optional isolated/nested EntityManagers, and a post flush.
+     * Run the operation in batch mode with a pre-flush.
      * <p>
      * It is desirable to use nestedEntityManagers to keep the existing context free of newly created entities.
      * <p>
-     * WARNING: Any queries run while batching will be in COMMIT mode, so they cannot see changes made
-     * within the batch.
-     * <p>
-     * Use trace logging on the {@link EntityManagerProxy} context to see if any detach or flush calls
-     * were made during batch.
+     * WARNING: Any queries run while batching will be in COMMIT mode, so they cannot see non-flushed changes made
+     * within the batch. Most of Keycloak's JPA code however persists and flushes together.
      *
      * @param nestedEntityManagers - if true run with isolated EntityManagers WARNING: Any entities passed into the task that
      *   that will get persisted must not already be associated with an open EntityManager.
@@ -109,7 +106,9 @@ public class EntityManagers {
 
         try {
             runInBatchMode(runnable);
-            flush(session, nestedEntityManagers);
+            if (nestedEntityManagers) {
+                flush(session, true);
+            }
         } finally {
             // restablish the old entitymanagers
             if (nestedEntityManagers) {
