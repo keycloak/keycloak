@@ -1610,7 +1610,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(modelSupplier) : cached.getOptionalDefaultClientScopes(modelSupplier);
         return clientScopeIds.stream()
                 .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
