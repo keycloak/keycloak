@@ -120,7 +120,7 @@ public class TokenVerifier<T extends JsonWebToken> {
 
     public static class TokenTypeCheck implements Predicate<JsonWebToken> {
 
-        private static final TokenTypeCheck INSTANCE_DEFAULT_TOKEN_TYPE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP));
+        private static final TokenTypeCheck INSTANCE_DEFAULT_TOKEN_TYPE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_BEARER));
 
         private final List<String> tokenTypes;
 
