@@ -177,9 +177,7 @@ public class RealmManager {
     }
 
     protected void createDefaultClientScopes(RealmModel realm) {
-        // due to repetitive and expensive queries against the context, run in batch against the current EntityManagers
-        DefaultClientScopes.createDefaultClientScopes(session, realm, true);
-        //EntityManagers.runInBatch(session, () -> DefaultClientScopes.createDefaultClientScopes(session, realm, true), false);
+        EntityManagers.runInBatch(session, () -> DefaultClientScopes.createDefaultClientScopes(session, realm, true), false);
     }
 
     protected void setupAdminConsole(RealmModel realm) {

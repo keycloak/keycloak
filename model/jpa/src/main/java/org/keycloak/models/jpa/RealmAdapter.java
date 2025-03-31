@@ -26,7 +26,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.*;
 import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.jpa.entities.*;
@@ -1441,14 +1440,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         realm.setResetCredentialsFlow(flow.getId());
     }
 
-    @Override
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         String flowId = realm.getClientAuthenticationFlow();
         if (flowId == null) return null;
         return getAuthenticationFlowById(flowId);
     }
 
-    @Override
     public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
         realm.setClientAuthenticationFlow(flow.getId());
     }
@@ -1596,7 +1593,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         return entityToModel(entity);
     }
 
-    @Override
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         TypedQuery<AuthenticationExecutionEntity> query = em.createNamedQuery("authenticationFlowExecution", AuthenticationExecutionEntity.class)
                 .setParameter("flowId", flowId);
@@ -1990,10 +1986,8 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setRealm(getEntity());
         entity.setDefaultScope(defaultScope);
         em.persist(entity);
-        if (!EntityManagers.isBatchMode()) {
-            em.flush();
-            em.detach(entity);
-        }
+        em.flush();
+        em.detach(entity);
     }
 
     @Override

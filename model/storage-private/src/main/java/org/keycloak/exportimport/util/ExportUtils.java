@@ -26,7 +26,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.ClientModel;
@@ -278,7 +277,6 @@ public class ExportUtils {
             }).forEach(rep::addOrganization);
         }
 
-        EntityManagers.flush(session, true); // shouldn't do much, but makes this symmetrical with ImportUtils
         return rep;
     }
 
