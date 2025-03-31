@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 
 public class RolePermissionsV2 extends RolePermissions {
 
-    public RolePermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
+    RolePermissionsV2(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
         super(session, realm, authz, root);
     }
 
@@ -53,8 +53,8 @@ public class RolePermissionsV2 extends RolePermissions {
     public boolean canMapClientScope(RoleModel role) {
         if (root.clients().canManageClientsDefault()) return true;
 
-        if (role.getContainer() instanceof ClientModel) {
-            if (root.clients().canMapClientScopeRoles((ClientModel) role.getContainer())) return true;
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.clients().canMapClientScopeRoles(clientModel)) return true;
         }
 
         return hasPermission(role, MAP_ROLE_CLIENT_SCOPE_SCOPE);
@@ -64,8 +64,8 @@ public class RolePermissionsV2 extends RolePermissions {
     public boolean canMapComposite(RoleModel role) {
         if (canManageDefault(role)) return checkAdminRoles(role);
 
-        if (role.getContainer() instanceof ClientModel) {
-            if (root.clients().canMapCompositeRoles((ClientModel) role.getContainer())) return true;
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.clients().canMapCompositeRoles(clientModel)) return true;
         }
 
         return hasPermission(role, MAP_ROLE_COMPOSITE_SCOPE) && checkAdminRoles(role);
@@ -75,8 +75,8 @@ public class RolePermissionsV2 extends RolePermissions {
     public boolean canMapRole(RoleModel role) {
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
 
-        if (role.getContainer() instanceof ClientModel) {
-            if (root.clients().canMapRoles((ClientModel) role.getContainer())) return true;
+        if (role.getContainer() instanceof ClientModel clientModel) {
+            if (root.clients().canMapRoles(clientModel)) return true;
         }
 
         return hasPermission(role, MAP_ROLE_SCOPE) && checkAdminRoles(role);
@@ -158,7 +158,7 @@ public class RolePermissionsV2 extends RolePermissions {
                         return true;
                     }
                 }
-            };
+            }
         }
 
         return false;

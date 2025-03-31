@@ -143,7 +143,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         //create all-users permission for "myadmin" (so that myadmin can manage all users in the realm)
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(MANAGE));
+        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
@@ -157,7 +157,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testManageUserPermission() {
         String myadminId = realm.admin().users().search("myadmin").get(0).getId();
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", myadminId);
-        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MANAGE));
+        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
         String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
@@ -167,7 +167,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
-        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(MANAGE), policy);
+        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
 
         // it should be possible to update the user due to single user-permission
         realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
@@ -355,28 +355,26 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testNoTransitiveUserPermissions() {
         //create all-users manage permission for "myadmin"
         UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
+        createAllPermission(client, usersType, policy, Set.of(MANAGE));
 
-        // with manage permission it is possible also view
+        // with manage permission it is NOT possible to view
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertFalse(search.isEmpty());
+        assertTrue(search.isEmpty());
 
-        // with manage permission it is possible also map roles
+        // with manage permission it is NOT possible to map roles
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).roles().realmLevel().add(List.of(new RoleRepresentation()));
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/792b673f49d5faeed8b3bb2c61fb4a3b404df695/services/src/main/java/org/keycloak/services/resources/admin/RoleMapperResource.java#L243
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // with manage permission it is possible also manage group membership
+        // with manage permission it is NOT possible to manage group membership
         try {
             realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
         // with manage permission it is NOT possible to impersonate
