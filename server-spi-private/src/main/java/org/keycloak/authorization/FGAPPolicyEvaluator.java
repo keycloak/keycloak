@@ -18,36 +18,74 @@
 
 package org.keycloak.authorization;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+
+import java.util.Map;
 import java.util.function.Consumer;
 
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.StoreFactory;
 
 /**
  * A {@link PolicyEvaluator} specific for evaluating permisions in the context of the {@link org.keycloak.common.Profile.Feature#ADMIN_FINE_GRAINED_AUTHZ_V2} feature.
  */
 public class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
 
+    private final Map<String, ? extends ResourceTypePolicyEvaluator> resourceTypePolicyEvaluators = Map.of(USERS_RESOURCE_TYPE, new UserResourceTypePolicyEvaluator());
+
     @Override
-    protected void evaluateResourceTypePolicies(ResourcePermission permission, Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
+    public void evaluate(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Map<Policy, Map<Object, Effect>> decisionCache) {
+        super.evaluate(permission, authorizationProvider, executionContext, new FGAPDecision(decision), decisionCache);
+    }
+
+    @Override
+    protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+        super.evaluateResourcePolicies(permission, authorization, policyConsumer);
+
         String resourceType = permission.getResourceType();
+
+        if (resourceType == null) {
+            return;
+        }
+
+        ResourceTypePolicyEvaluator resourceTypePolicyEvaluator = resourceTypePolicyEvaluators.get(resourceType);
+
+        if (resourceTypePolicyEvaluator == null) {
+            return;
+        }
+
+        resourceTypePolicyEvaluator.evaluate(permission, authorization, policyConsumer);
+    }
+
+    @Override
+    protected void evaluateResourceTypePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+        String resourceType = permission.getResourceType();
+        Resource resource = permission.getResource();
 
         if (resourceType == null || resource.getName().equals(permission.getResourceType())) {
             return;
         }
+
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceServer resourceServer = permission.getResourceServer();
 
         Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
         policyStore.findByResource(resourceServer, resourceTypeResource, policyConsumer);
     }
 
     @Override
-    protected void evaluateScopePolicies(ResourcePermission permission, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer) {
+    protected void evaluateScopePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
         // do not evaluate permissions for individual scopes
     }
 }

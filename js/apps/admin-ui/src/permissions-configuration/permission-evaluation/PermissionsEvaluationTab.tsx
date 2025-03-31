@@ -120,6 +120,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
       userId: formValues.user![0],
+      resourceType: formValues.resourceType,
       resources: [
         {
           name: resourceName,

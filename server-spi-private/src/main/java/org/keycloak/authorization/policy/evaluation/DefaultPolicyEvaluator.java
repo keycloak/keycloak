@@ -68,11 +68,11 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            evaluateResourcePolicies(permission, policyStore, resourceServer, resource, policyConsumer);
-            evaluateResourceTypePolicies(permission, resource, policyStore, resourceServer, policyConsumer, resourceStore);
+            evaluateResourcePolicies(permission, authorizationProvider, policyConsumer);
+            evaluateResourceTypePolicies(permission, authorizationProvider, policyConsumer);
         }
 
-        evaluateScopePolicies(permission, policyStore, resourceServer, policyConsumer);
+        evaluateScopePolicies(permission, authorizationProvider, policyConsumer);
 
         if (verified.get()) {
             decision.onComplete(permission);
@@ -84,15 +84,27 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
     }
 
-    private void evaluateResourcePolicies(ResourcePermission permission, PolicyStore policyStore, ResourceServer resourceServer, Resource resource, Consumer<Policy> policyConsumer) {
+    protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceServer resourceServer = permission.getResourceServer();
+        Resource resource = permission.getResource();
         policyStore.findByResource(resourceServer, resource, policyConsumer);
     }
 
-    protected void evaluateResourceTypePolicies(ResourcePermission permission, Resource resource, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer, ResourceStore resourceStore) {
+    protected void evaluateResourceTypePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+        Resource resource = permission.getResource();
+
         if (resource.getType() != null) {
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+            ResourceServer resourceServer = permission.getResourceServer();
+
             policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
 
             if (!resource.getOwner().equals(resourceServer.getClientId())) {
+                ResourceStore resourceStore = storeFactory.getResourceStore();
+
                 for (Resource typedResource : resourceStore.findByType(resourceServer, resource.getType())) {
                     policyStore.findByResource(resourceServer, typedResource, policyConsumer);
                 }
@@ -100,10 +112,12 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
     }
 
-    protected void evaluateScopePolicies(ResourcePermission permission, PolicyStore policyStore, ResourceServer resourceServer, Consumer<Policy> policyConsumer) {
+    protected void evaluateScopePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
         Collection<Scope> scopes = permission.getScopes();
 
         if (!scopes.isEmpty()) {
+            PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+            ResourceServer resourceServer = permission.getResourceServer();
             policyStore.findByScopes(resourceServer, null, new LinkedList<>(scopes), policyConsumer);
         }
     }
@@ -117,7 +131,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         decision.onComplete(permission);
     }
 
-    private Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, AtomicBoolean verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
+    protected Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, AtomicBoolean verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
         return parentPolicy -> {
             PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
 

@@ -16,8 +16,10 @@
  */
 package org.keycloak.authorization;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -96,7 +98,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(CONFIGURE, MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
     public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP));
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS)));
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
     private final PartialEvaluator partialEvaluator = new PartialEvaluator();
@@ -457,5 +459,21 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return null;
+    }
+
+    public Set<String> getScopeAliases(String resourceType, Scope scope) {
+        ResourceType type = getResourceTypes().get(resourceType);
+        Set<String> aliases = type.getScopeAliases().get(scope.getName());
+
+        if (aliases == null) {
+            aliases = new HashSet<>();
+            for (Entry<String, Set<String>> entry : type.getScopeAliases().entrySet()) {
+                if (entry.getValue().contains(scope.getName())) {
+                    aliases.add(entry.getKey());
+                }
+            }
+        }
+
+        return aliases;
     }
 }

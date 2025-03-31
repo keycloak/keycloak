@@ -25,11 +25,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
@@ -44,6 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
 import org.keycloak.authorization.attribute.Attributes;
@@ -51,12 +54,14 @@ import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.ResourceWrapper;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.Permissions;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
@@ -131,7 +136,7 @@ public class PolicyEvaluationService {
 
             request.setClaims(claims);
 
-            return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity), request), resourceServer, authorization, identity)).build();
+            return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity), request), resourceServer, authorization, identity, evaluationRequest)).build();
         } catch (Exception e) {
             logger.error("Error while evaluating permissions", e);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
@@ -142,12 +147,16 @@ public class PolicyEvaluationService {
 
     private EvaluationDecisionCollector evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
         List<ResourcePermission> permissions = createPermissions(evaluationRequest, evaluationContext, authorization, request);
+        EvaluationDecisionCollector decision = new EvaluationDecisionCollector(authorization, resourceServer, request);
 
         if (permissions.isEmpty()) {
-            return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(authorization.getRealm())) {
+                return decision;
+            }
+            return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(decision);
         }
 
-        return authorization.evaluators().from(permissions, evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+        return authorization.evaluators().from(permissions, resourceServer, evaluationContext).evaluate(decision);
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -174,16 +183,42 @@ public class PolicyEvaluationService {
     }
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization, AuthorizationRequest request) {
-        return representation.getResources().stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
+        List<ResourceRepresentation> requestedResources = representation.getResources();
+
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
+            if (requestedResources.isEmpty()) {
+                throw new BadRequestException("No resources provided");
+            }
+
+            if (representation.getResourceType() == null) {
+                throw new BadRequestException("No resource type provided");
+            }
+
+            if (representation.getUserId() == null) {
+                throw new BadRequestException("No user provided");
+            }
+        }
+
+        return requestedResources.stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
             StoreFactory storeFactory = authorization.getStoreFactory();
             if (resource == null) {
                 resource = new ResourceRepresentation();
             }
 
-            Set<ScopeRepresentation> givenScopes = resource.getScopes();
+            Set<ScopeRepresentation> givenScopes = new HashSet<>(Optional.ofNullable(resource.getScopes()).orElse(Set.of()));
 
-            if (givenScopes == null) {
-                givenScopes = new HashSet<>();
+            if (givenScopes.isEmpty()) {
+                Resource resourceType = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(authorization.getKeycloakSession(), resourceServer, representation.getResourceType());
+
+                if (resourceType != null) {
+                    givenScopes.addAll(resourceType.getScopes().stream().map(new Function<Scope, ScopeRepresentation>() {
+                        @Override
+                        public ScopeRepresentation apply(Scope scope) {
+                            return new ScopeRepresentation(scope.getName());
+                        }
+                    }).collect(Collectors.toSet()));
+                    resource.setScopes(givenScopes);
+                }
             }
 
             ScopeStore scopeStore = storeFactory.getScopeStore();
@@ -192,17 +227,32 @@ public class PolicyEvaluationService {
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer, resource.getId());
+                if (resourceModel == null) {
+                    return Stream.empty();
+                }
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
-            } else if (resource.getName() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findByName(resourceServer, resource.getName());
-                if (resourceModel != null) {
-                    return new ArrayList<>(Arrays.asList(
-                            Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
+            } else {
+                ResourceStore resourceStore = storeFactory.getResourceStore();
+
+                if (resource.getName() != null) {
+                    Resource resourceModel = resourceStore.findByName(resourceServer, resource.getName());
+                    List<ResourcePermission> permissions = new ArrayList<>();
+                    String resourceType = representation.getResourceType();
+
+                    if (resourceModel != null) {
+                        permissions.add(Permissions.createResourcePermissions(resourceType, resourceModel, resourceServer, scopes, authorization, request));
+                    } else if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
+                        permissions.add(Permissions.createResourcePermissions(resourceType, new ResourceWrapper(resource.getName(), scopes, resourceServer), resourceServer, scopes, authorization, request));
+                    }
+
+                    if (!permissions.isEmpty()) {
+                        return permissions.stream();
+                    }
+                } else if (resource.getType() != null) {
+                    return resourceStore.findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                            resourceServer, scopes, authorization, request));
                 }
-            } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
-                        resourceServer, scopes, authorization, request));
             }
 
             if (scopes.isEmpty()) {

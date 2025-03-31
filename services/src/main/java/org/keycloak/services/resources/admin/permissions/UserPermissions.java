@@ -579,7 +579,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         return evaluateHierarchy(eval, group.getParent(), visited);
     }
 
-    protected boolean canManageByGroup(UserModel user) {
+    private boolean canManageByGroup(UserModel user) {
         if (authz == null) return false;
         return evaluateHierarchy(user, root.groups()::canManageMembers);
     }

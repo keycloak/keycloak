@@ -16,11 +16,12 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.ForbiddenException;
 import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -28,6 +29,7 @@ import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.ResourceWrapper;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
@@ -49,7 +51,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE) || canViewByGroup(user);
+        return hasPermission(user, null, AdminPermissionsSchema.VIEW, AdminPermissionsSchema.MANAGE);
     }
 
     @Override
@@ -67,7 +69,27 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE) || canManageByGroup(user);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE);
+    }
+
+    @Override
+    public boolean canManage() {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        if (!root.isAdminSameRealm()) {
+            return false;
+        }
+
+        return hasPermission((UserModel) null, null, AdminPermissionsSchema.MANAGE);
+    }
+
+    @Override
+    public void requireManage() {
+        if (!canManage()) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -88,7 +110,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MAP_ROLES) || canManageByGroup(user);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MAP_ROLES);
     }
 
     @Override
@@ -97,7 +119,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP) || canManageByGroup(user);
+        return hasPermission(user, null, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
     }
 
     private boolean hasPermission(UserModel user, EvaluationContext context, String... scopes) {
@@ -111,23 +133,19 @@ class UserPermissionsV2 extends UserPermissions {
             return false;
         }
 
-        Resource resource = user == null ? null : resourceStore.findByName(server, user.getId());
         String resourceType = AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+        Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
+        Resource resource = user == null ? resourceTypeResource : resourceStore.findByName(server, user.getId());
 
-        if (resource == null) {
-            // check if there is permission for "all-users". If so, load its resource and proceed with evaluation
-            resource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
-
-            if (policyStore.findByResource(server, resource).isEmpty()) {
-                return false;
-            }
+        if (user != null && resource == null) {
+            resource = new ResourceWrapper(user.getId(), user.getId(), new HashSet<>(resourceTypeResource.getScopes()), server);
         }
 
         Collection<Permission> permissions = (context == null) ?
                 root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
                 root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
 
-        List<String> expectedScopes = Arrays.asList(scopes);
+        List<String> expectedScopes = List.of(scopes);
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {

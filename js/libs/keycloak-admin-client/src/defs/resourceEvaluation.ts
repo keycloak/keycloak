@@ -5,6 +5,7 @@ export default interface ResourceEvaluation {
   clientId?: string;
   userId: string;
   resources?: ResourceRepresentation[];
+  resourceType?: string;
   entitlements: boolean;
   context: {
     attributes: {

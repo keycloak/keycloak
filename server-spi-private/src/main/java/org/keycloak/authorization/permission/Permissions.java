@@ -124,6 +124,13 @@ public final class Permissions {
         Set<Scope> scopes = resolveScopes(resource, resourceServer, requestedScopes, authorization);
         return new ResourcePermission(resource, scopes, resourceServer, request.getClaims());
     }
+
+    public static ResourcePermission createResourcePermissions(String resourceType, Resource resource,
+                                                               ResourceServer resourceServer, Collection<Scope> requestedScopes,
+                                                               AuthorizationProvider authorization, AuthorizationRequest request) {
+        Set<Scope> scopes = resolveScopes(resource, resourceServer, requestedScopes, authorization);
+        return new ResourcePermission(resourceType, resource, scopes, resourceServer, request.getClaims());
+    }
     
     public static Set<Scope> resolveScopes(Resource resource, ResourceServer resourceServer,
             Collection<Scope> requestedScopes, AuthorizationProvider authorization) {
