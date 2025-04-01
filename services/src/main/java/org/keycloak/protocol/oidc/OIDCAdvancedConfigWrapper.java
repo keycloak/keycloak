@@ -310,6 +310,26 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
     }
 
+    public int getTokenEndpointAuthSigningMaxExp() {
+        final String value = getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP);
+        try {
+            final int maxExp = Integer.parseInt(value);
+            if (maxExp > 0) {
+                return maxExp;
+            }
+        } catch (NumberFormatException e) {
+            // ignore and return default value
+        }
+        return 60; // default to 60s
+    }
+
+    public void setTokenEndpointAuthSigningMaxExp(int maxExp) {
+        if (maxExp <= 0) {
+            throw new IllegalArgumentException("Maximum expiration is a positive number in seconds");
+        }
+        setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_MAX_EXP, String.valueOf(maxExp));
+    }
+
     public String getBackchannelLogoutUrl() {
         return getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
     }
