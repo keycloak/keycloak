@@ -21,36 +21,58 @@ The recommended way to install the {project_name} Operator in Kubernetes environ
 
 * Be sure that you have cluster-admin permission or an equivalent level of permissions granted by an administrator.
 
+==== Using the OpenShift web console
+
+The following procedure describes how to install the {project_name} Operator. However, for general instructions on installing Operators using OLM, see https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[Install your operator with OLM]. In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make sure to use the `fast` channel to find the operator.
+
+Perform this procedure on an OpenShift cluster.
+
+. Open the OpenShift Container Platform web console.
+
+. In the left column, click *Home*, *Operators*, *OperatorHub*.
+
+. Search for "keycloak" on the search input box.
++
+image::select-operator.jpeg["Select the {project_name} Operator in the UI"]
+
+. Select the {project_name} Operator from the list of results.
+. Follow the instructions on the screen.
++
+Make sure you are installing from the *fast* channel:
++
+image::configure-operator.png["Configure {project_name} Operator"]
+
+You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
+
+==== Configuring Manual Approval for OLM Upgrades
+
 [WARNING]
 ====
 *Important: Automatic OLM Upgrades*
 
 By default, OLM automatically updates the {project_name} Operator when a new version is released. This can cause several significant issues:
 
-* When using the default {project_name} image, the Operator by default uses a matching image of the corresponding {project_name} version, resulting in *unintended {project_name} upgrades* when the Operator is upgraded.
+*Major version upgrades* present the highest risk:
 
-* Even when using custom images, major Operator upgrades can introduce compatibility issues with your existing Keycloak CR configuration.
+* When using the default {project_name} image, the Operator uses a matching image of the corresponding {project_name} version, resulting in *unintended {project_name} upgrades* when the Operator is upgraded
+* *Even when using custom images*, major Operator upgrades can introduce significant compatibility issues with your existing Keycloak CR configuration, potentially requiring manual intervention
+* No option to downgrade to the previous {project_name} version due to database schema migrations
+* Breaking changes in the Operator's handling of Custom Resources
 
-*Potential risks:*
+*Minor version upgrades* generally have lower risk but still require caution:
 
-* Unexpected downtime during automatic upgrades
-* Database schema migrations that cannot be easily rolled back
-* Version incompatibilities if custom resources use features from newer CRDs
-* Breaking changes in the Operator behavior across major versions
+* Changes in Operator logic might affect how your deployment is managed
+* New fields or behavioral changes could impact existing custom configurations
 
 *Recommendation:*
 
-*We strongly recommend using only manual approval mode for the Keycloak Operator.* This ensures you can:
+*We strongly recommend using manual approval mode for the Keycloak Operator.* This ensures you can:
 
-1. Schedule maintenance windows for upgrades
-2. Test upgrades in a non-production environment first
-3. Prepare rollback plans in case of issues
-4. Review release notes and understand changes before approving upgrades
-
-See the instructions below for configuring manual approval with OLM.
+1. Review release notes and understand changes before approving upgrades
+2. Schedule maintenance windows for upgrades
+3. Test upgrades in a non-production environment first
+4. Back up the database to allow downgrading to the previous {project_version} in case of issues
 ====
-
-==== Configuring Manual Approval for OLM Upgrades
 
 To prevent automatic upgrades by OLM, set the approval strategy to `Manual` when installing the Operator:
 
@@ -80,29 +102,6 @@ spec:
 ----
 
 After installation, any upgrade will require manual approval through the OLM interface or via the CLI.
-
-==== Using the OpenShift web console
-
-The following procedure describes how to install the {project_name} Operator. However, for general instructions on installing Operators using OLM, see https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[Install your operator with OLM]. In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make sure to use the `fast` channel to find the operator.
-
-Perform this procedure on an OpenShift cluster.
-
-. Open the OpenShift Container Platform web console.
-
-. In the left column, click *Home*, *Operators*, *OperatorHub*.
-
-. Search for "keycloak" on the search input box.
-+
-image::select-operator.jpeg["Select the {project_name} Operator in the UI"]
-
-. Select the {project_name} Operator from the list of results.
-. Follow the instructions on the screen.
-+
-Make sure you are installing from the *fast* channel:
-+
-image::configure-operator.png["Configure {project_name} Operator"]
-
-You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
 
 <@profile.ifCommunity>
 === Installing by using kubectl without Operator Lifecycle Manager
