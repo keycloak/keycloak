@@ -21,17 +21,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.micrometer.core.instrument.Metrics;
-import org.infinispan.client.hotrod.impl.ConfigurationProperties;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
@@ -50,16 +44,14 @@ import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.JGroupsConfigurator;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsConfigurator;
 
 import javax.net.ssl.SSLContext;
 
-import static org.keycloak.config.CachingOptions.CACHE_REMOTE_HOST_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PASSWORD_PROPERTY;
-import static org.keycloak.config.CachingOptions.CACHE_REMOTE_PORT_PROPERTY;
 import static org.keycloak.config.CachingOptions.CACHE_REMOTE_USERNAME_PROPERTY;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
@@ -70,7 +62,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.O
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
-import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 public class CacheManagerFactory {
 
@@ -81,43 +72,24 @@ public class CacheManagerFactory {
     );
     private static final Supplier<ConfigurationBuilder> TO_NULL = () -> null;
 
-    private volatile CompletableFuture<EmbeddedCacheManager> cacheManagerFuture;
+    private volatile EmbeddedCacheManager cacheManager;
     private final JGroupsConfigurator jGroupsConfigurator;
 
     public CacheManagerFactory(String config) {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
         jGroupsConfigurator = JGroupsConfigurator.create(builder);
-
-        if (jGroupsConfigurator.requiresKeycloakSession()) {
-            cacheManagerFuture = null;
-        } else {
-            cacheManagerFuture = CompletableFuture.supplyAsync(() -> startEmbeddedCacheManager(null));
-        }
     }
 
     public EmbeddedCacheManager getOrCreateEmbeddedCacheManager(KeycloakSession keycloakSession) {
-        if (cacheManagerFuture != null)
-            return join(cacheManagerFuture);
+        if (cacheManager != null)
+            return cacheManager;
 
-        if (cacheManagerFuture == null) {
-           synchronized (this) {
-               if (cacheManagerFuture == null) {
-                   cacheManagerFuture = CompletableFuture.completedFuture(startEmbeddedCacheManager(keycloakSession));
-              }
-           }
+        synchronized (this) {
+            if (cacheManager == null) {
+                cacheManager = startEmbeddedCacheManager(keycloakSession);
+            }
         }
-        return join(cacheManagerFuture);
-    }
-
-    private static <T> T join(Future<T> future) {
-        try {
-            return future.get(getStartTimeout(), TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } catch (ExecutionException | TimeoutException e) {
-            throw new RuntimeException("Failed to start embedded or remote cache manager", e);
-        }
+        return cacheManager;
     }
 
     private EmbeddedCacheManager startEmbeddedCacheManager(KeycloakSession session) {

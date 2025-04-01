@@ -33,7 +33,7 @@ import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.infinispan.module.certificates.ReloadCertificateFunction;
+import org.keycloak.jgroups.certificates.ReloadCertificateFunction;
 import org.keycloak.keys.infinispan.PublicKeyStorageInvalidationEvent;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;

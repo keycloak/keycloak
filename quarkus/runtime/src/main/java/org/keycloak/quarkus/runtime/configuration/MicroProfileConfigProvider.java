@@ -22,7 +22,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCas
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.ArrayUtils;
@@ -129,17 +128,16 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         @Override
         public Set<String> getPropertyNames() {
             return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                    .filter(new Predicate<String>() {
-                        @Override
-                        public boolean test(String key) {
-                            return key.startsWith(prefix) || key.startsWith(toEnvVarFormat(prefix));
-                        }
-                    })
+                    .filter(this::startWithPrefix)
                     .collect(Collectors.toSet());
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
             return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
+        }
+
+        private boolean startWithPrefix(String key) {
+            return key.startsWith(toDashCase(prefix)) || key.startsWith(toDashCase(toEnvVarFormat(prefix)));
         }
     }
 

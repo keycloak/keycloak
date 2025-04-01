@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.infinispan;
+package org.keycloak.spi.infinispan;
 
 import org.keycloak.provider.Spi;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * The {@link Spi} implementation for {@link JGroupsCertificateProvider}.
  */
-public class InfinispanConnectionSpi implements Spi {
+public class JGroupsCertificateProviderSpi implements Spi {
 
-    public static final String SPI_NAME = "connectionsInfinispan";
+    public static final String SPI_NAME = "jgroupsMtls";
 
     @Override
     public boolean isInternal() {
@@ -37,13 +37,12 @@ public class InfinispanConnectionSpi implements Spi {
     }
 
     @Override
-    public Class<InfinispanConnectionProvider> getProviderClass() {
-        return InfinispanConnectionProvider.class;
+    public Class<JGroupsCertificateProvider> getProviderClass() {
+        return JGroupsCertificateProvider.class;
     }
 
     @Override
-    public Class<InfinispanConnectionProviderFactory> getProviderFactoryClass() {
-        return InfinispanConnectionProviderFactory.class;
+    public Class<JGroupsCertificateProviderFactory> getProviderFactoryClass() {
+        return JGroupsCertificateProviderFactory.class;
     }
-
 }

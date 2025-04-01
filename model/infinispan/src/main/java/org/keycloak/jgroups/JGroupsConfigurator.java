@@ -15,25 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups;
+package org.keycloak.jgroups;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.keycloak.config.CachingOptions;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.impl.JGroupsJdbcPingStackConfigurator;
+import org.keycloak.jgroups.impl.JpaJGroupsTlsConfigurator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.FileJGroupsTlsConfigurator;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.JGroupsJdbcPingStackConfigurator;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl.JpaJGroupsTlsConfigurator;
 
 /**
  * Configures the JGroups stacks before starting Infinispan.
  */
 public class JGroupsConfigurator {
+
+    public static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private final ConfigurationBuilderHolder holder;
     private final List<JGroupsStackConfigurator> stackConfiguratorList;
@@ -46,10 +48,10 @@ public class JGroupsConfigurator {
     private static void createJdbcPingConfigurator(ConfigurationBuilderHolder holder, List<JGroupsStackConfigurator> configurator) {
         var stackXmlAttribute = JGroupsUtil.transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
-            CacheManagerFactory.logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
+            logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
             return;
         }
-        CacheManagerFactory.logger.debug("JDBC_PING discovery enabled.");
+        logger.debug("JDBC_PING discovery enabled.");
         if (!stackXmlAttribute.isModified()) {
             // defaults to jdbc-ping
             JGroupsUtil.transportOf(holder).stack("jdbc-ping");
@@ -62,31 +64,23 @@ public class JGroupsConfigurator {
     }
 
     private static void createTlsConfigurator(List<JGroupsStackConfigurator> configurator) {
-        if (!Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)) {
-            CacheManagerFactory.logger.debug("JGroups encryption disabled.");
-            return;
-        }
-
-        if (Configuration.isBlank(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE) && Configuration.isBlank(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE)) {
-            CacheManagerFactory.logger.debug("JGroups encryption enabled. Neither KeyStore and Truststore present, using the certificates from database.");
-            configurator.add(JpaJGroupsTlsConfigurator.INSTANCE);
-            return;
-        }
-        CacheManagerFactory.logger.debug("JGroups encryption enabled. KeyStore or Truststore present.");
-        configurator.add(FileJGroupsTlsConfigurator.INSTANCE);
+        configurator.add(JpaJGroupsTlsConfigurator.INSTANCE);
     }
 
     private static boolean isLocal(ConfigurationBuilderHolder holder) {
-        return JGroupsUtil.transportOf(holder) == null;
+        return JGroupsUtil.transportOf(holder).getTransport() == null;
     }
 
     public static JGroupsConfigurator create(ConfigurationBuilderHolder holder) {
         if (InfinispanUtils.isRemoteInfinispan() || isLocal(holder)) {
-            CacheManagerFactory.logger.debug("Multi Site or local mode. Skipping JGroups configuration.");
+            logger.debug("Multi Site or local mode. Skipping JGroups configuration.");
             return new JGroupsConfigurator(holder, List.of());
         }
         // Configure stack from CLI options to Global Configuration
-        Configuration.getOptionalKcValue(CachingOptions.CACHE_STACK).ifPresent(JGroupsUtil.transportOf(holder)::stack);
+        var stack = Config.scope(InfinispanConnectionSpi.SPI_NAME, "quarkus").get("stack");
+        if (stack != null) {
+            JGroupsUtil.transportOf(holder).stack(stack);
+        }
         var configurator = new ArrayList<JGroupsStackConfigurator>(2);
         createJdbcPingConfigurator(holder, configurator);
         createTlsConfigurator(configurator);
@@ -101,13 +95,6 @@ public class JGroupsConfigurator {
     }
 
     /**
-     * @return {@code true} if it requires a {@link KeycloakSession} to perform the stack configuration.
-     */
-    public boolean requiresKeycloakSession() {
-        return stackConfiguratorList.stream().anyMatch(JGroupsStackConfigurator::requiresKeycloakSession);
-    }
-
-    /**
      * @return {@code true} if Keycloak is run in local mode (development mode for example) and JGroups won't be used.
      */
     public boolean isLocal() {
@@ -117,8 +104,7 @@ public class JGroupsConfigurator {
     /**
      * Configures the JGroups stack.
      *
-     * @param session The {@link KeycloakSession}. It is {@code null} when {@link #requiresKeycloakSession()} returns
-     *                {@code false}.
+     * @param session The {@link KeycloakSession}.
      */
     public void configure(KeycloakSession session) {
         if (InfinispanUtils.isRemoteInfinispan() || isLocal()) {
