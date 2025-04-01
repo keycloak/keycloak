@@ -20,6 +20,7 @@ package org.keycloak.theme;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ThemeManager;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultThemeManagerFactory {
+public class DefaultThemeManagerFactory implements ThemeManagerFactory {
 
     private static final Logger log = Logger.getLogger(DefaultThemeManagerFactory.class);
 
@@ -39,8 +40,26 @@ public class DefaultThemeManagerFactory {
         }
     }
 
+    @Override
     public ThemeManager create(KeycloakSession session) {
         return new DefaultThemeManager(this, session);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "default";
     }
 
     public Theme getCachedTheme(String name, Theme.Type type) {
@@ -73,6 +92,7 @@ public class DefaultThemeManagerFactory {
         return themeCache != null;
     }
 
+    @Override
     public void clearCache() {
         if (themeCache != null) {
             themeCache.clear();
