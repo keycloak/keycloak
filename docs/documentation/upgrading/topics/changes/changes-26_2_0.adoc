@@ -100,3 +100,7 @@ It is now possible to control where new users, groups, or roles will be created 
 Because the https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-XSS-Protection[`X-XSS-Protection` header] is no longer supported by any user agents that are supported by Keycloak, it has been removed. This header was a feature of Internet Explorer, Chrome, and Safari that stopped pages from loading when they detected reflected cross-site scripting (XSS) attacks.
 
 We don't expect that this will impact any deployments due to the lack of support in user agents, as well as this feature being supplanted by https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP[Content Security Policy (CSP)].
+
+=== JWT client authentication defines a new max expiration option for the token
+
+When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#_client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
