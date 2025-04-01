@@ -92,6 +92,14 @@ public interface InfinispanConnectionProvider extends Provider {
             CRL_CACHE_NAME,
     };
 
+    // list of cache name for user and client session caches, both offline and online
+    String[] USER_AND_CLIENT_SESSION_CACHES = {
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
+    };
+
     // list of cache name which could be defined as distributed or replicated
     String[] CLUSTERED_CACHE_NAMES = {
             USER_SESSION_CACHE_NAME,
