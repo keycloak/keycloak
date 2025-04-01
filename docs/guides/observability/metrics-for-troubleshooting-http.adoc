@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} HTTP metrics"
+title="HTTP metrics"
 summary="Learn about metrics for monitoring the {project_name} HTTP requests processing"
 tileVisible="false"
 >

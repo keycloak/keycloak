@@ -2,12 +2,11 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} Grafana dashboards"
-summary="Learn how to import {project_name} provided Grafana dashboards to your Grafana instance" >
+title="Visualizing cluster activities with Grafana dashboards"
+summary="Install the {project_name} Grafana dashboards to visualize what is happening inside your cluster.">
 
 {project_name} provides metrics to observe what is happening inside the deployment.
 To understand how metrics evolve over time, it is helpful to collect them and visualize in graphs.
-
 
 This guide provides instructions on how to visualize collected {project_name} metrics in a running Grafana instance.
 

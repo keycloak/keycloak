@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} JVM metrics"
+title="JVM metrics"
 summary="Learn about key JVM metrics for observing performance of {project_name}"
 tileVisible="false"
 >

@@ -4,14 +4,14 @@
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
 
-<@tmpl.guide title="Enabling Tracing"
-summary="Learn how to enable distributed tracing in {project_name}"
+<@tmpl.guide title="Tracking down root causes with OpenTelemetry tracing"
+summary="Record information during the request lifecycle to identify root cases for latencies and errors in {project_name} and neighboring systems."
 includedOptions="tracing-* log-*-include-trace">
 
 This {section} explains how you can enable and configure distributed tracing in {project_name} by utilizing https://opentelemetry.io/[OpenTelemetry] (OTel).
 Tracing allows for detailed monitoring of each request's lifecycle, which helps quickly identify and diagnose issues, leading to more efficient debugging and maintenance.
 
-It also provides valuable insights into performance bottlenecks and can help optimize the system's overall efficiency.
+It provides valuable insights into performance bottlenecks and can help optimize the system's overall efficiency and across system boundaries.
 {project_name} uses a supported https://quarkus.io/guides/opentelemetry-tracing[Quarkus OTel extension] that provides smooth integration and exposure of application traces.
 
 == Enable tracing

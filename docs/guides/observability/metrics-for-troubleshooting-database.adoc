@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} Database Metrics"
+title="Database Metrics"
 summary="Learn about metrics describing {project_name}'s connection to the database"
 tileVisible="false"
 >

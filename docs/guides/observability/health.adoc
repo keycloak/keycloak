@@ -4,8 +4,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Enabling {project_name} Health checks"
-summary="Learn how to enable and use {project_name} health checks"
+title="Tracking status information of instances with health checks"
+summary="Check if an instance has finished its start up and is ready to serve requests."
 includedOptions="health-enabled">
 
 {project_name} has built in support for health checks. This {section} describes how to enable and use the {project_name} health checks.
