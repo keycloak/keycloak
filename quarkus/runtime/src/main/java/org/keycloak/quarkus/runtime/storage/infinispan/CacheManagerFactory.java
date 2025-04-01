@@ -71,7 +71,7 @@ import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsConfigurator;
+import org.keycloak.jgroups.JGroupsConfigurator;
 
 import javax.net.ssl.SSLContext;
 
@@ -108,12 +108,6 @@ public class CacheManagerFactory {
     public CacheManagerFactory(String config) {
         ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
         jGroupsConfigurator = JGroupsConfigurator.create(builder);
-
-        if (jGroupsConfigurator.requiresKeycloakSession()) {
-            cacheManagerFuture = null;
-        } else {
-            cacheManagerFuture = CompletableFuture.supplyAsync(() -> startEmbeddedCacheManager(null));
-        }
 
         if (InfinispanUtils.isRemoteInfinispan()) {
             logger.debug("Remote Cache feature is enabled");

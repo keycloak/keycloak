@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups;
+package org.keycloak.jgroups;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.keycloak.models.KeycloakSession;
@@ -26,14 +26,7 @@ import org.keycloak.models.KeycloakSession;
 public interface JGroupsStackConfigurator {
 
     /**
-     * @return {@code true} if this configuration requires the sessions, for example, to access a database.
-     */
-    boolean requiresKeycloakSession();
-
-    /**
      * Configures the stack in {@code holder}.
-     * <p>
-     * The {@code session} is not {@code null} when {@link #requiresKeycloakSession()} returns {@code true}.
      *
      * @param holder  The Infinispan {@link ConfigurationBuilderHolder}.
      * @param session The current {@link KeycloakSession}. It may be {@code null};
