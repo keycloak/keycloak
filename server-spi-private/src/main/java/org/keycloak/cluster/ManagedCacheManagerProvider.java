@@ -31,6 +31,10 @@ public interface ManagedCacheManagerProvider {
 
     /**
      * @return A RemoteCacheManager if the features {@link org.keycloak.common.Profile.Feature#CLUSTERLESS} or {@link org.keycloak.common.Profile.Feature#MULTI_SITE}  is enabled, {@code null} otherwise.
+     * @deprecated The RemoteCacheManager is created and managed by keycloak. Use InfinispanConnectionProvider to retrieve it and implement CacheRemoteConfigProvider to overwrite the configuration.
      */
-    <C> C getRemoteCacheManager(Config.Scope config);
+    @Deprecated(since = "26.3", forRemoval = true)
+    default <C> C getRemoteCacheManager(Config.Scope config) {
+        return null;
+    }
 }
