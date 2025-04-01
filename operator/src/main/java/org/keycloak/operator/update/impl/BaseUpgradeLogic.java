@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
@@ -60,9 +61,10 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         var existing = ContextUtils.getCurrentStatefulSet(context);
         if (existing.isEmpty()) {
             // new deployment, no update needed
-            Log.debug("New deployment - skipping update logic");
+            Log.info("New deployment - skipping update logic");
             return Optional.empty();
         }
+        Log.info("Metadata: " + Serialization.asYaml(existing.get().getMetadata()));
         copyStatusFromExistStatefulSet(existing.get());
 
         var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
@@ -105,6 +107,7 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         }
         var reason = CRDUtils.findUpdateReason(current).orElseThrow();
         var recreate = maybeRecreate.get();
+        Log.info("Copied " + reason);
         statusConsumer = statusAggregator -> statusAggregator.addUpdateType(recreate, reason);
     }
 
