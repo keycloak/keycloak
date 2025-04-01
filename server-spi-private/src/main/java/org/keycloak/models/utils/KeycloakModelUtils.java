@@ -111,6 +111,8 @@ public final class KeycloakModelUtils {
     public static final String GROUP_PATH_ESCAPE = "~";
     private static final char CLIENT_ROLE_SEPARATOR = '.';
 
+    public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
+
     private KeycloakModelUtils() {
     }
 
@@ -937,8 +939,10 @@ public final class KeycloakModelUtils {
         }
 
         // Check client roles for all possible splits by dot
+        int counter = 0;
         int scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR);
-        while (scopeIndex >= 0) {
+        while (scopeIndex >= 0 && counter < MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+            counter++;
             String appName = roleName.substring(0, scopeIndex);
             ClientModel client = realm.getClientByClientId(appName);
             if (client != null) {
@@ -947,6 +951,10 @@ public final class KeycloakModelUtils {
             }
 
             scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR, scopeIndex - 1);
+        }
+        if (counter >= MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+            logger.warnf("Not able to retrieve role model from the role name '%s'. Please use shorter role names with the limited amount of dots, roleName", roleName.length() > 100 ? roleName.substring(0, 100) + "..." : roleName);
+            return null;
         }
 
         // determine if roleName is a realm role
