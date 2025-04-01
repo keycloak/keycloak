@@ -5,6 +5,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.injection.InstanceContext;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 
@@ -33,8 +34,13 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
     }
 
     @Override
+    public LifeCycle getDefaultLifecycle() {
+        return LifeCycle.GLOBAL;
+    }
+
+    @Override
     public boolean compatible(InstanceContext<HttpClient, InjectHttpClient> a, RequestedInstance<HttpClient, InjectHttpClient> b) {
-        return true;
+        return a.getAnnotation().followRedirects() == b.getAnnotation().followRedirects();
     }
 
 }
