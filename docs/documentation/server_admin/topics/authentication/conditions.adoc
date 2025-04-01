@@ -107,6 +107,7 @@ The last thing is defining the property with an error message in the login theme
 deny-role1 = You do not have required role!
 ----
 
+[#twofa-conditional-workflow-examples]
 ==== 2FA conditional workflow examples
 
 The section presents some examples of conditional workflows that integrates 2nd Factor Authentication (2FA) in different ways. The examples copy the default `browser` flow and modify the configuration inside the `forms` sub-flow.
