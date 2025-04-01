@@ -17,18 +17,18 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
-
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";

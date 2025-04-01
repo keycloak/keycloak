@@ -52,7 +52,6 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        Environment.updateProfile(true);
         if (Environment.isDevProfile()) {
             throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
@@ -72,6 +71,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
         try {
             Start start = new Start();
             Environment.setParsedCommand(start);
+            picocli.initProfile(start.getDefaultProfile());
             PropertyMappers.sanitizeDisabledMappers();
             start.optimizedMixin.optimized = true;
             start.dryRunMixin.dryRun = dryRun;

@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -43,6 +45,25 @@ public abstract class AbstractCommand {
 
     protected void executionError(CommandLine cmd, String message, Throwable cause) {
         cliExecutionError(cmd, message, cause);
+    }
+
+    /**
+     * Get the actual profile used for the command run
+     */
+    public String getInitProfile() {
+        String configuredProfile = org.keycloak.common.util.Environment.getProfile();
+        if (configuredProfile != null) {
+            return configuredProfile; // the profile was already set by the cli or even ENV
+        }
+        if (Environment.isRebuildCheck()) {
+            // builds default to prod, if the profile is not overriden via the cli
+            return Environment.PROD_PROFILE_VALUE;
+        }
+        // otherwise take the default profile, or what is persisted, or ultimately prod
+        return Optional.ofNullable(this.getDefaultProfile())
+                .or(() -> Optional.ofNullable(
+                        PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE)))
+                .orElse(Environment.PROD_PROFILE_VALUE);
     }
 
     /**
@@ -78,6 +99,14 @@ public abstract class AbstractCommand {
 
     public void setPicocli(Picocli picocli) {
         this.picocli = picocli;
+    }
+
+    /**
+     * The default profile for the command, or null if the persisted profile should be checked first
+     * @return
+     */
+    public String getDefaultProfile() {
+        return Environment.PROD_PROFILE_VALUE;
     }
 
 }

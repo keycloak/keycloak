@@ -70,9 +70,6 @@ public final class Build extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
-        if (org.keycloak.common.util.Environment.getProfile() == null) {
-            Environment.setProfile(Environment.PROD_PROFILE_VALUE);
-        }
         checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");
@@ -118,7 +115,7 @@ public final class Build extends AbstractCommand implements Runnable {
 
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
-            String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
+            String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
             // we allow start-dev, and import|export|bootstrap-admin --profile=dev
             // but not start --profile=dev, nor build --profile=dev
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {

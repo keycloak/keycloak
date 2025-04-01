@@ -54,8 +54,13 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     String filter;
 
     @Override
+    public String getDefaultProfile() {
+        return null;
+    }
+
+    @Override
     public void run() {
-        String profile = Environment.updateProfile(true);
+        String profile = org.keycloak.common.util.Environment.getProfile();
 
         spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
 
