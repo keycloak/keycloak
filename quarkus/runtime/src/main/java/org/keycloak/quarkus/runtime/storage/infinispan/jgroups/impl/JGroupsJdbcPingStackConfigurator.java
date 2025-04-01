@@ -26,6 +26,7 @@ import io.quarkus.arc.Arc;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
+import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.JDBC_PING2;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -81,7 +82,11 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
                 "stack.combine", "REPLACE",
                 "stack.position", discoveryProtocol
         );
-        return List.of(new ProtocolConfiguration(JDBC_PING2.class.getSimpleName(), attributes));
+
+        // Use custom Keycloak JDBC_PING implementation that workarounds issue https://issues.redhat.com/browse/JGRP-2870
+        // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
+        ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
+        return List.of(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
     }
 
 
