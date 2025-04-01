@@ -53,6 +53,8 @@ import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -736,7 +738,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
 
         // Test expired lifespan
-        response = testMissingClaim(-11, "expiration");
+        response = testMissingClaim(- 11 - 15, "expiration"); // 15 sec clock skew
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
         // Missing exp and issuedAt should return error
@@ -781,5 +783,55 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testDirectGrantRequestFailureES256() throws Exception {
         testDirectGrantRequestFailure(Algorithm.ES256);
+    }
+
+    @Test
+    public void testClockSkew() throws Exception {
+        OAuthClient.AccessTokenResponse response = testMissingClaim(15, "issuedAt", "notBefore"); // allowable clock skew is 15 sec
+        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+
+        // excess allowable clock skew
+        response = testMissingClaim(15 + 15, "issuedAt");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        response = testMissingClaim(15 + 15, "notBefore");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+    }
+
+    @Test
+    public void testLongExpirationWithIssuedAt() throws Exception {
+        CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
+        jwtProvider.setupKeyPair(keyPairClient1);
+        jwtProvider.setTokenTimeout(3600); // one hour of token expiration
+
+        // the token should be valid the first time inside the max-exp window
+        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(jwt);
+        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+
+        // in the max-exp window the token should be detected as already used
+        setTimeOffset(30);
+        response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token reuse detected"));
+
+        // after the max-exp window the token cannot be used because iat is too far in the past
+        setTimeOffset(65);
+        response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token was issued too far in the past to be used now"));
+    }
+
+    @Test
+    public void testLongExpirationWithoutIssuedAt() throws Exception {
+        CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
+        jwtProvider.setupKeyPair(keyPairClient1);
+        jwtProvider.setTokenTimeout(3600); // one hour of token expiration
+        jwtProvider.enableClaim("issuedAt", false);
+
+        // the token should not be valid because expiration is to far in the future
+        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token expiration is too far in the future and iat claim not present in token"));
     }
 }

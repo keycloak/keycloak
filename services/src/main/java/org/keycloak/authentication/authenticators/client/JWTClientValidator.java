@@ -19,8 +19,6 @@
 
 package org.keycloak.authentication.authenticators.client;
 
-import java.util.Optional;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -57,6 +55,8 @@ public class JWTClientValidator {
     private JWSInput jws;
     private JsonWebToken token;
     private ClientModel client;
+
+    private static final int ALLOWED_CLOCK_SKEW = 15; // sec
 
     public JWTClientValidator(ClientAuthenticationFlowContext context, String clientAuthenticatorProviderId) {
         this.context = context;
@@ -174,13 +174,61 @@ public class JWTClientValidator {
             throw new RuntimeException("Token is not active");
         }
 
+        if ((token.getExp() == null || token.getExp() <= 0) && (token.getIat() == null || token.getIat() <= 0)) {
+            throw new RuntimeException("Token cannot be validated. Neither the exp nor the iat claim are present.");
+        }
+
         // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-        if ((token.getExp() == null || token.getExp() <= 0) && token.getIat() + 10 < currentTime) {
-            throw new RuntimeException("Token is not active");
+        if (token.getExp() == null || token.getExp() <= 0) { // in case of "exp" not exist
+            if (token.getIat() + ALLOWED_CLOCK_SKEW + 10 < currentTime) { // consider "exp" = 10, client's clock delays from Keycloak's clock
+                throw new RuntimeException("Token is not active");
+            }
+        } else {
+            if ((token.getIat() != null && token.getIat() > 0) && token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) { // consider client's clock is ahead from Keycloak's clock
+                throw new RuntimeException("Token was issued in the future");
+            }
         }
 
         if (token.getId() == null) {
             throw new RuntimeException("Missing ID on the token");
+        }
+    }
+
+    private long calculateLifespanInSeconds()  {
+        if ((token.getExp() == null || token.getExp() <= 0) && (token.getIat() == null || token.getIat() <= 0)) {
+            throw new RuntimeException("Token cannot be validated. Neither the exp nor the iat claim are present.");
+        }
+
+        // rfc7523 marks exp as required and iat as optional: https://datatracker.ietf.org/doc/html/rfc7523#section-3
+        if (token.getExp() == null || token.getExp() <= 0) {
+            // exp not present but iat present, just allow a short period of time from iat (10s)
+            final long lifespan = token.getIat() + ALLOWED_CLOCK_SKEW + 10 - currentTime;
+            if (lifespan <= 0) {
+                throw new RuntimeException("Token is not active");
+            }
+            return lifespan;
+        } else if (token.getIat() == null || token.getIat() <= 0) {
+            // iat not present but exp present, the max-exp should not be exceeded
+            final int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+            final long lifespan = token.getExp() - currentTime;
+            if (lifespan > maxExp) {
+                throw new RuntimeException("Token expiration is too far in the future and iat claim not present in token");
+            }
+            return lifespan;
+        } else {
+            // both iat and exp present, the token is just allowed to be used max-age as much
+            if (token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) {
+                throw new RuntimeException("Token was issued in the future");
+            }
+            final int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+            final long lifespan = Math.min(token.getExp() - currentTime, maxExp);
+            if (lifespan <= 0) {
+                throw new RuntimeException("Token is not active");
+            }
+            if (currentTime > token.getIat() + maxExp) {
+                throw new RuntimeException("Token was issued too far in the past to be used now");
+            }
+            return lifespan;
         }
     }
 
@@ -189,7 +237,7 @@ public class JWTClientValidator {
         if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        long lifespanInSecs = Math.max(Optional.ofNullable(token.getExp()).orElse(0L) - currentTime, 10);
+        long lifespanInSecs = calculateLifespanInSeconds();
         if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
             logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
 
