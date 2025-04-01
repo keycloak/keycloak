@@ -151,8 +151,12 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
         entity.setUserSessionId(userSession.getId());
 
-        // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
-        entity.setTimestamp(userSession.getLastSessionRefresh());
+        if (offline) {
+            // Update timestamp to the same value as userSession. LastSessionRefresh of userSession from DB will have a correct value.
+            // This is an optimization with the old code before persistent user sessions existed, and is probably valid as an offline user session is supposed to have only one client session.
+            // Remove this code once this once the persistent sessions is the only way to handle sessions, and the old client sessions have been migrated to have an updated timestamp.
+            entity.setTimestamp(userSession.getLastSessionRefresh());
+        }
 
         if (getMaxIdleMsLoader(offline).apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
                 || getLifespanMsLoader(offline).apply(realm, client, entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
