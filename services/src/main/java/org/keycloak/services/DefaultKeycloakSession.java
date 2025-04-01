@@ -81,7 +81,6 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private DatastoreProvider datastoreProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
-    private ThemeManager themeManager;
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
@@ -314,10 +313,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public ThemeManager theme() {
-        if (themeManager == null) {
-            themeManager = factory.getThemeManagerFactory().create(this);
-        }
-        return themeManager;
+        return this.getProvider(ThemeManager.class);
     }
 
     @Override
