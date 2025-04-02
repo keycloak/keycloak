@@ -121,6 +121,7 @@ Due to fundamental changes in the permission model, **automatic migration from V
   ** Example: To both view and manage a resource, both *view* and *manage* scopes for a permissions must be assigned separately.
 * Permission model changes:
   ** The *user-impersonated* user permission has been _removed_.
+  ** The *configure* client permission has been _removed_. With the introduction of explicit operation scoping in V2, the distinction between manage and configure became ambiguous.
 * Flexible resource scoping:
   ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
   ** Administrators can now define permissions for:

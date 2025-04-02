@@ -75,7 +75,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String VIEW = "view";
 
     // client specific scopes
-    public static final String CONFIGURE = "configure";
     public static final String MAP_ROLES = "map-roles";
     public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
     public static final String MAP_ROLES_COMPOSITE = "map-roles-composite";
@@ -95,7 +94,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
 
-    public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(CONFIGURE, MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
+    public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
     public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS)), GROUPS.getType());
