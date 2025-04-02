@@ -1805,17 +1805,15 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             // Clear all entries from the cache to enforce re-loading the data from the database
             testingClient.server("test").run(session -> {
-                if (Profile.Feature.PERSISTENT_USER_SESSIONS.isAvailable()) {
-                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                    if (connections != null) {
-                        Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-                        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-                        if (sessionCache != null) {
-                            sessionCache.clear();
-                        }
-                        if (clientSessionCache != null) {
-                            clientSessionCache.clear();
-                        }
+                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+                if (connections != null) {
+                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
+                    if (sessionCache != null) {
+                        sessionCache.clear();
+                    }
+                    if (clientSessionCache != null) {
+                        clientSessionCache.clear();
                     }
                 }
             });
