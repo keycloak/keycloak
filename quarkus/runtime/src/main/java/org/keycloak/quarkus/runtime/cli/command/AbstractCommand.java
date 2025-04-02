@@ -66,7 +66,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        // TODO: validate that the Configuration does not exist prior to this point
         picocli.initProfile();
         return exitWith().orElseGet(() -> {
             runCommand();
@@ -74,6 +73,9 @@ public abstract class AbstractCommand implements Callable<Integer> {
         });
     }
 
+    /**
+     * An alternative to {@link #runCommand()} that allows for returning an exit code
+     */
     protected Optional<Integer> exitWith() {
         return Optional.empty();
     }

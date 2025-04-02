@@ -61,7 +61,7 @@ public class BuildAndStartDistTest {
         cliResult.assertBuild();
         cliResult = rawDist.run("start", OPTIMIZED_BUILD_OPTION_LONG);
         cliResult.assertNoBuild();
-        assertTrue(cliResult.getErrorOutput().isBlank());
+        assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
         // running start without optimized flag should not cause a build
         cliResult = rawDist.run("start");
         cliResult.assertNoBuild();

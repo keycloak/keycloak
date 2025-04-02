@@ -340,7 +340,7 @@ public class PicocliTest extends AbstractConfigurationTest {
             Environment.setRebuildCheck(); // auto-build
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
-        assertTrue(nonRunningPicocli.reaug);
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.reaug);
         assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("first-class"));
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
@@ -401,7 +401,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void testReaugFromDevToProdExport() {
-        build("start-dev");
+        build("start-dev", "-v");
 
         Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");

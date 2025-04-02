@@ -21,7 +21,6 @@ import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_P
 import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import io.quarkus.runtime.LaunchMode;
 
@@ -78,7 +77,7 @@ public final class Build extends AbstractCommand {
             return null;
         });
 
-        println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
+        picocli.println("Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
             configureBuildClassLoader();
@@ -91,8 +90,8 @@ public final class Build extends AbstractCommand {
             }
 
             if (!isDevProfile()) {
-                println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
-                println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+                picocli.println("Server configuration updated and persisted. Run the following command to review the configuration:\n");
+                picocli.println("\t" + Environment.getCommand() + " show-config\n");
             }
         } catch (Throwable throwable) {
             executionError(spec.commandLine(), "Failed to update server configuration.", throwable);

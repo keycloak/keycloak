@@ -98,12 +98,15 @@ public class KeycloakMain implements QuarkusApplication {
             picocli.usageException(e.getMessage(), e.getCause());
             return;
         }
-        
+
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
         }
 
         if (cliArgs.isEmpty()) {
+            if (Environment.isRebuildCheck()) {
+                return; // nothing to do - not currently caught by the shell scripts
+            }
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");

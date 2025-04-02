@@ -19,15 +19,12 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static java.lang.String.format;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
@@ -54,7 +51,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -114,12 +110,7 @@ public class Picocli {
             // recreate the command specifically for the current
             cmd = createCommandLineForCommand(cliArgs, commandLineList);
 
-            int exitCode = CommandLine.ExitCode.OK;
-
-            exitCode = cmd.execute(argArray);
-            if (exitCode == AbstractStartCommand.REAUG_EXIT_CODE) {
-                exitCode = runReAugmentation(cliArgs, cmd);
-            }
+            int exitCode = cmd.execute(argArray);
 
             exit(exitCode);
         } catch (ParameterException parEx) {
@@ -202,53 +193,6 @@ public class Picocli {
             // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
             System.exit(exitCode);
         }
-    }
-
-    /**
-     * checks the raw cli input for possible credentials / properties which should be masked,
-     * and masks them.
-     * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
-     * instead of the actual passwords value.
-     */
-    private static List<String> getSanitizedRuntimeCliOptions() {
-        List<String> properties = new ArrayList<>();
-
-        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
-
-            if (mapper == null || mapper.isRunTime()) {
-                properties.add(key + "=" + maskValue(value, mapper));
-            }
-        }, properties::add);
-
-        return properties;
-    }
-
-    private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if(!isDevMode() && cmd != null) {
-            cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            if (Configuration.isOptimized()) {
-                checkChangesInBuildOptionsDuringAutoBuild(cmd.getOut());
-            }
-        }
-
-        List<String> configArgsList = new ArrayList<>();
-        configArgsList.add(Build.NAME);
-        parseConfigArgs(cliArgs, (k, v) -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(k);
-
-            if (mapper != null && mapper.isBuildTime()) {
-                configArgsList.add(k + "=" + v);
-            }
-        }, ignored -> {});
-
-        int exitCode = cmd.execute(configArgsList.toArray(new String[0]));
-
-        if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
-        }
-
-        return exitCode;
     }
 
     private static boolean wasBuildEverRun() {
@@ -830,8 +774,8 @@ public class Picocli {
         return transformedDesc.toString();
     }
 
-    public static void println(CommandLine cmd, String message) {
-        cmd.getOut().println(message);
+    public void println(String message) {
+        getOutWriter().println(message);
     }
 
     public static List<String> parseArgs(String[] rawArgs) throws PropertyException {
@@ -861,7 +805,7 @@ public class Picocli {
         return args;
     }
 
-    private static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
+    public static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
 
         checkChangesInBuildOptions((key, oldValue, newValue) -> optionChanged(options, key, oldValue, newValue));
@@ -926,6 +870,7 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
+    // TODO: validate that the Configuration does not exist prior to this point
     public void initProfile() {
         Environment.setProfile(Main.getInitProfile(parsedCommand));
         parsedCommand.ifPresent(ignored -> PropertyMappers.sanitizeDisabledMappers());

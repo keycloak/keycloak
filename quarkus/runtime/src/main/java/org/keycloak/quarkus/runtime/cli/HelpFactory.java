@@ -34,7 +34,7 @@ final class HelpFactory implements CommandLine.IHelpFactory {
     public CommandLine.Help create(CommandSpec commandSpec,
             ColorScheme colorScheme) {
         if (shouldInit) { // called after Main.setProfile
-            shouldInit = false; 
+            shouldInit = false;
             picocli.initProfile();
         }
         return new Help(commandSpec, colorScheme);
