@@ -109,9 +109,7 @@ set of management operations:
 | *Operation*                | *Description*
 
 | *view*                    | Defines if a realm administrator can view clients.
-| *manage*                  | Defines if a realm administrator can manage clients. It allows operations, such as update certificates, manage 
-                              protocol-mappers or client scopes, regenerate access token.
-| *configure*               | Defines if a realm administrator can manage clients.
+| *manage*                  | Defines if a realm administrator can manage clients.
 | *map-roles*               | Defines if a realm administrator can assign any role defined by a client (or multiple clients) to a user.
 | *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client (or multiple clients) as a composite to 
                               another role.
@@ -125,7 +123,6 @@ set of management operations:
   assigning only *manage* without *view* will prevent the client from being visible.
 - The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also 
   have user role mapping permissions.
-- For certain operations like updating or deleting clients it is required both *manage* and *configure* assigned.
 ====
 
 ===== Roles Resource Type

@@ -55,10 +55,15 @@ class ClientPermissionsV2 extends ClientPermissions {
     }
 
     @Override
-    public boolean canConfigure(ClientModel client) {
-        if (canManage(client)) return true;
+    public void requireConfigure(ClientModel client) {
+        //redirecting call to manage for V2
+        super.requireManage(client);
+    }
 
-        return hasPermission(client, AdminPermissionsSchema.CONFIGURE);
+    @Override
+    public boolean canConfigure(ClientModel client) {
+        //redirecting call to manage for V2
+        return canManage(client);
     }
 
     @Override
