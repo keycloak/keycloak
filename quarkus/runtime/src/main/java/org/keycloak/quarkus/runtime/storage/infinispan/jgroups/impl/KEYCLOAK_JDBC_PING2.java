@@ -28,9 +28,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     }
                     delete(connection, clustername, data.getAddress());
                     insert(connection, data, clustername);
-                    connection.commit();
+                    if (isAutocommit) {
+                        connection.commit();
+                    }
                 } catch (SQLException e) {
-                    connection.rollback();
+                    if (isAutocommit) {
+                        connection.rollback();
+                    }
+                    throw e;
                 } finally {
                     if (isAutocommit) {
                         connection.setAutoCommit(isAutocommit);
