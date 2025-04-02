@@ -40,6 +40,7 @@ public class TotpLoginBean {
 
     private final String selectedCredentialId;
     private final List<OTPCredential> userOtpCredentials;
+    private OTPPolicy policy;
 
     public TotpLoginBean(KeycloakSession session, RealmModel realm, UserModel user, String selectedCredentialId) {
 
@@ -57,6 +58,7 @@ public class TotpLoginBean {
         }
 
         this.selectedCredentialId = selectedCredentialId;
+        this.policy = realm.getOTPPolicy();
     }
 
 
@@ -68,6 +70,9 @@ public class TotpLoginBean {
         return selectedCredentialId;
     }
 
+    public OTPPolicy getPolicy() {
+        return policy;
+    }
 
     public static class OTPCredential {
 
