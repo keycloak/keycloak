@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.infinispan.module.certificates;
+package org.keycloak.jgroups.certificates;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
+package org.keycloak.jgroups.impl;
 
 import java.util.List;
 import java.util.Map;
@@ -30,10 +30,10 @@ import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.JDBC_PING2;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.jgroups.JGroupsConfigurator;
+import org.keycloak.jgroups.JGroupsStackConfigurator;
+import org.keycloak.jgroups.JGroupsUtil;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsStackConfigurator;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsUtil;
 
 import javax.sql.DataSource;
 
@@ -47,11 +47,6 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
     private JGroupsJdbcPingStackConfigurator() {}
 
     @Override
-    public boolean requiresKeycloakSession() {
-        return true;
-    }
-
-    @Override
     public void configure(ConfigurationBuilderHolder holder, KeycloakSession session) {
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var stackName = JGroupsUtil.transportStackOf(holder).get();
@@ -63,7 +58,7 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
         Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
         JGroupsUtil.transportOf(holder).addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
         JGroupsUtil.transportOf(holder).stack(stackName);
-        CacheManagerFactory.logger.info("JGroups JDBC_PING discovery enabled.");
+        JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, String discoveryProtocol) {

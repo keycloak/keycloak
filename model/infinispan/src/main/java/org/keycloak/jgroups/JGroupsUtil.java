@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups;
+package org.keycloak.jgroups;
 
 import org.infinispan.commons.configuration.attributes.Attribute;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 
@@ -50,7 +49,7 @@ public final class JGroupsUtil {
             case "azure":
             case "ec2":
             case "google":
-                CacheManagerFactory.logger.warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
+                JGroupsConfigurator.logger.warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
         }
     }
 
