@@ -62,13 +62,13 @@ Consent Screen Text::
 
 == Include in token scope
 
-There is the switch *Include in token scope* on the client scope. If on, the name of this client scope will be added to the access token property `scope` as well as to the Token Response and Token Introspection Endpoint
+There is the *Include in token scope* switch on the client scope. If on, the name of this client scope will be added to the access token property scope, and to the Token Response and Token Introspection Endpoint
 response claim `scope`. If off, this client scope will be omitted from the token and from the Token Introspection Endpoint response. As mentioned above, some built-in client scopes have this switch disabled, which means
 that they are not included in the `scope` claim even if they are applied for the particular request.
 
 [[_client_scopes_linking]]
 == Link client scope with the client
-Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Here is how it looks like for the client application `myclient`:
+Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Here is how it looks for the client application `myclient`:
 
 .Client scopes linking to client
 image:images/client-scopes-default.png[]
@@ -92,19 +92,19 @@ scope=openid phone
 The scope parameter contains the string, with the scope values divided by spaces. The value *openid* is the meta-value used for all OpenID Connect requests. The token will contain mappers and role scope mappings from the default client scopes *profile* and *email* as well as *phone*, an optional client scope requested by the scope parameter.
 
 [[_client_scopes_dedicated]]
-=== Client dedicated client scope
+=== Dedicated client scope
 
-There is special client scope, which is linked to every client. It is dedicated client scope, which is always shown as a first client scope when you click to the tab *Client scopes* of the particular client.
-For example for client `myclient`, the client scope is shown as `myclient-dedicated`. This client scope represents the protocol mappers and role scope mappings, which are linked directly to the client itself.
+There is a special client scope, which is linked to every client. It is a dedicated client scope, which is always shown as the first client scope when you click on the tab *Client scopes* of the particular client. 
+For example, for client `myclient`, the client scope is shown as `myclient-dedicated`. This client scope represents the protocol mappers and role scope mappings, which are linked directly to the client itself.
 
-It is not possible to unlink the dedicated client scope from client. Also it is not possible to link this dedicated client scope to some different client. In other words, the dedicated client scope is useful
-just for protocol mappers and role scope mappings, which are specific to a single client. In case you want to share same protocol mapper configuration among multiple clients, it is usually useful to create
-a client scope in the realm tab *Client scopes* and then link this shared client scope to every client, which should apply this shared configuration.
+It is not possible to unlink the dedicated client scope from a client. Also, it is not possible to link this dedicated client scope to a different client. In other words, the dedicated client scope is useful
+just for protocol mappers and role scope mappings, which are specific to a single client. In case you want to share the same protocol mapper configuration among multiple clients, it is usually useful to create
+a client scope in the realm tab *Client scopes* and then link this shared client scope to every client that should apply this shared configuration.
 
 In the tab *Scope* of the dedicated client scope, you can define role scope mappings applicable to this client. You can also see the switch *Full scope allowed* in this tab.
 The details about this switch are described in <<_role_scope_mappings, this section>> and in <<_oidc_token_role_mappings,this section>>.
 
-NOTE: In the admin REST API and in the internal {project_name} storage, the dedicated client scope does not exists as it's protocol mappers and role scope mappings are internally linked to the client itself. The
+NOTE: In the admin REST API and in the internal {project_name} storage, the dedicated client scope does not exist as its protocol mappers and role scope mappings are internally linked to the client itself. The.
 dedicated client scope is in fact just an abstraction for the admin console UI.
 
 [[_client_scopes_evaluate]]
@@ -125,7 +125,7 @@ include::proc-updating-default-scopes.adoc[]
 
 == Scopes explained
 
-The term _scope_ is used in various contexts in {project_name} and in the various OAuth/OIDC specifications. Here is some clarification of various _scopes_ used in {project_name}:
+The term _scope_ has multiple meanings within {project_name} and across the OAuth/OIDC specifications. Below is a clarification of the different _scopes_ used in {project_name}:
 
 Client scope::
 Client scopes are entities in {project_name} that are configured at the realm level and can be linked to clients. Client scopes are referenced by their name when a request is sent to the {project_name} authorization endpoint with a corresponding value of the *scope* parameter. See the <<_client_scopes_linking, client scopes linking>> section for more details.
