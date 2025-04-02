@@ -65,7 +65,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testCookieDefaultsWithInsecureContext() {
-        KeycloakTestingClient testingInsecure = KeycloakTestingClient.getInstance("http://127.0.0.1.nip.io:8180/auth");
+        KeycloakTestingClient testingInsecure = KeycloakTestingClient.getInstance("http://0.0.0.0:8180/auth");
 
         Response response = testingInsecure.server("master").runWithResponse(session -> {
             CookieProvider cookies = session.getProvider(CookieProvider.class);
