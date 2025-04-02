@@ -43,6 +43,7 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
@@ -146,10 +147,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
         }
 
+        // add revision from CR if set
+        UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
+
         var updateType = ContextUtils.getUpdateType(context);
         // empty means no existing stateful set.
         if (updateType.isEmpty()) {
-            return addUpdateRevisionAnnotation(baseDeployment, primary);
+            return baseDeployment;
         }
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElseThrow();
@@ -162,7 +166,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         return switch (updateType.get()) {
             case ROLLING -> handleRollingUpdate(baseDeployment, context, primary);
-            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, context, primary);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, context);
         };
     }
 
@@ -551,11 +555,10 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .editMetadata()
                 .addToAnnotations(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, "false")
                 .addToAnnotations(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
-        addUpdateRevisionAnnotation(builder, primary);
         return builder.endMetadata().build();
     }
 
-    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Context<Keycloak> context, Keycloak primary) {
+    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Context<Keycloak> context) {
         if (actual.getStatus().getReplicas() == 0) {
             Log.debug("Performing a recreate update - scaling up the stateful set");
             return desired;
@@ -567,25 +570,24 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withReplicas(0)
                 .endSpec();
         // update metadata from the new stateful set, it is safe to do so.
-        builder.withMetadata(desired.getMetadata());
-        var metadataBuilder = builder.editMetadata()
+        var metadataBuilder = desired.getMetadata().edit()
                 .addToAnnotations(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString())
                 .addToAnnotations(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.TRUE.toString())
                 .addToAnnotations(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
-        addUpdateRevisionAnnotation(metadataBuilder, primary);
-        metadataBuilder.endMetadata();
-        return builder.build();
+        // copy revision number from the previous stateful set.
+        CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, metadataBuilder));
+        return builder
+                .withMetadata(metadataBuilder.build())
+                .build();
     }
 
-    private static StatefulSet addUpdateRevisionAnnotation(StatefulSet statefulSet, Keycloak primary) {
-        var builder = statefulSet.toBuilder()
-                .editMetadata();
-        addUpdateRevisionAnnotation(builder, primary);
-        return builder.endMetadata().build();
+    private static void addUpdateRevisionAnnotation(String revision, StatefulSet toUpdate) {
+        var metadataBuilder = toUpdate.getMetadata().edit();
+        addUpdateRevisionAnnotation(revision, metadataBuilder);
+        toUpdate.setMetadata(metadataBuilder.build());
     }
 
-    private static void addUpdateRevisionAnnotation(ObjectMetaFluent<?> builder, Keycloak primary) {
-        UpdateSpec.getRevision(primary)
-                .ifPresent(rev -> builder.addToAnnotations(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, rev));
+    private static void addUpdateRevisionAnnotation(String revision, ObjectMetaFluent<?> builder) {
+        builder.addToAnnotations(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
     }
 }
