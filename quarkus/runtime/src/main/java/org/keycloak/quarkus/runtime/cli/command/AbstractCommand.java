@@ -66,7 +66,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        picocli.initProfile();
         return exitWith().orElseGet(() -> {
             runCommand();
             return CommandLine.ExitCode.OK;

@@ -23,20 +23,9 @@ import picocli.CommandLine.Model.CommandSpec;
 
 final class HelpFactory implements CommandLine.IHelpFactory {
 
-    private Picocli picocli;
-    private boolean shouldInit = true;
-
-    public HelpFactory(Picocli picocli) {
-        this.picocli = picocli;
-    }
-
     @Override
     public CommandLine.Help create(CommandSpec commandSpec,
             ColorScheme colorScheme) {
-        if (shouldInit) { // called after Main.setProfile
-            shouldInit = false;
-            picocli.initProfile();
-        }
         return new Help(commandSpec, colorScheme);
     }
 }

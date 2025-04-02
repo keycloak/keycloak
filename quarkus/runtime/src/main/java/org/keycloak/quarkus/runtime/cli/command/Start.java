@@ -72,6 +72,7 @@ public final class Start extends AbstractStartCommand {
             start.optimizedMixin.optimized = true;
             start.dryRunMixin.dryRun = dryRun;
             start.setPicocli(picocli);
+            picocli.initConfig(start);
             picocli.exit(start.call());
         } catch (PropertyException | ProfileException e) {
             picocli.usageException(e.getMessage(), e.getCause());

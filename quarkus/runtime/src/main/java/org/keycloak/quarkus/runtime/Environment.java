@@ -33,7 +33,6 @@ import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class Environment {
@@ -46,8 +45,6 @@ public final class Environment {
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
-
-    private static volatile AbstractCommand parsedCommand;
 
     private Environment() {}
 
@@ -229,21 +226,6 @@ public final class Environment {
         }
 
         return profile;
-    }
-
-    /**
-     * Get parsed AbstractCommand we obtained from the CLI
-     */
-    public static Optional<AbstractCommand> getParsedCommand() {
-        return Optional.ofNullable(parsedCommand);
-    }
-
-    public static boolean isParsedCommand(String commandName) {
-        return getParsedCommand().filter(f -> f.getName().equals(commandName)).isPresent();
-    }
-
-    public static void setParsedCommand(AbstractCommand command) {
-        Environment.parsedCommand = command;
     }
 
     public static void removeHomeDir() {

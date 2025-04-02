@@ -36,6 +36,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.AbstractConfigurationTest;
 
@@ -91,8 +92,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initProfile() {
-            super.initProfile();
+        public void initConfig(AbstractCommand command) {
+            super.initConfig(command);
             config = createConfig();
         }
 
@@ -116,6 +117,12 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testUnbuiltHelp() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("bootstrap-admin");
         assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
+    }
+
+    @Test
+    public void testProfileForHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("-pf=dev", "bootstrap-admin", "-h");
+        assertEquals("dev", nonRunningPicocli.config.getConfigValue("kc.profile").getValue());
     }
 
     @Test

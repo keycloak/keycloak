@@ -54,7 +54,7 @@ public abstract class AbstractStartCommand extends AbstractCommand {
     protected Optional<Integer> exitWith() {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
-                return Optional.of(runReAugmentation());
+                runReAugmentation();
             }
             return Optional.of(CommandLine.ExitCode.OK);
         }
@@ -74,7 +74,7 @@ public abstract class AbstractStartCommand extends AbstractCommand {
         return !rawPersistedProperties.equals(current);
     }
 
-    private int runReAugmentation() {
+    private void runReAugmentation() {
         if(!isDevMode()) {
             spec.commandLine().getOut().println("Changes detected in configuration. Updating the server image.");
             if (Configuration.isOptimized()) {
@@ -82,21 +82,19 @@ public abstract class AbstractStartCommand extends AbstractCommand {
             }
         }
 
-        int exitCode = directBuild();
+        directBuild();
 
         if(!isDevMode()) {
             spec.commandLine().getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
         }
-
-        return exitCode;
     }
 
-    public int directBuild() {
+    public void directBuild() {
         Build build = new Build();
         build.dryRunMixin = this.dryRunMixin;
         build.setPicocli(picocli);
         build.spec = spec;
-        return build.call();
+        build.runCommand();
     }
 
     /**

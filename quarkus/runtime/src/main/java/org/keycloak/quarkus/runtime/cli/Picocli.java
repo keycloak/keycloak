@@ -51,6 +51,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -150,16 +151,16 @@ public class Picocli {
                 addHelp(currentSpec);
             }
 
+            AbstractCommand currentCommand = null;
             if (currentSpec != null) {
                 CommandLine commandLine = currentSpec.commandLine();
                 addCommandOptions(cliArgs, commandLine);
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
-                    // set current parsed command
-                    this.parsedCommand = Optional.ofNullable(ac);
-                    Environment.setParsedCommand(ac);
+                    currentCommand = ac;
                 }
             }
+            initConfig(currentCommand);
 
             if (isRebuildCheck()) {
                 // build command should be available when running re-aug
@@ -562,7 +563,7 @@ public class Picocli {
         cmd.setPosixClusteredShortOptionsAllowed(false);
         cmd.setExecutionExceptionHandler(this.errorHandler);
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
-        cmd.setHelpFactory(new HelpFactory(this));
+        cmd.setHelpFactory(new HelpFactory());
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
         cmd.setOut(getOutWriter());
@@ -863,7 +864,8 @@ public class Picocli {
     }
 
     public void start() {
-        KeycloakMain.start(errorHandler, getErrWriter());
+        KeycloakMain.start((AbstractNonServerCommand) this.getParsedCommand()
+                .filter(AbstractNonServerCommand.class::isInstance).orElse(null), errorHandler, getErrWriter());
     }
 
     public void build() throws Throwable {
@@ -871,9 +873,10 @@ public class Picocli {
     }
 
     // TODO: validate that the Configuration does not exist prior to this point
-    public void initProfile() {
+    public void initConfig(AbstractCommand command) {
+        this.parsedCommand = Optional.ofNullable(command);
         Environment.setProfile(Main.getInitProfile(parsedCommand));
-        parsedCommand.ifPresent(ignored -> PropertyMappers.sanitizeDisabledMappers());
+        parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
     }
 
 }
