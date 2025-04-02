@@ -64,7 +64,7 @@ abstract class BaseUpdateLogic implements UpdateLogic {
             Log.info("New deployment - skipping update logic");
             return Optional.empty();
         }
-        Log.info("Metadata: " + Serialization.asYaml(existing.get().getMetadata()));
+        Log.info("Annotations: " + Serialization.asYaml(existing.get().getMetadata().getAnnotations()));
         copyStatusFromExistStatefulSet(existing.get());
 
         var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
