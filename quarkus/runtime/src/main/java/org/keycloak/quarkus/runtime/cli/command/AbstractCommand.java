@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
@@ -33,7 +34,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-public abstract class AbstractCommand {
+public abstract class AbstractCommand implements Callable<Integer> {
 
     @Spec
     protected CommandSpec spec; // will be null for "start --optimized"
@@ -47,9 +48,6 @@ public abstract class AbstractCommand {
         cliExecutionError(cmd, message, cause);
     }
 
-    /**
-     * Get the actual profile used for the command run
-     */
     public String getInitProfile() {
         String configuredProfile = org.keycloak.common.util.Environment.getProfile();
         if (configuredProfile != null) {
@@ -59,11 +57,29 @@ public abstract class AbstractCommand {
             // builds default to prod, if the profile is not overriden via the cli
             return Environment.PROD_PROFILE_VALUE;
         }
-        // otherwise take the default profile, or what is persisted, or ultimately prod
+        // otherwise take the default profile, or what is persisted, or ultimately dev
         return Optional.ofNullable(this.getDefaultProfile())
                 .or(() -> Optional.ofNullable(
                         PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE)))
                 .orElse(Environment.PROD_PROFILE_VALUE);
+    }
+
+    @Override
+    public Integer call() {
+        // TODO: validate that the Configuration does not exist prior to this point
+        picocli.initProfile();
+        return exitWith().orElseGet(() -> {
+            runCommand();
+            return CommandLine.ExitCode.OK;
+        });
+    }
+
+    protected Optional<Integer> exitWith() {
+        return Optional.empty();
+    }
+
+    protected void runCommand() {
+
     }
 
     /**

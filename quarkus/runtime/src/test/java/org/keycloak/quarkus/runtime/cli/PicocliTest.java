@@ -91,8 +91,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initProfile(String initProfile) {
-            super.initProfile(initProfile);
+        public void initProfile() {
+            super.initProfile();
             config = createConfig();
         }
 
@@ -110,6 +110,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli.config = createConfig();
         KeycloakMain.main(args, nonRunningPicocli);
         return nonRunningPicocli;
+    }
+
+    @Test
+    public void testUnbuiltHelp() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("bootstrap-admin");
+        assertTrue(nonRunningPicocli.getErrString().contains("Missing required subcommand"));
     }
 
     @Test
@@ -423,7 +429,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         System.setProperty("kc.hostname-strict", "false");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
-        assertEquals(Integer.MAX_VALUE, nonRunningPicocli.exitCode); // "running" state
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
 
     @Test

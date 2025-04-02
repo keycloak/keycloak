@@ -321,10 +321,6 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers() {
-            if (Environment.getParsedCommand().isEmpty()) {
-                return; // do not sanitize when no command is present
-            }
-
             DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
 
                 // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation

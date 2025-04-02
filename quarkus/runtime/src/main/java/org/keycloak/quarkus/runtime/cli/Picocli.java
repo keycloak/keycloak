@@ -113,18 +113,12 @@ public class Picocli {
 
             // recreate the command specifically for the current
             cmd = createCommandLineForCommand(cliArgs, commandLineList);
-            initProfile(parsedCommand.map(AbstractCommand::getInitProfile).orElse(Environment.PROD_PROFILE_VALUE));
-            PropertyMappers.sanitizeDisabledMappers();
 
             int exitCode = CommandLine.ExitCode.OK;
 
-            if (isRebuildCheck()) {
-                if (parsedCommand.filter(AbstractStartCommand.class::isInstance).isPresent() && !isHelp(cliArgs)
-                        && requiresReAugmentation()) {
-                    exitCode = runReAugmentation(cliArgs, cmd);
-                }
-            } else {
-                exitCode = cmd.execute(argArray);
+            exitCode = cmd.execute(argArray);
+            if (exitCode == AbstractStartCommand.REAUG_EXIT_CODE) {
+                exitCode = runReAugmentation(cliArgs, cmd);
             }
 
             exit(exitCode);
@@ -208,25 +202,6 @@ public class Picocli {
             // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
             System.exit(exitCode);
         }
-    }
-
-    private static boolean isHelp(List<String> cliArgs) {
-        return cliArgs.contains("--help")
-                || cliArgs.contains("-h")
-                || cliArgs.contains("--help-all");
-    }
-
-    private static boolean requiresReAugmentation() {
-        Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
-        if (rawPersistedProperties.isEmpty()) {
-            return true; // no build yet
-        }
-        var current = getNonPersistedBuildTimeOptions();
-
-        // everything but the optimized value must match
-        String key = Configuration.KC_OPTIMIZED;
-        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
-        return !rawPersistedProperties.equals(current);
     }
 
     /**
@@ -643,7 +618,7 @@ public class Picocli {
         cmd.setPosixClusteredShortOptionsAllowed(false);
         cmd.setExecutionExceptionHandler(this.errorHandler);
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
-        cmd.setHelpFactory(new HelpFactory());
+        cmd.setHelpFactory(new HelpFactory(this));
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(getErrWriter());
         cmd.setOut(getOutWriter());
@@ -951,8 +926,9 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
-    public void initProfile(String initProfile) {
-        Environment.setProfile(initProfile);
+    public void initProfile() {
+        Environment.setProfile(Main.getInitProfile(parsedCommand));
+        parsedCommand.ifPresent(ignored -> PropertyMappers.sanitizeDisabledMappers());
     }
 
 }

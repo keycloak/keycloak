@@ -18,26 +18,56 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 
-public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractStartCommand extends AbstractCommand {
+
+    // TODO: put all the exit codes together
+    public static final int REAUG_EXIT_CODE = 5;
+
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
     @CommandLine.Mixin
     DryRunMixin dryRunMixin = new DryRunMixin();
 
     @Override
-    public void run() {
+    protected Optional<Integer> exitWith() {
+        if (isRebuildCheck()) {
+            return Optional.ofNullable(requiresReAugmentation() ? REAUG_EXIT_CODE : CommandLine.ExitCode.OK);
+        }
+        return Optional.empty();
+    }
+
+    static boolean requiresReAugmentation() {
+        Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
+        if (rawPersistedProperties.isEmpty()) {
+            return true; // no build yet
+        }
+        var current = Picocli.getNonPersistedBuildTimeOptions();
+
+        // everything but the optimized value must match
+        String key = Configuration.KC_OPTIMIZED;
+        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
+        return !rawPersistedProperties.equals(current);
+    }
+
+    @Override
+    protected void runCommand() {
         doBeforeRun();
         validateConfig();
 

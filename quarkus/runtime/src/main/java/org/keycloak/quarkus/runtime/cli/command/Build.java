@@ -58,7 +58,7 @@ import java.util.Optional;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "  Change the relative path:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n")
-public final class Build extends AbstractCommand implements Runnable {
+public final class Build extends AbstractCommand {
 
     public static final String NAME = "build";
 
@@ -69,7 +69,7 @@ public final class Build extends AbstractCommand implements Runnable {
     DryRunMixin dryRunMixin;
 
     @Override
-    public void run() {
+    protected void runCommand() {
         checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");
