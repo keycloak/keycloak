@@ -165,8 +165,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     private boolean allowUserManagedAccess;
 
     protected List<String> defaultGroups;
-    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
-    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
+    protected DefaultLazyLoader<RealmModel, List<String>> defaultDefaultClientScopes;
+    protected DefaultLazyLoader<RealmModel, List<String>> optionalDefaultClientScopes;
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -268,7 +268,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheClientScopes(model);
+        defaultDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
+        optionalDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocalesStream().collect(Collectors.toSet());
@@ -324,13 +327,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         }
 
         realmLocalizationTexts = model.getRealmLocalizationTexts();
-    }
-
-    protected void cacheClientScopes(RealmModel model) {
-        defaultDefaultClientScopes = model.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
-        optionalDefaultClientScopes = model.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
     }
 
     public String getMasterAdminClient() {
@@ -706,12 +702,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getDefaultDefaultClientScopes() {
-        return defaultDefaultClientScopes;
+    public List<String> getDefaultDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
+        return defaultDefaultClientScopes.get(modelSupplier);
     }
 
-    public List<String> getOptionalDefaultClientScopes() {
-        return optionalDefaultClientScopes;
+    public List<String> getOptionalDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
+        return optionalDefaultClientScopes.get(modelSupplier);
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {
