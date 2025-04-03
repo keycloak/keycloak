@@ -61,7 +61,7 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @InjectUser(ref = "alice")
