@@ -28,7 +28,6 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -41,7 +40,6 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                           Cache<String, SessionEntityWrapper<UserSessionEntity>> cache,
                                                           Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineCache,
-                                                          RemoteCacheInvoker remoteCacheInvoker,
                                                           SessionFunction<UserSessionEntity> lifespanMsLoader,
                                                           SessionFunction<UserSessionEntity> maxIdleTimeMsLoader,
                                                           SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
@@ -49,7 +47,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                           SerializeExecutionsByKey<String> serializerOnline,
                                                           SerializeExecutionsByKey<String> serializerOffline) {
-        super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+        super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {

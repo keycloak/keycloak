@@ -31,7 +31,6 @@ import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.util.UUID;
@@ -48,7 +47,6 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                             Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache,
                                                             Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineCache,
-                                                            RemoteCacheInvoker remoteCacheInvoker,
                                                             SessionFunction<AuthenticatedClientSessionEntity> lifespanMsLoader,
                                                             SessionFunction<AuthenticatedClientSessionEntity> maxIdleTimeMsLoader,
                                                             SessionFunction<AuthenticatedClientSessionEntity> offlineLifespanMsLoader,
@@ -57,7 +55,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             SerializeExecutionsByKey<UUID> serializerOnline,
                                                             SerializeExecutionsByKey<UUID> serializerOffline) {
-        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, remoteCacheInvoker, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
         this.userSessionTx = userSessionTx;
     }
 

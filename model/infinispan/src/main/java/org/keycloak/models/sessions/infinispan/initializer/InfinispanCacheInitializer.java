@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas DELETE!
 public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
     private static final Logger log = Logger.getLogger(InfinispanCacheInitializer.class);

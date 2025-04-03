@@ -37,7 +37,6 @@ import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
@@ -60,14 +59,14 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     protected final InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, RemoteCacheInvoker remoteCacheInvoker, InfinispanKeyGenerator keyGenerator,
-                                                   Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache, int authSessionsLimit,  SerializeExecutionsByKey<String> serializer) {
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator,
+                                                   Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache, int authSessionsLimit, SerializeExecutionsByKey<String> serializer) {
         this.session = session;
         this.keyGenerator = keyGenerator;
         this.authSessionsLimit = authSessionsLimit;
 
         this.cache = cache;
-        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, remoteCacheInvoker, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer);
+        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(sessionTx);

@@ -54,6 +54,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @ClientListener
+// TODO: mhajas DELETE!
 public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
     protected static final Logger logger = Logger.getLogger(RemoteCacheSessionListener.class);

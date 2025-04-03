@@ -33,7 +33,6 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
@@ -59,12 +58,11 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
     public InfinispanUserLoginFailureProvider(KeycloakSession session,
-                                              RemoteCacheInvoker remoteCacheInvoker,
                                               Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache,
                                               SerializeExecutionsByKey<LoginFailureKey> serializer) {
         this.session = session;
         this.loginFailureCache = loginFailureCache;
-        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, remoteCacheInvoker, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs, serializer);
+        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);

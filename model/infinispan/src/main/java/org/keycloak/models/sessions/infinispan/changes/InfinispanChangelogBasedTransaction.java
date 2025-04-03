@@ -19,13 +19,11 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,13 +31,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,7 +43,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     protected final KeycloakSession kcSession;
     private final String cacheName;
     protected final Cache<K, SessionEntityWrapper<V>> cache;
-    private final RemoteCacheInvoker remoteCacheInvoker;
 
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
@@ -59,12 +50,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     protected final SessionFunction<V> maxIdleTimeMsLoader;
     private final SerializeExecutionsByKey<K> serializer;
 
-    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
+    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache,
                                                SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, SerializeExecutionsByKey<K> serializer) {
         this.kcSession = kcSession;
         this.cacheName = cache.getName();
         this.cache = cache;
-        this.remoteCacheInvoker = remoteCacheInvoker;
         this.lifespanMsLoader = lifespanMsLoader;
         this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
         this.serializer = serializer;
@@ -185,9 +175,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             if (merged != null) {
                 // Now run the operation in our cluster
                 runOperationInCluster(entry.getKey(), merged, sessionWrapper);
-
-                // Check if we need to send message to second DC
-                remoteCacheInvoker.runTask(kcSession, realm, cacheName, entry.getKey(), merged, sessionWrapper);
             }
         }
     }

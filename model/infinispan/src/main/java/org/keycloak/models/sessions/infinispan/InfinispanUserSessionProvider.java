@@ -75,7 +75,6 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
@@ -118,7 +117,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     protected final SessionFunction offlineClientSessionCacheEntryLifespanAdjuster;
 
     public InfinispanUserSessionProvider(KeycloakSession session,
-                                         RemoteCacheInvoker remoteCacheInvoker,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
@@ -138,10 +136,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         this.offlineSessionCache = offlineSessionCache;
         this.offlineClientSessionCache = offlineClientSessionCache;
 
-        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCache, remoteCacheInvoker, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, serializerSession);
-        this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, remoteCacheInvoker, offlineSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineSessionMaxIdleMs, serializerOfflineSession);
-        this.clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, remoteCacheInvoker, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs, serializerClientSession);
-        this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, remoteCacheInvoker, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs, serializerOfflineClientSession);
+        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCache, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, serializerSession);
+        this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, offlineSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineSessionMaxIdleMs, serializerOfflineSession);
+        this.clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs, serializerClientSession);
+        this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs, serializerOfflineClientSession);
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 

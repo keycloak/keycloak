@@ -83,7 +83,6 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
@@ -118,7 +117,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     protected final InfinispanKeyGenerator keyGenerator;
 
     public PersistentUserSessionProvider(KeycloakSession session,
-                                         RemoteCacheInvoker remoteCacheInvoker,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
@@ -142,7 +140,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         this.sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
                 sessionCache, offlineSessionCache,
-                remoteCacheInvoker,
                 SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs,
                 SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs,
                 asyncQueuePersistentUpdate,
@@ -151,7 +148,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         this.clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCache, offlineClientSessionCache,
-                remoteCacheInvoker,
                 SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs,
                 SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs,
                 sessionTx,

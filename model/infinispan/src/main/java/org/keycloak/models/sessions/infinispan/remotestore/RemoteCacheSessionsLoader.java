@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas DELETE!
 public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessionsLoaderContext, SessionLoader.WorkerContext, SessionLoader.WorkerResult> {
 
     private static final Logger log = Logger.getLogger(RemoteCacheSessionsLoader.class);
