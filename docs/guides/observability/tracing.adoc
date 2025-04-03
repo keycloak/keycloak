@@ -4,7 +4,7 @@
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
 
-<@tmpl.guide title="Tracking down root causes with tracing"
+<@tmpl.guide title="Root cause analysis with tracing"
 summary="Record information during the request lifecycle with OpenTelementry tracing to identify root cases for latencies and errors in {project_name} and connected systems."
 includedOptions="tracing-* log-*-include-trace">
 
