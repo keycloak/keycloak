@@ -384,16 +384,20 @@ export function UserDataTable() {
         }
         toolbarItem={toolbar()}
         subToolbar={subtoolbar()}
-        actionResolver={(rowData: IRowData) => [
-          {
-            title: t("delete"),
-            onClick: () => {
-              setSelectedRows([rowData.data]);
-              toggleDeleteDialog();
+        actionResolver={(rowData: IRowData) => {
+          const user: UserRepresentation = rowData.data;
+          if (!user.access?.manage) return [];
+
+          return [
+            {
+              title: t("delete"),
+              onClick: () => {
+                setSelectedRows([user]);
+                toggleDeleteDialog();
+              },
             },
-          },
-        ]}
-        isRowDisabled={(user: UserRepresentation) => !!user.access?.manage}
+          ];
+        }}
         columns={[
           {
             name: "username",
