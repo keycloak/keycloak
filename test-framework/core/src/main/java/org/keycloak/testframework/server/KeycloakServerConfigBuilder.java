@@ -5,6 +5,7 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -206,7 +207,7 @@ public class KeycloakServerConfigBuilder {
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
         return Arrays.stream(features).map(f -> {
-            if (f.getVersion() > 1) {
+            if (Profile.getFeatureVersions(f.getKey()).size() > 1) {
                 return f.getVersionedKey();
             }
             return f.name().toLowerCase().replace('_', '-');

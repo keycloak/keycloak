@@ -26,15 +26,12 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import org.junit.After;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.exportimport.ExportImportTest;
 
-@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)
-public class ExportImportTestWithFGAPV2Enabled extends ExportImportTest {
+public class ExportImportTestFGAPV2 extends ExportImportTest {
 
     private final String REALM_NAME = "fgap";
     private final String CUSTOM_CLIENT_ID = "imported-permission-client";

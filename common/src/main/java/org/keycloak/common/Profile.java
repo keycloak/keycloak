@@ -55,7 +55,7 @@ public class Profile {
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW, 1),
 
-        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.EXPERIMENTAL, 2, Feature.AUTHORIZATION),
+        ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
 

@@ -35,7 +35,7 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class RoleResourceTypePermissionTest extends AbstractPermissionTest {
 
     @InjectClient(ref = "testClient")

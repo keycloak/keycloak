@@ -42,7 +42,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")

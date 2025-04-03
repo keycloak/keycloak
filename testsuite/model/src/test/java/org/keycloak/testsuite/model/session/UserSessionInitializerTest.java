@@ -133,6 +133,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             // Delete one of the clients now
             ClientModel testApp = realm.getClientByClientId("test-app");
