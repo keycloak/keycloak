@@ -76,7 +76,7 @@ public final class HostnameV2PropertyMappers {
 
             if (!url.getProtocol().toUpperCase().equals("HTTPS") && isProd) {
                 if (!SecureContextResolver.isLocal(url.getHost())) {
-                    picocli.warn("`hostname` is set to an HTTP hostname, cross-origin cookies will not be allowed. This is likely a misconfiguration.");
+                    picocli.warn("`hostname` is configured to use HTTP instead of HTTPS, cross-origin cookies will not be allowed. This is likely a misconfiguration.");
 
                     // TODO: any hostname-admin specific validation?
 
