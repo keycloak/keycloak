@@ -173,10 +173,10 @@ importers:
         version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uiw/react-textarea-code-editor':
         specifier: ^3.1.0
-        version: 3.1.0(@babel/runtime@7.26.10)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 3.1.0(@babel/runtime@7.27.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       admin-ui:
         specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.10)(@types/react@18.3.18)(typescript@5.8.2)'
+        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.27.0)(@types/react@18.3.18)(typescript@5.8.2)'
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -236,8 +236,8 @@ importers:
         specifier: ^6.6.3
         version: 6.6.3
       '@testing-library/react':
-        specifier: ^16.2.0
-        version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/dagre':
         specifier: ^0.7.52
         version: 0.7.52
@@ -649,6 +649,10 @@ packages:
 
   '@babel/runtime@7.26.9':
     resolution: {integrity: sha512-aA63XwOkcl4xxQa3HjPMqOP6LiK0ZDv3mUPYEFXkpHbaFjtGggE1A61FjFzJnB+p7/oy2gA8E+rcBNl/zC1tMg==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.27.0':
+    resolution: {integrity: sha512-VtPOkrdPHZsKc/clNqyi9WUA8TINkZ4cGk63UUE3u4pmB2k+ZMQRDuIOagv8UVd6j7k0T3+RRIb7beKTebNbcw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.26.9':
@@ -1379,8 +1383,8 @@ packages:
     resolution: {integrity: sha512-IteBhl4XqYNkM54f4ejhLRJiZNqcSCoXUOG2CPK7qbD322KjQozM4kHQOfkG2oln9b9HTYqs+Sae8vBATubxxA==}
     engines: {node: '>=14', npm: '>=6', yarn: '>=1'}
 
-  '@testing-library/react@16.2.0':
-    resolution: {integrity: sha512-2cSskAvA1QNtKc8Y9VJQRv0tm3hLVgxRGDB+KYhIaPQJ1I+RHbhIXcM+zClKXzMes/wshsMVzf4B9vS4IZpqDQ==}
+  '@testing-library/react@16.3.0':
+    resolution: {integrity: sha512-kFSyxiEDwv1WLl2fgsq6pPBbw5aWKrsY2/noi1Id0TK0UParSF62oFQFGHXIyaG4pp2tEub/Zlel+fjjZILDsw==}
     engines: {node: '>=18'}
     peerDependencies:
       '@testing-library/dom': ^10.0.0
@@ -4549,6 +4553,10 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
+  '@babel/runtime@7.27.0':
+    dependencies:
+      regenerator-runtime: 0.14.1
+
   '@babel/template@7.26.9':
     dependencies:
       '@babel/code-frame': 7.26.2
@@ -4781,7 +4789,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.26.10)(@types/react@18.3.18)(typescript@5.8.2)':
+  '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.27.0)(@types/react@18.3.18)(typescript@5.8.2)':
     dependencies:
       '@dagrejs/dagre': 1.1.4
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
@@ -4791,7 +4799,7 @@ snapshots:
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
       '@patternfly/react-table': 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@uiw/react-textarea-code-editor': 3.1.0(@babel/runtime@7.26.10)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@uiw/react-textarea-code-editor': 3.1.0(@babel/runtime@7.27.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       file-saver: 2.0.5
       flat: 6.0.1
       i18next: 24.2.3(typescript@5.8.2)
@@ -5269,9 +5277,9 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
 
-  '@testing-library/react@16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.26.9
+      '@babel/runtime': 7.27.0
       '@testing-library/dom': 10.4.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -5563,9 +5571,9 @@ snapshots:
       '@typescript-eslint/types': 8.29.0
       eslint-visitor-keys: 4.2.0
 
-  '@uiw/react-textarea-code-editor@3.1.0(@babel/runtime@7.26.10)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@uiw/react-textarea-code-editor@3.1.0(@babel/runtime@7.27.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@babel/runtime': 7.26.10
+      '@babel/runtime': 7.27.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       rehype: 13.0.2
