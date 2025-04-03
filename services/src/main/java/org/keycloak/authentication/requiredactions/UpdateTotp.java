@@ -46,6 +46,8 @@ import org.keycloak.utils.CredentialHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -115,8 +117,18 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if ("on".equals(formData.getFirst("logout-sessions"))) {
             AuthenticatorUtil.logoutOtherSessions(context);
         }
+        Map<String, Boolean> otpResult = CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel);
 
-        if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
+        if (otpResult.get("isDeviceDuplicate")) {
+            Response challenge = context.form()
+                    .setAttribute("mode", mode)
+                    .addError(new FormMessage(Validation.FIELD_OTP_LABEL, "Device already exists with the same name"))
+                    .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+            context.challenge(challenge);
+            return;
+        }
+
+        if (!otpResult.get("isOTPCreationSuccess")) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))

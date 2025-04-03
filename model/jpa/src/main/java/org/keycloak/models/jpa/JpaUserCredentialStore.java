@@ -21,6 +21,7 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -36,6 +37,7 @@ import jakarta.persistence.LockModeType;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.models.ModelDuplicateException;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -62,6 +64,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
         if (!checkCredentialEntity(entity, user)) return;
+        validateDuplicateCredential(realm, user, cred.getUserLabel(), cred.getId());
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setUserLabel(cred.getUserLabel());
         entity.setType(cred.getType());
@@ -138,7 +141,19 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     }
 
+    private void validateDuplicateCredential(RealmModel realm, UserModel user, String userLabel, String credentialId) {
+        boolean exists = getStoredCredentialEntities(realm, user)
+                .anyMatch(existing -> existing.getUserLabel() != null
+                        && existing.getUserLabel().equalsIgnoreCase(userLabel.trim())
+                        && (credentialId == null || !existing.getId().equals(credentialId))); // Exclude self in update
+
+        if (exists) {
+            throw new ModelDuplicateException("Device already exists with the same name");
+        }
+    }
+
     CredentialEntity createCredentialEntity(RealmModel realm, UserModel user, CredentialModel cred) {
+        validateDuplicateCredential(realm, user, cred.getUserLabel(), null);
         CredentialEntity entity = new CredentialEntity();
         String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
         entity.setId(id);
