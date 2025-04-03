@@ -1,14 +1,12 @@
 [[_oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
-+
 [IMPORTANT]
 ====
 This is an experimental feature and should not be used in production. Backward compatibility is not guaranteed, and future updates may introduce breaking changes.
 ====
-+
 
-{project_name} provides support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance].
+{project_name} provides experimental support for https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[OpenID for Verifiable Credential Issuance].
 
 === Introduction
 
@@ -58,8 +56,8 @@ An access token is required to authenticate API requests.
 
 Refer to the following {project_name} documentation sections for detailed steps on:
 
-- https://www.{project_name}.org/docs/latest/server_admin/#proc-creating-oidc-client_server_administration_guide[Creating a Client^]
-- https://www.{project_name}.org/securing-apps/token-exchange#_internal_internal_making_request[Obtaining an Access Token^]
+- <<proc-creating-oidc-client_{context},Creating a Client>>
+- <<_oidc-auth-flows-direct, Obtaining an Access Token>>
 
 === Configuration Steps
 
@@ -73,7 +71,7 @@ For Verifiable Credential (VC) issuance, create a dedicated realm to ensure isol
 [NOTE]
 ====
 For detailed instructions on creating a realm, refer to the {project_name} documentation:
-https://www.{project_name}.org/docs/latest/server_admin/index.html#proc-creating-a-realm_server_administration_guide[Creating a Realm^].
+<<proc-creating-a-realm_{context},Creating a Realm>>.
 ====
 
 === Creating a User Account
@@ -83,7 +81,7 @@ A test user is required to simulate credential issuance and verify the setup.
 [NOTE]
 ====
 For step-by-step instructions on creating a user, refer to the {project_name} documentation:
-https://www.{project_name}.org/docs/latest/server_admin/index.html#assembly-managing-users_server_administration_guide[Creating a User^].
+<<assembly-managing-users_{context},Creating a User>>.
 ====
 
 Ensure that the user has a valid username, email, and password. If the password should not be reset upon first login, disable the "Temporary" toggle during password configuration.
@@ -95,7 +93,7 @@ Ensure that the user has a valid username, email, and password. If the password 
 [NOTE]
 ====
 For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
-https://www.{project_name}.org/docs/latest/server_admin/#realm_keys[Managing Realm Keys^].
+<<realm_keys,Managing Realm Keys>>.
 ====
 
 ==== Configuring Key Providers
@@ -360,10 +358,10 @@ A successful response returns a JSON object containing details such as:
 - **Credential formats**
 - **Issuer metadata**
 
-== Conclusion
+=== Conclusion
 
 You have successfully configured **{project_name} as a Verifiable Credential Issuer** using the **OID4VCI protocol**.
 This setup leverages {project_name}'s robust **identity management capabilities** to issue secure, **standards-compliant VCs**.
 
-For a **complete reference implementation**, see our sample project:
+For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
