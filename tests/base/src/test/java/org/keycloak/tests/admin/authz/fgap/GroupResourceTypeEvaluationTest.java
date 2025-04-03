@@ -310,6 +310,25 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testCreateGroupMembers() {
+        //create group permission for "topGroup" to allow "myadmin" view, manage-members and manage-membership
+        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createGroupPermission(topGroup, Set.of(VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS), policy);
+        
+        //create new user as realm user should fail
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").build())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+        //create new user as member of different group should fail
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("different_group").build())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        String bobId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("/" + groupName).build()));
+        realm.cleanup().add(r -> r.users().delete(bobId));
+    }
+
+    @Test
     public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
         UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());

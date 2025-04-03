@@ -189,7 +189,7 @@ public class UsersResource {
     }
 
     private boolean canCreateGroupMembers(UserRepresentation rep) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) && !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return false;
         }
 
