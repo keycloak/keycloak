@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Monitoring user-facing performance with Service Level Indicators (SLIs)"
-summary="Track performance and reliability from a user's perspective with Service Level Indicators (SLIs) and Service Level Objectives (SLOs)."
+title="Monitoring performance with Service Level Indicators"
+summary="Track performance and reliability as perceived by users with Service Level Indicators (SLIs) and Service Level Objectives (SLOs)."
 >
 
 Service Level Indicators (SLIs) and Service Level Objectives (SLOs) are essential components in monitoring and maintaining the performance and reliability of {project_name} in production environments.

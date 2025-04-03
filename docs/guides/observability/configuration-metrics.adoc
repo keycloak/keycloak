@@ -4,7 +4,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Gaining insights into a running instance with metrics"
+title="Gaining insights with metrics"
 summary="Collect metrics to gain insights about state and activities of a running instance of {project_name}."
 includedOptions="metrics-enabled http-metrics-* cache-metrics-*">
 

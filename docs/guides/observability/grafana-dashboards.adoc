@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Visualizing cluster activities with Grafana dashboards"
+title="Visualizing cluster activities with dashboards"
 summary="Install the {project_name} Grafana dashboards to visualize what is happening inside your cluster.">
 
 {project_name} provides metrics to observe what is happening inside the deployment.
