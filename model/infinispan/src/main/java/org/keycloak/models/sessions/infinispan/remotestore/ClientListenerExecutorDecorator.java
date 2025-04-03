@@ -38,6 +38,7 @@ import static org.infinispan.client.hotrod.event.ClientEvent.Type.CLIENT_CACHE_E
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas DELETE
 public class ClientListenerExecutorDecorator<K> {
 
     private static final Logger logger = Logger.getLogger(ClientListenerExecutorDecorator.class);

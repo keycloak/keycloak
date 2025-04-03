@@ -42,6 +42,7 @@ public class CacheDecorators {
      * @param cache
      * @return Cache with the flags applied.
      */
+    // TODO: mhajas DELETE!
     public static <K, V> AdvancedCache<K, V> skipCacheLoadersIfRemoteStoreIsEnabled(Cache<K, V> cache) {
         if (!getRemoteStores(cache).isEmpty()) {
             // Disabling of the cache load and cache store is only needed when a remote store is used and handled separately.

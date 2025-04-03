@@ -47,7 +47,6 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
     public static final String REMOVE_ALL_LOGIN_FAILURES_EVENT = "REMOVE_ALL_LOGIN_FAILURES_EVENT";
 
-    private Config.Scope config;
     SerializeExecutionsByKey<LoginFailureKey> serializer = new SerializeExecutionsByKey<>();
 
     @Override
@@ -60,7 +59,6 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
 
     @Override
     public void init(Config.Scope config) {
-        this.config = config;
     }
 
     @Override
@@ -103,23 +101,6 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
         });
 
         log.debug("Registered cluster listeners");
-    }
-
-    // Max count of worker errors. Initialization will end with exception when this number is reached
-    // TODO: mhajas DELETE
-    private int getMaxErrors() {
-        return config.getInt("maxErrors", 20);
-    }
-
-    // Count of sessions to be computed in each segment
-    // TODO: mhajas DELETE
-    private int getSessionsPerSegment() {
-        return config.getInt("sessionsPerSegment", 64);
-    }
-
-    // TODO: mhajas DELETE ALL
-    private int getStalledTimeoutInSeconds(int defaultTimeout) {
-         return config.getInt("stalledTimeoutInSeconds", defaultTimeout);
     }
 
     @Override

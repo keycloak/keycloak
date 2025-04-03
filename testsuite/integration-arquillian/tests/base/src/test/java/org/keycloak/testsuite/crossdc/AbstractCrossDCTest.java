@@ -42,6 +42,7 @@ import static org.keycloak.testsuite.arquillian.CrossDCTestEnricher.forAllBacken
  * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
  * @author hmlnarik
  */
+// TODO: I don't think this is running anywhere and can be removed
 @InitialDcState
 public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest {
 

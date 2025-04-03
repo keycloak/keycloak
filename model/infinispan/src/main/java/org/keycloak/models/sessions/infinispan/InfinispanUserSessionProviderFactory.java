@@ -174,17 +174,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                         }
                     };
                 } else {
-                    int preloadTransactionTimeout = getTimeoutForPreloadingSessionsSeconds();
-                    log.debugf("Will preload sessions with transaction timeout %d seconds", preloadTransactionTimeout);
-
-                    KeycloakModelUtils.runJobInTransactionWithTimeout(factory, (KeycloakSession session) -> {
+                    KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
 
                         keyGenerator = new InfinispanKeyGenerator();
                         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
                             initializePersisterLastSessionRefreshStore(factory);
                         }
                         registerClusterListeners(session);
-                    }, preloadTransactionTimeout);
+                    });
                 }
 
                 } else if (event instanceof UserModel.UserRemovedEvent) {
@@ -212,22 +209,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     maxBatchSize);
             persistentSessionsWorker.start();
         }
-    }
-
-    // Max count of worker errors. Initialization will end with exception when this number is reached
-    private int getMaxErrors() {
-        return config.getInt("maxErrors", 20);
-    }
-
-    // Count of sessions to be computed in each segment
-    private int getSessionsPerSegment() {
-        return config.getInt("sessionsPerSegment", 64);
-    }
-
-    // TODO: mhajas DELETE
-    private int getTimeoutForPreloadingSessionsSeconds() {
-        Integer timeout = config.getInt("sessionsPreloadTimeoutInSeconds", null);
-        return timeout != null ? timeout : Environment.getServerStartupTimeout();
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {

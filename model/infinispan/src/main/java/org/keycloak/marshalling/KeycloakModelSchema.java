@@ -95,7 +95,6 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
-import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
 import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
@@ -148,9 +147,6 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 ResourceServerRemovedEvent.class,
                 ScopeUpdatedEvent.class,
                 ScopeRemovedEvent.class,
-
-                // models.sessions.infinispan.initializer package
-                InitializerState.class,
 
                 // models.sessions.infinispan.changes package
                 SessionEntityWrapper.class,
