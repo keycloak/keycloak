@@ -49,6 +49,11 @@ class ClientPermissionsV2 extends ClientPermissions {
     }
 
     @Override
+    public boolean canList() {
+        return root.hasOneAdminRole(AdminRoles.QUERY_CLIENTS) || canView();
+    }
+
+    @Override
     public boolean canConfigure(ClientModel client) {
         if (canManage(client)) return true;
 

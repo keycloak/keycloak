@@ -71,7 +71,9 @@ public interface ClientPermissionEvaluator {
     /**
      * Returns {@code true} if {@link #canView()} returns {@code true}.
      * <p/>
-     * Or if the caller has at least one of the {@link AdminRoles#QUERY_CLIENTS} or {@link AdminRoles#QUERY_USERS} roles.
+     * Or if the caller has at least one of the {@link AdminRoles#QUERY_CLIENTS} role.
+     * <p/>
+     * V1: or {@link AdminRoles#QUERY_USERS} roles.
      */
     boolean canList();
 
