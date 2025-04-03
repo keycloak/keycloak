@@ -19,12 +19,8 @@
 package org.keycloak.authorization.policy.provider;
 
 import java.util.List;
-import java.util.Set;
 
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
-import org.keycloak.representations.idm.authorization.ResourceType;
 
 /**
  * If a realm has the {@link org.keycloak.common.Profile.Feature#ADMIN_FINE_GRAINED_AUTHZ} feature enabled,
@@ -41,26 +37,15 @@ public interface PartialEvaluationStorageProvider {
      * @param evaluationContext the evaluation context.
      * @return the list of predicates
      */
-    List<Predicate> getFilters(EvaluationContext evaluationContext);
+    List<Predicate> getFilters(PartialEvaluationContext evaluationContext);
 
     /**
      * A callback method that will be called when building queries for realm resources to deny access to resources. It returns a list of
      * {@link Predicate} instances representing the filters that should be applied to queries
      * when querying realm resources.
      *
-     * @param evaluationContext the evaluation context.
+     * @param context the evaluation context.
      * @return the list of predicates
      */
-    List<Predicate> getNegateFilters(EvaluationContext evaluationContext);
-
-    /**
-     * An {@link EvaluationContext} instance provides access to contextual information when building a query for realm
-     * resources of a given {@link ResourceType}.
-     *
-     * @param resourceType the type of the resource to query
-     * @param criteriaQuery the query to rely on when building predicates
-     * @param path the path for the root entity
-     */
-    record EvaluationContext(ResourceType resourceType, CriteriaQuery<?> criteriaQuery, Path<?> path, Set<String> allowedGroupIds, Set<String> deniedGroupIds) {
-    }
+    List<Predicate> getNegateFilters(PartialEvaluationContext context);
 }

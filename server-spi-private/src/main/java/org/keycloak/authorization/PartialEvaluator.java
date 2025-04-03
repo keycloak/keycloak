@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization;
 
-import static java.util.function.Predicate.not;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,14 +31,13 @@ import org.keycloak.Config;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.provider.PartialEvaluationContext;
 import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
-import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider.EvaluationContext;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -50,99 +47,45 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 
 public class PartialEvaluator {
 
-    public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    private static final String NO_ID = "none";
+    private static final String ID_FIELD = "id";
+
+    public List<Predicate> getPredicates(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             // feature not enabled, if a storage evaluator is provided try to resolve any filter from there
-            return storage == null ? List.of() : storage.getFilters(new EvaluationContext(resourceType, queryBuilder, path, Set.of(), Set.of()));
+            return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
         }
 
-        KeycloakContext context = session.getContext();
-        UserModel adminUser = context.getUser();
+        UserModel adminUser = session.getContext().getUser();
 
-        if (skipPartialEvaluation(session, adminUser, realm, resourceType)) {
+        if (shouldSkipPartialEvaluation(session, adminUser, realm, resourceType)) {
             // only run partial evaluation if the admin user does not have view-* or manage-* role for specified resourceType or has any query-* role
             return List.of();
         }
 
         // collect the result from the partial evaluation so that the filters can be applied
-        PartialResourceEvaluationResult result = evaluate(session, adminUser, resourceType);
-        EvaluationContext evaluationContext = new EvaluationContext(resourceType, queryBuilder, path, new HashSet<>(), new HashSet<>());
+        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, storage, builder, queryBuilder, path);
 
-        if (AdminPermissionsSchema.USERS.equals(resourceType)) {
-            PartialResourceEvaluationResult evaluateGroups = evaluate(session, adminUser, AdminPermissionsSchema.GROUPS);
-
-            evaluationContext.allowedGroupIds().addAll(evaluateGroups.allowedIds());
-            evaluationContext.deniedGroupIds().addAll(evaluateGroups.deniedIds());
-        }
-
-        List<Predicate> predicates = new ArrayList<>();
-        Set<String> deniedIds = result.deniedIds();
-
-        if (!deniedIds.isEmpty()) {
-            // add filters to remove denied resources from the result set
-            predicates.add(builder.not(path.get("id").in(deniedIds)));
-        }
-
-        List<Predicate> storageFilters = storage == null ? List.of() : storage.getFilters(evaluationContext);
-        List<Predicate> storageNegateFilters = storage == null ? List.of() : storage.getNegateFilters(evaluationContext);
-
-        predicates.addAll(storageNegateFilters);
-
-        if (storageFilters.isEmpty() && (result.isResourceTypedDenied() || (!deniedIds.isEmpty() && result.rawAllowedIds().isEmpty()))) {
-            // do not return any result because there is no filter from the evaluator, and access is denied for the resource type
-            return List.of(builder.equal(path.get("id"), "none"));
-        }
-
-        Set<String> allowedIds = result.allowedIds();
-
-        if (allowedIds.isEmpty()) {
-            // no resources granted, filter them based on any filter previously set
-            predicates.addAll(storageFilters);
-            return predicates;
-        }
-
-        if (storageFilters.isEmpty()) {
-            // no filter from the evaluator, filter based on the resources that were granted
-            predicates.add(builder.and(path.get("id").in(allowedIds)));
-        } else {
-            // there are filters from the evaluator, the resources granted will be a returned using a or condition
-            List<Predicate> orPredicates = new ArrayList<>(storageFilters);
-            orPredicates.add(path.get("id").in(allowedIds));
-            predicates.add(builder.or(orPredicates.toArray(new Predicate[0])));
-        }
-
-        return predicates;
+        return buildPredicates(context);
     }
 
-    private record PartialResourceEvaluationResult(ResourceType resourceType, Set<String> rawAllowedIds, Set<String> rawDeniedIds) {
-        Set<String> allowedIds() {
-            return rawAllowedIds.stream().filter(not(resourceType.getType()::equals)).collect(Collectors.toSet());
-        }
-
-        Set<String> deniedIds() {
-            return rawDeniedIds.stream().filter(not(resourceType.getType()::equals)).collect(Collectors.toSet());
-        }
-
-        boolean isResourceTypedDenied() {
-            return rawAllowedIds.isEmpty() && (rawDeniedIds.isEmpty() || (rawDeniedIds.size() == 1 && rawDeniedIds.contains(resourceType.getType())));
-        }
-    }
-
-    private PartialResourceEvaluationResult evaluate(KeycloakSession session, UserModel adminUser, ResourceType resourceType) {
-        Set<String> allowedIds = new HashSet<>();
-        Set<String> deniedIds = new HashSet<>();
+    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+        Set<String> allowedResources = new HashSet<>();
+        Set<String> deniedResources = new HashSet<>();
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
             policyProvider.getPermissions(session, resourceType, adminUser).forEach(permission -> {
-                if (permission.getScopes().stream().map(Scope::getName).noneMatch(name -> name.startsWith(AdminPermissionsSchema.VIEW))) {
+                if (!hasViewScope(permission)) {
+                    // only run partial evaluation for permissions with any view scope
                     return;
                 }
+
                 Set<String> ids = permission.getResources().stream().map(Resource::getName).collect(Collectors.toSet());
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
-                    PartialEvaluationPolicyProvider provider = policyProviders.stream().filter((p) -> p.supports(policy)).findAny().orElse(null);
+                    PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
 
                     if (provider == null) {
                         continue;
@@ -155,25 +98,107 @@ public class PartialEvaluator {
                     }
 
                     if (granted) {
-                        allowedIds.addAll(ids);
+                        allowedResources.addAll(ids);
                     } else {
-                        deniedIds.addAll(ids);
+                        deniedResources.addAll(ids);
                     }
                 }
             });
         }
 
-        allowedIds.removeAll(deniedIds);
+        allowedResources.removeAll(deniedResources);
 
-        if (allowedIds.contains(resourceType.getType())) {
-            allowedIds.removeIf(not(resourceType.getType()::equals));
+        return createEvaluationContext(session, resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path, adminUser);
+    }
+
+    private List<Predicate> buildPredicates(PartialEvaluationContext context) {
+        List<Predicate> storageFilters = getStorageFilters(context);
+        CriteriaBuilder builder = context.getCriteriaBuilder();
+        Path<?> path = context.getPath();
+
+        if (isDenied(storageFilters, context)) {
+            // do not return any result because there is no filter from the evaluator, and access is denied for the resource type
+            return List.of(builder.equal(path.get(ID_FIELD), NO_ID));
         }
+
+        Set<String> deniedIds = context.getDeniedResources();
+        ResourceType resourceType = context.getResourceType();
 
         if (deniedIds.contains(resourceType.getType())) {
-            deniedIds.removeIf(not(resourceType.getType()::equals));
+            // do not filter by id if access is granted to the resource type
+            deniedIds = Set.of();
         }
 
-        return new PartialResourceEvaluationResult(resourceType, allowedIds, deniedIds);
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (!deniedIds.isEmpty()) {
+            // add filters to remove denied resources from the result set
+            predicates.add(builder.not(path.get(ID_FIELD).in(deniedIds)));
+        }
+
+        List<Predicate> storageNegateFilters = getStorageNegateFilters(context);
+
+        // add filters from the storage that deny access to resources
+        predicates.addAll(storageNegateFilters);
+
+        Set<String> allowedResourceIds = context.getAllowedResources();
+
+        if (allowedResourceIds.contains(resourceType.getType())) {
+            // do not filter by id if access is granted to the resource type
+            allowedResourceIds = Set.of();
+        }
+
+        if (allowedResourceIds.isEmpty()) {
+            // no resources granted, return any predicates created until now
+            predicates.addAll(storageFilters);
+            return predicates;
+        }
+
+        if (storageFilters.isEmpty()) {
+            // no filter from the evaluator, filter based on the resources that were granted
+            predicates.add(builder.and(path.get(ID_FIELD).in(allowedResourceIds)));
+        } else {
+            // there are filters from the evaluator, the resources granted will be a returned using a or condition
+            List<Predicate> orPredicates = new ArrayList<>(storageFilters);
+            orPredicates.add(path.get(ID_FIELD).in(allowedResourceIds));
+            predicates.add(builder.or(orPredicates.toArray(new Predicate[0])));
+        }
+
+        return predicates;
+    }
+
+    private PartialEvaluationContext createEvaluationContext(KeycloakSession session, ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path, UserModel adminUser) {
+        PartialEvaluationContext context = new PartialEvaluationContext(resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path);
+        String groupType = resourceType.getGroupType();
+
+        if (groupType != null) {
+            // if the resource type has support for groups, evaluate permissions for the group
+            ResourceType groupResourceType = AdminPermissionsSchema.SCHEMA.getResourceTypes().get(groupType);
+
+            if (groupResourceType == null) {
+                return context;
+            }
+
+            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, storage, builder, queryBuilder, path);
+            context.setAllowedGroups(evaluateGroups.getAllowedResources());
+            context.setDeniedGroups(evaluateGroups.getDeniedResources());
+        }
+
+        return context;
+    }
+
+    private List<Predicate> getStorageFilters(PartialEvaluationContext context) {
+        PartialEvaluationStorageProvider storage = context.getStorage();
+        return storage == null ? List.of() : storage.getFilters(context);
+    }
+
+    private List<Predicate> getStorageNegateFilters(PartialEvaluationContext context) {
+        PartialEvaluationStorageProvider storage = context.getStorage();
+        return storage == null ? List.of() : storage.getNegateFilters(context);
+    }
+
+    private boolean isDenied(List<Predicate> storageFilters, PartialEvaluationContext context) {
+        return context.getAllowedResources().isEmpty() && storageFilters.isEmpty();
     }
 
     private List<PartialEvaluationPolicyProvider> getPartialEvaluationPolicyProviders(KeycloakSession session) {
@@ -183,22 +208,23 @@ public class PartialEvaluator {
                 .toList();
     }
 
-    private boolean skipPartialEvaluation(KeycloakSession session, UserModel user, RealmModel realm, ResourceType resourceType) {
+    private PartialEvaluationPolicyProvider getPartialEvaluationPolicyProvider(Policy policy, List<PartialEvaluationPolicyProvider> policyProviders) {
+        return policyProviders.stream()
+                .filter((p) -> p.supports(policy))
+                .findAny()
+                .orElse(null);
+    }
+
+    private boolean hasViewScope(Policy permission) {
+        return permission.getScopes().stream().map(Scope::getName).anyMatch(name -> name.startsWith(AdminPermissionsSchema.VIEW));
+    }
+
+    private boolean shouldSkipPartialEvaluation(KeycloakSession session, UserModel user, RealmModel realm, ResourceType resourceType) {
         if (user == null) {
             return false;
         }
 
-        String clientId;
-
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            clientId = realm.getMasterAdminClient().getClientId();
-        } else {
-            ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-            clientId = client == null ? null : client.getClientId();
-        }
-
-        // client probably removed when removing the realm
-        ClientModel client = clientId == null ? null : session.clients().getClientByClientId(realm, clientId);
+        ClientModel client = getRealmManagementClient(session);
 
         if (client == null) {
             return true;
@@ -208,20 +234,32 @@ public class PartialEvaluator {
             return user.hasRole(client.getRole(AdminRoles.VIEW_USERS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_USERS)) || !hasAnyQueryAdminRole(client, user);
         } else if (resourceType.equals(AdminPermissionsSchema.CLIENTS)) {
             return user.hasRole(client.getRole(AdminRoles.VIEW_CLIENTS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_CLIENTS)) || !hasAnyQueryAdminRole(client, user);
-        } else {
-            return false;
         }
+
+        return false;
+    }
+
+    private ClientModel getRealmManagementClient(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            return session.clients().getClientByClientId(realm, realm.getMasterAdminClient().getClientId());
+        }
+
+        return realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
     }
 
     private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
+        boolean result = false;
         for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS)) {
             RoleModel role = client.getRole(adminRole);
 
             if (user.hasRole(role)) {
-                return true;
+                result = true;
+                break;
             }
         }
 
-        return false;
+        return result;
     }
 }

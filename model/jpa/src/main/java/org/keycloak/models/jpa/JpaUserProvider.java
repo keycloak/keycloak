@@ -19,8 +19,6 @@ package org.keycloak.models.jpa;
 
 import jakarta.persistence.criteria.Path;
 import org.keycloak.authorization.AdminPermissionsSchema;
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
-import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -63,7 +61,6 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -88,7 +85,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider, UserCredentialStore, PartialEvaluationStorageProvider {
+public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUserPartialEvaluationProvider {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -1098,112 +1095,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, Parti
     }
 
     @Override
-    public List<Predicate> getFilters(EvaluationContext evaluationContext) {
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
-            // support for FGAP v1
-            Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
-
-
-            if (userGroups != null) {
-                return List.of(getFilterByGroupMembership(session, evaluationContext, userGroups));
-            }
-
-            return List.of();
-        }
-
-        Predicate predicate = getFilterByGroupMembership(evaluationContext, false);
-
-        if (predicate != null) {
-            return List.of(predicate);
-        }
-
-        return List.of();
+    public KeycloakSession getSession() {
+        return session;
     }
 
     @Override
-    public List<Predicate> getNegateFilters(EvaluationContext evaluationContext) {
-        Predicate predicate = getFilterByGroupMembership(evaluationContext, true);
-
-        if (predicate != null) {
-            return List.of(predicate);
-        }
-
-        return List.of();
-    }
-
-    @Deprecated
-    private Predicate getFilterByGroupMembership(KeycloakSession session, EvaluationContext evaluationContext, Set<String> groupIds) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<?> query = evaluationContext.criteriaQuery();
-        Subquery subquery = query.subquery(String.class);
-        Root<?> from = subquery.from(UserGroupMembershipEntity.class);
-
-        subquery.select(cb.literal(1));
-
-        List<Predicate> subPredicates = new ArrayList<>();
-
-        subPredicates.add(from.get("groupId").in(groupIds));
-
-        Path<?> root = evaluationContext.path();
-
-        subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
-
-        Subquery subquery1 = query.subquery(String.class);
-
-        subquery1.select(cb.literal(1));
-
-        Root from1 = subquery1.from(ResourceEntity.class);
-
-        List<Predicate> subs = new ArrayList<>();
-
-        Expression<String> groupId = from.get("groupId");
-
-        RealmModel realm = session.getContext().getRealm();
-
-        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-            subs.add(cb.like(from1.get("name"), groupId));
-        } else {
-            subs.add(cb.like(from1.get("name"), cb.concat("group.resource.", groupId)));
-        }
-
-        subquery1.where(subs.toArray(Predicate[]::new));
-
-        subPredicates.add(cb.exists(subquery1));
-
-        subquery.where(subPredicates.toArray(Predicate[]::new));
-
-        return cb.exists(subquery);
-    }
-
-    private Predicate getFilterByGroupMembership(EvaluationContext evaluationContext, boolean negate) {
-        if (negate && evaluationContext.deniedGroupIds().isEmpty()) {
-            return null;
-        }
-        if (!negate && evaluationContext.allowedGroupIds().isEmpty()) {
-            return null;
-        }
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<?> query = evaluationContext.criteriaQuery();
-        Subquery subquery = query.subquery(String.class);
-        Root<?> from = subquery.from(UserGroupMembershipEntity.class);
-
-        subquery.select(cb.literal(1));
-
-        List<Predicate> subPredicates = new ArrayList<>();
-
-        subPredicates.add(from.get("groupId").in(negate ? evaluationContext.deniedGroupIds() : evaluationContext.allowedGroupIds()));
-
-        Path<?> root = evaluationContext.path();
-
-        subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
-
-        subquery.where(subPredicates.toArray(Predicate[]::new));
-
-        if (negate) {
-            return cb.not(cb.exists(subquery));
-        }
-
-        return cb.exists(subquery);
+    public EntityManager getEntityManager() {
+        return em;
     }
 }
