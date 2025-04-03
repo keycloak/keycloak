@@ -115,6 +115,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 throw new EmailException("No sender address configured in the realm settings for emails");
             }
 
+            // Specify 'mail.from' as InternetAddress.getLocalAddress() would otherwise do a InetAddress.getCanonicalHostName
+            // and add this as a mail header. This would both be slow, and would reveal internal IP addresses that we don't want.
+            // https://jakarta.ee/specifications/mail/2.0/jakarta-mail-spec-2.0#a823
+            props.setProperty("mail.from", from);
+
             String fromDisplayName = config.get("fromDisplayName");
             String replyTo = config.get("replyTo");
             String replyToDisplayName = config.get("replyToDisplayName");
