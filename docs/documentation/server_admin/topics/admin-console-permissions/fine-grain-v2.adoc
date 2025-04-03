@@ -7,22 +7,22 @@ Different from the regular Role-Based Access Control Mechanism provided through 
 (<<_master_realm_access_control, Master realm access control>>), this feature provides a more fine-grained control over
 how realm resources can be accessed and managed based on a well-defined set of operations that can be performed on them.
 
-By relying on a Policy-Based Access Control, server administrators can define permissions to realm resources such as users, 
-groups, and clients, using different policy types, or access control methods, so that a realm administrator is limited to 
+By relying on a Policy-Based Access Control, server administrators can define permissions to realm resources such as users,
+groups, and clients, using different policy types, or access control methods, so that a realm administrator is limited to
 access a subset of realm resources and their operations.
 
 Here are some key points to understand about fine-grained admin permissions:
 
-* Fine grained admin permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> or 
+* Fine grained admin permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> or
   realm-specific admin APIs and administrators defined within those realms. You cannot define cross-realm fine grained permissions.
-* Fine grained admin permissions are used to grant additional permissions. You cannot override the default behavior of the 
+* Fine grained admin permissions are used to grant additional permissions. You cannot override the default behavior of the
   built-in admin roles.
-* Fine-grained admin permissions V2 do not support federated resources. This restriction is a known limitation under consideration 
+* Fine-grained admin permissions V2 do not support federated resources. This restriction is a known limitation under consideration
   for future improvement.
 
 [NOTE]
 ====
-To maximize the effectiveness of fine-grained admin permissions while minimizing the impact of broad admin roles, 
+To maximize the effectiveness of fine-grained admin permissions while minimizing the impact of broad admin roles,
 it is recommended to assign the *query-clients*, *query-groups*, and *query-users* roles (along with roles required
 for realm management) to allow querying. All other administrative access could be managed through fine-grained permissions.
 See <<_realm_access_control, Accessing a Realm Admin Console as a Realm Administrator>> for more information.
@@ -30,11 +30,11 @@ See <<_realm_access_control, Accessing a Realm Admin Console as a Realm Administ
 
 ==== Understanding the Realm Resource Types
 
-In a realm, you can manage different types of resources such as users, groups, clients, client scopes, roles, and so on. 
-As a realm administrator, you are constantly managing these resources to manage your identities and how they authenticate 
+In a realm, you can manage different types of resources such as users, groups, clients, client scopes, roles, and so on.
+As a realm administrator, you are constantly managing these resources to manage your identities and how they authenticate
 and authorize to a realm and your applications.
 
-Each realm resource supports a well-defined set of management operations, or actions, that can be performed on them, 
+Each realm resource supports a well-defined set of management operations, or actions, that can be performed on them,
 such as view, manage, and resource-specific operations such as view-members if you take groups as an example.
 
 This feature provides the necessary mechanisms to enforce access to a well-defined set of realm resources, limited to:
@@ -44,12 +44,12 @@ This feature provides the necessary mechanisms to enforce access to a well-defin
 * Clients
 * Roles
 
-When managing permissions for a specific realm resource type, you can choose to do it for all resources of a given resource 
+When managing permissions for a specific realm resource type, you can choose to do it for all resources of a given resource
 type, such as users, or for a specific realm resource, such as a specific user or set of users in the realm.
 
 ===== Users Resource Type
 
-The *Users* realm resource type represents the users in a realm. You can manage permissions for users based on the following 
+The *Users* realm resource type represents the users in a realm. You can manage permissions for users based on the following
 set of management operations:
 
 [cols="30%,70%"]
@@ -65,17 +65,17 @@ set of management operations:
 
 [NOTE]
 ====
-- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
-  assigning only *manage* without *view* will prevent the user from being visible.  
-- The *view* operation also considers group-related permissions, specifically *view-members* for viewing group members. 
-  The evaluation takes permissions for specific resources (specific user permissions and specific group permissions) first. 
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example,
+  assigning only *manage* without *view* will prevent the user from being visible.
+- The *view* operation also considers group-related permissions, specifically *view-members* for viewing group members.
+  The evaluation takes permissions for specific resources (specific user permissions and specific group permissions) first.
   See <<_resolving-conflicting-permissions, Resolving Conflicting Permissions>> for more information.
-- Similarly, the *manage* operation takes *manage-members* into account when managing group members.  
+- Similarly, the *manage* operation takes *manage-members* into account when managing group members.
 ====
 
 ===== Groups Resource Type
 
-The *Groups* realm resource type represents the groups in a realm. You can manage permissions for groups based on the following 
+The *Groups* realm resource type represents the groups in a realm. You can manage permissions for groups based on the following
 set of management operations:
 
 [cols="30%,70%"]
@@ -84,23 +84,24 @@ set of management operations:
 
 | *view*                    | Defines if a realm administrator can view groups.
 | *manage*                  | Defines if a realm administrator can manage groups.
-| *view-members*            | Defines if a realm administrator can view group members. 
+| *view-members*            | Defines if a realm administrator can view group members.
 | *manage-members*          | Defines if a realm administrator can manage group members.
+| *impersonate-members*     | Defines if a realm administrator can impersonate group members.
 | *manage-membership*       | Defines if a realm administrator can add or remove members from groups.
 |===
 
 [NOTE]
 ====
-- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
-  assigning only *manage* without *view* will prevent the group from being visible.  
-- The *view-members* and *manage-members* operations apply to the entire group hierarchy. In other words, if an administrator has 
-  permission to manage members of a group, they can also manage members of all its subgroups. This can be prevented by 
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example,
+  assigning only *manage* without *view* will prevent the group from being visible.
+- The *view-members* and *manage-members* operations apply to the entire group hierarchy. In other words, if an administrator has
+  permission to manage members of a group, they can also manage members of all its subgroups. This can be prevented by
   explicitly denying permission for specific subgroups.
 ====
 
 ===== Clients Resource Type
 
-The *Clients* realm resource type represents the clients in a realm. You can manage permissions for clients based on the following 
+The *Clients* realm resource type represents the clients in a realm. You can manage permissions for clients based on the following
 set of management operations:
 
 [cols="30%,70%"]
@@ -110,17 +111,17 @@ set of management operations:
 | *view*                    | Defines if a realm administrator can view clients.
 | *manage*                  | Defines if a realm administrator can manage clients.
 | *map-roles*               | Defines if a realm administrator can assign any role defined by a client (or multiple clients) to a user.
-| *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client (or multiple clients) as a composite to 
+| *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client (or multiple clients) as a composite to
                               another role.
-| *map-roles-client-scope*  | Defines if a realm administrator can assign any role defined by a client (or multiple clients) to the scope of 
+| *map-roles-client-scope*  | Defines if a realm administrator can assign any role defined by a client (or multiple clients) to the scope of
                               another client.
 |===
 
 [NOTE]
 ====
-- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example, 
+- An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example,
   assigning only *manage* without *view* will prevent the client from being visible.
-- The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also 
+- The *map-roles* operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also
   have user role mapping permissions.
 ====
 
@@ -133,15 +134,15 @@ The *Roles* realm resource type represents the roles in a realm. You can manage 
 | *Operation*               | *Description*
 
 | *map-role*               | Defines if a realm administrator can assign a role (or multiple roles) to a user.
-| *map-role-composite*     | Defines if a realm administrator can assign a role (or multiple roles) as a composite to another role. 
+| *map-role-composite*     | Defines if a realm administrator can assign a role (or multiple roles) as a composite to another role.
 | *map-role-client-scope*  | Defines if a realm administrator can apply a role (or multiple roles) to an another client’s scope.
 |===
 
 [NOTE]
 ====
-* The *map-role* operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also have 
-  user role mapping permissions.  
-* When mapping client roles, if an administrator has permission to *map-roles*, *map-roles-composite*, or *map-roles-client-scope* for 
+* The *map-role* operation does not grant the ability to manage users or assign roles arbitrarily; the administrator must also have
+  user role mapping permissions.
+* When mapping client roles, if an administrator has permission to *map-roles*, *map-roles-composite*, or *map-roles-client-scope* for
   a client, permissions for specific roles within that client are not evaluated.
 ====
 
@@ -161,28 +162,28 @@ image:images/fine-grain-permissions-tab.png[Fine grain permissions tab]
 
 ==== Managing Permissions
 
-The *Permissions* tab provides an overview of all active permissions within a realm. From here, administrators can create, 
+The *Permissions* tab provides an overview of all active permissions within a realm. From here, administrators can create,
 update, delete, or search for permissions.
 
-The *Policies* tab allows administrators to define conditions using different access control methods (*policy type*) to determine whether 
-a permission should be granted to an administrator attempting to access a specific resource performing some operation. It also 
-supports basic searching capability, based on policy `name` and its `type`. Fine-grained admin permissions were implemented on top of 
-Authorization services. Read more about link:{authorizationguide_link}#_policy_overview[Managing policies] in the Authorization services 
-documentation. 
+The *Policies* tab allows administrators to define conditions using different access control methods (*policy type*) to determine whether
+a permission should be granted to an administrator attempting to access a specific resource performing some operation. It also
+supports basic searching capability, based on policy `name` and its `type`. Fine-grained admin permissions were implemented on top of
+Authorization services. Read more about link:{authorizationguide_link}#_policy_overview[Managing policies] in the Authorization services
+documentation.
 
 ===== Defining permissions for viewing realm resources
 
-IMPORTANT: When listing or searching for realm resources (such as clients, groups, or users) via the Admin Console or Admin API, {project_name} 
-evaluates permissions that contain the *view* scope for the specific resource. For this operation, only role, user, and group policy types are 
-considered, while other policy types are ignored due to partial evaluation performed at the database level. Because of this, only policies that 
-reference the resource directly—whether through user association, group membership, or role assignment—are found and permissions assiciated with 
+IMPORTANT: When listing or searching for realm resources (such as clients, groups, or users) via the Admin Console or Admin API, {project_name}
+evaluates permissions that contain the *view* scope for the specific resource. For this operation, only role, user, and group policy types are
+considered, while other policy types are ignored due to partial evaluation performed at the database level. Because of this, only policies that
+reference the resource directly—whether through user association, group membership, or role assignment—are found and permissions assiciated with
 those are used for evaluation.
 
 When checking whether an admin can view a specific user, all policy types are taken into account.
 
-The partial evaluation mechanism helps identify and load relevant permissions from the database by using the resource 
-identifiers that the realm administrator has permission to "view". These identifiers are then applied in the subsequent 
-database query to fetch the actual stream of resources. Partial evaluation is supported for non-federated resources, which 
+The partial evaluation mechanism helps identify and load relevant permissions from the database by using the resource
+identifiers that the realm administrator has permission to "view". These identifiers are then applied in the subsequent
+database query to fetch the actual stream of resources. Partial evaluation is supported for non-federated resources, which
 is a limitation of the current implementation.
 
 ===== Searching Permissions
@@ -193,37 +194,37 @@ The Admin Console provides several ways to search for permissions, supporting th
 * Search for permissions of a specific resource type, such as *Users*
 * Search for permissions of a specific resource type that apply to a particular resource (such as *Users* resource type for user `myadmin`).
 * Search for permissions of a specific resource type with a given scope (such as *Users* resource type permissions with the *manage* scope).
-* Search for permissions of a specific resource type that apply to a particular resource and have a specific scope (such as *Users* resource 
+* Search for permissions of a specific resource type that apply to a particular resource and have a specific scope (such as *Users* resource
   type permissions with the *manage* scope for user `myadmin`).
 
 image:images/fine-grain-search.png[Fine grained permissions search]
 
 ==== Evaluating Permissions
 
-The *Evaluation* tab provides a testing environment where administrators can verify that permissions are correctly enforcing access 
+The *Evaluation* tab provides a testing environment where administrators can verify that permissions are correctly enforcing access
 control as expected.
 
-The administrator could see what permissions were involved in evaluation and what the outcome is by specifying a `username` of a user they 
+The administrator could see what permissions were involved in evaluation and what the outcome is by specifying a `username` of a user they
 want to verify, *Resource type*, resource (usermane of a *User* in this case) and optionally an authorization scope.
 
 image:images/fine-grain-evaluation.png[Fine grained permissions evaluation tab]
 
-In the example above it is visible that the user `myadmin`, can *manage* user `user-1`. There is also information what permissions were involved 
+In the example above it is visible that the user `myadmin`, can *manage* user `user-1`. There is also information what permissions were involved
 in the evaluation, what outcome it had and what scopes were granted or denied.
 
 [[_resolving-conflicting-permissions]]
 ===== Resolving conflicting permissions
 
-Permissions can have multiple policies associated with them. As the authorization model evolves, it is common for some policies within a permission or 
+Permissions can have multiple policies associated with them. As the authorization model evolves, it is common for some policies within a permission or
 even different permissions related to a specific resource to conflict.
 
-The evaluation outcome will be "denied" whenever any permission is evaluated to "DENY." If there are multiple permissions related to the same resource, 
+The evaluation outcome will be "denied" whenever any permission is evaluated to "DENY." If there are multiple permissions related to the same resource,
 all of them must grant access in order for the outcome to be "granted."
 
-IMPORTANT: Fine-grained admin permissions allow you to set up permissions for individual resources or for the resource type itself (such as all users, 
-all groups, and so on.). If a permission or permissions related to a specific resource exist, the "all-resource" permission is *NOT* taken into account 
-during evaluation. If no specific permission exists, the fallback is to the "all-resource" permission. This approach helps address scenarios like 
-allowing members of the `realm-admins` group to manage members of realm groups, but preventing them from managing members of the `realm-admins` group 
+IMPORTANT: Fine-grained admin permissions allow you to set up permissions for individual resources or for the resource type itself (such as all users,
+all groups, and so on.). If a permission or permissions related to a specific resource exist, the "all-resource" permission is *NOT* taken into account
+during evaluation. If no specific permission exists, the fallback is to the "all-resource" permission. This approach helps address scenarios like
+allowing members of the `realm-admins` group to manage members of realm groups, but preventing them from managing members of the `realm-admins` group
 themselves.
 
 *View and Manage users and group members*
@@ -232,7 +233,7 @@ When evaluating *view* or *manage* permissions for users the group *view-members
 The evaluation follows:
 
 * Specific user/group permissions take precedence over broader all-resource permissions.
-* If multiple permissions apply to a given user or group (such as multiple user-specific permissions, or a permission covering a set of 
+* If multiple permissions apply to a given user or group (such as multiple user-specific permissions, or a permission covering a set of
   users/groups where the user is member of), all of them are evaluated, and all of them must grant access for the outcome to be GRANTED.
 * If no user/group-specific permissions exist, the evaluation falls back to all-resource permissions ("all-users", "all-groups").
 * When both all-users and all-groups permissions exist, both must grant access for the outcome to be GRANTED.
@@ -241,35 +242,35 @@ The evaluation follows:
 [[_realm_access_control]]
 ==== Accessing a Realm Admin Console as a Realm Administrator
 
-Realm administrators can access a dedicated realm-specific Admin Console, which allows them to manage resources within their assigned realm. 
+Realm administrators can access a dedicated realm-specific Admin Console, which allows them to manage resources within their assigned realm.
 This is separate from the main Keycloak Admin Console, which is typically used by server administrators.
 
 For more details on dedicated realm admin consoles and available roles, refer to: <<_per_realm_admin_permissions, Dedicated admin consoles>>.
 
-To access the Admin Console, a realm administrator must have at least one of the following roles assigned, depending on the resources they 
+To access the Admin Console, a realm administrator must have at least one of the following roles assigned, depending on the resources they
 need to administer:
 
-- *query-users* – Required to query realm users.  
-- *query-groups* – Required to query realm groups.  
-- *query-clients* – Required to query realm clients.  
+- *query-users* – Required to query realm users.
+- *query-groups* – Required to query realm groups.
+- *query-clients* – Required to query realm clients.
 
-If an administrator is responsible for multiple resource types (such as both users and groups), they must have all corresponding "query-*" 
+If an administrator is responsible for multiple resource types (such as both users and groups), they must have all corresponding "query-*"
 roles assigned.
 
-These roles enable basic access to query resources but do not grant permission to view or modify them. To configure more fine-grained 
+These roles enable basic access to query resources but do not grant permission to view or modify them. To configure more fine-grained
 administrative access, additional permissions must be granted using fine-grained admin permissions.
 
 ===== Granting Administrative Roles to a Realm Administrator
 
-A realm administrator’s access must be configured by someone with permission to assign administrative roles. At a minimum, the administrator 
-must have:  
+A realm administrator’s access must be configured by someone with permission to assign administrative roles. At a minimum, the administrator
+must have:
 
 - The appropriate "query-*" roles, depending on the resource types they need to administer.
 
-Beyond these foundational roles, *fine-grained admin permissions* can be used to define specific administrative capabilities. While fine-grained 
+Beyond these foundational roles, *fine-grained admin permissions* can be used to define specific administrative capabilities. While fine-grained
 permissions allow for more granular control over access, they cannot override the default behavior of built-in admin roles.
-This means that if an respective admin role is assigned to a realm administrator, permission evaluation will be bypassed, and access will be 
-granted. 
+This means that if an respective admin role is assigned to a realm administrator, permission evaluation will be bypassed, and access will be
+granted.
 
 ====== Roles and Permission relationship
 
@@ -280,14 +281,14 @@ If a realm admin is assigned one or more admin roles, it prevents the permission
 |===
 | *Admin Role*              | *Description*
 
-| *query-users*            | A realm administrator can see the *Users* section in Admin Console and can search for users in the realm. 
+| *query-users*            | A realm administrator can see the *Users* section in Admin Console and can search for users in the realm.
                              It does not grant the ability to *view* users.
-| *query-groups*           | A realm administrator can see the *Groups* section in Admin Console and can search for groups in the realm. 
+| *query-groups*           | A realm administrator can see the *Groups* section in Admin Console and can search for groups in the realm.
                              It does not grant the ability to *view* groups.
-| *query-clients*          | A realm administrator can see the *Clients* section in Admin Console and can search for clients in the realm. 
+| *query-clients*          | A realm administrator can see the *Clients* section in Admin Console and can search for clients in the realm.
                              It does not grant the ability to *view* clients.
 | *view-users*             | A realm administrator can *view* all users and groups in the realm.
-| *manage-users*           | A realm administrator can *view*, *map-roles*, *manage-group-membership* and *manage* all users in the realm, 
+| *manage-users*           | A realm administrator can *view*, *map-roles*, *manage-group-membership* and *manage* all users in the realm,
                              as well as *view*, *manage-membership* and *manage* groups in the realm.
 | *impersonation*          | A realm administrator can *impersonate* all users in the realm.
 | *view-clients*           | A realm administrator can *view* all clients in the realm.
@@ -296,7 +297,7 @@ If a realm admin is assigned one or more admin roles, it prevents the permission
 
 ==== Understanding some common use cases
 
-Consider a situation where an administrator wants to allow a group of administrators to manage all users in the realm except those that 
+Consider a situation where an administrator wants to allow a group of administrators to manage all users in the realm except those that
 belong to the administrators group. This example includes a `test` realm and a `test-admins` group.
 
 ===== Allow manage users by group of administrators
@@ -356,3 +357,8 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 - Assign a "Group Policy" targeting `test-admins` to it.
 - Create another "Group Permission" with the *view-members* and *manage-members* scopes for specific group, select all subgroups of the `mygroup`.
 - Create negative "Group Policy" for `test-admins` and assign it to the "subgroups" permission.
+
+===== Allow impersonating members of a specific group
+
+- Create a "Group Permission" with the *impersonate-members* for specific group `mygroup`.
+- Assign a "Group Policy" targeting `mygroup-helpdesk` to it.
