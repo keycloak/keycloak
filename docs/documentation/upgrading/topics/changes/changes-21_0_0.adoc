@@ -1,7 +1,7 @@
 = Keycloak uses Micrometer for metrics
 
 Keycloak provides an optional a metrics endpoint which exports metrics in the Prometheus format.
-In this release the implementation to provide this data switched from SmallRye to Micrometer, which is the https://quarkus.io/guides/micrometer/[recommended metrics library for Quarkus].
+In this release the implementation to provide this data switched from SmallRye to Micrometer, which is the https://quarkus.io/guides/telemetry-micrometer[recommended metrics library for Quarkus].
 
 Due to this change, metrics have been renamed.
 The following table shows some examples.
@@ -52,9 +52,9 @@ backward compatibility mode is planned to be removed in Keycloak 24.
 
 = Deprecated methods from user session provider were removed
 
-In Keycloak 13 there was introduced `UserLoginFailureProvider` and some methods from 
-`UserSessionProvider` were moved there. The methods in `UserSessionProvider` were deprecated 
-and now has been removed. Javadoc of these methods contained a corresponding replacement 
+In Keycloak 13 there was introduced `UserLoginFailureProvider` and some methods from
+`UserSessionProvider` were moved there. The methods in `UserSessionProvider` were deprecated
+and now has been removed. Javadoc of these methods contained a corresponding replacement
 (see Javadoc of Keycloak 20 release).
 
 = Custom themes using old admin console won't work
