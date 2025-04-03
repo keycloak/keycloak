@@ -18,7 +18,7 @@ You create users in the realm where you intend to have applications needed by th
 
 ifdef::standalone[]
 +
-NOTE: *Username* is the only required field.
+NOTE: *Email* is the only required field.
 +   
 . Click *Save*. After saving the details, the *Management* page for the new user is displayed.  
 endif::[]
