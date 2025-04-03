@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin.permissions;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -663,8 +664,9 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     public Map<String, Boolean> getAccess(ClientModel client) {
         Map<String, Boolean> map = new HashMap<>();
         map.put("view", canView(client));
-        map.put("manage", StorageId.isLocalStorage(client) && canManage(client));
-        map.put("configure", StorageId.isLocalStorage(client) && canConfigure(client));
+        boolean isAdminPermissionsClient = AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(realm, client.getId());
+        map.put("manage", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canManage(client));
+        map.put("configure", !isAdminPermissionsClient && StorageId.isLocalStorage(client) && canConfigure(client));
         return map;
     }
 
