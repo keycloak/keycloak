@@ -46,9 +46,10 @@ public final class HostnameV2PropertyMappers {
         if (!inUse.isEmpty()) {
             picocli.warn("Hostname v1 options %s are still in use, please review your configuration".formatted(inUse));
         }
+        boolean isProd = Environment.PROD_PROFILE_VALUE.equals(org.keycloak.common.util.Environment.getProfile());
         boolean httpsEnabled = HttpPropertyMappers.isHttpsEnabled();
         String host = Configuration.getConfigValue(HostnameV2Options.HOSTNAME).getValue();
-        if (host != null && validateFullHostname(httpsEnabled, host, picocli)) {
+        if (host != null && validateFullHostname(httpsEnabled, isProd, host, picocli)) {
             return;
         }
         if (httpsEnabled) {
@@ -60,23 +61,20 @@ public final class HostnameV2PropertyMappers {
             // must not be tls passthrough, but there's no way of knowing the intention
             return;
         }
-        if (host == null) {
-            String message = "With HTTPS not enabled and hostname-strict=false, cross-origin cookies will not be allowed.";
-            if (Environment.isDevProfile()) {
-                picocli.info(message);
-            } else {
-                picocli.warn(message);
-            }
-        } else if (!SecureContextResolver.isLocal(host)) {
-            picocli.warn("HTTPS is not enabled on the server, either the `hostname` should be set to a full URL or `proxy-headers` should be used. This is likely a misconfiguration.");
-        } // else warn on prod
+        if (isProd) {
+            if (host == null) {
+                picocli.warn("With HTTPS not enabled and hostname-strict=false, cross-origin cookies will not be allowed.");
+            } else if (!SecureContextResolver.isLocal(host)) {
+                picocli.warn("HTTPS is not enabled on the server, either the `hostname` should be set to a full URL or `proxy-headers` should be used. This is likely a misconfiguration.");
+            } // else warn on prod
+        }
     }
 
-    static boolean validateFullHostname(boolean httpsEnabled, String host, Picocli picocli) {
+    static boolean validateFullHostname(boolean httpsEnabled, boolean isProd, String host, Picocli picocli) {
         try {
             URL url = new URL(host);
 
-            if (!url.getProtocol().toUpperCase().equals("HTTPS")) {
+            if (!url.getProtocol().toUpperCase().equals("HTTPS") && isProd) {
                 if (!SecureContextResolver.isLocal(url.getHost())) {
                     picocli.warn("`hostname` is set to an HTTP hostname, cross-origin cookies will not be allowed. This is likely a misconfiguration.");
 

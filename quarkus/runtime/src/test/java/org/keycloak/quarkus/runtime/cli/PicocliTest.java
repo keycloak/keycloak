@@ -584,21 +584,21 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void hostnameProxyValidation() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=foo");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=foo", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("HTTPS is not enabled on the server, either the `hostname` should be set to a full URL or `proxy-headers` should be used"));
     }
 
     @Test
     public void hostnameProxyValidationStrictFalse() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname-strict=false");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname-strict=false", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("With HTTPS not enabled and hostname-strict=false, cross-origin cookies will not be allowed"));
     }
 
     @Test
     public void hostnameValidationHttp() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=http://host");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--hostname=http://host", "--http-enabled=true");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("`hostname` is set to an HTTP hostname, cross-origin cookies will not be allowed. This is likely a misconfiguration."));
     }
