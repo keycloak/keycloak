@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
@@ -240,6 +241,8 @@ public class ClientResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
+
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));
