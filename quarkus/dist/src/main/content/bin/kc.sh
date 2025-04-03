@@ -72,7 +72,8 @@ do
             *) case "$1" in
                  --optimized | --help | --help-all | -h) PRE_BUILD=false;;
                  build) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
-               esac 
+                 update-compatibility) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
+               esac
                CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
                ;;
           esac
