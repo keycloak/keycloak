@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
@@ -107,6 +108,23 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(UserRepresentation::getUsername).noneMatch(notAllowedUsers::contains));
+    }
+
+    @Test
+    public void testCountWithFilters() {
+        assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(0));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(0));
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        Set<String> allowedUsers = Set.of("user-0", "user-15", "user-30");
+        createPermission(client, allowedUsers, usersType, Set.of(VIEW), allowPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(allowedUsers.size(), search.size());
+        assertTrue(search.stream().map(UserRepresentation::getUsername).allMatch(allowedUsers::contains));
+
+        assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(allowedUsers.size()));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(1));
     }
 
     @Test
