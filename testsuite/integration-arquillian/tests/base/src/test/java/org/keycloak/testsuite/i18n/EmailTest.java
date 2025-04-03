@@ -31,6 +31,7 @@ import java.util.Locale;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -167,6 +168,8 @@ public class EmailTest extends AbstractI18NTest {
         assertEquals(expectedMsgCount, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[expectedMsgCount - 1];
+
+        assertThat(message.getMessageID(), Matchers.endsWith("@keycloak.org>"));
 
         assertEquals(expectedSubject, message.getSubject());
 
