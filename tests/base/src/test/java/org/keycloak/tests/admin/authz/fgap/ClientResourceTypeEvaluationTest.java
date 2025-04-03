@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.fail;
+import static org.keycloak.authorization.AdminPermissionsSchema.CLIENTS;
 import static org.keycloak.authorization.AdminPermissionsSchema.CONFIGURE;
 import static org.keycloak.authorization.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
@@ -31,7 +32,9 @@ import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -44,6 +47,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -323,6 +327,45 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         try (Response response = realmAdminClient.realm(realm.getName()).clients().create(null)) {
             Assertions.assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testCreateClientsRequireManageScope() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        ClientRepresentation newClient = new ClientRepresentation();
+
+        newClient.setClientId(KeycloakModelUtils.generateId());
+
+        // can't create a new client
+        try (Response response = realmAdminClient.realm(realm.getName()).clients().create(newClient)) {
+            Assertions.assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+
+        List<ClientRepresentation> found = realmAdminClient.realm(realm.getName()).clients().findAll(true);
+        assertThat(found, empty());
+
+
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation allPermission = createAllPermission(client, clientsType, onlyMyAdminUserPolicy, CLIENTS.getScopes().stream().filter(Predicate.not(MANAGE::equals)).collect(Collectors.toSet()));
+
+        // can't create a new client
+        try (Response response = realmAdminClient.realm(realm.getName()).clients().create(newClient)) {
+            Assertions.assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+
+        // grants manage access
+        allPermission = getScopePermissionsResource(client).findByName(allPermission.getName());
+        allPermission.setScopes(Set.of(VIEW, MANAGE));
+        getScopePermissionsResource(client).findById(allPermission.getId()).update(allPermission);
+
+        // create clients is permission is granted to all clients
+        try (Response response = realmAdminClient.realm(realm.getName()).clients().create(newClient)) {
+            Assertions.assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        found = realmAdminClient.realm(realm.getName()).clients().findByClientId(newClient.getClientId());
+        assertThat(found, not(empty()));
     }
 
     @Test
