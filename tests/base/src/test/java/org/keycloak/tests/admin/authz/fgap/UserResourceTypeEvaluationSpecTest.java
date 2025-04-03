@@ -28,9 +28,15 @@ import static org.keycloak.authorization.AdminPermissionsSchema.USERS_RESOURCE_T
 import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.AdminPermissionsSchema.VIEW_MEMBERS;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
 import org.junit.jupiter.api.AfterEach;
@@ -67,6 +73,17 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     @InjectUser(ref = "jdoe")
     ManagedUser userJdoe;
 
+    @InjectUser(ref = "tom")
+    ManagedUser userTom;
+
+    @InjectUser(ref = "mary")
+    ManagedUser userMary;
+
+    ManagedUser myadmin;
+
+    private List<ManagedUser> ALL_GROUP_MEMBERS;
+    private List<ManagedUser> ALL_USERS;
+
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
 
@@ -75,17 +92,36 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @BeforeEach
     public void onBefore() {
-        for (int i = 0; i < 2; i++) {
-            GroupRepresentation group = new GroupRepresentation();
-            group.setName("group-" + i);
-            realm.admin().groups().add(group).close();
+        Map<String, List<ManagedUser>> groupMembers = new HashMap<>();
+
+        groupMembers.put("group-0", List.of(userAlice));
+        groupMembers.put("group-1", List.of(userBob));
+        groupMembers.put("group-2", List.of(userMary, userTom));
+
+        for (Entry<String, List<ManagedUser>> group : groupMembers.entrySet()) {
+            String name = group.getKey();
+
+            GroupRepresentation rep = new GroupRepresentation();
+            rep.setName(name);
+            realm.admin().groups().add(rep).close();
+
+            List<ManagedUser> members = group.getValue();
+
+            for (ManagedUser member : members) {
+                joinGroup(member, name);
+            }
         }
 
-        joinGroup(userAlice, "group-0");
-        joinGroup(userBob, "group-1");
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        allowPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", myadmin.getId());
+        this.myadmin = new ManagedUser(myadmin, realm.admin().users().get(myadmin.getId()));
 
-        allowPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, client,"Not My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        ALL_USERS = new ArrayList<>();
+        groupMembers.values().forEach(ALL_USERS::addAll);
+        ALL_USERS.add(this.myadmin);
+        ALL_USERS.add(userJdoe);
+        ALL_GROUP_MEMBERS = groupMembers.values().stream().flatMap(Collection::stream).toList();
     }
 
     @AfterEach
@@ -101,8 +137,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_01() {
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -113,8 +148,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_02() {
         allowAllGroups();
 
-        // TODO: should see only user members of groups
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("alice", "bob"));
+        assertFilter(ALL_GROUP_MEMBERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -125,8 +159,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_03() {
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -137,8 +170,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_04() {
         allowGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("alice"));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -150,9 +182,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         allowAllGroups();
 
-        // TODO: should only see users that are members of groups
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("alice", "bob"));
+        assertFilter(ALL_GROUP_MEMBERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -164,9 +194,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         denyAllGroups();
 
-        // TODO: should see only members of single group
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("alice", "bob"));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -177,8 +205,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_07() {
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -190,9 +217,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyGroup("group-0");
         allowAllGroups();
 
-        // TODO: should see only members of groups except those from single group
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("bob"));
+        assertFilter(userBob, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -216,8 +241,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_10() {
         allowAllUsers();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -229,8 +253,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowAllUsers();
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -242,9 +265,8 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowAllUsers();
         denyAllGroups();
 
-        // TODO: should not see users members of a group
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder("jdoe", "myadmin"));
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userJdoe.getUsername(), "myadmin"));
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -256,9 +278,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowAllUsers();
         allowGroup("group-0");
 
-        // TODO: should return all users
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -271,8 +291,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -285,9 +304,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         denyAllGroups();
 
-        // TODO: should see user that are not a member of a group or members of the single group
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice, userJdoe, myadmin);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -299,8 +316,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowAllUsers();
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userBob, userJdoe, myadmin, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -313,8 +329,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userBob, userJdoe, myadmin, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -327,9 +342,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyGroup("group-0");
         denyAllGroups();
 
-        // TODO: should see only users not members of groups
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userJdoe.getUsername(), "myadmin"));
+        assertFilter(userJdoe, myadmin);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -340,8 +353,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
     public void test_19() {
         denyAllUsers();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -353,8 +365,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyAllUsers();
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -366,8 +377,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyAllUsers();
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -379,9 +389,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyAllUsers();
         allowGroup("group-0");
 
-        // NOK denying all users permissions should have precedence over group permissions and not return users
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -394,9 +402,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         allowAllGroups();
 
-        // NOK denying all users permissions should have precedence over group permissions and not return users
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -409,9 +415,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         allowGroup("group-0");
         denyAllGroups();
 
-        // NOK denying all users permissions should have precedence over group permissions and not return users
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -423,8 +427,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyAllUsers();
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -437,8 +440,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -451,8 +453,7 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         denyGroup("group-0");
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -461,10 +462,9 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_28() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -473,11 +473,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_29() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice, userBob, userTom, userMary);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -486,11 +485,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_30() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -499,11 +497,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_31() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowGroup("group-1");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername()));
+        assertFilter(userAlice, userBob);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -512,13 +509,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_32() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowGroup("group-0");
         allowAllGroups();
 
-        //NOK all group members should be granted
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername()));
+        assertFilter(userAlice, userBob, userTom, userMary);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -527,12 +522,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_33() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowGroup("group-0");
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -541,12 +535,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_33_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowGroup("group-1");
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername()));
+        assertFilter(userAlice, userBob);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -555,11 +548,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_34() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -568,13 +560,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_35() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyGroup("group-0");
         allowAllGroups();
 
-        //NOK should grant access to users from other groups
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername()));
+        assertFilter(userBob, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -583,12 +573,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_35_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyGroup("group-1");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice, userTom, userMary);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -597,13 +586,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_36() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyGroup("group-0");
         denyAllGroups();
 
-        //NOK should grant access to users from other groups
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -612,11 +599,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_37() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -625,12 +611,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_38() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -639,13 +624,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_39() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         denyAllGroups();
 
-        //NOK should not return members from groups other than the user that was granted
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userAlice, userJdoe, myadmin);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -654,13 +637,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_40() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowGroup("group-0");
 
-        //NOK not sure if it should restrict or grant access
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -669,13 +650,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_40_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowGroup("group-1");
 
-        //NOK not sure if it should restrict or grant access
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -684,13 +663,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_41() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowGroup("group-1");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -699,14 +677,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_42() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowGroup("group-0");
         denyAllGroups();
 
-        //TODO should return single resource and users not members of groups
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userAlice, userJdoe, myadmin);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -715,14 +691,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_42_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         allowGroup("group-1");
-        denyAllGroups();
 
-        //NOK not sure if it should restrict or grant access
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(ALL_USERS);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, true);
@@ -731,12 +704,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_43() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userBob, userJdoe, myadmin, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -745,13 +717,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_44() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         denyGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userBob, userJdoe, myadmin, userTom, userMary);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, true);
@@ -760,14 +731,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_45() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         allowAllUsers();
         denyGroup("group-0");
         denyAllGroups();
 
-        //NOK filtering is not taking into account when group membership is denied to all groups
-        //List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        //assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userBob.getUsername(), userJdoe.getUsername(), "myadmin"));
+        assertFilter(userJdoe, myadmin);
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -776,11 +745,10 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_46() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -789,12 +757,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_47() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -803,12 +770,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_48() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -817,12 +783,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_49() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         allowGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -831,12 +796,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_49_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         allowGroup("group-1");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername(), userBob.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -845,13 +809,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_50() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         allowGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -860,13 +823,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_51() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         allowGroup("group-0");
         denyAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -875,12 +837,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_52() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         denyGroup("group-0");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -889,12 +850,11 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_52_a() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         denyGroup("group-1");
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(userAlice.getUsername()));
+        assertFilter(userAlice);
 
         assertUpdate(userAlice, true);
         assertUpdate(userBob, false);
@@ -903,13 +863,12 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_53() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         denyGroup("group-0");
         allowAllGroups();
 
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
@@ -918,26 +877,104 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
 
     @Test
     public void test_54() {
-        allowUser(userAlice.getId());
+        allowUser(userAlice);
         denyAllUsers();
         denyGroup("group-0");
         denyAllGroups();
 
-        // NOK should return alice because the resource is granted
-//        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
-//        assertThat(search.isEmpty(), is(true));
+        assertFilter();
 
         assertUpdate(userAlice, false);
         assertUpdate(userBob, false);
         assertUpdate(userJdoe, false);
     }
 
+    @Test
+    public void test_55() {
+        allowAllUsers();
+        denyUser(userAlice);
+        denyUser(userJdoe);
+
+        assertFilter(userBob, myadmin, userMary, userTom);
+
+        assertUpdate(userBob, true);
+        assertUpdate(userAlice, false);
+        assertUpdate(userJdoe, false);
+    }
+
+    @Test
+    public void test_56() {
+        allowUser(userJdoe);
+        denyUser(userBob);
+
+        assertFilter(userJdoe);
+
+        assertUpdate(userJdoe, true);
+        assertUpdate(userBob, false);
+        assertUpdate(userAlice, false);
+    }
+
+    @Test
+    public void test_57() {
+        denyUser(userAlice);
+        denyUser(userJdoe);
+
+        assertFilter();
+
+        assertUpdate(userBob, false);
+        assertUpdate(userAlice, false);
+        assertUpdate(userJdoe, false);
+    }
+
+    @Test
+    public void test_58() {
+        denyUser(userTom);
+        allowGroup("group-2");
+
+        assertFilter(userMary);
+
+        assertUpdate(userMary, true);
+        assertUpdate(userTom, false);
+        assertUpdate(userJdoe, false);
+    }
+
+    @Test
+    public void test_59() {
+        allowAllUsers();
+        denyUser(userTom);
+        allowGroup("group-1");
+
+        assertFilter(userAlice, userBob, userMary, userJdoe, myadmin);
+
+        assertUpdate(userMary, true);
+        assertUpdate(userJdoe, true);
+        assertUpdate(userTom, false);
+    }
+
+    @Test
+    public void test_60() {
+        allowAllUsers();
+        denyUser(userTom);
+        allowGroup("group-1");
+        denyGroup("group-2");
+
+        assertFilter(userAlice, userBob, userJdoe, myadmin);
+
+        assertUpdate(userJdoe, true);
+        assertUpdate(userMary, false);
+        assertUpdate(userTom, false);
+    }
+
+    private void denyUser(ManagedUser user) {
+        createPermission(client, user.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), denyPolicy);
+    }
+
     private void allowAllUsers() {
         createAllPermission(client, USERS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
     }
 
-    private void allowUser(String id) {
-        createPermission(client, id , USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), allowPolicy);
+    private void allowUser(ManagedUser user) {
+        createPermission(client, user.getId() , USERS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), allowPolicy);
     }
 
     private void denyAllUsers() {
@@ -1009,6 +1046,20 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
             } else {
                 assertThat(result.getDeniedScopes().stream().map(ScopeRepresentation::getName).toList(), containsInAnyOrder(AdminPermissionsSchema.USERS.getScopes().toArray()));
             }
+        }
+    }
+
+    private void assertFilter(List<ManagedUser> expected) {
+        assertFilter(expected.toArray(new ManagedUser[0]));
+    }
+
+    private void assertFilter(ManagedUser... expected) {
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+
+        if (expected.length == 0) {
+            assertThat(search.isEmpty(), is(true));
+        } else {
+            assertThat(search.stream().map(UserRepresentation::getUsername).toList(), containsInAnyOrder(Stream.of(expected).map(ManagedUser::getUsername).toArray()));
         }
     }
 }
