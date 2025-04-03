@@ -96,7 +96,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
     @Override
     public ErrorStatusUpdateControl<KeycloakRealmImport> updateErrorStatus(KeycloakRealmImport realm, Context<KeycloakRealmImport> context, Exception e) {
-        Log.error("--- Error reconciling", e);
+        Log.debug("--- Error reconciling", e);
         KeycloakRealmImportStatus status = new KeycloakRealmImportStatusBuilder()
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
