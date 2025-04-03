@@ -47,9 +47,23 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
  */
-@QuarkusMain(name = "keycloak")
-@ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
+
+    // this class allows us to differentiate between
+    // regular java launches of KeycloakMain.main, and embedded quarkus launches
+    @QuarkusMain(name = "keycloak")
+    @ApplicationScoped
+    public static class KeycloakQuarkusApplication {
+
+        public static void main(String[] args) {
+            KeycloakMain.main(args, new Picocli() {
+                @Override
+                public void exit(int exitCode) {
+                    ApplicationLifecycleManager.exit(exitCode);
+                }
+            });
+        }
+    }
 
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
 
@@ -64,10 +78,6 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
-        ensureVirtualThreadsParallelism();
-
-        System.setProperty("kc.version", Version.VERSION);
-
         main(args, new Picocli());
     }
 
@@ -91,6 +101,10 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void main(String[] args, Picocli picocli) {
+        ensureVirtualThreadsParallelism();
+
+        System.setProperty("kc.version", Version.VERSION);
+
         List<String> cliArgs = null;
         try {
             cliArgs = Picocli.parseArgs(args);
@@ -98,7 +112,7 @@ public class KeycloakMain implements QuarkusApplication {
             picocli.usageException(e.getMessage(), e.getCause());
             return;
         }
-        
+
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
         }
@@ -168,17 +182,15 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        int exitCode = ApplicationLifecycleManager.getExitCode();
-
         if (isTestLaunchMode() || isNonServerMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
-            Quarkus.asyncExit(exitCode);
+            Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
             Quarkus.waitForExit();
         }
 
-        return exitCode;
+        return ApplicationLifecycleManager.getExitCode();
     }
 
 }
