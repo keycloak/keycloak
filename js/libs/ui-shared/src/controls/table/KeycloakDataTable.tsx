@@ -88,21 +88,21 @@ const CellRenderer = ({
   index,
   actions,
   actionResolver,
-}: CellRendererProps) => {
-  const items = actions || actionResolver?.(row, {});
-  return (
-    <>
-      {row.cells!.map((c, i) => (
-        <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
-      ))}
-      {items && items.length > 0 && !row.disableActions && (
-        <Td isActionCell>
-          <ActionsColumn items={items} extraData={{ rowIndex: index }} />
-        </Td>
-      )}
-    </>
-  );
-};
+}: CellRendererProps) => (
+  <>
+    {row.cells!.map((c, i) => (
+      <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+    ))}
+    {(actions || actionResolver) && (
+      <Td isActionCell>
+        <ActionsColumn
+          items={actions || actionResolver?.(row, {})!}
+          extraData={{ rowIndex: index }}
+        />
+      </Td>
+    )}
+  </>
+);
 
 const ExpandableRowRenderer = ({ row }: CellRendererProps) =>
   row.cells!.map((c, i) => (
@@ -235,7 +235,6 @@ function DataTable<T>({
                       (v) => get(v, "id") === row.data.id,
                     ),
                     variant: isRadio ? "radio" : "checkbox",
-                    isDisabled: row.disableSelection,
                   }}
                 />
               )}
