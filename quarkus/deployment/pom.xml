@@ -53,6 +53,10 @@
                     <groupId>io.mvnpm</groupId>
                     <artifactId>importmap</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-devtools-common</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
