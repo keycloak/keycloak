@@ -67,6 +67,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     // Infinispan cache
     private volatile Cache<String, Object> workCache;
 
+    // TODO: mhajas REMOVE!
     // Ensure that atomic operations (like putIfAbsent) must work correctly in any of: non-clustered, clustered or cross-Data-Center (cross-DC) setups
     private CrossDCAwareCacheFactory crossDCAwareCacheFactory;
 

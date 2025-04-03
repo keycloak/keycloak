@@ -47,6 +47,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas REMOVE!
 public class RemoteCacheInvoker {
 
     public static final Logger logger = Logger.getLogger(RemoteCacheInvoker.class);

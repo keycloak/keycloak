@@ -32,6 +32,7 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     CacheOperation getOperation();
 
+    // TODO: mhajas DELETE!
     CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);
 
     enum CacheOperation {
@@ -60,6 +61,7 @@ public interface SessionUpdateTask<S extends SessionEntity> {
     }
 
 
+    // TODO: mhajas DELETE
     enum CrossDCMessageStatus {
         SYNC,
         //ASYNC,

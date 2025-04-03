@@ -75,7 +75,6 @@ import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdatesList;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -116,15 +115,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    protected final CrossDCLastSessionRefreshStore lastSessionRefreshStore;
-    protected final CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
-
     protected final InfinispanKeyGenerator keyGenerator;
 
     public PersistentUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
-                                         CrossDCLastSessionRefreshStore lastSessionRefreshStore,
-                                         CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
@@ -167,8 +161,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
-        this.lastSessionRefreshStore = lastSessionRefreshStore;
-        this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
         this.keyGenerator = keyGenerator;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
@@ -182,16 +174,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     protected Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> getClientSessionCache(boolean offline) {
         return offline ? offlineClientSessionCache : clientSessionCache;
-    }
-
-    @Override
-    public CrossDCLastSessionRefreshStore getLastSessionRefreshStore() {
-        return lastSessionRefreshStore;
-    }
-
-    @Override
-    public CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore() {
-        return offlineLastSessionRefreshStore;
     }
 
     @Override

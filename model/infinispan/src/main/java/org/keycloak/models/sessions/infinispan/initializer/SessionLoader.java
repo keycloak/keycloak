@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+// TODO: mhajas REMOVE!
 public interface SessionLoader<LOADER_CONTEXT extends SessionLoader.LoaderContext,
         WORKER_CONTEXT extends SessionLoader.WorkerContext,
         WORKER_RESULT extends SessionLoader.WorkerResult> {

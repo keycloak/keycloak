@@ -67,7 +67,6 @@ import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -110,8 +109,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    protected final CrossDCLastSessionRefreshStore lastSessionRefreshStore;
-    protected final CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     protected final PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
 
     protected final InfinispanKeyGenerator keyGenerator;
@@ -122,8 +119,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
-                                         CrossDCLastSessionRefreshStore lastSessionRefreshStore,
-                                         CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
@@ -150,8 +145,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
-        this.lastSessionRefreshStore = lastSessionRefreshStore;
-        this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
         this.keyGenerator = keyGenerator;
         this.offlineSessionCacheEntryLifespanAdjuster = offlineSessionCacheEntryLifespanAdjuster;
@@ -178,16 +171,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> getClientSessionTransaction(boolean offline) {
         return offline ? offlineClientSessionTx : clientSessionTx;
-    }
-
-    @Override
-    public CrossDCLastSessionRefreshStore getLastSessionRefreshStore() {
-        return lastSessionRefreshStore;
-    }
-
-    @Override
-    public CrossDCLastSessionRefreshStore getOfflineLastSessionRefreshStore() {
-        return offlineLastSessionRefreshStore;
     }
 
     @Override

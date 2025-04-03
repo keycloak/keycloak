@@ -58,6 +58,7 @@ public class InfinispanUtil {
     public static final int MAXIMUM_REPLACE_RETRIES = 25;
 
     // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
+    // TODO: mhajas REMOVE!
     public static Set<RemoteStore> getRemoteStores(Cache<?, ?> ispnCache) {
         return ComponentRegistry.componentOf(ispnCache, PersistenceManager.class).getStores(RemoteStore.class);
     }

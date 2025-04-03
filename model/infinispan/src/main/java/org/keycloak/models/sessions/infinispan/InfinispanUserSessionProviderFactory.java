@@ -34,7 +34,6 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MultiSiteUtils;
-import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -50,8 +49,6 @@ import org.keycloak.models.sessions.infinispan.changes.PersistentSessionsWorker;
 import org.keycloak.models.sessions.infinispan.changes.PersistentUpdate;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -100,8 +97,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private Config.Scope config;
 
     private RemoteCacheInvoker remoteCacheInvoker;
-    private CrossDCLastSessionRefreshStore lastSessionRefreshStore;
-    private CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private InfinispanKeyGenerator keyGenerator;
     SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
@@ -133,8 +128,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             return new PersistentUserSessionProvider(
                     session,
                     remoteCacheInvoker,
-                    lastSessionRefreshStore,
-                    offlineLastSessionRefreshStore,
                     keyGenerator,
                     cache,
                     offlineSessionsCache,
@@ -150,8 +143,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         return new InfinispanUserSessionProvider(
                 session,
                 remoteCacheInvoker,
-                lastSessionRefreshStore,
-                offlineLastSessionRefreshStore,
                 persisterLastSessionRefreshStore,
                 keyGenerator,
                 cache,
@@ -204,7 +195,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                         keyGenerator = new InfinispanKeyGenerator();
                         checkRemoteCaches(session);
                         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
-                            initializeLastSessionRefreshStore(factory);
+                            initializePersisterLastSessionRefreshStore(factory);
                         }
                         registerClusterListeners(session);
                         loadSessionsFromRemoteCaches(session);
@@ -226,12 +217,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 } else if (event instanceof ResetTimeOffsetEvent) {
                     if (persisterLastSessionRefreshStore != null) {
                         persisterLastSessionRefreshStore.reset();
-                    }
-                    if (lastSessionRefreshStore != null) {
-                        lastSessionRefreshStore.reset();
-                    }
-                    if (offlineLastSessionRefreshStore != null) {
-                        offlineLastSessionRefreshStore.reset();
                     }
                 }
             }
@@ -263,7 +248,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
          return config.getInt("sessionPreloadStalledTimeoutInSeconds", defaultTimeout);
     }
 
-    public void initializeLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
+    public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -319,19 +304,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionsCache = ispn.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
         RemoteCache sessionsRemoteCache = checkRemoteCache(session, sessionsCache, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
 
-        if (sessionsRemoteCache != null) {
-            lastSessionRefreshStore = new CrossDCLastSessionRefreshStoreFactory().createAndInit(session, sessionsCache, false);
-        }
-
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionsCache = ispn.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         checkRemoteCache(session, clientSessionsCache, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
         RemoteCache offlineSessionsRemoteCache = checkRemoteCache(session, offlineSessionsCache, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
-
-        if (offlineSessionsRemoteCache != null) {
-            offlineLastSessionRefreshStore = new CrossDCLastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, true);
-        }
 
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
         checkRemoteCache(session, offlineClientSessionsCache, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);

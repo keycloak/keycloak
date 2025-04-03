@@ -80,7 +80,6 @@ import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 import org.keycloak.models.sessions.infinispan.changes.ReplaceFunction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshEvent;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -157,7 +156,6 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 SessionEntityWrapper.class,
 
                 // models.sessions.infinispan.changes.sessions package
-                LastSessionRefreshEvent.class,
                 SessionData.class,
 
                 // models.cache.infinispan.authorization.stream package
