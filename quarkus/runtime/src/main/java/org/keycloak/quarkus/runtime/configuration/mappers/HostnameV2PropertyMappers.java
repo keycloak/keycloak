@@ -18,6 +18,7 @@ import org.keycloak.utils.SecureContextResolver;
 
 public final class HostnameV2PropertyMappers {
 
+    private static final String CONTEXT_WARNING = "the server is running in an insecure context. Secure contexts are required for full functionality, including cross-origin cookies.";
     private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy", "hostname-strict-https");
 
     private HostnameV2PropertyMappers(){}
@@ -62,10 +63,11 @@ public final class HostnameV2PropertyMappers {
             return;
         }
         if (isProd) {
+            String warning = CONTEXT_WARNING + " Also if you are using a proxy, requests from the proxy to the server will fail CORS checks with 403s because the wrong origin will be determined. Make sure `proxy-headers` are configured properly or use a full URL `hostname`.";
             if (host == null) {
-                picocli.warn("With HTTPS not enabled and hostname-strict=false, cross-origin cookies will not be allowed.");
+                picocli.warn("With HTTPS not enabled, `proxy-headers` unset, and `hostname-strict=false`, " + warning);
             } else if (!SecureContextResolver.isLocal(host)) {
-                picocli.warn("HTTPS is not enabled on the server, either the `hostname` should be set to a full URL or `proxy-headers` should be used. This is likely a misconfiguration.");
+                picocli.warn("Likely misconfiguration detected. With HTTPS not enabled, `proxy-headers` unset, and a non-URL `hostname`, " + warning);
             } // else warn on prod
         }
     }
@@ -76,13 +78,13 @@ public final class HostnameV2PropertyMappers {
 
             if (!url.getProtocol().toUpperCase().equals("HTTPS") && isProd) {
                 if (!SecureContextResolver.isLocal(url.getHost())) {
-                    picocli.warn("`hostname` is configured to use HTTP instead of HTTPS, cross-origin cookies will not be allowed. This is likely a misconfiguration.");
+                    picocli.warn("Likely misconfiguration detected. `hostname` is configured to use HTTP instead of HTTPS, " + CONTEXT_WARNING);
 
                     // TODO: any hostname-admin specific validation?
 
                 } // else warn on prod?
                 if (httpsEnabled) {
-                    picocli.warn("HTTPS is enabled on the server, but `hostname` specifies HTTP. This is likely a misconfiguration.");
+                    picocli.warn("Likely misconfiguration detected. HTTPS is enabled on the server, but `hostname` specifies HTTP.");
                 }
             }
 
