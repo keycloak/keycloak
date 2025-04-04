@@ -18,6 +18,12 @@ It has been a while since discussions started about any activity around the Inst
 and any objection from the community about deprecating it for removal. For more details, see
 https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
 
+=== Deprecated proprietary protocol for client initiated linking to the identity provider account
+
+When you want the user, who is authenticated to your client application, to link his or her account to a specific identity provider, consider using the Application initiated action (AIA) based
+mechanism with the action `idp_link`. The proprietary custom protocol for client initiated account linking is deprecated now and might be removed in the future versions. For more information, see the
+Client initiated account link section of the link:{developerguide_link}[{developerguide_name}].
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.

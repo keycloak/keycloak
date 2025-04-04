@@ -41,6 +41,7 @@ public interface RequiredActionContext {
     enum Status {
         CHALLENGE,
         SUCCESS,
+        CANCELLED,
         IGNORE,
         FAILURE
     }
@@ -148,6 +149,11 @@ public interface RequiredActionContext {
      *
      */
     void success();
+
+    /**
+     * Mark this action as cancelled. Can be only used in AIA
+     */
+    void cancel();
 
     /**
      * Ignore this required action and go onto the next, or complete the flow.
