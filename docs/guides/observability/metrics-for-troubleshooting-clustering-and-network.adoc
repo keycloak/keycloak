@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Clustering and network metrics"
-summary="Learn about metrics monitoring communication between {project_name} nodes"
+title="Clustering metrics"
+summary="Learn about metrics monitoring communication between {project_name} nodes."
 tileVisible="false"
 >
 

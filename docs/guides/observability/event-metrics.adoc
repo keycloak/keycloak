@@ -4,11 +4,10 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Enabling {project_name} Event Metrics"
-summary="Learn how to enable and use {project_name} Event Metrics"
+title="Monitoring user activities with event metrics"
+summary="Event metrics provide admins an aggregated view of the different user activities in a {project_name} instance."
 includedOptions="metrics-enabled event-metrics-user-*">
 
-Event metrics can provide admins an overview of the different activities in a {project_name} instance.
 For now, only metrics for user events are captured.
 For example, you can monitor the number of logins, login failures, or token refreshes performed.
 

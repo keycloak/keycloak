@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} service level indicators (SLIs)"
-summary="Learn about the Service Level Indicators to monitor your {project_name} deployment's performance"
+title="Monitoring performance with Service Level Indicators"
+summary="Track performance and reliability as perceived by users with Service Level Indicators (SLIs) and Service Level Objectives (SLOs)."
 >
 
 Service Level Indicators (SLIs) and Service Level Objectives (SLOs) are essential components in monitoring and maintaining the performance and reliability of {project_name} in production environments.

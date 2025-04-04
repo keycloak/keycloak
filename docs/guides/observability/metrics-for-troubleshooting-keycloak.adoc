@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="{project_name} self-provided metrics"
+title="Self-provided metrics"
 summary="Learn about key metrics that {project_name} provides"
 tileVisible="false"
 >
