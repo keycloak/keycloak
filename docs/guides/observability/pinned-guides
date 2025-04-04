@@ -13,3 +13,4 @@ metrics-for-troubleshooting-embedded-caches-multi-site
 metrics-for-troubleshooting-external-infinispan-multi-site
 tracing
 grafana-dashboards
+exemplars
