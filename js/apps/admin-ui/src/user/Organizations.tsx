@@ -1,5 +1,4 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ListEmptyState,
   OrganizationTable,
@@ -29,17 +28,7 @@ import { toUsers } from "./routes/Users";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
 import { capitalizeFirstLetterFormatter } from "../util";
 import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
-
-type OrganizationProps = {
-  user: UserRepresentation;
-};
-
-type MembershipTypeRepresentation = OrganizationRepresentation &
-  UserRepresentation & {
-    membershipType?: string;
-  };
-
-export const Organizations = ({ user }: OrganizationProps) => {
+export const Organizations = () => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { id } = useParams<UserParams>();
@@ -88,35 +77,15 @@ export const Organizations = ({ user }: OrganizationProps) => {
       const userOrganizations =
         await adminClient.organizations.memberOrganizations({ userId: id! });
 
-      const userOrganizationsWithMembershipTypes = await Promise.all(
-        userOrganizations.map(async (org) => {
-          const orgId = org.id;
-          const memberships: MembershipTypeRepresentation[] =
-            await adminClient.organizations.listMembers({
-              orgId: orgId!,
-            });
-
-          const userMemberships = memberships.filter(
-            (membership) => membership.username === user.username,
-          );
-
-          const membershipType = userMemberships.map((membership) => {
-            const formattedMembershipType = capitalizeFirstLetterFormatter()(
-              membership.membershipType,
-            );
-            return formattedMembershipType;
-          });
-
-          return { ...org, membershipType };
-        }),
-      );
-
-      let filteredOrgs = userOrganizationsWithMembershipTypes;
+      let filteredOrgs = userOrganizations.map((org) => {
+        org.membershipType = capitalizeFirstLetterFormatter()(
+          org.membershipType,
+        ) as string;
+        return org;
+      });
       if (filteredMembershipTypes.length > 0) {
         filteredOrgs = filteredOrgs.filter((org) =>
-          org.membershipType?.some((type) =>
-            filteredMembershipTypes.includes(type as string),
-          ),
+          filteredMembershipTypes.includes(org.membershipType as string),
         );
       }
 
