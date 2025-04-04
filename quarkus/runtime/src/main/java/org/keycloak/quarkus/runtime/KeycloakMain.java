@@ -22,14 +22,16 @@ import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import picocli.CommandLine;
+
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
@@ -47,23 +49,9 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
  */
+@QuarkusMain(name = "keycloak")
+@ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
-
-    // this class allows us to differentiate between
-    // regular java launches of KeycloakMain.main, and embedded quarkus launches
-    @QuarkusMain(name = "keycloak")
-    @ApplicationScoped
-    public static class KeycloakQuarkusApplication {
-
-        public static void main(String[] args) {
-            KeycloakMain.main(args, new Picocli() {
-                @Override
-                public void exit(int exitCode) {
-                    ApplicationLifecycleManager.exit(exitCode);
-                }
-            });
-        }
-    }
 
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
 
@@ -78,7 +66,22 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void main(String[] args) {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
-        main(args, new Picocli());
+        ensureVirtualThreadsParallelism();
+
+        System.setProperty("kc.version", Version.VERSION);
+
+        Picocli picocli;
+        if (!(Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader)) {
+            picocli = new Picocli() { // embedded launch case, avoid System.exit
+                @Override
+                public void exit(int exitCode) {
+                    Quarkus.asyncExit(exitCode);
+                };
+            };
+        } else {
+            picocli = new Picocli();
+        }
+        main(args, picocli);
     }
 
     private static void ensureVirtualThreadsParallelism() {
@@ -101,10 +104,6 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void main(String[] args, Picocli picocli) {
-        ensureVirtualThreadsParallelism();
-
-        System.setProperty("kc.version", Version.VERSION);
-
         List<String> cliArgs = null;
         try {
             cliArgs = Picocli.parseArgs(args);
@@ -154,27 +153,22 @@ public class KeycloakMain implements QuarkusApplication {
         return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
+    public static void start(Picocli picocli, ExecutionExceptionHandler errorHandler) {
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
-                    errorHandler.error(errStream,
+                    errorHandler.error(picocli.getErrWriter(),
                             String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                             cause.getCause());
                 }
-
-                if (Environment.isDistribution()) {
-                    // assume that it is running the distribution
-                    // as we are replacing the default exit handler, we need to force exit
-                    System.exit(exitCode);
-                }
+                picocli.exit(exitCode);
             });
         } catch (Throwable cause) {
-            errorHandler.error(errStream,
+            errorHandler.error(picocli.getErrWriter(),
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
-            System.exit(1);
         }
+        picocli.exit(CommandLine.ExitCode.SOFTWARE);
     }
 
     /**

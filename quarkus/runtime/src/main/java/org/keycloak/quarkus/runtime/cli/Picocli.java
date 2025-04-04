@@ -982,7 +982,7 @@ public class Picocli {
     }
 
     public void start() {
-        KeycloakMain.start(errorHandler, getErrWriter());
+        KeycloakMain.start(this, errorHandler);
     }
 
     public void build() throws Throwable {
