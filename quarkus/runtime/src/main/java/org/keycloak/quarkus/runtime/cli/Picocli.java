@@ -54,12 +54,10 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.Completion;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
@@ -252,9 +250,7 @@ public class Picocli {
                 || cliArgs.contains("-h")
                 || cliArgs.contains("--help-all")
                 || currentCommandName.equals(Build.NAME)
-                || currentCommandName.equals(ShowConfig.NAME)
-                || currentCommandName.equals(Completion.NAME)
-                || currentCommandName.equals(UpdateCompatibility.NAME);
+                || Environment.getParsedCommand().filter(AbstractStartCommand.class::isInstance).isEmpty();
     }
 
     private static boolean requiresReAugmentation(CommandLine cmdCommand) {
