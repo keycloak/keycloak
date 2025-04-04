@@ -325,6 +325,7 @@ public class CacheManagerFactory {
                 if (jGroupsConfigurator.isLocal()) {
                     throw new RuntimeException("Unable to use clustered cache with local mode.");
                 }
+                // TODO: mhajas DELETE
                 configureRemoteStores(builder);
             }
             jGroupsConfigurator.configure(session);

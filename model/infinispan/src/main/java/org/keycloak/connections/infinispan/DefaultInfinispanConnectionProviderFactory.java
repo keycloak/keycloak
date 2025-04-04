@@ -27,7 +27,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.CacheMode;
@@ -37,7 +36,6 @@ import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
@@ -106,8 +104,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private volatile EmbeddedCacheManager cacheManager;
 
-    private volatile RemoteCacheProvider remoteCacheProvider;
-
     protected volatile boolean containerManaged;
 
     private volatile TopologyInfo topologyInfo;
@@ -120,7 +116,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         return InfinispanUtils.isRemoteInfinispan() ?
                 new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
-                new DefaultInfinispanConnectionProvider(cacheManager, remoteCacheProvider, topologyInfo);
+                new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
 
     }
 
@@ -166,9 +162,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
                 cacheManager.stop();
-            }
-            if (remoteCacheProvider != null) {
-                remoteCacheProvider.stop();
             }
         });
     }
@@ -230,7 +223,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
                     logger.infof(topologyInfo.toString());
 
-                    remoteCacheProvider = new RemoteCacheProvider(config, localCacheManager);
                     // only set the cache manager attribute at the very end to avoid passing a half-initialized entry callers
                     cacheManager = localCacheManager;
                     remoteCacheManager = rcm;
@@ -398,9 +390,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         // copy base configuration
         var builder = createCacheConfigurationBuilder();
         builder.read(baseConfiguration);
-        if (config.getBoolean("remoteStoreEnabled", false)) {
-            configureRemoteCacheStore(builder, config.getBoolean("async", false), cacheName);
-        }
         cacheManager.defineConfiguration(cacheName, builder.build());
         cacheManager.getCache(cacheName);
     }
@@ -423,47 +412,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .maxCount(maxEntries);
 
         return cb.build();
-    }
-
-    // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
-    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName) {
-        String jdgServer = config.get("remoteStoreHost", "127.0.0.1");
-        Integer jdgPort = config.getInt("remoteStorePort", 11222);
-
-        // After upgrade to Infinispan 12.1.7.Final it's required that both remote store and embedded cache use
-        // the same key media type to allow segmentation. Also, the number of segments in an embedded cache needs to match number of segments in the remote store.
-        boolean segmented = config.getBoolean("segmented", false);
-
-        //noinspection removal
-        builder.persistence()
-                .passivation(false)
-                .addStore(RemoteStoreConfigurationBuilder.class)
-                .ignoreModifications(false)
-                .purgeOnStartup(false)
-                .preload(false)
-                .shared(true)
-                .remoteCacheName(cacheName)
-                .segmented(segmented)
-                .rawValues(true)
-                .forceReturnValues(false)
-                .protocolVersion(getHotrodVersion())
-                .addServer()
-                .host(jdgServer)
-                .port(jdgPort)
-                .async()
-                .enabled(async);
-    }
-
-    private ProtocolVersion getHotrodVersion() {
-        String hotrodVersionStr = config.get("hotrodProtocolVersion", ProtocolVersion.DEFAULT_PROTOCOL_VERSION.toString());
-        ProtocolVersion hotrodVersion = ProtocolVersion.parseVersion(hotrodVersionStr);
-        if (hotrodVersion == null) {
-            hotrodVersion = ProtocolVersion.DEFAULT_PROTOCOL_VERSION;
-        }
-
-        logger.debugf("HotRod protocol version: %s", hotrodVersion);
-
-        return hotrodVersion;
     }
 
     protected Configuration getKeysCacheConfig() {

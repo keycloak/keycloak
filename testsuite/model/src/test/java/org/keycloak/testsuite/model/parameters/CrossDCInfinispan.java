@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
+// TODO: mhajas DELETE
 public class CrossDCInfinispan extends KeycloakModelParameters {
 
     private final HotRodServerRule hotRodServerRule = new HotRodServerRule();
@@ -51,9 +52,7 @@ public class CrossDCInfinispan extends KeycloakModelParameters {
                     .provider("default")
                     .config("embedded", "true")
                     .config("clustered", "true")
-                    .config("remoteStoreEnabled", "true")
                     .config("useKeycloakTimeService", "true")
-                    .config("remoteStoreSecurityEnabled", "false")
                     .config("nodeName", "node-" + NODE_COUNTER.get())
                     .config("siteName", siteName(NODE_COUNTER.get()))
                     .config("remoteStorePort", siteName(NODE_COUNTER.get()).equals("site-2") ? "11333" : "11222")

@@ -135,7 +135,6 @@
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
             "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
