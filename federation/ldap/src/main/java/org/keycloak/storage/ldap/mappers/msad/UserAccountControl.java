@@ -72,4 +72,8 @@ public class UserAccountControl {
     public long getValue() {
         return value;
     }
+
+    public boolean isAnySet() {
+        return value != 0;
+    }
 }
