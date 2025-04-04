@@ -2,11 +2,10 @@
 
 === Fine grained admin permissions V2
 
-With fine-grained admin permissions, you can delegate realm management to other administrators, delegate realm management 
-to other administrators, the realm administrators. Different from the regular Role-Based Access Control Mechanism provided 
-through the Global and Realm specific roles (<<_master_realm_access_control, Master realm access control>>), this feature 
-provides a more fine-grained control over how realm resources can be accessed and managed based on a well-defined set of 
-operations that can be performed on them.
+With fine-grained admin permissions, you can delegate realm management to other administrators, the realm administrators.
+Different from the regular Role-Based Access Control Mechanism provided through the Global and Realm specific roles
+(<<_master_realm_access_control, Master realm access control>>), this feature provides a more fine-grained control over
+how realm resources can be accessed and managed based on a well-defined set of operations that can be performed on them.
 
 By relying on a Policy-Based Access Control, server administrators can define permissions to realm resources such as users, 
 groups, and clients, using different policy types, or access control methods, so that a realm administrator is limited to 
