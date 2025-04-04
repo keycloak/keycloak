@@ -422,6 +422,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean hideUserAlreadyRegisteredError() {
+        if (isUpdated()) return updated.hideUserAlreadyRegisteredError();
+        return cached.hideUserAlreadyRegisteredError();
+    }
+
+    @Override
+    public void setHideUserAlreadyRegisteredError(boolean hideUserAlreadyRegisteredError) {
+        getDelegateForUpdate();
+        updated.setHideUserAlreadyRegisteredError(hideUserAlreadyRegisteredError);
+    }
+
+    @Override
     public boolean isResetPasswordAllowed() {
         if (isUpdated()) return updated.isResetPasswordAllowed();
         return cached.isResetPasswordAllowed();

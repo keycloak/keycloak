@@ -33,6 +33,8 @@ public class Messages {
 
     public static final String INVALID_USERNAME_OR_EMAIL = "invalidUsernameOrEmailMessage";
 
+    public static final String USER_ALREADY_EXISTS = "userAlreadyExists";
+
     public static final String INVALID_PASSWORD = "invalidPasswordMessage";
 
     public static final String INVALID_EMAIL = "invalidEmailMessage";
