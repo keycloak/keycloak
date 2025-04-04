@@ -1264,7 +1264,8 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void searchById() {
-        String expectedUserId = createUsers().get(0);
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
 
         assertEquals(1, users.size());
@@ -1274,6 +1275,19 @@ public class UserTest extends AbstractAdminTest {
 
         assertEquals(1, users.size());
         assertEquals(expectedUserId, users.get(0).getId());
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        List<UserRepresentation> multipleUsers = realm.users().search(String.format("id:%s %s", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+
+        // Should take arbitrary amount of spaces in between ids
+        List<UserRepresentation> multipleUsers2 = realm.users().search(String.format("id:  %s   %s  ", expectedUserId, expectedUserId2), 0 , 10);;
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
     }
 
     @Test
