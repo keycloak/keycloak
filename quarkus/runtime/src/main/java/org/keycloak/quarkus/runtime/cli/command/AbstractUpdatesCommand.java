@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
 
@@ -29,11 +30,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractUpdatesCommand extends AbstractCommand {
 
     private static final int FEATURE_DISABLED_EXIT_CODE = 4;
 
@@ -52,18 +52,15 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
     }
 
     @Override
-    public void run() {
-        Environment.updateProfile(true);
+    protected Optional<Integer> exitWith() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
             printFeatureDisabled();
-            picocli.exit(FEATURE_DISABLED_EXIT_CODE);
-            return;
+            return Optional.of(FEATURE_DISABLED_EXIT_CODE);
         }
         loadConfiguration();
         printPreviewWarning();
         validateConfig();
-        var exitCode = executeAction();
-        picocli.exit(exitCode);
+        return Optional.of(executeAction());
     }
 
     abstract int executeAction();

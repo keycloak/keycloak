@@ -140,7 +140,9 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 // the weaknesses here:
                 // - needs to know all of the short name options that accept a value
                 // - Even though We've explicitly disabled PosixClusteredShortOptionsAllowed, it may not know all of the picocli parsing rules.
-                if (mapper != null || SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) || arg.startsWith(SPI_OPTION_PREFIX)) {
+                if (mapper != null
+                        || (SHORT_OPTIONS_ACCEPTING_VALUE.contains(key) && !args.get(i + 1).startsWith(ARG_SHORT_PREFIX))
+                        || arg.startsWith(SPI_OPTION_PREFIX)) {
                     i++; // consume next as a value to the key
                     value = args.get(i);
                 } else {
