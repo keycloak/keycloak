@@ -42,14 +42,12 @@ import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
-import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
-import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
@@ -325,8 +323,6 @@ public class CacheManagerFactory {
                 if (jGroupsConfigurator.isLocal()) {
                     throw new RuntimeException("Unable to use clustered cache with local mode.");
                 }
-                // TODO: mhajas DELETE
-                configureRemoteStores(builder);
             }
             jGroupsConfigurator.configure(session);
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
@@ -384,59 +380,6 @@ public class CacheManagerFactory {
 
     private static int getStartTimeout() {
         return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
-    }
-
-    private static void configureRemoteStores(ConfigurationBuilderHolder builder) {
-        //if one of remote store command line parameters is defined, some other are required, otherwise assume it'd configured via xml only
-        if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent()) {
-
-            String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
-            Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
-                    .map(Integer::parseInt)
-                    .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
-
-            SSLContext sslContext = createSSLContext();
-
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
-                PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
-
-                //if specified via command line -> cannot be defined in the xml file
-                if (!persistenceCB.stores().isEmpty()) {
-                    throw new RuntimeException(String.format("Remote store for cache '%s' is already configured via CLI parameters. It should not be present in the XML file.", cacheName));
-                }
-
-                var storeBuilder = persistenceCB.addStore(RemoteStoreConfigurationBuilder.class);
-                storeBuilder
-                        .rawValues(true)
-                        .shared(true)
-                        .segmented(false)
-                        .remoteCacheName(cacheName)
-                        .connectionPool()
-                            .maxActive(16)
-                            .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                        .addServer()
-                        .host(cacheRemoteHost)
-                        .port(cacheRemotePort);
-
-                if (isRemoteTLSEnabled()) {
-                    storeBuilder.remoteSecurity()
-                            .ssl()
-                            .enable()
-                            .sslContext(sslContext)
-                            .sniHostName(cacheRemoteHost);
-                }
-
-                if (isRemoteAuthenticationEnabled()) {
-                    storeBuilder.remoteSecurity()
-                            .authentication()
-                            .enable()
-                            .username(requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY))
-                            .password(requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY))
-                            .realm("default")
-                            .saslMechanism(SCRAM_SHA_512);
-                }
-            });
-        }
     }
 
     private static void checkForRemoteStores(ConfigurationBuilderHolder builder) {
