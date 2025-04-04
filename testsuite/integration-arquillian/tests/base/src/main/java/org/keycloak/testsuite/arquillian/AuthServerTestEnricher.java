@@ -128,8 +128,6 @@ public class AuthServerTestEnricher {
 
     public static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
-    public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
-    public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
@@ -206,65 +204,7 @@ public class AuthServerTestEnricher {
 
         suiteContext = new SuiteContext(containers);
 
-        if (AUTH_SERVER_CROSS_DC) {
-            // if cross-dc mode enabled, load-balancer is the frontend of datacenter cluster
-            containers.stream()
-                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER + "-cross-dc"))
-                .forEach(c -> {
-                    String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                    String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                    updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                    suiteContext.addAuthServerInfo(Integer.valueOf(dcString), c);
-                });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new IllegalStateException("Not found frontend container (load balancer): " + AUTH_SERVER_BALANCER);
-            }
-            if (suiteContext.getDcAuthServerInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("auth-server-" + System.getProperty("node.name") + "-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(c -> {
-                        String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                        updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-
-                        String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                        suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
-                    });
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(containerInfo -> {
-
-                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
-
-                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
-
-                        suiteContext.addCacheServerInfo(dcIndex, containerInfo);
-                    });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
-                throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getCacheServersInfo().isEmpty() && !CACHE_SERVER_LIFECYCLE_SKIP) {
-                throw new IllegalStateException("Cache containers misconfiguration");
-            }
-
-            log.info("Using frontend containers: " + this.suiteContext.getDcAuthServerInfo().stream()
-              .map(ContainerInfo::getQualifier)
-              .collect(Collectors.joining(", ")));
-        } else if (AUTH_SERVER_CLUSTER) {
+        if (AUTH_SERVER_CLUSTER) {
             // if cluster mode enabled, load-balancer is the frontend
             ContainerInfo container = containers.stream()
               .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER))
@@ -316,7 +256,6 @@ public class AuthServerTestEnricher {
         }
 
         suiteContextProducer.set(suiteContext);
-        CrossDCTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
         log.info("\n\n" + SystemInfoHelper.getSystemInfo());
 

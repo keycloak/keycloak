@@ -61,11 +61,9 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
-                .service(TestEnricher.class, CacheStatisticsControllerEnricher.class)
                 .observer(JmxConnectorRegistryCreator.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
-                .observer(CrossDCTestEnricher.class)
                 .observer(H2TestEnricher.class);
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)
