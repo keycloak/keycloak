@@ -19,6 +19,7 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.api.BasicCache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
@@ -43,7 +45,6 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -66,13 +67,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     // Infinispan cache
     private volatile Cache<String, Object> workCache;
-
-    // TODO: mhajas REMOVE!
-    // Ensure that atomic operations (like putIfAbsent) must work correctly in any of: non-clustered, clustered or cross-Data-Center (cross-DC) setups
-    private CrossDCAwareCacheFactory crossDCAwareCacheFactory;
-
     private int clusterStartupTime;
-
     // Just to extract notifications related stuff to separate class
     private InfinispanNotificationsManager notificationsManager;
 
@@ -88,7 +83,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     public ClusterProvider create(KeycloakSession session) {
         lazyInit(session);
         String myAddress = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
-        return new InfinispanClusterProvider(clusterStartupTime, myAddress, crossDCAwareCacheFactory, notificationsManager, localExecutor);
+        return new InfinispanClusterProvider(clusterStartupTime, myAddress, workCache, notificationsManager, localExecutor);
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -101,17 +96,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                     workCacheListener = new ViewChangeListener();
                     workCache.getCacheManager().addListener(workCacheListener);
 
-                    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-                    Set<RemoteStore> remoteStores = InfinispanUtil.getRemoteStores(workCache);
-                    crossDCAwareCacheFactory = CrossDCAwareCacheFactory.getFactory(workCache, remoteStores);
-
                     clusterStartupTime = initClusterStartupTime(session);
 
                     TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
                     String myAddress = topologyInfo.getMyNodeName();
                     String mySite = topologyInfo.getMySiteName();
 
-                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, remoteStores);
+                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, Set.of());
                 }
             }
         }
@@ -119,7 +110,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
 
     protected int initClusterStartupTime(KeycloakSession session) {
-        Integer existingClusterStartTime = (Integer) crossDCAwareCacheFactory.getCache().get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
+        Integer existingClusterStartTime = (Integer) workCache.get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
         if (existingClusterStartTime != null) {
             logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
             return existingClusterStartTime;
@@ -127,7 +118,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // clusterStartTime not yet initialized. Let's try to put our startupTime
             int serverStartTime = (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-            existingClusterStartTime = putIfAbsentWithRetries(crossDCAwareCacheFactory, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
+            existingClusterStartTime = putIfAbsentWithRetries(workCache, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
             if (existingClusterStartTime == null) {
                 logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
@@ -138,10 +129,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         }
     }
 
-
     // Will retry few times for the case when backup site not available in cross-dc environment.
     // The site might be taken offline automatically if "take-offline" properly configured
-    static <V> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
+    // TODO: mhajas Check if retries needed in single cluster
+    static <V> V putIfAbsentWithRetries(BasicCache<String, Object> workCache, String key, V value, int taskTimeoutInSeconds) {
         AtomicReference<V> resultRef = new AtomicReference<>();
 
         Retry.executeWithBackoff(iteration -> {
@@ -149,10 +140,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             try {
                 V result;
                 if (taskTimeoutInSeconds > 0) {
-                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(crossDCAwareCacheFactory.getCache(), Time.toMillis(taskTimeoutInSeconds));
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
+                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(workCache, Time.toMillis(taskTimeoutInSeconds));
+                    result = (V) workCache.putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
                 } else {
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
+                    result = (V) workCache.putIfAbsent(key, value);
                 }
                 resultRef.set(result);
 
@@ -167,8 +158,6 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
         return resultRef.get();
     }
-
-
 
     @Override
     public void init(Config.Scope config) {

@@ -77,6 +77,7 @@ public class InfinispanNotificationsManager {
 
     private final Cache<String, Object> workCache;
 
+    // TODO: mhajas DELETE!
     private final RemoteCache<String, Object> workRemoteCache;
 
     private final String myAddress;
@@ -95,6 +96,7 @@ public class InfinispanNotificationsManager {
 
 
     // Create and init manager including all listeners etc
+    // TODO: mhajas DELETE remoteStores
     public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Object> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
         RemoteCache<String, Object> workRemoteCache = null;
 
