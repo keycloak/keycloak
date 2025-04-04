@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.keycloak.common.Profile.Feature;
 
 public class KeycloakServerConfigBuilder {
 
@@ -205,12 +206,7 @@ public class KeycloakServerConfigBuilder {
     }
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
-        return Arrays.stream(features).map(f -> {
-            if (f.getVersion() > 1) {
-                return f.getVersionedKey();
-            }
-            return f.name().toLowerCase().replace('_', '-');
-        }).collect(Collectors.toSet());
+        return Arrays.stream(features).map(Feature::getVersionedKey).collect(Collectors.toSet());
     }
 
     public enum LogHandlers {
