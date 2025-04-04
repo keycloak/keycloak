@@ -5,6 +5,7 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -18,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.keycloak.common.Profile.Feature;
 
 public class KeycloakServerConfigBuilder {
 
@@ -206,7 +206,12 @@ public class KeycloakServerConfigBuilder {
     }
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
-        return Arrays.stream(features).map(Feature::getVersionedKey).collect(Collectors.toSet());
+        return Arrays.stream(features).map(f -> {
+            if (Profile.getFeatureVersions(f.getKey()).size() > 1) {
+                return f.getVersionedKey();
+            }
+            return f.name().toLowerCase().replace('_', '-');
+        }).collect(Collectors.toSet());
     }
 
     public enum LogHandlers {
