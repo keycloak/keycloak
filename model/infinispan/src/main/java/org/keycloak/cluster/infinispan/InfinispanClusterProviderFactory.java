@@ -19,7 +19,6 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,7 +37,6 @@ import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.MergeEvent;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
-import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -102,7 +100,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                     String myAddress = topologyInfo.getMyNodeName();
                     String mySite = topologyInfo.getMySiteName();
 
-                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, Set.of());
+                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite);
                 }
             }
         }
