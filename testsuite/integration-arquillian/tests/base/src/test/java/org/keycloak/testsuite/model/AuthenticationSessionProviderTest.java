@@ -45,7 +45,7 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.notNullValue; 
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assume.assumeFalse;
 
@@ -301,6 +301,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved1) -> {
             KeycloakSession currentSession = sesRealmRemoved1;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             authSessionID.set(currentSession.authenticationSessions().createRootAuthenticationSession(realm).getId());
 
@@ -316,6 +317,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved1) -> {
             KeycloakSession currentSession = sesRealmRemoved1;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
 
             RootAuthenticationSessionModel rootAuthSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get());
 
@@ -329,6 +331,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved1) -> {
             KeycloakSession currentSession = sesRealmRemoved1;
             RealmModel realm = currentSession.realms().getRealm(realmId);
+            currentSession.getContext().setRealm(realm);
             RootAuthenticationSessionModel rootAuthSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get());
 
             assertThat(rootAuthSession.getAuthenticationSession(realm.getClientByClientId("test-app"), tab1ID.get()).getAuthNote("foo"), is("bar"));
