@@ -136,4 +136,18 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(ClientRepresentation::getId).noneMatch(notAllowedClients::contains));
     }
+
+    @Test
+    public void testSearchByClientId() {
+        String expectedClientId = "client-0";
+        List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
+        assertTrue(search.isEmpty());
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, expectedClientId, CLIENTS_RESOURCE_TYPE, Set.of(VIEW), allowPolicy);
+        search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
+        assertFalse(search.isEmpty());
+        assertEquals(1, search.size());
+        assertEquals(search.get(0).getClientId(), expectedClientId);
+    }
 }

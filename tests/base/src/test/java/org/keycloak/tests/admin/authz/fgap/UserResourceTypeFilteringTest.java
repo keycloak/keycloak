@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.authz.fgap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -336,5 +337,19 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         realm.cleanup().add(r -> r.users().get(userId).roles().clientLevel(clientUuid).remove(List.of(viewUsers)));
 
         assertThat(realmAdminClient.realm(realm.getName()).users().list(), not(empty()));
+    }
+
+    @Test
+    public void testSearchById() {
+        UserRepresentation expected = realm.admin().users().search("user-0").get(0);
+        assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + expected.getId(), -1, -1), hasSize(0));
+        UserPolicyRepresentation negativePolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, expected.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), negativePolicy);
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
+        assertFalse(search.isEmpty());
+        assertThat(search, Matchers.hasSize(1));
+        UserRepresentation user = search.get(0);
+        assertThat(user.getUsername(), Matchers.is("user-0"));
+        assertThat(realmAdminClient.realm(realm.getName()).users().search("id:" + user.getId(), -1, -1), hasSize(1));
     }
 }
