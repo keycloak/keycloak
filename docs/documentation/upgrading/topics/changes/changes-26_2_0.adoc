@@ -106,7 +106,7 @@ Due to fundamental changes in the permission model, **automatic migration from V
 
 ==== Key Differences Between FGAP:V1 and FGAP:V2
 
-* Realm-level enablement: 
+* Realm-level enablement:
   ** FGAP:V2 can be enabled for a realm using the new *Admin Permissions* switch in *Realm Settings*.
 * Centralized management:
   ** The resource-specific *Permissions* tabs (for users, groups, clients, and roles) have been removed.
@@ -116,7 +116,7 @@ Due to fundamental changes in the permission model, **automatic migration from V
   ** Administrators must now explicitly assign each required permission.
   ** Example: To both view and manage a resource, both *view* and *manage* scopes for a permissions must be assigned separately.
 * Permission model changes:
-  ** The *user-impersonated* user permission has been _removed_.
+  ** The *user-impersonated* user permission has been _removed_. Instead, you can use the `impersonate-members` scope of the `Groups` resource type to allow or deny impersonation of group members.
 * Flexible resource scoping:
   ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
   ** Administrators can now define permissions for:
