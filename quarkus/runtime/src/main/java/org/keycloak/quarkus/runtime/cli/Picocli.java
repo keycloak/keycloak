@@ -200,10 +200,7 @@ public class Picocli {
     }
 
     public void exit(int exitCode) {
-        if (exitCode != CommandLine.ExitCode.OK && (!Environment.isTestLaunchMode() || isRebuildCheck())) {
-            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
-            System.exit(exitCode);
-        }
+        System.exit(exitCode);
     }
 
     private int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd, CommandLine currentCommand) {
@@ -985,7 +982,7 @@ public class Picocli {
     }
 
     public void start() {
-        KeycloakMain.start(errorHandler, getErrWriter());
+        KeycloakMain.start(this, errorHandler);
     }
 
     public void build() throws Throwable {
