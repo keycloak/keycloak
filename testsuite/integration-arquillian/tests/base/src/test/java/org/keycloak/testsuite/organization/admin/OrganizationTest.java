@@ -277,6 +277,15 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testCountEndpoint() {
+        createOrganization("testorg.1");
+        createOrganization("testorg.2");
+
+        assertThat(testRealm().organizations().count(null).get("count"), is(equalTo(2L)));
+        assertThat(testRealm().organizations().count(".1").get("count"), is(equalTo(1L)));
+    }
+
+    @Test
     public void testDelete() {
         OrganizationRepresentation expected = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(expected.getId());

@@ -186,6 +186,26 @@ public class OrganizationsResource {
         return new OrganizationResource(session, organizationModel, adminEvent);
     }
 
+    /**
+     * Returns the organizations counts.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns the organizations counts.")
+    public Map<String, Long> getOrganizationCount(@QueryParam("search") String search) {
+        auth.realm().requireManageRealm();
+        Organizations.checkEnabled(provider);
+
+        Long count = provider.getAllStream(search, false, null, null).count();
+
+        return Map.of("count", count);
+    }
+
     @Path("members/{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
