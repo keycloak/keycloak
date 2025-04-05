@@ -93,10 +93,17 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
         if (configSource == null) {
             return "Derived";
         }
+        String name = CONFIG_SOURCE_DISPLAY_NAMES.get(configSource);
+        if (name != null) {
+            return name;
+        }
         if (isKeyStoreConfigSource(configSource)) {
             return "config-keystore";
         }
-        return CONFIG_SOURCE_DISPLAY_NAMES.getOrDefault(configSource, configSource);
+        if (configSource.contains("PropertiesConfigSource") && configSource.contains("!/application.properties")) {
+            return "classpath application.properties";
+        }
+        return configSource; // some other Quarkus configsource
     }
 
     public static boolean isKeyStoreConfigSource(String configSourceName) {
