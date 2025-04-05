@@ -24,6 +24,12 @@ public class ModelDuplicateException extends ModelException {
 
     private String duplicateFieldName;
 
+    /**
+     * Default constructor
+     *
+     * @deprecated use a variant with a message instead
+     */
+    @Deprecated
     public ModelDuplicateException() {
     }
 
