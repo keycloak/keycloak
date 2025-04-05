@@ -5,6 +5,7 @@
 title="HTTP metrics"
 summary="Learn about metrics for monitoring the {project_name} HTTP requests processing"
 tileVisible="false"
+includedOptions="http-metrics-histograms-enabled http-metrics-slos"
 >
 
 <#include "partials/prerequisites-metrics-troubleshooting.adoc" />
@@ -36,6 +37,8 @@ m| http_server_requests_seconds_count
 m| http_server_requests_seconds_sum
 | The total duration for all the requests processed.
 |===
+
+You can enable histograms for this metric by setting `http-metrics-histograms-enabled` to `true`, and add additional buckets for service level objectives using the option `http-metrics-slos`.
 
 include::partials/histogram_note_http.adoc[]
 
