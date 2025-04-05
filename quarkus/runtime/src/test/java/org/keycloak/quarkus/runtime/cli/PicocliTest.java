@@ -307,6 +307,16 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testNoReaugUpdateCommand() {
+        build("start-dev");
+
+        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility", "check", "--file=x");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertFalse(nonRunningPicocli.reaug);
+    }
+
+    @Test
     public void testReaugFromProdToDev() {
         build("build", "--db=dev-file");
 
