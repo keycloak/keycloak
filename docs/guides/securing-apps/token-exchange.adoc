@@ -24,7 +24,7 @@ provided by V2 together with other use cases that are supported by V1. For more 
 
 NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
 link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
-token-exchange is conceptually not really an "admin" permission and hence there is not plan to add token exchange permissions to FGAP:v2.
+token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 
 [[_standard-token-exchange]]
 == Standard token exchange
@@ -313,7 +313,7 @@ s|Behavior of `audience` parameter   | Support for more values as per the specif
 the required target audience | Support for single audience value. Token effectively issued to the client requested by audience parameter and using scopes of that client
 s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
-s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions:v1
+s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
 s|Delegation per rfc8693|Not supported yet|Not supported
 s|Resource parameter per rfc8693|Not supported yet|Not supported

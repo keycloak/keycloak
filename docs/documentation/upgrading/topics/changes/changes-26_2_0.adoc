@@ -70,9 +70,9 @@ disable the `token-exchange` feature, which represents the Legacy token exchange
 legacy token exchange. In this case, {project_name} serves the standard internal-to-internal requests preferably by the standard token exchange while the other requests are served by the legacy token exchange. The choice of standard or legacy token exchange is determined based on the
 parameters of the particular request. For example, requests containing non-standard parameters such as `requested_issuer` or `requested_subject` are considered legacy.
 +
-If you still need legacy token exchange feature, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+If you still need legacy token exchange, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
 link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose
-because token-exchange is conceptually not really an "admin" permission and hence there is not plan to add token exchange permissions to FGAP:v2.
+because token-exchange is conceptually not really an "admin" permission and therefore token exchange permissions were not added to FGAP:v2.
 
 * Standard token exchange requires enabling a switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
 
