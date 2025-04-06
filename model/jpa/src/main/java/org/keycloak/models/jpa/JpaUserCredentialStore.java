@@ -32,11 +32,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
 import java.util.List;
+
 import jakarta.persistence.LockModeType;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.models.ModelDuplicateException;
 
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -132,7 +134,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
         return getStoredCredentialsStream(realm, user).filter(credential ->
-                Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                        Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
                 .findFirst().orElse(null);
     }
 
@@ -142,13 +144,15 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     }
 
     private void validateDuplicateCredential(RealmModel realm, UserModel user, String userLabel, String credentialId) {
-        boolean exists = getStoredCredentialEntities(realm, user)
-                .anyMatch(existing -> existing.getUserLabel() != null
-                        && existing.getUserLabel().equalsIgnoreCase(userLabel.trim())
-                        && (credentialId == null || !existing.getId().equals(credentialId))); // Exclude self in update
+        if (userLabel != null) {
+            boolean exists = getStoredCredentialEntities(realm, user)
+                    .anyMatch(existing -> existing.getUserLabel() != null
+                            && existing.getUserLabel().equalsIgnoreCase(userLabel.trim())
+                            && (credentialId == null || !existing.getId().equals(credentialId))); // Exclude self in update
 
-        if (exists) {
-            throw new ModelDuplicateException("Device already exists with the same name");
+            if (exists) {
+                throw new ModelDuplicateException("Device already exists with the same name");
+            }
         }
     }
 
@@ -207,7 +211,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
             if (id.equals(credential.getId())) {
                 ourCredentialIndex = i;
                 ourCredential = credential;
-            } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
+            } else if (newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
                 newPreviousCredentialIndex = i;
             }
             i++;
@@ -224,7 +228,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         }
 
         // 3 - Compute index where we move our credential
-        int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
+        int toMoveIndex = newPreviousCredentialId == null ? 0 : newPreviousCredentialIndex + 1;
 
         // 4 - Insert our credential to new position, remove it from the old position
         newList.add(toMoveIndex, ourCredential);

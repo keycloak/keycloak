@@ -55,12 +55,14 @@ import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jakarta.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
@@ -91,7 +93,6 @@ public class JpaUserFederatedStorageProvider implements
 
     /**
      * We create an entry so that its easy to iterate over all things in the database.  Specifically useful for export
-     *
      */
     protected void createIndex(RealmModel realm, String userId) {
         if (em.find(FederatedUser.class, userId) == null) {
@@ -337,7 +338,7 @@ public class JpaUserFederatedStorageProvider implements
 
     private FederatedUserConsentEntity getGrantedConsentEntity(String userId, String clientId, LockModeType lockMode) {
         StorageId clientStorageId = new StorageId(clientId);
-        String queryName = clientStorageId.isLocal() ?  "userFederatedConsentByUserAndClient" : "userFederatedConsentByUserAndExternalClient";
+        String queryName = clientStorageId.isLocal() ? "userFederatedConsentByUserAndClient" : "userFederatedConsentByUserAndExternalClient";
         TypedQuery<FederatedUserConsentEntity> query = em.createNamedQuery(queryName, FederatedUserConsentEntity.class);
         query.setLockMode(lockMode);
         query.setParameter("userId", userId);
@@ -364,7 +365,7 @@ public class JpaUserFederatedStorageProvider implements
         }
 
         StorageId clientStorageId = null;
-        if ( entity.getClientId() == null) {
+        if (entity.getClientId() == null) {
             clientStorageId = new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId());
         } else {
             clientStorageId = new StorageId(entity.getClientId());
@@ -434,7 +435,7 @@ public class JpaUserFederatedStorageProvider implements
         MultivaluedHashMap<String, String> attrs = getAttributes(realm, userId);
         String notBeforeStr = attrs.getFirst("fedNotBefore");
 
-        return notBeforeStr==null ? 0 : Integer.parseInt(notBeforeStr);
+        return notBeforeStr == null ? 0 : Integer.parseInt(notBeforeStr);
     }
 
     @Override
@@ -483,14 +484,14 @@ public class JpaUserFederatedStorageProvider implements
 
         return closing(paginateQuery(query, firstResult, max).getResultStream());
     }
-    
+
     @Override
     public Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("fedRoleMembership", String.class);
         query.setParameter("roleId", role.getId());
-		query.setParameter("realmId", realm.getId());
+        query.setParameter("realmId", realm.getId());
 
-		return closing(paginateQuery(query, firstResult, max).getResultStream());
+        return closing(paginateQuery(query, firstResult, max).getResultStream());
     }
 
     @Override
@@ -578,13 +579,15 @@ public class JpaUserFederatedStorageProvider implements
      * Excludes the credential itself if updating an existing one.
      */
     private void validateDuplicateUserCredential(String userId, String userLabel, String credentialId) {
-        boolean exists = getStoredCredentialEntitiesStream(userId)
-                .anyMatch(existing -> existing.getUserLabel() != null
-                        && existing.getUserLabel().trim().equalsIgnoreCase(userLabel.trim())
-                        && (credentialId == null || !existing.getId().equals(credentialId)));
+        if (userLabel != null) {
+            boolean exists = getStoredCredentialEntitiesStream(userId)
+                    .anyMatch(existing -> existing.getUserLabel() != null
+                            && existing.getUserLabel().trim().equalsIgnoreCase(userLabel.trim())
+                            && (credentialId == null || !existing.getId().equals(credentialId)));
 
-        if (exists) {
-            throw new ModelDuplicateException("Device already exists with the same name");
+            if (exists) {
+                throw new ModelDuplicateException("Device already exists with the same name");
+            }
         }
     }
 
@@ -746,7 +749,7 @@ public class JpaUserFederatedStorageProvider implements
             if (id.equals(credential.getId())) {
                 ourCredentialIndex = i;
                 ourCredential = credential;
-            } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
+            } else if (newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
                 newPreviousCredentialIndex = i;
             }
             i++;
@@ -763,7 +766,7 @@ public class JpaUserFederatedStorageProvider implements
         }
 
         // 3 - Compute index where we move our credential
-        int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
+        int toMoveIndex = newPreviousCredentialId == null ? 0 : newPreviousCredentialIndex + 1;
 
         // 4 - Insert our credential to new position, remove it from the old position
         newList.add(toMoveIndex, ourCredential);
@@ -788,7 +791,7 @@ public class JpaUserFederatedStorageProvider implements
         Object count = em.createNamedQuery("getFederatedUserCount")
                 .setParameter("realmId", realm.getId())
                 .getSingleResult();
-        return ((Number)count).intValue();
+        return ((Number) count).intValue();
     }
 
     @Override
@@ -832,11 +835,11 @@ public class JpaUserFederatedStorageProvider implements
         } else {
             em.createNamedQuery("deleteFederatedUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
-                    .setParameter("externalClientId",clientStorageId.getExternalId())
+                    .setParameter("externalClientId", clientStorageId.getExternalId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
-                    .setParameter("externalClientId",clientStorageId.getExternalId())
+                    .setParameter("externalClientId", clientStorageId.getExternalId())
                     .executeUpdate();
 
         }
@@ -928,10 +931,10 @@ public class JpaUserFederatedStorageProvider implements
                     .executeUpdate();
         } else if (model.getProviderType().equals(ClientStorageProvider.class.getName())) {
             em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientStorageProvider")
-                    .setParameter("clientStorageProvider",  model.getId())
+                    .setParameter("clientStorageProvider", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByClientStorageProvider")
-                    .setParameter("clientStorageProvider",  model.getId())
+                    .setParameter("clientStorageProvider", model.getId())
                     .executeUpdate();
 
         }
