@@ -21,7 +21,26 @@ import java.io.InputStream;
 
 public interface FormPartValue {
 
+    /**
+     * Returns the value as a string.
+     *
+     * @return the string representation of the form part value
+     */
     String asString();
+
+    /**
+     * Returns the input stream.
+     * <p>
+     * If the value is originally a string, it will be converted to an input stream.
+     *
+     * @return the input stream representation of the form part value
+     */
     InputStream asInputStream();
 
+    /**
+     * Indicates whether the value was originally provided as an input stream.
+     *
+     * @return {@code true} if the form part value was created from an input stream; {@code false} otherwise
+     */
+    boolean isInputStream();
 }

@@ -37,7 +37,7 @@ public class FormPartValueImpl implements FormPartValue {
 
     @Override
     public String asString() {
-        if (inputStream != null) {
+        if (isInputStream()) {
             throw new RuntimeException("Value is a input stream");
         }
         return value;
@@ -49,5 +49,10 @@ public class FormPartValueImpl implements FormPartValue {
             return new ByteArrayInputStream(value.getBytes());
         }
         return inputStream;
+    }
+
+    @Override
+    public boolean isInputStream() {
+        return inputStream != null;
     }
 }
