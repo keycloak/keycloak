@@ -40,9 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.datastore.DefaultExportImportManager;
 
 /**
@@ -148,37 +146,18 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         if (!realmRep.getRealm().equals(realmName)) {
             throw new IllegalStateException(String.format("File name / realm name mismatch. %s, contains realm %s. File name should be %s", realmFile.getName(), realmRep.getRealm(), realmRep.getRealm() + "-realm.json"));
         }
-        final AtomicBoolean realmImported = new AtomicBoolean();
 
         new ExportImportSessionTask() {
 
             @Override
             public void runExportImportTask(KeycloakSession session) {
-                boolean imported = ImportUtils.importRealm(session, realmRep, strategy, true);
-                realmImported.set(imported);
+                ImportUtils.importRealm(session, realmRep, strategy, () -> {
+                    importUsers(realmName, userFiles, false);
+                    importUsers(realmName, federatedUserFiles, true);
+                });
             }
 
         }.runTask(factory);
-
-        if (realmImported.get()) {
-            // Import users
-            importUsers(realmName, userFiles, false);
-            importUsers(realmName, federatedUserFiles, true);
-        }
-
-        if (realmImported.get()) {
-            // Import authorization and initialize service accounts last, as they require users already in DB
-            new ExportImportSessionTask() {
-
-                @Override
-                public void runExportImportTask(KeycloakSession session) {
-                    session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                    RealmManager realmManager = new RealmManager(session);
-                    realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
-                }
-
-            }.runTask(factory);
-        }
     }
 
     private void importUsers(final String realmName, File[] userFiles, boolean federated) {
