@@ -183,13 +183,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                 } else if (role.getName().equals(AdminRoles.QUERY_GROUPS)) {
                     return true;
                 } else if (role.getName().equals(AdminRoles.MANAGE_AUTHORIZATION)) {
-                    if (!root.realm().canManageAuthorization()) {
+                    ResourceServer resourceServer = getResourceServer(role);
+                    if (!root.realm().canManageAuthorization(resourceServer)) {
                         return adminConflictMessage(role);
                     } else {
                         return true;
                     }
                 } else if (role.getName().equals(AdminRoles.VIEW_AUTHORIZATION)) {
-                    if (!root.realm().canViewAuthorization()) {
+                    ResourceServer resourceServer = getResourceServer(role);
+                    if (!root.realm().canViewAuthorization(resourceServer)) {
                         return adminConflictMessage(role);
                     } else {
                         return true;
@@ -657,5 +659,14 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     private static String getRoleResourceName(RoleModel role) {
         return "role.resource." + role.getId();
+    }
+
+    private ResourceServer getResourceServer(RoleModel role) {
+        ResourceServer resourceServer = null;
+        if (role.isClientRole()) {
+            RoleContainerModel container = role.getContainer();
+            resourceServer = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findById(container.getId());
+        }
+        return resourceServer;
     }
 }

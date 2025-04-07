@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
 import jakarta.ws.rs.ForbiddenException;
 
@@ -25,7 +26,7 @@ import jakarta.ws.rs.ForbiddenException;
  */
 class RealmPermissions implements RealmPermissionEvaluator {
 
-    private final MgmtPermissions root;
+    protected final MgmtPermissions root;
 
     public RealmPermissions(MgmtPermissions root) {
         this.root = root;
@@ -47,11 +48,11 @@ class RealmPermissions implements RealmPermissionEvaluator {
         return root.hasOneAdminRole(AdminRoles.MANAGE_IDENTITY_PROVIDERS, AdminRoles.VIEW_IDENTITY_PROVIDERS);
     }
 
-    public boolean canManageAuthorizationDefault() {
+    public boolean canManageAuthorizationDefault(ResourceServer resourceServer) {
         return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.MANAGE_CLIENTS);
 
     }
-    public boolean canViewAuthorizationDefault() {
+    public boolean canViewAuthorizationDefault(ResourceServer resourceServer) {
         return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.VIEW_AUTHORIZATION);
     }
     public boolean canManageEventsDefault() {
@@ -123,24 +124,24 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
 
     @Override
-    public boolean canManageAuthorization() {
-        return canManageAuthorizationDefault();
+    public boolean canManageAuthorization(ResourceServer resourceServer) {
+        return canManageAuthorizationDefault(resourceServer);
     }
 
     @Override
-    public boolean canViewAuthorization() {
-        return canViewAuthorizationDefault();
+    public boolean canViewAuthorization(ResourceServer resourceServer) {
+        return canViewAuthorizationDefault(resourceServer);
     }
 
     @Override
-    public void requireManageAuthorization() {
-        if (!canManageAuthorization()) {
+    public void requireManageAuthorization(ResourceServer resourceServer) {
+        if (!canManageAuthorization(resourceServer)) {
             throw new ForbiddenException();
         }
     }
     @Override
-    public void requireViewAuthorization() {
-        if (!canViewAuthorization()) {
+    public void requireViewAuthorization(ResourceServer resourceServer) {
+        if (!canViewAuthorization(resourceServer)) {
             throw new ForbiddenException();
         }
     }
