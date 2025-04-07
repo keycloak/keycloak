@@ -46,6 +46,7 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
 
     // option keys
     public static final String SECRET_KEY = "secret.key";
+    public static final String OLD_SECRET = "secret";
 
     @Override
     public String getDisplayType() {
@@ -67,7 +68,8 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
 
     @Override
     protected boolean validateConfig(Map<String, String> config) {
-        return !(StringUtil.isNullOrEmpty(config.get(SITE_KEY)) || StringUtil.isNullOrEmpty(config.get(SECRET_KEY)));
+        return !StringUtil.isNullOrEmpty(config.get(SITE_KEY)) &&
+                (!StringUtil.isNullOrEmpty(config.get(SECRET_KEY)) || !StringUtil.isNullOrEmpty(config.get(OLD_SECRET)));
     }
 
     @Override
@@ -77,7 +79,16 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
 
         HttpPost post = new HttpPost("https://www." + getRecaptchaDomain(config) + "/recaptcha/api/siteverify");
         List<NameValuePair> formparams = new LinkedList<>();
-        formparams.add(new BasicNameValuePair("secret", config.get(SECRET_KEY)));
+        String secret = config.get(SECRET_KEY);
+        if (StringUtil.isNullOrEmpty(secret)) {
+            // migrate old config name to the new one
+            secret = config.get(OLD_SECRET);
+            if (!StringUtil.isNullOrEmpty(secret)) {
+                config.put(SECRET_KEY, secret);
+                config.remove(OLD_SECRET);
+            }
+        }
+        formparams.add(new BasicNameValuePair("secret", secret));
         formparams.add(new BasicNameValuePair("response", captcha));
         formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
 
