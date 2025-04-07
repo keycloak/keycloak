@@ -126,6 +126,11 @@ public interface UserPermissionEvaluator {
     Map<String, Boolean> getAccess(UserModel user);
 
     /**
+     * Returns Map with information what access the caller for the provided user has when listing users.
+     */
+    Map<String, Boolean> getAccessForListing(UserModel user);
+
+    /**
      * Throws ForbiddenException if {@link #canMapRoles(UserModel)} returns {@code false}.
      */
     void requireMapRoles(UserModel user);

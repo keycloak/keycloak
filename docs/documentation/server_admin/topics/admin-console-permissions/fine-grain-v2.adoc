@@ -383,3 +383,52 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 
 - Create a "Group Permission" with the *impersonate-members* for specific group `mygroup`.
 - Assign a "Group Policy" targeting `mygroup-helpdesk` to it.
+
+==== Performance considerations
+
+When enabling the feature to a realm, there is an additional overhead when realm administrators are managing any of the
+supported resource types. This is mainly true when performing these operations:
+
+* Listing and searching
+* Updating or deleting
+
+The feature introduces additional checks whenever you are listing or managing realm resources in order to enforce access
+based on the permissions you have defined. This is mainly true when querying realm resources due to the additional overhead
+to partially evaluate the permissions for a realm administrator to filter and paginate the results.
+
+Fewer permissions referencing a realm administrator user and most of the resources they can access is better. For instance,
+if you want to delegate access to a realm administrator to manage users, it is better to have those users as members of a group. By doing that,
+you are improving not only the performance when evaluating permissions but also creating a permission model that is easier to manage.
+
+The main impact of access enforcement is when querying realm resources. If a realm administrator is, for instance, referenced
+in thousands of permissions through a user, role, or group policy, the partial evaluation mechanism that happens when querying
+realm resources will query all those permissions from the database. A more concise and optimized model will help to fetch fewer
+permissions but the enough to grant or deny access to realm resources.
+
+For instance, granting access to a realm administrator to view and manage users in a realm is better done with a group permission
+than create individual permissions for each individual user in a realm. As well as make sure the policies associated with a
+permission referencing a realm administrator either by a direct reference (user policy),
+or indirect (role or group policy) reference, do not span multiple (thousands of) permissions, regardless of the resource type.
+
+As an example, suppose you have three users in a realm, and you want to allow `bob`, a realm administrator, to `view` and `manage` them.
+A non-optimal permission model would create three different permissions, for each user, where a user policy grants access to `bob`. Instead,
+you can have a single group permission, or even a single user permission, that groups those three users while still granting access to `bob`
+using the same user policy.
+
+The same is true if you want to give access to more realm administrators to those three users. Instead of creating individual policies,
+you can consider using a group or role policy instead. The permission model is use-case-specific, but these recommendations are important
+to provide not only better manageability but also improve the overall performance of the server when managing realm resources.
+
+In terms of server configuration, depending on the size of your realm and the number of permissions and policies you have, you might consider
+changing the cache configuration to increase the size of the following caches:
+
+* `realms`
+* `users`
+* `authorization`
+
+Consider looking at the server metrics for these caches to find the best value when sizing your deployment.
+
+When filtering resources, the partial evaluation mechanism will eventually rely on `IN` clauses in SQL statements
+to filter the results. Depending on your database, you might have limitations on the number of parameters for the `IN` clause.
+That is the case for old versions of the Oracle database, which has a hard limit to 1000 parameters. To avoid such problems,
+keep in mind the considerations above about the number of permissions that grants or deny access to a single realm administrator.
