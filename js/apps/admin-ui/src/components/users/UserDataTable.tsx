@@ -29,7 +29,7 @@ import {
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import type { IRowData } from "@patternfly/react-table";
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
@@ -43,6 +43,7 @@ import { emptyFormatter } from "../../util";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { BruteUser, findUsers } from "../role-mapping/resource";
 import { UserDataTableToolbarItems } from "./UserDataTableToolbarItems";
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 
 export type UserFilter = {
   exact: boolean;
@@ -107,7 +108,7 @@ const ValidatedEmail = (user: UserRepresentation) => {
           <ExclamationCircleIcon className="keycloak__user-section__email-verified" />
         </Tooltip>
       )}{" "}
-      {emptyFormatter()(user.email)}
+      {emptyFormatter()(user.email) as JSX.Element}
     </>
   );
 };
@@ -141,8 +142,13 @@ export function UserDataTable() {
           fetchRealmInfo(adminClient),
           adminClient.users.getProfile(),
         ]);
-      } catch {
-        return [{}, {}] as [UiRealmInfo, UserProfileConfig];
+      } catch (error) {
+        if (error instanceof NetworkError && error?.response?.status === 403) {
+          // "User Profile" attributes not available for Users Attribute search, when admin user does not have view- or manage-realm realm-management role
+          return [{}, {}] as [UiRealmInfo, UserProfileConfig];
+        } else {
+          throw error;
+        }
       }
     },
     ([uiRealmInfo, profile]) => {
@@ -157,12 +163,15 @@ export function UserDataTable() {
       first: first!,
       max: max!,
       q: query!,
-      exact: activeFilters.exact,
     };
 
     const searchParam = search || searchUser || "";
     if (searchParam) {
       params.search = searchParam;
+    }
+
+    if (activeFilters.exact) {
+      params.exact = true;
     }
 
     if (!listUsers && !(params.search || params.q)) {
@@ -200,7 +209,10 @@ export function UserDataTable() {
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "deleteConfirmUsers",
+    titleKey: t("deleteConfirmUsers", {
+      count: selectedRows.length,
+      name: selectedRows[0]?.username,
+    }),
     messageKey: t("deleteConfirmDialog", { count: selectedRows.length }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,

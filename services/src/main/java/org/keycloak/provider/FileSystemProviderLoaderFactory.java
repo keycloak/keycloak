@@ -59,7 +59,7 @@ public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
                 }
             }
 
-            logger.debug("Loading providers from " + urls.toString());
+            logger.debugf("Loading providers from %s", urls);
 
             return new URLClassLoader(urls.toArray(new URL[urls.size()]), parent);
         } catch (Exception e) {

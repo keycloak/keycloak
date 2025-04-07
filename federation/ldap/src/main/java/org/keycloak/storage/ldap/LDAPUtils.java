@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap;
 
 import java.lang.reflect.Method;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -144,6 +147,13 @@ public class LDAPUtils {
             ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
         }
 
+        if (config.isActiveDirectory()) {
+            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_LAST_SET);
+        } else {
+            // https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy
+            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_CHANGED_TIME);
+        }
+
         return ldapQuery;
     }
 
@@ -155,7 +165,7 @@ public class LDAPUtils {
             throw new ModelException("RDN Attribute [" + rdnLdapAttrName + "] is not filled. Filled attributes: " + ldapUser.getAttributes());
         }
 
-        LDAPDn dn = LDAPDn.fromString(config.getUsersDn());
+        LDAPDn dn = LDAPDn.fromString(config.getRelativeCreateDn() + config.getUsersDn());
         dn.addFirst(rdnLdapAttrName, rdnLdapAttrValue);
         ldapUser.setDn(dn);
     }
@@ -408,5 +418,50 @@ public class LDAPUtils {
         }
 
         return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME;
+    }
+
+    /**
+     * Convert Generalized Time as defined in RFC4517 to the Date
+     */
+    static Date generalizedTimeToDate(String generalized) {
+
+        String[] parts = generalized.split("[Z+-]");
+        String[] timeFraction = parts[0].split("[.,]");
+        String time = timeFraction[0];
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(0);
+        calendar.setLenient(false);
+
+        calendar.set(Calendar.YEAR, Integer.parseInt(time.substring(0, 4)));
+        calendar.set(Calendar.MONTH, Integer.parseInt(time.substring(4, 6)) - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(time.substring(6, 8)));
+        calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(time.substring(8, 10)));
+        if (time.length() >= 12) calendar.set(Calendar.MINUTE, Integer.parseInt(time.substring(10, 12)));
+        if (time.length() >= 14) calendar.set(Calendar.SECOND, Integer.parseInt(time.substring(12, 14)));
+
+        // fraction
+        if (timeFraction.length >= 2) {
+            double fraction = Double.parseDouble("0." + timeFraction[1]);
+            if (time.length() >= 14) { // fraction of second
+                calendar.set(Calendar.MILLISECOND, (int) Math.round(fraction * 1000));
+            } else if (time.length() >= 12) { // fraction of minute
+                calendar.set(Calendar.SECOND, (int) Math.round(fraction * 60));
+            } else { // fraction of hour
+                calendar.set(Calendar.MINUTE, (int) Math.round(fraction * 60));
+            }
+        }
+
+        // timezone
+        if (generalized.length() > parts[0].length()) {
+            char delimiter = generalized.charAt(parts[0].length());
+            if (delimiter == 'Z') {
+                calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
+            } else {
+                calendar.setTimeZone(TimeZone.getTimeZone("GMT" + delimiter + parts[1]));
+            }
+        }
+
+        return calendar.getTime();
     }
 }

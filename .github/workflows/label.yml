@@ -3,14 +3,15 @@ on:
   pull_request_target:
     types: closed
 
+permissions:
+  contents: read
+  
 jobs:
   label:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
-
+      issues: write # Required to add labels to Issues
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,7 +27,7 @@ jobs:
           
           if [ "$GITHUB_BASE_REF" == "main" ]; then
             LAST_RELEASE="$(gh api /repos/$GITHUB_REPOSITORY/branches --paginate --jq .[].name | grep '^release/' | cut -d '/' -f 2 | sort -n -r | head -n 1)"
-            LAST_MINOR=$(echo $LAST_MINOR | cut -d '.' -f 2)
+            LAST_MINOR=$(echo $LAST_RELEASE | cut -d '.' -f 2)
             NEXT_MAJOR=$(echo $LAST_RELEASE | cut -d '.' -f 1)
             NEXT_MINOR="$(($LAST_MINOR + 1))"
             LABEL="release/$NEXT_MAJOR.$NEXT_MINOR.0"
@@ -40,9 +41,9 @@ jobs:
           fi
           
           echo "Label:      $LABEL"
-          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$(echo $LABEL | sed 's|/|%2F|g'))" >> $GITHUB_STEP_SUMMARY
+          echo "**Label:** [$LABEL](https://github.com/$GITHUB_REPOSITORY/labels/$LABEL" >> $GITHUB_STEP_SUMMARY
           
-          gh api "repos/$GITHUB_REPOSITORY/labels/$(echo $LABEL | sed 's|/|%2F|g')" --silent 2>/dev/null || gh label create -R "$GITHUB_REPOSITORY" "$LABEL" -c "0E8A16"
+          gh api "/repos/$GITHUB_REPOSITORY/labels/$LABEL" --silent 2>/dev/null || gh label create -R "$GITHUB_REPOSITORY" "$LABEL" -c "0E8A16"
           
           echo ""
           echo "" >> $GITHUB_STEP_SUMMARY

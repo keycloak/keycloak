@@ -33,6 +33,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -43,8 +44,10 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import java.io.IOException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -105,17 +108,25 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testGetAll() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 15; i++) {
             OrganizationRepresentation organization = createOrganization("kc.org." + i);
             expected.add(organization);
             organization.setAttributes(Map.of("foo", List.of("foo")));
             testRealm().organizations().get(organization.getId()).update(organization).close();
         }
 
-        List<OrganizationRepresentation> existing = testRealm().organizations().getAll();
+        List<OrganizationRepresentation> existing = testRealm().organizations().list(-1, -1);
         assertFalse(existing.isEmpty());
-        assertThat(expected, containsInAnyOrder(existing.toArray()));
+        assertThat(existing, containsInAnyOrder(expected.toArray()));
         Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
+
+        List<OrganizationRepresentation> concatenatedList = Stream.of(
+                testRealm().organizations().list(0, 5),
+                testRealm().organizations().list(5, 5),
+                testRealm().organizations().list(10, 5))
+                .flatMap(Collection::stream).toList();
+
+        assertThat(concatenatedList, containsInAnyOrder(expected.toArray()));
     }
 
     @Test
@@ -146,6 +157,15 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomain("gtbank.com"), not(nullValue()));
         assertThat(orgRep.getDomain("gtbank.net"), not(nullValue()));
         assertThat(orgRep.getAttributes(), nullValue());
+
+        orgRep.singleAttribute("foo", "bar");
+        orgRep.singleAttribute("bar", "foo");
+        testRealm().organizations().get(orgRep.getId()).update(orgRep).close();
+        existing = testRealm().organizations().search("gtbank.net", true, 0, 10, false);
+        assertThat(existing, hasSize(1));
+        orgRep = existing.get(0);
+        assertThat(orgRep.getAttributes(), notNullValue());
+        assertThat(2, is(orgRep.getAttributes().size()));
 
         existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
         assertThat(existing, is(empty()));
@@ -268,7 +288,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         try {
             organization.toRepresentation();
             fail("should be deleted");
-        } catch (NotFoundException ignore) {}
+        } catch (NotFoundException ignore) {
+        }
     }
 
     @Test
@@ -412,17 +433,20 @@ public class OrganizationTest extends AbstractOrganizationTest {
                 assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
             }
             try {
-                testRealm().organizations().getAll();
+                testRealm().organizations().list(-1, -1);
                 fail("Expected NotFoundException");
-            } catch (NotFoundException expected) {}
+            } catch (NotFoundException expected) {
+            }
             try {
                 testRealm().organizations().search("*");
                 fail("Expected NotFoundException");
-            } catch (NotFoundException expected) {}
+            } catch (NotFoundException expected) {
+            }
             try {
                 testRealm().organizations().get(existing.getId()).toRepresentation();
                 fail("Expected NotFoundException");
-            } catch (NotFoundException expected) {}
+            } catch (NotFoundException expected) {
+            }
         }
     }
 
@@ -442,7 +466,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
             createOrganization(realmRes, "test-org", "test.org");
 
-            List<OrganizationRepresentation> orgs = realmRes.organizations().getAll();
+            List<OrganizationRepresentation> orgs = realmRes.organizations().list(-1, -1);
             assertThat(orgs, hasSize(1));
 
             IdentityProviderRepresentation broker = bc.setUpIdentityProvider();
@@ -461,8 +485,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
     @Test
     public void testCount() {
         List<String> orgIds = IntStream.range(0, 10)
-             .mapToObj(i -> createOrganization("kc.org." + i).getId())
-             .collect(Collectors.toList());
+                .mapToObj(i -> createOrganization("kc.org." + i).getId())
+                .collect(Collectors.toList());
 
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);

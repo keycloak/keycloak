@@ -31,7 +31,7 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jboss.shrinkwrap.api.asset.UrlAsset;
 
@@ -79,11 +79,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
+            webXMLContent = IOUtils.toString(webXML.openStream(), StandardCharsets.UTF_8)
                     .replace("%CONTEXT_PATH%", name);
 
             if (clockSkewSec != null) {
-                String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), Charset.forName("UTF-8"))
+                String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), StandardCharsets.UTF_8)
                     .replace("%CLOCK_SKEW%", "${allowed.clock.skew:" + String.valueOf(clockSkewSec) + "}");
                 deployment.addAsWebInfResource(new StringAsset(keycloakSamlXMLContent), "keycloak-saml.xml");
             } else {
@@ -123,7 +123,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         String webXMLContent;
         try {
-            webXMLContent = IOUtils.toString(webXML.openStream(), Charset.forName("UTF-8"))
+            webXMLContent = IOUtils.toString(webXML.openStream(), StandardCharsets.UTF_8)
                     .replace("%CONTEXT_PATH%", name);
         } catch (IOException e) {
             throw new RuntimeException(e);

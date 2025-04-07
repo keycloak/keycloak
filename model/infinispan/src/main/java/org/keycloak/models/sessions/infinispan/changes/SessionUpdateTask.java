@@ -26,6 +26,10 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     void runUpdate(S entity);
 
+    default boolean shouldRemove(S entity) {
+        return false;
+    }
+
     CacheOperation getOperation();
 
     CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper);

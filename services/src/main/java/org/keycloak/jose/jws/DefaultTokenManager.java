@@ -39,21 +39,27 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
+import org.keycloak.protocol.oidc.mappers.LogoutTokenMapper;
 import org.keycloak.representations.LogoutToken;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Comparator;
@@ -106,7 +112,7 @@ public class DefaultTokenManager implements TokenManager {
                 kid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, signatureAlgorithm).getKid();
             }
 
-            boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);
@@ -181,7 +187,7 @@ public class DefaultTokenManager implements TokenManager {
                 return null;
             }
 
-            boolean valid = signatureProvider.verifier(client, jws).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
+            boolean valid = signatureProvider.verifier(client, jws).verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature());
             return valid ? jws.readJsonContent(clazz) : null;
         } catch (Exception e) {
             logger.debug("Failed to decode token", e);
@@ -238,6 +244,11 @@ public class DefaultTokenManager implements TokenManager {
 
     private String type(TokenCategory category) {
         switch (category) {
+            case ACCESS:
+                ClientModel client = session.getContext().getClient();
+                return OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRfc9068AccessTokenHeaderType()
+                    ? TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN
+                    : "JWT";
             case LOGOUT:
                 return TokenUtil.TOKEN_TYPE_JWT_LOGOUT_TOKEN;
             default:
@@ -272,8 +283,8 @@ public class DefaultTokenManager implements TokenManager {
         Key encryptionKek = keyWrapper.getPublicKey();
         String encryptionKekId = keyWrapper.getKid();
         try {
-            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes("UTF-8"), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
-        } catch (JWEException | UnsupportedEncodingException e) {
+            encryptedToken = TokenUtil.jweKeyEncryptionEncode(encryptionKek, encodedToken.getBytes(StandardCharsets.UTF_8), algAlgorithm, encAlgorithm, encryptionKekId, jweAlgorithmProvider, jweEncryptionProvider);
+        } catch (JWEException e) {
             throw new RuntimeException(e);
         }
         return encryptedToken;
@@ -358,6 +369,16 @@ public class DefaultTokenManager implements TokenManager {
             token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, true);
         }
         token.setSubject(user.getId());
+
+        // adjust the subject in the logout token in case we have an PairwiseSubMapper
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
+        ProtocolMapperUtils
+            .getSortedProtocolMappers(session, clientSessionCtx)
+            .filter(mapperEntry -> mapperEntry.getValue() instanceof LogoutTokenMapper)
+            .forEach(mapperEntry -> {
+                LogoutTokenMapper mapper = (LogoutTokenMapper) mapperEntry.getValue();
+                mapper.transformLogoutToken(token, mapperEntry.getKey(), session, clientSession.getUserSession(), clientSessionCtx);
+            });
 
         return token;
     }

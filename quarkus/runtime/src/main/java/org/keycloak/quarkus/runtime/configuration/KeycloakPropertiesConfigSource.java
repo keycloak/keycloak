@@ -17,42 +17,34 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-
 /**
  * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
-    
+
     public static final int PROPERTIES_FILE_ORDINAL = 475;
 
-    private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
     private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";
     public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
@@ -64,51 +56,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        // a workaround for https://github.com/smallrye/smallrye-config/issues/1207
-        // replace by the following line when fixed:
-        // return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
-        var cs = new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal) {
-            private String name;
-            @Override
-            public String getName() {
-                return name;
-            }
-            public void setName(String name) {
-                this.name = name;
-            }
-        };
-        cs.setName(url.toString());
-        return cs;
-    }
-
-    public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
-
-        @Override
-        public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
-            return loadConfigSources("META-INF/" + KEYCLOAK_CONF_FILE, 150, classLoader);
-        }
-
-        @Override
-        protected List<ConfigSource> tryClassPath(URI uri, int ordinal, ClassLoader classLoader) {
-            try {
-                return super.tryClassPath(uri, ordinal, classLoader);
-            } catch (RuntimeException e) {
-                Throwable cause = e.getCause();
-
-                if (cause instanceof NoSuchFileException) {
-                    // configuration step happens before classpath is updated, and it might happen that
-                    // provider JARs are still in classpath index but removed from the providers dir
-                    return Collections.emptyList();
-                }
-
-                throw e;
-            }
-        }
-
-        @Override
-        protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
-            return Collections.emptyList();
-        }
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
     }
 
     public static class InFileSystem extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
@@ -136,8 +84,9 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         public Path getConfigurationFile() {
             String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
 
-            if (filePath == null)
+            if (filePath == null) {
                 filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
+            }
 
             if (filePath == null) {
                 String homeDir = Environment.getHomeDir();
@@ -161,54 +110,12 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     private static Map<String, String> transform(Map<String, String> properties) {
         Map<String, String> result = new HashMap<>(properties.size());
-        properties.keySet().forEach(k -> {
-            String key = transformKey(k);
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
 
-            //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
-            if (mapper != null
-                    || key.contains(NS_KEYCLOAK_PREFIX + "spi")
-                    || key.contains(NS_KEYCLOAK_PREFIX + "feature")) {
-                String value = properties.get(k);
-
-                result.put(key, value);
-
-                if (mapper != null && key.charAt(0) != '%') {
-                    result.put(getMappedPropertyName(key), value);
-                }
-            }
+        properties.entrySet().forEach(entry -> {
+            result.put(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + entry.getKey(), entry.getValue());
         });
 
         return result;
     }
 
-    /**
-     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest
-     * path is to just have the "kc" namespace for Keycloak-specific properties.
-     *
-     * @param key the key to transform
-     * @return the same key but prefixed with the namespace
-     */
-    private static String transformKey(String key) {
-        String namespace;
-        String[] keyParts = DOT_SPLIT.split(key);
-        String extension = keyParts[0];
-        String profile = "";
-        String transformed = key;
-
-        if (extension.startsWith("%")) {
-            profile = String.format("%s.", keyParts[0]);
-            extension = keyParts[1];
-            transformed = key.substring(key.indexOf('.') + 1);
-        }
-
-        if (extension.equalsIgnoreCase(NS_QUARKUS)) {
-            return key;
-        } else {
-            namespace = NS_KEYCLOAK;
-        }
-
-        return profile + namespace + "." + transformed;
-
-    }
 }

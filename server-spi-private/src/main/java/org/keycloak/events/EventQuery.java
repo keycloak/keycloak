@@ -56,18 +56,34 @@ public interface EventQuery {
     EventQuery user(String userId);
 
     /**
-     * Search events that are newer than {@code fromDate}
+     * Search events that are on or after {@code fromDate}
      * @param fromDate date
      * @return this object for method chaining
      */
+    @Deprecated
     EventQuery fromDate(Date fromDate);
 
     /**
-     * Search events that are older than {@code toDate}
+     * Search events that are on or after {@code fromDate}
+     * @param fromDate from timestamp
+     * @return this object for method chaining
+     */
+    EventQuery fromDate(long fromDate);
+
+    /**
+     * Search events that are on or before {@code toDate}
      * @param toDate date
      * @return this object for method chaining
      */
+    @Deprecated
     EventQuery toDate(Date toDate);
+
+    /**
+     * Search events that are on or before {@code toDate}
+     * @param toDate to timestamp
+     * @return this object for method chaining
+     */
+    EventQuery toDate(long toDate);
 
     /**
      * Search events from ipAddress

@@ -169,6 +169,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>observability-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/observability</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/observability</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>migration-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>

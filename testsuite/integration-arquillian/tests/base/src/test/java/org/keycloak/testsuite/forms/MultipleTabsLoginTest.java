@@ -33,7 +33,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
@@ -70,7 +69,8 @@ import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -163,7 +163,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             updatePasswordPage.assertCurrent();
 
             // Simulate login in different browser tab tab2. I will be on loginPage again.
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
             oauth.openLoginForm();
@@ -247,7 +247,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         getLogger().info("URL in tab1: " + driver.getCurrentUrl());
         // Open new tab 2
-        tabUtil.newTab(oauth.getLoginFormUrl());
+        tabUtil.newTab(oauth.loginForm().build());
         assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
         loginPage.assertCurrent();
         getLogger().info("URL in tab2: " + driver.getCurrentUrl());
@@ -293,7 +293,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
                 .assertEvent(true);
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }
@@ -330,7 +330,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
             // Open new tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             loginPage.assertCurrent();
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
@@ -369,7 +369,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
             // Open new tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             loginPage.assertCurrent();
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
@@ -406,17 +406,17 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             oauth.openLoginForm();
             String tab1WindowHandle = util.getActualWindowHandle();
             loginSuccessAndDoRequiredActions();
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
             AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
 
             // seamless login in the second tab, user already authenticated
-            util.newTab(oauth.getLoginFormUrl());
+            util.newTab(oauth.loginForm().build());
             oauth.openLoginForm();
             appPage.assertCurrent();
             events.clear();
             // logout in the second tab
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
             events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
             // re-login in the second tab
             oauth.openLoginForm();
@@ -438,7 +438,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             String originalTab = util.getActualWindowHandle();
 
             // open a new tab performing the passive check
-            String passiveCheckUrl = oauth.responseType("none").prompt("none").getLoginFormUrl();
+            String passiveCheckUrl = oauth.responseType("none").loginForm().prompt("none").build();
             util.newTab(passiveCheckUrl);
             MatcherAssert.assertThat(new URL(oauth.getDriver().getCurrentUrl()).getQuery(), Matchers.containsString("error=login_required"));
 
@@ -597,17 +597,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
         String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
-        oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state1").open();
         loginPage.assertCurrent();
         loginPage.login("login-test", "bad-password");
         String tab1Url = driver.getCurrentUrl();
 
         // Go to tab2 and start login with different client "root-url-client"
-        oauth.stateParamHardcoded("state2");
         oauth.redirectUri(redirectUri2);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state2").open();
         loginPage.assertCurrent();
         String tab2Url = driver.getCurrentUrl();
 
@@ -629,17 +627,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
         String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
         // Open tab1 and start login here
-        oauth.stateParamHardcoded("state1");
         oauth.redirectUri(redirectUri1);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state1").open();
         loginPage.assertCurrent();
         loginPage.login("login-test", "bad-password");
         String tab1Url = driver.getCurrentUrl();
 
         // Go to tab2 and start login with different client "root-url-client"
-        oauth.stateParamHardcoded("state2");
         oauth.redirectUri(redirectUri2);
-        oauth.openLoginForm();
+        oauth.loginForm().state("state2").open();
         loginPage.assertCurrent();
         String tab2Url = driver.getCurrentUrl();
 
@@ -681,7 +677,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
             String tab1Url = driver.getCurrentUrl();
 
             // Simulate login in different browser tab tab2. I will be on loginPage again.
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
 
             loginPage.assertCurrent();
@@ -711,7 +707,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
            driver.manage().deleteCookieNamed("AUTH_SESSION_ID");
 
            // Open new tab 2
-           tabUtil.newTab(oauth.getLoginFormUrl());
+           tabUtil.newTab(oauth.loginForm().build());
            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
            loginPage.assertCurrent();
            getLogger().info("URL in tab2: " + driver.getCurrentUrl());

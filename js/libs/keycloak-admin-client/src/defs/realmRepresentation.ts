@@ -24,6 +24,8 @@ export default interface RealmRepresentation {
   actionTokenGeneratedByUserLifespan?: number;
   adminEventsDetailsEnabled?: boolean;
   adminEventsEnabled?: boolean;
+  adminPermissionsClient?: ClientRepresentation;
+  adminPermissionsEnabled?: boolean;
   adminTheme?: string;
   attributes?: Record<string, any>;
   // AuthenticationFlowRepresentation

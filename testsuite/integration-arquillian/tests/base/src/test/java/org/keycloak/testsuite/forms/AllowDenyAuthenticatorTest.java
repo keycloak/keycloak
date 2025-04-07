@@ -21,7 +21,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -344,7 +344,7 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
         try {
             oauth.clientId(clientId);
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", user, "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(user, "password");
             assertEquals(401, response.getStatusCode());
             assertEquals("Access denied", response.getError());
             assertNull(response.getErrorDescription());

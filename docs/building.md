@@ -1,9 +1,15 @@
 ## Building from source
 
-Ensure you have JDK 21 (or newer) and Git installed
+Ensure you have **JDK 17** or **JDK 21** and Git installed
 
     java -version
     git --version
+
+Newer versions of the JDK are not supported. If you have multiple JDK versions
+installed, you can specify which one to use during the build by setting the `JAVA_HOME`
+environment variable (this should be the directory containing `/bin/` or `/jre/`).
+
+    JAVA_HOME=/path/to/jdk-21/ ./mvnw clean install
 
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
@@ -46,6 +52,16 @@ To enable it for a single Maven command execution, enable it as follows:
 To enable it by default, add it to the `MAVEN_OPTS` environment variable:
 
     export MAVEN_OPTS="-Dmaven.build.cache.enabled=true"
+
+---
+**NOTE**
+
+To ensure that development in a branch does not break compatibility with existing releases, proto-schema-compatibility-maven-plugin checks may be run, which can cause builds to fail in proxy environments.
+To avoid this, you can skip this check by adding the following property:
+
+    -DskipProtoLock=true
+
+---
 
 ### Starting Keycloak
 

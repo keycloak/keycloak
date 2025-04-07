@@ -75,15 +75,39 @@ type DataTableProps<T> = {
 
 type CellRendererProps = {
   row: IRow;
+  index?: number;
+  actions?: IActions;
+  actionResolver?: IActionsResolver;
 };
 
-const CellRenderer = ({ row }: CellRendererProps) => {
-  const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
-    !!c && (c as IRowCell).title !== undefined;
-  return row.cells!.map((c, i) => (
-    <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
+  !!c && (c as IRowCell).title !== undefined;
+
+const CellRenderer = ({
+  row,
+  index,
+  actions,
+  actionResolver,
+}: CellRendererProps) => (
+  <>
+    {row.cells!.map((c, i) => (
+      <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+    ))}
+    {(actions || actionResolver) && (
+      <Td isActionCell>
+        <ActionsColumn
+          items={actions || actionResolver?.(row, {})!}
+          extraData={{ rowIndex: index }}
+        />
+      </Td>
+    )}
+  </>
+);
+
+const ExpandableRowRenderer = ({ row }: CellRendererProps) =>
+  row.cells!.map((c, i) => (
+    <div key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</div>
   ));
-};
 
 function DataTable<T>({
   columns,
@@ -132,24 +156,31 @@ function DataTable<T>({
   };
 
   const updateState = (rowIndex: number, isSelected: boolean) => {
-    if (rowIndex === -1) {
-      const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) => get(v, "id"));
-      updateSelectedRows(
-        isSelected
-          ? [...selectedRows, ...rows.map((row) => row.data)]
-          : selectedRows.filter(
-              (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-            ),
-      );
+    if (isRadio) {
+      const selectedRow = isSelected ? [rows[rowIndex].data] : [];
+      updateSelectedRows(selectedRow);
     } else {
-      if (isSelected) {
-        updateSelectedRows([...selectedRows, rows[rowIndex].data]);
-      } else {
-        updateSelectedRows(
-          selectedRows.filter(
-            (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
-          ),
+      if (rowIndex === -1) {
+        const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) =>
+          get(v, "id"),
         );
+        updateSelectedRows(
+          isSelected
+            ? [...selectedRows, ...rows.map((row) => row.data)]
+            : selectedRows.filter(
+                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
+              ),
+        );
+      } else {
+        if (isSelected) {
+          updateSelectedRows([...selectedRows, rows[rowIndex].data]);
+        } else {
+          updateSelectedRows(
+            selectedRows.filter(
+              (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
+            ),
+          );
+        }
       }
     }
   };
@@ -162,10 +193,10 @@ function DataTable<T>({
     >
       <Thead>
         <Tr>
-          {onCollapse && <Th />}
+          {onCollapse && <Th screenReaderText={t("expandRow")} />}
           {canSelectAll && (
             <Th
-              aria-label={t("selectAll")}
+              screenReaderText={t("selectAll")}
               select={
                 !isRadio
                   ? {
@@ -180,6 +211,7 @@ function DataTable<T>({
           )}
           {columns.map((column) => (
             <Th
+              screenReaderText={t("expandRow")}
               key={column.displayKey || column.name}
               className={column.transforms?.[0]().className}
             >
@@ -206,15 +238,12 @@ function DataTable<T>({
                   }}
                 />
               )}
-              <CellRenderer row={row} />
-              {(actions || actionResolver) && (
-                <Td isActionCell>
-                  <ActionsColumn
-                    items={actions || actionResolver?.(row, {})!}
-                    extraData={{ rowIndex: index }}
-                  />
-                </Td>
-              )}
+              <CellRenderer
+                row={row}
+                index={index}
+                actions={actions}
+                actionResolver={actionResolver}
+              />
             </Tr>
           ))}
         </Tbody>
@@ -224,26 +253,35 @@ function DataTable<T>({
             {index % 2 === 0 ? (
               <Tr>
                 <Td
-                  expand={{
-                    isExpanded: !!expandedRows[index],
-                    rowIndex: index,
-                    expandId: `${index}`,
-                    onToggle: (_, rowIndex, isOpen) => {
-                      onCollapse(isOpen, rowIndex);
-                      const expand = [...expandedRows];
-                      expand[index] = isOpen;
-                      setExpandedRows(expand);
-                    },
-                  }}
+                  expand={
+                    rows[index + 1].cells.length === 0
+                      ? undefined
+                      : {
+                          isExpanded: !!expandedRows[index],
+                          rowIndex: index,
+                          expandId: "expandable-row-",
+                          onToggle: (_, rowIndex, isOpen) => {
+                            onCollapse(isOpen, rowIndex);
+                            const expand = [...expandedRows];
+                            expand[index] = isOpen;
+                            setExpandedRows(expand);
+                          },
+                        }
+                  }
                 />
-                <CellRenderer row={row} />
+                <CellRenderer
+                  row={row}
+                  index={index}
+                  actions={actions}
+                  actionResolver={actionResolver}
+                />
               </Tr>
             ) : (
               <Tr isExpanded={!!expandedRows[index - 1]}>
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
-                    <CellRenderer row={row} />
+                    <ExpandableRowRenderer row={row} />
                   </ExpandableRowContent>
                 </Td>
               </Tr>
@@ -521,7 +559,7 @@ export function KeycloakDataTable<T>({
 
   return (
     <>
-      {(loading || !noData || searching) && (
+      {(!noData || searching) && (
         <PaginatingTableToolbar
           id={id}
           count={rowLength}
@@ -544,7 +582,7 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button variant="link" onClick={refresh}>
+                <Button variant="link" onClick={refresh} data-testid="refresh">
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>
@@ -592,9 +630,9 @@ export function KeycloakDataTable<T>({
               }
             />
           )}
-          {loading && <KeycloakSpinner />}
         </PaginatingTableToolbar>
       )}
+      {loading && <KeycloakSpinner />}
       {!loading && noData && !searching && emptyState}
     </>
   );

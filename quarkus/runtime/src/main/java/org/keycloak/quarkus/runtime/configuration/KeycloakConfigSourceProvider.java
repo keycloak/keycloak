@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,16 +28,16 @@ import io.quarkus.runtime.configuration.ConfigBuilder;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-import org.keycloak.quarkus.runtime.Environment;
 
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider, ConfigBuilder {
 
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
     private static final Map<String, String> CONFIG_SOURCE_DISPLAY_NAMES = new HashMap<>();
 
-    // we initialize in a static block to avoid discovering the config sources multiple times when starting the application
-    static {
-        initializeSources();
+    public KeycloakConfigSourceProvider() {
+        if (CONFIG_SOURCES.isEmpty()) {
+            initializeSources();
+        }
     }
 
     private static void initializeSources() {
@@ -61,9 +60,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
         if (path != null) {
             addConfigSources(path.getFileName().toString(), inFileSystem.getConfigSources(Thread.currentThread().getContextClassLoader(), path));
         }
-
-        // by enabling this config source we are able to rely on the default settings when running tests
-        addConfigSources("classpath keycloak.conf", new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
     }
 
     private static void addConfigSources(String displayName, Collection<ConfigSource> configSources) {
@@ -85,9 +81,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
-        if(Environment.isTestLaunchMode()) {
-            reload();
-        }
         return CONFIG_SOURCES;
     }
 

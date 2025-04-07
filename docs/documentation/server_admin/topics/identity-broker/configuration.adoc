@@ -22,7 +22,7 @@ When you configure an identity provider, the identity provider appears on the {p
 image:images/identity-provider-login-page.png[]
 
 Social::
-  Social providers enable social authentication in your realm. With {project_name}, users can log in to your application using a social network account. Supported providers include Twitter, Facebook, Google, LinkedIn, Instagram, Microsoft, PayPal, Openshift v3, GitHub, GitLab, Bitbucket, and Stack Overflow.
+  Social providers enable social authentication in your realm. With {project_name}, users can log in to your application using a social network account. Supported providers include Twitter, Facebook, Google, LinkedIn, Instagram, Microsoft, PayPal, Openshift v4, GitHub, GitLab, Bitbucket, and Stack Overflow.
 
 Protocol-based::
   Protocol-based providers rely on specific protocols to authenticate and authorize users. Using these providers, you can connect to any identity provider compliant with a specific protocol. {project_name} provides support for SAML v2.0 and OpenID Connect v1.0 protocols. You can configure and broker any identity provider based on these open standards.

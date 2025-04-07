@@ -197,6 +197,9 @@ public abstract class AuthorizationEndpointBase {
                         rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
                     }
                     authSession = rootAuthSession.createAuthenticationSession(client);
+                    // set auth session cookies because they can be missing if recovered from identity cookie
+                    manager.setAuthSessionCookie(rootAuthSession.getId());
+                    manager.setAuthSessionIdHashCookie(rootAuthSession.getId());
                     logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
                             "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
                 }
@@ -205,6 +208,7 @@ public abstract class AuthorizationEndpointBase {
             }
         }
 
+        session.getContext().setAuthenticationSession(authSession);
         session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
 
         return authSession;

@@ -11,6 +11,7 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+  RETRY_COUNT: 3
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -20,6 +21,9 @@ concurrency:
 defaults:
   run:
     shell: bash
+
+permissions:
+  contents: read
 
 jobs:
   conditional:
@@ -69,8 +73,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   ui-shared:
     name: UI Shared
@@ -85,8 +91,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   account-ui:
     name: Account UI
@@ -101,8 +109,10 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
+        working-directory: js
 
   admin-ui:
     name: Admin UI
@@ -117,12 +127,13 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} lint
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        working-directory: js
 
       - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} build
-
-      - run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:check-types
+        working-directory: js
 
   account-ui-e2e:
     name: Account UI E2E
@@ -156,9 +167,11 @@ jobs:
 
       - name: Install Playwright browsers
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration
+        working-directory: js
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -203,7 +216,6 @@ jobs:
       WORKSPACE: keycloak-admin-ui
     strategy:
       matrix:
-        container: [1, 2, 3, 4, 5]
         browser: [chrome, firefox]
         exclude:
           # Only test with Firefox on scheduled runs
@@ -212,22 +224,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Google Chrome
-        if: matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-
-      - name: Install Firefox
-        if: matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1
-        with:
-          firefox-version: latest
-
       - uses: ./.github/actions/pnpm-setup
 
       - name: Compile Admin Client
         run: pnpm --fail-if-no-match --filter @keycloak/keycloak-admin-client build
+        working-directory: js
 
       - name: Download Keycloak server
         uses: actions/download-artifact@v4
@@ -240,43 +241,35 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v1,transient-users &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz:v2,transient-users &> ~/server.log &
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
           KC_BOOTSTRAP_ADMIN_CLIENT_ID: temporary-admin-service
           KC_BOOTSTRAP_ADMIN_CLIENT_SECRET: temporary-admin-service
 
-      - name: Start LDAP server
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} cy:ldap-server &
+      - name: Install Playwright browsers
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
 
-      - name: Run Cypress
-        uses: cypress-io/github-action@v6
+      - name: Run Playwright tests
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration
+        working-directory: js
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          install: false
-          browser: ${{ matrix.browser }}
-          wait-on: http://localhost:8080
-          working-directory: js/apps/admin-ui
-        env:
-          SPLIT: ${{ strategy.job-total }}
-          SPLIT_INDEX: ${{ strategy.job-index }}
-          SPLIT_RANDOM_SEED: ${{ needs.generate-test-seed.outputs.seed }}
+          name: admin-ui-playwright-report-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-report
+          retention-days: 30
 
       - name: Upload server logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
+          name: admin-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
-
-      - name: Upload Cypress videos
-        uses: actions/upload-artifact@v4
-        if: always() && github.repository != 'keycloak/keycloak-private'
-        with:
-          name: cypress-videos-${{ matrix.container }}-${{ matrix.browser }}
-          path: js/apps/admin-ui/cypress/videos
-          if-no-files-found: ignore
-          retention-days: 10
 
   check:
     name: Status Check - Keycloak JavaScript CI

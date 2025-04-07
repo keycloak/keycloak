@@ -35,23 +35,29 @@ public enum SslRequired {
         return isRequired(connection.getRemoteAddr());
     }
 
-    public boolean isRequired(String address) {
+    public boolean isRequired(String host) {
         switch (this) {
             case ALL:
                 return true;
             case NONE:
                 return false;
             case EXTERNAL:
-                return !isLocal(address);
+                // NOTE: this is sometimes using hostnames here, which require DNS resolution
+                // It assumes that the resolution will be the same on the client side
+                // - this will go away once EXTERNAL is no longer supported
+                return !isLocal(host);
             default:
                 return true;
         }
     }
 
-    private boolean isLocal(String remoteAddress) {
+    private boolean isLocal(String host) {
+        if (host == null || host.isEmpty()) {
+            return false; // InetAddress.getByName returns localhost for these
+        }
         try {
-            InetAddress inetAddress = InetAddress.getByName(remoteAddress);
-            return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress() || inetAddress.isLinkLocalAddress() || isUniqueLocal(inetAddress);
+            InetAddress inetAddress = InetAddress.getByName(host);
+            return inetAddress.isLoopbackAddress() || inetAddress.isSiteLocalAddress() || inetAddress.isLinkLocalAddress() || isUniqueLocal(inetAddress);
         } catch (UnknownHostException e) {
             return false;
         }

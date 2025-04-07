@@ -18,6 +18,7 @@ package org.keycloak.models.cache.infinispan.organization;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -176,7 +177,15 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
-        return getDelegate().getMembersStream(organization, search, exact, first, max);
+        Map<String, String> filters = Optional.ofNullable(search)
+                .map(value -> Map.of(UserModel.SEARCH, value))
+                .orElse(Map.of());
+        return getMembersStream(organization, filters, exact, first, max);
+    }
+
+    @Override
+    public Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
+        return getDelegate().getMembersStream(organization, filters, exact, first, max);
     }
 
     @Override

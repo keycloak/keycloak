@@ -1,0 +1,60 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Gaining insights with metrics"
+summary="Collect metrics to gain insights about state and activities of a running instance of {project_name}."
+includedOptions="metrics-enabled http-metrics-* cache-metrics-*">
+
+{project_name} has built in support for metrics. This {section} describes how to enable and configure server metrics.
+
+== Enabling Metrics
+
+It is possible to enable metrics using the build time option `metrics-enabled`:
+
+<@kc.start parameters="--metrics-enabled=true"/>
+
+== Querying Metrics
+
+{project_name} exposes metrics at the following endpoint on the management interface at:
+
+* `/metrics`
+
+For more information about the management interface, see <@links.server id="management-interface" />.
+The response from the endpoint uses a `application/openmetrics-text` content type and it is based on the Prometheus (OpenMetrics) text format. The snippet below
+is an example of a response:
+
+[source]
+----
+# HELP base_gc_total Displays the total number of collections that have occurred. This attribute lists -1 if the collection count is undefined for this collector.
+# TYPE base_gc_total counter
+base_gc_total{name="G1 Young Generation",} 14.0
+# HELP jvm_memory_usage_after_gc_percent The percentage of long-lived heap pool used after the last GC event, in the range [0..1]
+# TYPE jvm_memory_usage_after_gc_percent gauge
+jvm_memory_usage_after_gc_percent{area="heap",pool="long-lived",} 0.0
+# HELP jvm_threads_peak_threads The peak live thread count since the Java virtual machine started or peak was reset
+# TYPE jvm_threads_peak_threads gauge
+jvm_threads_peak_threads 113.0
+# HELP agroal_active_count Number of active connections. These connections are in use and not available to be acquired.
+# TYPE agroal_active_count gauge
+agroal_active_count{datasource="default",} 0.0
+# HELP base_memory_maxHeap_bytes Displays the maximum amount of memory, in bytes, that can be used for memory management.
+# TYPE base_memory_maxHeap_bytes gauge
+base_memory_maxHeap_bytes 1.6781410304E10
+# HELP process_start_time_seconds Start time of the process since unix epoch.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.675188449054E9
+# HELP system_load_average_1m The sum of the number of runnable entities queued to available processors and the number of runnable entities running on the available processors averaged over a period of time
+# TYPE system_load_average_1m gauge
+system_load_average_1m 4.005859375
+
+...
+----
+
+== Next steps
+
+Read the {sections} <@links.observability id="keycloak-service-level-indicators"/> and <@links.observability id="metrics-for-troubleshooting"/> to see how to use the metrics.
+
+</@tmpl.guide>

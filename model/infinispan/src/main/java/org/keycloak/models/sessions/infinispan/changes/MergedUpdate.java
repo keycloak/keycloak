@@ -52,6 +52,16 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     }
 
     @Override
+    public boolean shouldRemove(S session) {
+        for (SessionUpdateTask<S> child : childUpdates) {
+            if(child.shouldRemove(session)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public CacheOperation getOperation() {
         return operation;
     }

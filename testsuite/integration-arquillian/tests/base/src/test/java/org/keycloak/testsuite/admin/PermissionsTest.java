@@ -1160,6 +1160,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.flows().getExecutions("nosuch");
             }
         }, Resource.REALM, false);
+        invoke((RealmResource realm) -> realm.flows().getExecution("nosuch"), Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.flows().updateExecutions("nosuch", new AuthenticationExecutionInfoRepresentation());

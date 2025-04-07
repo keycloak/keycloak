@@ -17,8 +17,8 @@
 
 package org.keycloak.services.util;
 
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -33,10 +33,12 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -129,6 +131,16 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return allowedClientScopes.stream();
     }
 
+    @Override
+    public boolean isOfflineTokenRequested() {
+        Boolean offlineAccessRequested = getAttribute(OAuth2Constants.OFFLINE_ACCESS, Boolean.class);
+        if (offlineAccessRequested != null) return offlineAccessRequested;
+
+        ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(clientSession.getRealm(), OAuth2Constants.OFFLINE_ACCESS);
+        offlineAccessRequested = offlineAccessScope == null ? false : getClientScopeIds().contains(offlineAccessScope.getId());
+        setAttribute(OAuth2Constants.OFFLINE_ACCESS, offlineAccessRequested);
+        return offlineAccessRequested;
+    }
 
     @Override
     public Stream<RoleModel> getRolesStream() {
@@ -264,6 +276,14 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
         // Expand (resolve composite roles)
         clientScopeRoles = RoleUtils.expandCompositeRoles(clientScopeRoles);
+
+        //remove roles that are not contained in requested audience
+        if (attributes.get(Constants.REQUESTED_AUDIENCE_CLIENTS) != null) {
+            final Set<String> requestedClientIdsFromAudience = Arrays.stream(getAttribute(Constants.REQUESTED_AUDIENCE_CLIENTS, ClientModel[].class))
+                    .map(ClientModel::getId)
+                    .collect(Collectors.toSet());
+            clientScopeRoles.removeIf(role-> role.isClientRole() && !requestedClientIdsFromAudience.contains(role.getContainerId()));
+        }
 
         // Check if expanded roles of clientScope has any intersection with expanded roles of user. If not, it is not permitted
         clientScopeRoles.retainAll(getUserRoles());

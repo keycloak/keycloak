@@ -97,7 +97,10 @@ export const ResetPasswordDialog = ({
         id: user.id!,
       });
       const credentialLabel = credentials.find((c) => c.type === "password");
-      if (credentialLabel) {
+      const isLocalCredential =
+        credentialLabel && credentialLabel.federationLink === undefined;
+
+      if (isLocalCredential) {
         await adminClient.users.updateCredentialLabel(
           {
             id: user.id!,
@@ -199,6 +202,7 @@ export const ResetPasswordDialog = ({
               name="temporaryPassword"
               label={t("temporaryPassword")}
               labelIcon={t("temporaryPasswordHelpText")}
+              className="pf-v5-u-mb-md"
               defaultValue="true"
             />
           </FormProvider>

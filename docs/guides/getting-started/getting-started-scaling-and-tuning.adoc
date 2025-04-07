@@ -58,6 +58,33 @@ Horizontal autoscaling allows for adding or removing {project_name} instances on
 When using the embedded Infinispan cache cluster, dynamically adding or removing cluster members requires Infinispan to perform a rebalancing of the Infinispan caches, which can get expensive if many entries exist in those caches.
 To minimize this time we limit number of entries in session related caches to 10000 by default. Note, this optimization is possible only if `persistent-user-sessions` feature is not explicitly disabled in your configuration.
 
-On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler].
+On Kubernetes, the Keycloak custom resource is scalable meaning that it can be targeted by the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[built-in autoscaler]. For example to scale on average CPU utilization:
+
+[source,yaml]
+----
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: keycloak-hpa
+  namespace: keycloak-cluster
+spec:
+  scaleTargetRef:
+    apiVersion: k8s.keycloak.org/v2alpha1
+    kind: Keycloak
+    name: keycloak
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+----
+
+NOTE: Scaling on memory is generally not needed with persistent sessions enabled, and should not be needed at all when using remote {jdgserver_name}. If you are using persistent sessions or remote {jdgserver_name} and you experience memory issues, it is best to fully diagnose the problem and revisit the <@links.ha id="concepts-memory-and-cpu-sizing" /> guide. Adjusting the memory request and limit is preferable to horizontal scaling.
+
+Consult the https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/[Kubernetes docs] for additional information, including the usage of https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/#autoscaling-on-multiple-metrics-and-custom-metrics[custom metrics].
 
 </@tmpl.guide>

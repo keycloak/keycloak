@@ -352,7 +352,7 @@ public class DefaultThemeManager implements ThemeManager {
          */
         private void substituteProperties(final Properties properties) {
             for (final String propertyName : properties.stringPropertyNames()) {
-                properties.setProperty(propertyName, StringPropertyReplacer.replaceProperties(properties.getProperty(propertyName), new SystemEnvProperties()));
+                properties.setProperty(propertyName, StringPropertyReplacer.replaceProperties(properties.getProperty(propertyName), SystemEnvProperties.UNFILTERED::getProperty));
             }
         }
     }

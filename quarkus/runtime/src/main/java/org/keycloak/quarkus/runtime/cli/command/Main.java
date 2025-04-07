@@ -67,7 +67,8 @@ import java.nio.file.Path;
                 Import.class,
                 ShowConfig.class,
                 Tools.class,
-                BootstrapAdmin.class
+                BootstrapAdmin.class,
+                UpdateCompatibility.class
         })
 public final class Main {
 

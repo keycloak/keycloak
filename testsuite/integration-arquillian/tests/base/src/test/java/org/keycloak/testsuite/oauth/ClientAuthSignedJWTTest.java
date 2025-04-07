@@ -27,6 +27,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.Algorithm;
@@ -44,7 +45,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -52,6 +54,8 @@ import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -67,7 +71,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testServiceAccountAndLogoutSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
-        OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
+        AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -86,7 +90,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         client1Jwt = getClient1SignedJWT();
-        OAuthClient.AccessTokenResponse refreshedResponse = doRefreshTokenRequest(response.getRefreshToken(), client1Jwt);
+        AccessTokenResponse refreshedResponse = doRefreshTokenRequest(response.getRefreshToken(), client1Jwt);
         AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
 
@@ -204,7 +208,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testDirectGrantRequestSuccess() throws Exception {
         oauth.clientId("client2");
-        OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
+        AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -238,7 +242,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
             // test
             oauth.clientId("client2");
-            OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
+            AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
 
             assertEquals(200, response.getStatusCode());
         } finally {
@@ -259,7 +263,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
             oauth.clientId("client2");
-            OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
+            AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
             // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
@@ -304,7 +308,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             // test
             oauth.clientId("client2");
             JsonWebToken clientAuthJwt = createRequestToken("client2", getRealmInfoUrl());
-            OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password",
+            AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password",
                     createSignledRequestToken(privateKey, publicKey, signingAlgorithm, "my-kid", clientAuthJwt));
 
             assertEquals(200, response.getStatusCode());
@@ -390,8 +394,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response, 401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
@@ -402,8 +406,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, "invalid"));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
 
@@ -415,8 +419,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response, 401,null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
@@ -430,8 +434,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
@@ -445,8 +449,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,401, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
@@ -462,16 +466,16 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client2"));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,"client2", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
 
         // Matching client_id should work fine
         parameters.remove(3);
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
-        resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        response = new OAuthClient.AccessTokenResponse(resp);
+        resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        response = new AccessTokenResponse(resp);
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -490,8 +494,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,401, "client1", "invalid_client", Errors.CLIENT_DISABLED);
 
@@ -519,8 +523,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response,400, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
 
@@ -537,8 +541,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
     }
@@ -555,8 +559,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         setTimeOffset(0);
 
@@ -565,17 +569,17 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testParEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getParEndpointUrl());
+        testEndpointAsAudience(oauth.getEndpoints().getPushedAuthorizationRequest());
     }
 
     @Test
     public void testBackchannelAuthenticationEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getBackchannelAuthenticationUrl());
+        testEndpointAsAudience(oauth.getEndpoints().getBackchannelAuthentication());
     }
 
     @Test
     public void testTokenIntrospectionEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getTokenIntrospectionUrl());
+        testEndpointAsAudience(oauth.getEndpoints().getIntrospection());
     }
     @Test
     public void testInvalidAudience() throws Exception {
@@ -598,8 +602,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION,
                 createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, null, assertion)));
 
-            try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
-                OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+            try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
+                AccessTokenResponse response = new AccessTokenResponse(resp);
                 assertNull(response.getAccessToken());
             }
         } finally {
@@ -618,7 +622,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
             JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
 
-            SignatureSignerContext signer = oauth.createSigner(privateKey, null,  Algorithm.ES512);
+            SignatureSignerContext signer = SignatureSignerUtil.createSigner(privateKey, null,  Algorithm.ES512);
             String jws = new JWSBuilder().jsonContent(assertion).sign(signer);
 
             List<NameValuePair> parameters = new LinkedList<>();
@@ -627,8 +631,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
                     .add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, jws));
 
-            try (CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters)) {
-                OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+            try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
+                AccessTokenResponse response = new AccessTokenResponse(resp);
                 assertNotNull(response.getAccessToken());
             }
         } finally {
@@ -647,8 +651,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
 
-        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
 
         setTimeOffset(0);
 
@@ -661,7 +665,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testAssertionReuse() throws Exception {
         String clientJwt = getClient1SignedJWT();
 
-        OAuthClient.AccessTokenResponse response = doClientCredentialsGrantRequest(clientJwt);
+        AccessTokenResponse response = doClientCredentialsGrantRequest(clientJwt);
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -676,32 +680,54 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     }
 
     @Test
+    public void testAuthenticationFailsWhenClientSecretJWTAuthenticatorSet() throws Exception {
+        // Set client authenticator to JWT signed by client secret.
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientResource.update(clientRep);
+
+        // It should not be possible to use private_key_jwt for the authentication
+        try {
+            String clientJwt = getClient1SignedJWT();
+
+            AccessTokenResponse response = doClientCredentialsGrantRequest(clientJwt);
+
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        } finally {
+            clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
     public void testMissingIdClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("id");
+        AccessTokenResponse response = testMissingClaim("id");
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
     public void testMissingIssuerClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("issuer");
+        AccessTokenResponse response = testMissingClaim("issuer");
         assertError(response,401, null, OAuthErrorException.INVALID_CLIENT, Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
     public void testMissingSubjectClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("subject");
+        AccessTokenResponse response = testMissingClaim("subject");
         assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
     public void testMissingAudienceClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("audience");
+        AccessTokenResponse response = testMissingClaim("audience");
         assertError(response,400, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
     public void testMissingIssuedAtClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("issuedAt");
+        AccessTokenResponse response = testMissingClaim("issuedAt");
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
     }
 
@@ -709,11 +735,11 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     // KEYCLOAK-2986
     public void testMissingExpirationClaim() throws Exception {
         // Missing only exp; the lifespan should be calculated from issuedAt
-        OAuthClient.AccessTokenResponse response = testMissingClaim("expiration");
+        AccessTokenResponse response = testMissingClaim("expiration");
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
 
         // Test expired lifespan
-        response = testMissingClaim(-11, "expiration");
+        response = testMissingClaim(- 11 - 15, "expiration"); // 15 sec clock skew
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
         // Missing exp and issuedAt should return error
@@ -723,7 +749,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testMissingNotBeforeClaim() throws Exception {
-        OAuthClient.AccessTokenResponse response = testMissingClaim("notBefore");
+        AccessTokenResponse response = testMissingClaim("notBefore");
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
     }
 
@@ -758,5 +784,55 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testDirectGrantRequestFailureES256() throws Exception {
         testDirectGrantRequestFailure(Algorithm.ES256);
+    }
+
+    @Test
+    public void testClockSkew() throws Exception {
+        AccessTokenResponse response = testMissingClaim(15, "issuedAt", "notBefore"); // allowable clock skew is 15 sec
+        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+
+        // excess allowable clock skew
+        response = testMissingClaim(15 + 15, "issuedAt");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        response = testMissingClaim(15 + 15, "notBefore");
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+    }
+
+    @Test
+    public void testLongExpirationWithIssuedAt() throws Exception {
+        CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
+        jwtProvider.setupKeyPair(keyPairClient1);
+        jwtProvider.setTokenTimeout(3600); // one hour of token expiration
+
+        // the token should be valid the first time inside the max-exp window
+        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        AccessTokenResponse response = doClientCredentialsGrantRequest(jwt);
+        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
+
+        // in the max-exp window the token should be detected as already used
+        setTimeOffset(30);
+        response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token reuse detected"));
+
+        // after the max-exp window the token cannot be used because iat is too far in the past
+        setTimeOffset(65);
+        response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token was issued too far in the past to be used now"));
+    }
+
+    @Test
+    public void testLongExpirationWithoutIssuedAt() throws Exception {
+        CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
+        jwtProvider.setupKeyPair(keyPairClient1);
+        jwtProvider.setTokenTimeout(3600); // one hour of token expiration
+        jwtProvider.enableClaim("issuedAt", false);
+
+        // the token should not be valid because expiration is to far in the future
+        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        AccessTokenResponse response = doClientCredentialsGrantRequest(jwt);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertThat(response.getErrorDescription(), containsString("Token expiration is too far in the future and iat claim not present in token"));
     }
 }

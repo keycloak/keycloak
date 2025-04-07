@@ -1,9 +1,21 @@
 [[migration-changes]]
 == Migration Changes
 
+=== Migrating to 26.2.0
+
+include::changes-26_2_0.adoc[leveloffset=2]
+
+=== Migrating to 26.1.3
+
+include::changes-26_1_3.adoc[leveloffset=2]
+
 === Migrating to 26.1.0
 
-include::changes-26_1_0.adoc[leveloffset=3]
+include::changes-26_1_0.adoc[leveloffset=2]
+
+=== Migrating to 26.0.6
+
+include::changes-26_0_6.adoc[leveloffset=3]
 
 === Migrating to 26.0.0
 

@@ -244,6 +244,7 @@ public class LDAPRule extends ExternalResource {
                 config.put(LDAPConstants.START_TLS, "true");
                 // Use truststore from TruststoreSPI also for StartTLS connections
                 config.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
+                config.put(LDAPConstants.CONNECTION_POOLING, "false");
                 break;
             default:
                 // Default to startTLS disabled

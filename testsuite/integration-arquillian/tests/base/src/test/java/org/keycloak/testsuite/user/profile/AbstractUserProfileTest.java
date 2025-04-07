@@ -58,7 +58,9 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
     protected static void configureAuthenticationSession(KeycloakSession session, String clientId, Set<String> requestedScopes) {
         RealmModel realm = session.getContext().getRealm();
 
-        session.getContext().setAuthenticationSession(createAuthenticationSession(realm.getClientByClientId(clientId), requestedScopes));
+        ClientModel client = realm.getClientByClientId(clientId);
+        session.getContext().setAuthenticationSession(createAuthenticationSession(client, requestedScopes));
+        session.getContext().setClient(client);
     }
 
     protected static Optional<ComponentModel> setAndGetDefaultConfiguration(KeycloakSession session) {

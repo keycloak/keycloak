@@ -17,19 +17,24 @@
 
 package org.keycloak.quarkus.runtime.configuration.test;
 
-import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
-import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import java.lang.reflect.Field;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.Function;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -37,15 +42,9 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Function;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.SmallRyeConfig;
 
 public abstract class AbstractConfigurationTest {
 
@@ -59,7 +58,11 @@ public abstract class AbstractConfigurationTest {
         try {
             field = env.getClass().getDeclaredField("m");
             field.setAccessible(true);
-            ((Map<String, String>) field.get(env)).put(name, value);
+            if (value == null) {
+                ((Map<String, String>) field.get(env)).remove(name);
+            } else {
+                ((Map<String, String>) field.get(env)).put(name, value);
+            }
         } catch (Exception cause) {
             throw new RuntimeException("Failed to update environment variables", cause);
         } finally {
@@ -92,38 +95,46 @@ public abstract class AbstractConfigurationTest {
 
     public static void setSystemProperty(String key, String value, Runnable runnable) {
         System.setProperty(key, value);
+        createConfig();
         try {
             runnable.run();
         } finally {
             System.clearProperty(key);
         }
     }
-    
-    @AfterClass
-    public static void resetConfigruation() {
-        ConfigurationTest.createConfig(); // onAfter doesn't actually reset the config
-    }
 
-    @After
-    public void onAfter() {
-        Properties current = System.getProperties();
-
-        for (String name : current.stringPropertyNames()) {
-            if (!SYSTEM_PROPERTIES.containsKey(name)) {
-                current.remove(name);
-            }
-        }
+    @BeforeClass
+    public static void resetConfiguration() {
+        System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
+        Environment.setHomeDir(Paths.get("src/test/resources/"));
 
         for (String name : new HashMap<>(System.getenv()).keySet()) {
             if (!ENVIRONMENT_VARIABLES.containsKey(name)) {
                 removeEnvVar(name);
             }
         }
+        ENVIRONMENT_VARIABLES.forEach((key, value) -> {
+            if (!System.getenv(key).equals(value)) {
+                putEnvVar(key, value);
+            }
+        });
 
-        SmallRyeConfigProviderResolver.class.cast(ConfigProviderResolver.instance()).releaseConfig(ConfigProvider.getConfig());
         PropertyMappers.reset();
         ConfigArgsConfigSource.setCliArgs();
         PersistedConfigSource.getInstance().getConfigValueProperties().clear();
+        Profile.reset();
+        Configuration.resetConfig();
+        ExecutionExceptionHandler.resetExceptionTransformers();
+    }
+
+    @After
+    public void onAfter() {
+        resetConfiguration();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        Environment.removeHomeDir();
     }
 
     protected Config.Scope initConfig(String... scope) {
@@ -132,14 +143,10 @@ public abstract class AbstractConfigurationTest {
     }
 
     static protected SmallRyeConfig createConfig() {
+        Configuration.resetConfig();
         KeycloakConfigSourceProvider.reload();
-        // older versions of quarkus implicitly picked up this config, now we
-        // must set it manually
-        SmallRyeConfig config = ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
-        SmallRyeConfigProviderResolver resolver = new SmallRyeConfigProviderResolver();
-        resolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
-        ConfigProviderResolver.setInstance(resolver);
-        return config;
+        Environment.getCurrentOrCreateFeatureProfile();
+        return Configuration.getConfig();
     }
 
     protected void assertConfig(String key, String expectedValue, boolean isExternal) {
@@ -164,9 +171,12 @@ public abstract class AbstractConfigurationTest {
     protected void assertExternalConfig(Map<String, String> expectedValues) {
         expectedValues.forEach(this::assertExternalConfig);
     }
-    
+
     protected static void addPersistedConfigValues(Map<String, String> values) {
         var configValueProps = PersistedConfigSource.getInstance().getConfigValueProperties();
-        values.forEach((k, v) -> configValueProps.put(k, new ConfigValueBuilder().withName(k).withValue(v).build()));
+        values.forEach((k, v) -> configValueProps.put(k,
+                new ConfigValueBuilder().withName(k).withValue(v).withRawValue(v)
+                        .withConfigSourceName(PersistedConfigSource.getInstance().getName())
+                        .withConfigSourceOrdinal(PersistedConfigSource.getInstance().getOrdinal()).build()));
     }
 }

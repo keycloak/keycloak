@@ -19,6 +19,12 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
+        <!-- Only necessary for proper Maven build order - if explicitly added, deployment JARs will not be part of /lib/deployment folder -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-server-deployment</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -26,19 +32,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-        </dependency>
-        <!-- Necessary for proper execution of IDELauncher -->
-        <!-- Can be removed as part of the https://github.com/keycloak/keycloak/issues/22455 enhancement -->
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- this dependency is necessary to start the IDELauncher -->
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc11</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.mvnpm</groupId>
@@ -73,6 +66,7 @@
                     <finalName>keycloak</finalName>
                     <systemProperties>
                         <kc.home.dir>${kc.home.dir}</kc.home.dir>
+                        <kc.db>dev-file</kc.db>
                         <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                     </systemProperties>
                 </configuration>
@@ -86,15 +80,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>snyk-quarkus</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-quarkus-server-deployment</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>

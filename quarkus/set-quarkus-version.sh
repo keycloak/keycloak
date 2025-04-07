@@ -39,6 +39,7 @@ QUARKUS_BRANCH="$QUARKUS_VERSION"
 EXCLUDED_DEPENDENCIES=(
     "infinispan"
     "jakarta.mail"
+    "webauthn4j" # https://github.com/keycloak/keycloak/issues/36385
 )
 
 if [ "$QUARKUS_BRANCH" == "$DEFAULT_QUARKUS_VERSION" ]; then

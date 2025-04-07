@@ -17,6 +17,9 @@ image:images/user-federation.png[User federation]
 . Click *Add LDAP providers*.
 +
 {project_name} brings you to the LDAP configuration page.
++
+.Add LDAP provider
+image:images/user-fed-ldap.png[User federation]
 
 ==== Storage mode
 
@@ -75,6 +78,14 @@ Toggle this switch to *ON* if you want new users created by {project_name} added
 
 Allow Kerberos authentication::
 Enable Kerberos/SPNEGO authentication in the realm with user data provisioned from LDAP. For more information, see the <<_kerberos,Kerberos section>>.
+
+Remove invalid users during searches::
+Remove users from the local database if they are not available from the user storage when executing searches. If this is true, users no longer available from their corresponding user storage will be deleted from the local database whenever trying to look up users. If false, then users previously imported from the user storage will be kept in the local database, as read-only and disabled, even if that user is no longer available from the user storage. For example, user was deleted directly from LDAP or the `Users DN` is invalid. Note that this behavior will only happen when the user is not yet cached.
+
+Relative User Creation DN::
+Relative DN from the `Users DN` where new users will be created. This allows users to be created in a sub-DN of the parent `Users DN` when using a `subtree` search scope. For example, if the `Users DN` is set to `ou=people,dc=myorg,dc=com` and the `Relative User Creation DN` is set to `ou=engineering`, users will be fetched from the `Users DN` and all sub-DNs, but new users will be stored in `ou=engineering,ou=people,dc=myorg,dc=com`. In other words, {project_name} concatenates the `Relative User Creation DN` with the `Users DN` (a comma is added automatically when concatenating the DNs) and uses this resulting DN to store users
+
+A similar property is also available in the group and role mappers, allowing groups and roles to be added to a sub-DN of the base DN that is used to search for the groups/roles.
 
 Other options::
 Hover the mouse pointer over the tooltips in the Admin Console to see more details about these options.
@@ -174,6 +185,8 @@ The LDAP connection pool configuration is configured using the following system 
 | `com.sun.jndi.ldap.connect.pool.protocol` | A list of space-separated protocol types of connections that may be pooled. Valid types are "plain" and "ssl"
 | `com.sun.jndi.ldap.connect.pool.debug` | A string that indicates the level of debug output to produce. Valid values are "fine" (trace connection creation and removal) and "all" (all debugging information)
 |===
+
+By default, connection pooling is enabled for both `plain` and `ssl` protocols.
 
 For more details, see the link:https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/config.html[Java LDAP Connection Pooling Configuration] documentation.
 

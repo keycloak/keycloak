@@ -213,7 +213,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             if (success) {
                 success(s, realm, user.getId());
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteAddr(), Time.currentTimeMillis());
+                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis());
             }
         }));
     }
@@ -294,6 +294,11 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         @Override
         public UriInfo getUri() {
             return uriInfo;
+        }
+
+        @Override
+        public boolean isProxyTrusted() {
+            return true;
         }
     }
 

@@ -1,7 +1,6 @@
 import ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { Page, expect, test } from "@playwright/test";
-import { randomUUID } from "node:crypto";
 
 import {
   createClient,
@@ -11,7 +10,6 @@ import {
   deleteIdentityProvider,
   deleteUser,
   findClientByClientId,
-  inRealm,
 } from "../admin-client";
 import { SERVER_URL } from "../constants";
 import groupsIdPClient from "../realms/groups-idp.json" assert { type: "json" };
@@ -23,7 +21,11 @@ test.describe("Account linking", () => {
   let user: string;
   // Tests for keycloak account console, section Account linking in Account security
   test.beforeAll(async () => {
-    user = await createRandomUserWithPassword("user-" + randomUUID(), "pwd");
+    user = await createRandomUserWithPassword(
+      "user-" + crypto.randomUUID(),
+      "pwd",
+      realm,
+    );
 
     const kcGroupsIdpId = await findClientByClientId("groups-idp");
     if (kcGroupsIdpId) {
@@ -49,17 +51,17 @@ test.describe("Account linking", () => {
       },
     };
 
-    await inRealm(realm, () => createIdentityProvider(idp));
+    await createIdentityProvider(idp, realm);
   });
 
   test.afterAll(async () => {
-    await deleteUser(user);
+    await deleteUser(user, realm);
   });
   test.afterAll(async () => {
     await deleteClient(groupIdPClientId);
   });
   test.afterAll(async () => {
-    await inRealm(realm, () => deleteIdentityProvider("master-idp"));
+    await deleteIdentityProvider("master-idp", realm);
   });
 
   test("Linking", async ({ page }) => {

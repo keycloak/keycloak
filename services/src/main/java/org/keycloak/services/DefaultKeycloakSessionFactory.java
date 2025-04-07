@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
@@ -158,7 +159,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
                 }
                 Map<String, ProviderFactory> f = factories.get(providerDep);
                 if (f == null) {
-                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName());
+                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName() + " required by " + factory.getClass().getName() + " (" + factory.getId() + ")");
                 }
                 recursionPrevention.push(factory);
                 initializeProviders(providerDep, factories, intializedProviders, recursionPrevention);
@@ -181,6 +182,8 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
     @Override
     public void deploy(ProviderManager pm) {
+        registerNewSpis(pm);
+
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> newFactories = loadFactories(pm);
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> deployed = new HashMap<>();
@@ -220,6 +223,20 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
 
         if (pm.getInfo().hasThemes() || pm.getInfo().hasThemeResources()) {
             themeManagerFactory.clearCache();
+        }
+    }
+
+    // Register SPIs of this providerManager, which are possibly not yet registered in this factory
+    private void registerNewSpis(ProviderManager pm) {
+        Set<String> existingSpiNames = this.spis.stream()
+                .map(spi -> spi.getName())
+                .collect(Collectors.toSet());
+
+        this.spis = new HashSet<>(this.spis);
+        for (Spi newSpi : pm.loadSpis()) {
+            if (!existingSpiNames.contains(newSpi.getName())) {
+                this.spis.add(newSpi);
+            }
         }
     }
 

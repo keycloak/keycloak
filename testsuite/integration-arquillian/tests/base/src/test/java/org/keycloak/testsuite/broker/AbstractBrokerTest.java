@@ -62,7 +62,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     }
 
     protected void loginUser() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", "password");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -167,7 +167,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         log.debug("Testing single log out");
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", "secret");
         oauth.openLoginForm();
 
         Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
@@ -175,7 +175,6 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",

@@ -17,6 +17,8 @@
 
 package org.keycloak.events;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -27,6 +29,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.tracing.TracingAttributes;
+import org.keycloak.tracing.TracingProvider;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,7 +60,7 @@ public class EventBuilder {
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
-        ipAddress(clientConnection.getRemoteAddr());
+        ipAddress(clientConnection.getRemoteHost());
     }
 
     public EventBuilder(RealmModel realm, KeycloakSession session) {
@@ -230,6 +236,7 @@ public class EventBuilder {
         send(this.storeImmediately == null ? true : this.storeImmediately);
     }
 
+    @Override
     public EventBuilder clone() {
         return new EventBuilder(session, store, listeners, realm, event.clone());
     }
@@ -258,12 +265,40 @@ public class EventBuilder {
             }
         }
 
+        traceEvent();
+
         for (EventListenerProvider l : targetListeners) {
             try {
                 l.onEvent(event);
             } catch (Throwable t) {
                 log.error("Failed to send type to " + l, t);
             }
+        }
+    }
+
+    private void traceEvent() {
+        var tracing = session.getProvider(TracingProvider.class);
+        var span = tracing.getCurrentSpan();
+
+        if (span.isRecording()) {
+            final var ab = Attributes.builder();
+            ab.put(TracingAttributes.EVENT_ID, event.getId());
+            ab.put(TracingAttributes.REALM_ID, event.getRealmId());
+            ab.put(TracingAttributes.REALM_NAME, event.getRealmName());
+            ab.put(TracingAttributes.CLIENT_ID, event.getClientId());
+            ab.put(TracingAttributes.USER_ID, event.getUserId());
+            ab.put(TracingAttributes.SESSION_ID, event.getSessionId());
+            ab.put("ipAddress", event.getIpAddress());
+            ab.put(TracingAttributes.EVENT_ERROR, event.getError());
+
+            var details = event.getDetails();
+            if (details != null) {
+                details.forEach((k, v) -> ab.put(TracingAttributes.KC_PREFIX + "details." + k, v));
+            }
+            if (event.getType().name().endsWith("_ERROR")) {
+                span.setStatus(StatusCode.ERROR);
+            }
+            span.addEvent(event.getType().name(), ab.build(), event.getTime(), TimeUnit.MILLISECONDS);
         }
     }
 

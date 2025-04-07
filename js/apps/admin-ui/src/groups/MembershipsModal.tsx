@@ -1,5 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import UserRepresentation from "js/libs/keycloak-admin-client/lib/defs/userRepresentation";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { Modal, ModalVariant } from "@patternfly/react-core";
 import {
   Button,

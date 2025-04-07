@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -15,7 +16,6 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
 import javax.net.ssl.SSLSocketFactory;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -60,32 +60,45 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     private void createLdapContext() throws NamingException {
-        Hashtable<Object, Object> connProp = getConnectionProperties(ldapConfig);
+        var tracing = session.getProvider(TracingProvider.class);
+        tracing.startSpan(LDAPContextManager.class, "createLdapContext");
+        try {
+            Hashtable<Object, Object> connProp = getConnectionProperties(ldapConfig);
 
-        if (!LDAPConstants.AUTH_TYPE_NONE.equals(ldapConfig.getAuthType())) {
-            vaultStringSecret = getVaultSecret();
+            if (!LDAPConstants.AUTH_TYPE_NONE.equals(ldapConfig.getAuthType())) {
+                vaultStringSecret = getVaultSecret();
 
-            if (vaultStringSecret != null && !ldapConfig.isStartTls() && ldapConfig.getBindCredential() != null) {
-                connProp.put(SECURITY_CREDENTIALS, vaultStringSecret.get()
-                        .orElse(ldapConfig.getBindCredential()).toCharArray());
-            }
-        }
-
-        ldapContext = new InitialLdapContext(connProp, null);
-        if (ldapConfig.isStartTls()) {
-            SSLSocketFactory sslSocketFactory = null;
-            if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
-                TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
-                sslSocketFactory = provider.getSSLSocketFactory();
+                if (vaultStringSecret != null && !ldapConfig.isStartTls() && ldapConfig.getBindCredential() != null) {
+                    connProp.put(SECURITY_CREDENTIALS, vaultStringSecret.get()
+                            .orElse(ldapConfig.getBindCredential()).toCharArray());
+                }
             }
 
-            tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
-                    vaultStringSecret.get().orElse(ldapConfig.getBindCredential()), sslSocketFactory);
-
-            // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
-            if (tlsResponse == null) {
-                throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
+            if (ldapConfig.isConnectionTrace()) {
+                connProp.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
             }
+
+            ldapContext = new InitialLdapContext(connProp, null);
+            if (ldapConfig.isStartTls()) {
+                SSLSocketFactory sslSocketFactory = null;
+                if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
+                    TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
+                    sslSocketFactory = provider.getSSLSocketFactory();
+                }
+
+                tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
+                        vaultStringSecret.get().orElse(ldapConfig.getBindCredential()), sslSocketFactory);
+
+                // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+                if (tlsResponse == null) {
+                    throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
+                }
+            }
+        } catch (NamingException e) {
+            tracing.error(e);
+            throw e;
+        } finally {
+            tracing.endSpan();
         }
     }
 

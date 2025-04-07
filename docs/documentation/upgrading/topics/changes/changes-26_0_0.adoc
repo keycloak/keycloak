@@ -167,7 +167,7 @@ As part of the improvements around the scalability of realms and organizations w
 no longer holds the list of identity providers. However, they are still available from the realm representation
 when exporting a realm.
 
-To obtain the query the identity providers in a realm, prefer using the `/realms/{realm}/identity-provider/instances` endpoint.
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm-name}/identity-provider/instances` endpoint.
 This endpoint supports filters and pagination.
 
 = CLI import placeholder replacement
@@ -319,7 +319,7 @@ The `groups.setOrCreateChild()` method has been removed from that JavaScript-bas
 
 = Keycloak JS
 
-This release includes several changes to Keycloak JS library that should be taken into account. The main motivation for these changes is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifing the code and making it easier to maintain in the future. The changes are as follows:
+This release includes several changes to Keycloak JS library that should be taken into account. The main motivation for these changes is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifying the code and making it easier to maintain in the future. The changes are as follows:
 
 == The library is no longer served statically from the server
 
@@ -334,7 +334,7 @@ The Keycloak JS library is no longer served statically from the Keycloak server.
 - `/js/{version}/keycloak.js`
 - `/js/{version}/keycloak.min.js`
 
-Additionally, the `keycloakJsUrl` property that linked to the library on these URLs has been removed from the the admin console theme. If your custom theme was using this property to include the library, you should update your theme to include the library using a different method.
+Additionally, the `keycloakJsUrl` property that linked to the library on these URLs has been removed from the admin console theme. If your custom theme was using this property to include the library, you should update your theme to include the library using a different method.
 
 If you are not already you should include the library in your project using a package manager like link:https://nodejs.org/en/learn/getting-started/an-introduction-to-the-npm-package-manager[NPM]. The library is available on the NPM registry as link:https://www.npmjs.com/package/keycloak-js[`keycloak-js`]. You can install it using the following command:
 
@@ -347,7 +347,7 @@ Alternatively, the distribution of the server includes a copy of the library in 
 
 == Support for the UMD distribution has been removed
 
-The UMD distribution link:https://github.com/umdjs/umd?tab=readme-ov-file#umd-universal-module-definition[Universal Module Definition] of the Keycloak JS library has been removed. This means that the library is no longer exposed as a global variable, and instead must be imported as link:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules[a module]. This change is in line with modern JavaScript development practices, and allows for a more consitent experience between browsers and build tooling, and generally results in more predictable code with less side-effects.
+The UMD distribution link:https://github.com/umdjs/umd?tab=readme-ov-file#umd-universal-module-definition[Universal Module Definition] of the Keycloak JS library has been removed. This means that the library is no longer exposed as a global variable, and instead must be imported as link:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules[a module]. This change is in line with modern JavaScript development practices, and allows for a more consistent experience between browsers and build tooling, and generally results in more predictable code with less side-effects.
 
 If you are using a bundler like Vite or Webpack nothing changes, you'll have the same experience as before. If you are using the library directly in the browser, you'll need to update your code to import the library as a module:
 
@@ -412,7 +412,7 @@ const keycloak = new Keycloak({
 });
 
 // Alternatively, you can pass a URL to a `keycloak.json` file.
-// Note this is not reccomended as it creates additional network requests, and is prone to change in the future.
+// Note this is not recommended as it creates additional network requests, and is prone to change in the future.
 const keycloak = new Keycloak('http://keycloak-server/path/to/keycloak.json');
 ----
 

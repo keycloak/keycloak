@@ -19,9 +19,13 @@ package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 
@@ -30,9 +34,11 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 
+@DryRun
 @DistributionTest
 @RawDistOnly(reason = "No need to test script again on container")
 @WithEnvVars({"PRINT_ENV", "true"})
+@Tag(DistributionTest.WIN)
 public class JavaOptsScriptTest {
 
     private static final String DEFAULT_OPTS = "(?:-\\S+ )*-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8(?: -\\S+)*";
@@ -106,7 +112,7 @@ public class JavaOptsScriptTest {
         String output = result.getOutput();
         assertThat(output, containsString("JAVA_ADD_OPENS already set in environment; overriding default settings"));
         assertThat(output, not(containsString("--add-opens")));
-        assertThat(output, matchesPattern(String.format("(?s).*Using JAVA_OPTS: %s%s -Dfoo=bar.*", 
+        assertThat(output, matchesPattern(String.format("(?s).*Using JAVA_OPTS: %s%s -Dfoo=bar.*",
                 OS.WINDOWS.isCurrentOs() ? "-Dprogram.name=kc.bat " : "", DEFAULT_OPTS)));
     }
 
@@ -115,6 +121,15 @@ public class JavaOptsScriptTest {
     void testPicocliClosuresDisabled(LaunchResult result) {
         String output = result.getErrorOutput(); // not sure why picocli logs are printed to err
         assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
+    }
+
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different path behaviour on Windows.")
+    @Test
+    @Launch({"start-dev", "--optimized"})
+    void testKcHomeDirPathFormat(LaunchResult result) {
+        String output = result.getOutput();
+        assertThat(output, containsString("kc.home.dir="));
+        assertThat(output, matchesPattern("(?s).*kc\\.home\\.dir=\"[A-Z]:/.*?/keycloak/quarkus/tests/integration/target/kc-tests/keycloak-\\d+\\.\\d+\\.\\d+.*?/bin/\\.\\.\".*"));
     }
 
 }

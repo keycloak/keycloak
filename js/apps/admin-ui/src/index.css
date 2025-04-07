@@ -30,3 +30,7 @@ input[type="checkbox"] {
   color: var(--pf-v5-global--primary-color--100);
   width: fit-content;
 }
+
+div.w-tc-editor {
+  font-family: 'ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace';
+}

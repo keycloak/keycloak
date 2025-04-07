@@ -35,7 +35,6 @@ public class TracingDistTest {
     private void assertTracingEnabled(CLIResult result) {
         result.assertMessage("opentelemetry");
         result.assertMessage("service.name=\"keycloak\"");
-        result.assertMessage("Preview features enabled: opentelemetry");
     }
 
     private void assertTracingDisabled(CLIResult result) {
@@ -43,7 +42,6 @@ public class TracingDistTest {
         result.assertNoMessage("service.name=\"keycloak\"");
         result.assertNoMessage("Failed to export spans.");
         result.assertNoMessage("Connection refused: localhost/127.0.0.1:4317");
-        result.assertNoMessage("Preview features enabled: opentelemetry");
     }
 
     @Test
@@ -62,12 +60,12 @@ public class TracingDistTest {
     void disabledOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Disabled option: '--tracing-service-name'. Available only when 'opentelemetry' feature and Tracing is enabled");
+        cliResult.assertError("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled");
     }
 
     @Test
     @Order(3)
-    @Launch({"start-dev", "--tracing-enabled=true"})
+    @Launch({"start-dev", "--features-disabled=opentelemetry", "--tracing-enabled=true"})
     void disabledFeature(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
@@ -76,16 +74,16 @@ public class TracingDistTest {
 
     @Test
     @Order(4)
-    @Launch({"start-dev", "--features=opentelemetry", "--tracing-enabled=false", "--tracing-endpoint=something"})
+    @Launch({"start-dev", "--tracing-enabled=false", "--tracing-endpoint=something"})
     void disabledTracing(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        cliResult.assertError("Disabled option: '--tracing-endpoint'. Available only when 'opentelemetry' feature and Tracing is enabled");
+        cliResult.assertError("Disabled option: '--tracing-endpoint'. Available only when Tracing is enabled");
     }
 
     @Test
     @Order(5)
-    @Launch({"build", "--tracing-enabled=true", "--features=opentelemetry"})
+    @Launch({"build", "--db=dev-file", "--tracing-enabled=true"})
     void buildTracingEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 

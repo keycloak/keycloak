@@ -32,7 +32,13 @@ import jakarta.ws.rs.ext.Provider;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.models.IdentityProviderModel;
@@ -69,6 +75,13 @@ public class OrganizationIdentityProvidersResource {
     @Operation(summary = "Adds the identity provider with the specified id to the organization",
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
                 "or if it is already associated with the organization, an error response is returned")
+    @RequestBody(description = "Payload should contain only id or alias of the identity provider to be associated with the organization (id or alias without quotes).", required = true)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response addIdentityProvider(String id) {
         id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
         
@@ -94,6 +107,9 @@ public class OrganizationIdentityProvidersResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns all identity providers associated with the organization")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY)))
+    })
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         return organization.getIdentityProviders().map(this::toRepresentation);
     }
@@ -106,6 +122,10 @@ public class OrganizationIdentityProvidersResource {
     @Operation(summary = "Returns the identity provider associated with the organization that has the specified alias",
         description = "Searches for an identity provider with the given alias. If one is found and is associated with the " +
                 "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class))),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
@@ -123,6 +143,11 @@ public class OrganizationIdentityProvidersResource {
     @Operation(summary = "Removes the identity provider with the specified alias from the organization",
         description = "Breaks the association between the identity provider and the organization. The provider itself is not deleted. " +
                 "If no provider is found, or if it is not currently associated with the org, an error response is returned")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
     public Response delete(@PathParam("alias") String alias) {
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 

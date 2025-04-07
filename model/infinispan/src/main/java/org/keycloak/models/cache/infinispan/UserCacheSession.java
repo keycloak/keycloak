@@ -17,9 +17,10 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
@@ -56,7 +57,6 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -226,7 +227,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             adapter = cacheUser(realm, delegate, loaded);
         } else {
-            adapter = validateCache(realm, cached);
+            adapter = validateCache(realm, cached, () -> getDelegate().getUserById(realm, id));
         }
         managedUsers.put(id, adapter);
         return adapter;
@@ -307,11 +308,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         if (cached == null) {
             return cacheUser(realm, delegate, loaded);
         } else {
-            return validateCache(realm, cached);
+            return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
         }
     }
 
-    protected UserModel validateCache(RealmModel realm, CachedUser cached) {
+    protected UserModel validateCache(RealmModel realm, CachedUser cached, Supplier<UserModel> supplier) {
         if (!realm.getId().equals(cached.getRealm())) {
             return null;
         }
@@ -330,23 +331,24 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             // its also hard to test stuff
             if (model.shouldInvalidate(cached)) {
                 registerUserInvalidation(cached);
-                return getDelegate().getUserById(realm, cached.getId());
+                return supplier.get();
             }
         }
+
         return new UserAdapter(cached, this, session, realm);
     }
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
-        if (isReadOnlyOrganizationMember(delegate)) {
+        if (isReadOnlyOrganizationMember(session, delegate)) {
             return new ReadOnlyUserModelDelegate(delegate, false);
         }
 
         CachedUser cached;
         UserAdapter adapter;
 
-        if (delegate.getFederationLink() != null) {
+        if (delegate.isFederated()) {
             ComponentModel component = realm.getComponent(delegate.getFederationLink());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {
@@ -589,29 +591,47 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return getDelegate().getUsersCount(realm, params, groupIds);
     }
 
+    private UserModel returnFromCacheIfPresent(RealmModel realm, UserModel delegate) {
+        if (delegate == null || delegate instanceof CachedUserModel || isRegisteredForInvalidation(realm, delegate.getId())) {
+            return delegate;
+        }
+
+        if (managedUsers.containsKey(delegate.getId())) {
+            return managedUsers.get(delegate.getId());
+        }
+
+        CachedUser cached = cache.get(delegate.getId(), CachedUser.class);
+        if (cached == null) {
+            return delegate;
+        }
+
+        UserModel cachedUserModel = validateCache(realm, cached, () -> delegate);
+        return cachedUserModel != null? cachedUserModel : delegate;
+    }
+
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
-        return getDelegate().searchForUserStream(realm, search);
+        return getDelegate().searchForUserStream(realm, search).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return getDelegate().searchForUserStream(realm, search, firstResult, maxResults);
+        return getDelegate().searchForUserStream(realm, search, firstResult, maxResults).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes) {
-        return getDelegate().searchForUserStream(realm, attributes);
+        return getDelegate().searchForUserStream(realm, attributes).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        return getDelegate().searchForUserStream(realm, attributes, firstResult, maxResults);
+        return getDelegate().searchForUserStream(realm, attributes, firstResult, maxResults).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
-        return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue);
+        return getDelegate().searchForUserByUserAttributeStream(realm, attrName, attrValue).map(u -> returnFromCacheIfPresent(realm, u));
     }
 
     @Override
@@ -804,7 +824,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
-        UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRoles);
+        UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
         fullyInvalidateUser(realm, user);
         managedUsers.put(user.getId(), user);
@@ -965,27 +985,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
         return List.of();
-    }
-
-    private boolean isReadOnlyOrganizationMember(UserModel delegate) {
-        if (delegate == null) {
-            return false;
-        }
-
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            return false;
-        }
-
-        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
-
-        if (organizationProvider.count() == 0) {
-            return false;
-        }
-
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 
     public UserCacheManager getCache() {

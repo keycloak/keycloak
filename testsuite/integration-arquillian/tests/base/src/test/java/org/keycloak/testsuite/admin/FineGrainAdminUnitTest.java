@@ -74,7 +74,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
-import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -86,6 +85,8 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
+    public static boolean IMPERSONATION_DISABLED = "impersonation".equals(System.getProperty("feature.name"))
+            && "disabled".equals(System.getProperty("feature.value"));
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -1312,12 +1313,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     private String checkTokenExchange(boolean shouldPass) throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupTokenExchange);
         oauth.realm("master");
-        oauth.clientId("tokenexclient");
+        oauth.client("tokenexclient", "password");
         String exchanged = null;
-        String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
+        String token = oauth.doPasswordGrantRequest("admin", "admin").getAccessToken();
         Assert.assertNotNull(token);
         try {
-            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "tokenexclient", "password").getAccessToken();
+            exchanged = oauth.tokenExchangeRequest(token).audience("admin-cli").send().getAccessToken();
         } catch (AssertionError e) {
             log.info("Error message is expected from oauth: " + e.getMessage());
         }

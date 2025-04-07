@@ -19,8 +19,8 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
-import org.keycloak.authorization.common.UserModelIdentity;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -71,11 +71,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private static final String VIEW_PERMISSION_USERS = "view.permission.users";
     private static final String USERS_RESOURCE = "Users";
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
     private final AuthorizationProvider authz;
-    private final MgmtPermissions root;
-    private final PolicyStore policyStore;
-    private final ResourceStore resourceStore;
+    protected final MgmtPermissions root;
+    protected final PolicyStore policyStore;
+    protected final ResourceStore resourceStore;
     private boolean grantIfNoPermission = false;
 
     UserPermissions(KeycloakSession session, AuthorizationProvider authz, MgmtPermissions root) {
@@ -177,10 +177,6 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         }
     }
 
-    public boolean canManageDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
-    }
-
     @Override
     public Resource resource() {
         ResourceServer server = root.realmResourceServer();
@@ -235,7 +231,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canManage() {
-        if (canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
@@ -274,7 +270,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canQuery() {
-        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_USERS);
+        return root.hasOneAdminRole(AdminRoles.QUERY_USERS) || canView();
     }
 
     @Override
@@ -299,7 +295,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canView() {
-        if (canViewDefault() || canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
             return true;
         }
 
@@ -487,7 +483,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     }
 
-    private boolean hasPermission(String... scopes) {
+    protected boolean hasPermission(String... scopes) {
         return hasPermission(null, scopes);
     }
 
@@ -585,15 +581,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     private boolean canManageByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
-
+        return evaluateHierarchy(user, root.groups()::canManageMembers);
     }
-    private boolean canViewByGroup(UserModel user) {
+
+    protected boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
-    }
-
-    public boolean canViewDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS);
+        return evaluateHierarchy(user, root.groups()::canViewMembers);
     }
 }

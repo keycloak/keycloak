@@ -7,7 +7,7 @@ import { HelpItem } from "@keycloak/keycloak-ui-shared";
 const LOGIC_TYPES = ["POSITIVE", "NEGATIVE"] as const;
 
 type LogicSelectorProps = {
-  isDisabled: boolean;
+  isDisabled?: boolean;
 };
 
 export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {

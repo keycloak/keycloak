@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
@@ -41,6 +42,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -201,15 +204,25 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
         @Merged
         public void mergeEvent(MergeEvent event) {
-           // During split-brain only Keycloak instances contained within the same partition will receive updates via
-           // the work cache. On split-brain heal it's necessary for us to clear all local caches so that potentially
-           // stale values are invalidated and subsequent requests are forced to read from the DB.
-           localExecutor.execute(() ->
-              Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                    .map(name -> workCache.getCacheManager().getCache(name))
-                    .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                    .forEach(Cache::clear)
-           );
+            // During split-brain only Keycloak instances contained within the same partition will receive updates via
+            // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
+            // stale values are invalidated and subsequent requests are forced to read from the DB.
+            localExecutor.execute(() ->
+                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                            .map(name -> workCache.getCacheManager().getCache(name))
+                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                            .forEach(Cache::clear)
+            );
+
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
+                // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
+                localExecutor.execute(() ->
+                        Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
+                                .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
+                                .forEach(Cache::clear)
+                );
+            }
         }
 
         @ViewChanged

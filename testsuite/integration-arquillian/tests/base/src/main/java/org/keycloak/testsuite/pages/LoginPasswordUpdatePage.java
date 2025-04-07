@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,7 +33,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "button[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
@@ -48,19 +49,15 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public void cancel() {
-        cancelAIAButton.click();
+        UIUtils.clickLink(cancelAIAButton);
     }
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Update password");
-    }
-
-    public void open() {
-        throw new UnsupportedOperationException();
     }
 
     public String getError() {

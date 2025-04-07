@@ -161,7 +161,7 @@ public final class Help extends CommandLine.Help {
             // do not show options without a description nor hidden
             return false;
         }
-        
+
         if (ALL_OPTIONS) {
             return true;
         }
@@ -172,11 +172,15 @@ public final class Help extends CommandLine.Help {
         if (option.group() != null && option.group().heading() != null) {
             category = OptionCategory.fromHeading(removeSuffix(option.group().heading(), ":"));
         }
-        PropertyMapper<?> mapper = getMapper(optionName, category);
+        String kcKey = PropertyMappers.getKcKeyFromCliKey(optionName).orElse(null);
+        if (kcKey == null) {
+            return true;
+        }
+        PropertyMapper<?> mapper = getMapper(kcKey, category);
 
         if (mapper == null) {
-            final var disabledMapper = PropertyMappers.getDisabledMapper(optionName);
-            
+            final var disabledMapper = PropertyMappers.getDisabledMapper(kcKey);
+
             // Show disabled mappers, which do not have a description when they're enabled
             return disabledMapper.flatMap(PropertyMapper::getEnabledWhen).isEmpty();
         }

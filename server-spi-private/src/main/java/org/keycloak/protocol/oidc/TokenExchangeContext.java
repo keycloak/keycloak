@@ -28,6 +28,7 @@ import org.keycloak.services.cors.Cors;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,7 +41,6 @@ public class TokenExchangeContext {
     private final KeycloakSession session;
     private final MultivaluedMap<String, String> formParams;
 
-    // TODO: resolve deps issue and use correct types
     private final Cors cors;
     private final Object tokenManager;
 
@@ -48,11 +48,14 @@ public class TokenExchangeContext {
     private final RealmModel realm;
     private final EventBuilder event;
 
-    private ClientConnection clientConnection;
-    private HttpHeaders headers;
-    private Map<String, String> clientAuthAttributes;
+    private final ClientConnection clientConnection;
+    private final HttpHeaders headers;
+    private final Map<String, String> clientAuthAttributes;
 
     private final Params params = new Params();
+
+    // Reason why the particular tokenExchange provider cannot be supported
+    private String unsupportedReason;
 
     public TokenExchangeContext(KeycloakSession session,
             MultivaluedMap<String, String> formParams,
@@ -120,6 +123,14 @@ public class TokenExchangeContext {
         return params;
     }
 
+    public String getUnsupportedReason() {
+        return unsupportedReason;
+    }
+
+    public void setUnsupportedReason(String unsupportedReason) {
+        this.unsupportedReason = unsupportedReason;
+    }
+
     public class Params {
 
         public String getActorToken() {
@@ -130,12 +141,12 @@ public class TokenExchangeContext {
             return formParams.getFirst(OAuth2Constants.ACTOR_TOKEN_TYPE);
         }
 
-        public String getAudience() {
-            return formParams.getFirst(OAuth2Constants.AUDIENCE);
+        public List<String> getAudience() {
+            return formParams.get(OAuth2Constants.AUDIENCE);
         }
 
-        public String getResource() {
-            return formParams.getFirst(OAuth2Constants.RESOURCE);
+        public List<String> getResource() {
+            return formParams.get(OAuth2Constants.RESOURCE);
         }
 
         public String getRequestedTokenType() {

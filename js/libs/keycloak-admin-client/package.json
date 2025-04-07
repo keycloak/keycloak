@@ -24,12 +24,11 @@
     "build": {
       "command": "tsc --pretty",
       "files": [
-        "src/**",
-        "package.json",
+        "src",
         "tsconfig.json"
       ],
       "output": [
-        "lib/**"
+        "lib"
       ]
     },
     "lint": {
@@ -45,14 +44,14 @@
     "url-template": "^3.1.1"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.2.0",
-    "@types/chai": "^5.0.1",
+    "@faker-js/faker": "^9.6.0",
+    "@types/chai": "^5.2.1",
     "@types/lodash-es": "^4.17.12",
-    "@types/mocha": "^10.0.9",
-    "@types/node": "^22.9.0",
-    "chai": "^5.1.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.14.0",
+    "chai": "^5.2.0",
     "lodash-es": "^4.17.21",
-    "mocha": "^10.8.2",
+    "mocha": "^11.1.0",
     "ts-node": "^10.9.2"
   },
   "author": {

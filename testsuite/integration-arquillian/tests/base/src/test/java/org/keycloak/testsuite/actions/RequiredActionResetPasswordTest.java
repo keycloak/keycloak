@@ -46,7 +46,8 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.WebDriver;
@@ -114,8 +115,8 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -136,8 +137,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     }
 
     private void resetPassword(boolean logoutOtherSessions) {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();

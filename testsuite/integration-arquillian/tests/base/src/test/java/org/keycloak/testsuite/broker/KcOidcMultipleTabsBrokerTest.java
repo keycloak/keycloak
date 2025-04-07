@@ -34,7 +34,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,7 +72,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             getLogger().infof("URL in tab 1: %s", driver.getCurrentUrl());
 
             // Open new tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             Assert.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
@@ -111,7 +112,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             Assert.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
@@ -184,7 +185,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
-            tabUtil.newTab(oauth.getLoginFormUrl());
+            tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
             Assert.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
@@ -255,7 +256,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
             // Being redirected back to consumer and then back to client right away. Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
-            OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
             org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
             org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
         }
@@ -264,7 +265,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
     // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
     private void assertOnAppPageWithAlreadyLoggedInError() {
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
-        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         org.keycloak.testsuite.Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         org.keycloak.testsuite.Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }

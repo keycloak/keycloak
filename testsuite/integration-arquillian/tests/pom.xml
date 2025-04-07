@@ -93,6 +93,7 @@
         <auth.server.remote>false</auth.server.remote>
         <auth.server.quarkus>false</auth.server.quarkus>
         <auth.server.quarkus.embedded>false</auth.server.quarkus.embedded>
+        <auth.server.jgroups.mtls>false</auth.server.jgroups.mtls>
 
         <auth.server.profile/>
         <auth.server.feature/>
@@ -452,6 +453,7 @@
                             <auth.server.keystore.type>${auth.server.keystore.type}</auth.server.keystore.type>
                             <auth.server.java.security.file>${auth.server.java.security.file}</auth.server.java.security.file>
                             <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
+                            <auth.server.jgroups.mtls>${auth.server.jgroups.mtls}</auth.server.jgroups.mtls>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
@@ -1552,6 +1554,7 @@
                 <dependency>
                     <groupId>org.jboss.arquillian.protocol</groupId>
                     <artifactId>arquillian-protocol-servlet-jakarta</artifactId>
+                    <version>${arquillian.protocol.servlet.jakarta.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.arquillian.graphene</groupId>

@@ -1,5 +1,6 @@
 package org.keycloak.admin.ui.rest;
 
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -91,12 +92,55 @@ public class SessionsResource {
             return Stream.<SessionRepresentation>builder().build();
         });
 
+        return applySearch(search, result).distinct().skip(first).limit(max);
+    }
+
+    @GET
+    @Path("client")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
+    @Operation(
+            summary = "List all sessions of the passed client containing regular and offline",
+            description = "This endpoint returns a list of sessions and the clients that have been used including offline tokens"
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "",
+            content = {@Content(
+                    schema = @Schema(
+                            implementation = SessionRepresentation.class,
+                            type = SchemaType.ARRAY
+                    )
+            )}
+    )
+    public Stream<SessionRepresentation> clientSessions(@QueryParam("clientId") final String clientId,
+                                                        @QueryParam("type") @DefaultValue("ALL") final SessionType type,
+                                                        @QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
+                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+        ClientModel clientModel = realm.getClientById(clientId);
+        auth.clients().requireView(clientModel);
+
+        Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
+        if (type == ALL || type == REGULAR) {
+            result = Stream.concat(result, session.sessions()
+                    .getUserSessionsStream(clientModel.getRealm(), clientModel).map(s -> toRepresentation(s, REGULAR)));
+        }
+        if (type == ALL || type == OFFLINE) {
+            result = Stream.concat(result, session.sessions()
+                    .getOfflineUserSessionsStream(clientModel.getRealm(), clientModel, null, null)
+                    .map(s -> toRepresentation(s, OFFLINE)));
+        }
+
+        return applySearch(search, result).distinct().skip(first).limit(max);
+    }
+
+    private static Stream<SessionRepresentation> applySearch(String search, Stream<SessionRepresentation> result) {
         if (!StringUtil.isBlank(search)) {
             String searchTrimmed = search.trim();
             result = result.filter(s -> s.getUsername().contains(searchTrimmed) || s.getIpAddress().contains(searchTrimmed)
-                                        || s.getClients().values().stream().anyMatch(c -> c.contains(searchTrimmed)));
+                    || s.getClients().values().stream().anyMatch(c -> c.contains(searchTrimmed)));
         }
-        return result.distinct().skip(first).limit(max);
+        return result;
     }
 
     private static SessionRepresentation toRepresentation(UserSessionModel session, SessionType type) {

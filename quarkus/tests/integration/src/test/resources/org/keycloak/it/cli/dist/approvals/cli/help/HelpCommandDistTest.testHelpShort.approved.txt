@@ -30,6 +30,13 @@ Commands:
   bootstrap-admin         Commands for bootstrapping admin access
     user                  Add an admin user with a password
     service               Add an admin service account
+  update-compatibility    [Preview] Tool for configuration compatibility.
+    check                 Checks if the metadata is compatible with the current
+                            configuration. A zero exit code means a rolling
+                            update is possible between old and the current
+                            metadata.
+    metadata              Stores the metadata necessary to determine if a
+                            configuration is compatible.
 
 Examples:
 

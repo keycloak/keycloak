@@ -29,6 +29,7 @@ import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 type RootMenuItem = {
+  id?: string;
   label: TFuncKey;
   path: string;
   isVisible?: keyof Feature;
@@ -137,7 +138,7 @@ export const NavLink = ({
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const menuItemPath = getFullUrl(path) + `?${location.search}`;
+  const menuItemPath = getFullUrl(path) + location.search;
   const href = useHref(menuItemPath);
   const handleClick = useLinkClickHandler(menuItemPath);
 

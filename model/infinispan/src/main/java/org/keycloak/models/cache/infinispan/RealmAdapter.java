@@ -17,6 +17,8 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
+
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
@@ -53,7 +55,6 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -917,27 +918,30 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return session.identityProviders().getAllStream();
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream());
     }
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        return session.identityProviders().getByAlias(alias);
+        return runOnRealm(session, this, (session) -> session.identityProviders().getByAlias(alias));
     }
 
     @Override
     public void addIdentityProvider(IdentityProviderModel identityProvider) {
-        session.identityProviders().create(identityProvider);
+        runOnRealm(session, this, (session) -> session.identityProviders().create(identityProvider));
     }
 
     @Override
     public void updateIdentityProvider(IdentityProviderModel identityProvider) {
-        session.identityProviders().update(identityProvider);
+        runOnRealm(session, this, (session) -> {
+            session.identityProviders().update(identityProvider);
+            return null;
+        });
     }
 
     @Override
     public void removeIdentityProviderByAlias(String alias) {
-        session.identityProviders().remove(alias);
+        runOnRealm(session, this, (session) -> session.identityProviders().remove(alias));
     }
 
     @Override
@@ -1093,6 +1097,18 @@ public class RealmAdapter implements CachedRealmModel {
     public RoleModel getDefaultRole() {
         if (isUpdated()) return updated.getDefaultRole();
         return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
+    }
+
+    @Override
+    public void setAdminPermissionsClient(ClientModel client) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsClient(client);
+    }
+
+    @Override
+    public ClientModel getAdminPermissionsClient() {
+        if (isUpdated()) return updated.getAdminPermissionsClient();
+        return cached.getAdminPermissionsClientId() == null ? null : cacheSession.getClientById(this, cached.getAdminPermissionsClientId());
     }
 
     @Override
@@ -1360,7 +1376,11 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId) {
         if (isUpdated()) return updated.getAuthenticationExecutionsStream(flowId);
-        return cached.getAuthenticationExecutions().get(flowId).stream();
+        List<AuthenticationExecutionModel> executions = cached.getAuthenticationExecutions().get(flowId);
+        if (executions == null) {
+            return Stream.empty();
+        }
+        return executions.stream();
     }
 
     @Override
@@ -1590,7 +1610,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(modelSupplier) : cached.getOptionalDefaultClientScopes(modelSupplier);
         return clientScopeIds.stream()
                 .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
@@ -1811,8 +1831,8 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isOrganizationsEnabled() {
-        if (isUpdated()) return featureAwareIsOrganizationsEnabled(updated.isOrganizationsEnabled());
-        return featureAwareIsOrganizationsEnabled(cached.isOrganizationsEnabled());
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, updated.isOrganizationsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ORGANIZATION, cached.isOrganizationsEnabled());
     }
 
     @Override
@@ -1822,9 +1842,21 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isAdminPermissionsEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, updated.isAdminPermissionsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, cached.isAdminPermissionsEnabled());
+    }
+
+    @Override
+    public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
+        getDelegateForUpdate();
+        updated.setAdminPermissionsEnabled(adminPermissionsEnabled);
+    }
+
+    @Override
     public boolean isVerifiableCredentialsEnabled() {
-        if (isUpdated()) return featureVerifiableCredentialsEnabled(updated.isVerifiableCredentialsEnabled());
-        return featureVerifiableCredentialsEnabled(cached.isVerifiableCredentialsEnabled());
+        if (isUpdated()) return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, updated.isVerifiableCredentialsEnabled());
+        return featureAwareIsEnabled(Profile.Feature.OID4VC_VCI, cached.isVerifiableCredentialsEnabled());
     }
 
     @Override
@@ -1833,13 +1865,8 @@ public class RealmAdapter implements CachedRealmModel {
         updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
 
-    private boolean featureAwareIsOrganizationsEnabled(boolean isOrganizationsEnabled) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) return false;
-        return isOrganizationsEnabled;
-    }
-
-    private boolean featureVerifiableCredentialsEnabled(boolean isVerifiableCredentialsEnabled) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) return false;
-        return isVerifiableCredentialsEnabled;
+    private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {
+        if (!Profile.isFeatureEnabled(feature)) return false;
+        return isEnabled;
     }
 }

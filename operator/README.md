@@ -43,6 +43,14 @@ kc.operator.keycloak.image-pull-policy
 
 ### Quick start on Minikube
 
+Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
+Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
+Another CNI implementation may work too.
+
+```bash
+minikube start --addons ingress --cni cilium
+```
+
 Enable the Minikube Docker daemon:
 
 ```bash
@@ -109,7 +117,7 @@ To avoid skipping tests that are depending on custom Keycloak images, you need t
 And run the tests passing an extra Java property:
 
 ```bash
--Dtest.kc.operator.custom.image=custom-keycloak:latest
+-Dtest.operator.custom.image=custom-keycloak:latest
 ```
 
 ### Testing using a pre-built operator image from a remote registry

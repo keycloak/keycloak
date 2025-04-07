@@ -26,7 +26,6 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -68,6 +67,8 @@ public class CredentialModel implements Serializable {
     private String secretData;
     private String credentialData;
 
+    private String federationLink;
+
     public CredentialModel shallowClone() {
         CredentialModel res = new CredentialModel();
         res.id = id;
@@ -76,6 +77,7 @@ public class CredentialModel implements Serializable {
         res.createdDate = createdDate;
         res.secretData = secretData;
         res.credentialData = credentialData;
+        res.federationLink = federationLink;
         return res;
     }
 
@@ -294,6 +296,14 @@ public class CredentialModel implements Serializable {
     @Deprecated
     public void setConfig(MultivaluedHashMap<String, String> config) {
         writeProperty("config", config, false);
+    }
+
+    public void setFederationLink(String federationLink) {
+        this.federationLink = federationLink;
+    }
+
+    public String getFederationLink() {
+        return federationLink;
     }
 
     private Map<String, Object> readMapFromJson(boolean secret) {

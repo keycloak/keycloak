@@ -12,19 +12,16 @@ import java.util.Set;
 public class UserListQuery extends AbstractRevisioned implements UserQuery {
     private final Set<String> users;
     private final String realm;
-    private final String realmName;
 
     public UserListQuery(Long revisioned, String id, RealmModel realm, Set<String> users) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.users = users;
     }
 
     public UserListQuery(Long revisioned, String id, RealmModel realm, String user) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.users = new HashSet<>();
         this.users.add(user);
     }
@@ -43,7 +40,7 @@ public class UserListQuery extends AbstractRevisioned implements UserQuery {
     public String toString() {
         return "UserListQuery{" +
                 "id='" + getId() + "'" +
-                "realmName='" + realmName + '\'' +
+                "realm='" + realm + '\'' +
                 '}';
     }
 }

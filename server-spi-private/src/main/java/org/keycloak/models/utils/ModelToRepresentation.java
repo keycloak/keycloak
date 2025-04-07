@@ -23,6 +23,7 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -48,14 +49,15 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.account.LocalizedMessage;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -122,6 +124,11 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
 
         REALM_EXCLUDED_ATTRIBUTES.add("firstBrokerLoginFlowId");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("organizationsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -165,10 +172,6 @@ public class ModelToRepresentation {
         Map<String, List<String>> attributes = group.getAttributes();
         rep.setAttributes(attributes);
         return rep;
-    }
-
-    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, Map<String,String> attributes, Integer first, Integer max) {
-        return session.groups().searchGroupsByAttributes(realm, attributes, first, max);
     }
 
     @Deprecated
@@ -282,6 +285,7 @@ public class ModelToRepresentation {
 
     public static EventRepresentation toRepresentation(Event event) {
         EventRepresentation rep = new EventRepresentation();
+        rep.setId(event.getId());
         rep.setTime(event.getTime());
         rep.setType(event.getType().toString());
         rep.setRealmId(event.getRealmId());
@@ -296,6 +300,7 @@ public class ModelToRepresentation {
 
     public static AdminEventRepresentation toRepresentation(AdminEvent adminEvent) {
         AdminEventRepresentation rep = new AdminEventRepresentation();
+        rep.setId(adminEvent.getId());
         rep.setTime(adminEvent.getTime());
         rep.setRealmId(adminEvent.getRealmId());
         if (adminEvent.getAuthDetails() != null) {
@@ -405,6 +410,7 @@ public class ModelToRepresentation {
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
+        rep.setAdminPermissionsEnabled(realm.isAdminPermissionsEnabled());
         rep.setVerifiableCredentialsEnabled(realm.isVerifiableCredentialsEnabled());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
@@ -503,6 +509,14 @@ public class ModelToRepresentation {
         if (realm.getFirstBrokerLoginFlow() != null) rep.setFirstBrokerLoginFlow(realm.getFirstBrokerLoginFlow().getAlias());
 
         rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
+
+        if (realm.getAdminPermissionsClient() != null) {
+            ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+            ClientRepresentation clientRep = new ClientRepresentation();
+            clientRep.setId(adminPermissionsClient.getId());
+            clientRep.setClientId(adminPermissionsClient.getClientId());
+            rep.setAdminPermissionsClient(clientRep);
+        }
 
         List<String> defaultGroups = realm.getDefaultGroupsStream()
                 .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
@@ -654,28 +668,27 @@ public class ModelToRepresentation {
         rep.setCreatedDate(cred.getCreatedDate());
         rep.setSecretData(cred.getSecretData());
         rep.setCredentialData(cred.getCredentialData());
+        rep.setFederationLink(cred.getFederationLink());
         return rep;
+    }
+
+    private static LocalizedMessage toLocalizedMessage(CredentialMetadata.LocalizedMessage message) {
+        if (message == null) {
+            return null;
+        }
+        String[] parameters = message.getParameters() != null
+                ? Arrays.stream(message.getParameters()).map(Object::toString).toArray(String[]::new)
+                : null;
+        return new LocalizedMessage(message.getKey(), parameters);
     }
 
     public static CredentialMetadataRepresentation toRepresentation(CredentialMetadata credentialMetadata) {
         CredentialMetadataRepresentation rep = new CredentialMetadataRepresentation();
 
         rep.setCredential(ModelToRepresentation.toRepresentation(credentialMetadata.getCredentialModel()));
-        try {
-            rep.setInfoMessage(credentialMetadata.getInfoMessage() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getInfoMessage()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping info message", e);
-        }
-        try {
-            rep.setWarningMessageDescription(credentialMetadata.getWarningMessageDescription() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageDescription()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping warning message desc", e);
-        }
-        try {
-            rep.setWarningMessageTitle(credentialMetadata.getWarningMessageTitle() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageTitle()));
-        } catch (IOException e) {
-            LOG.warn("unable to serialize model information, skipping warning message title", e);
-        }
+        rep.setInfoMessage(toLocalizedMessage(credentialMetadata.getInfoMessage()));
+        rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
+        rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
         return rep;
     }
 
@@ -930,7 +943,9 @@ public class ModelToRepresentation {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
             AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
-            rep.setAuthenticatorConfig(config.getAlias());
+            if (config != null) {
+                rep.setAuthenticatorConfig(config.getAlias());
+            }
         }
         rep.setAuthenticator(model.getAuthenticator());
         rep.setAuthenticatorFlow(model.isAuthenticatorFlow());
@@ -1038,6 +1053,7 @@ public class ModelToRepresentation {
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
         server.setDecisionStrategy(model.getDecisionStrategy());
+        server.setAuthorizationSchema(AdminPermissionsSchema.SCHEMA.getAuthorizationSchema(client));
 
         return server;
     }
@@ -1297,15 +1313,10 @@ public class ModelToRepresentation {
     }
 
     public static OrganizationRepresentation toRepresentation(OrganizationModel model) {
-        OrganizationRepresentation rep = toBriefRepresentation(model);
-        if (rep == null) {
-            return null;
-        }
-        rep.setAttributes(model.getAttributes());
-        return rep;
+        return toRepresentation(model, true);
     }
 
-    public static OrganizationRepresentation toBriefRepresentation(OrganizationModel model) {
+    public static OrganizationRepresentation toRepresentation(OrganizationModel model, boolean briefRepresentation) {
         if (model == null) {
             return null;
         }
@@ -1313,6 +1324,9 @@ public class ModelToRepresentation {
         rep.setId(model.getId());
         rep.setName(model.getName());
         rep.setAlias(model.getAlias());
+        if (!briefRepresentation) {
+            rep.setAttributes(model.getAttributes());
+        }
         rep.setEnabled(model.isEnabled());
         rep.setRedirectUrl(model.getRedirectUrl());
         rep.setDescription(model.getDescription());

@@ -25,10 +25,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
@@ -46,10 +48,19 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
 
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -265,6 +276,42 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         assertError(response, "Invalid use enc for algorithm RS256.");
     }
 
+    @Test
+    public void invalidKeystoreExpiredCertificate() throws Exception {
+        generateRSAExpiredCertificateStore(KeystoreUtils.getPreferredKeystoreType());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+
+        Response response = adminClient.realm("test").components().add(rep);
+        assertError(response, "Certificate error on server.");
+    }
+
+    @Test
+    public void testExpiredCertificateInOneHour() throws Exception {
+        this.keyAlgorithm = Algorithm.RS256;
+        generateRSAExpiredInOneHourCertificateStore(KeystoreUtils.getPreferredKeystoreType());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+
+        try (Response response = adminClient.realm("test").components().add(rep)) {
+            String id = ApiUtil.getCreatedId(response);
+            getCleanup().addComponentId(id);
+        }
+
+        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
+        PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), KeyType.RSA);
+        PublicKey got = PemUtils.decodePublicKey(key.getPublicKey(), KeyType.RSA);
+        assertEquals(exp, got);
+        assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
+        assertEquals(KeyStatus.ACTIVE.name(), key.getStatus());
+
+        setTimeOffset(3610);
+
+        keys = adminClient.realm("test").keys().getKeyMetadata();
+        key = keys.getKeys().get(0);
+        assertEquals(KeyStatus.PASSIVE.name(), key.getStatus());
+    }
+
     protected void assertError(Response response, String error) {
         if (!response.hasEntity()) {
             fail("No error message set");
@@ -318,6 +365,19 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
             }
         }
+    }
+
+    private void generateRSAExpiredCertificateStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
+        PrivateKey privKey = PemUtils.decodePrivateKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY);
+        X509Certificate cert = PemUtils.decodeCertificate(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE);
+        this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password", privKey, cert);
+    }
+
+    private void generateRSAExpiredInOneHourCertificateStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
+        KeyPair keyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(
+                keyPair, "test", new BigInteger("1"), Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+        this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
     }
 
     private static boolean isFips() {

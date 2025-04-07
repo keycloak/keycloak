@@ -18,16 +18,17 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
+import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import io.quarkus.runtime.LaunchMode;
 
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
@@ -35,7 +36,6 @@ import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import java.util.List;
 import java.util.Optional;
 
 @Command(name = Build.NAME,
@@ -65,15 +65,21 @@ public final class Build extends AbstractCommand implements Runnable {
     @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
+    @CommandLine.Mixin
+    DryRunMixin dryRunMixin;
+
     @Override
     public void run() {
         if (org.keycloak.common.util.Environment.getProfile() == null) {
             Environment.setProfile(Environment.PROD_PROFILE_VALUE);
         }
-        exitWithErrorIfDevProfileIsSet();
+        checkProfileAndDb();
 
         System.setProperty("quarkus.launch.rebuild", "true");
-        validateConfig();
+        PersistedConfigSource.getInstance().runWithDisabled(() -> {
+            validateConfig();
+            return null;
+        });
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
@@ -81,7 +87,11 @@ public final class Build extends AbstractCommand implements Runnable {
             configureBuildClassLoader();
 
             beforeReaugmentationOnWindows();
-            picocli.build();
+            if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+                picocli.build();
+            } else if (DryRunMixin.isDryRunBuild()) {
+                PersistedConfigSource.getInstance().saveDryRunProperties();
+            }
 
             if (!isDevProfile()) {
                 println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
@@ -106,13 +116,7 @@ public final class Build extends AbstractCommand implements Runnable {
         return true;
     }
 
-    @Override
-    public List<OptionCategory> getOptionCategories() {
-        // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
-        return super.getOptionCategories();
-    }
-
-    private void exitWithErrorIfDevProfileIsSet() {
+    private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = Environment.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
             // we allow start-dev, and import|export|bootstrap-admin --profile=dev
@@ -120,6 +124,8 @@ public final class Build extends AbstractCommand implements Runnable {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
+        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+            picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }
 

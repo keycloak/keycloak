@@ -13,5 +13,3 @@ include::migrate_db.adoc[leveloffset=1]
 include::migrate_themes.adoc[leveloffset=1]
 
 include::upgrade_adapters.adoc[leveloffset=1]
-
-include::upgrade_client_libs.adoc[leveloffset=1]

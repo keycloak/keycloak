@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oauth;
 
+import jakarta.ws.rs.BadRequestException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
@@ -35,10 +36,10 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
-import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.runonserver.ServerVersion;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -46,8 +47,11 @@ import org.keycloak.testsuite.util.RealmBuilder;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,6 +61,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -68,16 +73,16 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         CookieStore cookieStore = new BasicCookieStore();
 
         try (CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build()) {
-            String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", "UTF-8");
+            String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", StandardCharsets.UTF_8);
 
-            PkceGenerator pkce = new PkceGenerator();
+            PkceGenerator pkce = PkceGenerator.s256();
 
             HttpGet get = new HttpGet(
                     suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID +
                             "&redirect_uri=" + redirectUri + "&scope=openid&code_challenge_method=S256&code_challenge=" + pkce.getCodeChallenge());
 
             CloseableHttpResponse response = client.execute(get);
-            String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             response.close();
 
             String action = ActionURIUtils.getActionURIFromPageSource(s);
@@ -216,6 +221,20 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
             assertNull(response.getHeaderString(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey()));
             assertNull(response.getHeaderString(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
+        }
+    }
+
+    @Test
+    public void checkCspWithNewline() throws Exception {
+        try {
+            new RealmAttributeUpdater(adminClient.realm("test"))
+                    .setBrowserSecurityHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey(), "test\ntest")
+                    .update();
+            fail("Validation should fail due to newline");
+        }
+        catch (BadRequestException ex) {
+            ErrorRepresentation errorRep = ex.getResponse().readEntity(ErrorRepresentation.class);
+            assertEquals("Newline not allowed.", errorRep.getErrorMessage());
         }
     }
 

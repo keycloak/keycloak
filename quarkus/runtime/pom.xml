@@ -81,7 +81,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ojdbc11</artifactId>
+                    <artifactId>ojdbc17</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.oracle.database.nls</groupId>
@@ -116,6 +116,10 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-apache-httpclient-4.3</artifactId>
         </dependency>
 
         <dependency>
@@ -207,6 +211,16 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-themes</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-themes-vendor</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -317,6 +331,16 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-ldap-federation</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ipatuura-federation</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -573,6 +597,13 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
+            <exclusions>
+                <exclusion>
+                    <!-- compile-only dependency -->
+                    <groupId>org.infinispan.protostream</groupId>
+                    <artifactId>protostream-processor</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -585,6 +616,12 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
+        </dependency>
+        <dependency>
+            <!-- adding to avoid warning during compilation about "unknown enum constant org.infinispan.jmx.annotations.DataType.TRAIT" and others -->
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- required for query/search in the external Infinispan server -->
         <dependency>
@@ -608,6 +645,10 @@
             <groupId>org.openjdk.nashorn</groupId>
             <artifactId>nashorn-core</artifactId>
             <version>${nashorn.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
         </dependency>
 
         <dependency>

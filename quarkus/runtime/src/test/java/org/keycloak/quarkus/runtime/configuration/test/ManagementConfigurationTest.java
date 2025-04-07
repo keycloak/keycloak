@@ -231,6 +231,18 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void managementDefaultHttpsCertificatesReload() {
+        makeInterfaceOccupied();
+        putEnvVar("KC_HTTPS_CERTIFICATES_RELOAD_PERIOD", "2d");
+
+        initConfig();
+
+        assertConfig("https-management-certificates-reload-period", "2d");
+        assertManagementEnabled(true);
+        assertManagementHttpsEnabled(false);
+    }
+
+    @Test
     public void managementEnabledDefaultHttpsKeystore(){
         makeInterfaceOccupied();
         putEnvVar("KC_HTTPS_KEY_STORE_FILE", "keystore.p12");

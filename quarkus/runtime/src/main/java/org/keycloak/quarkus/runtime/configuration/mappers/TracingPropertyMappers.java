@@ -40,7 +40,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class TracingPropertyMappers {
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String TRACING_ENABLED_MSG = "'opentelemetry' feature and Tracing is enabled";
+    private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
 
     private TracingPropertyMappers() {
     }
@@ -122,7 +122,6 @@ public class TracingPropertyMappers {
     }
 
     private static boolean isFeatureEnabled() {
-        Environment.getCurrentOrCreateFeatureProfile();
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
     }
 

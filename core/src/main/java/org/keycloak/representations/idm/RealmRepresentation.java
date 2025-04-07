@@ -114,6 +114,7 @@ public class RealmRepresentation {
     @Deprecated
     protected List<String> defaultRoles;
     protected RoleRepresentation defaultRole;
+    protected ClientRepresentation adminPermissionsClient;
     protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
@@ -219,6 +220,8 @@ public class RealmRepresentation {
     private List<OrganizationRepresentation> organizations;
 
     protected Boolean verifiableCredentialsEnabled;
+
+    protected Boolean adminPermissionsEnabled;
 
     @Deprecated
     protected Boolean social;
@@ -549,6 +552,14 @@ public class RealmRepresentation {
 
     public void setDefaultRole(RoleRepresentation defaultRole) {
         this.defaultRole = defaultRole;
+    }
+
+    public ClientRepresentation getAdminPermissionsClient() {
+        return adminPermissionsClient;
+    }
+
+    public void setAdminPermissionsClient(ClientRepresentation adminPermissionsClient) {
+        this.adminPermissionsClient = adminPermissionsClient;
     }
 
     public List<String> getDefaultGroups() {
@@ -1440,6 +1451,14 @@ public class RealmRepresentation {
 
     public void setOrganizationsEnabled(Boolean organizationsEnabled) {
         this.organizationsEnabled = organizationsEnabled;
+    }
+
+    public Boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
+    }
+
+    public void setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        this.adminPermissionsEnabled = adminPermissionsEnabled;
     }
 
     public Boolean isVerifiableCredentialsEnabled() {

@@ -20,13 +20,13 @@ import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TestAppHelper;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 
 import jakarta.ws.rs.client.Client;
@@ -37,7 +37,6 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -199,9 +198,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
 
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
+        AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).client("broker-app", "broker-app-secret").doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
         AtomicReference<String> accessToken = (AtomicReference<String>) new AtomicReference<>(accessTokenResponse.getAccessToken());
-        Client client = jakarta.ws.rs.client.ClientBuilder.newBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
+        Client client = KeycloakTestingClient.getRestEasyClientBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
 
         try {
             WebTarget target = client.target(Urls.identityProviderRetrieveToken(URI.create(getConsumerRoot() + "/auth"), bc.getIDPAlias(), bc.consumerRealmName()));
@@ -213,7 +212,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             testingClient.server(bc.consumerRealmName()).run(revokeReadTokenRole(username));
 
-            accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
+            accessTokenResponse = oauth.realm(bc.consumerRealmName()).client("broker-app", "broker-app-secret").doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
             accessToken.set(accessTokenResponse.getAccessToken());
 
             try (Response response = target.request().get()) {
@@ -522,83 +521,6 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
-    }
-
-    // KEYCLOAK-12986
-    @Test
-    public void testPostBrokerLoginFlowWithOTP_bruteForceEnabled() {
-        assumeFalse("Brute force protection does not apply to transient sessions", isUsingTransientSessions());
-
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-
-        // Enable brute force protector in consumer realm
-        RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        RealmRepresentation consumerRealmRep = realm.toRepresentation();
-        consumerRealmRep.setBruteForceProtected(true);
-        consumerRealmRep.setFailureFactor(2);
-        consumerRealmRep.setMaxDeltaTimeSeconds(20);
-        consumerRealmRep.setMaxFailureWaitSeconds(100);
-        consumerRealmRep.setWaitIncrementSeconds(5);
-        realm.update(consumerRealmRep);
-
-        try {
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-            final UserRepresentation user = realm.users().search(bc.getUserLogin()).get(0);
-            assertNumFederatedIdentities(user.getId(), 1);
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-            setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            loginTotpPage.assertCurrent();
-
-            Map<String, Object> bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
-            assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
-
-            // Login for 2 times with incorrect TOTP. This should temporarily disable the user
-            loginTotpPage.login("bad-totp");
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-            loginTotpPage.login("bad-totp");
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-            WaitUtils.waitForBruteForceExecutors(testingClient);
-
-            bruteForceStatus = realm.attackDetection().bruteForceUserStatus(user.getId());
-            assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
-
-            // Login with valid TOTP. I should not be able to login
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
-
-            // Clear login failures
-            realm.attackDetection().clearBruteForceForUser(user.getId());
-
-            setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
-
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            WaitUtils.waitForPageToLoad();
-            appPage.assertCurrent();
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-        } finally {
-            testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
-
-            // Disable brute force protector
-            consumerRealmRep = realm.toRepresentation();
-            consumerRealmRep.setBruteForceProtected(false);
-            realm.update(consumerRealmRep);
-        }
     }
 
     /**

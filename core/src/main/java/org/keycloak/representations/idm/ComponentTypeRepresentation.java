@@ -57,8 +57,9 @@ public class ComponentTypeRepresentation {
     }
 
     /**
-     * Extra information about the component that might come from annotations or interfaces that the component implements
-     * For example, if UserStorageProvider implements ImportSynchronization
+     * Extra information about the component
+     * that might come from annotations or interfaces that the component implements.
+     * For example, if UserStorageProviderFactory implements ImportSynchronization
      *
      * @return
      */

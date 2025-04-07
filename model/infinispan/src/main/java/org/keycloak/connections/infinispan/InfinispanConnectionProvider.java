@@ -64,6 +64,9 @@ public interface InfinispanConnectionProvider extends Provider {
     int KEYS_CACHE_DEFAULT_MAX = 1000;
     int KEYS_CACHE_MAX_IDLE_SECONDS = 3600;
 
+    String CRL_CACHE_NAME = "crl";
+    int CRL_CACHE_DEFAULT_MAX = 1000;
+
     // System property used on Wildfly to identify distributedCache address and sticky session route
     String JBOSS_NODE_NAME = "jboss.node.name";
     String JGROUPS_UDP_MCAST_ADDR = "jgroups.mcast_addr";
@@ -85,7 +88,16 @@ public interface InfinispanConnectionProvider extends Provider {
             USER_REVISIONS_CACHE_NAME,
             AUTHORIZATION_CACHE_NAME,
             AUTHORIZATION_REVISIONS_CACHE_NAME,
-            KEYS_CACHE_NAME
+            KEYS_CACHE_NAME,
+            CRL_CACHE_NAME,
+    };
+
+    // list of cache name for user and client session caches, both offline and online
+    String[] USER_AND_CLIENT_SESSION_CACHES = {
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            OFFLINE_USER_SESSION_CACHE_NAME,
+            OFFLINE_CLIENT_SESSION_CACHE_NAME,
     };
 
     // list of cache name which could be defined as distributed or replicated

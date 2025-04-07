@@ -25,7 +25,13 @@ package org.keycloak.common;
  */
 public interface ClientConnection {
 
+    /**
+     * @return the IP address as a string if it is available, otherwise null
+     */
     String getRemoteAddr();
+    /**
+     * @return the remote host, which will be an IP address or whatever is provided via proxy headers
+     */
     String getRemoteHost();
     int getRemotePort();
 

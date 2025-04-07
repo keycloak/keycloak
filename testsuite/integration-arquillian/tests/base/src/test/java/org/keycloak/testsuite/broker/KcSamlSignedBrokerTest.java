@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -22,7 +21,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -150,15 +149,13 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         loginUser();
 
         // Logout should fail because logout response is not signed.
-        final String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        final OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        final String code = oauth.parseLoginResponse().getCode();
+        final AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         final String idTokenString = tokenResponse.getIdToken();
         final String redirectUri = getAccountUrl(getProviderRoot(), bc.providerRealmName());
-        final String logoutUri = oauth.realm(bc.providerRealmName()).getLogoutUrl()
+        oauth.realm(bc.providerRealmName()).logoutForm()
             .idTokenHint(idTokenString)
-            .postLogoutRedirectUri(redirectUri).build();
-
-        driver.navigate().to(logoutUri);
+            .postLogoutRedirectUri(redirectUri).open();
 
         errorPage.assertCurrent();
     }

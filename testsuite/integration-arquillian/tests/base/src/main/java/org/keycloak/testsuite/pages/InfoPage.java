@@ -19,7 +19,8 @@ package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -55,13 +56,14 @@ public class InfoPage extends LanguageComboboxAwarePage {
         return DroneUtils.getCurrentDriver().getPageSource().contains("kc-info-message");
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
+    public void clickBackToApplicationLink() {
+        UIUtils.clickLink(backToApplicationLink);
     }
 
-    public void clickBackToApplicationLink() {
-        backToApplicationLink.click();
+    public String getBackToApplicationLink() {
+        return backToApplicationLink != null
+                ? backToApplicationLink.getAttribute("href")
+                : null;
     }
 
     public void clickToContinueDe() {

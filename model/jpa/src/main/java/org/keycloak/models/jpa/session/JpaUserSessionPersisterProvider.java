@@ -191,13 +191,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        em.createNamedQuery("deleteClientSessionsByRealm")
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
-
-        em.createNamedQuery("deleteUserSessionsByRealm")
-                .setParameter("realmId", realm.getId())
-                .executeUpdate();
+        this.removeUserSessions(realm);
     }
 
     @Override
@@ -248,7 +242,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         // prefer client session timeout if set
         int expiredClientOffline = expiredOffline;
-        if (realm.getClientOfflineSessionIdleTimeout() > 0) {
+        if (realm.isOfflineSessionMaxLifespanEnabled() && realm.getClientOfflineSessionIdleTimeout() > 0) {
             expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
         }
 
@@ -466,7 +460,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setMaxResults(1);
 
         return closing(query.getResultStream())
-                .map(entity -> toAdapter(realm, userSession, entity))
+                .map(entity -> toAdapter(realm, client, userSession, entity))
                 .findFirst()
                 .orElse(null);
     }
@@ -562,7 +556,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private boolean addClientSessionToAuthenticatedClientSessionsIfPresent(OfflineUserSessionModel userSession, PersistentClientSessionEntity clientSessionEntity) {
 
-        AuthenticatedClientSessionModel clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSessionEntity);
+        AuthenticatedClientSessionModel clientSessAdapter = toAdapter(userSession.getRealm(), null, userSession, clientSessionEntity);
 
         if (clientSessAdapter.getClient() == null) {
             logger.tracef("Not adding client session %s / %s since client is null", userSession, clientSessAdapter);
@@ -660,13 +654,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return new PersistentUserSessionAdapter(session, model, realm, entity.getUserId(), clientSessions);
     }
 
-    private AuthenticatedClientSessionModel toAdapter(RealmModel realm, UserSessionModel userSession, PersistentClientSessionEntity entity) {
-        String clientId = entity.getClientId();
-        if (isExternalClient(entity)) {
-            clientId = getExternalClientId(entity);
+    private AuthenticatedClientSessionModel toAdapter(RealmModel realm, ClientModel client, UserSessionModel userSession, PersistentClientSessionEntity entity) {
+        if (client == null) {
+            String clientId = entity.getClientId();
+            if (isExternalClient(entity)) {
+                clientId = getExternalClientId(entity);
+            }
+            // can be null if client is not found anymore
+            client = realm.getClientById(clientId);
         }
-        // can be null if client is not found anymore
-        ClientModel client = realm.getClientById(clientId);
 
         PersistentClientSessionModel model = new PersistentClientSessionModel() {
             @Override
@@ -760,6 +756,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .executeUpdate();
     }
 
+    @Override
+    public void removeUserSessions(RealmModel realm) {
+        em.createNamedQuery("deleteClientSessionsByRealm")
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteUserSessionsByRealm")
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
+    }
 
     @Override
     public void close() {

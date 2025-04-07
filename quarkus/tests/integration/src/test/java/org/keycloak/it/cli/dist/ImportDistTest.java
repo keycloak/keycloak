@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -31,28 +32,29 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-@DistributionTest
+@DistributionTest(defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(DistributionTest.SMOKE)
 public class ImportDistTest {
 
     @Test
     void testImport(KeycloakDistribution dist) throws IOException {
         CLIResult cliResult = dist.run("build");
-        
+
         File dir = new File("target");
 
         cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
-        
+
         // add a placeholder into the realm
         ObjectMapper mapper = new ObjectMapper();
         File file = new File(dir, "master-realm.json");
         ObjectNode node = (ObjectNode)mapper.readTree(file);
         node.put("enabled", "${REALM_ENABLED}");
         mapper.writer().writeValue(file, node);
-        
+
         dist.setEnvVar("REALM_ENABLED", "true");
         cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");

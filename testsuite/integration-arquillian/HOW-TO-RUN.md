@@ -270,7 +270,7 @@ An example social.properties file looks like:
     facebook.profile.lastName=Test
 
 In the example above the common username, password and profile are shared for all providers, but Facebook has a
-different last name. Profile informations are used for assertion after login, so you have to set them to be same as
+different last name. Profile information is used for assertion after login, so you have to set it to be same as
 user profile information returned by given social login provider for used sample user.
 
 Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.

@@ -17,14 +17,21 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.tracing.TracingProvider;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -81,41 +88,72 @@ public class PersistentSessionsWorker {
             if (polled != null) {
                 batch.add(polled);
                 queue.drainTo(batch, maxBatchSize - 1);
-                try {
-                    LOG.debugf("Processing %d deferred session updates.", batch.size());
-                    Retry.executeWithBackoff(iteration -> {
-                                if (iteration < 2) {
-                                    // attempt to write whole batch in the first two attempts
-                                    KeycloakModelUtils.runJobInTransaction(factory,
-                                            innerSession -> batch.forEach(c -> c.perform(innerSession)));
-                                    batch.forEach(PersistentUpdate::complete);
-                                } else {
-                                    LOG.warnf("Running single changes in iteration %d for %d entries", iteration, batch.size());
-                                    ArrayList<PersistentUpdate> performedChanges = new ArrayList<>();
-                                    List<Throwable> throwables = new ArrayList<>();
-                                    batch.forEach(change -> {
-                                        try {
-                                            KeycloakModelUtils.runJobInTransaction(factory,
-                                                    change::perform);
-                                            change.complete();
-                                            performedChanges.add(change);
-                                        } catch (Throwable ex) {
-                                            throwables.add(ex);
+                KeycloakModelUtils.runJobInTransaction(factory, outerSession -> {
+                    TracingProvider tracing = outerSession.getProvider(TracingProvider.class);
+                    Tracer process = tracing.getTracer("PersistentSessionsWorker");
+                    SpanBuilder spanBuilder = process.spanBuilder("PersistentSessionsWorker.process");
+                    batch.stream().map(update -> update.getSpan().getSpanContext()).forEach(spanBuilder::addLink);
+                    Span span = tracing.startSpan(spanBuilder);
+                    List<Span> batchSpans = new LinkedList<>();
+                    try {
+                        batch.forEach(persistentUpdate -> {
+                            // This adds another span to the parent span to avoid updating span links after span creation as suggested by the API
+                            SpanBuilder sb = process.spanBuilder("PersistentSessionsWorker.batch");
+                            sb.setParent(Context.current().with(persistentUpdate.getSpan()));
+                            sb.addLink(span.getSpanContext());
+                            batchSpans.add(sb.startSpan());
+                        });
+                        LOG.debugf("Processing %d deferred session updates.", batch.size());
+                        Retry.executeWithBackoff(iteration -> {
+                                    if (iteration < 2) {
+                                        // attempt to write whole batch in the first two attempts
+                                        KeycloakModelUtils.runJobInTransaction(factory,
+                                                innerSession -> batch.forEach(c -> c.perform(innerSession)));
+                                        batch.forEach(PersistentUpdate::complete);
+                                    } else {
+                                        LOG.warnf("Running single changes in iteration %d for %d entries", iteration, batch.size());
+                                        ArrayList<PersistentUpdate> performedChanges = new ArrayList<>();
+                                        List<Throwable> throwables = new ArrayList<>();
+                                        batch.forEach(change -> {
+                                            try {
+                                                KeycloakModelUtils.runJobInTransaction(factory,
+                                                        change::perform);
+                                                change.complete();
+                                                performedChanges.add(change);
+                                            } catch (ModelDuplicateException ex) {
+                                                // duplicate exceptions are unlikely to succeed on a retry,
+                                                tracing.error(ex);
+                                                change.fail(ex);
+                                                performedChanges.add(change);
+                                            } catch (Throwable ex) {
+                                                if (iteration > 20) {
+                                                    // never retry more than 20 times
+                                                    tracing.error(ex);
+                                                    change.fail(ex);
+                                                    performedChanges.add(change);
+                                                } else {
+                                                    throwables.add(ex);
+                                                }
+                                            }
+                                        });
+                                        batch.removeAll(performedChanges);
+                                        if (!throwables.isEmpty()) {
+                                            RuntimeException ex = new RuntimeException("unable to complete some changes");
+                                            throwables.forEach(ex::addSuppressed);
+                                            throw ex;
                                         }
-                                    });
-                                    batch.removeAll(performedChanges);
-                                    if (!throwables.isEmpty()) {
-                                        RuntimeException ex = new RuntimeException("unable to complete some changes");
-                                        throwables.forEach(ex::addSuppressed);
-                                        throw ex;
                                     }
-                                }
-                            },
-                            Duration.of(10, ChronoUnit.SECONDS), 0);
-                } catch (RuntimeException ex) {
-                    batch.forEach(o -> o.fail(ex));
-                    LOG.warnf(ex, "Unable to write %d deferred session updates", batch.size());
-                }
+                                },
+                                Duration.of(10, ChronoUnit.SECONDS), 0);
+                    } catch (RuntimeException ex) {
+                        tracing.error(ex);
+                        batch.forEach(o -> o.fail(ex));
+                        LOG.warnf(ex, "Unable to write %d deferred session updates", batch.size());
+                    } finally {
+                        batchSpans.forEach(Span::end);
+                        tracing.endSpan();
+                    }
+                });
             }
         }
     }

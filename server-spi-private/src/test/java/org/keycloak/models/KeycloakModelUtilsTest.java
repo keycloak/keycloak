@@ -25,9 +25,13 @@ import static org.junit.Assert.assertNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmModelDelegate;
 
 /**
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
@@ -65,6 +69,30 @@ public class KeycloakModelUtilsTest {
         String[] clientIdAndRoleName = KeycloakModelUtils.parseRole("my.client.id.role-name");
 
         assertParsedRoleQualifier(clientIdAndRoleName, "my.client.id", "role-name");
+    }
+
+    // Tests that count of client lookups during KeycloakModelUtils.getRoleFromString is limited (to prevent issues like DoS or OOM in case that incorrect configuration of the role mapper was provided)
+    @Test
+    public void testLimitCountOfClientLookupsDuringGetRoleFromString() {
+        AtomicInteger counter = new AtomicInteger(0);
+
+        RealmModel realm = new RealmModelDelegate(null) {
+
+            @Override
+            public ClientModel getClientByClientId(String clientId) {
+                counter.incrementAndGet();
+                return null;
+            }
+        };
+
+        String badRoleName = ".";
+        for (int i = 0 ; i < 16 ; i++) {
+            badRoleName = badRoleName + badRoleName;
+        }
+        Assert.assertEquals(65536, badRoleName.length());
+
+        Assert.assertNull(KeycloakModelUtils.getRoleFromString(realm, badRoleName));
+        Assert.assertEquals(KeycloakModelUtils.MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE, counter.get());
     }
 
     @Test

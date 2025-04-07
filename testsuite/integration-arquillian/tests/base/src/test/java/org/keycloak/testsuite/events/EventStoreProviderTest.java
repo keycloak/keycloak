@@ -246,6 +246,9 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, StringUtils.repeat(realmId, 100), "clientId", "userId", "127.0.0.1", "error"));
         testing().onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, realmId, "clientId", StringUtils.repeat("userId", 100), "127.0.0.1", "error"));
 
+        EventRepresentation event = create(System.currentTimeMillis() - 30000, EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error");
+        event.setSessionId(StringUtils.repeat("sessionId", 100));
+        testing().onEvent(event);
     }
 
     @Test

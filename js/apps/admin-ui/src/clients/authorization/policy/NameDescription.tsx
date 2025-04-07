@@ -1,18 +1,25 @@
 import { useTranslation } from "react-i18next";
 import { TextAreaControl, TextControl } from "@keycloak/keycloak-ui-shared";
+import { useIsAdminPermissionsClient } from "../../../utils/useIsAdminPermissionsClient";
 
 type NameDescriptionProps = {
-  isDisabled: boolean;
+  isDisabled?: boolean;
+  clientId?: string;
 };
 
-export const NameDescription = ({ isDisabled }: NameDescriptionProps) => {
+export const NameDescription = ({
+  isDisabled,
+  clientId,
+}: NameDescriptionProps) => {
   const { t } = useTranslation();
+  const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId!);
 
   return (
     <>
       <TextControl
         name="name"
         label={t("name")}
+        labelIcon={isAdminPermissionsClient ? t("permissionNameHelpText") : ""}
         rules={{ required: t("required") }}
         isDisabled={isDisabled}
       />

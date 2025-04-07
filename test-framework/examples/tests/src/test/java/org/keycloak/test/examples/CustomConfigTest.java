@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.info.FeatureRepresentation;
-import org.keycloak.test.framework.annotations.InjectAdminClient;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
 
 import java.util.Optional;
-import java.util.Set;
 
 @KeycloakIntegrationTest(config = CustomConfigTest.CustomServerConfig.class)
 public class CustomConfigTest {
@@ -25,11 +25,11 @@ public class CustomConfigTest {
         Assertions.assertTrue(updateEmailFeature.get().isEnabled());
     }
 
-    public static class CustomServerConfig implements KeycloakTestServerConfig {
+    public static class CustomServerConfig implements KeycloakServerConfig {
 
         @Override
-        public Set<String> features() {
-            return Set.of("update-email");
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.UPDATE_EMAIL);
         }
 
     }

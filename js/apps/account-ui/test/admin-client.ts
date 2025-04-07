@@ -30,16 +30,6 @@ export async function useTheme() {
   );
 }
 
-export async function inRealm<T>(realm: string, fn: () => Promise<T>) {
-  const prevRealm = adminClient.realmName;
-  adminClient.realmName = realm;
-  try {
-    return await fn();
-  } finally {
-    adminClient.realmName = prevRealm;
-  }
-}
-
 export async function importRealm(realm: RealmRepresentation) {
   await adminClient.realms.create(realm);
 }
@@ -66,12 +56,16 @@ export async function deleteClient(id: string) {
 
 export async function createIdentityProvider(
   idp: IdentityProviderRepresentation,
+  realm = DEFAULT_REALM,
 ): Promise<string> {
-  return adminClient.identityProviders.create(idp)["id"];
+  return adminClient.identityProviders.create({ ...idp, realm })["id"];
 }
 
-export async function deleteIdentityProvider(alias: string) {
-  await adminClient.identityProviders.del({ alias });
+export async function deleteIdentityProvider(
+  alias: string,
+  realm = DEFAULT_REALM,
+) {
+  await adminClient.identityProviders.del({ alias, realm });
 }
 
 export async function importUserProfile(
@@ -93,9 +87,12 @@ export async function enableLocalization(realm = DEFAULT_REALM) {
   );
 }
 
-export async function createUser(user: UserRepresentation) {
+export async function createUser(
+  user: UserRepresentation,
+  realm = DEFAULT_REALM,
+) {
   try {
-    await adminClient.users.create(user);
+    await adminClient.users.create({ ...user, realm });
   } catch (error) {
     console.error(error);
   }
@@ -104,19 +101,29 @@ export async function createUser(user: UserRepresentation) {
 export async function createRandomUserWithPassword(
   username: string,
   password: string,
+  realm: string,
   props?: UserRepresentation,
 ): Promise<string> {
-  return createUser({
-    username: username,
-    enabled: true,
-    credentials: [
-      {
-        type: "password",
-        value: password,
-      },
-    ],
-    ...props,
-  }).then(() => username);
+  await adminClient.auth({
+    username: "admin",
+    password: "admin",
+    grantType: "password",
+    clientId: "admin-cli",
+  });
+  return createUser(
+    {
+      username: username,
+      enabled: true,
+      credentials: [
+        {
+          type: "password",
+          value: password,
+        },
+      ],
+      ...props,
+    },
+    realm,
+  ).then(() => username);
 }
 
 export async function getUserByUsername(username: string, realm: string) {
@@ -124,11 +131,15 @@ export async function getUserByUsername(username: string, realm: string) {
   return users.length > 0 ? users[0] : undefined;
 }
 
-export async function deleteUser(username: string) {
+export async function deleteUser(username: string, realm = DEFAULT_REALM) {
   try {
-    const users = await adminClient.users.find({ username });
+    const users = await adminClient.users.find({ username, realm });
+    if (users.length === 0) {
+      console.warn(`User ${username} not found in realm ${realm}`);
+      return;
+    }
     const { id } = users[0];
-    await adminClient.users.del({ id: id! });
+    await adminClient.users.del({ id: id!, realm });
   } catch (error) {
     console.error(error);
   }

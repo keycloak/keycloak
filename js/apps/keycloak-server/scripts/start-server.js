@@ -60,7 +60,7 @@ async function startServer() {
     path.join(SERVER_DIR, `bin/kc${SCRIPT_EXTENSION}`),
     [
       "start-dev",
-      `--features="login:v2,account:v3,admin-fine-grained-authz,transient-users,oid4vc-vci,organization"`,
+      `--features="login:v2,account:v3,admin-fine-grained-authz:v2,transient-users,oid4vc-vci,organization,declarative-ui"`,
       ...keycloakArgs,
     ],
     {

@@ -21,6 +21,10 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -38,7 +42,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
     public static final String NAME = "start";
 
     @CommandLine.Mixin
-    OptimizedMixin optimizedMixin;
+    OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
@@ -50,7 +54,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
     protected void doBeforeRun() {
         Environment.updateProfile(true);
         if (Environment.isDevProfile()) {
-            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+            throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
     }
 
@@ -62,5 +66,19 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @Override
     public String getName() {
         return NAME;
+    }
+
+    public static void fastStart(Picocli picocli, boolean dryRun) {
+        try {
+            Start start = new Start();
+            Environment.setParsedCommand(start);
+            PropertyMappers.sanitizeDisabledMappers();
+            start.optimizedMixin.optimized = true;
+            start.dryRunMixin.dryRun = dryRun;
+            start.setPicocli(picocli);
+            start.run();
+        } catch (PropertyException | ProfileException e) {
+            picocli.usageException(e.getMessage(), e.getCause());
+        }
     }
 }

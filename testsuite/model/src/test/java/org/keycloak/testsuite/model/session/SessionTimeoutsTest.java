@@ -44,6 +44,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -93,10 +94,7 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         InfinispanTestUtil.revertTimeService(s);
         RealmModel realm = s.realms().getRealm(realmId);
         s.getContext().setRealm(realm);
-        UserModel user1 = s.users().getUserByUsername(realm, "user1");
-        s.sessions().removeUserSessions(realm);
-        s.sessions().getOfflineUserSessionsStream(realm, user1).forEach(us -> s.sessions().removeOfflineUserSession(realm, us));
-        s.realms().removeRealm(realmId);
+        new RealmManager(s).removeRealm(realm);
 
         super.cleanEnvironment(s);
     }

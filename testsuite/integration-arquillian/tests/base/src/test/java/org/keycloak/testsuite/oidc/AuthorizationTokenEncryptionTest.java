@@ -44,15 +44,15 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.*;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.util.Map;
 
@@ -182,8 +182,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
 
             // get authorization response
             oauth.responseMode("jwt");
-            oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-            OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
             // parse JWE and JOSE Header
             String jweStr = response.getResponse();
@@ -199,7 +198,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);
-            String authorizationTokenString = new String(decodedString, "UTF-8");
+            String authorizationTokenString = new String(decodedString, StandardCharsets.UTF_8);
 
             // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
             JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
@@ -210,7 +209,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
             Assert.assertEquals("test-app", authorizationToken.getAudience()[0]);
             Assert.assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", authorizationToken.getOtherClaims().get("state"));
             Assert.assertNotNull(authorizationToken.getOtherClaims().get("code"));
-        } catch (JWEException | UnsupportedEncodingException e) {
+        } catch (JWEException e) {
             Assert.fail();
         } finally {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -279,9 +278,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
  
             // get authorization response but failed
             oauth.responseMode("jwt");
-            oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
-
-            OAuthClient.AuthorizationEndpointResponse errorResponse =  oauth.doLogin("test-user@localhost", "password");
+            AuthorizationEndpointResponse errorResponse =  oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
             System.out.println(driver.getPageSource().contains("Unexpected error when handling authentication request to identity provider."));
 

@@ -3,7 +3,7 @@
 NEW_VERSION=$1
 
 # Convert NPM version to semver compatible if needed
-if [[ $NEW_VERSION =~ [0-9]+.[0-9]+.[0-9]+.[a-z] ]]; then
+if [[ $NEW_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+\.[a-z] ]]; then
   NEW_NPM_VERSION=$(echo $NEW_VERSION | awk -F '.' '{ print $1"."$2"."$3"+"$4 }')
 else
   NEW_NPM_VERSION=$NEW_VERSION
@@ -26,7 +26,6 @@ sed -i 's/:project_versionDoc: .*/:project_versionDoc: '$NEW_VERSION'/' topics/t
 cd -
 
 # NPM publish
-echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-js/package.json)" > js/libs/keycloak-js/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-admin-client/package.json)" > js/libs/keycloak-admin-client/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/ui-shared/package.json)" > js/libs/ui-shared/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/apps/account-ui/package.json)" > js/apps/account-ui/package.json

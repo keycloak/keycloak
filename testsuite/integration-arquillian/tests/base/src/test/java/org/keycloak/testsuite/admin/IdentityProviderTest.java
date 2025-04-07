@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -77,6 +78,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -169,6 +171,25 @@ public class IdentityProviderTest extends AbstractAdminTest {
         results = realm.identityProviders().find("\"twitter\"", null, 0, 5);
         Assert.assertNames(results, "twitter");
         Assert.assertFalse("Config should be present in full representation", results.iterator().next().getConfig().isEmpty());
+    }
+
+    @Test
+    public void testFindForLoginPreservesOrderByAlias() {
+
+        create(createRep("twitter", "twitter"));
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
+        create(createRep("google", "google"));
+        create(createRep("github", "github"));
+        create(createRep("facebook", "facebook"));
+        create(createRep("stackoverflow", "stackoverflow"));
+        create(createRep("openshift-v4", "openshift-v4"));
+
+        getTestingClient().server(REALM_NAME).run(session -> {
+            // fetch the list of idps available for login (should match all from above list) and ensure they come ordered by alias.
+            List<String> aliases = session.identityProviders().getForLogin(IdentityProviderStorageProvider.FetchMode.ALL, null)
+                    .map(IdentityProviderModel::getAlias).toList();
+            assertThat(aliases, contains("facebook", "github", "google", "linkedin-openid-connect", "openshift-v4", "stackoverflow", "twitter"));
+        });
     }
 
     @Test
@@ -601,18 +622,18 @@ public class IdentityProviderTest extends AbstractAdminTest {
         }
     }
 
-    private IdentityProviderRepresentation createRep(String id, String providerId) {
-        return createRep(id, providerId,true, null);
+    private IdentityProviderRepresentation createRep(String alias, String providerId) {
+        return createRep(alias, providerId,true, null);
     }
 
-    private IdentityProviderRepresentation createRep(String id, String providerId,boolean enabled, Map<String, String> config) {
-        return createRep(id, id, providerId, enabled, config);
+    private IdentityProviderRepresentation createRep(String alias, String providerId,boolean enabled, Map<String, String> config) {
+        return createRep(alias, alias, providerId, enabled, config);
     }
 
-    private IdentityProviderRepresentation createRep(String id, String displayName, String providerId, boolean enabled, Map<String, String> config) {
+    private IdentityProviderRepresentation createRep(String alias, String displayName, String providerId, boolean enabled, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
-        idp.setAlias(id);
+        idp.setAlias(alias);
         idp.setDisplayName(displayName);
         idp.setProviderId(providerId);
         idp.setEnabled(enabled);
@@ -648,10 +669,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
+        /*
+        // disabled to prevent 429 rate limiting on GitHub actions for LinkedIn's
+        // https://www.linkedin.com/oauth/.well-known/openid-configuration discovery URL
         create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
         provider = realm.identityProviders().get("linkedin-openid-connect");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
+        */
 
         create(createRep("microsoft", "microsoft"));
         provider = realm.identityProviders().get("microsoft");

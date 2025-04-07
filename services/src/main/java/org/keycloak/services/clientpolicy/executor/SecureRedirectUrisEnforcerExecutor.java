@@ -142,7 +142,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         public List<String> getAllowPermittedDomains() {
             return allowPermittedDomains;
         }
- 
+
         public void setAllowPermittedDomains(List<String> permittedDomains) {
             this.allowPermittedDomains = permittedDomains;
         }
@@ -173,26 +173,14 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    ClientRepresentation client = ((ClientCRUDContext)context).getProposedClientRepresentation();
-                    List<String> redirectUris = client.getRedirectUris();
-                    if (redirectUris == null || redirectUris.isEmpty()) {
-                        throw invalidRedirectUri(ERR_GENERAL);
-                    }
-                    verifyRedirectUris(client.getRootUrl(), redirectUris);
-                    verifyPostLogoutRedirectUriUpdate(client);
+                    verifyRedirectUris((ClientCRUDContext) context);
                 } else {
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    ClientRepresentation client = ((ClientCRUDContext)context).getProposedClientRepresentation();
-                    List<String> redirectUris = client.getRedirectUris();
-                    if (redirectUris == null || redirectUris.isEmpty()) {
-                        return;
-                    }
-                    verifyRedirectUris(client.getRootUrl(), redirectUris);
-                    verifyPostLogoutRedirectUriUpdate(client);
+                    verifyRedirectUris((ClientCRUDContext) context);
                 } else {
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
@@ -205,10 +193,32 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 if (client == null) {
                     throw invalidRedirectUri("Invalid parameter: clientId");
                 }
-                verifyRedirectUri(redirectUriParam, true);
+                if (isAuthFlowWithRedirectEnabled(client)) {
+                    verifyRedirectUri(redirectUriParam, true);
+                }
                 return;
             default:
         }
+    }
+
+    private void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
+        ClientRepresentation client = context.getProposedClientRepresentation();
+        if (isAuthFlowWithRedirectEnabled(client)) {
+            List<String> redirectUris = client.getRedirectUris();
+            if (redirectUris == null || redirectUris.isEmpty()) {
+                throw invalidRedirectUri(ERR_GENERAL);
+            }
+            verifyRedirectUris(client.getRootUrl(), redirectUris);
+            verifyPostLogoutRedirectUriUpdate(client);
+        }
+    }
+
+    private static boolean isAuthFlowWithRedirectEnabled(ClientModel client) {
+        return client.isStandardFlowEnabled() || client.isImplicitFlowEnabled();
+    }
+
+    private static boolean isAuthFlowWithRedirectEnabled(ClientRepresentation client) {
+        return (client.isStandardFlowEnabled() == null || client.isStandardFlowEnabled() == Boolean.TRUE) || client.isImplicitFlowEnabled() == Boolean.TRUE;
     }
 
     private void verifyPostLogoutRedirectUriUpdate(ClientRepresentation client) throws ClientPolicyException {
@@ -240,7 +250,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             logger.debugv("URISyntaxException - input = {0}, errMessage = {1], errReason = {2}, redirectUri = {3}", e.getInput(), e.getMessage(), e.getReason(), redirectUri);
             throw invalidRedirectUri(ERR_GENERAL);
         }
- 
+
         validation.validate();
     }
 

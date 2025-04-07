@@ -25,28 +25,11 @@
                 </property>
             </activation>
             <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-resources</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>maven-resources-community</directory>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                <resources>
+                    <resource>
+                        <directory>maven-resources-community</directory>
+                    </resource>
+                </resources>
             </build>
         </profile>
         <profile>
@@ -58,15 +41,22 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>lib-build</id>
+                                <id>pnpm-build-lib</id>
                                 <goals>
                                     <goal>pnpm</goal>
                                 </goals>
                                 <configuration>
-                                    <arguments>build</arguments>
-                                    <environmentVariables>
-                                        <LIB>true</LIB>
-                                    </environmentVariables>
+                                    <arguments>build-lib</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pnpm-pack</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>pack --pack-destination=target</arguments>
                                 </configuration>
                             </execution>
                         </executions>
@@ -84,20 +74,10 @@
         </resources>
         <plugins>
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>pack</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>pack --pack-destination=target</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

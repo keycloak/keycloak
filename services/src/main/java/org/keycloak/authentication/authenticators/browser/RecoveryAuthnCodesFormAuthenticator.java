@@ -27,6 +27,9 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
 public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
+    public static final String GENERATED_RECOVERY_AUTHN_CODES_NOTE = "RecoveryAuthnCodes.generatedRecoveryAuthnCodes";
+    public static final String GENERATED_AT_NOTE = "RecoveryAuthnCodes.generatedAt";
+
     public RecoveryAuthnCodesFormAuthenticator(KeycloakSession keycloakSession) {
     }
 
@@ -37,7 +40,8 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
+                .user(context.getUser());
         if (isRecoveryAuthnCodeInputValid(context)) {
             context.success();
         }
@@ -73,8 +77,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                 authnFlowContext.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, responseChallenge);
             } else {
                 result = true;
-                Optional<CredentialModel> optUserCredentialFound = authenticatedUser.credentialManager().getStoredCredentialsByTypeStream(
-                        RecoveryAuthnCodesCredentialModel.TYPE).findFirst();
+                Optional<CredentialModel> optUserCredentialFound = RecoveryAuthnCodesUtils.getCredential(authenticatedUser);
                 RecoveryAuthnCodesCredentialModel recoveryCodeCredentialModel = null;
                 if (optUserCredentialFound.isPresent()) {
                     recoveryCodeCredentialModel = RecoveryAuthnCodesCredentialModel

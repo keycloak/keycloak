@@ -23,13 +23,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
+import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -42,6 +40,8 @@ public final class Configuration {
     public static final char OPTION_PART_SEPARATOR_CHAR = '-';
     public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
     public static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
+
+    private static SmallRyeConfig config;
 
     private Configuration() {
 
@@ -74,7 +74,14 @@ public final class Configuration {
     }
 
     public static synchronized SmallRyeConfig getConfig() {
-        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
+        if (config == null) {
+            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+        }
+        return config;
+    }
+
+    public static void resetConfig() {
+        config = null;
     }
 
     /**
@@ -102,6 +109,10 @@ public final class Configuration {
         }
 
         return getConfig().getPropertyNames();
+    }
+
+    public static ConfigValue getConfigValue(Option<?> option) {
+        return getKcConfigValue(option.getKey());
     }
 
     public static ConfigValue getConfigValue(String propertyName) {
@@ -132,15 +143,12 @@ public final class Configuration {
         return getOptionalValue(name).map(Boolean::parseBoolean);
     }
 
-    public static String getMappedPropertyName(String key) {
-        PropertyMapper<?> mapper = PropertyMappers.getMapper(key);
+    public static Optional<Integer> getOptionalIntegerValue(Option<Integer> option) {
+        return getOptionalIntegerValue(option.getKey());
+    }
 
-        if (mapper == null) {
-            return key;
-        }
-
-        // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
-        return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
+    public static Optional<Integer> getOptionalIntegerValue(String propertyName) {
+        return getConfig().getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName), Integer.class);
     }
 
     public static String toEnvVarFormat(String key) {

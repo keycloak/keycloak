@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -35,8 +37,14 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.events.admin.OperationType;
@@ -80,6 +88,12 @@ public class OrganizationMemberResource {
     @Operation(summary = "Adds the user with the specified id as a member of the organization", description = "Adds, or associates, " +
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
+    @RequestBody(description = "Payload should contain only id of the user to be added to the organization (UUID without quotes).", required = true)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response addMember(String id) {
         id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
         
@@ -112,6 +126,12 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
             description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
                                @FormParam("lastName") String lastName) {
@@ -123,6 +143,11 @@ public class OrganizationMemberResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user to the organization, using the specified user id")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public Response inviteExistingUser(@FormParam("id") String id) {
         return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
     }
@@ -132,16 +157,30 @@ public class OrganizationMemberResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Returns a paginated list of organization members filtered according to the specified parameters")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class, type = SchemaType.ARRAY)))
+    })
     public Stream<MemberRepresentation> search(
             @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max
+            @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
     ) {
-        return provider.getMembersStream(organization, search, exact, first, max).map(this::toRepresentation);
+        Map<String, String> filters = new HashMap<>();
+
+        if (search != null) {
+            filters.put(UserModel.SEARCH, search);
+        }
+
+        if (membershipType != null) {
+            filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
+        }
+
+        return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
     }
 
-    @Path("{id}")
+    @Path("{member-id}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -149,26 +188,34 @@ public class OrganizationMemberResource {
     @Operation( summary = "Returns the member of the organization with the specified id", description = "Searches for a" +
             "user with the given id. If one is found, and is currently a member of the organization, returns it. Otherwise," +
             "an error response with status NOT_FOUND is returned")
-    public MemberRepresentation get(@PathParam("id") String id) {
-        if (StringUtil.isBlank(id)) {
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class))),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public MemberRepresentation get(@PathParam("member-id") String memberId) {
+        if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        return toRepresentation(getMember(id));
+        return toRepresentation(getMember(memberId));
     }
 
-    @Path("{id}")
+    @Path("{member-id}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Removes the user with the specified id from the organization", description = "Breaks the association " +
             "between the user and organization. The user itself is deleted in case the membership is managed, otherwise the user is not deleted. " +
             "If no user is found, or if they are not a member of the organization, an error response is returned")
-    public Response delete(@PathParam("id") String id) {
-        if (StringUtil.isBlank(id)) {
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public Response delete(@PathParam("member-id") String memberId) {
+        if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        UserModel member = getMember(id);
+        UserModel member = getMember(memberId);
 
         if (provider.removeMember(organization, member)) {
             adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
@@ -183,18 +230,22 @@ public class OrganizationMemberResource {
         throw ErrorResponse.error("Not a member of the organization", Status.BAD_REQUEST);
     }
 
-    @Path("{id}/organizations")
+    @Path("{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
-    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("id") String id) {
-        if (StringUtil.isBlank(id)) {
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
+        if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        UserModel member = getUser(id);
+        UserModel member = getUser(memberId);
 
         return provider.getByMember(member).map(ModelToRepresentation::toRepresentation);
     }
@@ -205,6 +256,9 @@ public class OrganizationMemberResource {
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Returns number of members in the organization.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Long.class)))
+    })
     public Long count() {
         return provider.getMembersCount(organization);
     }

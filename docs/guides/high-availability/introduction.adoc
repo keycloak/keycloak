@@ -48,10 +48,10 @@ using ROSA HCP.
 ** Each Openshift cluster has all its workers in a single Availability Zone.
 ** OpenShift version
 <@profile.ifProduct>
-4.16 (or later).
+4.17 (or later).
 </@profile.ifProduct>
 <@profile.ifCommunity>
-4.16.
+4.17.
 </@profile.ifCommunity>
 
 * Amazon Aurora PostgreSQL database

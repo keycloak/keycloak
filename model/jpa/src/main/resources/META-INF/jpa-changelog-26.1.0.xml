@@ -35,9 +35,18 @@
     </changeSet>
 
     <changeSet author="keycloak" id="26.1.0-34013">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="ADMIN_EVENT_ENTITY" columnName="DETAILS_JSON" />
+            </not>
+        </preConditions>
         <addColumn tableName="ADMIN_EVENT_ENTITY">
             <column name="DETAILS_JSON" type="NCLOB" />
         </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.1.0-34380">
+        <dropTable tableName="USERNAME_LOGIN_FAILURE"/>
     </changeSet>
 
 </databaseChangeLog>

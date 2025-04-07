@@ -33,22 +33,35 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the
                        clientSessions cache. Available only when embedded Infinispan clusters
                        configured.
+--cache-embedded-crl-max-count <max-count>
+                     The maximum number of entries that can be stored in-memory by the crl cache.
 --cache-embedded-keys-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the keys cache.
 --cache-embedded-mtls-enabled <true|false>
-                     Encrypts the network communication between Keycloak servers. Default: false.
+                     Encrypts the network communication between Keycloak servers. If no additional
+                       parameters about a keystore and truststore are provided, ephemeral key pairs
+                       and certificates are created and rotated automatically, which is recommended
+                       for standard setups. Default: true. Available only when a TCP based
+                       cache-stack is used.
 --cache-embedded-mtls-key-store-file <file>
                      The Keystore file path. The Keystore must contain the certificate to use by
-                       the TLS protocol. By default, it lookup 'cache-mtls-keystore.p12' under
-                       conf/ directory.
+                       the TLS protocol. By default, it looks up 'cache-mtls-keystore.p12' under
+                       conf/ directory. Available only when property 'cache-embedded-mtls-enabled'
+                       is enabled.
 --cache-embedded-mtls-key-store-password <password>
-                     The password to access the Keystore.
+                     The password to access the Keystore. Available only when property
+                       'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-mtls-rotation-interval-days <days>
+                     Rotation period in days of automatic JGroups MTLS certificates. Default: 30.
+                       Available only when property 'cache-embedded-mtls-enabled' is enabled.
 --cache-embedded-mtls-trust-store-file <file>
                      The Truststore file path. It should contain the trusted certificates or the
                        Certificate Authority that signed the certificates. By default, it lookup
-                       'cache-mtls-truststore.p12' under conf/ directory.
+                       'cache-mtls-truststore.p12' under conf/ directory. Available only when
+                       property 'cache-embedded-mtls-enabled' is enabled.
 --cache-embedded-mtls-trust-store-password <password>
-                     The password to access the Truststore.
+                     The password to access the Truststore. Available only when property
+                       'cache-embedded-mtls-enabled' is enabled.
 --cache-embedded-offline-client-sessions-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        offlineClientSessions cache. Available only when embedded Infinispan
@@ -68,39 +81,32 @@ Cache:
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
 --cache-remote-host <hostname>
-                     The hostname of the remote server for the remote store configuration. It
-                       replaces the 'host' attribute of 'remote-server' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' and 'cache-remote-password' are required
-                       as well and the related configuration in XML file should not be present.
+                     The hostname of the external Infinispan cluster. Available only when feature
+                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
+                       Required when feature 'multi-site' or 'clusterless' is set.
 --cache-remote-password <password>
-                     The password for the authentication to the remote server for the remote store.
-                       It replaces the 'password' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-username' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
---cache-remote-port <port>
-                     The port of the remote server for the remote store configuration. It replaces
-                       the 'port' attribute of 'remote-server' tag of the configuration specified
-                       via XML file (see 'cache-config-file' option.). Default: 11222. Available
+                     The password for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-username' is required as well. Available
                        only when remote host is set.
+--cache-remote-port <port>
+                     The port of the external Infinispan cluster. Default: 11222. Available only
+                       when remote host is set.
 --cache-remote-tls-enabled <true|false>
                      Enable TLS support to communicate with a secured remote Infinispan server.
                        Recommended to be enabled in production. Default: true. Available only when
                        remote host is set.
 --cache-remote-username <username>
-                     The username for the authentication to the remote server for the remote store.
-                       It replaces the 'username' attribute of 'digest' tag of the configuration
-                       specified via XML file (see 'cache-config-file' option.). If the option is
-                       specified, 'cache-remote-password' is required as well and the related
-                       configuration in XML file should not be present. Available only when remote
-                       host is set.
+                     The username for the authentication to the external Infinispan cluster. It is
+                       optional if connecting to an unsecure external Infinispan cluster. If the
+                       option is specified, 'cache-remote-password' is required as well. Available
+                       only when remote host is set.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
-                       Possible values are: tcp, udp, jdbc-ping, jdbc-ping-udp, kubernetes, ec2
-                       (deprecated), azure (deprecated), google (deprecated), or a custom one.
-                       Default: jdbc-ping-udp. Available only when 'cache' type is set to 'ispn'.
+                       Possible values are: jdbc-ping, kubernetes, jdbc-ping-udp (deprecated), tcp
+                       (deprecated), udp (deprecated), ec2 (deprecated), azure (deprecated), google
+                       (deprecated), or a custom one. Default: jdbc-ping. Available only when
+                       'cache' type is set to 'ispn'.
 
 Config:
 
@@ -240,6 +246,14 @@ Management:
                      The file path to a private key in PEM format for the management server. If not
                        given, the value is inherited from HTTP options. Relevant only when
                        something is exposed on the management interface - see the guide for details.
+--https-management-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-management-* options for the management server. May be a
+                       java.time.Duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
+                       to disable. If not given, the value is inherited from HTTP options. Relevant
+                       only when something is exposed on the management interface - see the guide
+                       for details. Default: 1h.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
@@ -260,7 +274,8 @@ Proxy:
 --proxy-protocol-enabled <true|false>
                      Whether the server should use the HA PROXY protocol when serving requests from
                        behind a proxy. When set to true, the remote address returned will be the
-                       one from the actual connecting client. Default: false.
+                       one from the actual connecting client. Cannot be enabled when the
+                       `proxy-headers` is used. Default: false.
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.
@@ -291,13 +306,17 @@ Logging:
                      Include tracing information in the console log. If the 'log-console-format'
                        option is specified, this option has no effect. Default: true. Available
                        only when Console log handler and Tracing is activated.
+--log-console-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when Console log handler is activated and
+                       output is set to 'json'.
 --log-console-level <level>
                      Set the log level for the console handler. It specifies the most verbose log
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when Console log handler is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
@@ -312,13 +331,17 @@ Logging:
                      Include tracing information in the file log. If the 'log-file-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        File log handler and Tracing is activated.
+--log-file-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when File log handler is activated and
+                       output is set to 'json'.
 --log-file-level <level>
                      Set the log level for the file handler. It specifies the most verbose log
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when File log handler is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when File log handler is activated.
 --log-file-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
@@ -327,6 +350,10 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+--log-level-<category> <level>
+                     The log level of a category. Takes precedence over the 'log-level' option.
+                       Possible values are (case insensitive): off, fatal, error, warn, info,
+                       debug, trace, all.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
@@ -340,13 +367,17 @@ Logging:
                      Include tracing information in the Syslog. If the 'log-syslog-format' option
                        is specified, this option has no effect. Default: true. Available only when
                        Syslog handler and Tracing is activated.
+--log-syslog-json-format <format>
+                     Set the format of the produced JSON. Possible values are: default, ecs.
+                       Default: default. Available only when Syslog is activated and output is set
+                       to 'json'.
 --log-syslog-level <level>
                      Set the log level for the Syslog handler. It specifies the most verbose log
                        level for logs shown in the output. It respects levels specified in the
                        'log-level' option, which represents the maximal verbosity for the whole
                        logging system. For more information, check the Logging guide. Possible
-                       values are: off, fatal, error, warn, info, debug, trace, all. Default: all.
-                       Available only when Syslog is activated.
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Syslog is activated.
 --log-syslog-max-length <max-length>
                      Set the maximum length, in bytes, of the message allowed to be sent. The
                        length includes the header and the message. If not set, the default value is
@@ -363,42 +394,41 @@ Logging:
                      Set the Syslog type used to format the sent message. Possible values are:
                        rfc5424, rfc3164. Default: rfc5424. Available only when Syslog is activated.
 
-Tracing (Preview):
+Tracing:
 
 --tracing-compression <method>
-                     Preview: OpenTelemetry compression method used to compress payloads. If unset,
+                     OpenTelemetry compression method used to compress payloads. If unset,
                        compression is disabled. Possible values are: gzip, none. Default: none.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                       Available only when Tracing is enabled.
 --tracing-endpoint <url>
-                     Preview: OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
+                       Available only when Tracing is enabled.
 --tracing-protocol <protocol>
-                     Preview: OpenTelemetry protocol used for the telemetry data. Possible values
-                       are: grpc, http/protobuf. Default: grpc. Available only when 'opentelemetry'
-                       feature and Tracing is enabled.
+                     OpenTelemetry protocol used for the telemetry data. Possible values are: grpc,
+                       http/protobuf. Default: grpc. Available only when Tracing is enabled.
 --tracing-resource-attributes <attributes>
-                     Preview: OpenTelemetry resource attributes present in the exported trace to
+                     OpenTelemetry resource attributes present in the exported trace to
                        characterize the telemetry producer. Values in format 'key1=val1,key2=val2'.
-                       For more information, check the Tracing guide. Available only when
-                       'opentelemetry' feature and Tracing is enabled.
+                       For more information, check the Tracing guide. Available only when Tracing
+                       is enabled.
 --tracing-sampler-ratio <ratio>
-                     Preview: OpenTelemetry sampler ratio. Probability that a span will be sampled.
-                       Expected double value in interval <0,1). Default: 1.0. Available only when
-                       'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
+                       double value in interval <0,1). Default: 1.0. Available only when Tracing is
+                       enabled.
 --tracing-service-name <name>
-                     Preview: OpenTelemetry service name. Takes precedence over 'service.name'
-                       defined in the 'tracing-resource-attributes' property. Default: keycloak.
-                       Available only when 'opentelemetry' feature and Tracing is enabled.
+                     OpenTelemetry service name. Takes precedence over 'service.name' defined in
+                       the 'tracing-resource-attributes' property. Default: keycloak. Available
+                       only when Tracing is enabled.
 
-Events (Preview):
+Events:
 
 --event-metrics-user-events <events>
-                     Preview: Comma-separated list of events to be collected for user event
-                       metrics. Reduce the number of metrics. If empty or not set, all events
-                       create a metric. Available only when user event metrics are enabled.
+                     Comma-separated list of events to be collected for user event metrics. This
+                       option can be used to reduce the number of metrics created as by default all
+                       user events create a metric. Possible values are:<...>
 --event-metrics-user-tags <tags>
-                     Preview: Comma-separated list of tags to be collected for user event metrics.
-                       By default only 'realm' is enabled to avoid a high metrics cardinality.
+                     Comma-separated list of tags to be collected for user event metrics. By
+                       default only 'realm' is enabled to avoid a high metrics cardinality.
                        Possible values are: realm, idp, clientId. Default: realm. Available only
                        when user event metrics are enabled.
 

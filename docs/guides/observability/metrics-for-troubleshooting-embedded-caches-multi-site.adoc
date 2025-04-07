@@ -1,0 +1,22 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Embedded Infinispan metrics for multi-site deployments"
+summary="Learn about metrics monitoring caching health"
+tileVisible="false"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+:jgrp_application: {project_name}
+
+include::partials/ispn_metrics.adoc[leveloffset=+1]
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or proceed to <@links.observability id="metrics-for-troubleshooting-external-infinispan-multi-site"/>.
+
+</@tmpl.guide>

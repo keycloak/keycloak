@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oid4vc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -32,20 +33,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
-import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.VCSigningServiceProviderFactory;
-import org.keycloak.protocol.oid4vc.issuance.signing.VerifiableCredentialsSigningService;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.managers.AppAuthManager;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -58,11 +49,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     public static final String PROTOCOL_ID = "oid4vc";
 
-    private static final String ISSUER_DID_REALM_ATTRIBUTE_KEY = "issuerDid";
-    private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
-    private static final int DEFAULT_CODE_LIFESPAN_S = 30;
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLIENT_ROLES_MAPPER = "client-roles";
     private static final String USERNAME_MAPPER = "username";
     private static final String SUBJECT_ID_MAPPER = "subject-id";
@@ -97,42 +83,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         return builtins;
     }
 
-    private void addServiceFromComponent(Map<String, VerifiableCredentialsSigningService> signingServices, KeycloakSession keycloakSession, ComponentModel componentModel) {
-        ProviderFactory<VerifiableCredentialsSigningService> factory = keycloakSession
-                .getKeycloakSessionFactory()
-                .getProviderFactory(VerifiableCredentialsSigningService.class, componentModel.getProviderId());
-        if (factory instanceof VCSigningServiceProviderFactory sspf) {
-            VerifiableCredentialsSigningService verifiableCredentialsSigningService = sspf.create(keycloakSession, componentModel);
-            signingServices.put(verifiableCredentialsSigningService.locator(), verifiableCredentialsSigningService);
-        } else {
-            throw new IllegalArgumentException(String.format("The component %s is not a VerifiableCredentialsSigningServiceProviderFactory", componentModel.getProviderId()));
-        }
-
-    }
 
     @Override
     public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
-
-        Map<String, VerifiableCredentialsSigningService> signingServices = new HashMap<>();
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        realm.getComponentsStream(realm.getId(), VerifiableCredentialsSigningService.class.getName())
-                .forEach(cm -> addServiceFromComponent(signingServices, keycloakSession, cm));
-
-        RealmModel realmModel = keycloakSession.getContext().getRealm();
-        String issuerDid = Optional.ofNullable(realmModel.getAttribute(ISSUER_DID_REALM_ATTRIBUTE_KEY))
-                .orElseThrow(() -> new VCIssuerException("No issuer-did  configured."));
-        int preAuthorizedCodeLifespan = Optional.ofNullable(realmModel.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CODE_LIFESPAN_S);
-
-        return new OID4VCIssuerEndpoint(
-                keycloakSession,
-                issuerDid,
-                signingServices,
-                new AppAuthManager.BearerTokenAuthenticator(keycloakSession),
-                OBJECT_MAPPER,
-                new OffsetTimeProvider(),
-                preAuthorizedCodeLifespan);
+        return new OID4VCIssuerEndpoint(keycloakSession);
     }
 
     @Override

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -47,7 +46,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
@@ -103,8 +102,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		// login using another session
 		configureRequiredActionsToUser("test-user@localhost");
 		UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
-		OAuthClient oauth2 = new OAuthClient();
-		oauth2.init(driver2);
+		OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 		oauth2.doLogin("test-user@localhost", "password");
 		EventRepresentation event1 = events.expectLogin().assertEvent();
 		assertEquals(1, testUser.getUserSessions().size());

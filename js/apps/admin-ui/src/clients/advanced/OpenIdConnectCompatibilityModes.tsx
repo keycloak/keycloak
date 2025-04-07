@@ -3,9 +3,10 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 type OpenIdConnectCompatibilityModesProps = {
   save: () => void;
@@ -19,7 +20,17 @@ export const OpenIdConnectCompatibilityModes = ({
   hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const { control, watch } = useFormContext();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const tokenExchangeEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.standard.token.exchange.enabled",
+    ),
+  );
+  const useRefreshTokens = watch(
+    convertAttributeNameToForm<FormFields>("attributes.use.refresh.tokens"),
+    "true",
+  );
   return (
     <FormAccess
       role="manage-clients"
@@ -171,6 +182,28 @@ export const OpenIdConnectCompatibilityModes = ({
           )}
         />
       </FormGroup>
+
+      {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+        <SelectControl
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.standard.token.exchange.enableRefreshRequestedTokenType",
+          )}
+          label={t("enableRefreshRequestedTokenType")}
+          labelIcon={t("enableRefreshRequestedTokenTypeHelp")}
+          controller={{
+            defaultValue: "",
+          }}
+          isDisabled={
+            tokenExchangeEnabled?.toString() !== "true" ||
+            useRefreshTokens?.toString() !== "true"
+          }
+          options={[
+            { key: "", value: t("choose") },
+            { key: "NO", value: t("no") },
+            { key: "SAME_SESSION", value: t("sameSession") },
+          ]}
+        />
+      )}
       <ActionGroup>
         <Button
           variant="secondary"

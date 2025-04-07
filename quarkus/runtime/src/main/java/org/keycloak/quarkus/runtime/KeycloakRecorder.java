@@ -23,7 +23,6 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
-import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -31,6 +30,7 @@ import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.commons.util.FileLookupFactory;
+import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -38,6 +38,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -69,9 +70,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConf
 
 @Recorder
 public class KeycloakRecorder {
-
-    public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
-    public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
     private static final Logger logger = Logger.getLogger(KeycloakRecorder.class);
 
@@ -169,20 +167,11 @@ public class KeycloakRecorder {
         DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
 
-    public void registerShutdownHook(ShutdownContext shutdownContext) {
-        shutdownContext.addShutdownTask(new Runnable() {
-            @Override
-            public void run() {
-                QuarkusKeycloakSessionFactory.getInstance().close();
-            }
-        });
-    }
-
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
         return new HibernateOrmIntegrationRuntimeInitListener() {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
-                InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
+                try (InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
                         AgroalDataSource.class, new DataSource() {
                             @Override public Class<? extends Annotation> annotationType() {
                                 return DataSource.class;
@@ -191,8 +180,9 @@ public class KeycloakRecorder {
                             @Override public String value() {
                                 return name;
                             }
-                        });
-                propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+                        })) {
+                    propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+                }
             }
         };
     }
@@ -220,5 +210,9 @@ public class KeycloakRecorder {
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when configuring the crypto provider: " + cryptoProvider, cause);
         }
+    }
+
+    public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
+        Marshalling.setSchemas(schemas);
     }
 }

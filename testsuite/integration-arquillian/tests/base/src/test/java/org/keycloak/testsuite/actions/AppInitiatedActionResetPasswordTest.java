@@ -37,13 +37,15 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
@@ -110,7 +112,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             testingClient.server().run(session -> {
                 // ensure that our logic to detect the authentication session works as expected
                 RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-                assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId));
             });
 
             changePasswordPage.changePassword("new-password", "new-password");
@@ -138,8 +141,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
             events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -268,8 +271,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void checkLogoutSessions() {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -301,8 +303,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void uncheckLogoutSessions() {
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
 

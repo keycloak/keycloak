@@ -100,6 +100,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setQuickLoginCheckMilliSeconds(Long value) {
+        rep.setQuickLoginCheckMilliSeconds(value);
+        return this;
+    }
+
     public RealmAttributeUpdater setEventsListeners(List<String> eventListanets) {
         rep.setEventsListeners(eventListanets);
         return this;
@@ -205,6 +210,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setRegistrationAllowed(Boolean registrationAllowed) {
         rep.setRegistrationAllowed(registrationAllowed);
+        return this;
+    }
+
+    public RealmAttributeUpdater setAdminPermissionsEnabled(Boolean adminPermissionsEnabled) {
+        rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
         return this;
     }
 }

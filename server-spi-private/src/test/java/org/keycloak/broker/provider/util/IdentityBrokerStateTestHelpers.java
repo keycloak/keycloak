@@ -1621,6 +1621,15 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public ClientModel getAdminPermissionsClient() {
+            return null;
+        }
+
+        @Override
+        public void setAdminPermissionsClient(ClientModel client) {
+        }
+
+        @Override
         public boolean isIdentityFederationEnabled() {
             return false;
         }
@@ -1817,6 +1826,15 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setOrganizationsEnabled(boolean organizationsEnabled) {
+        }
+
+        @Override
+        public boolean isAdminPermissionsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
         }
 
         @Override

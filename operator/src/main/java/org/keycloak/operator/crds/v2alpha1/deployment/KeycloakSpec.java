@@ -28,8 +28,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -42,6 +44,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {
@@ -119,6 +122,18 @@ public class KeycloakSpec {
     @JsonProperty("bootstrapAdmin")
     @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for inital cluster creation.")
     private BootstrapAdminSpec bootstrapAdminSpec;
+
+    @JsonProperty("networkPolicy")
+    @JsonPropertyDescription("Controls the ingress traffic flow into Keycloak pods.")
+    private NetworkPolicySpec networkPolicySpec;
+
+    @JsonProperty("tracing")
+    @JsonPropertyDescription("In this section you can configure OpenTelemetry Tracing for Keycloak.")
+    private TracingSpec tracingSpec;
+
+    @JsonProperty("update")
+    @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
+    private UpdateSpec updateSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -269,12 +284,36 @@ public class KeycloakSpec {
     public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
         this.schedulingSpec = schedulingSpec;
     }
-    
+
     public BootstrapAdminSpec getBootstrapAdminSpec() {
         return bootstrapAdminSpec;
     }
 
     public void setBootstrapAdminSpec(BootstrapAdminSpec bootstrapAdminSpec) {
         this.bootstrapAdminSpec = bootstrapAdminSpec;
+    }
+
+    public NetworkPolicySpec getNetworkPolicySpec() {
+        return networkPolicySpec;
+    }
+
+    public void setNetworkPolicySpec(NetworkPolicySpec networkPolicySpec) {
+        this.networkPolicySpec = networkPolicySpec;
+    }
+
+    public TracingSpec getTracingSpec() {
+        return tracingSpec;
+    }
+
+    public void setTracingSpec(TracingSpec tracingSpec) {
+        this.tracingSpec = tracingSpec;
+    }
+
+    public UpdateSpec getUpdateSpec() {
+        return updateSpec;
+    }
+
+    public void setUpdateSpec(UpdateSpec updateSpec) {
+        this.updateSpec = updateSpec;
     }
 }

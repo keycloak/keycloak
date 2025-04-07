@@ -162,7 +162,7 @@ public class SessionCodeChecks {
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
         AuthenticationSessionModel authSession = null;
         if (authSessionId != null)
-            authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
+            authSession = authSessionManager.getAuthenticationSessionByEncodedIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
         if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {

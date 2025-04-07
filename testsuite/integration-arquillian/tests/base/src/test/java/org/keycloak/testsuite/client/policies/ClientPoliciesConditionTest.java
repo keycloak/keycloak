@@ -54,6 +54,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -81,7 +82,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
@@ -199,8 +200,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
 
         try {
             failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_NONCE);
-            oauth.nonce("yesitisnonce");
-            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret, "yesitisnonce", "somestate");
         } catch (Exception e) {
             fail();
         }
@@ -343,7 +343,7 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
     }
 
     @Test
-    public void testClientScopesCondition() throws Exception {
+    public void testClientScopesOptionalCondition() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
@@ -383,6 +383,65 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         } catch (Exception e) {
             fail();
         }
+    }
+
+    @Test
+    public void testClientScopesAnyCondition() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                        .addExecutor(PKCEEnforcerExecutorFactory.PROVIDER_ID,
+                                createPKCEEnforceExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, List.of("email", "microprofile-jwt")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        String id = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+        });
+
+
+        String emailClientScopeId = adminClient.realm(REALM_NAME)
+                .getDefaultDefaultClientScopes().stream()
+                .filter(scope -> "email".equals(scope.getName()))
+                .map(ClientScopeRepresentation::getId)
+                .findAny()
+                .orElse(null);
+
+        //remove email default client scope
+        adminClient.realm(REALM_NAME).clients().get(id).removeDefaultClientScope(emailClientScopeId);
+
+        try {
+            //condition evaluates false
+            oauth.scope("address" + " " + "phone");
+            successfulLoginAndLogout(clientId, clientSecret);
+
+            //condition evaluates true because of microprofile-jwt optional client scope
+            oauth.scope("microprofile-jwt" + " " + "profile");
+            failLoginByNotFollowingPKCE(clientId);
+
+            adminClient.realm(REALM_NAME).clients().get(id).addDefaultClientScope(emailClientScopeId);
+            oauth.scope(null);
+            //condition evaluates true because of email default client scope
+            failLoginByNotFollowingPKCE(clientId);
+
+            successfulLoginAndLogoutWithPKCE(clientId, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
+        } catch (Exception e) {
+            fail();
+        }
+
     }
 
     @Test
@@ -581,9 +640,9 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         String origClientId = oauth.getClientId();
-        oauth.clientId("service-account-app");
+        oauth.client("service-account-app", "app-secret");
         try {
-            OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("app-secret");
+            AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
             assertEquals(400, response.getStatusCode());
             assertEquals(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST.toString(), response.getError());
             assertEquals("Exception thrown intentionally", response.getErrorDescription());

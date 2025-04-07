@@ -178,9 +178,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         } else {
                             String url = config.get("url");
                             String driver = config.get("driver");
-                            if (driver.equals("org.h2.Driver")) {
-                                url = addH2NonKeywords(url);
-                            }
+                            url = augmentJdbcUrl(driver, url);
                             properties.put(AvailableSettings.JAKARTA_JDBC_URL, url);
                             properties.put(AvailableSettings.JAKARTA_JDBC_DRIVER, driver);
 
@@ -373,15 +371,23 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             } else {
                 String url = config.get("url");
                 String driver = config.get("driver");
-                if (driver.equals("org.h2.Driver")) {
-                    url = addH2NonKeywords(url);
-                }
+                url = augmentJdbcUrl(driver, url);
                 Class.forName(driver);
-                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()), config.get("user"), config.get("password"));
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(url, System.getProperties()::getProperty), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);
         }
+    }
+
+    private String augmentJdbcUrl(String driver, String url) {
+        if (driver.equals("org.postgresql.xa.PGXADataSource") || driver.equals("org.postgresql.Driver")) {
+            url = addPostgreSQLKeywords(url);
+        }
+        if (driver.equals("org.h2.Driver")) {
+            url = addH2NonKeywords(url);
+        }
+        return url;
     }
 
     @Override
@@ -431,6 +437,24 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     private String addH2NonKeywords(String jdbcUrl) {
         if (!jdbcUrl.contains("NON_KEYWORDS=")) {
             jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
+        }
+        return jdbcUrl;
+    }
+
+    /**
+     * For a PostgreSQL cluster, Keycloak would need to connect to the primary node that is writable.
+     * The `targetServerType` should avoid connecting to a reader instance accidentally during node failover.
+
+     * @return JDBC URL with <code>targetServerType=primary</code> appended if the URL doesn't contain <code>targetServerType=</code> yet
+     */
+    private String addPostgreSQLKeywords(String jdbcUrl) {
+        if (!jdbcUrl.contains("targetServerType=")) {
+            if (jdbcUrl.contains("?")) {
+                jdbcUrl = jdbcUrl + "&";
+            } else {
+                jdbcUrl = jdbcUrl + "?";
+            }
+            jdbcUrl = jdbcUrl + "targetServerType=primary";
         }
         return jdbcUrl;
     }

@@ -28,11 +28,10 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
@@ -43,8 +42,6 @@ import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestCont
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -81,13 +78,11 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         UserModel clientUser = session.users().getServiceAccount(client);
-        ClientScopeModel serviceAccountScope = KeycloakModelUtils.getClientScopeByName(client.getRealm(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
-
-        if (clientUser == null || (serviceAccountScope != null && !client.getClientScopes(true).containsKey(serviceAccountScope.getId()))) {
-            // May need to handle bootstrap here as well
-            logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
-            new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            clientUser = session.users().getServiceAccount(client);
+        if (clientUser == null) {
+            event.detail(Details.REASON, "The associated service account for the client does not exist");
+            event.error(Errors.USER_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "The associated service account for the client does not exist", Response.Status.UNAUTHORIZED);
         }
 
         String clientUsername = clientUser.getUsername();
@@ -121,22 +116,25 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
-                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
+                clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
         event.session(userSession);
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
 
         // Notes about client details
         userSession.setNote(ServiceAccountConstants.CLIENT_ID_SESSION_NOTE, client.getClientId()); // This is for backwards compatibility
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
         userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
-        userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());
+        userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteHost());
 
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenRequestContext(formParams, clientSessionCtx.getClientSession()));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -155,6 +153,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
             }
         } else {
             responseBuilder.getAccessToken().setSessionId(null);
+            event.session((String) null);
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
@@ -167,7 +166,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         try {
             session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
         } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

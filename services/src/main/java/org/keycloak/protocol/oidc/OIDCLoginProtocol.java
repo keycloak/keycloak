@@ -110,6 +110,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PROMPT_VALUE_NONE = "none";
     public static final String PROMPT_VALUE_LOGIN = "login";
     public static final String PROMPT_VALUE_CONSENT = "consent";
+    public static final String PROMPT_VALUE_CREATE = "create";
     public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
 
     // Client authentication methods
@@ -135,6 +136,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PKCE_METHOD_PLAIN = "plain";
     public static final String PKCE_METHOD_S256 = "S256";
 
+    // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
+    public static final String DPOP_JKT = "dpop_jkt";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
@@ -150,6 +154,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
     protected OIDCResponseType responseType;
     protected OIDCResponseMode responseMode;
 
+    protected OIDCProviderConfig providerConfig;
+
     public OIDCLoginProtocol(KeycloakSession session, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, EventBuilder event) {
         this.session = session;
         this.realm = realm;
@@ -158,8 +164,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
         this.event = event;
     }
 
-    public OIDCLoginProtocol() {
-
+    public OIDCLoginProtocol(OIDCProviderConfig providerConfig) {
+        this.providerConfig = providerConfig;
     }
 
     private void setupResponseTypeAndMode(String responseType, String responseMode) {
@@ -197,6 +203,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public OIDCLoginProtocol setEventBuilder(EventBuilder event) {
         this.event = event;
         return this;
+    }
+
+    public OIDCProviderConfig getConfig() {
+        return this.providerConfig;
     }
 
     @Override
@@ -248,6 +258,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                authSession.getClientNote(OIDCLoginProtocol.DPOP_JKT),
                 userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
@@ -281,6 +292,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
             try {
                 session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
             } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());

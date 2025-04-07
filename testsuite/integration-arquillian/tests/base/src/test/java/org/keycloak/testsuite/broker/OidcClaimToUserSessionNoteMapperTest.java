@@ -24,7 +24,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -135,13 +136,13 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     }
 
     private AccessToken login() {
-        OAuthClient.AuthorizationEndpointResponse authzResponse = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
-                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account")
-                .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        oauth.realm(bc.consumerRealmName())
+                .client("broker-app", consumerClientRep.getSecret())
+                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account");
+        AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
 
         String code = authzResponse.getCode();
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, consumerClientRep.getSecret());
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         return toAccessToken(response.getAccessToken());
     }
 

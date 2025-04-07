@@ -404,7 +404,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
 
@@ -413,8 +413,7 @@ public class AuthenticationManagementResource {
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(data).success();
 
-        return Response.status(Response.Status.CREATED).build();
-
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(copy.getId()).build()).build();
     }
 
     public static AuthenticationFlowModel copyFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel flow, String newName) {
@@ -652,7 +651,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("Flow not found");
         }
         List<AuthenticationExecutionInfoRepresentation> result = new LinkedList<>();
@@ -661,6 +660,19 @@ public class AuthenticationManagementResource {
 
         recurseExecutions(flow, result, level);
         return result;
+    }
+
+    private String getAuthenticationConfig(String flowAlias, AuthenticationExecutionModel model) {
+        if (model.getAuthenticatorConfig() == null) {
+            return null;
+        }
+        AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
+        if (config == null) {
+            logger.warnf("Authenticator configuration '%s' is missing for execution '%s' (%s) in flow '%s'",
+                    model.getAuthenticatorConfig(), model.getId(), model.getAuthenticator(), flowAlias);
+            return null;
+        }
+        return config.getId();
     }
 
     public void recurseExecutions(AuthenticationFlowModel flow, List<AuthenticationExecutionInfoRepresentation> result, int level) {
@@ -682,7 +694,7 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                     rep.setProviderId(execution.getAuthenticator());
-                    rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                    rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 } else if (AuthenticationFlow.CLIENT_FLOW.equals(flowRef.getProviderId())) {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.REQUIRED.name());
@@ -732,7 +744,7 @@ public class AuthenticationManagementResource {
                 }
 
                 rep.setProviderId(providerId);
-                rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
+                rep.setAuthenticationConfig(getAuthenticationConfig(flow.getAlias(), execution));
                 result.add(rep);
             }
         });
@@ -757,7 +769,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
         if (flow == null) {
-            logger.debug("flow not found: " + flowAlias);
+            logger.debugf("flow not found: %s", flowAlias);
             throw new NotFoundException("flow not found");
         }
 
@@ -832,7 +844,7 @@ public class AuthenticationManagementResource {
     @Operation( summary = "Get Single Execution")
     public AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId) {
     	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
-        auth.realm().requireManageRealm();
+        auth.realm().requireViewRealm();
 
         final Optional<AuthenticationExecutionModel> model = Optional.ofNullable(realm.getAuthenticationExecutionById(executionId));
         if (!model.isPresent()) {

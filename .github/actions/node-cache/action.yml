@@ -8,14 +8,20 @@ runs:
       id: tooling-versions
       shell: bash
       run: |
-        echo "node=$(./mvnw help:evaluate -Dexpression=node.version -q -DforceStdout | cut -c 2-)" >> $GITHUB_OUTPUT
-        echo "pnpm=$(./mvnw help:evaluate -Dexpression=pnpm.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        echo "node=$(cat js/pom.xml | grep '<node.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 2-)" >> $GITHUB_OUTPUT
+        echo "pnpm=$(cat js/pom.xml | grep '<pnpm.version>' | cut -d '>' -f 2 | cut -d '<' -f 1 | cut -c 1-)" >> $GITHUB_OUTPUT
 
     # Downloading Node.js often fails due to network issues, therefore we cache the artifacts downloaded by the frontend plugin.
     - uses: actions/cache@v4
+      id: cache-binaries
       name: Cache Node.js and PNPM binaries
       with:
         path: |
           ~/.m2/repository/com/github/eirslett/node
           ~/.m2/repository/com/github/eirslett/pnpm
         key: ${{ runner.os }}-frontend-plugin-artifacts-${{ steps.tooling-versions.outputs.node }}-${{ steps.tooling-versions.outputs.pnpm }}
+
+    - name: Download Node.js and PNPM
+      if: steps.cache-binaries.outputs.cache-hit != 'true'
+      shell: bash
+      run: ./.github/scripts/download-node-tooling.sh ${{ steps.tooling-versions.outputs.node }} ${{ steps.tooling-versions.outputs.pnpm }}

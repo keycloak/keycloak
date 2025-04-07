@@ -1,25 +1,24 @@
 package org.keycloak.test.examples;
 
-import com.nimbusds.oauth2.sdk.GeneralException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.events.EventType;
-import org.keycloak.test.framework.annotations.InjectEvents;
-import org.keycloak.test.framework.annotations.InjectOAuthClient;
-import org.keycloak.test.framework.ui.annotations.InjectPage;
-import org.keycloak.test.framework.ui.annotations.InjectWebDriver;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.events.Events;
-import org.keycloak.test.framework.oauth.OAuthClient;
-import org.keycloak.test.framework.ui.page.LoginPage;
-import org.keycloak.test.framework.server.KeycloakTestServerConfig;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
-import java.io.IOException;
-import java.net.URL;
-
-@KeycloakIntegrationTest(config = EventsTest.ServerConfig.class)
+@KeycloakIntegrationTest
 public class EventsTest {
+
+    @InjectRealm
+    private ManagedRealm realm;
 
     @InjectEvents
     private Events events;
@@ -27,34 +26,38 @@ public class EventsTest {
     @InjectOAuthClient
     private OAuthClient oAuthClient;
 
-    @InjectWebDriver
-    private WebDriver webDriver;
-
-    @InjectPage
-    private LoginPage loginPage;
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
-    public void testFailedLogin() throws GeneralException, IOException {
-        URL authorizationRequestURL = oAuthClient.authorizationRequest();
-        webDriver.navigate().to(authorizationRequestURL);
-        loginPage.fillLogin("invalid", "invalid");
-        loginPage.submit();
+    public void testFailedLogin() {
+        oAuthClient.doPasswordGrantRequest("invalid", "invalid");
 
-        Assertions.assertEquals(EventType.LOGIN_ERROR, events.poll().getType());
+        EventRepresentation event = events.poll();
+        Assertions.assertEquals(EventType.LOGIN_ERROR.name(), event.getType());
+        Assertions.assertEquals("invalid", event.getDetails().get("username"));
+
+        oAuthClient.doPasswordGrantRequest("invalid2", "invalid");
+
+        event = events.poll();
+        Assertions.assertEquals(EventType.LOGIN_ERROR.name(), event.getType());
+        Assertions.assertEquals("invalid2", event.getDetails().get("username"));
     }
 
     @Test
-    public void testClientLogin() throws GeneralException, IOException {
-        oAuthClient.clientCredentialGrant();
+    public void testTimeOffset() {
+        timeOffSet.set(60);
 
-        Assertions.assertEquals(EventType.CLIENT_LOGIN, events.poll().getType());
+        oAuthClient.doClientCredentialsGrantAccessTokenRequest();
+
+        Assertions.assertEquals(EventType.CLIENT_LOGIN.name(), events.poll().getType());
     }
 
-    public static class ServerConfig implements KeycloakTestServerConfig {
-        @Override
-        public boolean enableSysLog() {
-            return true;
-        }
+    @Test
+    public void testClientLogin() {
+        oAuthClient.doClientCredentialsGrantAccessTokenRequest();
+
+        Assertions.assertEquals(EventType.CLIENT_LOGIN.name(), events.poll().getType());
     }
 
 }

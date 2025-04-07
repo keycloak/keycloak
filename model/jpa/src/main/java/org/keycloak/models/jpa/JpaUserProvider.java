@@ -17,7 +17,8 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
+import jakarta.persistence.criteria.Path;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -60,7 +61,6 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
 import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -85,7 +85,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider, UserCredentialStore {
+public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUserPartialEvaluationProvider {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -493,9 +493,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
-        query.setParameter("groupId", group.getId());
-        return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+        return getGroupMembersStream(realm, group, -1, -1);
     }
 
     @Override
@@ -625,6 +623,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
         }
 
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
+
         queryBuilder.where(predicates.toArray(Predicate[]::new));
 
         return em.createQuery(queryBuilder).getSingleResult().intValue();
@@ -669,6 +669,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         userQuery = userQuery.select(count);
         List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
+        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, qb, userQuery, from));
 
         userQuery = userQuery.where(restrictions.toArray(Predicate[]::new));
         TypedQuery<Long> query = em.createQuery(userQuery);
@@ -693,7 +694,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         List<Predicate> restrictions = predicates(params, root, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
 
-        groupsWithPermissionsSubquery(countQuery, groupIds, root, restrictions);
+        session.setAttribute(UserModel.GROUPS, groupIds);
+
+        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, countQuery, root));
 
         countQuery.where(restrictions.toArray(Predicate[]::new));
         TypedQuery<Long> query = em.createQuery(countQuery);
@@ -704,27 +707,70 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
-        query.setParameter("groupId", group.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+        Path<UserEntity> userPath = root.get("user");
 
-        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        queryBuilder.select(userPath);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("groupId"), group.getId()));
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, userPath));
+
+        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
         TypedQuery<UserEntity> query;
         if (StringUtil.isBlank(search)) {
-            query = em.createNamedQuery("groupMembership", UserEntity.class);
-        } else if (Boolean.TRUE.equals(exact)) {
-            query = em.createNamedQuery("groupMembershipByUser", UserEntity.class);
-            query.setParameter("search", search);
-        } else {
-            query = em.createNamedQuery("groupMembershipByUserContained", UserEntity.class);
-            query.setParameter("search", search.toLowerCase());
+            return getGroupMembersStream(realm, group, first, max);
         }
-        query.setParameter("groupId", group.getId());
 
-        return closing(paginateQuery(query, first, max).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
+        // select g.user from UserGroupMembershipEntity g where g.groupId = :groupId and " +
+        //                "(g.user.username = :search or g.user.email = :search or g.user.firstName = :search or g.user.lastName = :search) order by g.user.username
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+        Path<UserEntity> userPath = root.get("user");
+
+        queryBuilder.select(userPath);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("groupId"), group.getId()));
+
+        if (Boolean.TRUE.equals(exact)) {
+            predicates.add(builder.and(
+                    builder.or(
+                        builder.equal(userPath.get("username"), search)),
+                        builder.equal(userPath.get("email"), search),
+                        builder.equal(userPath.get("firstName"), search),
+                        builder.equal(userPath.get("lastName"), search)
+                    )
+            );
+        } else {
+            predicates.add(builder.and(
+                    builder.or(
+                            builder.like(builder.lower(userPath.get("username")), builder.lower(builder.literal("%" + search + "%"))),
+                            builder.like(builder.lower(userPath.get("email")), builder.lower(builder.literal("%" + search + "%"))),
+                            builder.like(builder.lower(userPath.get("firstName")), builder.lower(builder.literal("%" + search + "%"))),
+                            builder.like(builder.lower(userPath.get("lastName")), builder.lower(builder.literal("%" + search + "%")))
+                    )
+            ));
+        }
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, userPath));
+
+        queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(userPath.get(UserModel.USERNAME)));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(user -> new UserAdapter(session, realm, em, user)));
     }
 
     @Override
@@ -759,11 +805,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
-        Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);
-
-        if (userGroups != null) {
-            groupsWithPermissionsSubquery(queryBuilder, userGroups, root, predicates);
-        }
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
@@ -1027,7 +1069,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                                 builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
                     } else {
-                        if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
+                        if (Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.TRUE.toString()))) {
                             attributePredicates.add(builder.and(
                                 builder.equal(attributesJoin.get("name"), key),
                                 builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
@@ -1055,37 +1097,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return predicates;
     }
 
-    @SuppressWarnings("unchecked")
-    private void groupsWithPermissionsSubquery(CriteriaQuery<?> query, Set<String> groupIds, Root<UserEntity> root, List<Predicate> restrictions) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
+    @Override
+    public KeycloakSession getSession() {
+        return session;
+    }
 
-        Subquery subquery = query.subquery(String.class);
-
-        Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
-
-        subquery.select(cb.literal(1));
-
-        List<Predicate> subPredicates = new ArrayList<>();
-
-        subPredicates.add(from.get("groupId").in(groupIds));
-        subPredicates.add(cb.equal(from.get("user").get("id"), root.get("id")));
-
-        Subquery subquery1 = query.subquery(String.class);
-
-        subquery1.select(cb.literal(1));
-        Root from1 = subquery1.from(ResourceEntity.class);
-
-        List<Predicate> subs = new ArrayList<>();
-
-        Expression<String> groupId = from.get("groupId");
-        subs.add(cb.like(from1.get("name"), cb.concat("group.resource.", groupId)));
-
-        subquery1.where(subs.toArray(Predicate[]::new));
-
-        subPredicates.add(cb.exists(subquery1));
-
-        subquery.where(subPredicates.toArray(Predicate[]::new));
-
-        restrictions.add(cb.exists(subquery));
+    @Override
+    public EntityManager getEntityManager() {
+        return em;
     }
 }

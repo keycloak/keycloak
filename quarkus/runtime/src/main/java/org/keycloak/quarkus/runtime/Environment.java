@@ -31,14 +31,15 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
+    private static final String KC_HOME_DIR = "kc.home.dir";
     public static final String NON_SERVER_MODE = "nonserver";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
@@ -60,7 +61,7 @@ public final class Environment {
     }
 
     public static String getHomeDir() {
-        return System.getProperty("kc.home.dir");
+        return System.getProperty(KC_HOME_DIR);
     }
 
     public static Path getHomePath() {
@@ -140,7 +141,7 @@ public final class Environment {
     }
 
     public static boolean isWindows() {
-        return SystemUtils.IS_OS_WINDOWS;
+        return NetworkUtils.checkForWindows();
     }
 
     public static void forceDevProfile() {
@@ -216,7 +217,7 @@ public final class Environment {
     public static boolean isRebuildCheck() {
         return Boolean.getBoolean("kc.config.build-and-exit");
     }
-    
+
     public static void setRebuildCheck() {
         System.setProperty("kc.config.build-and-exit", "true");
     }
@@ -226,7 +227,7 @@ public final class Environment {
     }
 
     public static void setHomeDir(Path path) {
-        System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+        System.setProperty(KC_HOME_DIR, path.toFile().getAbsolutePath());
     }
 
     /**
@@ -259,5 +260,9 @@ public final class Environment {
 
     public static void setParsedCommand(AbstractCommand command) {
         Environment.parsedCommand = command;
+    }
+
+    public static void removeHomeDir() {
+        System.getProperties().remove(KC_HOME_DIR);
     }
 }

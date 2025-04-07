@@ -75,8 +75,10 @@ public class JWK {
     @JsonProperty(X5C)
     private String[] x509CertificateChain;
 
+    @JsonProperty(SHA1_509_THUMBPRINT)
     private String sha1x509Thumbprint;
 
+    @JsonProperty(SHA256_509_THUMBPRINT)
     private String sha256x509Thumbprint;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
@@ -120,24 +122,36 @@ public class JWK {
 
     public void setX509CertificateChain(String[] x509CertificateChain) {
         this.x509CertificateChain = x509CertificateChain;
-        if (x509CertificateChain != null && x509CertificateChain.length > 0) {
-            try {
-              sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
-              sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
-            } catch (NoSuchAlgorithmException e) {
-              throw new RuntimeException(e);
-            }
-        }
     }
 
-    @JsonProperty(SHA1_509_THUMBPRINT)
     public String getSha1x509Thumbprint() {
+        if (sha1x509Thumbprint == null && x509CertificateChain != null && x509CertificateChain.length > 0) {
+            try {
+                sha1x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-1");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
         return sha1x509Thumbprint;
     }
 
-    @JsonProperty(SHA256_509_THUMBPRINT)
+    public void setSha1x509Thumbprint(String sha1x509Thumbprint) {
+        this.sha1x509Thumbprint = sha1x509Thumbprint;
+    }
+
     public String getSha256x509Thumbprint() {
+        if (sha256x509Thumbprint == null && x509CertificateChain != null && x509CertificateChain.length > 0) {
+            try {
+                sha256x509Thumbprint = PemUtils.generateThumbprint(x509CertificateChain, "SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
         return sha256x509Thumbprint;
+    }
+
+    public void setSha256x509Thumbprint(String sha256x509Thumbprint) {
+        this.sha256x509Thumbprint = sha256x509Thumbprint;
     }
 
     @JsonAnyGetter

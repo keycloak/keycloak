@@ -127,7 +127,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     public LDAPObject createLDAPGroup(String groupName, Map<String, Set<String>> additionalAttributes) {
         LDAPObject ldapGroup = LDAPUtils.createLDAPGroup(ldapProvider, groupName, config.getGroupNameLdapAttribute(), config.getGroupObjectClasses(ldapProvider),
-                config.getGroupsDn(), additionalAttributes, config.getMembershipLdapAttribute());
+                config.getRelativeCreateDn() + config.getGroupsDn(), additionalAttributes, config.getMembershipLdapAttribute());
 
         logger.debugf("Creating group [%s] to LDAP with DN [%s]", groupName, ldapGroup.getDn().toString());
         return ldapGroup;
@@ -580,8 +580,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             return Collections.emptyList();
         }
 
-        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
-        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+        String strategyKey = config.getUserGroupsRetrieveStrategy();
+        UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
+        return strategy.getLDAPRoleMembers(realm, this, ldapGroup, firstResult, maxResults);
     }
 
     public void addGroupMappingInLDAP(RealmModel realm, GroupModel kcGroup, LDAPObject ldapUser) {
@@ -806,6 +807,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     protected boolean isGroupInGroupPath(RealmModel realm, GroupModel group) {
+        if (group.getType() == GroupModel.Type.ORGANIZATION) {
+            return false; // always skip organization groups as those are internal groups.
+        }
         if (config.isTopLevelGroupsPath()) {
             return true; // any group is in the path of the top level path.
         }

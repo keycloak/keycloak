@@ -138,6 +138,7 @@ export const ClusteringPanel = ({
                 <ToolbarItem>
                   <Button
                     id="testClusterAvailability"
+                    data-testid="test-cluster-availability"
                     onClick={testCluster}
                     variant={ButtonVariant.secondary}
                     isDisabled={Object.keys(nodes).length === 0}
@@ -148,6 +149,7 @@ export const ClusteringPanel = ({
                 <ToolbarItem>
                   <Button
                     id="registerNodeManually"
+                    data-testid="registerNodeManually"
                     onClick={() => setAddNodeOpen(true)}
                     variant={ButtonVariant.tertiary}
                   >

@@ -42,6 +42,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.ProfileAssume;
@@ -49,7 +50,10 @@ import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.HttpClientUtils;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.oauth.HttpClientManager;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
@@ -438,7 +442,7 @@ public class AuthServerTestEnricher {
         log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
-        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"));
+        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);
         String dbUser = System.getProperty(prefix + "user");
         String dbPassword = System.getProperty(prefix + "password");
 
@@ -694,7 +698,7 @@ public class AuthServerTestEnricher {
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
-        OAuthClient oAuthClient = new OAuthClient();
+        OAuthClient oAuthClient = new OAuthClient(HttpClientUtils.createDefault(), null);
         oAuthClientProducer.set(oAuthClient);
     }
 

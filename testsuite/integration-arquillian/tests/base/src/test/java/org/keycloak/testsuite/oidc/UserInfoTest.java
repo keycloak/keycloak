@@ -73,12 +73,10 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -94,6 +92,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collection;
@@ -107,7 +106,7 @@ import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 /**
  * @author pedroigor
@@ -259,8 +258,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
         userResource.roles().clientLevel(clientUUID).add(Collections.singletonList(fooRole));
 
         // Login to the new client
-        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.clientId(clientId)
-                .doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.client(clientId, "password")
+                .doPasswordGrantRequest("test-user@localhost", "password");
 
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertNames(accessToken.getResourceAccess(clientId).getRoles(), "my.foo.role");
@@ -401,7 +400,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             JWEEncryptionProvider encryptionProvider = encAlgorithm != null ? getJweEncryptionProvider(encAlgorithm) :
                     getJweEncryptionProvider(JWEConstants.A128CBC_HS256);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, encryptedResponse, algorithmProvider, encryptionProvider);
-            String jwePayload = new String(decodedString, "UTF-8");
+            String jwePayload = new String(decodedString, StandardCharsets.UTF_8);
 
             UserInfo userInfo = null;
             // verify JWS
@@ -556,9 +555,10 @@ public class UserInfoTest extends AbstractKeycloakTest {
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
                     .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
+                    .session(accessTokenResponse.getSessionState())
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
+            events.assertEmpty();
 
         } finally {
             client.close();
@@ -599,10 +599,10 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testAccessTokenAfterUserSessionLogoutAndLoginAgain() {
-        OAuthClient.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
         String refreshToken1 = accessTokenResponse.getRefreshToken();
 
-        oauth.doLogout(refreshToken1, "password");
+        oauth.doLogout(refreshToken1);
         events.clear();
 
         setTimeOffset(2);
@@ -632,7 +632,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
                     .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
+                    .session(accessTokenResponse.getSessionState())
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .client("test-app")
                     .assertEvent();
@@ -707,7 +707,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
-            testingClient.testing().removeUserSessions("test");
+            testingClient.testing().removeExpired("test");
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -871,7 +871,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testUserInfoRequestWithSamlClient() throws Exception {
         // obtain an access token
-        String accessToken = oauth.doGrantAccessTokenRequest("test", "test-user@localhost", "password", null, "saml-client", "secret").getAccessToken();
+        String accessToken = oauth.client("saml-client", "secret").doPasswordGrantRequest( "test-user@localhost", "password").getAccessToken();
 
         // change client's protocol
         ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
@@ -1028,20 +1028,16 @@ public class UserInfoTest extends AbstractKeycloakTest {
         }
     }
 
-    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+    private org.keycloak.testsuite.util.oauth.AccessTokenResponse loginAndForceNewLoginPage() {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        oauth.clientSessionState("client-session");
+        String code = oauth.parseLoginResponse().getCode();
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         setTimeOffset(1);
 
-        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-        driver.navigate().to(loginFormUri);
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
 
         loginPage.assertCurrent();
 

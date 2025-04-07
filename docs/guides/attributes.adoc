@@ -16,6 +16,8 @@
 :jdgserver_name: Infinispan
 :infinispan-operator-docs: https://infinispan.org/docs/infinispan-operator/main/operator.html
 :infinispan-xsite-docs: https://infinispan.org/docs/stable/titles/xsite/xsite.html
+:infinispan_embedding_docs: https://infinispan.org/docs/stable/titles/embedding/embedding.html
+:infinispan_configuring_docs: https://infinispan.org/docs/stable/titles/configuring/configuring.html
 :containerlabel: latest
 :project_product: false
 :project_community: true
@@ -27,5 +29,6 @@
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
+:upgrading_guide_link: {project_doc_base_url}/upgrading/
 :kc_js_path: /js
 :kc_realms_path: /realms

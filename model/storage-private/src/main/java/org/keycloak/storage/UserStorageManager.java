@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.opentelemetry.api.trace.StatusCode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -51,7 +52,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -76,6 +76,7 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
@@ -115,21 +116,33 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     protected UserModel importValidation(RealmModel realm, UserModel user) {
 
         if (isReadOnlyOrganizationMember(user)) {
+            if (user instanceof CachedUserModel cachedUserModel) {
+                cachedUserModel.invalidate();
+            }
             return new ReadOnlyUserModelDelegate(user, false);
         }
 
-        if (user == null || user.getFederationLink() == null) return user;
+        if (user == null || !user.isFederated()) return user;
 
         UserStorageProviderModel model = getStorageProviderModel(realm, user.getFederationLink());
         if (model == null) {
             // remove linked user with unknown storage provider.
             logger.debugf("Removed user with federation link of unknown storage provider '%s'", user.getUsername());
+            deleteInvalidUserCache(realm, user);
             deleteInvalidUser(realm, user);
             return null;
         }
 
         if (!model.isEnabled()) {
+            if (user instanceof CachedUserModel cachedUserModel) {
+                cachedUserModel.invalidate();
+            }
             return new ReadOnlyUserModelDelegate(user, false);
+        }
+
+        if (user instanceof CachedUserModel) {
+            // if the user is cached do not validate import for the cached configured time
+            return user;
         }
 
         ImportedUserValidation importedUserValidation = getStorageProviderInstance(model, ImportedUserValidation.class, true);
@@ -137,11 +150,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         UserModel validated = importedUserValidation.validate(realm, user);
         if (validated == null) {
-            deleteInvalidUser(realm, user);
-            return null;
-        } else {
-            return validated;
+            deleteInvalidUserCache(realm, user);
+            if (model.isRemoveInvalidUsersEnabled()) {
+                deleteInvalidUser(realm, user);
+                return null;
+            }
+
+            return new ReadOnlyUserModelDelegate(user, false);
         }
+
+        return validated;
     }
 
     private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
@@ -161,7 +179,21 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         for (CredentialAuthentication credentialAuthentication : credentialAuthenticationStream
                 .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
                 .collect(Collectors.toList())) {
-            CredentialValidationOutput validationOutput = credentialAuthentication.authenticate(realm, input);
+            CredentialValidationOutput validationOutput = session.getProvider(TracingProvider.class).trace(credentialAuthentication.getClass(), "authenticate",
+                    span -> {
+                        CredentialValidationOutput output = credentialAuthentication.authenticate(realm, input);
+                        if (span.isRecording()) {
+                            if (output != null) {
+                                CredentialValidationOutput.Status status = output.getAuthStatus();
+                                span.setAttribute("kc.validationStatus", status.name());
+                                if (status == CredentialValidationOutput.Status.FAILED) {
+                                    span.setStatus(StatusCode.ERROR);
+                                }
+                            }
+                        }
+                        return output;
+                    }
+            );
             if (Objects.nonNull(validationOutput)) {
                 CredentialValidationOutput.Status status = validationOutput.getAuthStatus();
                 if (status == CredentialValidationOutput.Status.AUTHENTICATED || status == CredentialValidationOutput.Status.CONTINUE || status == CredentialValidationOutput.Status.FAILED) {
@@ -178,14 +210,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return result;
     }
 
-    protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
-        String userId = user.getId();
-        String userName = user.getUsername();
+    protected void deleteInvalidUserCache(final RealmModel realm, final UserModel user) {
         UserCache userCache = UserStorageUtil.userCache(session);
         if (userCache != null) {
             userCache.evict(realm, user);
         }
+    }
 
+    protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
+        String userId = user.getId();
+        String userName = user.getUsername();
         // This needs to be running in separate transaction because removing the user may end up with throwing
         // PessimisticLockException which also rollbacks Jpa transaction, hence when it is running in current transaction
         // it will become not usable for all consequent jpa calls. It will end up with Transaction is in rolled back
@@ -207,7 +241,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             }
         });
     }
-
 
     protected Stream<UserModel> importValidation(RealmModel realm, Stream<UserModel> users) {
         return users.map(user -> importValidation(realm, user)).filter(Objects::nonNull);
@@ -351,9 +384,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         StorageId storageId = new StorageId(user.getId());
 
         if (storageId.getProviderId() == null) {
-            String federationLink = user.getFederationLink();
-            boolean linkRemoved = federationLink == null || Optional.ofNullable(
-                    getStorageProviderInstance(realm, federationLink, UserRegistrationProvider.class))
+            boolean linkRemoved = !user.isFederated() || Optional.ofNullable(
+                    getStorageProviderInstance(realm, user.getFederationLink(), UserRegistrationProvider.class))
                     .map(provider -> provider.removeUser(realm, user))
                     .orElse(false);
 

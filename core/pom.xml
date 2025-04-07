@@ -77,9 +77,9 @@
 
     <profiles>
         <profile>
-            <id>jdk-16</id>
+            <id>jdk-15</id>
             <activation>
-                <jdk>[16,)</jdk>
+                <jdk>[15,)</jdk>
             </activation>
             <build>
                 <plugins>
@@ -87,17 +87,16 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>compile-java16</id>
+                                <id>compile-java15</id>
                                 <phase>compile</phase>
                                 <goals>
                                     <goal>compile</goal>
                                 </goals>
                                 <configuration>
-                                    <release>16</release>
+                                    <release>15</release>
                                     <compileSourceRoots>
-                                        <compileSourceRoot>${project.basedir}/src/main/java16</compileSourceRoot>
+                                        <compileSourceRoot>${project.basedir}/src/main/java15</compileSourceRoot>
                                     </compileSourceRoots>
-                                    <multiReleaseOutput>true</multiReleaseOutput>
                                 </configuration>
                             </execution>
                         </executions>
@@ -117,13 +116,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Multi-Release>true</Multi-Release>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>

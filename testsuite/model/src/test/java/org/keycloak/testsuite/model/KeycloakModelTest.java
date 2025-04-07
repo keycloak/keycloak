@@ -103,6 +103,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.models.DeploymentStateProviderFactory;
+import org.keycloak.tracing.TracingProviderFactory;
+import org.keycloak.tracing.TracingSpi;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -245,6 +247,7 @@ public abstract class KeycloakModelTest {
       .add(DeploymentStateSpi.class)
       .add(StoreFactorySpi.class)
       .add(TimerSpi.class)
+      .add(TracingSpi.class)
       .add(UserLoginFailureSpi.class)
       .add(UserSessionSpi.class)
       .add(UserSpi.class)
@@ -258,6 +261,7 @@ public abstract class KeycloakModelTest {
       .add(DefaultExecutorsProviderFactory.class)
       .add(DeploymentStateProviderFactory.class)
       .add(DatastoreProviderFactory.class)
+      .add(TracingProviderFactory.class)
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;

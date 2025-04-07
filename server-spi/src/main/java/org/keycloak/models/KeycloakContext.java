@@ -17,10 +17,12 @@
 
 package org.keycloak.models;
 
+import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -81,6 +83,10 @@ public interface KeycloakContext {
 
     Locale resolveLocale(UserModel user);
 
+    default Locale resolveLocale(UserModel user, Theme.Type themeType) {
+        return resolveLocale(user);
+    }
+
     /**
      * Get current AuthenticationSessionModel, can be null out of the AuthenticationSession context.
      *
@@ -99,4 +105,25 @@ public interface KeycloakContext {
     void setHttpRequest(HttpRequest httpRequest);
 
     void setHttpResponse(HttpResponse httpResponse);
+
+    UserSessionModel getUserSession();
+
+    void setUserSession(UserSessionModel session);
+
+    /**
+     * Returns a {@link Token} representing the bearer token used to authenticate and authorize the current request.
+     *
+     * @return the bearer token
+     */
+    Token getBearerToken();
+
+    void setBearerToken(Token token);
+
+    /**
+     * Returns the {@link UserModel} bound to this context. The user is first resolved from the {@link #getBearerToken()} set to this
+     * context, if any. Otherwise, it will be resolved from the {@link #getUserSession()} set to this context, if any.
+     *
+     * @return the {@link UserModel} bound to this context.
+     */
+    UserModel getUser();
 }

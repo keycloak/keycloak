@@ -193,7 +193,7 @@ public void testRealmAdmin() {
 ## Using Selenium
 
 Frequently when testing Keycloak it is required to interact with login pages, required actions, etc. through the 
-browser. This can be done in two ways, where the most convinient way is to inject a Java Page representation:
+browser. This can be done in two ways, where the most convenient way is to inject a Java Page representation:
 
 ```java
 @InjectPage
@@ -222,7 +222,7 @@ public void test() {
 
 ## OAuth Client
 
-A convenient way to test OAuth flows are with the OAuth Client. This provides convinient methods to perform different
+A convenient way to test OAuth flows are with the OAuth Client. This provides convenient methods to perform different
 OAuth flows, and it even automatically creates its own client within the realm. For example:
 
 ```java
@@ -254,7 +254,7 @@ There are a few options on how to configure the test framework, with the followi
 
 * System properties
 * Environment variables
-* `.env` file in the current working directory
+* `.env.test` file in the project hierarchy
 * A properties file specified with `kc.test.config` system property or `KC_TEST_CONFIG` environment variable
 
 ### Using system properties
@@ -291,20 +291,23 @@ KC_TEST_BROWSER=firefox mvn test
 
 As with system properties, using environment variables within the IDE can be cumbersome.
 
-### Using `.env` file
+### Using `.env.test` file
 
-When running tests from an IDE using the `.env` file is very convinient, especially as this can be added to `.gitignore`
+When running tests from an IDE using the `.env.test` file is very convenient, especially as this can be added to `.gitignore`
 allowing developers to quickly have their own personal preference when running tests.
 
-Example `.env` file:
+Example `.env.test` file:
 
 ```
 KC_TEST_BROWSER=firefox
 ```
 
+For multi-modal Maven projects the `.env.test` file can be located in the current module, or one of its parent modules.
+This allows sharing configuration across multiple test modules.
+
 ### Using a properties file
 
-Using a property file allows creating a set of configuration which can be commited to a Git repository to be shareable.
+Using a property file allows creating a set of configuration which can be committed to a Git repository to be shareable.
 
 For example create the file `/path/mytestconfig.properties` with the following contents:
 
@@ -348,9 +351,15 @@ Valid values:
 | mysql    | MySQL test container                    |
 | postgres | PostgreSQL test container               |
 
+Configuration:
+
+| Value                                               | Description                                                                                                                                                                 |
+|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kc.test.database.reuse` / `KC_TEST_DATABASE_REUSE` | Set to true to enable reuse of database. Requires [enabling reuse for Testcontainers](https://java.testcontainers.org/features/reuse/) (`TESTCONTAINERS_REUSE_ENABLE=true`) |
+
 ### Browser
 
-Option: `kc.test.broser` / `KC_TEST_BROWSER`
+Option: `kc.test.browser` / `KC_TEST_BROWSER`
 
 Valid values:
 

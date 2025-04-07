@@ -2,20 +2,20 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.annotations.InjectClient;
-import org.keycloak.test.framework.annotations.InjectRealm;
-import org.keycloak.test.framework.annotations.InjectUser;
-import org.keycloak.test.framework.annotations.KeycloakIntegrationTest;
-import org.keycloak.test.framework.injection.LifeCycle;
-import org.keycloak.test.framework.realm.ClientConfig;
-import org.keycloak.test.framework.realm.ManagedClient;
-import org.keycloak.test.framework.realm.ManagedRealm;
-import org.keycloak.test.framework.realm.ManagedUser;
-import org.keycloak.test.framework.realm.RealmConfig;
-import org.keycloak.test.framework.realm.UserConfig;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 
 @KeycloakIntegrationTest
 public class FancyRealmTest {
@@ -51,37 +51,31 @@ public class FancyRealmTest {
     static class MyRealm implements RealmConfig {
 
         @Override
-        public RealmRepresentation getRepresentation() {
-            return builder()
-                    .roles("role-1", "role-2")
-                    .groups("group-1", "group-2")
-                    .build();
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            return realm.roles("role-1", "role-2")
+                    .groups("group-1", "group-2");
         }
     }
 
     static class MyClient implements ClientConfig {
 
         @Override
-        public ClientRepresentation getRepresentation() {
-            return builder()
-                    .clientId("the-client")
-                    .redirectUris("http://127.0.0.1", "http://test")
-                    .build();
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("the-client")
+                    .redirectUris("http://127.0.0.1", "http://test");
         }
     }
 
     static class MyUser implements UserConfig {
 
         @Override
-        public UserRepresentation getRepresentation() {
-            return builder()
-                    .username("bobthemob")
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.username("bobthemob")
                     .name("Bob", "Mob")
                     .email("bob@mob")
                     .password("password")
                     .roles("role-1", "role-2") // TODO Adding role mappings when creating user is not supported!
-                    .groups("/group-1")
-                    .build();
+                    .groups("/group-1");
         }
     }
 

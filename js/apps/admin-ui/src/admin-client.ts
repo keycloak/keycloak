@@ -4,7 +4,6 @@ import {
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import type Keycloak from "keycloak-js";
-
 import type { Environment } from "./environment";
 
 export type AdminClientProps = {
@@ -31,7 +30,7 @@ export async function initAdminClient(
       try {
         await keycloak.updateToken(5);
       } catch {
-        keycloak.login();
+        await keycloak.login();
       }
 
       return keycloak.token;

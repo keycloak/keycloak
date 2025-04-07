@@ -37,7 +37,7 @@ Defines the month that access must be granted. You can also specify a range of m
 Defines the year that access must be granted. You can also specify a range of years. In this case, permission is granted only if the current year is between or equal to the two values specified.
 * *Hour*
 +
-Defines the hour that access must be granted. You can also specify a range of hours. In this case, permission is granted only if current hour is between or equal to the two values specified.
+Defines the hour that access must be granted. You can also specify a range of hours. In this case, permission is granted only if the current hour is between or equal to the two values specified.
 * *Minute*
 +
 Defines the minute that access must be granted. You can also specify a range of minutes. In this case, permission is granted only if the current minute is between or equal to the two values specified.

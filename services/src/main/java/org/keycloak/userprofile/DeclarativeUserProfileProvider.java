@@ -36,11 +36,11 @@ import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -77,17 +77,18 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
      * @return
      */
     private static boolean requestedScopePredicate(AttributeContext context, Set<String> configuredScopes) {
-        KeycloakSession session = context.getSession();
-        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
-
-        if (authenticationSession == null) {
-            return false;
+        // any attribute is enabled and available when managing through the User Admin API
+        if (UserProfileContext.USER_API.equals(context.getContext())) {
+            return true;
         }
 
-        String requestedScopesString = authenticationSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
-        ClientModel client = authenticationSession.getClient();
+        KeycloakSession session = context.getSession();
+        String requestedScopes = AuthenticationManager.getRequestedScopes(session);
+        ClientModel client = session.getContext().getClient();
 
-        return getRequestedClientScopes(session, requestedScopesString, client, context.getUser()).map((csm) -> csm.getName()).anyMatch(configuredScopes::contains);
+        return getRequestedClientScopes(session, requestedScopes, client, context.getUser())
+                .map(ClientScopeModel::getName)
+                .anyMatch(configuredScopes::contains);
     }
 
     private final KeycloakSession session;

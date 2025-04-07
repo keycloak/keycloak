@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-test-framework-parent</artifactId>
-    <groupId>org.keycloak.test</groupId>
+    <groupId>org.keycloak.testframework</groupId>
     <packaging>pom</packaging>
     <name>Keycloak Test Framework Parent</name>
     <description>Keycloak Test Framework Parent</description>
@@ -35,13 +35,18 @@
     <modules>
         <module>bom</module>
         <module>core</module>
+        <module>junit5-config</module>
         <module>db-mariadb</module>
         <module>db-mssql</module>
         <module>db-mysql</module>
         <module>db-oracle</module>
         <module>db-postgres</module>
-        <module>ui</module>
+        <module>email-server</module>
         <module>examples</module>
+        <module>oauth</module>
+        <module>remote</module>
+        <module>remote-providers</module>
+        <module>ui</module>
     </modules>
 
 </project>

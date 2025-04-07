@@ -31,6 +31,7 @@ import static org.keycloak.testsuite.util.UIUtils.clickLink;
  *
  * @author tkyjovsk
  */
+@Deprecated
 public class Form {
 
     protected final Logger log = Logger.getLogger(this.getClass());

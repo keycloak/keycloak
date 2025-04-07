@@ -47,6 +47,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
@@ -62,10 +63,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -136,6 +138,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         try {
             session.clientPolicy().triggerOnEvent(new PreAuthorizationRequestContext(clientId, params));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
         }
         checkClient(clientId);
@@ -185,17 +191,40 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
         }
 
-        try {
-            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params));
-        } catch (ClientPolicyException cpe) {
-            return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
+        // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
+        String dpopJkt = session.getAttribute(PAR_DPOP_PROOF_JKT, String.class);
+        if (dpopJkt != null) {
+            // if dpop_jkt is specified in an authorization request sent to Authorization Endpoint, it is overwritten by one in PAR request
+            request.setDpopJkt(dpopJkt);
         }
 
         authenticationSession = createAuthenticationSession(client, request.getState());
+
+        try {
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params, authenticationSession));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
+            return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
+        }
+
         updateAuthenticationSession();
 
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader(session);
+
+        // Add support for Initiating User Registration via OpenID Connect 1.0 via prompt=create
+        // see: https://openid.net/specs/openid-connect-prompt-create-1_0.html#section-4.1
+        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(params.getFirst(OAuth2Constants.PROMPT))) {
+            if (!Organizations.isRegistrationAllowed(session, realm)) {
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
+            }
+            return buildRegister();
+        }
+
         switch (action) {
             case REGISTER:
                 return buildRegister();
@@ -348,6 +377,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             }
         }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
 
+
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {
                 authenticationSession.setClientNote(LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, request.getAdditionalReqParams().get(paramName));
@@ -411,5 +441,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
         paramAction.accept(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
         paramAction.accept(OIDCLoginProtocol.STATE_PARAM, request.getState());
+        paramAction.accept(OIDCLoginProtocol.DPOP_JKT, request.getDpopJkt());
     }
 }

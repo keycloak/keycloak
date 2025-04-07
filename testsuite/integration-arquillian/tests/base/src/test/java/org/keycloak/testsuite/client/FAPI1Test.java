@@ -50,7 +50,9 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -252,19 +254,16 @@ public class FAPI1Test extends AbstractFAPITest {
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
+        pkceGenerator = PkceGenerator.s256();
         // Setup PKCE
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
 
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
+        successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
             String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
-            return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
+            return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
         });
     }
 
@@ -282,19 +281,14 @@ public class FAPI1Test extends AbstractFAPITest {
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
-        // Setup PKCE
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        pkceGenerator = PkceGenerator.s256();
 
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
-            oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code, null);
+        successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
+            return oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         });
     }
 
@@ -377,24 +371,19 @@ public class FAPI1Test extends AbstractFAPITest {
         Assert.assertTrue(client.isPublicClient());
 
         // Setup PKCE and nonce
-        oauth.nonce("123456");
-        String codeVerifier = "1234567890123456789012345678901234567890123"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        pkceGenerator = PkceGenerator.s256();
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
-        successfulLoginAndLogout("foo", TEST_USERNAME, false, (String code) -> {
-            oauth.codeVerifier(codeVerifier);
-            return oauth.doAccessTokenRequest(code, null);
+        successfulLoginAndLogout("foo", "123456", TEST_USERNAME, false, (String code) -> {
+            return oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         });
 
         // Set "advanced" policy
         setupPolicyFAPIAdvancedForAllClient();
 
         // Should not be possible to login anymore with public client
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, false,"invalid client access type");
+        oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
     }
 
     @Test
@@ -456,20 +445,20 @@ public class FAPI1Test extends AbstractFAPITest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check nonce and redirectUri
-        oauth.clientId("foo");
+        oauth.client("foo");
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check login request object required
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: 'request' or 'request_uri'");
+        oauth.loginForm().nonce("123456").open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: 'request' or 'request_uri'");
 
         // Create request without 'nbf' . Should fail in FAPI1 advanced client policy
         TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
         requestObject.nbf(null);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST_URI,false, "Missing parameter in the 'request' object: nbf");
+        oauth.loginForm().requestUri(requestUri).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST_URI,"Missing parameter in the 'request' object: nbf");
 
         // Create valid request object - more extensive testing of 'request' object is in ClientPoliciesTest.testSecureRequestObjectExecutor()
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
@@ -477,21 +466,21 @@ public class FAPI1Test extends AbstractFAPITest {
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
 
         // Check response type
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "invalid response_type");
+        oauth.loginForm().requestUri(requestUri).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"invalid response_type");
 
         // Add the response_Type including token. Should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,true, "invalid response_type");
+        oauth.loginForm().requestUri(requestUri).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"invalid response_type");
 
         // Set correct response_type for FAPI 1 Advanced
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         loginPage.assertCurrent();
 
         // Get keys of client. Will be used for client authentication and signing of request object
@@ -502,27 +491,29 @@ public class FAPI1Test extends AbstractFAPITest {
         PublicKey publicKey = keyPair.getPublic();
 
 
-        String code = loginUserAndGetCode("foo", true);
+        String code = loginUserAndGetCode("foo", null, true);
+
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
 
         // Check token not present in the AuthorizationResponse. Check ID Token present, but used as detached signature
-        Assert.assertNull(getParameterFromUrl(OAuth2Constants.ACCESS_TOKEN, true));
-        String idTokenParam = getParameterFromUrl(OAuth2Constants.ID_TOKEN, true);
+        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        String idTokenParam = authorizationEndpointResponse.getIdToken();
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
         // Check HoK required
         String signedJwt = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
-        OAuthClient.AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, null, DefaultHttpClient::new);
+        AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
         Assert.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
         Assert.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
 
         // Login with private-key-jwt client authentication and MTLS added to HttpClient. TokenRequest should be successful now
-        oauth.openLoginForm();
-        code = oauth.getCurrentFragment().get(OAuth2Constants.CODE);
+        oauth.loginForm().requestUri(requestUri).open();
+        code = oauth.parseLoginResponse().getCode();
         Assert.assertNotNull(code);
 
         String signedJwt2 = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
 
-        tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt2, null, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt2, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -551,13 +542,13 @@ public class FAPI1Test extends AbstractFAPITest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check nonce and redirectUri
-        oauth.clientId("foo");
+        oauth.client("foo");
         checkNonceAndStateForCurrentClientDuringLogin();
         checkRedirectUriForCurrentClientDuringLogin();
 
         // Check login request object required
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: 'request' or 'request_uri'");
+        oauth.loginForm().nonce("123456").open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: 'request' or 'request_uri'");
 
         // Set request object and correct responseType
         TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
@@ -565,18 +556,20 @@ public class FAPI1Test extends AbstractFAPITest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         loginPage.assertCurrent();
 
-        String code = loginUserAndGetCode("foo", true);
+        String code = loginUserAndGetCode("foo", null, true);
+
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
 
         // Check token not present in the AuthorizationResponse. Check ID Token present, but used as detached signature
-        Assert.assertNull(getParameterFromUrl(OAuth2Constants.ACCESS_TOKEN, true));
-        String idTokenParam = getParameterFromUrl(OAuth2Constants.ID_TOKEN, true);
+        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        String idTokenParam = authorizationEndpointResponse.getIdToken();
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
         // Check HoK required
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, null);
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
@@ -588,31 +581,25 @@ public class FAPI1Test extends AbstractFAPITest {
 
     private void checkPKCEWithS256RequiredDuringLogin(String clientId) {
         // Check PKCE required - login without PKCE should fail
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: code_challenge_method");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: code_challenge_method");
 
         // Check PKCE required - login with "plain" PKCE should fail
-        oauth.codeChallenge("234567890_234567890123");
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_PLAIN);
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Invalid parameter: code challenge method is not matching the configured one");
+        pkceGenerator = PkceGenerator.plain();
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Invalid parameter: code challenge method is not matching the configured one");
     }
 
     // Assumption is that clientId is already set in "oauth" client when this method is called. Also assumption is that PKCE parameters are properly set (in case PKCE required for the client)
     private void checkNonceAndStateForCurrentClientDuringLogin() {
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: nonce");
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: nonce");
 
         // Check "state" required in non-OIDC request
-        oauth.nonce("123456");
-        oauth.stateParamHardcoded(null);
         oauth.openid(false);
-        oauth.openLoginForm();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,false, "Missing parameter: state");
-
-        // Revert to default "state" parameter generator
-        oauth.stateParamRandom();
+        oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,"Missing parameter: state");
     }
 
     private void checkRedirectUriForCurrentClientDuringLogin() {
@@ -621,7 +608,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Check redirect_uri required
         oauth.openid(true);
         oauth.redirectUri(null);
-        oauth.openLoginForm();
+        oauth.loginForm().codeChallenge(pkceGenerator).open();
         assertBrowserWithError("Invalid parameter: redirect_uri");
 
         // Revert redirectUri
@@ -666,10 +653,10 @@ public class FAPI1Test extends AbstractFAPITest {
     }
 
     // codeToTokenExchanger is supposed to exchange "code" for the accessTokenResponse. It is supposed to send the tokenRequest including proper client authentication
-    private void successfulLoginAndLogout(String clientId, String username, boolean fragmentResponseModeExpected, Function<String, OAuthClient.AccessTokenResponse> codeToTokenExchanger) throws Exception {
-        String code = loginUserAndGetCode(clientId, fragmentResponseModeExpected);
+    private void successfulLoginAndLogout(String clientId, String nonce, String username, boolean fragmentResponseModeExpected, Function<String, AccessTokenResponse> codeToTokenExchanger) throws Exception {
+        String code = loginUserAndGetCode(clientId, nonce, fragmentResponseModeExpected);
 
-        OAuthClient.AccessTokenResponse tokenResponse = codeToTokenExchanger.apply(code);
+        AccessTokenResponse tokenResponse = codeToTokenExchanger.apply(code);
 
         assertSuccessfulTokenResponse(tokenResponse);
 
@@ -687,7 +674,7 @@ public class FAPI1Test extends AbstractFAPITest {
         Assert.assertNull(idToken.getGivenName());
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertEquals(idToken.getNonce(), "123456");
-        String state = getParameterFromUrl(OAuth2Constants.STATE, true);
+        String state = oauth.parseLoginResponse().getState();
         Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
         Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
     }

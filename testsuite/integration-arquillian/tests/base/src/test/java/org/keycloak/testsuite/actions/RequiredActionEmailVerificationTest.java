@@ -889,7 +889,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             appPage.assertCurrent();
 
             // Browser 2: Log in
-            driver2.navigate().to(oauth.getLoginFormUrl());
+            driver2.navigate().to(oauth.loginForm().build());
 
             assertThat(driver2.getTitle(), is("Sign in to " + testRealmName));
             driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
@@ -1044,7 +1044,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
 
-        driver2.navigate().to(oauth.getLoginFormUrl());
+        driver2.navigate().to(oauth.loginForm().build());
 
         // login page should be shown in the second browser
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
@@ -1064,9 +1064,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
         final String COMMON_ATTR = "verifyEmailRegistrationUser";
 
-        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
-        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
-        driver.navigate().to(appInitiatedRegisterUrl);
+        driver.navigate().to(oauth.registrationForm().build());
 
         registerPage.assertCurrent();
         registerPage.register(COMMON_ATTR, COMMON_ATTR, COMMON_ATTR + "@" + COMMON_ATTR, COMMON_ATTR, COMMON_ATTR, COMMON_ATTR);

@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -87,11 +87,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         updateAccountInformation();
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                .doAccessTokenRequest(code, "broker-app-secret");
+                .doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
 
         String idToken = response.getIdToken();
@@ -117,11 +117,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         updateAccountInformation();
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                .clientId("broker-app")
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                .doAccessTokenRequest(code, "broker-app-secret");
+                .doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
 
         String idTokenString = response.getIdToken();
@@ -203,11 +203,11 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             updateAccountInformation();
 
             // Exchange code from "broker-app" client of "consumer" realm for the tokens
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
-                    .clientId("broker-app")
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                    .client("broker-app", "broker-app-secret")
                     .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
-                    .doAccessTokenRequest(code, "broker-app-secret");
+                    .doAccessTokenRequest(code);
             assertEquals(200, response.getStatusCode());
 
             String idTokenString = response.getIdToken();

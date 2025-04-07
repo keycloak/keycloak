@@ -18,6 +18,7 @@ package org.keycloak.sdjwt.vp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,9 +27,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -128,12 +131,17 @@ public class SdJwtVP {
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
 
         ObjectNode issuerPayload = (ObjectNode) issuerSignedJWT.getPayload();
-        String hashAlgorithm = issuerPayload.get(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM).asText();
+        String hashAlgorithm = Optional.ofNullable(issuerPayload.get(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM))
+                .map(JsonNode::asText)
+                .orElse(JavaAlgorithm.SHA256.toLowerCase());
 
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();
 
-        String[] split = disclosuresString.split(SdJwt.DELIMITER);
+        List<String> split = Arrays.stream(disclosuresString.split(SdJwt.DELIMITER))
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+
         for (String disclosure : split) {
             String disclosureDigest = SdJwtUtils.hashAndBase64EncodeNoPad(disclosure.getBytes(), hashAlgorithm);
             if (disclosures.containsKey(disclosureDigest)) {

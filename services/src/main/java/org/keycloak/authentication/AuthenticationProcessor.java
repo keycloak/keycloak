@@ -17,8 +17,10 @@
 
 package org.keycloak.authentication;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
@@ -68,6 +70,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -306,6 +309,11 @@ public class AuthenticationProcessor {
         return clientData.encode();
     }
 
+    private String getSignedAuthSessionId() {
+        AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+        return authenticationSessionManager.signAndEncodeToBase64AuthSessionId(getAuthenticationSession().getParentSession().getId());
+    }
+
     public URI getRefreshUrl(boolean authSessionIdParam) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                 .path(AuthenticationProcessor.this.flowPath)
@@ -313,7 +321,7 @@ public class AuthenticationProcessor {
                 .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                 .queryParam(Constants.CLIENT_DATA, getClientData());
         if (authSessionIdParam) {
-            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
         }
         return uriBuilder
                 .build(getRealm().getName());
@@ -596,15 +604,23 @@ public class AuthenticationProcessor {
 
         @Override
         public URI getActionUrl(String code) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
+            UriInfo uriInfo = getUriInfo();
+            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
-            if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+            MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+            String token = queryParameters.getFirst(Constants.TOKEN);
+
+            if (StringUtil.isNotBlank(token)) {
+                uriBuilder.queryParam(Constants.TOKEN, token);
+            }
+
+            if (queryParameters.containsKey(LoginActionsService.AUTH_SESSION_ID)) {
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -619,7 +635,7 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -634,7 +650,7 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .queryParam(Constants.CLIENT_DATA, getClientData());
             if (getUriInfo().getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
+                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getSignedAuthSessionId());
             }
             return uriBuilder
                     .build(getRealm().getName());
@@ -938,7 +954,7 @@ public class AuthenticationProcessor {
     public Response redirectToFlow() {
         URI redirect = new AuthenticationFlowURLHelper(session, realm, uriInfo).getLastExecutionUrl(authenticationSession);
 
-        logger.debug("Redirecting to URL: " + redirect.toString());
+        logger.debugf("Redirecting to URL: %s", redirect.toString());
 
         return Response.status(302).location(redirect).build();
 
@@ -1119,7 +1135,7 @@ public class AuthenticationProcessor {
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
-                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId, persistenceState);
 
                 if (isLightweightUser(userSession.getUser())) {
@@ -1127,7 +1143,7 @@ public class AuthenticationProcessor {
                     lua.setOwningUserSessionId(userSession.getId());
                 }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {
                 // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
@@ -1177,11 +1193,16 @@ public class AuthenticationProcessor {
 
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
-        if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
+        if (!authenticatedUser.isEnabled()) {
+            event.user(authenticatedUser).detail(Details.USERNAME, authenticatedUser.getUsername());
+            throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
+        }
         if (authenticatedUser.getServiceAccountClientLink() != null) throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
     }
 
     protected Response authenticationComplete() {
+        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
+
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
@@ -1205,7 +1226,6 @@ public class AuthenticationProcessor {
     public AuthenticationProcessor.Result createClientAuthenticatorContext(AuthenticationExecutionModel model, ClientAuthenticator clientAuthenticator, List<AuthenticationExecutionModel> executions) {
         return new Result(model, clientAuthenticator, executions);
     }
-
 
     // This takes care of CRUD of FormMessage to the authenticationSession, so that message can be displayed on the forms in different HTTP request
     private class ForwardedFormMessageStore {

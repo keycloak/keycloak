@@ -160,14 +160,14 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             //get members
             try {
                 //we should get 403, not 400 or 404 etc.
-                realmUserResource.organizations().get("non-existing").members().getAll();
+                realmUserResource.organizations().get("non-existing").members().list(-1, -1);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
             try {
-                realmUserResource.organizations().get(orgId).members().getAll();
+                realmUserResource.organizations().get(orgId).members().list(-1, -1);
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
-            assertThat(realmAdminResource.organizations().get(orgId).members().getAll(), Matchers.notNullValue());
+            assertThat(realmAdminResource.organizations().get(orgId).members().list(-1, -1), Matchers.notNullValue());
 
             //get member
             try {

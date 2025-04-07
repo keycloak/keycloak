@@ -41,9 +41,14 @@ public class KcUnrecognizedPropertyExceptionHandler implements ExceptionMapper<U
 
     /**
      * Return escaped original message
+     * @param exception Exception to map
+     * @return The response with the error
      */
     @Override
     public Response toResponse(UnrecognizedPropertyException exception) {
-        return KeycloakErrorHandler.getResponse(session, new BadRequestException(exception.getMessage()));
+        final String message = String.format("Invalid json representation for %s. Unrecognized field \"%s\" at line %s column %s.",
+                exception.getReferringClass().getSimpleName(), exception.getPropertyName(),
+                exception.getLocation().getLineNr(), exception.getLocation().getColumnNr());
+        return KeycloakErrorHandler.getResponse(session, new BadRequestException(message));
     }
 }

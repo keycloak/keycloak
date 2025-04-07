@@ -28,7 +28,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
@@ -52,7 +51,8 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -147,8 +147,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -187,8 +186,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
 
         // Username input hidden as well as register and rememberMe. Info message should be shown
@@ -235,8 +233,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         setTimeOffset(10);
 
         // Request re-authentication
-        oauth.maxAge("1");
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // User directly on the password page. Info message should be shown here
         passwordPage.assertCurrent();
@@ -277,9 +274,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
         // See that user can re-authenticate with the github link present on the page as user has link to github social provider
         setTimeOffset(10);
-        oauth.maxAge("1");
-
-        loginPage.open();
+        oauth.loginForm().maxAge(1).open();
 
         // Username input hidden as well as register and rememberMe. Info message should be present
         loginPage.assertCurrent();
@@ -310,16 +305,15 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
     public void restartLoginWithNewRootAuthSession() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
-        oauth.prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
-        loginPage.open();
+        oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
         loginPage.clickResetLogin();
         loginPage.login("john-doh@localhost", "password");
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
@@ -343,8 +337,8 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().refresh();
         loginPage.login("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
         //set time offset after user session expiration (10s) but before accessCodeLifespanLogin (1800s) and accessCodeLifespan (60s)
         setTimeOffset(20);
@@ -352,8 +346,8 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("john-doh@localhost", "password");
 
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
 
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
@@ -375,7 +369,7 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
-        tabUtil.newTab(oauth.getLoginFormUrl());
+        tabUtil.newTab(oauth.loginForm().build());
         assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
         oauth.openLoginForm();
 
@@ -386,17 +380,17 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         loginPage.login("test-user@localhost", "password");
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response1 = oauth.doAccessTokenRequest(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
 
-        oauth.doLogout(response1.getRefreshToken(), "password");
+        oauth.doLogout(response1.getRefreshToken());
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
+        code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
         Assert.assertNotEquals(accessToken1.getId(), accessToken2.getId());

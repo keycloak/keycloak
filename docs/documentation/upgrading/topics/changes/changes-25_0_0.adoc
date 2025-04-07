@@ -82,8 +82,8 @@ For more details and more comprehensive scenarios, see https://www.keycloak.org/
 
 == `security-admin-console` Client Redirect URIs
 
-The handling of the `${authAdminUrl}` has changed in hostname v1. Previously with hostname v1 the admin URL was resolved dynamically from the request if the `hostname-admin` or `hostname-admin-url` options were not set. With hostname v2 the admin URL will default instead to the frontend URL. 
-If the `hostname` option is set and `hostname-strict` is true, this change will prevent redirect URIs with alternative hostnames from working for Clients using the Root URL `${authAdminUrl}`. 
+The handling of the `${authAdminUrl}` has changed in hostname v1. Previously with hostname v1 the admin URL was resolved dynamically from the request if the `hostname-admin` or `hostname-admin-url` options were not set. With hostname v2 the admin URL will default instead to the frontend URL.
+If the `hostname` option is set and `hostname-strict` is true, this change will prevent redirect URIs with alternative hostnames from working for Clients using the Root URL `${authAdminUrl}`.
 You should consider using the `hostname-admin` option instead of the redirect URIs to allow a single alternative hostname. Alternative hostname redirects should be removed as the `security-admin-console` Client only needs the default redirect URI of `/admin/master/console/*` with Root URL of `${authAdminUrl}`.
 
 = Persistent user sessions
@@ -260,7 +260,8 @@ The old behavior to preload offline sessions at startup is now removed after it 
 
 Options `cache`, `cache-stack`, and `cache-config-file` are no longer build options, and they can be specified only during runtime.
 This eliminates the need to execute the build phase and rebuild your image due to them.
-Be aware that they will not be recognized during the `build` phase, so you need to remove them.
+Be aware that they will not be recognized during the `build` phase, so you need to remove them from the `build` phase and add them to the `runtime` phase.
+If you do not add your current caching options to the `runtime` phase, {project_name} will fall back to the default caching settings.
 
 = kcadm and kcreg changes
 
@@ -423,7 +424,7 @@ to avoid overflow after 2038.
 Method `String encode(String rawPassword, int iterations)` on the interface `org.keycloak.credential.hash.PasswordHashProvider` is deprecated. The method will be removed in
 one of the future {project_name} releases. It might be {project_name} 27 release.
 
-= CollectionUtil intesection method removed
+= CollectionUtil intersection method removed
 
 The method `org.keycloak.common.util.CollectionUtil.intersection` has been removed. You should use the 'java.util.Collection.retainAll' instead on an existing collection.
 

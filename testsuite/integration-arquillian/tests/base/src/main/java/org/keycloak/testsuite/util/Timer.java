@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -133,8 +134,8 @@ public class Timer {
             }
             OutputStream stream = new BufferedOutputStream(new FileOutputStream(f));
             for (Long duration : stats.get(op)) {
-                IOUtils.write(duration.toString(), stream, "UTF-8");
-                IOUtils.write("\n", stream, "UTF-8");
+                IOUtils.write(duration.toString(), stream, StandardCharsets.UTF_8);
+                IOUtils.write("\n", stream, StandardCharsets.UTF_8);
             }
             stream.flush();
             IOUtils.closeQuietly(stream);

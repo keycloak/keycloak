@@ -58,7 +58,7 @@ import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(value = CLIENT_TYPES)
+@EnableFeature(value = CLIENT_TYPES, skipRestart = true)
 public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
     @Override

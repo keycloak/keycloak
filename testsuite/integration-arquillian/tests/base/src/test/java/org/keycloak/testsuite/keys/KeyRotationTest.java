@@ -50,7 +50,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
 import jakarta.ws.rs.core.Response;
@@ -129,7 +129,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         // Get token with keys #1
         oauth.doLogin("test-user@localhost", "password");
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys1.get(Algorithm.RS256), response.getAccessToken());
         assertTokenKid(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
@@ -162,7 +162,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertNotEquals(keys1.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), keys2.get(Algorithm.HS512));
 
                 // Refresh token with keys #2
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys2.get(Algorithm.RS256), response.getAccessToken());
         assertTokenKid(keys2.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
@@ -181,7 +181,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         dropKeys1();
 
         // Refresh token with keys #1 dropped - should pass as refresh token should be signed with key #2
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
         assertTokenKid(keys2.get(Algorithm.RS256), response.getAccessToken());
         assertTokenKid(keys2.get(Constants.INTERNAL_SIGNATURE_ALGORITHM), response.getRefreshToken());
@@ -213,7 +213,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenIntrospection(response.getAccessToken(), false);
 
         // Refresh token with keys #2 dropped - should fail as refresh token is signed with key #2
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());
         assertEquals("Invalid refresh token", response.getErrorDescription());
     }
@@ -335,10 +335,9 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
     private void assertTokenIntrospection(String token, boolean expectActive) {
         try {
-            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", token);
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+            JsonNode jsonNode = oauth.client("confidential-cli", "secret1").doIntrospectionAccessTokenRequest(token).asJsonNode();
             assertEquals(expectActive, jsonNode.get("active").asBoolean());
+            oauth.client("test-app", "password");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

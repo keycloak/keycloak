@@ -624,6 +624,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected void onRemoveUserSessionsEvent(String realmId) {
         removeLocalUserSessions(realmId, false);
+        removeLocalUserSessions(realmId, true);
     }
 
     // public for usage in the testsuite

@@ -29,6 +29,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -78,7 +79,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         ClientSessionContext sessionContext = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,
                 OAuth2Constants.SCOPE_OPENID, session);
         clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
-
+        sessionContext.setAttribute(Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
 
         // set the client as retrieved from the pre-authorized session
         session.getContext().setClient(result.getClientSession().getClient());
@@ -120,7 +121,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     public static String getPreAuthorizedCode(KeycloakSession session, AuthenticatedClientSessionModel authenticatedClientSession, int expirationTime) {
         String codeId = UUID.randomUUID().toString();
         String nonce = SecretGenerator.getInstance().randomString();
-        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null,
+        OAuth2Code oAuth2Code = new OAuth2Code(codeId, expirationTime, nonce, null, null, null, null, null,
                 authenticatedClientSession.getUserSession().getId());
         return OAuth2CodeParser.persistCode(session, authenticatedClientSession, oAuth2Code);
     }

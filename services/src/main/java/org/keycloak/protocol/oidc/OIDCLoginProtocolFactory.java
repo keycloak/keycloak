@@ -110,14 +110,22 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
     public static final String ORGANIZATION_SCOPE_CONSENT_TEXT = "${organizationScopeConsentText}";
 
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_NUMBER = "add-req-params-max-number";
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_SIZE = "add-req-params-max-size";
+    public static final String CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
+    public static final String CONFIG_OIDC_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
+
+    private OIDCProviderConfig providerConfig;
+
     @Override
     public void init(Config.Scope config) {
+        this.providerConfig = new OIDCProviderConfig(config);
         initBuiltIns();
     }
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
-        return new OIDCLoginProtocol().setSession(session);
+        return new OIDCLoginProtocol(this.providerConfig).setSession(session);
     }
 
     @Override
@@ -448,8 +456,6 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     ServiceAccountConstants.CLIENT_ADDRESS,
                     ServiceAccountConstants.CLIENT_ADDRESS, "String",
                     true, true, true));
-
-            newRealm.addDefaultClientScope(serviceAccountScope, true);
 
             logger.debugf("Client scope '%s' created in the realm '%s'.", ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, newRealm.getName());
         } else {

@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,7 +33,6 @@ public class AppPage extends AbstractPage {
     @FindBy(id = "account")
     private WebElement accountLink;
 
-    @Override
     public void open() {
         DroneUtils.getCurrentDriver().navigate().to(OAuthClient.APP_AUTH_ROOT);
     }
@@ -60,7 +59,7 @@ public class AppPage extends AbstractPage {
     }
 
     public void logout(String idTokenHint) {
-        oauth.idTokenHint(idTokenHint).openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
     }
 
 

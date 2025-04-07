@@ -116,6 +116,6 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
     body: payload,
   });
 
-  const data: TokenResponseRaw = await response.json();
+  const data = (await response.json()) as TokenResponseRaw;
   return camelize(data);
 };

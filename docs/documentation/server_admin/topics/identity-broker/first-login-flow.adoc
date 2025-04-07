@@ -70,6 +70,7 @@ This authenticator sets an existing user to the authentication context without v
 [NOTE]
 ====
 This setup is the simplest setup available, but it is possible to use other authenticators. For example:
+
 * You can add the Review Profile authenticator to the beginning of the flow if you want end users to confirm their profile information.
 * You can add authentication mechanisms to this flow, forcing a user to verify their credentials. Adding authentication mechanisms requires a complex flow. For example, you can set the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
 ====

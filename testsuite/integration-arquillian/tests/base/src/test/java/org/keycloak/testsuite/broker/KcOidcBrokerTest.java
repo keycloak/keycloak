@@ -47,9 +47,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import jakarta.ws.rs.core.Response;
@@ -68,9 +67,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -279,165 +275,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         Assert.assertEquals("hard-coded", user.getAttributes().get("hard-coded").get(0));
     }
 
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_samlBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationSamlBrokerWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-            logInWithBroker(samlBrokerConfig);
-
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-            setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "sign in to", true);
-            log.debug("Logging in");
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_oidcBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationOIDCBrokerWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(samlBrokerConfig);
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-            AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
-
-            logInWithBroker(bc);
-
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
-        }
-    }
-
-    /**
-     * Refers to in old test suite: PostBrokerFlowTest#testBrokerReauthentication_bothBrokerWithOTPRequired
-     */
-    @Test
-    public void testReauthenticationBothBrokersWithOTPRequired() throws Exception {
-        final RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-
-        try (RealmAttributeUpdater rauConsumer = new RealmAttributeUpdater(consumerRealm).setOtpPolicyCodeReusable(true).update();
-             RealmAttributeUpdater rauProvider = new RealmAttributeUpdater(providerRealm).setOtpPolicyCodeReusable(true).update()) {
-
-            KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-            ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-            IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-
-            try {
-                updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-                providerRealm.clients().create(samlClient);
-                consumerRealm.identityProviders().create(samlBroker);
-
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-                logInWithBroker(samlBrokerConfig);
-                totpPage.assertCurrent();
-                String totpSecret = totpPage.getTotpSecret();
-                totpPage.configure(totp.generateTOTP(totpSecret));
-                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                logInWithBroker(bc);
-
-                waitForPage(driver, "account already exists", false);
-                idpConfirmLinkPage.assertCurrent();
-                idpConfirmLinkPage.clickLinkAccount();
-                loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-
-                loginTotpPage.assertCurrent();
-                loginTotpPage.login(totp.generateTOTP(totpSecret));
-                AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
-                AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
-
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
-
-                logInWithBroker(bc);
-
-                loginTotpPage.assertCurrent();
-                loginTotpPage.login(totp.generateTOTP(totpSecret));
-
-                assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-            } finally {
-                updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-                removeUserByUsername(consumerRealm, "consumer");
-            }
-        }
-    }
 
     @Test
     public void testInvalidIssuedFor() {

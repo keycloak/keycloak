@@ -80,7 +80,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
     protected KeycloakQuarkusConfiguration configuration;
     protected List<String> additionalBuildArgs = Collections.emptyList();
-    protected Map<String, List<String>> spis = new HashMap<String, List<String>>();
+    protected Map<String, List<String>> spis = new HashMap<>();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -174,7 +174,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
-            commands.add("--hostname-strict-https=false");
         } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
         }
@@ -383,12 +382,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
-        return new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
+        return (s, sslSession) -> true;
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {

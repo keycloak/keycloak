@@ -485,7 +485,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
                 ClusterProvider.DCNotify.ALL_DCS);
 
-        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm, false);
+        session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
@@ -746,8 +746,12 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     userSessionEntityToImport.getRealmId(), clientUUID, offline);
             clientSessionToImport.setUserSessionId(userSessionEntityToImport.getId());
 
-            // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
-            clientSessionToImport.setTimestamp(userSessionEntityToImport.getLastSessionRefresh());
+            if (offline) {
+                // Update timestamp to the same value as userSession. LastSessionRefresh of userSession from DB will have a correct value.
+                // This is an optimization with the old code before persistent user sessions existed, and is probably valid as an offline user session is supposed to have only one client session.
+                // Remove this code once this once the persistent sessions is the only way to handle sessions, and the old client sessions have been migrated to have an updated timestamp.
+                clientSessionToImport.setTimestamp(userSessionEntityToImport.getLastSessionRefresh());
+            }
 
             clientSessionsById.put(clientSessionToImport.getId(), new SessionEntityWrapper<>(clientSessionToImport));
 
@@ -935,8 +939,12 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     userSessionEntity.getRealmId(), clientUUID, offline);
             clientSession.setUserSessionId(userSessionEntity.getId());
 
-            // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
-            // clientSession.setTimestamp(userSessionEntity.getLastSessionRefresh());
+            if (offline) {
+                // Update timestamp to the same value as userSession. LastSessionRefresh of userSession from DB will have a correct value.
+                // This is an optimization with the old code before persistent user sessions existed, and is probably valid as an offline user session is supposed to have only one client session.
+                // Remove this code once this once the persistent sessions is the only way to handle sessions, and the old client sessions have been migrated to have an updated timestamp.
+                clientSession.setTimestamp(userSessionEntity.getLastSessionRefresh());
+            }
 
             ClientModel client = session.clients().getClientById(realm, clientSession.getClientId());
             if (isClientSessionExpired(realm, client, clientSession, offline)) {

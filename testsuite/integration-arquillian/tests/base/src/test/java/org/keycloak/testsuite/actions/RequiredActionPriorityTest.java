@@ -50,7 +50,7 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import java.util.List;
 
@@ -229,10 +229,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login with kc_action=UPDATE_PROFILE
-        final var kcActionOauth = new OAuthClient();
-        kcActionOauth.init(driver);
-        kcActionOauth.kcAction(RequiredAction.UPDATE_PROFILE.name());
-        kcActionOauth.openLoginForm();
+        oauth.loginForm().kcAction(RequiredAction.UPDATE_PROFILE.name()).open();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(USERNAME, PASSWORD);
 

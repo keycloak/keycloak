@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -80,7 +80,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         assertEquals(500, response.getStatus());
 
         InputStream is = (InputStream) response.getEntity();
-        String responseString = StreamUtil.readString(is, Charset.forName("UTF-8"));
+        String responseString = StreamUtil.readString(is, StandardCharsets.UTF_8);
 
         Assert.assertTrue(responseString.contains("An internal server error has occurred"));
     }

@@ -55,7 +55,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -77,6 +76,7 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -760,7 +760,12 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.CLIENT_DATA) String clientData,
-                                 @QueryParam(Constants.TAB_ID) String tabId) {
+                                 @QueryParam(Constants.TAB_ID) String tabId,
+                                 @QueryParam(Constants.TOKEN) String tokenString) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
+            //this call should extract orgId from token and set the organization to the session context
+            preHandleActionToken(tokenString);
+        }
         return registerRequest(authSessionId, code, execution, clientId,  tabId,clientData);
     }
 
@@ -907,7 +912,8 @@ public class LoginActionsService {
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
         event.success();
 
@@ -1017,6 +1023,11 @@ public class LoginActionsService {
             Response response = protocol.sendError(authSession, Error.CONSENT_DENIED, null);
             event.error(Errors.REJECTED_BY_USER);
             return response;
+        }
+
+        if (DeviceGrantType.isDeviceCodeDeniedForDeviceVerificationFlow(session, realm, authSession)) {
+            event.error(Errors.REJECTED_BY_USER);
+            return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
         }
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());

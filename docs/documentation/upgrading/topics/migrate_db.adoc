@@ -11,11 +11,11 @@ To perform an automatic migration, start the server connected to the desired dat
 
 For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created. Instead, you find a warning in the server logs with the SQL commands that you can apply manually.
 
-To change the threshold, set the `index-creation-threshold` property, value for the default `connections-liquibase` provider:
+To change the threshold, set the `index-creation-threshold` property, value for the `connections-liquibase` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-liquibase-default-index-creation-threshold=300000
+kc.[sh|bat] start --spi-connections-liquibase-quarkus-index-creation-threshold=300000
 ----
 
 === Manual relational database migration

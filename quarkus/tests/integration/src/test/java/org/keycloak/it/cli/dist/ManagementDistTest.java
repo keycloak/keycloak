@@ -20,6 +20,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -36,10 +37,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true,
-        defaultOptions = {"--health-enabled=true", "--metrics-enabled=true"},
+        defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000,
         containerExposedPorts = {9000, 8080, 9005})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Tag(DistributionTest.SLOW)
 public class ManagementDistTest {
 
     @Test
@@ -171,7 +173,9 @@ public class ManagementDistTest {
         cliResult.assertMessage("Management interface listening on http://localhost:9000");
 
         // If running in container, we cannot access the localhost due to network host settings
-        if (DistributionType.isContainerDist()) return;
+        if (DistributionType.isContainerDist()) {
+            return;
+        }
 
         when().get("/").then()
                 .statusCode(200)

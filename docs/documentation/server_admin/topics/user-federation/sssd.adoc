@@ -13,7 +13,7 @@ image:images/keycloak-sssd-freeipa-integration-overview.png[]
 
 [NOTE]
 ====
-{project_name} registers groups and roles automatically but does not synchronize them. Any changes made by the {project_name} administrator in {project_name} do not synchronize with SSSD.
+{project_name} registers groups and roles automatically but does not synchronize them. The groups are imported from SSSD the first time the user is accessed and then they are managed entirely inside {project_name}. Any changes made by the administrator in {project_name} do not synchronize with SSSD or vice-versa.
 ====
 
 ==== FreeIPA/IdM server

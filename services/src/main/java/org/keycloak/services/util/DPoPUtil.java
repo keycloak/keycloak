@@ -23,17 +23,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.commons.codec.binary.Hex;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -56,6 +58,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -75,6 +78,7 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
@@ -84,12 +88,12 @@ import static org.keycloak.utils.StringUtil.isNotBlank;
 public class DPoPUtil {
 
     public static final int DEFAULT_PROOF_LIFETIME = 10;
-    public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 2;
+    public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 15; // sec;
     public static final String DPOP_TOKEN_TYPE = "DPoP";
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
 
-    public static enum Mode {
+    public enum Mode {
         ENABLED,
         OPTIONAL,
         DISABLED
@@ -97,7 +101,7 @@ public class DPoPUtil {
 
     public static final String DPOP_HTTP_HEADER = "DPoP";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
-    private static final String DPOP_ATH_ALG = "RS256";
+    public static final String DPOP_ATH_ALG = "RS256";
 
     public static final Set<String> DPOP_SUPPORTED_ALGS = Stream.of(
         Algorithm.ES256,
@@ -167,13 +171,38 @@ public class DPoPUtil {
         } catch (VerificationException ex) {
             event.detail(Details.REASON, ex.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_DPOP_PROOF, ex.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
+    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
+                                                             EventBuilder event,
+                                                             Cors cors) {
+        boolean isDPoPSupported = Profile.isFeatureEnabled(Profile.Feature.DPOP);
+        if (!isDPoPSupported) {
+            return Optional.empty();
+        }
+
+        HttpRequest request = keycloakSession.getContext().getHttpRequest();
+        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
+        if (!isDpopHeaderPresent) {
+            return Optional.empty();
+        }
+
+        try {
+            DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
+            keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
+            return Optional.of(dPoP);
+        } catch (VerificationException ex) {
+            event.detail(Details.REASON, ex.getMessage());
+            event.error(Errors.INVALID_DPOP_PROOF);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
+    
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
-        if (token == null || token.trim().equals("")) {
+        if (token == null || token.trim().isEmpty()) {
             throw new VerificationException("DPoP proof is missing");
         }
 
@@ -237,6 +266,43 @@ public class DPoPUtil {
 
     }
 
+    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
+
+    public static TokenVerifier<AccessToken> withDPoPVerifier(TokenVerifier<AccessToken> verifier, RealmModel realm, DPoPUtil.Validator validator) {
+        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            verifier = verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP))
+                    .withChecks(token -> {
+                        String[] split = WHITESPACES.split(validator.authHeader);
+                        String typeString = split[0];
+                        if (!typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                            throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
+                        }
+                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                            throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
+                        }
+                        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
+                        if (clientModel == null) {
+                            throw new VerificationException("Client not found");
+                        }
+                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                            throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
+                        }
+                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                            if (validator.accessToken == null) {
+                                throw new VerificationException("Access Token not set for validator");
+                            }
+                            DPoP dPoP = validator.validate();
+                            DPoPUtil.validateBinding(token, dPoP);
+                            if (!Objects.equals(token.getConfirmation().getKeyThumbprint(), dPoP.getThumbprint())) {
+                                throw new VerificationException("DPoP Proof public key thumbprint does not match dpop_jkt");
+                            }
+                        }
+                        return true;
+                    });
+        }
+        return verifier;
+    }
+
     public static void validateBinding(AccessToken token, DPoP dPoP) throws VerificationException {
         try {
             TokenVerifier.createWithoutSignature(token)
@@ -262,6 +328,32 @@ public class DPoPUtil {
 
     public static void bindToken(AccessToken token, DPoP dPoP) {
         bindToken(token, dPoP.getThumbprint());
+    }
+
+    public static void validateDPoPJkt(String dpopJkt, KeycloakSession session, EventBuilder event, Cors cors) {
+        if (dpopJkt == null) {
+            // if Keycloak did not receive dpop_jkt in an authorization request, Keycloak needs not to verify whether DPoP Proof public key thumbprint matches dpop_jkt.
+            return;
+        }
+        // if Keycloak received dpop_jkt in an authorization request, Keycloak needs to verify whether DPoP Proof public key thumbprint matches dpop_jkt.
+        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dPoP == null) {
+            String errorMessage = "DPoP Proof missing";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
+        if (!dpopJkt.equals(dPoP.getThumbprint())){
+            String errorMessage = "DPoP Proof public key thumbprint does not match dpop_jkt";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+    }
+
+    public static boolean isDPoPToken(AccessToken refreshToken) {
+        return refreshToken.getConfirmation() != null && refreshToken.getConfirmation().getKeyThumbprint() != null;
     }
 
     private static class DPoPClaimsCheck implements TokenVerifier.Predicate<DPoP> {
@@ -352,7 +444,26 @@ public class DPoPUtil {
             long time = Time.currentTime();
             Long iat = t.getIat();
 
-            if (!(iat <= time + clockSkew && iat > time - lifetime)) {
+            // Considering a clock skew, there are two cases about it:
+            //   case 1: a client's clock is ahead Keycloak's clock
+            //   case 2: a client's clock is behind Keycloak's clock
+            //
+            // To remedy case 1, the valid time slot is as follows:
+            //   current keycloak clock => "iat" - clock skew
+            //   current keycloak clock => "nbf" - clock skew
+            // To remedy case 2, the valid time slot is as follows:
+            //   current keycloak clock <= "exp" + clock skew
+            //     or
+            //   current keycloak clock <= "iat" + life time + clock skew
+            //
+            // Therefore, the valid time slot is as follows:
+            //    "iat" - clock skew <= keycloak's clock <= "exp" + clock skew
+            //      or
+            //    "iat" - clock skew <= keycloak's clock <= iat" + life time + clock skew
+            //
+            // Considering that these claim values are in seconds, the valid time slot uses <=, >=, instead of <, >.
+
+            if (!(iat <= time + clockSkew && iat >= time - lifetime - clockSkew)) {
                 throw new DPoPVerificationException(t, "DPoP proof is not active");
             }
             return true;
@@ -361,7 +472,7 @@ public class DPoPUtil {
 
     private static class DPoPAccessTokenHashCheck implements TokenVerifier.Predicate<DPoP> {
 
-        private String hash;
+        private final String hash;
 
         public DPoPAccessTokenHashCheck(String tokenString) {
             hash = HashUtils.accessTokenHash(DPOP_ATH_ALG, tokenString, true);
@@ -422,6 +533,7 @@ public class DPoPUtil {
         private String method;
         private String dPoP;
         private String accessToken;
+        private String authHeader;
         private int clockSkew = DEFAULT_ALLOWED_CLOCK_SKEW;
         private int lifetime = DEFAULT_PROOF_LIFETIME;
 
@@ -435,6 +547,7 @@ public class DPoPUtil {
             this.uri = request.getUri().getAbsolutePath();
             this.method = request.getHttpMethod();
             this.dPoP = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
+            this.authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
             return this;
         }
 

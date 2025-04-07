@@ -20,6 +20,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -298,7 +299,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
                 .build()
                 .executeAndTransform(response -> {
                     Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-                    MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"),
+                    MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8),
                             Matchers.containsString("Invalid Request"));
                     return null;
                 });
@@ -328,7 +329,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
                 .build()
                 .executeAndTransform(response -> {
                     Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
-                    MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"),
+                    MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8),
                             Matchers.containsString("Invalid Request"));
                     return null;
                 });

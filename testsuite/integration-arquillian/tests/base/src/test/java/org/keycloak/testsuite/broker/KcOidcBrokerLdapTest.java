@@ -26,24 +26,16 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider.EditMode;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
-import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.federation.kerberos.KeycloakSPNegoSchemeFactory;
-import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.LDAPRule;
 
 public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTest {
-
-    private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-ldap-connection.properties";
-
-    private KeycloakSPNegoSchemeFactory spnegoSchemeFactory;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -51,13 +43,10 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
     }
 
     @ClassRule
-    public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION, KerberosEmbeddedServer.DEFAULT_KERBEROS_REALM);
+    public static LDAPRule ldapRule = new LDAPRule();
 
     @Before
     public void onBefore() {
-        getKerberosRule().setKrb5ConfPath(testingClient.testing());
-        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig());
-        oauth.clientId("kerberos-app");
         ComponentRepresentation rep = getUserStorageConfiguration();
         Response resp = adminClient.realm(bc.consumerRealmName()).components().add(rep);
         getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
@@ -76,11 +65,11 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
     }
 
     private ComponentRepresentation getUserStorageConfiguration(String providerName, String providerId) {
-        Map<String,String> kerberosConfig = getKerberosRule().getConfig();
-        kerberosConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
-        kerberosConfig.put(LDAPConstants.EDIT_MODE, EditMode.UNSYNCED.name());
-        kerberosConfig.put(UserStorageProviderModel.IMPORT_ENABLED, "true");
-        MultivaluedHashMap<String, String> config = toComponentConfig(kerberosConfig);
+        Map<String,String> ldapConfig = ldapRule.getConfig();
+        ldapConfig.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
+        ldapConfig.put(LDAPConstants.EDIT_MODE, EditMode.UNSYNCED.name());
+        ldapConfig.put(UserStorageProviderModel.IMPORT_ENABLED, "true");
+        MultivaluedHashMap<String, String> config = toComponentConfig(ldapConfig);
 
         UserStorageProviderModel model = new UserStorageProviderModel();
         model.setLastSync(0);
@@ -103,16 +92,7 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
         return config;
     }
 
-    private KerberosRule getKerberosRule() {
-        return kerberosRule;
-    }
-
-
-    private CommonKerberosConfig getKerberosConfig() {
-        return new LDAPProviderKerberosConfig(getUserStorageConfiguration());
-    }
-
     private ComponentRepresentation getUserStorageConfiguration() {
-        return getUserStorageConfiguration("kerberos-ldap", LDAPStorageProviderFactory.PROVIDER_NAME);
+        return getUserStorageConfiguration("ldap", LDAPStorageProviderFactory.PROVIDER_NAME);
     }
 }

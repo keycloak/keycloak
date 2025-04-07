@@ -28,3 +28,4 @@ org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFa
 org.keycloak.services.clientpolicy.executor.SamlSecureClientUrisExecutorFactory
 org.keycloak.services.clientpolicy.executor.SamlAvoidRedirectBindingExecutorFactory
 org.keycloak.services.clientpolicy.executor.SamlSignatureEnforcerExecutorFactory
+org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory

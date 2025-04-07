@@ -17,7 +17,7 @@ For a configuration where this is applied, visit <@links.ha id="deploy-keycloak-
 // remove this paragraph once OpenJDK 17 is no longer supported on the server side.
 // https://github.com/keycloak/keycloak/issues/31101
 
-JGroups communications, which is used in single-site setups for the communication between {project_name} nodes, benefits from the use of virtual threads which are available in OpenJDK 21.
+JGroups communications, which is used in single-site setups for the communication between {project_name} nodes, benefits from the use of virtual threads which are available in OpenJDK 21 when at least two cores are available for {project_name}.
 This reduces the memory usage and removes the need to configure thread pool sizes.
 Therefore, the use of OpenJDK 21 is recommended.
 
@@ -59,7 +59,7 @@ When this setting is active, requests that exceed the number of queued requests 
 {project_name}'s liveness probe is non-blocking to avoid a restart of a Pod under a high load.
 
 // Developer's note: See KeycloakReadyHealthCheck for the details of the blocking/non-blocking behavior
-The overall health probe and the readiness can probe in some cases block to check the connection to the database, so they might fail under a high load.
+The overall health probe and the readiness probe can in some cases block to check the connection to the database, so they might fail under a high load.
 Due to this, a Pod can become non-ready under a high load.
 
 === OS Resources

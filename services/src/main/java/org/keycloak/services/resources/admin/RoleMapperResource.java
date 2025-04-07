@@ -17,9 +17,13 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -124,7 +128,11 @@ public class RoleMapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Get role mappings")
+    @Operation(summary = "Get role mappings")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MappingsRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public MappingsRepresentation getRoleMappings() {
         viewPermission.require();
 
@@ -168,7 +176,11 @@ public class RoleMapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Get realm-level role mappings")
+    @Operation(summary = "Get realm-level role mappings")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
@@ -189,7 +201,11 @@ public class RoleMapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Get effective realm-level role mappings This will recurse all composite roles to get the result.")
+    @Operation(summary = "Get effective realm-level role mappings This will recurse all composite roles to get the result.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
@@ -210,7 +226,11 @@ public class RoleMapperResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Get realm-level roles that can be mapped")
+    @Operation(summary = "Get realm-level roles that can be mapped")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public Stream<RoleRepresentation> getAvailableRealmRoleMappings() {
         viewPermission.require();
 
@@ -229,8 +249,14 @@ public class RoleMapperResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Add realm-level role mappings to the user")
-    @APIResponse(responseCode = "204", description = "No Content")
+    @Operation(summary = "Add realm-level role mappings to the user")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public void addRealmRoleMappings(@Parameter(description = "Roles to add") List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -253,7 +279,9 @@ public class RoleMapperResource {
             throw new ErrorResponseException("invalid_request", "Could not add user role mappings!", Response.Status.BAD_REQUEST);
         }
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        if (!roles.isEmpty()) {
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
+        }
     }
 
     /**
@@ -265,7 +293,14 @@ public class RoleMapperResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLE_MAPPER)
-    @Operation( summary = "Delete realm-level role mappings")
+    @Operation(summary = "Delete realm-level role mappings")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
     public void deleteRealmRoleMappings(List<RoleRepresentation> roles) {
         managePermission.require();
 

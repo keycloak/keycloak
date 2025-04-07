@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import type { ComponentProps } from "./components";
-import { convertToName } from "./DynamicComponents";
 
 export const BooleanComponent = ({
   name,
@@ -13,6 +12,7 @@ export const BooleanComponent = ({
   isDisabled = false,
   defaultValue,
   isNew = true,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();

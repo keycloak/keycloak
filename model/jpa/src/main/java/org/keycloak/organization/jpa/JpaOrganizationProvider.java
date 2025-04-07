@@ -18,13 +18,20 @@
 package org.keycloak.organization.jpa;
 
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
+import static org.keycloak.models.UserModel.EMAIL;
+import static org.keycloak.models.UserModel.FIRST_NAME;
+import static org.keycloak.models.UserModel.LAST_NAME;
+import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -33,6 +40,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -56,9 +64,11 @@ import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.storage.StorageId;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -275,10 +285,72 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
-        throwExceptionIfObjectIsNull(organization, "Organization");
-        GroupModel group = getOrganizationGroup(organization);
+        return getMembersStream(organization, Map.of(UserModel.SEARCH, search), exact, first, max);
+    }
 
-        return userProvider.getGroupMembersStream(getRealm(), group, search, exact, first, max);
+    @Override
+    public Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
+        throwExceptionIfObjectIsNull(organization, "Organization");
+        var builder = em.getCriteriaBuilder();
+        var queryBuilder = builder.createQuery(String.class);
+        var groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        queryBuilder.select(groupMembership.get("user").get("id"));
+
+        var predicates = new ArrayList<>();
+        var group = getOrganizationGroup(organization);
+
+        predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
+
+        From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
+            switch (filter.getKey()) {
+                case UserModel.SEARCH -> predicates.add(builder
+                        .or(getSearchOptionPredicateArray(filter.getValue(), Optional.ofNullable(exact).orElse(false), builder, userJoin)));
+                case MembershipType.NAME -> predicates.add(builder
+                        .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
+            }
+        }
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream().map(id -> {
+            UserModel user = userProvider.getUserById(getRealm(), id);
+
+            if (isReadOnlyOrganizationMember(session, user)) {
+                return new ReadOnlyUserModelDelegate(user) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
+
+            return user;
+        }));
+    }
+
+    private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
+        value = value.toLowerCase();
+
+        List<Predicate> orPredicates = new ArrayList<>();
+
+        if (exact) {
+            orPredicates.add(builder.equal(from.get(USERNAME), value));
+            orPredicates.add(builder.equal(from.get(EMAIL), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
+        } else {
+            value = "%" + value + "%";
+            orPredicates.add(builder.like(from.get(USERNAME), value));
+            orPredicates.add(builder.like(from.get(EMAIL), value));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+        }
+
+        return orPredicates.toArray(Predicate[]::new);
     }
 
     @Override
@@ -308,7 +380,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<OrganizationModel> getByMember(UserModel member) {
         throwExceptionIfObjectIsNull(member, "User");
-        TypedQuery<String> query = em.createNamedQuery("getGroupsByMember", String.class);
+
+        TypedQuery<String> query;
+        if(StorageId.isLocalStorage(member.getId())) {
+            query = em.createNamedQuery("getGroupsByMember", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupsByFederatedMember", String.class);
+        }
 
         query.setParameter("userId", member.getId());
 

@@ -52,7 +52,6 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resteasy.ResteasyKeycloakApplication;
-import org.keycloak.testsuite.JsonConfigProviderFactory;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.UndertowRequestFilter;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -94,15 +93,6 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
         di.setDefaultEncoding("UTF-8");
-        if (configuration.getKeycloakConfigPropertyOverridesMap() != null) {
-            try {
-                di.addInitParameter(JsonConfigProviderFactory.SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES,
-                  JsonSerialization.writeValueAsString(configuration.getKeycloakConfigPropertyOverridesMap()));
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 

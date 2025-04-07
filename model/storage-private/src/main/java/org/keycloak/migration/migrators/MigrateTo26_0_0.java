@@ -59,11 +59,15 @@ public class MigrateTo26_0_0 implements Migration {
 
     private void migrateRealm(KeycloakSession session, RealmModel realm) {
         ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        adminConsoleClient.setFullScopeAllowed(true);
-        adminConsoleClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        if (adminConsoleClient != null) {
+            adminConsoleClient.setFullScopeAllowed(true);
+            adminConsoleClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        }
         ClientModel adminCliClient = realm.getClientByClientId(Constants.ADMIN_CLI_CLIENT_ID);
-        adminCliClient.setFullScopeAllowed(true);
-        adminCliClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        if (adminCliClient != null) {
+            adminCliClient.setFullScopeAllowed(true);
+            adminCliClient.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
+        }
     }
 }
 

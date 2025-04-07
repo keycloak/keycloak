@@ -142,9 +142,7 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 * A lock icon for a Quarkus property in the https://quarkus.io/guides/all-config[Quarkus documentation] indicates a build time property. You run the `build` command to apply this property. For details about the build command, see the subsequent sections on optimizing {project_name}.
 * No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and {project_name}.
 
-. Use the `[-cf|--config-file]` command line parameter to include that file.
-
-Similarly, you can also store Quarkus properties in a Java KeyStore.
+You can also store Quarkus properties in a Java KeyStore.
 
 Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by {project_Name}, defining that property key in `quarkus.properties` has no effect. The {project_Name} configuration value takes precedence over the Quarkus property value.
 
@@ -154,6 +152,18 @@ Note that some Quarkus properties are already mapped in the {project_name} confi
 
 To disable expression evaluation, the `\` character functions as an escape character. In particular, it must be used to escape the usage of `$` characters when they appear to define an expression or are repeated. For example, if you want the configuration value `my$$password`, use `my\$\$password` instead.  Note that the `\` character requires additional escaping or quoting when using most unix shells, or when it appears in properties files.
 For example, bash single quotes preserve the single backslash `--db-password='my\$\$password'`. Also, with bash double quotes, you need an additional backslash `--db-password="my\\$\\$password"`. Similarly in a properties file, backslash characters must also be escaped: `kc.db-password=my\\$\\$password`
+
+.Windows-specific considerations
+When specifying Windows file paths in configuration values, backslashes must also be escaped. For example, if you want to specify the path `C:\path\to\file`, you should write it as `C:\\path\\to\\file`. Alternatively, you can use forward slashes which don't need escaping: `C:/path/to/file`.
+
+When using PowerShell and your values contain special characters like commas, use single quotes around double quotes:
+
+[source, bash]
+----
+.\kc.bat start --log-level='"INFO,org.hibernate:debug"'
+----
+
+PowerShell handles quotes differently. It interprets the quoted string before passing it to the `kc.bat` script, removing the outer quote characters. Therefore, an extra layer of quotes is needed to preserve the value structure. Otherwise, the comma would be interpreted as a delimiter. In Windows CMD, you can use double quotes directly.
 
 == Starting {project_name}
 You can start {project_name} in `development mode` or `production mode`. Each mode offers different defaults for the intended environment.
@@ -265,6 +275,20 @@ https-certificate-file
     <@kc.start parameters="--optimized"/>
 
 You can achieve most optimizations to startup and runtime behavior by using the `build` command. Also, by using the `keycloak.conf` file as a configuration source, you avoid some steps at startup that would otherwise require command line parameters, such as initializing the CLI itself. As a result, the server starts up even faster.
+
+== Using system variables in the realm configuration
+
+Some of the realm capabilities allow administrators to reference system variables such as environment variables and system properties when configuring
+the realm and its components.
+
+By default, {project_name} disallow using system variables but only those explicitly specified through the `spi-admin-allowed-system-variables` configuration
+option. This option allows you to specify a comma-separated list of keys that will eventually resolve to values from system variables with the same key.
+
+. Start the server and expose a set of system variables to the server runtime
++
+    <@kc.start parameters="--spi-admin-allowed-system-variables=FOO,BAR"/>
+
+In future releases, this capability will be removed in favor of preventing any usage of system variables in the realm configuration.
 
 == Underlying concepts
 This section gives an overview of the underlying concepts {project_name} uses, especially when it comes to optimizing the startup.

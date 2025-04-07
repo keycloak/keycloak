@@ -1,5 +1,10 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakSpinner,
+  TextControl,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -23,6 +28,7 @@ import { SettingsCache } from "../shared/SettingsCache";
 import { SyncSettings } from "./SyncSettings";
 
 import "./custom-provider-settings.css";
+import { useState } from "react";
 
 export default function CustomProviderSettings() {
   const { adminClient } = useAdminClient();
@@ -42,6 +48,7 @@ export default function CustomProviderSettings() {
 
   const { addAlert, addError } = useAlerts();
   const { realm: realmName, realmRepresentation: realm } = useRealm();
+  const [loading, setLoading] = useState(true);
 
   const provider = (
     useServerInfo().componentTypes?.[
@@ -62,6 +69,7 @@ export default function CustomProviderSettings() {
       } else if (id) {
         throw new Error(t("notFound"));
       }
+      setLoading(false);
     },
     [],
   );
@@ -99,6 +107,8 @@ export default function CustomProviderSettings() {
       );
     }
   };
+
+  if (loading) return <KeycloakSpinner />;
 
   return (
     <FormProvider {...form}>

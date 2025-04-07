@@ -41,6 +41,11 @@ public interface ClientSessionContext {
     Stream<ClientScopeModel> getClientScopesStream();
 
     /**
+     * @return true if offline token is requested
+     */
+    boolean isOfflineTokenRequested();
+
+    /**
      * Returns all roles including composite ones as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */

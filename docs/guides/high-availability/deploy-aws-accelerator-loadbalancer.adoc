@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy an AWS Global Accelerator loadbalancer"
-summary="Building block for a loadbalancer"
+title="Deploy an AWS Global Accelerator load balancer"
+summary="Building block for a load balancer"
 tileVisible="false" >
 
 This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-site {project_name} deployments.
@@ -20,11 +20,11 @@ availability-zone {project_name} deployments.
 
 == Architecture
 
-To ensure user requests are routed to each {project_name} site we need to utilise a loadbalancer. To prevent issues with
+To ensure user requests are routed to each {project_name} site we need to utilise a load balancer. To prevent issues with
 DNS caching on the client-side, the implementation should use a static IP address that remains the same
 when routing clients to both availability-zones.
 
-In this {section} we describe how to route all {project_name} client requests via an AWS Global Accelerator loadbalancer.
+In this {section} we describe how to route all {project_name} client requests via an AWS Global Accelerator load balancer.
 In the event of a {project_name} site failing, the Accelerator ensures that all client requests are routed to the remaining
 healthy site. If both sites are marked as unhealthy, then the Accelerator will "`fail-open`" and forward requests to a site
 chosen at random.
@@ -48,7 +48,7 @@ Perform the following on each of the {project_name} clusters:
 +
 .. Login to the ROSA cluster
 +
-.. Create a Kubernetes loadbalancer service
+.. Create a Kubernetes load balancer service
 +
 .Command:
 [source,bash]
@@ -261,7 +261,7 @@ aws globalaccelerator create-endpoint-group \
 ----
 . Optional: Configure your custom domain
 +
-If you are using a custom domain, pointed your custom domain to the AWS Global Loadbalancer by configuring an Alias or CNAME in your custom domain.
+If you are using a custom domain, pointed your custom domain to the AWS Global Load Balancer by configuring an Alias or CNAME in your custom domain.
 +
 . Create or update the {project_name} Deployment
 +
@@ -290,7 +290,7 @@ spec:
 +
 To ensure that request forwarding works as expected, it is necessary for the Keycloak CR to specify the hostname through
 which clients will access the {project_name} instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
-with the Global Accelerator. If you are using a custom domain and pointed your custom domain to the AWS Global Loadbalancer, use your custom domain here.
+with the Global Accelerator. If you are using a custom domain, point your custom domain to the AWS Global Accelerator, and use your custom domain here.
 
 == Verify
 To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to hostname configured above, and you should be presented with the {project_name} admin console.

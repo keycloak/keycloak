@@ -30,7 +30,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,12 +54,12 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
     public void loginSuccess() throws Exception {
         setUpDirectGrantFlowWithSetClientNoteAuthenticator();
 
-        oauth.clientId("direct-grant");
+        oauth.client("direct-grant", "password");
 
         // Signal that we want userSession to be transient
-        oauth.addCustomParameter(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString());
-
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.passwordGrantRequest("test-user@localhost", "password")
+                .param(SetClientNoteAuthenticator.PREFIX + AuthenticationManager.USER_SESSION_PERSISTENT_STATE, UserSessionModel.SessionPersistenceState.TRANSIENT.toString())
+                .send();
 
         assertEquals(200, response.getStatusCode());
 
@@ -71,7 +71,7 @@ public class TransientSessionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
         // Refresh will fail. There is no userSession on the server
-        OAuthClient.AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+        AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
         Assert.assertNull(refreshedResponse.getAccessToken());
         assertNotNull(refreshedResponse.getError());
         Assert.assertEquals("Session not active", refreshedResponse.getErrorDescription());

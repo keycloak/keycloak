@@ -28,6 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.VC_KEY;
 import org.keycloak.protocol.oid4vc.model.OID4VCClient;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -45,6 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+
 /**
  * Provides the client-registration functionality for OID4VC-clients.
  *
@@ -53,8 +55,6 @@ import java.util.stream.Collectors;
 public class OID4VCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCClientRegistrationProvider.class);
-
-    private static final String VC_KEY = "vc";
 
     public OID4VCClientRegistrationProvider(KeycloakSession session) {
         super(session);

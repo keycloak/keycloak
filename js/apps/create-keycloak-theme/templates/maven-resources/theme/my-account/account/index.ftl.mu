@@ -134,7 +134,7 @@
           "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
           "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
           "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
-          "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
+          "isLinkedAccountsEnabled": ${isLinkedAccountsEnabled?c},
           "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
           "isViewOrganizationsEnabled": ${isViewOrganizationsEnabled?c},
           "deleteAccountAllowed": ${deleteAccountAllowed?c},

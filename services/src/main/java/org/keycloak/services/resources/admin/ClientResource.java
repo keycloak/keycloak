@@ -24,10 +24,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -239,6 +241,8 @@ public class ClientResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
+
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));
@@ -633,7 +637,7 @@ public class ClientResource {
 
         ReservedCharValidator.validate(node);
 
-        if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
+        logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri(), node).success();
     }
@@ -651,7 +655,7 @@ public class ClientResource {
     public void unregisterNode(final @PathParam("node") String node) {
         auth.clients().requireConfigure(client);
 
-        if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
+        logger.debugf("Unregister node: %s", node);
 
         Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {
@@ -806,12 +810,13 @@ public class ClientResource {
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
+        boolean serviceAccountScopeAssigned = client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
         if (Boolean.TRUE.equals(rep.isServiceAccountsEnabled())) {
-            if (serviceAccount == null) {
+            if (serviceAccount == null || !serviceAccountScopeAssigned) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
             }
         } else if (Boolean.FALSE.equals(rep.isServiceAccountsEnabled()) || !client.isServiceAccountsEnabled()) {
-            if (serviceAccount != null) {
+            if (serviceAccount != null || serviceAccountScopeAssigned) {
                 new ClientManager(new RealmManager(session)).disableServiceAccount(client);
             }
         }

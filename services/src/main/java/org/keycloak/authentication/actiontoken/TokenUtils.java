@@ -19,6 +19,11 @@ package org.keycloak.authentication.actiontoken;
 import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.representations.JsonWebToken;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -81,5 +86,26 @@ public class TokenUtils {
 
     public static <T extends JsonWebToken> Predicate<? super T>[] predicates(Predicate<? super T>... predicate) {
         return predicate;
+    }
+
+    /**
+     * Check that all requested audiences from parameter "requestedAudience" are available in the accessToken. If some are missing, return the missing audiences.
+     * Assumption is, that token does not contain any additional audiences, which is true for example during token-exchange
+     *
+     * @param token token to check
+     * @param requestedAudience requested audiences
+     * @return set of audiences, which are requested, but are missing from the token
+     */
+    public static Set<String> checkRequestedAudiences(JsonWebToken token, List<String> requestedAudience) {
+        if (requestedAudience != null && (token.getAudience() == null ||
+                token.getAudience().length < requestedAudience.size())) {
+            final Set<String> missingAudience = new HashSet<>(requestedAudience);
+            if (token.getAudience() != null) {
+                missingAudience.removeAll(Set.of(token.getAudience()));
+            }
+            return missingAudience;
+        } else {
+            return Collections.emptySet();
+        }
     }
 }

@@ -21,13 +21,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-
 import org.jboss.logging.Logger;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -42,6 +36,7 @@ import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -60,6 +55,10 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Base class for OAuth 2.0 grant types
@@ -105,6 +104,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     protected Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
         String scopeParam, boolean code, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
+        clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
@@ -129,7 +129,9 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             try {
                 session.clientPolicy().triggerOnEvent(clientPolicyContextGenerator.apply(responseBuilder));
             } catch (ClientPolicyException cpe) {
-                event.detail(Details.REASON, cpe.getErrorDetail());
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
             }

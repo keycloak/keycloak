@@ -392,10 +392,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 clientSessionCode.getClientSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
             }
 
-            IdentityProviderFactory<?> providerFactory = getIdentityProviderFactory(session, identityProviderModel);
-
-            IdentityProvider<?> identityProvider = providerFactory.create(session, identityProviderModel);
-
+            IdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel.getAlias());
             Response response = identityProvider.performLogin(createAuthenticationRequest(identityProvider, providerAlias, clientSessionCode));
 
             if (response != null) {
@@ -557,7 +554,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
                 .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
                 .detail(Details.IDENTITY_PROVIDER, providerAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
         boolean shouldMigrateId = false;
@@ -882,7 +880,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         event.detail(Details.IDENTITY_PROVIDER, providerAlias)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         if (isDebugEnabled()) {
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
@@ -1176,7 +1175,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private Response checkAccountManagementFailedLinking(AuthenticationSessionModel authSession, String error, Object... parameters) {
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (userSession != null && authSession.getClient() != null && authSession.getClient().getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
+        if (userSession != null && authSession.getClient() != null) {
 
             this.event.event(EventType.FEDERATED_IDENTITY_LINK);
             UserModel user = userSession.getUser();
@@ -1330,7 +1329,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
     }
 
-    public static IdentityProviderFactory<?> getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
+    private static IdentityProviderFactory<?> getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
+        if (model == null) {
+            return null;
+        }
+
         return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
                 .filter(providerFactory -> Objects.equals(providerFactory.getId(), model.getProviderId()))

@@ -17,11 +17,17 @@
 package org.keycloak.services.resources.admin;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -39,6 +45,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -121,8 +128,15 @@ public class UsersResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "409", description = "Conflict", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
+        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Create a new user Username must be unique.")
+    @Operation(summary = "Create a new user Username must be unique.")
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -176,7 +190,7 @@ public class UsersResource {
     }
 
     private boolean canCreateGroupMembers(UserRepresentation rep) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ) && !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
             return false;
         }
 
@@ -251,8 +265,12 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -286,6 +304,9 @@ public class UsersResource {
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
+                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        userModels = userModels.filter(userPermissionEvaluator::canView);
+                    }
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
@@ -366,6 +387,10 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Integer.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Returns the number of users that match the given criteria.",
@@ -396,7 +421,11 @@ public class UsersResource {
             } else if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, search.trim());
             } else {
-                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    return session.users().getUsersCount(realm, search.trim());
+                } else {
+                    return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
+                }
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
@@ -423,12 +452,19 @@ public class UsersResource {
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupsWithViewPermission());
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    return session.users().getUsersCount(realm, parameters);
+                } else {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                }
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                return session.users().getUsersCount(realm);
+            }
+            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -446,24 +482,26 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!auth.users().canView()) {
-            Set<String> groupModels = auth.groups().getGroupsWithViewPermission();
-
-            if (!groupModels.isEmpty()) {
-                session.setAttribute(UserModel.GROUPS, groupModels);
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
+            if (!groupIds.isEmpty()) {
+                session.setAttribute(UserModel.GROUPS, groupIds);
             }
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);
-        return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
+        return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
-        boolean canViewGlobal = usersEvaluator.canView();
 
-        usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
-        return userModels.filter(user -> canViewGlobal || usersEvaluator.canView(user))
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+            userModels = userModels.filter(usersEvaluator::canView);
+            usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
+        }
+
+        return userModels
                 .map(user -> {
                     UserRepresentation userRep = briefRepresentationB
                             ? ModelToRepresentation.toBriefRepresentation(user)

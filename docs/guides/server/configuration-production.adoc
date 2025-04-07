@@ -57,6 +57,17 @@ To ensure that users can continue to log in when a {project_name} instance goes 
 
 To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
 
+=== Secure network communication
+
+JGroups supports Java SSL sockets for TCP communication.
+Check <@links.server id="caching" anchor="securing-cache-communication"/> for more information on how to configure TLS and the alternatives available for UDP communication.
+
+=== Configure Firewall ports
+
+A set of network ports must be open to allow a healthy network communication between {project_name} servers.
+See <@links.server id="caching" anchor="network-ports"/>.
+It describes what ports need to be open and their usage.
+
 == Configure {project_name} Server with IPv4 or IPv6
 The system properties `java.net.preferIPv4Stack` and `java.net.preferIPv6Addresses` are used to configure the JVM for use with IPv4 or IPv6 addresses.
 
@@ -71,5 +82,14 @@ For example, to change the IP stack preference to IPv4, set an environment varia
 ----
 export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=true"
 ----
+
+To set up the server for IPv6 only, set an environment variable as follows for the distributed caches to form a cluster:
+
+[source, bash]
+----
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+----
+
+See <@links.server id="caching" anchor="network-bind-address"/> for more details.
 
 </@tmpl.guide>

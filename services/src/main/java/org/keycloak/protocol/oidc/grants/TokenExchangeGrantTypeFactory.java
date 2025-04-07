@@ -38,13 +38,19 @@ public class TokenExchangeGrantTypeFactory implements OAuth2GrantTypeFactory, En
     }
 
     @Override
+    public String getShortcut() {
+        return "te";
+    }
+
+    @Override
     public OAuth2GrantType create(KeycloakSession session) {
         return new TokenExchangeGrantType();
     }
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+        return     Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE)
+                || Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2);
     }
 
     @Override

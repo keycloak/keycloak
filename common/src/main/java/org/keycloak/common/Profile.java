@@ -65,13 +65,16 @@ public class Profile {
 
         LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1),
 
+        QUICK_THEME("WYSIWYG theme configuration tool", Type.EXPERIMENTAL, 1),
+
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1),
+        TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -114,7 +117,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
-        OPENTELEMETRY("OpenTelemetry Tracing", Type.PREVIEW),
+        OPENTELEMETRY("OpenTelemetry Tracing", Type.DEFAULT),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -124,7 +127,11 @@ public class Profile {
 
         CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
 
-        USER_EVENT_METRICS("Collect metrics based on user events", Type.PREVIEW),
+        USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
+
+        IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
+
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ;
 
         private final Type type;
@@ -390,6 +397,10 @@ public class Profile {
 
     public static Profile getInstance() {
         return CURRENT;
+    }
+
+    public static void reset() {
+        CURRENT = null;
     }
 
     public static boolean isFeatureEnabled(Feature feature) {

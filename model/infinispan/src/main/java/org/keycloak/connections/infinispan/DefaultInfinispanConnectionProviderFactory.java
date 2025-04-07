@@ -68,6 +68,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_BIND_ADDR;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JMX_DOMAIN;
@@ -264,6 +265,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         defineRevisionCache(cacheManager, AUTHORIZATION_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_NAME, AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX);
 
         cacheManager.getCache(KEYS_CACHE_NAME, true);
+        cacheManager.getCache(CRL_CACHE_NAME, true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, false, getId());
 
@@ -317,6 +319,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(KEYS_CACHE_NAME, getKeysCacheConfig());
         cacheManager.getCache(KEYS_CACHE_NAME, true);
+
+        cacheManager.defineConfiguration(CRL_CACHE_NAME, getCrlCacheConfig());
+        cacheManager.getCache(CRL_CACHE_NAME, true);
 
         var builder = createCacheConfigurationBuilder();
         if (clustered) {
@@ -471,6 +476,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cb.expiration().maxIdle(KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
 
         return cb.build();
+    }
+
+    protected Configuration getCrlCacheConfig() {
+        return InfinispanUtil.getCrlCacheConfig().build();
     }
 
     private void registerSystemWideListeners(KeycloakSession session) {

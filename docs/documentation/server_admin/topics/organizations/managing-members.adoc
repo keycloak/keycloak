@@ -34,7 +34,7 @@ There are two types of members:
 
 Managed members are those managed by the organization, and they cannot exist outside of their organization. For instance, consider
 an account created through an identity provider associated with an organization. That account does not belong to a realm as it was federated from the organization.
-In this case, the single-source of truth for the identity is the organization and its lifecycle is controlled
+In this case, the single source of truth for the identity is the organization and its lifecycle is controlled
 by the organization.
 If you remove the organization or the member, the account is also removed from the realm.
 
@@ -121,3 +121,9 @@ When removing a member from an organization, remember that the user may or may n
 that user is managed or unmanaged member, respectively.
 
 For more details, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
+
+== Support for federated members
+
+Users coming from federated providers can also be added as members of an organization. The only exceptions are the users from LDAP providers with *import mode disabled*. Organization members are added to an internal group that is not synchronized with external providers, so even if the LDAP provider has a group mapper with mode LDAP_ONLY it won't be possible for the non-imported users to be added as members of an organization because that membership won't be synced with the LDAP server.
+
+In other words, LDAP users that are not imported can't join an organization because the membership is not stored in the local DB nor in the LDAP server. So if you want to have LDAP users joining organizations, ensure that the import mode of the LDAP provider is enabled.

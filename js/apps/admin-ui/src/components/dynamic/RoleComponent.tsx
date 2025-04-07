@@ -1,3 +1,4 @@
+import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   Chip,
@@ -7,12 +8,9 @@ import {
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import useToggle from "../../utils/useToggle";
-import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../role-mapping/RoleMapping";
-import { convertToName } from "./DynamicComponents";
 import type { ComponentProps } from "./components";
 
 const parseValue = (value: any) =>
@@ -30,6 +28,7 @@ export const RoleComponent = ({
   defaultValue,
   required,
   isDisabled = false,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
 

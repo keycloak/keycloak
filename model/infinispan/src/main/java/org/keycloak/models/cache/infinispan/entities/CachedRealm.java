@@ -75,6 +75,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     protected boolean organizationsEnabled;
+    protected boolean adminPermissionsEnabled;
     protected boolean verifiableCredentialsEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
@@ -160,11 +161,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean adminEventsEnabled;
     protected boolean adminEventsDetailsEnabled;
     protected String defaultRoleId;
+    protected String adminPermissionsClientId;
     private boolean allowUserManagedAccess;
 
     protected List<String> defaultGroups;
-    protected List<String> defaultDefaultClientScopes = new LinkedList<>();
-    protected List<String> optionalDefaultClientScopes = new LinkedList<>();
+    protected DefaultLazyLoader<RealmModel, List<String>> defaultDefaultClientScopes;
+    protected DefaultLazyLoader<RealmModel, List<String>> optionalDefaultClientScopes;
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -192,6 +194,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetPasswordAllowed = model.isResetPasswordAllowed();
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
+        adminPermissionsEnabled = model.isAdminPermissionsEnabled();
         verifiableCredentialsEnabled = model.isVerifiableCredentialsEnabled();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
@@ -255,6 +258,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
+        adminPermissionsClientId = model.getAdminPermissionsClient() == null ? null : model.getAdminPermissionsClient().getId();
 
         if(Objects.isNull(model.getDefaultRole())) {
             throw new ModelException("Default Role is null for Realm " + name);
@@ -264,7 +268,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
-        cacheClientScopes(model);
+        defaultDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
+        optionalDefaultClientScopes = new DefaultLazyLoader<>(realm -> realm.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
+                .collect(Collectors.toList()), null);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
         supportedLocales = model.getSupportedLocalesStream().collect(Collectors.toSet());
@@ -322,19 +329,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         realmLocalizationTexts = model.getRealmLocalizationTexts();
     }
 
-    protected void cacheClientScopes(RealmModel model) {
-        defaultDefaultClientScopes = model.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
-        optionalDefaultClientScopes = model.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
-                .collect(Collectors.toList());
-    }
-
     public String getMasterAdminClient() {
         return masterAdminClient;
     }
 
     public String getDefaultRoleId() {
         return defaultRoleId;
+    }
+
+    public String getAdminPermissionsClientId() {
+        return adminPermissionsClientId;
     }
 
     public String getName() {
@@ -431,6 +435,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isOrganizationsEnabled() {
         return organizationsEnabled;
+    }
+
+    public boolean isAdminPermissionsEnabled() {
+        return adminPermissionsEnabled;
     }
 
     public boolean isVerifiableCredentialsEnabled() {
@@ -694,12 +702,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getDefaultDefaultClientScopes() {
-        return defaultDefaultClientScopes;
+    public List<String> getDefaultDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
+        return defaultDefaultClientScopes.get(modelSupplier);
     }
 
-    public List<String> getOptionalDefaultClientScopes() {
-        return optionalDefaultClientScopes;
+    public List<String> getOptionalDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
+        return optionalDefaultClientScopes.get(modelSupplier);
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {

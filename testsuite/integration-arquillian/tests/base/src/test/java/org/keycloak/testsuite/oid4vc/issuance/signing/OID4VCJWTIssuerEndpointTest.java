@@ -50,13 +50,14 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -277,6 +278,26 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test(expected = BadRequestException.class)
+    public void testRequestCredentialNoMatchingCredentialBuilder() throws Throwable {
+        String token = getBearerToken(oauth);
+        withCausePropagation(() ->
+            testingClient
+                    .server(TEST_REALM_NAME)
+                    .run((session -> {
+                        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                        authenticator.setTokenString(token);
+
+                        // Prepare the issue endpoint with no credential builders.
+                        OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+
+                        issuerEndpoint.requestCredential(new CredentialRequest()
+                                .setFormat(Format.JWT_VC)
+                                .setCredentialIdentifier("test-credential"));
+                    }))
+        );
+    }
+
+    @Test(expected = BadRequestException.class)
     public void testRequestCredentialUnsupportedCredential() throws Throwable {
         String token = getBearerToken(oauth);
         withCausePropagation(() -> {
@@ -372,9 +393,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         List<NameValuePair> parameters = new LinkedList<>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
         parameters.add(new BasicNameValuePair(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode()));
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         postPreAuthorizedCode.setEntity(formEntity);
-        OAuthClient.AccessTokenResponse accessTokenResponse = new OAuthClient.AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
+        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(postPreAuthorizedCode));
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
         String theToken = accessTokenResponse.getAccessToken();
 

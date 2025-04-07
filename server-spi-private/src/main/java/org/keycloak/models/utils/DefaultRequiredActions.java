@@ -186,14 +186,14 @@ public class DefaultRequiredActions {
 
     public static void addVerifyProfile(RealmModel realm) {
         if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.VERIFY_PROFILE.name()) == null) {
-            RequiredActionProviderModel termsAndConditions = new RequiredActionProviderModel();
-            termsAndConditions.setEnabled(true);
-            termsAndConditions.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
-            termsAndConditions.setName("Verify Profile");
-            termsAndConditions.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
-            termsAndConditions.setDefaultAction(false);
-            termsAndConditions.setPriority(90);
-            realm.addRequiredActionProvider(termsAndConditions);
+            RequiredActionProviderModel verifyProfile = new RequiredActionProviderModel();
+            verifyProfile.setEnabled(true);
+            verifyProfile.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
+            verifyProfile.setName("Verify Profile");
+            verifyProfile.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
+            verifyProfile.setDefaultAction(false);
+            verifyProfile.setPriority(90);
+            realm.addRequiredActionProvider(verifyProfile);
         }
     }
 

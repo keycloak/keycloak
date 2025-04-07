@@ -11,7 +11,7 @@ import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { AdminEvents } from "./AdminEvents";
 import { UserEvents } from "./UserEvents";
-import { EventsTab, toEvents } from "./routes/Events";
+import { toEvents } from "./routes/Events";
 
 import "./events.css";
 
@@ -19,10 +19,10 @@ export default function EventsSection() {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  const useTab = (tab: EventsTab) => useRoutableTab(toEvents({ realm, tab }));
-
-  const userEventsTab = useTab("user-events");
-  const adminEventsTab = useTab("admin-events");
+  const userEventsTab = useRoutableTab(toEvents({ realm, tab: "user-events" }));
+  const adminEventsTab = useRoutableTab(
+    toEvents({ realm, tab: "admin-events" }),
+  );
 
   return (
     <>

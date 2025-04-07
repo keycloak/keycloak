@@ -16,10 +16,10 @@
  */
 package org.keycloak.services;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.transaction.JtaTransactionWrapper;
 
@@ -32,14 +32,12 @@ import java.util.List;
  */
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
 
-    private static final Logger logger = Logger.getLogger(DefaultKeycloakTransactionManager.class);
-
-    private List<KeycloakTransaction> prepare = new LinkedList<KeycloakTransaction>();
-    private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
-    private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
+    private final List<KeycloakTransaction> prepare = new LinkedList<>();
+    private final List<KeycloakTransaction> transactions = new LinkedList<>();
+    private final List<KeycloakTransaction> afterCompletion = new LinkedList<>();
     private boolean active;
     private boolean rollback;
-    private KeycloakSession session;
+    private final KeycloakSession session;
     private JTAPolicy jtaPolicy = JTAPolicy.REQUIRES_NEW;
     // Used to prevent double committing/rollback if there is an uncaught exception
     protected boolean completed;
@@ -119,10 +117,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             completed = true;
         }
 
+        TracingProvider tracing = session.getProvider(TracingProvider.class);
+
         RuntimeException exception = null;
         for (KeycloakTransaction tx : prepare) {
             try {
-                tx.commit();
+                commitWithTracing(tx, tracing);
             } catch (RuntimeException e) {
                 exception = exception == null ? e : exception;
             }
@@ -133,7 +133,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
         for (KeycloakTransaction tx : transactions) {
             try {
-                tx.commit();
+                commitWithTracing(tx, tracing);
             } catch (RuntimeException e) {
                 exception = exception == null ? e : exception;
             }
@@ -143,7 +143,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         if (exception == null) {
             for (KeycloakTransaction tx : afterCompletion) {
                 try {
-                    tx.commit();
+                    commitWithTracing(tx, tracing);
                 } catch (RuntimeException e) {
                     exception = exception == null ? e : exception;
                 }
@@ -164,6 +164,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
     }
 
+    private static void commitWithTracing(KeycloakTransaction tx, TracingProvider tracing) {
+        tracing.trace(tx.getClass(), "commit", span -> {
+            tx.commit();
+        });
+    }
+
     @Override
     public void rollback() {
         if (completed) {
@@ -177,16 +183,18 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     }
 
     protected void rollback(RuntimeException exception) {
+        TracingProvider tracing = session.getProvider(TracingProvider.class);
+
         for (KeycloakTransaction tx : transactions) {
             try {
-                tx.rollback();
+                rollbackWithTracing(tx, tracing);
             } catch (RuntimeException e) {
                 exception = exception != null ? e : exception;
             }
         }
         for (KeycloakTransaction tx : afterCompletion) {
             try {
-                tx.rollback();
+                rollbackWithTracing(tx, tracing);
             } catch (RuntimeException e) {
                 exception = exception != null ? e : exception;
             }
@@ -195,6 +203,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         if (exception != null) {
             throw exception;
         }
+    }
+
+    private static void rollbackWithTracing(KeycloakTransaction tx, TracingProvider tracing) {
+        tracing.trace(tx.getClass(), "rollback", span -> {
+            tx.rollback();
+        });
     }
 
     @Override

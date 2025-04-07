@@ -52,6 +52,7 @@ import { useParams } from "../utils/useParams";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
+import { AdminEvents } from "../events/AdminEvents";
 
 export default function RealmRoleTabs() {
   const { adminClient } = useAdminClient();
@@ -189,14 +190,12 @@ export default function RealmRoleTabs() {
     throw new Error("Route could not be determined.");
   };
 
-  const useTab = (tab: RealmRoleTab | ClientRoleTab) =>
-    useRoutableTab(toTab(tab));
-
-  const detailsTab = useTab("details");
-  const associatedRolesTab = useTab("associated-roles");
-  const attributesTab = useTab("attributes");
-  const usersInRoleTab = useTab("users-in-role");
-  const permissionsTab = useTab("permissions");
+  const detailsTab = useRoutableTab(toTab("details"));
+  const associatedRolesTab = useRoutableTab(toTab("associated-roles"));
+  const attributesTab = useRoutableTab(toTab("attributes"));
+  const usersInRoleTab = useRoutableTab(toTab("users-in-role"));
+  const permissionsTab = useRoutableTab(toTab("permissions"));
+  const eventsTab = useRoutableTab(toTab("events"));
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roleDeleteConfirm",
@@ -330,6 +329,7 @@ export default function RealmRoleTabs() {
             )}
             {!isDefaultRole(roleName) && (
               <Tab
+                data-testid="usersInRoleTab"
                 title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
                 {...usersInRoleTab}
               >
@@ -345,6 +345,15 @@ export default function RealmRoleTabs() {
                   <PermissionsTab id={id} type="roles" />
                 </Tab>
               )}
+            {hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents resourcePath={`roles-by-id/${id}`} />
+              </Tab>
+            )}
           </RoutableTabs>
         </FormProvider>
       </PageSection>

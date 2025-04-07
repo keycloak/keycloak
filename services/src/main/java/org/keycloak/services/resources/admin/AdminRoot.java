@@ -27,6 +27,7 @@ import org.keycloak.common.util.Encode;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -93,14 +94,18 @@ public class AdminRoot {
     @GET
     @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirect() {
+        String requestUrl = session.getContext().getUri().getRequestUri().toString();
+        KeycloakUriInfo adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
+        String adminUrl = adminUriInfo.getBaseUri().toString();
+        String localAdminUrl = session.getContext().getUri(UrlType.LOCAL_ADMIN).getBaseUri().toString();
 
-        if (!isAdminConsoleEnabled()) {
+        if (!isAdminConsoleEnabled() || (!requestUrl.startsWith(adminUrl) && !requestUrl.startsWith(localAdminUrl))) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
-                session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
+                adminUriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
         ).build();
     }
 
@@ -190,6 +195,8 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
+        session.getContext().setBearerToken(authResult.getToken());
+
         return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
     }
 
@@ -221,7 +228,9 @@ public class AdminRoot {
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            if (logger.isDebugEnabled()) {
+                logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
+            }
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
@@ -265,7 +274,7 @@ public class AdminRoot {
         }
 
         if (auth != null) {
-            logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
+            logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
         }
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();

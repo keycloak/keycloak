@@ -16,6 +16,9 @@
  */
 package org.keycloak.credential;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -30,9 +33,15 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_ALGORITHM_TAG;
+import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_HASHING_STRENGTH_TAG;
+import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_REALM_TAG;
+import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_VALIDATION_OUTCOME_TAG;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,11 +51,28 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(PasswordCredentialProvider.class);
+    private static final String METER_VALIDATION_OUTCOME_VALID_TAG_VALUE = "valid";
+    private static final String METER_VALIDATION_OUTCOME_INVALID_TAG_VALUE = "invalid";
+    private static final String METER_VALIDATION_OUTCOME_ERROR_TAG_VALUE = "error";
+
 
     protected final KeycloakSession session;
+    private final Meter.MeterProvider<Counter> meterProvider;
+    private final boolean withAlgorithmInMetric;
+    private final boolean metricsEnabled;
+    private final boolean withRealmInMetric;
+    private final boolean withHashingStrengthInMetric;
+    private final boolean withOutcomeInMetric;
 
-    public PasswordCredentialProvider(KeycloakSession session) {
+    public PasswordCredentialProvider(KeycloakSession session, Meter.MeterProvider<Counter> meterProvider, boolean metricsEnabled,
+                                      boolean withRealmInMetric, boolean withAlgorithmInMetric, boolean withHashingStrengthInMetric, boolean withOutcomeInMetric) {
         this.session = session;
+        this.meterProvider = meterProvider;
+        this.metricsEnabled = metricsEnabled;
+        this.withRealmInMetric = withRealmInMetric;
+        this.withAlgorithmInMetric = withAlgorithmInMetric;
+        this.withHashingStrengthInMetric = withHashingStrengthInMetric;
+        this.withOutcomeInMetric = withOutcomeInMetric;
     }
 
     public PasswordCredentialModel getPassword(RealmModel realm, UserModel user) {
@@ -121,7 +147,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private boolean passwordAgePredicate(CredentialModel credential, long passwordMaxAgeMillis) {
-        return credential.getCreatedDate() < passwordMaxAgeMillis;
+        long createdDate = credential.getCreatedDate() == null ? Long.MIN_VALUE : credential.getCreatedDate();
+        return createdDate < passwordMaxAgeMillis;
     }
 
     @Override
@@ -189,24 +216,57 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             logger.debugv("No password stored for user {0} ", user.getUsername());
             return false;
         }
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, password.getPasswordCredentialData().getAlgorithm());
+        String algorithm = password.getPasswordCredentialData().getAlgorithm();
+        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, algorithm);
         if (hash == null) {
-            logger.debugv("PasswordHashProvider {0} not found for user {1} ", password.getPasswordCredentialData().getAlgorithm(), user.getUsername());
+            logger.debugv("PasswordHashProvider {0} not found for user {1} ", algorithm, user.getUsername());
             return false;
         }
         try {
-            if (!hash.verify(input.getChallengeResponse(), password)) {
+            boolean isValid = hash.verify(input.getChallengeResponse(), password);
+            if (!isValid) {
                 logger.debugv("Failed password validation for user {0} ", user.getUsername());
+                publishMetricIfEnabled(realm, algorithm, hash.credentialHashingStrength(password), METER_VALIDATION_OUTCOME_INVALID_TAG_VALUE);
                 return false;
             }
 
             rehashPasswordIfRequired(session, realm, user, input, password);
         } catch (Throwable t) {
             logger.warn("Error when validating user password", t);
+            publishMetricIfEnabled(realm, algorithm, hash.credentialHashingStrength(password), METER_VALIDATION_OUTCOME_ERROR_TAG_VALUE);
             return false;
         }
 
+        publishMetricIfEnabled(realm, algorithm, hash.credentialHashingStrength(password), METER_VALIDATION_OUTCOME_VALID_TAG_VALUE);
         return true;
+    }
+
+    private void publishMetricIfEnabled(RealmModel realm, String algorithm, String hashingStrength, String outcome) {
+        // Do not publish metrics if metrics are disabled
+        if (!metricsEnabled) {
+            return;
+        }
+
+        List<Tag> tags = new ArrayList<>(5);
+        if (withAlgorithmInMetric) {
+            tags.add(Tag.of(METER_ALGORITHM_TAG, nullToEmpty(algorithm)));
+        }
+        if (withHashingStrengthInMetric) {
+            tags.add(Tag.of(METER_HASHING_STRENGTH_TAG, nullToEmpty(hashingStrength)));
+        }
+        if (withRealmInMetric) {
+            tags.add(Tag.of(METER_REALM_TAG, nullToEmpty(realm.getName())));
+        }
+        if (withOutcomeInMetric) {
+            tags.add(Tag.of(METER_VALIDATION_OUTCOME_TAG, nullToEmpty(outcome)));
+        }
+
+        meterProvider.withTags(tags).increment();
+
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private void rehashPasswordIfRequired(KeycloakSession session, RealmModel realm, UserModel user, CredentialInput input, PasswordCredentialModel password) {

@@ -18,13 +18,11 @@
 package org.keycloak.connections.httpclient;
 
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -254,7 +252,7 @@ public class HttpClientBuilder {
                     .setSocketTimeout((int) TimeUnit.MILLISECONDS.convert(socketTimeout, socketTimeoutUnits))
                     .setExpectContinueEnabled(expectContinueEnabled).build();
 
-            org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
+            org.apache.http.impl.client.HttpClientBuilder builder = getApacheHttpClientBuilder()
                     .setDefaultRequestConfig(requestConfig)
                     .setSSLSocketFactory(sslsf)
                     .setMaxConnTotal(connectionPoolSize)
@@ -276,14 +274,14 @@ public class HttpClientBuilder {
 
             if (disableCookies) builder.disableCookieManagement();
 
-            if (!reuseConnections) {
-                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
-            }
-
             return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
+        return HttpClients.custom();
     }
 
     private SSLContext createSslContext(

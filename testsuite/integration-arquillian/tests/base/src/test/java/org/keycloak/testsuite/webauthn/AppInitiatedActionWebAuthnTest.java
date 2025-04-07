@@ -36,11 +36,12 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
@@ -60,6 +61,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
@@ -186,8 +188,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
                 .setBrowserFlow("browser")
                 .update()) {
-            OAuthClient oauth2 = new OAuthClient();
-            oauth2.init(driver2);
+            OAuthClient oauth2 = oauth.newConfig().driver(driver2);
             oauth2.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
             event1 = events.expectLogin().assertEvent();
             assertEquals(1, testUser.getUserSessions().size());
@@ -229,12 +230,16 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     }
 
     private EventRepresentation loginUser() {
-        usernamePage.open();
+        oauth.openLoginForm();
         usernamePage.assertCurrent();
         usernamePage.login(DEFAULT_USERNAME);
 
         passwordPage.assertCurrent();
         passwordPage.login(DEFAULT_PASSWORD);
+
+        appPage.assertCurrent();
+        assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+        assertNotNull(oauth.parseLoginResponse().getCode());
 
         return events.expectLogin()
                 .detail(Details.USERNAME, DEFAULT_USERNAME)

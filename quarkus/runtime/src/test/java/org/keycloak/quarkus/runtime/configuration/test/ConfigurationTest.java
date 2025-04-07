@@ -18,18 +18,19 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
+import java.io.File;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.dialect.H2Dialect;
@@ -45,7 +46,7 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -116,15 +117,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void testKeycloakProfilePropertySubstitution() {
-        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "user-profile");
-        assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
-    }
-
-    @Test
-    public void testQuarkusProfilePropertyStillWorks() {
-        System.setProperty("quarkus.profile", "user-profile");
-        assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
+    public void testProfiledPropertyExposure() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        // the "nope" profile is not active, the property should not be advertised
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.proxy.proxy-address-forwarding"::equals));
     }
 
     @Test
@@ -147,6 +144,27 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         // test multi-word SPI names using slashes
         ConfigArgsConfigSource.setCliArgs("--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         assertEquals("http://c.jwk.url", initConfig("client-registration", "openid-connect").get("static-jwk-url"));
+    }
+
+    @Test
+    public void testExpressionEnvValue() {
+        putEnvVar("KC_HOSTNAME_STRICT", "false");
+        putEnvVar("MY_EXPRESSION", "${KC_HOSTNAME_STRICT}");
+        ConfigArgsConfigSource.setCliArgs("");
+        var config = createConfig();
+        // with the env variable set, we should get the same value either way
+        assertEquals("false", config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
+        assertEquals("false", config.getConfigValue("MY_EXPRESSION").getValue());
+
+        // without the env variable set, the expression should use the missing env variable
+        putEnvVar("KC_HOSTNAME_STRICT", null);
+        ConfigArgsConfigSource.setCliArgs("");
+        config = createConfig();
+        // check that we get the mapped default value
+        assertEquals("true", config.getConfigValue("kc.hostname-strict").getValue());
+        // check that we don't get the mapped value
+        assertNull(config.getConfigValue("MY_EXPRESSION").getValue());
+        assertNull(config.getConfigValue("KC_HOSTNAME_STRICT").getValue());
     }
 
     @Test
@@ -206,7 +224,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
-    
+
     @Test
     public void testExpansionDisabled() {
         ConfigArgsConfigSource.setCliArgs("--db=mysql");
@@ -222,13 +240,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        // JDBC location treated as file:// URI
-        final String userHomeUri = Path.of(System.getProperty("user.home"))
-                .toUri()
-                .toString()
-                .replaceFirst(isWindows() ? "file:///" : "file://", "");
-
-        assertEquals("jdbc:h2:file:" + userHomeUri + "data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -341,9 +353,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     // KEYCLOAK-15632
     @Test
     public void testNestedDatabaseProperties() {
-        System.setProperty("kc.home.dir", "/tmp/kc/bin/../");
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:/tmp/kc/bin/..//data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:"+Environment.getHomeDir()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 
@@ -363,15 +374,19 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        Assert.assertEquals("cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        String conf = Environment.getHomeDir() + File.separator + "conf" + File.separator;
+        Assert.assertEquals(conf + "cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty(org.keycloak.common.util.Environment.PROFILE);
         ConfigArgsConfigSource.setCliArgs("--cache-config-file=cluster-foo.xml");
 
-        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals(conf + "cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
-        Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals(conf + "cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+
+        ConfigArgsConfigSource.setCliArgs("");
+        Assert.assertEquals("cache-local.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");
         Assert.assertEquals("foo", initConfig("connectionsInfinispan", "quarkus").get("stack"));
@@ -406,12 +421,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void testDatabaseDialectSetExplicitly() {
-        ConfigArgsConfigSource.setCliArgs("--db-dialect=user-defined");
-        assertEquals("user-defined", createConfig().getRawValue("kc.db-dialect"));
-    }
-
-    @Test
     public void testTransactionTypeChangesDriver() {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--transaction-xa-enabled=false");
         assertTrue(ConfigArgsConfigSource.getAllCliArgs().contains("--db=mssql"));
@@ -430,12 +439,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testResolveHealthOption() {
-        ConfigArgsConfigSource.setCliArgs("--health-enabled=true");
-        SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
         ConfigArgsConfigSource.setCliArgs("");
-        config = createConfig();
-        assertEquals("false", config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
+        SmallRyeConfig config = createConfig();
+        // default to null when the extension is effectively removed
+        assertNull(config.getConfigValue("quarkus.smallrye-health.extensions.enabled").getValue());
     }
 
     @Test
@@ -465,7 +472,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testKeystoreConfigSource() {
         // Add properties manually
         Map<String, String> properties = new HashMap<>();
-        properties.put("smallrye.config.source.keystore.kc-default.path", "keystore");
+        properties.put("smallrye.config.source.keystore.kc-default.path", "conf/keystore");
         properties.put("smallrye.config.source.keystore.kc-default.password", "secret");
 
         SmallRyeConfig config = new SmallRyeConfigBuilder()
@@ -480,11 +487,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testKeystoreConfigSourcePropertyMapping() {
-        SmallRyeConfig config = new SmallRyeConfigBuilder()
-                .addDefaultInterceptors()
-                .addDiscoveredSources()
-                .build();
-
+        SmallRyeConfig config = createConfig();
         assertEquals(config.getConfigValue("smallrye.config.source.keystore.kc-default.password").getValue(),config.getConfigValue("kc.config-keystore-password").getValue());
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
@@ -500,7 +503,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         assertEquals("2h", createConfig().getConfigValue("quarkus.http.ssl.certificate.reload-period").getValue());
     }
-    
+
     @Test
     public void testHttpsPaths() {
         ConfigArgsConfigSource.setCliArgs("--https-certificate-file=\\some\\file");
@@ -511,7 +514,16 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         }
         assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
     }
-    
+
+    @Test
+    public void testHttpTrustStoreType() {
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
+        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
+        assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+    }
+
     @Test
     public void testCacheMaxCount() {
         int maxCount = 500;
@@ -520,8 +532,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
               .collect(Collectors.toSet());
 
         StringBuilder sb = new StringBuilder();
-        for (String cache : maxCountCaches)
+        for (String cache : maxCountCaches) {
             sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
+        }
 
         String args = sb.toString();
         ConfigArgsConfigSource.setCliArgs(args.split(" "));
@@ -531,5 +544,44 @@ public class ConfigurationTest extends AbstractConfigurationTest {
             String prop = "kc." + CachingOptions.cacheMaxCountProperty(cache);
             assertEquals(Integer.toString(maxCount), config.getConfigValue(prop).getValue());
         }
+    }
+
+    @Test
+    public void testDirectWildcardTo() {
+        // the mapping to for a wildcard property shouldn't be to anything
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertNull(config.getConfigValue("quarkus.log.category.\"<categories>\".level").getValue());
+    }
+
+    @Test
+    public void testKeycloakConfQuarkusPropertyNotUsed() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
+        assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
+    }
+
+    @Test
+    public void testQuarkusPropertiesNamesFiltered() {
+        SmallRyeConfig config = createConfig();
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("not.quarkus"::equals));
+    }
+
+    @Test
+    public void testQuarkusLogPropDependentUponKeycloak() {
+        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        ConfigArgsConfigSource.setCliArgs("--log-level=something:debug");
+        SmallRyeConfig config = createConfig();
+        assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"something\".level").getValue());
+    }
+
+    @Test
+    public void testOverrideDefaultQuarkusPropertiesViaEnv() {
+        // we have a default defined in application.properties
+        putEnvVar("QUARKUS_HTTP_LIMITS_MAX_HEADER_SIZE", "200k");
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("200k", config.getConfigValue("quarkus.http.limits.max-header-size").getValue());
     }
 }

@@ -44,6 +44,8 @@ import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
+import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
+import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
@@ -55,6 +57,7 @@ import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTransformation;
@@ -80,6 +83,7 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
+import org.keycloak.config.TracingOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -104,6 +108,7 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
+import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -143,6 +148,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
@@ -300,7 +306,11 @@ class KeycloakProcessor {
     // Inspired by AgroalProcessor
     @BuildStep
     @Produce(CheckMultipleDatasourcesBuildStep.class)
-    void checkMultipleDatasourcesUseXA(DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+    void checkMultipleDatasourcesUseXA(TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+        if (transactionManagerConfig.unsafeMultipleLastResources()
+                .orElse(UnsafeMultipleLastResourcesMode.DEFAULT) != UnsafeMultipleLastResourcesMode.FAIL) {
+            return;
+        }
         long nonXADatasourcesCount = dataSourcesConfig.dataSources().keySet().stream()
                 .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
                 .filter(jdbc -> jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA)
@@ -636,13 +646,19 @@ class KeycloakProcessor {
                     LoadBalancerResource.class.getName())), false));
         }
 
-        KeycloakHandlerChainCustomizer chainCustomizer = new KeycloakHandlerChainCustomizer();
+        ArrayList<HandlerChainCustomizer> chainCustomizers = new ArrayList<>();
+
+        chainCustomizers.add(new KeycloakHandlerChainCustomizer());
+
+        if (Configuration.isTrue(TracingOptions.TRACING_ENABLED)) {
+            chainCustomizers.add(new KeycloakTracingCustomizer());
+        }
 
         scanner.produce(new MethodScannerBuildItem(new MethodScanner() {
             @Override
             public List<HandlerChainCustomizer> scan(MethodInfo method, ClassInfo actualEndpointClass,
                     Map<String, Object> methodContext) {
-                return List.of(chainCustomizer);
+                return chainCustomizers;
             }
         }));
     }
@@ -668,6 +684,15 @@ class KeycloakProcessor {
     @BuildStep(onlyIf = IsDevelopment.class)
     void configureDevMode(BuildProducer<HotDeploymentWatchedFileBuildItem> hotFiles) {
         hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.conf"));
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void configureProtoStreamSchemas(KeycloakRecorder recorder) {
+        var schemas = ServiceLoader.load(SerializationContextInitializer.class).stream()
+                .map(ServiceLoader.Provider::get)
+                .toList();
+        recorder.configureProtoStreamSchemas(schemas);
     }
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
@@ -830,7 +855,7 @@ class KeycloakProcessor {
                     metadata.setCode(StreamUtil.readString(in, StandardCharsets.UTF_8));
                 }
 
-                metadata.setId(new StringBuilder("script").append("-").append(fileName).toString());
+                metadata.setId("script-" + fileName);
 
                 String name = metadata.getName();
 

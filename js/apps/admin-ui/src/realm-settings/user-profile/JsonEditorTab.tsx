@@ -1,9 +1,8 @@
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
-import type { editor } from "monaco-editor";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
+import CodeEditor from "../../components/form/CodeEditor";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { prettyPrintJSON } from "../../util";
 import { useUserProfile } from "./UserProfileContext";
 
@@ -11,16 +10,14 @@ export const JsonEditorTab = () => {
   const { config, save, isSaving } = useUserProfile();
   const { t } = useTranslation();
   const { addError } = useAlerts();
-  const [editor, setEditor] = useState<editor.IStandaloneCodeEditor>();
-
-  useEffect(() => resetCode(), [config, editor]);
+  const [code, setCode] = useState(prettyPrintJSON(config));
 
   function resetCode() {
-    editor?.setValue(config ? prettyPrintJSON(config) : "");
+    setCode(config ? prettyPrintJSON(config) : "");
   }
 
   async function handleSave() {
-    const value = editor?.getValue();
+    const value = code;
 
     if (!value) {
       return;
@@ -37,10 +34,10 @@ export const JsonEditorTab = () => {
   return (
     <PageSection variant="light">
       <CodeEditor
-        language={Language.json}
-        height="30rem"
-        onEditorDidMount={(editor) => setEditor(editor)}
-        isLanguageLabelVisible
+        language="json"
+        value={code}
+        onChange={(value) => setCode(value ?? "")}
+        height={480}
       />
       <Form>
         <ActionGroup>

@@ -53,7 +53,7 @@ const Domains = (org: OrganizationRepresentation) => {
   );
 };
 
-type OrganizationTableProps = PropsWithChildren & {
+export type OrganizationTableProps = PropsWithChildren & {
   loader:
     | LoaderFunction<OrganizationRepresentation>
     | OrganizationRepresentation[];
@@ -62,6 +62,8 @@ type OrganizationTableProps = PropsWithChildren & {
   >;
   toolbarItem?: ReactNode;
   isPaginated?: boolean;
+  isSearching?: boolean;
+  searchPlaceholderKey?: string;
   onSelect?: (orgs: OrganizationRepresentation[]) => void;
   onDelete?: (org: OrganizationRepresentation) => void;
   deleteLabel?: string;
@@ -71,6 +73,8 @@ export const OrganizationTable = ({
   loader,
   toolbarItem,
   isPaginated = false,
+  isSearching = false,
+  searchPlaceholderKey,
   onSelect,
   onDelete,
   deleteLabel = "delete",
@@ -83,8 +87,9 @@ export const OrganizationTable = ({
     <KeycloakDataTable
       loader={loader}
       isPaginated={isPaginated}
+      isSearching={isSearching}
       ariaLabelKey="organizationList"
-      searchPlaceholderKey="searchOrganization"
+      searchPlaceholderKey={searchPlaceholderKey}
       toolbarItem={toolbarItem}
       onSelect={onSelect}
       canSelectAll={onSelect !== undefined}
@@ -114,6 +119,10 @@ export const OrganizationTable = ({
         {
           name: "description",
           displayKey: "description",
+        },
+        {
+          name: "membershipType",
+          displayKey: "membershipType",
         },
       ]}
       emptyState={children}

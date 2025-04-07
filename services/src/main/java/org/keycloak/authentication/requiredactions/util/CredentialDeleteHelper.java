@@ -60,6 +60,15 @@ public class CredentialDeleteHelper {
     public static CredentialModel removeCredential(KeycloakSession session, UserModel user, String credentialId, Supplier<Integer> currentLoAProvider) {
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
+            if (user.isFederated()) {
+                credential = user.credentialManager().getFederatedCredentialsStream().filter(c -> credentialId.equals(c.getId())).findAny().orElse(null);
+                if (credential != null) {
+                    String type = credential.getType();
+                    checkIfCanBeRemoved(session, user, type, currentLoAProvider);
+                    user.credentialManager().disableCredentialType(type);
+                    return null;
+                }
+            }
             // Backwards compatibility with account console 1 - When stored credential is not found, it may be federated credential.
             // In this case, it's ID needs to be something like "otp-id", which is returned by account REST GET endpoint as a placeholder
             // for federated credentials (See CredentialHelper.createUserStorageCredentialRepresentation )
@@ -78,7 +87,7 @@ public class CredentialDeleteHelper {
 
     private static void checkIfCanBeRemoved(KeycloakSession session, UserModel user, String credentialType, Supplier<Integer> currentLoAProvider) {
         CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
-                .filter(credentialProvider1 -> credentialType.equals(credentialProvider1.getType()))
+                .filter(credentialProvider1 -> credentialProvider1.supportsCredentialType(credentialType))
                 .findAny().orElse(null);
         if (credentialProvider == null) {
             logger.warnf("Credential provider %s not found", credentialType);

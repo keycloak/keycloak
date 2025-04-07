@@ -20,11 +20,97 @@
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
         <module>libs/ui-shared</module>
-        <module>libs/keycloak-js</module>
+        <module>themes-vendor</module>
     </modules>
 
     <properties>
-        <!-- The JavaScript projects use the non-standard 'src' folder for their sources, therefore, name it here explicitly -->
+        <node.version>v22.14.0</node.version>
+        <pnpm.version>10.4.1</pnpm.version>
+        <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
         <maven.build.cache.input.1>src</maven.build.cache.input.1>
+        <maven.build.cache.input.2>public</maven.build.cache.input.2>
+        <maven.build.cache.input.3>scripts</maven.build.cache.input.3>
     </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${frontend.plugin.version}</version>
+                    <configuration>
+                        <nodeVersion>${node.version}</nodeVersion>
+                        <pnpmVersion>${pnpm.version}</pnpmVersion>
+                        <installDirectory>${maven.multiModuleProjectDirectory}/js</installDirectory>
+                        <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>theme-verifier-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify-theme</id>
+                        <goals>
+                            <goal>verify-theme</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- Clean child modules from parent, as we trigger the build here for parallelization. -->
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>apps/account-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>apps/admin-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>themes-vendor/target</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>${frontend.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install-node-and-pnpm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>pnpm-install</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --prefer-offline --frozen-lockfile --ignore-scripts</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>pnpm-build</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

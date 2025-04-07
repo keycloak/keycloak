@@ -22,13 +22,13 @@ The port `8443` (or `8080` if HTTP is enabled) is used for the Admin UI, Account
 
 The port `9000` is used for management, which includes endpoints for health checks and metrics as described in the  <@links.server id="management-interface"/> {section}.
 
-You only need to proxy port `8443` (or `8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configure-production"/>. You should not proxy port `9000` as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.
+You only need to proxy port `8443` (or `8080`) even when you use different host names for frontend/backend and administration as described at <@links.server id="configuration-production"/>. You should not proxy port `9000` as health checks and metrics use those ports directly, and you do not want to expose this information to external callers.
 
 == Configure the reverse proxy headers
 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
 
-* By default if the option is not specified, no reverse proxy headers are parsed.
+* By default if the option is not specified, no reverse proxy headers are parsed. This should be used when no proxy is in use or with https passthrough.
 * `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
@@ -38,14 +38,14 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded"/>
 
-WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Do not use `forwarded` or `xforwarded` with https passthrough. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 
 Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
 If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
 NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
 
-NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the ‘http-enabled’ setting is required.
+NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the `http-enabled` setting is required.
 
 == Different context-path on reverse proxy
 
@@ -82,7 +82,7 @@ It is beneficial if particular session entity is always available locally, which
 
 From this point, it is beneficial if load balancer forwards all the next requests to the node2 as this is the node, who is owner of the authentication session with ID 123 and hence Infinispan can lookup this session locally. After authentication is finished, the authentication session is converted to user session, which will be also saved on node2 because it has same ID 123 .
 
-The sticky session is not mandatory for the cluster setup, however it is good for performance for the reasons mentioned above. You need to configure your loadbalancer to sticky over the AUTH_SESSION_ID cookie. How exactly do this is dependent on your loadbalancer.
+The sticky session is not mandatory for the cluster setup, however it is good for performance for the reasons mentioned above. You need to configure your loadbalancer to stick over the AUTH_SESSION_ID cookie. The appropriate procedure to make this change depends on your loadbalancer.
 
 If your proxy supports session affinity without processing cookies from backend nodes, you should set the `spi-sticky-session-encoder-infinispan-should-attach-route` option
 to `false` in order to avoid attaching the node to cookies and just rely on the reverse proxy capabilities.
@@ -146,7 +146,7 @@ For example:
 
 == PROXY Protocol
 
-The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client. The value cannot be `true` when using the `proxy-headers` option.
 
 This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
 
@@ -158,6 +158,22 @@ For example:
 
 When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
 clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
+
+[WARNING]
+====
+Client certificate lookup via a proxy header for X.509 authentication is considered security-sensitive. If misconfigured, a forged client certificate header can be used for authentication.
+*Extra precautions need to be taken to ensure that the client certificate information can be trusted when passed via a proxy header.*
+
+* Double check your use case needs reencrypt or edge TLS termination which implies using a proxy header for client certificate lookup. TLS passthrough is recommended as a more secure option
+  when X.509 authentication is desired as it does not require passing the certificate via a proxy header. Client certificate lookup from a proxy header is applicable only to reencrypt
+  and edge TLS termination.
+* If passthrough is not an option, implement the following security measures:
+** Configure your network so that {project_name} is isolated and can accept connections only from the proxy.
+** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup-<provider>-ssl-client-cert` option.
+** Pay extra attention to the `spi-x509cert-lookup-<provider>-trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
+   Setting `spi-x509cert-lookup-<provider>-trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
+   when a forged client certificate can be used for authentication.
+====
 
 The server supports some of the most commons TLS termination proxies such as:
 

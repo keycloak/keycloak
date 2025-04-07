@@ -14,7 +14,7 @@ The token introspection is essentially a https://datatracker.ietf.org/doc/html/r
 
 [source,subs="attributes+"]
 ----
-http://${host}:${port}{kc_realms_path}/${realm_name}/protocol/openid-connect/token/introspect
+http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token/introspect
 ----
 
 To introspect an RPT using this endpoint, you can send a request to the server as follows:
