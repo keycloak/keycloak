@@ -526,14 +526,24 @@ public class RealmManager {
     }
 
     public RealmModel importRealm(RealmRepresentation rep) {
-        return importRealm(rep, false);
+        return importRealm(rep, () -> {});
     }
 
 
     /**
      * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     * @deprecated use {@link #importRealm(RealmRepresentation, Runnable)}
      */
+    @Deprecated
     public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
+        return importRealm(rep, skipUserDependent ? null : () -> {});
+    }
+
+    /**
+     * @param userImport if null, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     */
+    public RealmModel importRealm(RealmRepresentation rep, Runnable userImport) {
+        boolean skipUserDependent = userImport == null;
         String id = rep.getId();
         if (id == null || id.trim().isEmpty()) {
             id = KeycloakModelUtils.generateId();
@@ -611,7 +621,7 @@ public class RealmManager {
                 createDefaultClientScopes(realm);
             }
 
-            RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+            RepresentationToModel.importRealm(session, rep, realm, userImport);
 
             setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
 

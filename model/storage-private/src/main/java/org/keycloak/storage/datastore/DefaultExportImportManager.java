@@ -174,7 +174,7 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     @Override
-    public void importRealm(RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
+    public void importRealm(RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
@@ -454,7 +454,8 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
 
-        if (!skipUserDependent) {
+        if (userImport != null) {
+            userImport.run();
             importRealmAuthorizationSettings(rep, newRealm, session);
         }
 

@@ -33,7 +33,7 @@ import java.io.InputStream;
  * @author Alexander Schwartz
  */
 public interface ExportImportManager {
-    void importRealm(RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent);
+    void importRealm(RealmRepresentation rep, RealmModel newRealm, Runnable userImport);
 
     PartialImportResults partialImportRealm(RealmModel realm, InputStream requestBody);
 

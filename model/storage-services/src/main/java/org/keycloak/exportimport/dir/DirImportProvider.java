@@ -37,8 +37,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.keycloak.services.managers.RealmManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -141,58 +139,38 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         if (!realmRep.getRealm().equals(realmName)) {
             throw new IllegalStateException(String.format("File name / realm name mismatch. %s, contains realm %s. File name should be %s", realmFile.getName(), realmRep.getRealm(), realmRep.getRealm() + "-realm.json"));
         }
-        final AtomicBoolean realmImported = new AtomicBoolean();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
             public void runExportImportTask(KeycloakSession session) {
-                boolean imported = ImportUtils.importRealm(session, realmRep, strategy, true);
-                realmImported.set(imported);
+                ImportUtils.importRealm(session, realmRep, strategy, () -> {
+                    importUsers(realmName, userFiles, false);
+                    importUsers(realmName, federatedUserFiles, true);
+                });
             }
 
         });
+    }
 
-        if (realmImported.get()) {
-            // Import users
-            for (final File userFile : userFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported users from %s", userFile.getAbsolutePath());
-                        }
-                    });
-                }
-            }
-            for (final File userFile : federatedUserFiles) {
-                try (InputStream fis = parseFile(userFile)) {
-                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                        @Override
-                        protected void runExportImportTask(KeycloakSession session) throws IOException {
-                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
+    private void importUsers(final String realmName, File[] userFiles, boolean federated) {
+        for (final File userFile : userFiles) {
+            try (InputStream fis = parseFile(userFile)) {
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        session.getContext().setRealm(session.realms().getRealmByName(realmName));
+                        if (federated) {
                             ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                            logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
+                        } else {
+                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
                         }
-                    });
-                }
+                        logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
+                    }
+                });
+            } catch (IOException e) {
+                throw new RuntimeException("Error during import: " + e.getMessage(), e);
             }
-        }
-
-        if (realmImported.get()) {
-            // Import authorization and initialize service accounts last, as they require users already in DB
-            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-
-                @Override
-                public void runExportImportTask(KeycloakSession session) {
-                    session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                    RealmManager realmManager = new RealmManager(session);
-                    realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
-                }
-
-            });
         }
     }
 
