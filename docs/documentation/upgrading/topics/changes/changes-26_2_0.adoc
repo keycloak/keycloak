@@ -122,6 +122,7 @@ Due to fundamental changes in the permission model, **automatic migration from V
 * Permission model changes:
   ** The *user-impersonated* user permission has been _removed_.
   ** The *configure* client permission has been _removed_. With the introduction of explicit operation scoping in V2, the distinction between manage and configure became ambiguous.
+  ** The *user-impersonated* user permission has been _removed_. Instead, you can use the `impersonate-members` scope of the `Groups` resource type to allow or deny impersonation of group members.
 * Flexible resource scoping:
   ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
   ** Administrators can now define permissions for:
