@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -24,6 +25,7 @@ import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.common.profile.ProfileException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
@@ -55,6 +57,10 @@ public final class Start extends AbstractStartCommand implements Runnable {
         Environment.updateProfile(true);
         if (Environment.isDevProfile()) {
             throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
+        }
+        if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+          picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
+          throw new PropertyException(Messages.invalidOrMissingPropertyDB());
         }
     }
 
