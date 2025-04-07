@@ -4,7 +4,6 @@
 <@tmpl.guide
 title="Using a vault"
 summary="Learn how to use and configure a vault in {project_name}"
-priority=30
 includedOptions="vault vault-*">
 
 {project_name} provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
