@@ -1108,7 +1108,7 @@ public class UserResource {
                                                        @QueryParam("max") Integer maxResults,
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
-        return user.getGroupsStream(search, firstResult, maxResults).map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
+        return user.getGroupsStream(search, firstResult, maxResults).filter(auth.groups()::canView).map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }
 
     @GET

@@ -134,13 +134,13 @@ public class GroupAdapter implements GroupModel {
     @Override
     public String getFirstAttribute(String name) {
         if (isUpdated()) return updated.getFirstAttribute(name);
-        return cached.getAttributes(modelSupplier).getFirst(name);
+        return cached.getAttributes(keycloakSession, modelSupplier).getFirst(name);
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
         if (isUpdated()) return updated.getAttributeStream(name);
-        List<String> values = cached.getAttributes(modelSupplier).get(name);
+        List<String> values = cached.getAttributes(keycloakSession, modelSupplier).get(name);
         if (values == null) return Stream.empty();
         return values.stream();
     }
@@ -148,7 +148,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Map<String, List<String>> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        return cached.getAttributes(modelSupplier);
+        return cached.getAttributes(keycloakSession, modelSupplier);
     }
 
     @Override
@@ -167,13 +167,13 @@ public class GroupAdapter implements GroupModel {
     public boolean hasDirectRole(RoleModel role) {
         if (isUpdated()) return updated.hasDirectRole(role);
 
-        return cached.getRoleMappings(modelSupplier).contains(role.getId());
+        return cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId());
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
         if (isUpdated()) return updated.hasRole(role);
-        if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
+        if (cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) return true;
         if (getRoleMappingsStream().anyMatch(r -> r.hasRole(role))) return true;
         GroupModel parent = getParent();
         return parent != null && parent.hasRole(role);
@@ -189,7 +189,7 @@ public class GroupAdapter implements GroupModel {
     public Stream<RoleModel> getRoleMappingsStream() {
         if (isUpdated()) return updated.getRoleMappingsStream();
         Set<RoleModel> roles = new HashSet<>();
-        for (String id : cached.getRoleMappings(modelSupplier)) {
+        for (String id : cached.getRoleMappings(keycloakSession, modelSupplier)) {
             RoleModel roleById = keycloakSession.roles().getRoleById(realm, id);
             if (roleById == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -225,7 +225,7 @@ public class GroupAdapter implements GroupModel {
     public Stream<GroupModel> getSubGroupsStream() {
         if (isUpdated()) return updated.getSubGroupsStream();
         Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups(modelSupplier)) {
+        for (String id : cached.getSubGroups(keycloakSession, modelSupplier)) {
             GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
@@ -259,7 +259,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return cached.getSubGroupsCount(modelSupplier);
+        return getGroupModel().getSubGroupsCount();
     }
 
     @Override

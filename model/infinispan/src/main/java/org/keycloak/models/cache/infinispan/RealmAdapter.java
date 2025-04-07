@@ -721,19 +721,19 @@ public class RealmAdapter implements CachedRealmModel {
     public OAuth2DeviceConfig getOAuth2DeviceConfig() {
         if (isUpdated())
             return updated.getOAuth2DeviceConfig();
-        return cached.getOAuth2DeviceConfig(modelSupplier);
+        return cached.getOAuth2DeviceConfig(session, modelSupplier);
     }
 
     @Override
     public CibaConfig getCibaPolicy() {
         if (isUpdated()) return updated.getCibaPolicy();
-        return cached.getCibaConfig(modelSupplier);
+        return cached.getCibaConfig(session, modelSupplier);
     }
 
     @Override
     public ParConfig getParPolicy() {
         if (isUpdated()) return updated.getParPolicy();
-        return cached.getParConfig(modelSupplier);
+        return cached.getParConfig(session, modelSupplier);
     }
 
     @Override
@@ -1610,7 +1610,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
-        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(modelSupplier) : cached.getOptionalDefaultClientScopes(modelSupplier);
+        List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes(session, modelSupplier) : cached.getOptionalDefaultClientScopes(session, modelSupplier);
         return clientScopeIds.stream()
                 .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
