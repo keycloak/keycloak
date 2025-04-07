@@ -471,52 +471,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return userSession;
         }
 
-        // Try lookup userSession from remoteCache
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-        if (remoteCache != null) {
-            SessionEntityWrapper<UserSessionEntity> remoteSessionEntityWrapper = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(id);
-            if (remoteSessionEntityWrapper != null) {
-                UserSessionEntity remoteSessionEntity = remoteSessionEntityWrapper.getEntity();
-                log.debugf("getUserSessionWithPredicate(%s): remote cache contains session entity %s", id, remoteSessionEntity);
-
-                UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
-                if (predicate.test(remoteSessionAdapter)) {
-
-                    InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
-
-                    // Remote entity contains our predicate. Update local cache with the remote entity
-                    SessionEntityWrapper<UserSessionEntity> sessionWrapper = remoteSessionEntity.mergeRemoteEntityWithLocalEntity(tx.get(id));
-
-                    // Replace entity just in ispn cache. Skip remoteStore
-                    cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                            .replace(id, sessionWrapper);
-
-                    tx.reloadEntityInCurrentTransaction(realm, id, sessionWrapper);
-
-                    // Recursion. We should have it locally now
-                    return getUserSessionWithPredicate(realm, id, offline, predicate);
-                } else {
-                    log.debugf("getUserSessionWithPredicate(%s): found, but predicate doesn't pass", id);
-
-                    return null;
-                }
-            } else {
-                log.debugf("getUserSessionWithPredicate(%s): not found", id);
-
-                // Session not available on remoteCache. Was already removed there. So removing locally too.
-                // TODO: Can be optimized to skip calling remoteCache.remove
-                removeUserSession(realm, userSession);
-
-                return null;
-            }
-        } else {
-
-            log.debugf("getUserSessionWithPredicate(%s): remote cache not available", id);
-
-            return null;
-        }
+        return null;
     }
 
 
@@ -870,36 +825,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             }, 10, 10);
         }
 
-        // put all entities to the remoteCache (if exists)
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-        if (remoteCache != null) {
-            Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsByIdForTransport = sessionsById.values().stream()
-                    .map(SessionEntityWrapper::forTransport)
-                    .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
-
-            if (importWithExpiration) {
-                importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
-                        offline ? offlineSessionCacheEntryLifespanAdjuster : SessionTimeouts::getUserSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
-            } else {
-                Retry.executeWithBackoff((int iteration) -> {
-
-                    try {
-                        remoteCache.putAll(sessionsByIdForTransport);
-                    } catch (HotRodClientException re) {
-                        if (log.isDebugEnabled()) {
-                            log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                    sessionsByIdForTransport.size(), iteration);
-                        }
-
-                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                        throw re;
-                    }
-
-                }, 10, 10);
-            }
-        }
-
         // Import client sessions
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache = getClientSessionCache(offline);
 
@@ -911,36 +836,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             Retry.executeWithBackoff((int iteration) -> {
                 clientSessCache.putAll(clientSessionsById);
             }, 10, 10);
-        }
-
-        // put all entities to the remoteCache (if exists)
-        RemoteCache remoteCacheClientSessions = InfinispanUtil.getRemoteCache(clientSessCache);
-        if (remoteCacheClientSessions != null) {
-            Map<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> sessionsByIdForTransport = clientSessionsById.values().stream()
-                    .map(SessionEntityWrapper::forTransport)
-                    .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
-
-            if (importWithExpiration) {
-                importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
-                        offline ? offlineClientSessionCacheEntryLifespanAdjuster : SessionTimeouts::getClientSessionLifespanMs,
-                        offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
-            } else {
-                Retry.executeWithBackoff((int iteration) -> {
-
-                    try {
-                        remoteCacheClientSessions.putAll(sessionsByIdForTransport);
-                    } catch (HotRodClientException re) {
-                        if (log.isDebugEnabled()) {
-                            log.debugf(re, "Failed to put import %d client sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                    sessionsByIdForTransport.size(), iteration);
-                        }
-
-                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                        throw re;
-                    }
-
-                }, 10, 10);
-            }
         }
     }
 

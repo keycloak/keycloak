@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
@@ -29,13 +28,10 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.factories.impl.BasicComponentRegistry;
 import org.infinispan.factories.impl.ComponentRef;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.manager.PersistenceManager;
-import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.EmbeddedTimeService;
 import org.jboss.logging.Logger;
@@ -44,7 +40,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 
 import java.time.Instant;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,23 +51,6 @@ public class InfinispanUtil {
     protected static final Logger logger = Logger.getLogger(InfinispanUtil.class);
 
     public static final int MAXIMUM_REPLACE_RETRIES = 25;
-
-    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-    // TODO: mhajas REMOVE!
-    public static Set<RemoteStore> getRemoteStores(Cache<?, ?> ispnCache) {
-        return ComponentRegistry.componentOf(ispnCache, PersistenceManager.class).getStores(RemoteStore.class);
-    }
-
-
-    public static RemoteCache getRemoteCache(Cache<?, ?> ispnCache) {
-        Set<RemoteStore> remoteStores = getRemoteStores(ispnCache);
-        if (remoteStores.isEmpty()) {
-            return null;
-        } else {
-            return remoteStores.iterator().next().getRemoteCache();
-        }
-    }
-
 
     public static TopologyInfo getTopologyInfo(KeycloakSession session) {
         return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();

@@ -73,15 +73,4 @@ public interface TestingCacheResource {
     @Path("/process-expiration")
     @Produces(MediaType.APPLICATION_JSON)
     void processExpiration();
-
-    @GET
-    @Path("/remote-cache-stats")
-    @Produces(MediaType.APPLICATION_JSON)
-    RemoteCacheStats getRemoteCacheStats();
-
-    @GET
-    @Path("/remote-cache-last-session-refresh/{user-session-id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    int getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId);
-
 }
