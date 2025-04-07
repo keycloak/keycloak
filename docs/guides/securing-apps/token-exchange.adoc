@@ -22,6 +22,10 @@ The standard token exchange supports only use-case (1). The legacy token exchang
 backwards compatible with future {project_name} versions. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
+NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
+token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
+
 [[_standard-token-exchange]]
 == Standard token exchange
 
@@ -41,7 +45,7 @@ use of the token
 * The `target-client` is not specified as the token audience; the token was intended to be used to invoke `requester-client`.
 * The token has to many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
 +
-Any of these situations could be the reason to invoke the token exchange. The `requester-client` may need to send the token exchange request to the {project_name} server and use the original token from step 1 as the 
+Any of these situations could be the reason to invoke the token exchange. The `requester-client` may need to send the token exchange request to the {project_name} server and use the original token from step 1 as the
 _subject token_ and exchange it for another token _requested token_.
 . The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
 . The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
@@ -122,7 +126,7 @@ audience::
   values of this parameter are allowed, which means that you want the token to contain multiple audiences to be used by `requester-client` in multiple different services. For example
   `audience=target-client1&audience=target-client2` can be used in the request. More details in <<_standard-token-exchange-scope,the section about scopes and audiences>>.
 
-A successful response is returned in the JSON format. It contains similar parameters such as the response from other grants. The following are some token exchange specifics of the more notable parameters: 
+A successful response is returned in the JSON format. It contains similar parameters such as the response from other grants. The following are some token exchange specifics of the more notable parameters:
 
 access_token::
     The requested access token. Note that if request specified `requested_token_type=urn:ietf:params:oauth:token-type:id_token`, this parameter may actually contain the ID token instead of access token.
@@ -154,7 +158,7 @@ If the client scope does not contain any client roles (for example, it contains 
 client role mappings, it must include some client roles of the clients requested by the `audience` parameter. Composite roles are also included for consideration. If the client scope contains no client
 roles of the clients requested by the `audience`, the client scope will be filtered.
 
-NOTE: The `audience` parameter can be used to filter the audiences that are coming from the used client scopes. However, this parameter will not add more audiences. When the audience parameter is omitted, 
+NOTE: The `audience` parameter can be used to filter the audiences that are coming from the used client scopes. However, this parameter will not add more audiences. When the audience parameter is omitted,
 no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
 to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
 
@@ -257,13 +261,13 @@ exchanges his own token, which was issued to it. Exchanging to itself might be u
 * link:{adminguide_link}#_fine_grain_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
 integration might be available to all grants. It will not be specific only to token exchange as it was in token exchange V1.
 
-* Integrating token exchange with link:{adminguide_link}#_client_policies[Client policies] is possible. This integration can be useful to address certain use cases. For example, consider the use case to reject the token exchange request if the 
+* Integrating token exchange with link:{adminguide_link}#_client_policies[Client policies] is possible. This integration can be useful to address certain use cases. For example, consider the use case to reject the token exchange request if the
 client `requester-client` sends the request with `scope=some-confidential-scope`. In this example, it can be useful to create a client policy condition with combined conditions
 for `client-scope`, `grant-type` and `client-roles`.
 
 * Requesting a refresh token is allowed only if the client has the switch *Allow refresh token in Standard Token Exchange* set to a value other than `No` (the default value). The switch is available in the
 Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section. The other available value of the switch is *Same session*, which means that the refresh token is
-allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#_transient-session[Transient session] or from an 
+allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#_transient-session[Transient session] or from an
 link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request an offline token (using `scope=offline_access`).
 
 .Enabling refresh token in Token Exchange
@@ -295,7 +299,7 @@ tokens would mean quite an overhead. So considering this,  the administrator mus
 [[_standard-token-exchange-comparison]]
 === Comparison of standard token exchange and legacy token exchange
 
-While the preceding sections fully detail standard and legacy token exchange, the following is an overall summary that compares the two token exchange methods. 
+While the preceding sections fully detail standard and legacy token exchange, the following is an overall summary that compares the two token exchange methods.
 
 [cols="3*", options="header"]
 |===
@@ -309,7 +313,7 @@ s|Behavior of `audience` parameter   | Support for more values as per the specif
 the required target audience | Support for single audience value. Token effectively issued to the client requested by audience parameter and using scopes of that client
 s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
-s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions
+s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
 s|Delegation per rfc8693|Not supported yet|Not supported
 s|Resource parameter per rfc8693|Not supported yet|Not supported
