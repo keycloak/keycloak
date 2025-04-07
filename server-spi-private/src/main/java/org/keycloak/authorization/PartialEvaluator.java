@@ -58,7 +58,7 @@ public class PartialEvaluator {
 
         UserModel adminUser = session.getContext().getUser();
 
-        if (shouldSkipPartialEvaluation(session, adminUser, realm, resourceType)) {
+        if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
             // only run partial evaluation if the admin user does not have view-* or manage-* role for specified resourceType or has any query-* role
             return List.of();
         }
@@ -219,9 +219,9 @@ public class PartialEvaluator {
         return permission.getScopes().stream().map(Scope::getName).anyMatch(name -> name.startsWith(AdminPermissionsSchema.VIEW));
     }
 
-    private boolean shouldSkipPartialEvaluation(KeycloakSession session, UserModel user, RealmModel realm, ResourceType resourceType) {
+    private boolean shouldSkipPartialEvaluation(KeycloakSession session, UserModel user, ResourceType resourceType) {
         if (user == null) {
-            return false;
+            return true;
         }
 
         ClientModel client = getRealmManagementClient(session);

@@ -304,10 +304,6 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             user = userSession == null ? null : userSession.getUser();
         }
 
-        if (user != null) {
-            return user;
-        }
-
-        throw new IllegalStateException("Could not resolve subject");
+        return user;
     }
 }
