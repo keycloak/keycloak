@@ -364,12 +364,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             throw new ModelException("For offline sessions, only lookup by userId and brokerUserId is supported");
         }
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
-
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        return StreamSupport.stream(cache.entrySet().stream().filter(predicate).map(Mappers.userSessionEntity()).spliterator(), false)
+        return StreamSupport.stream(getCache(offline).entrySet().stream().filter(predicate).map(Mappers.userSessionEntity()).spliterator(), false)
                 .map(entity -> this.wrap(realm, entity, offline))
                 .filter(Objects::nonNull).map(Function.identity());
     }
@@ -493,7 +490,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
                     SessionEntityWrapper<UserSessionEntity> sessionWrapper = remoteSessionEntity.mergeRemoteEntityWithLocalEntity(tx.get(id));
 
                     // Replace entity just in ispn cache. Skip remoteStore
-                    cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                    cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                             .replace(id, sessionWrapper);
 
                     tx.reloadEntityInCurrentTransaction(realm, id, sessionWrapper);
@@ -536,9 +533,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return persister.getUserSessionsCountsByClients(realm, true);
         }
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
-        return cache.entrySet().stream()
+        return getCache(offline).entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()))
                 .map(Mappers.authClientSessionSetMapper())
                 .flatMap(CollectionToStreamMapper.getInstance())
@@ -570,11 +565,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     protected void removeUserSessions(RealmModel realm, UserModel user, boolean offline) {
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-
-        cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(cache);
-
-        Iterator<UserSessionEntity> itr = cache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).map(Mappers.userSessionEntity()).iterator();
+        Iterator<UserSessionEntity> itr = getCache(offline).entrySet().stream()
+                .filter(UserSessionPredicate.create(realm.getId()).user(user.getId()))
+                .map(Mappers.userSessionEntity())
+                .iterator();
 
         while (itr.hasNext()) {
             UserSessionEntity userSessionEntity = itr.next();
@@ -617,11 +611,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(clientSessionCache);
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
-
         final AtomicInteger userSessionsSize = new AtomicInteger();
 
-        localCacheStoreIgnore
+        localCache
                 .entrySet()
                 .stream()
                 .filter(SessionWrapperPredicate.create(realmId))
@@ -865,7 +857,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
                 .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
         // Directly put all entities to the infinispan cache
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(getCache(offline));
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
 
         boolean importWithExpiration = sessionsById.size() == 1;
         if (importWithExpiration) {
@@ -909,8 +901,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         // Import client sessions
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache =
-                CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(offline ? offlineClientSessionCache : clientSessionCache);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache = getClientSessionCache(offline);
 
         if (importWithExpiration) {
             importSessionsWithExpiration(clientSessionsById, clientSessCache,

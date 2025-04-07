@@ -189,19 +189,19 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
+                cache.getAdvancedCache()
                         .withFlags(Flag.IGNORE_RETURN_VALUES)
                         .remove(key);
                 break;
             case ADD:
-                CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache)
+                cache.getAdvancedCache()
                         .withFlags(Flag.IGNORE_RETURN_VALUES)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
 
                 logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
                 break;
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache).putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+                SessionEntityWrapper<V> existing = cache.putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     logger.debugf("Existing entity in cache for key: %s . Will update it", key);
 
@@ -228,17 +228,16 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             SessionEntityWrapper<V> returnValue = null;
             int iteration = 0;
             V session = oldVersion.getEntity();
-            var writeCache = CacheDecorators.skipCacheStoreIfRemoteCacheIsEnabled(cache);
             while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
 
                 if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
                     logger.debugf("Entity %s removed after evaluation", key);
-                    writeCache.withFlags(Flag.IGNORE_RETURN_VALUES).remove(key);
+                    cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).remove(key);
                     return;
                 }
 
                 SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
-                returnValue = writeCache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
+                returnValue = cache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
                 if (returnValue == null) {
                     logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);

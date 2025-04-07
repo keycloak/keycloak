@@ -116,9 +116,9 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailureCache);
 
-        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
-
-        localCacheStoreIgnore
+        // Go through local cache data only
+        // entries from other nodes will be removed by each instance receiving the event
+        localCache
                 .entrySet()
                 .stream()
                 .filter(SessionWrapperPredicate.create(realmId))

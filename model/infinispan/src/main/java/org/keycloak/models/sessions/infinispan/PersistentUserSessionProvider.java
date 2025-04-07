@@ -478,11 +478,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> localClientSessionCache = CacheDecorators.localCache(clientSessionCache);
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(localCache);
-
         final AtomicInteger userSessionsSize = new AtomicInteger();
 
-        removeEntriesByRealm(realmId, localCacheStoreIgnore, userSessionsSize, localCache, localClientSessionCache);
+        removeEntriesByRealm(realmId, localCache, userSessionsSize, localClientSessionCache);
 
         // TODO: This now runs on each node on each site. Ideally it should run only once on each site.
         removeEntriesByRealmRemote(realmId, InfinispanUtil.getRemoteCache(getCache(offline)), userSessionsSize, InfinispanUtil.getRemoteCache(getClientSessionCache(offline)));
@@ -490,10 +488,10 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         log.debugf("Removed %d sessions in realm %s. Offline: %b", (Object) userSessionsSize.get(), realmId, offline);
     }
 
-    private static void removeEntriesByRealm(String realmId, Cache<String, SessionEntityWrapper<UserSessionEntity>> sessions, AtomicInteger userSessionsSize, Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache, Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessions) {
+    private static void removeEntriesByRealm(String realmId, Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionsCache, AtomicInteger userSessionsSize, Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessions) {
         FuturesHelper futures = new FuturesHelper();
 
-        sessions
+        sessionsCache
                 .entrySet()
                 .stream()
                 .filter(SessionWrapperPredicate.create(realmId))
@@ -502,7 +500,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     userSessionsSize.incrementAndGet();
 
                     // Remove session from remoteCache too. Use removeAsync for better perf
-                    Future<SessionEntityWrapper<UserSessionEntity>> future = localCache.removeAsync(userSessionEntity.getId());
+                    Future<SessionEntityWrapper<UserSessionEntity>> future = sessionsCache.removeAsync(userSessionEntity.getId());
                     futures.addTask(future);
                     userSessionEntity.getAuthenticatedClientSessions().forEach((clientUUID, clientSessionId) -> {
                         Future<SessionEntityWrapper<AuthenticatedClientSessionEntity>> f = clientSessions.removeAsync(clientSessionId);
@@ -513,6 +511,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         futures.waitForAllToFinish();
     }
 
+    // TODO: mhajas DELETE
     private static void removeEntriesByRealmRemote(String realmId, RemoteCache<String, SessionEntityWrapper<UserSessionEntity>> sessions, AtomicInteger userSessionsSize, RemoteCache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessions) {
         if (sessions == null) {
             return;
@@ -743,8 +742,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         Map<String, SessionEntityWrapper<UserSessionEntity>> sessionsById =
                     Stream.of(wrappedUserSessionEntity).collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
-        // Directly put all entities to the infinispan cache
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(getCache(offline));
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
 
         sessionsById = importSessionsWithExpiration(sessionsById, cache,
                 offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
@@ -767,8 +765,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         // Import client sessions
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache =
-                CacheDecorators.skipCacheLoadersIfRemoteStoreIsEnabled(offline ? offlineClientSessionCache : clientSessionCache);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache = getClientSessionCache(offline);
 
         importSessionsWithExpiration(clientSessionsById, clientSessCache,
                 offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
