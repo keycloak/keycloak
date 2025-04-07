@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -72,7 +71,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_BIND_ADDR;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR;
@@ -91,7 +89,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
@@ -239,11 +236,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         // upload the schema before trying to access the caches
         uploadSchemaAndReindexCaches(rcm);
-
-        // establish connection to all caches
-        if (isStartEagerly()) {
-            skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES)).forEach(rcm::getCache);
-        }
         return rcm;
     }
 
@@ -257,11 +249,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 new KeycloakIndexSchemaUtil.IndexedEntity(UserSessionQueries.USER_SESSION, OFFLINE_USER_SESSION_CACHE_NAME)
         );
         KeycloakIndexSchemaUtil.uploadAndReindexCaches(remoteCacheManager, KeycloakModelSchema.INSTANCE, entities);
-    }
-
-    private static boolean isStartEagerly() {
-        // eagerly starts caches by default
-        return Boolean.parseBoolean(System.getProperty("kc.cache-ispn-start-eagerly", Boolean.TRUE.toString()));
     }
 
     protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {

@@ -32,6 +32,9 @@ import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
  * Implementation used when an external Infinispan cluster is not configured.
  */
 public class DisabledCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, CacheRemoteConfigProvider, EnvironmentDependentProviderFactory {
+
+    private static final String PROVIDER_ID = "disabled";
+
     @Override
     public boolean isSupported(Config.Scope config) {
         return !InfinispanUtils.isRemoteInfinispan();
@@ -65,6 +68,6 @@ public class DisabledCacheRemoteConfigProviderFactory implements CacheRemoteConf
 
     @Override
     public String getId() {
-        return "disabled";
+        return PROVIDER_ID;
     }
 }

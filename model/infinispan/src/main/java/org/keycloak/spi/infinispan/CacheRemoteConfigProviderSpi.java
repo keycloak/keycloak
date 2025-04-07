@@ -23,6 +23,9 @@ import org.keycloak.provider.Spi;
  * An SPI to generate the configuration for the Hot Rod client.
  */
 public class CacheRemoteConfigProviderSpi implements Spi {
+
+    public static final String SPI_NAME = "cacheRemote";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -30,7 +33,7 @@ public class CacheRemoteConfigProviderSpi implements Spi {
 
     @Override
     public String getName() {
-        return "cacheRemote";
+        return SPI_NAME;
     }
 
     @Override

@@ -38,7 +38,6 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
-import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.KeycloakSession;
@@ -53,6 +52,7 @@ import javax.net.ssl.SSLContext;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
+import static org.keycloak.spi.infinispan.impl.Util.copyFromOption;
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 /**
@@ -285,8 +285,8 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     // configuration option below
 
     private static void addHostNameAndPortConfig(ProviderConfigurationBuilder builder) {
-        copyFromOption(builder, HOSTNAME, "hostname", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_HOST);
-        copyFromOption(builder, PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_REMOTE_PORT);
+        copyFromOption(builder, HOSTNAME, "hostname", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_HOST, false);
+        copyFromOption(builder, PORT, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_REMOTE_PORT, false);
     }
 
     private static void addClientIntelligenceConfig(ProviderConfigurationBuilder builder) {
@@ -309,17 +309,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
                 .add();
     }
 
-    private static void copyFromOption(ProviderConfigurationBuilder builder, String name, String label, String type, Option<?> option) {
-        var property = builder.property()
-                .name(name)
-                .helpText(option.getDescription())
-                .label(label)
-                .type(type)
-                .secret(option.isHidden());
-        option.getDefaultValue().ifPresent(property::defaultValue);
-        property.add();
-    }
-
     private static void addConnectionPoolConfig(ProviderConfigurationBuilder builder) {
         builder.property()
                 .name(CONNECTION_POOL_MAX_ACTIVE)
@@ -339,8 +328,8 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     }
 
     private static void addAuthenticationConfig(ProviderConfigurationBuilder builder) {
-        copyFromOption(builder, USERNAME, "username", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_USERNAME);
-        copyFromOption(builder, PASSWORD, "password", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_PASSWORD);
+        copyFromOption(builder, USERNAME, "username", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_USERNAME, false);
+        copyFromOption(builder, PASSWORD, "password", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_REMOTE_PASSWORD, true);
         builder.property()
                 .name(AUTH_REALM)
                 .helpText("Specifies the Infinispan server realm to be used for authentication.")
@@ -358,7 +347,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     }
 
     private static void addTlsConfig(ProviderConfigurationBuilder builder) {
-        copyFromOption(builder, TLS_ENABLED, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_REMOTE_TLS_ENABLED);
+        copyFromOption(builder, TLS_ENABLED, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_REMOTE_TLS_ENABLED, false);
         builder.property()
                 .name(TLS_SNI_HOSTNAME)
                 .helpText("Specifies the TLS SNI hostname for the connection to the Infinispan server.")
