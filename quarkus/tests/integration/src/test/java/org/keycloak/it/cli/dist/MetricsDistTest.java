@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -127,6 +128,21 @@ public class MetricsDistTest {
                 .statusCode(200)
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005\"}"))
                 .body(containsString("http_server_requests_seconds_bucket{method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/metrics\",le=\"0.005592405\"}"));
+
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--tracing-enabled=true" })
+    void testMetricsEndpointWithCacheMetricsHistogramsAndExemplars(KeycloakDistribution distribution) {
+        runClientCredentialGrantWithUnknownClientId(distribution);
+
+        distribution.setRequestPort(9000);
+        // Exemplars are only present when metrics and traces are enabled
+        given().accept("application/openmetrics-text; version=1.0.0; charset=utf-8");
+        when().get("/metrics").then()
+                .statusCode(200)
+                // http_server_requests_seconds_count{method="GET",outcome="CLIENT_ERROR",status="404",uri="NOT_FOUND"} 7.0 # {span_id="59fb88a687095d04",trace_id="a4d15d4deaa6f6ee7ac2da092f292925"} 1.0 1743780073.651
+                .body(matchesPattern("(?s).*http_server_requests_seconds_count.*,trace_id=.*"));
 
     }
 
