@@ -7,7 +7,7 @@ public class Guide {
     private String title;
     private String summary;
     private int priority = Integer.MAX_VALUE;
-    private Boolean tileVisible;
+    private boolean tileVisible = true;
 
     public String getTemplate() {
         return template;
@@ -49,11 +49,11 @@ public class Guide {
         this.priority = priority;
     }
 
-    public Boolean getTileVisible() {
+    public boolean isTileVisible() {
         return tileVisible;
     }
 
-    public void setTileVisible(Boolean tileVisible) {
+    public void setTileVisible(boolean tileVisible) {
         this.tileVisible = tileVisible;
     }
 }

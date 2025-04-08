@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class Context {
 
@@ -44,7 +43,7 @@ public class Context {
                     }
                 }
 
-                if (Objects.equals(guide.getTileVisible(), Boolean.FALSE) && guide.getPriority() == Integer.MAX_VALUE) {
+                if (!guide.isTileVisible() && guide.getPriority() == Integer.MAX_VALUE) {
                     throw new RuntimeException("Invisible tiles should be pinned or have an explicit priority: " + f.getName());
                 }
 
@@ -53,7 +52,7 @@ public class Context {
         }
 
         if (guidePriorities != null && !guidePriorities.isEmpty()) {
-            throw new RuntimeException("File pinned-guides contained files that do no longer exist or are mis-spelled: " + guidePriorities.keySet());
+            throw new RuntimeException("File 'pinned-guides' contains files that no longer exist or are misspelled: " + guidePriorities.keySet());
         }
 
         Collections.sort(guides, (o1, o2) -> {
