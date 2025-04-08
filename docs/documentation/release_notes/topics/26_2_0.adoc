@@ -10,10 +10,10 @@ For information on how to upgrade from the legacy token exchange used in previou
 
 = Fine-grained admin permissions supported
 
-This release introduces support for a new version of fine-grained admin permissions. Version 2 (V2) provides enhanced flexibility and control over administrative access within realms. 
+This release introduces support for a new version of fine-grained admin permissions. Version 2 (V2) provides enhanced flexibility and control over administrative access within realms.
 With this feature, administrators can define permissions for administering users, groups, clients, and roles without relying on broad administrative roles. V2 offers the same level of access control over realm resources as the previous version, with plans to extend its capabilities in future versions. Some key points follow:
 
-* *Centralized Admin Console Management* - New *Permissions* section was introduced to allow management from a single place without having to navigate to different places in the Admin Console. 
+* *Centralized Admin Console Management* - New *Permissions* section was introduced to allow management from a single place without having to navigate to different places in the Admin Console.
 * *Improved manageability* - Administrators can more easily search and evaluate permissions when building a permission model for realm resources.
 * *Resource-Specific and Global Permissions* – Permissions can be defined for individual resources (such as specific users or groups),  or entire resource types (such as all users or all groups).
 * *Explicit Operation Scoping* – Permissions are now independent, removing hidden dependencies between operations. Administrators must assign each scope explicitly, making it easier to see what is granted without needing prior knowledge of implicit relationships.
@@ -95,6 +95,18 @@ For more information, check the link:https://www.keycloak.org/server/management-
 
 Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
 This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
+
+= JWT Client authentication aligned with the latest OIDC specification
+
+The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect Core Specification] tightened the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt` . {project_name} now enforces by default that there is single audience
+in the JWT token used for client authentication.
+
+For information on the changed audience validation in JWT Client authentication {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
 
 = Federated credentials are available now when fetching user credentials
 
