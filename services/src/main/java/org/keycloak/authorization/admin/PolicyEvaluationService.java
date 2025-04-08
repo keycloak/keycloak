@@ -116,7 +116,7 @@ public class PolicyEvaluationService {
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response evaluate(PolicyEvaluationRequest evaluationRequest) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
         try {
             AuthorizationRequest request = new AuthorizationRequest();

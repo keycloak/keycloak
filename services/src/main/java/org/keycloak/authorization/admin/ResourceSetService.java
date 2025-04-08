@@ -375,7 +375,7 @@ public class ResourceSetService {
         @APIResponse(responseCode = "204", description = "No Content")
     })
     public Response find(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -526,13 +526,13 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
     }
 

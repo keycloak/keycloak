@@ -76,7 +76,7 @@ public class PolicyResourceService {
     @NoCache
     public Response update(String payload) {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
@@ -98,7 +98,7 @@ public class PolicyResourceService {
     @DELETE
     public Response delete() {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -128,7 +128,7 @@ public class PolicyResourceService {
     @NoCache
     public Response findById(@QueryParam("fields") String fields) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -152,7 +152,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getDependentPolicies() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -178,7 +178,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getScopes() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -201,7 +201,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getResources() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {
@@ -227,7 +227,7 @@ public class PolicyResourceService {
     @NoCache
     public Response getAssociatedPolicies() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         if (policy == null) {

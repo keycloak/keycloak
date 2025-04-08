@@ -434,4 +434,17 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
             Assertions.fail("Expected Exception wasn't thrown.");
         } catch (ForbiddenException expected) {}
     }
+
+    @Test
+    public void testManageClientWithAuthorizationSettings() {
+        ClientRepresentation myResourceServer = realm.admin().clients().findByClientId("myresourceserver").get(0);
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myResourceServer.getId());
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createPermission(client, myResourceServer.getId(), clientsType, Set.of(VIEW, MANAGE), onlyMyAdminUserPolicy);
+
+        // can update myResourceServer because manage also implies managing authorization service settings
+        myResourceServer.setName("somethingNew");
+        clientResource.update(myResourceServer);
+    }
 }
