@@ -586,7 +586,7 @@ public class JpaUserFederatedStorageProvider implements
                             && (credentialId == null || !existing.getId().equals(credentialId)));
 
             if (exists) {
-                throw new ModelDuplicateException("Device already exists with the same name");
+                throw new ModelDuplicateException("Device already exists with the same name", CredentialModel.USER_LABEL);
             }
         }
     }

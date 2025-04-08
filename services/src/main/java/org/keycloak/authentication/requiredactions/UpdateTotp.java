@@ -32,6 +32,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.Constants;
@@ -46,8 +47,6 @@ import org.keycloak.utils.CredentialHelper;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.util.stream.Stream;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -117,21 +116,24 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if ("on".equals(formData.getFirst("logout-sessions"))) {
             AuthenticatorUtil.logoutOtherSessions(context);
         }
-        Map<String, Boolean> otpResult = CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel);
 
-        if (otpResult.get("isDeviceDuplicate")) {
+        try {
+            if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
+                Response challenge = context.form()
+                        .setAttribute("mode", mode)
+                        .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
+                        .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+                context.challenge(challenge);
+                return;
+            }
+        } catch (ModelDuplicateException e) {
+            String field = switch (e.getDuplicateFieldName()) {
+                case CredentialModel.USER_LABEL ->  Validation.FIELD_OTP_LABEL;
+                default -> null;
+            };
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .addError(new FormMessage(Validation.FIELD_OTP_LABEL, "Device already exists with the same name"))
-                    .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
-            context.challenge(challenge);
-            return;
-        }
-
-        if (!otpResult.get("isOTPCreationSuccess")) {
-            Response challenge = context.form()
-                    .setAttribute("mode", mode)
-                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
+                    .addError(new FormMessage(field, e.getMessage()))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;

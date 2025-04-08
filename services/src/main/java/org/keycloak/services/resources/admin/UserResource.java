@@ -888,16 +888,10 @@ public class UserResource {
         }
 
         if (userLabel == null || userLabel.trim().isEmpty()) {
-            logger.warn("Missing device name for credential " + credentialId);
             throw new ErrorResponseException("missingDeviceName", "Please specify the device name", Status.BAD_REQUEST);
         }
 
-        try {
-            user.credentialManager().updateCredentialLabel(credentialId, userLabel);
-        } catch (ModelDuplicateException e) {
-            logger.warn("Device name already exists for user " + user.getUsername(), e);
-            throw new ErrorResponseException("deviceNameExists", "Device name already exists", Status.BAD_REQUEST);
-        }
+        user.credentialManager().updateCredentialLabel(credentialId, userLabel);
     }
 
     /**

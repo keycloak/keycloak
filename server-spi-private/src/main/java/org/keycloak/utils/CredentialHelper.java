@@ -29,7 +29,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -41,8 +40,6 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * used to set an execution a state based on type.
@@ -92,42 +89,24 @@ public class CredentialHelper {
      *
      * @return true if credential was successfully created either in the user storage or Keycloak DB. False if error happened (EG. during HOTP validation)
      */
-    public static Map<String, Boolean> createOTPCredential(KeycloakSession session, RealmModel realm, UserModel user, String totpCode, OTPCredentialModel credentialModel) {
+    public static boolean createOTPCredential(KeycloakSession session, RealmModel realm, UserModel user, String totpCode, OTPCredentialModel credentialModel) {
         CredentialProvider otpCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-otp");
         String totpSecret = credentialModel.getOTPSecretData().getValue();
-
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("isDeviceDuplicate", false); // Default: No duplicate
-        result.put("isOTPCreationSuccess", false); // Default: OTP creation failed
 
         UserCredentialModel otpUserCredential = new UserCredentialModel("", realm.getOTPPolicy().getType(), totpSecret);
         boolean userStorageCreated = user.credentialManager().updateCredential(otpUserCredential);
 
         String credentialId = null;
-
         if (userStorageCreated) {
             logger.debugf("Created OTP credential for user '%s' in the user storage", user.getUsername());
-            result.put("isOTPCreationSuccess", true);
         } else {
-            try {
-                CredentialModel createdCredential = otpCredentialProvider.createCredential(realm, user, credentialModel);
-                credentialId = createdCredential.getId();
-                result.put("isOTPCreationSuccess", true);
-            } catch (ModelDuplicateException e) {
-                String deviceName = credentialModel.getDevice(); // Assuming this method exists
-                logger.warnf("Duplicate OTP credential detected for device: %s", deviceName);
-                result.put("isDeviceDuplicate", true);
-            }
+            CredentialModel createdCredential = otpCredentialProvider.createCredential(realm, user, credentialModel);
+            credentialId = createdCredential.getId();
         }
 
-        // If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
-        if (result.get("isOTPCreationSuccess")) {
-            UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
-            boolean isValid = user.credentialManager().isValid(credential);
-            result.put("isOTPCreationSuccess", isValid);
-        }
-
-        return result;
+        //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
+        UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
+        return user.credentialManager().isValid(credential);
     }
 
     /**

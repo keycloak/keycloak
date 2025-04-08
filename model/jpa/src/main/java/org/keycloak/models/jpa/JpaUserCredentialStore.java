@@ -39,8 +39,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.models.ModelDuplicateException;
-
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -151,7 +149,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
                             && (credentialId == null || !existing.getId().equals(credentialId))); // Exclude self in update
 
             if (exists) {
-                throw new ModelDuplicateException("Device already exists with the same name");
+                throw new ModelDuplicateException("Device already exists with the same name", CredentialModel.USER_LABEL);
             }
         }
     }
