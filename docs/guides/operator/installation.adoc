@@ -6,7 +6,6 @@
 
 <@tmpl.guide
 title="{project_name} Operator Installation"
-priority=10
 summary="How to install the {project_name} Operator on Kubernetes and OpenShift">
 
 == Installing the {project_name} Operator
@@ -64,7 +63,7 @@ kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resourc
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
 ----
 
-The Operator will watch the namespace where it is installed. You may optionally select a namespace with the `-n` option. 
+The Operator will watch the namespace where it is installed. You may optionally select a namespace with the `-n` option.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
@@ -79,6 +78,6 @@ If you do this please be aware:
 - older CRDs may not be forwards compatible with new fields used by newer operators. When using OLM it will check if your custom resources are compatible with the CRDs being installed, so the usage of new fields can prevent the simultaneous installation of older operator versions.
 - fields introduced by newer CRDs will not be supported by older Operators. Older Operator will fail to handle CRs that use such new fields with an error deserializing an unrecognized field.
 
-It is therefore recommended in a multiple Operator install scenario that you keep versions aligned as closely as possible to minimize the potential problems with different versions. 
+It is therefore recommended in a multiple Operator install scenario that you keep versions aligned as closely as possible to minimize the potential problems with different versions.
 
 </@tmpl.guide>
