@@ -94,4 +94,9 @@ Exporting a dashboard to JSON format may be useful. For example, you may want to
 ++++
 </div>
 ++++
+
+== Further reading
+
+Continue reading on how to connect traces to dashboard in the <@links.observability id="exemplars" /> {section}.
+
 </@tmpl.guide>

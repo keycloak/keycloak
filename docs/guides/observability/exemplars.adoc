@@ -26,7 +26,7 @@ See the {section} <@links.observability id="metrics-for-troubleshooting-keycloak
 * `keycloak_user_events_total` +
 See the {section} <@links.observability id="metrics-for-troubleshooting-keycloak"/>  for details on this metric.
 
-See below for a screenshot of a heatmap diagram for latencies that is showing an exemplar when hovering over one of the pink indicators.
+See below for a screenshot of a heatmap visualization for latencies that is showing an exemplar when hovering over one of the pink indicators.
 
 .Heatmap diagram with exemplar
 image::observability/exemplar.png[]
@@ -43,7 +43,7 @@ To benefit from exemplars, perform the following steps:
 +
 For Prometheus, this is a https://prometheus.io/docs/prometheus/latest/feature_flags/#exemplars-storage[preview feature that you need to enable].
 
-. Scrape the metrics in the `OpenMetricsText1.0.0` protocol, which is not enabled by default in Prometheus.
+. Scrape the metrics using the `OpenMetricsText1.0.0` protocol, which is not enabled by default in Prometheus.
 +
 If you are using `PodMonitors` or similar in a Kubernetes environment, this can be achieved by adding it to the spec of the custom resource:
 +
@@ -80,6 +80,7 @@ Perform the following steps to verify that {project_name} is set up correctly fo
 
 . Follow the instructions to set up metrics and tracing for {project_name}.
 . For test purposes, record all traces by setting the tracing ration to `1.0`.
+See <@links.observability id="tracing" anchor="sampling" /> for recommended sampling settings in production systems.
 . Log in to the Keycloak instance to create some traces.
 . Scrape the metrics with a command similar to the following and search for those metrics that have an exemplar set:
 +

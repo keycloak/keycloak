@@ -135,6 +135,7 @@ WARNING: For a production-ready environment, sampling should be properly set to 
 
 The used sampler can be changed via the `tracing-sampler-type` property.
 
+[[sampling]]
 === Default sampler
 The default sampler for {project_name} is `traceidratio`, which controls the rate of trace sampling based on a specified ratio configurable via the `tracing-sampler-ratio` property.
 
