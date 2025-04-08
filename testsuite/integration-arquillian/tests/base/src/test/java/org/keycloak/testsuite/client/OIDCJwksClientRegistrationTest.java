@@ -345,15 +345,6 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
                             .rsa256(keyPair.getPrivate());
                 }
             }
-
-            @Override
-            protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
-                JsonWebToken jwt = super.createRequestToken(clientId, realmInfoUrl);
-                String tokenEndpointUrl = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
-                jwt.audience(tokenEndpointUrl);
-                return jwt;
-            }
-
         };
         jwtProvider.setupKeyPair(keyPair);
         jwtProvider.setTokenTimeout(10);
