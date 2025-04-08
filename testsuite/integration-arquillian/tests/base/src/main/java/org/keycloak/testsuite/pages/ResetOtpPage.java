@@ -24,7 +24,7 @@ public class ResetOtpPage extends AbstractPage {
     }
 
     public void selectOtp(int index) {
-        driver.findElement(By.id("kc-otp-credential-" + index)).click();
+        UIUtils.switchCheckbox(driver.findElement(By.id("kc-otp-credential-" + index)), true);
     }
 
     public void submitOtpReset() {
