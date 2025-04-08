@@ -40,6 +40,7 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
@@ -526,16 +527,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return accessCodeLifespanLogin;
     }
 
-    public OAuth2DeviceConfig getOAuth2DeviceConfig(Supplier<RealmModel> modelSupplier) {
-        return deviceConfig.get(modelSupplier);
+    public OAuth2DeviceConfig getOAuth2DeviceConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return deviceConfig.get(session, modelSupplier);
     }
 
-    public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
-        return cibaConfig.get(modelSupplier);
+    public CibaConfig getCibaConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return cibaConfig.get(session, modelSupplier);
     }
 
-    public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
-        return parConfig.get(modelSupplier);
+    public ParConfig getParConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return parConfig.get(session, modelSupplier);
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {
@@ -702,12 +703,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return defaultGroups;
     }
 
-    public List<String> getDefaultDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
-        return defaultDefaultClientScopes.get(modelSupplier);
+    public List<String> getDefaultDefaultClientScopes(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return defaultDefaultClientScopes.get(session, modelSupplier);
     }
 
-    public List<String> getOptionalDefaultClientScopes(Supplier<RealmModel> modelSupplier) {
-        return optionalDefaultClientScopes.get(modelSupplier);
+    public List<String> getOptionalDefaultClientScopes(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
+        return optionalDefaultClientScopes.get(session, modelSupplier);
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {

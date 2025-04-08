@@ -22,6 +22,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.AdminPermissionsSchema;
+import org.keycloak.authorization.policy.provider.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import jakarta.persistence.LockModeType;
+import org.keycloak.storage.UserStoragePrivateUtil;
 
 import static java.util.Optional.ofNullable;
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
@@ -161,7 +163,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
         }
 
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));
@@ -186,7 +188,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
         predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
         predicates.add(builder.equal(root.get("parentId"), group.getId()));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
 
