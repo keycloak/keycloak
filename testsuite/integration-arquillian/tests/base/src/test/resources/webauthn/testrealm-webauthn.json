@@ -599,11 +599,60 @@
           "authenticatorFlow": false
         },
         {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 26,
+          "autheticatorFlow": true,
+          "flowAlias": "browser-webauth-organization",
+          "userSetupAllowed": false
+        },
+        {
           "requirement": "ALTERNATIVE",
           "priority": 30,
           "flowAlias": "browser-webauthn-forms",
           "userSetupAllowed": false,
           "authenticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauth-organization",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": true,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 10,
+          "autheticatorFlow": true,
+          "flowAlias": "browser-webauthn-conditional-organization",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauthn-conditional-organization",
+      "description": "Flow to determine if the organization identity-first login is to be used",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": true,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "organization",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
         }
       ]
     },
