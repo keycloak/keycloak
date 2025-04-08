@@ -17,9 +17,87 @@
 
 package org.keycloak.testsuite.oauth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import jakarta.ws.rs.core.Response;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.AbstractJwtClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
+import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.ECDSAAlgorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.KeyStoreConfig;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.SignatureSignerUtil;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -46,85 +124,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.ws.rs.core.Response;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSAAlgorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.KeyStoreConfig;
-import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.util.CertificateInfoHelper;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.SignatureSignerUtil;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW;
 
 public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTest {
+
+    public static final String CLIENTS_STRICT_FLOW_ALIAS = "clients-strict";
+
+    public static final String TEST_REALM = "test";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -155,8 +164,44 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     }
 
     @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+
+        configureStrictClientAuthenticationFlowAsAdditionalAuthFlow();
+    }
+
+    protected void configureStrictClientAuthenticationFlowAsAdditionalAuthFlow() {
+        testingClient.server(TEST_REALM).run(session ->
+                FlowUtil.inCurrentRealm(session).copyClientFlow(CLIENTS_STRICT_FLOW_ALIAS)
+        );
+
+        testingClient.server(TEST_REALM).run(session -> {
+            List<AuthenticationExecutionModel> clientAuthExecutions = FlowUtil.inCurrentRealm(session)
+                    .selectFlow(CLIENTS_STRICT_FLOW_ALIAS)
+                    .getExecutions();
+
+            RealmModel realm = session.getContext().getRealm();
+            String strictClientFlowId = realm.getFlowByAlias(CLIENTS_STRICT_FLOW_ALIAS).getId();
+
+            for (var execution : clientAuthExecutions) {
+                switch (execution.getAuthenticator()) {
+                    // configure strict JWT assertion aud checking for both JWT client authenticators
+                    case JWTClientAuthenticator.PROVIDER_ID:
+                        // fall-through
+                    case JWTClientSecretAuthenticator.PROVIDER_ID: {
+                        FlowUtil.setAuthenticatorConfig(session, strictClientFlowId, execution.getAuthenticator(), AbstractJwtClientAuthenticator.ISSUER_ONLY_AUDIENCE_PROPERTY, "true");
+                    }
+                    default: {
+                        // noop
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmBuilder realmBuilder = RealmBuilder.create().name("test")
+        RealmBuilder realmBuilder = RealmBuilder.create().name(TEST_REALM)
                 .testEventListener();
 
         app1 = ClientBuilder.create()
@@ -203,6 +248,13 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         testRealms.add(testRealm);
     }
 
+    protected void useClientAuthenticationFlow(String newFlowAlias) {
+        testingClient.server(TEST_REALM).run(session ->
+                FlowUtil.inCurrentRealm(session)
+                        .selectFlow(newFlowAlias)
+                        .defineAsClientAuthenticationFlow());
+    }
+
     @Before
     public void recreateApp3() {
         app3 = ClientBuilder.create()
@@ -212,9 +264,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .build();
 
-        Response resp = adminClient.realm("test").clients().create(app3);
+        Response resp = adminClient.realm(TEST_REALM).clients().create(app3);
         getCleanup().addClientUuid(ApiUtil.getCreatedId(resp));
         resp.close();
+
+        // use normal client authentication flow by default
+        useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
     }
 
     public void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
@@ -237,12 +292,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     }
 
     public void testCodeToTokenRequestSuccessForceAlgInClient(String algorithm) throws Exception {
-        ClientManager.realm(adminClient.realm("test")).clientId("client2")
+        ClientManager.realm(adminClient.realm(TEST_REALM)).clientId("client2")
                 .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algorithm);
         try {
             testCodeToTokenRequestSuccess(algorithm);
         } finally {
-            ClientManager.realm(adminClient.realm("test")).clientId("client2")
+            ClientManager.realm(adminClient.realm(TEST_REALM)).clientId("client2")
                     .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, null);
         }
     }
@@ -520,7 +575,11 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 createSignedRequestToken(privateKey, publicKey, Algorithm.PS256, null, assertion, null)));
 
             try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
+                int statusCode = resp.getStatusLine().getStatusCode();
                 AccessTokenResponse response = new AccessTokenResponse(resp);
+                if (statusCode != 200) {
+                    throw new RuntimeException("Token request failed: " + statusCode + ". Error: " + response.getError() + ". ErrorDescription: " + response.getErrorDescription());
+                }
                 assertNotNull(response.getAccessToken());
             }
         } finally {
@@ -757,7 +816,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
     protected String getRealmInfoUrl() {
         String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
-        return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build("test").toString();
+        return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build(TEST_REALM).toString();
     }
 
     protected ClientAttributeCertificateResource getClientAttributeCertificateResource(String realm, String clientId) {

@@ -16,6 +16,7 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
@@ -26,18 +27,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
 
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +48,7 @@ import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
  * org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider
  * <p>
  */
-public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
+public class JWTClientSecretAuthenticator extends AbstractJwtClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-secret-jwt";
 
@@ -115,12 +111,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
             // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
 
-            // Allow both "issuer" or "token-endpoint" as audience
-            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
-            }
+            validateTokenAudience(context, realm, token);
 
             validator.validateToken();
             validator.validateTokenReuse();
@@ -131,11 +122,6 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with client secret signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
-    }
-
-    @Override
-    public boolean isConfigurable() {
-        return false;
     }
 
     @Override
@@ -199,12 +185,5 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     @Override
     public String getHelpText() {
         return "Validates client based on signed JWT issued by client and signed with the Client Secret";
-
     }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return new LinkedList<>();
-    }
-
 }

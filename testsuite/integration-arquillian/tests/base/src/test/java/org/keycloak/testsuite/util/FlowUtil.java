@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.BROWSER_FLOW;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.DIRECT_GRANT_FLOW;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.REGISTRATION_FLOW;
@@ -81,6 +82,11 @@ public class FlowUtil {
     public FlowUtil copyBrowserFlow(String newFlowAlias) {
         checkAndRestoreDefaultFlow(realm::getBrowserFlow, realm::setBrowserFlow, newFlowAlias, BROWSER_FLOW);
         return copyFlow(BROWSER_FLOW, newFlowAlias);
+    }
+
+    public FlowUtil copyClientFlow(String newFlowAlias) {
+        checkAndRestoreDefaultFlow(realm::getClientAuthenticationFlow, realm::setClientAuthenticationFlow, newFlowAlias, CLIENT_AUTHENTICATION_FLOW);
+        return copyFlow(CLIENT_AUTHENTICATION_FLOW, newFlowAlias);
     }
 
     public FlowUtil copyResetCredentialsFlow(String newFlowAlias) {
@@ -186,6 +192,11 @@ public class FlowUtil {
 
     public FlowUtil defineAsBrowserFlow() {
         realm.setBrowserFlow(currentFlow);
+        return this;
+    }
+
+    public FlowUtil defineAsClientAuthenticationFlow() {
+        realm.setClientAuthenticationFlow(currentFlow);
         return this;
     }
 

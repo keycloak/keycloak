@@ -59,6 +59,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -565,6 +566,72 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         setTimeOffset(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+    }
+
+    @Test
+    public void testAllowIssuerAudienceWithStrictClientJwtAuthentication() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
+        try {
+            testEndpointAsAudience(getRealmInfoUrl());
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
+    }
+
+    @Test
+    public void testRejectTokenEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getToken());
+            Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
+        } catch (RuntimeException ex) {
+            assertThat(ex.getMessage(), containsString("invalid_client"));
+            assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
+    }
+
+    @Test
+    public void testRejectIntrospectionEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getIntrospection());
+            Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
+        } catch(RuntimeException ex) {
+            assertThat(ex.getMessage(), containsString("invalid_client"));
+            assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
+    }
+
+    @Test
+    public void testRejectParEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getPushedAuthorizationRequest());
+            Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
+        } catch(RuntimeException ex) {
+            assertThat(ex.getMessage(), containsString("invalid_client"));
+            assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
+    }
+
+    @Test
+    public void testRejectCibaBackchannelEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getBackchannelAuthentication());
+            Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
+        } catch(RuntimeException ex) {
+            assertThat(ex.getMessage(), containsString("invalid_client"));
+            assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
     }
 
     @Test
