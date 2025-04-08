@@ -204,11 +204,6 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         }
 
         @Override
-        public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-            return CrossDCMessageStatus.SYNC;
-        }
-
-        @Override
         public boolean isOffline() {
             return offline;
         }

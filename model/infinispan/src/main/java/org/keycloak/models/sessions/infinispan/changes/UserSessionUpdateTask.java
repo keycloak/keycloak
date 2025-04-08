@@ -29,8 +29,4 @@ public abstract class UserSessionUpdateTask implements PersistentSessionUpdateTa
         return CacheOperation.REPLACE;
     }
 
-    @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-        return CrossDCMessageStatus.SYNC;
-    }
 }

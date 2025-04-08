@@ -41,7 +41,6 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
@@ -50,7 +49,6 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -964,10 +962,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return CacheOperation.REPLACE;
         }
 
-        @Override
-        public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-            return CrossDCMessageStatus.SYNC;
-        }
     }
 
 }

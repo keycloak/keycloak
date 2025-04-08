@@ -26,7 +26,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -243,11 +242,6 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
                     return;
                 }
                 entity.setLastSessionRefresh(lastSessionRefresh);
-            }
-
-            @Override
-            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-                return CrossDCMessageStatus.SYNC;
             }
 
             @Override

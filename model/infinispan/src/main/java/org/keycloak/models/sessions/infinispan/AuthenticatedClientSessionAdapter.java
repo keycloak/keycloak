@@ -28,7 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
@@ -152,11 +151,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                     return;
                 }
                 entity.setTimestamp(timestamp);
-            }
-
-            @Override
-            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper) {
-                return CrossDCMessageStatus.SYNC;
             }
 
             @Override
