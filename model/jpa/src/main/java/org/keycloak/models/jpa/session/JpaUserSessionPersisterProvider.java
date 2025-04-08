@@ -248,7 +248,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         // prefer client session timeout if set
         int expiredClientOffline = expiredOffline;
-        if (realm.getClientOfflineSessionIdleTimeout() > 0) {
+        if (realm.isOfflineSessionMaxLifespanEnabled() && realm.getClientOfflineSessionIdleTimeout() > 0) {
             expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
         }
 
