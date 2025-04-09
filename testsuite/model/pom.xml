@@ -236,9 +236,9 @@
         </profile>
 
         <profile>
-            <id>jpa+cross-dc-infinispan</id>
+            <id>jpa+multi-site-infinispan</id>
             <properties>
-                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+                <keycloak.model.parameters>MultiSiteInfinispan,Jpa</keycloak.model.parameters>
             </properties>
             <build>
                 <plugins>

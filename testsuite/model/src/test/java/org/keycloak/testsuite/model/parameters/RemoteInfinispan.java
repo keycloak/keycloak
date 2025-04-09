@@ -38,7 +38,7 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 
 /**
- * Copied from {@link CrossDCInfinispan}.
+ * Copied from {@link MultiSiteInfinispan}.
  * <p>
  * Adds the new provider factories implementation
  */
