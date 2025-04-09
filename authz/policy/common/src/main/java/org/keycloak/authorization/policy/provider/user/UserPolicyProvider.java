@@ -25,7 +25,6 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
@@ -52,24 +51,15 @@ public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPoli
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        EvaluationContext context = evaluation.getContext();
-        UserPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy(), evaluation.getAuthorizationProvider());
+        Policy policy = evaluation.getPolicy();
 
-        if (isGranted(context.getIdentity().getId(), policy)) {
+        if (policy.getConfig().getOrDefault("users", "").contains(evaluation.getContext().getIdentity().getId())) {
             evaluation.grant();
         }
 
-        logger.debugf("User policy %s evaluated to status %s on identity %s with accepted users: %s", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), policy.getUsers());
-    }
-
-    private boolean isGranted(String subject, UserPolicyRepresentation policy) {
-        for (String userId : policy.getUsers()) {
-            if (subject.equals(userId)) {
-                return true;
-            }
+        if (logger.isDebugEnabled()) {
+            logger.debugf("User policy %s evaluated to status %s on identity %s with accepted users: %s", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), policy.getConfig().getOrDefault("users", ""));
         }
-
-        return false;
     }
 
     @Override
@@ -86,8 +76,7 @@ public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPoli
 
     @Override
     public boolean evaluate(KeycloakSession session, Policy policy, UserModel adminUser) {
-        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
-        return isGranted(adminUser.getId(), representationFunction.apply(policy, authorizationProvider));
+        return policy.getConfig().getOrDefault("users", "").contains(adminUser.getId());
     }
 
     @Override

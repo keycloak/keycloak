@@ -140,12 +140,9 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
         PolicyStore policyStore = storeFactory.getPolicyStore();
         List<RoleModel> subjectRoles = subject.getRoleMappingsStream().toList();
         Stream<Policy> policies = Stream.of();
+        List<String> roleIds = subjectRoles.stream().map(RoleModel::getId).toList();
 
-        for (RoleModel role : subjectRoles) {
-            policies = Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", role.getId()));
-        }
-
-        return policies;
+        return Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), RolePolicyProviderFactory.ID, "roles", roleIds));
     }
 
     @Override

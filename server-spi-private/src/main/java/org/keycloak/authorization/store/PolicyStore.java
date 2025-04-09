@@ -190,4 +190,6 @@ public interface PolicyStore {
     List<Policy> findDependentPolicies(ResourceServer resourceServer, String id);
 
     Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, String configValue);
+
+    Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValues);
 }

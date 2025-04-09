@@ -447,6 +447,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String associatedPolicyType, String configKey, List<String> configValues) {
+                return policyStore.findDependentPolicies(resourceServer, resourceType, associatedPolicyType, configKey, configValues);
+            }
+
+            @Override
             public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
                 policyStore.findByResourceType(resourceServer, type, policyConsumer);
             }
