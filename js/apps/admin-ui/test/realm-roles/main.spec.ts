@@ -19,7 +19,7 @@ import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { confirmModal } from "../utils/modal";
 import {
-  changeRoleTypeFilter,
+  pickRoleType,
   clickUnassign,
   confirmModalAssign,
   pickRole,
@@ -35,8 +35,6 @@ import {
 } from "../utils/table";
 import {
   assertUnassignDisabled,
-  assignRole,
-  clickAddRoleButton,
   clickCreateRoleButton,
   goToAssociatedRolesTab,
 } from "./main";
@@ -132,25 +130,22 @@ test.describe("Realm roles test", () => {
     await goToAssociatedRolesTab(page);
 
     // Add associated realm role from search bar
-    await clickAddRoleButton(page, true);
-    await changeRoleTypeFilter(page, "roles");
+    await pickRoleType(page, "roles");
     await pickRole(page, "offline_access", true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
 
     // Add associated client role from search bar
-    await clickAddRoleButton(page);
+    await pickRoleType(page, "client");
     await pickRole(page, "accountmanage-account", true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
 
     // Add associated client role
-    await clickAddRoleButton(page);
+    await pickRoleType(page, "client");
     await pickRole(page, "accountmanage-consent", true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
-
-    await clickAddRoleButton(page);
   });
 
   test("should search existing associated role by name and go to it", async ({
@@ -207,7 +202,7 @@ test.describe("Realm roles test", () => {
     await clickTableRowItem(page, itemId);
     await goToAssociatedRolesTab(page);
 
-    await assignRole(page);
+    await pickRoleType(page, "client");
     await pickRole(page, "accountview-profile", true);
     await confirmModalAssign(page);
 
@@ -222,7 +217,7 @@ test.describe("Realm roles test", () => {
     await clickTableRowItem(page, itemId);
     await goToAssociatedRolesTab(page);
 
-    await assignRole(page);
+    await pickRoleType(page, "client");
     await pickRole(page, "accountview-profile", true);
     await confirmModalAssign(page);
 
@@ -239,7 +234,7 @@ test.describe("Realm roles test", () => {
     await clickTableRowItem(page, itemId);
     await goToAssociatedRolesTab(page);
 
-    await assignRole(page);
+    await pickRoleType(page, "client");
     await pickRole(page, "accountview-profile", true);
     await confirmModalAssign(page);
 
