@@ -30,6 +30,18 @@
           "configuration": {}
         },
         {
+          "executor": "secure-redirect-uris-enforcer",
+          "configuration": {
+            "allow-ipv4-loopback-address": false,
+            "allow-ipv6-loopback-address": false,
+            "allow-private-use-uri-scheme": false,
+            "allow-http-scheme": false,
+            "allow-wildcard-context-path": false,
+            "oauth-2-1-compliant": false,
+            "allow-open-redirect": false
+          }
+        },
+        {
           "executor": "consent-required",
           "configuration": {
             "auto-configure": true
@@ -68,6 +80,18 @@
         {
           "executor": "secure-client-uris",
           "configuration": {}
+        },
+        {
+          "executor": "secure-redirect-uris-enforcer",
+          "configuration": {
+            "allow-ipv4-loopback-address": false,
+            "allow-ipv6-loopback-address": false,
+            "allow-private-use-uri-scheme": false,
+            "allow-http-scheme": false,
+            "allow-wildcard-context-path": false,
+            "oauth-2-1-compliant": false,
+            "allow-open-redirect": false
+          }
         },
         {
           "executor": "secure-request-object",
