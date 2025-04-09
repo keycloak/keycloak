@@ -167,10 +167,10 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     public void importTestRealms() {
         super.importTestRealms();
 
-        configureStrictClientAuthenticationFlowAsAdditionalAuthFlow();
+        configureClientAuthenticationFlowWithLenientAudienceValidationAsAdditionalAuthFlow();
     }
 
-    protected void configureStrictClientAuthenticationFlowAsAdditionalAuthFlow() {
+    protected void configureClientAuthenticationFlowWithLenientAudienceValidationAsAdditionalAuthFlow() {
         testingClient.server(TEST_REALM).run(session ->
                 FlowUtil.inCurrentRealm(session).copyClientFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS)
         );

@@ -19,6 +19,26 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
+=== JWT Client authentication aligned with the latest OIDC specification
+
+The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect core specification] changed the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt`.
+
+Previously, the `aud` claim of a JWT client assertion was loosely defined as `The Audience SHOULD be the URL of the Authorization Server's Token Endpoint`, which did not exclude the usage of other URLs.
+
+The revised OIDC Core specification uses a stricter audience check: "The Audience value MUST be the OP's Issuer Identifier passed as a string, and not a single-element array.".
+
+We adapted the implementations of `JWTClientAuthenticator` and `JWTClientSecretAuthenticator` to follow the new audience check rules.
+By default, we now require the issuer URL to be the sole value of the audience.
+
+This strict audience check can be reverted to the previous more lenient check with a new 'Lenient Audience Validation'
+configuration in the respective client authentication flows. Additionally, server administrators can use two new SPI configuration options to configure the default audience validation behavior.
+
+The following SPI configuration enables `lenient-audience-validation` by default:
+
+** `--spi-client-authenticator-client-jwt-lenient-audience-validation=true`
+** `--spi-client-authenticator-client-secret-jwt-lenient-audience-validation=true`
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.

@@ -98,18 +98,10 @@ This can be achieved using link:{adminguide_link}#_client_policies[Client Polici
 
 = JWT Client authentication aligned with the latest OIDC specification
 
-The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect core specification] changed the rules for
-audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt`.
+The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect Core Specification] tightened the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt` which {project_name} now applies by default.
 
-Previously, the `aud` claim of a JWT client assertion was loosely defined as `The Audience SHOULD be the URL of the Authorization Server's Token Endpoint`, which did not exclude the usage of other URLs.
-
-The revised OIDC Core specification uses a stricter audience check: "The Audience value MUST be the OP's Issuer Identifier passed as a string, and not a single-element array.".
-
-We adapted the implementations of `JWTClientAuthenticator` and `JWTClientSecretAuthenticator` to follow the new audience check rules.
-By default, we now require the issuer URL to be the sole value of the audience.
-
-This strict audience check can be reverted to the previous more lenient check with a new 'Lenient Audience Validation'
-configuration in the respective client authentication flows. Additionally, server administrators can use the SPI configuration options `--spi-client-authenticator-client-jwt-lenient-audience-validation=true`and `--spi-client-authenticator-client-secret-jwt-lenient-audience-validation=true` to configure the old audience validation behavior.
+For information on the changed audience validation in JWT Client authentication {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
 = Federated credentials are available now when fetching user credentials
 
