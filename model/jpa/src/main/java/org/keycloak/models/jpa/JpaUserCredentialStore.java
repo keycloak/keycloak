@@ -32,7 +32,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
 import java.util.List;
-
 import jakarta.persistence.LockModeType;
 
 import java.util.Objects;
@@ -209,7 +208,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
             if (id.equals(credential.getId())) {
                 ourCredentialIndex = i;
                 ourCredential = credential;
-            } else if (newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
+            } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
                 newPreviousCredentialIndex = i;
             }
             i++;
@@ -226,7 +225,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         }
 
         // 3 - Compute index where we move our credential
-        int toMoveIndex = newPreviousCredentialId == null ? 0 : newPreviousCredentialIndex + 1;
+        int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
 
         // 4 - Insert our credential to new position, remove it from the old position
         newList.add(toMoveIndex, ourCredential);

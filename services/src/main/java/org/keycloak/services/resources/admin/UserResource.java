@@ -888,7 +888,8 @@ public class UserResource {
         }
 
         if (userLabel == null || userLabel.trim().isEmpty()) {
-            throw new ErrorResponseException("missingDeviceName", "Please specify the device name", Status.BAD_REQUEST);
+            throw new ErrorResponseException("missingCredentialLabel", "Credential label must not be empty", Status.BAD_REQUEST);
+
         }
 
         user.credentialManager().updateCredentialLabel(credentialId, userLabel);
@@ -940,7 +941,7 @@ public class UserResource {
     }
 
     /**
-     * Send an email to the user with a link they can click to reset their password.
+     * Send an email to the user with a link they can click to reUser their password.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      * <p>
