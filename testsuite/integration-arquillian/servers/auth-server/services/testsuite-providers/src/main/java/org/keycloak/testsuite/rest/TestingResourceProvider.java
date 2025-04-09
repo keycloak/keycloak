@@ -889,11 +889,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Consumes(MediaType.APPLICATION_JSON)
     public void resetFeature(@PathParam("feature") String featureKey) {
 
-        Profile.Feature feature;
+        featureKey = featureKey.contains(":") ? featureKey.split(":")[0] : featureKey;
+        Profile.Feature feature = Profile.getFeatureVersions(featureKey).iterator().next();
 
-        try {
-            feature = Profile.Feature.valueOf(featureKey);
-        } catch (IllegalArgumentException e) {
+        if (feature == null) {
             System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
             throw new BadRequestException();
         }
@@ -911,16 +910,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
     private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
         Collection<Profile.Feature> features = null;
 
-        try {
-            features = Arrays.asList(Profile.Feature.valueOf(featureKey));
-        } catch (IllegalArgumentException e) {
-            Set<Feature> featureVersions = Profile.getFeatureVersions(featureKey);
-            if (!shouldEnable) {
-                features = featureVersions;
-            } else if (!featureVersions.isEmpty()) {
-                // the set is ordered by preferred feature
-                features = Arrays.asList(featureVersions.iterator().next());
+        if (featureKey.contains(":")) {
+            String unversionedKey = featureKey.split(":")[0];
+            int version = Integer.parseInt(featureKey.split(":")[1].replace("v", ""));
+
+            for (Feature versionedFeature : Profile.getFeatureVersions(unversionedKey)) {
+                if (versionedFeature.getVersion() == version) {
+                    features = Set.of(versionedFeature);
+                    break;
+                }
             }
+        } else {
+            features = Profile.getFeatureVersions(featureKey);
         }
 
         if (features == null || features.isEmpty()) {

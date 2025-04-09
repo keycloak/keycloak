@@ -17,6 +17,7 @@ import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -31,6 +32,11 @@ public class FeaturesDistTest {
 
     private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: " + Arrays.stream(Profile.Feature.values())
             .filter(feature -> feature.getType() == Profile.Feature.Type.PREVIEW)
+            .filter(feature -> {
+                Set<Profile.Feature> versions = Profile.getFeatureVersions(feature.getKey());
+                if (versions.size() == 1) return true;
+                return versions.iterator().next().getVersion() == feature.getVersion();
+            })
             .map(Profile.Feature::getVersionedKey)
             .sorted()
             .collect(Collectors.joining(", "));

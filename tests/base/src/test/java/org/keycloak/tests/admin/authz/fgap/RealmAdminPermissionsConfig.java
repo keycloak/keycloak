@@ -38,6 +38,10 @@ public class RealmAdminPermissionsConfig implements RealmConfig {
         realm.addClient("myclient")
                 .secret("mysecret")
                 .directAccessGrants();
+        realm.addClient("myresourceserver")
+                .secret("mysecret")
+                .directAccessGrants()
+                .authorizationServices();
         return realm.adminPermissionsEnabled(true);
     }
 }

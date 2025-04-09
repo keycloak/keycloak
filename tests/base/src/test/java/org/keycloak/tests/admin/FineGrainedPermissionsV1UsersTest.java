@@ -41,8 +41,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
-@KeycloakIntegrationTest(config = FineGrainedPermissionsUsersTest.ServerConfig.class)
-public class FineGrainedPermissionsUsersTest {
+@KeycloakIntegrationTest(config = FineGrainedPermissionsV1UsersTest.ServerConfig.class)
+public class FineGrainedPermissionsV1UsersTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;

@@ -85,13 +85,25 @@ public class KeycloakTestingClient implements AutoCloseable {
     }
 
     public void enableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> disabledFeatures = testing().enableFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().enableFeature(featureString);
         Assert.assertFalse(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
     public void disableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> disabledFeatures = testing().disableFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().disableFeature(featureString);
         Assert.assertTrue(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
@@ -102,7 +114,17 @@ public class KeycloakTestingClient implements AutoCloseable {
      * @param feature
      */
     public void resetFeature(Profile.Feature feature) {
-        testing().resetFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+            Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getKey()).iterator().next();
+            if (featureVersionHighestPriority.getType().equals(Profile.Feature.Type.DEFAULT)) {
+                enableFeature(featureVersionHighestPriority);
+            }
+        } else {
+            featureString = feature.getKey();
+        }
+        testing().resetFeature(featureString);
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }

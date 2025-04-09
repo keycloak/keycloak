@@ -60,7 +60,7 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
 
     @Override
     public void init(Config.Scope config) {
-        super.init(config.scope("connectionsHttpClient", "default"));
+        super.init(Config.scope("connectionsHttpClient", "default"));
     }
 
     @Override

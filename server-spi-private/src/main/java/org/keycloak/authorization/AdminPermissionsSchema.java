@@ -75,7 +75,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String VIEW = "view";
 
     // client specific scopes
-    public static final String CONFIGURE = "configure";
     public static final String MAP_ROLES = "map-roles";
     public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
     public static final String MAP_ROLES_COMPOSITE = "map-roles-composite";
@@ -84,6 +83,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String MANAGE_MEMBERSHIP = "manage-membership";
     public static final String MANAGE_MEMBERS = "manage-members";
     public static final String VIEW_MEMBERS = "view-members";
+    public static final String IMPERSONATE_MEMBERS = "impersonate-members";
 
     // role specific scopes
     public static final String MAP_ROLE = "map-role";
@@ -95,10 +95,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
 
-    public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(CONFIGURE, MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
-    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS));
+    public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
+    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS)), GROUPS.getType());
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS)), GROUPS.getType());
+    private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
     private final PartialEvaluator partialEvaluator = new PartialEvaluator();
@@ -475,5 +476,41 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return aliases;
+    }
+
+    /**
+     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code runnable}
+     * in the context of the given {@code session}.
+     *
+     * <p>This method should be used whenever a code block should be executed without any evaluation or filtering based on
+     * the permissions set to a realm. For instance, when caching realm resources where access enforcement does not apply.
+     *
+     * @param session the session. If {@code null}, authorization is enabled when executing the code block
+     * @param runnable the runnable to execute
+     */
+    public static void runWithoutAuthorization(KeycloakSession session, Runnable runnable) {
+        if (isSkipEvaluation(session)) {
+            runnable.run();
+            return;
+        }
+
+        try {
+            session.setAttribute(SKIP_EVALUATION, Boolean.TRUE.toString());
+            runnable.run();
+        } finally {
+            session.removeAttribute(SKIP_EVALUATION);
+        }
+    }
+
+    /**
+     * Returns if authorization is disabled in the context of the given {@code session} at the moment that this method is called.
+     *
+     * @param session the session
+     * @return {@code true} if authorization is disabled. Otherwise, returns {@code false}.
+     * Otherwise, {@code false}.
+     * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
+     */
+    public static boolean isSkipEvaluation(KeycloakSession session) {
+        return session == null || Boolean.parseBoolean(session.getAttributeOrDefault(SKIP_EVALUATION, Boolean.FALSE.toString()));
     }
 }

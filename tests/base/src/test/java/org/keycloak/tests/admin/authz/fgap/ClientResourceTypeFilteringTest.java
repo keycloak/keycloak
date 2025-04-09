@@ -42,7 +42,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
@@ -87,7 +87,7 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
 
         search = realmAdminClient.realm(realm.getName()).clients().findAll();
         assertFalse(search.isEmpty());
-        assertEquals(58, search.size());
+        assertEquals(59, search.size());
     }
 
     @Test
@@ -135,5 +135,19 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).clients().findAll("client-", true, true, null, null);
         assertFalse(search.isEmpty());
         assertTrue(search.stream().map(ClientRepresentation::getId).noneMatch(notAllowedClients::contains));
+    }
+
+    @Test
+    public void testSearchByClientId() {
+        String expectedClientId = "client-0";
+        List<ClientRepresentation> search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
+        assertTrue(search.isEmpty());
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(client, expectedClientId, CLIENTS_RESOURCE_TYPE, Set.of(VIEW), allowPolicy);
+        search = realmAdminClient.realm(realm.getName()).clients().findByClientId(expectedClientId);
+        assertFalse(search.isEmpty());
+        assertEquals(1, search.size());
+        assertEquals(search.get(0).getClientId(), expectedClientId);
     }
 }

@@ -53,7 +53,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedUser;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class UserResourceTypePermissionTest extends AbstractPermissionTest {
 
     @InjectUser(ref = "alice", lifecycle = LifeCycle.METHOD)

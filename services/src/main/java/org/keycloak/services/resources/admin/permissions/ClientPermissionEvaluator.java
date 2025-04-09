@@ -118,12 +118,14 @@ public interface ClientPermissionEvaluator {
      * <p/>
      * Or if the caller has a permission to {@link ClientPermissionManagement#CONFIGURE_SCOPE} the client.
      * <p/>
-     * For V2 only: Also if the caller has a permission to {@link org.keycloak.authorization.AdminPermissionsSchema#CONFIGURE} all clients.
+     * For V2 only: the call is redirected to {@code canManage(ClientModel)}.
      */
     boolean canConfigure(ClientModel client);
 
     /**
      * Throws ForbiddenException if {@link #canConfigure(ClientModel)} returns {@code false}.
+     * <p/>
+     * For V2 only: the call is redirected to {@code requireManage(ClientModel)}.
      */
     void requireConfigure(ClientModel client);
 

@@ -623,6 +623,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
         }
 
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
+
         queryBuilder.where(predicates.toArray(Predicate[]::new));
 
         return em.createQuery(queryBuilder).getSingleResult().intValue();
@@ -667,6 +669,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         userQuery = userQuery.select(count);
         List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
+        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, qb, userQuery, from));
 
         userQuery = userQuery.where(restrictions.toArray(Predicate[]::new));
         TypedQuery<Long> query = em.createQuery(userQuery);

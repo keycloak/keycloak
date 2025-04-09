@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -80,8 +81,8 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         return enabled;
     }
 
-    public MultivaluedHashMap<String, String> getAttributes(Supplier<OrganizationModel> organizationModel) {
-        return attributes.get(organizationModel);
+    public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<OrganizationModel> organizationModel) {
+        return attributes.get(session, organizationModel);
     }
 
     public Stream<OrganizationDomainModel> getDomains() {

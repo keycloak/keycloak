@@ -5,7 +5,6 @@
 
 <@tmpl.guide
 title="{project_name} Realm Import"
-priority=30
 summary="How to perform an automated {project_name} Realm Import using the operator">
 
 == Importing a {project_name} Realm
@@ -85,10 +84,10 @@ When the import has successfully completed, the output will look like the follow
 ----
 CONDITION: Done
   STATUS: true
-  MESSAGE: 
+  MESSAGE:
 CONDITION: Started
   STATUS: false
-  MESSAGE: 
+  MESSAGE:
 CONDITION: HasErrors
   STATUS: false
   MESSAGE:
@@ -96,7 +95,7 @@ CONDITION: HasErrors
 
 === Placeholders
 
-Imports support placeholders referencing environment variables, see <@links.server id="importExport"/> for more. 
+Imports support placeholders referencing environment variables, see <@links.server id="importExport"/> for more.
 The `KeycloakRealmImport` CR allows you to leverage this functionality via the `spec.placeholders` stanza, for example:
 
 [source,yaml]
@@ -115,7 +114,7 @@ spec:
     ...
 ----
 
-In the above example placeholder replacement will be enabled and an environment variable with key `ENV_KEY` will be created from the Secret `SECRET_NAME`'s value for key `SECRET_KEY`. 
+In the above example placeholder replacement will be enabled and an environment variable with key `ENV_KEY` will be created from the Secret `SECRET_NAME`'s value for key `SECRET_KEY`.
 Currently only Secrets are supported and they must be in the same namespace as the Keycloak CR.
-  
+
 </@tmpl.guide>

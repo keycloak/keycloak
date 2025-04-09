@@ -310,7 +310,6 @@ export default function ClientDetails() {
   });
 
   const setupForm = (client: ClientRepresentation) => {
-    form.reset({ ...client });
     convertToFormValues(client, form.setValue);
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(

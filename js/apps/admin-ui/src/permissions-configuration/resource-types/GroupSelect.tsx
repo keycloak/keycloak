@@ -20,6 +20,9 @@ type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   isRequired?: boolean;
 };
 
+const convertGroups = (groups: GroupRepresentation[]): string[] =>
+  groups.map(({ id }) => id!);
+
 export const GroupSelect = ({
   name,
   label,
@@ -86,7 +89,7 @@ export const GroupSelect = ({
                 onConfirm={(selectGroup) => {
                   field.onChange([
                     ...(field.value || []),
-                    ...(selectGroup || []).map(({ id }) => id),
+                    ...convertGroups(selectGroup || []),
                   ]);
                   setGroups([...groups, ...(selectGroup || [])]);
                   setOpen(false);
@@ -129,7 +132,9 @@ export const GroupSelect = ({
                     icon={<MinusCircleIcon />}
                     onClick={() => {
                       setValue(name!, [
-                        ...(groups || []).filter(({ id }) => id !== group.id),
+                        ...convertGroups(
+                          (groups || []).filter(({ id }) => id !== group.id),
+                        ),
                       ]);
                       setGroups([
                         ...groups.filter(({ id }) => id !== group.id),

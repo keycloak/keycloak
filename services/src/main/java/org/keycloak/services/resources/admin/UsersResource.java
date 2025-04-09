@@ -303,6 +303,9 @@ public class UsersResource {
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
+                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        userModels = userModels.filter(userPermissionEvaluator::canView);
+                    }
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();

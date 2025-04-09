@@ -14,6 +14,7 @@ This guide provides instructions on how to visualize collected {project_name} me
 
 * {project_name} metrics are enabled. Follow <@links.observability id="configuration-metrics"/> {section} for more details.
 * Grafana instance is running and {project_name} metrics are collected into a Prometheus instance.
+* For the HTTP request latency heatmaps to work, enable histograms for HTTP metrics by setting `http-metrics-histograms-enabled` to `true`.
 
 == {project_name} Grafana dashboards
 
@@ -93,4 +94,9 @@ Exporting a dashboard to JSON format may be useful. For example, you may want to
 ++++
 </div>
 ++++
+
+== Further reading
+
+Continue reading on how to connect traces to dashboard in the <@links.observability id="exemplars" /> {section}.
+
 </@tmpl.guide>

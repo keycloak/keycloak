@@ -16,8 +16,12 @@
  */
 package org.keycloak.models.cache.infinispan;
 
+import static org.keycloak.authorization.AdminPermissionsSchema.runWithoutAuthorization;
+
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Default implementation of {@link DefaultLazyLoader} that only fetches data once. This implementation is not thread-safe
@@ -37,10 +41,13 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
     }
 
     @Override
-    public D get(Supplier<S> sourceSupplier) {
+    public D get(KeycloakSession session, Supplier<S> sourceSupplier) {
         if (data == null) {
-            S source = sourceSupplier.get();
-            data = source == null ? fallback.get() : this.loader.apply(source);
+            runWithoutAuthorization(session, () -> {
+                // make sure caching does not include partial results when FGAP is enabled
+                S source = sourceSupplier.get();
+                data = source == null ? fallback.get() : loader.apply(source);
+            });
         }
         return data;
     }

@@ -138,7 +138,11 @@ public class ClientsResource {
         } else {
             ClientModel client = realm.getClientByClientId(clientId);
             if (client != null) {
-                clientModels = Stream.of(client);
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    clientModels = Stream.of(client).filter(auth.clients()::canView);
+                } else {
+                    clientModels = Stream.of(client);
+                }
             }
         }
 

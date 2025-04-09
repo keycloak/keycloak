@@ -49,7 +49,7 @@ import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_CLIENT_
 import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_COMPOSITE;
 import static org.keycloak.authorization.AdminPermissionsSchema.VIEW;
 
-@KeycloakIntegrationTest(config = KeycloakAdminPermissionsServerConfig.class)
+@KeycloakIntegrationTest
 public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")

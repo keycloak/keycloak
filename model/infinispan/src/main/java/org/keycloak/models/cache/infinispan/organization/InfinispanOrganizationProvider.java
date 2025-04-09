@@ -107,7 +107,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         } else if (managedOrganizations.containsKey(id)) {
             return managedOrganizations.get(id);
         }
-        OrganizationAdapter adapter = new OrganizationAdapter(cached, () -> getDelegate(), this);
+        OrganizationAdapter adapter = new OrganizationAdapter(session, cached, this::getDelegate, this);
         managedOrganizations.put(id, adapter);
         return adapter;
     }

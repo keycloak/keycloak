@@ -79,7 +79,7 @@ public class ResourceServerService {
     public ResourceServer create(boolean newClient) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
-        this.auth.realm().requireManageAuthorization();
+        this.auth.realm().requireManageAuthorization(resourceServer);
 
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
 
@@ -103,7 +103,7 @@ public class ResourceServerService {
     public Response update(ResourceServerRepresentation server) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
-        this.auth.realm().requireManageAuthorization();
+        this.auth.realm().requireManageAuthorization(resourceServer);
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
         this.resourceServer.setDecisionStrategy(server.getDecisionStrategy());
@@ -114,7 +114,7 @@ public class ResourceServerService {
     public void delete() {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
-        this.auth.realm().requireManageAuthorization();
+        this.auth.realm().requireManageAuthorization(resourceServer);
         //need to create representation before the object is deleted to be able to get lazy loaded fields
         ResourceServerRepresentation rep = ModelToRepresentation.toRepresentation(resourceServer, client);
         authorization.getStoreFactory().getResourceServerStore().delete(client);
@@ -124,7 +124,7 @@ public class ResourceServerService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ResourceServerRepresentation findById() {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         return toRepresentation(this.resourceServer, this.client);
     }
 
@@ -133,7 +133,7 @@ public class ResourceServerService {
     @Produces(MediaType.APPLICATION_JSON)
     public ResourceServerRepresentation exportSettings() {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
-        this.auth.realm().requireManageAuthorization();
+        this.auth.realm().requireManageAuthorization(resourceServer);
         return ModelToRepresentation.toResourceServerRepresentation(session, client);
     }
 
@@ -143,7 +143,7 @@ public class ResourceServerService {
     @APIResponse(responseCode = "204", description = "No Content")
     public Response importSettings(ResourceServerRepresentation rep) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
-        this.auth.realm().requireManageAuthorization();
+        this.auth.realm().requireManageAuthorization(resourceServer);
 
         rep.setClientId(client.getId());
 
@@ -171,7 +171,7 @@ public class ResourceServerService {
 
     @Path("/permission")
     public PermissionService getPermissionTypeResource() {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         return new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
     }
 

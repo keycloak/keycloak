@@ -122,7 +122,7 @@ public class PolicyService {
     @APIResponse(responseCode = "201", description = "Created")
     public Response create(String payload) {
         if (auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
@@ -174,7 +174,7 @@ public class PolicyService {
     })
     public Response findByName(@QueryParam("name") String name, @QueryParam("fields") String fields) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -214,7 +214,7 @@ public class PolicyService {
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         Map<Policy.FilterOption, String[]> search = new EnumMap<>(Policy.FilterOption.class);
@@ -318,7 +318,7 @@ public class PolicyService {
     )
     public Response findPolicyProviders() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         return Response.ok(
@@ -340,7 +340,7 @@ public class PolicyService {
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
         if (auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
 
         return new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);

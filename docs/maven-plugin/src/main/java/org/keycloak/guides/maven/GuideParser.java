@@ -9,8 +9,8 @@ import java.util.regex.Pattern;
 
 public class GuideParser {
 
-    private Pattern TEMPLATE_IMPORT_PATTERN = Pattern.compile("<#import \"/templates/guide.adoc\" as (?<importName>[^ ]*)>");
-    private Pattern GUIDE_ELEMENT_PATTERN = Pattern.compile("(?<key>priority|title|summary)=(\\\"(?<valueString>[^\\\"]*)\\\"|(?<valueInt>[\\d]*))");
+    private final Pattern TEMPLATE_IMPORT_PATTERN = Pattern.compile("<#import \"/templates/guide.adoc\" as (?<importName>[^ ]*)>");
+    private final Pattern GUIDE_ELEMENT_PATTERN = Pattern.compile("(?<key>priority|title|summary|tileVisible)=(\\\"(?<valueString>[^\\\"]*)\\\"|(?<valueInt>[\\d]*))");
 
     /**
      * Parses a FreeMarker template to retrieve Guide attributes
@@ -26,7 +26,6 @@ public class GuideParser {
             if (importElement != null) {
                 Guide guide = new Guide();
                 guide.setTemplate(file.getName());
-                guide.setPriority(999);
 
                 guide.setId(file.getName().replaceAll(".adoc", ""));
 
@@ -79,6 +78,8 @@ public class GuideParser {
                     break;
                 case "priority":
                     guide.setPriority(Integer.parseInt(attributeMatcher.group("valueInt")));
+                case "tileVisible":
+                    guide.setTileVisible(Boolean.parseBoolean(attributeMatcher.group("valueString")));
             }
         }
     }

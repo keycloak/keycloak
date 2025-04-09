@@ -227,6 +227,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         runJobInTransaction(session.getKeycloakSessionFactory(), session -> {
             RealmModel realmModel = session.realms().getRealm(realm.getId());
             if (realmModel == null) return;
+            session.getContext().setRealm(realm);
             UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realmModel, userId);
             if (deletedUser != null) {
                 try {

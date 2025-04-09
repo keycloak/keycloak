@@ -159,7 +159,7 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
                 }
                 Map<String, ProviderFactory> f = factories.get(providerDep);
                 if (f == null) {
-                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName());
+                    throw new RuntimeException("No provider factories exists for provider " + providerDep.getSimpleName() + " required by " + factory.getClass().getName() + " (" + factory.getId() + ")");
                 }
                 recursionPrevention.push(factory);
                 initializeProviders(providerDep, factories, intializedProviders, recursionPrevention);

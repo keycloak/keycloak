@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -40,15 +41,17 @@ import java.util.stream.Stream;
 public class RoleAdapter implements RoleModel {
 
     protected RoleModel updated;
+    private final KeycloakSession session;
     protected CachedRole cached;
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
     protected Set<RoleModel> composites;
     private final Supplier<RoleModel> modelSupplier;
 
-    public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
+    public RoleAdapter(CachedRole cached, RealmCacheSession cacheSession, RealmModel realm) {
         this.cached = cached;
-        this.cacheSession = session;
+        this.cacheSession = cacheSession;
+        this.session = cacheSession.session;
         this.realm = realm;
         this.modelSupplier = this::getRoleModel;
     }
@@ -215,7 +218,7 @@ public class RoleAdapter implements RoleModel {
             return updated.getFirstAttribute(name);
         }
 
-        return cached.getAttributes(modelSupplier).getFirst(name);
+        return cached.getAttributes(session, modelSupplier).getFirst(name);
     }
 
     @Override
@@ -224,7 +227,7 @@ public class RoleAdapter implements RoleModel {
             return updated.getAttributeStream(name);
         }
 
-        List<String> result = cached.getAttributes(modelSupplier).get(name);
+        List<String> result = cached.getAttributes(session, modelSupplier).get(name);
         if (result == null) {
             return Stream.empty();
         }
@@ -237,7 +240,7 @@ public class RoleAdapter implements RoleModel {
             return updated.getAttributes();
         }
 
-        return cached.getAttributes(modelSupplier);
+        return cached.getAttributes(session, modelSupplier);
     }
 
     private RoleModel getRoleModel() {

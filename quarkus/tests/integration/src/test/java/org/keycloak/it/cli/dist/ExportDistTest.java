@@ -17,12 +17,17 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 @RawDistOnly(reason = "Containers are immutable")
 @DistributionTest(defaultOptions = "--db=dev-file")
@@ -52,5 +57,18 @@ public class ExportDistTest {
         cliResult = dist.run("export", "--dir=some-dir", "--users=skip");
         cliResult.assertMessage("Realm 'master' - data exported");
 
+    }
+
+    @Test
+    void testExportRealmFGAPEnabled(KeycloakDistribution dist) {
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        Path importDir = rawDist.getDistPath().resolve("data").resolve("import");
+        assertTrue(importDir.toFile().mkdirs());
+        dist.copyOrReplaceFileFromClasspath("/fgap-realm.json", importDir.resolve("fgap-realm.json"));
+        rawDist.run("start-dev","-v", "--import-realm", "--features=admin-fine-grained-authz:v2");
+        rawDist.stop();
+        CLIResult cliResult = rawDist.run("export", "--realm=fgap", "--dir=" + importDir.toAbsolutePath(), "--features=admin-fine-grained-authz:v2");
+        cliResult.assertMessage("Export of realm 'fgap' requested.");
+        cliResult.assertMessage("Export finished successfully");
     }
 }

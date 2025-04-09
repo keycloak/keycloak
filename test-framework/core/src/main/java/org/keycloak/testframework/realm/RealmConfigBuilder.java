@@ -138,8 +138,8 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder internationalizationEnabled() {
-        rep.setInternationalizationEnabled(true);
+    public RealmConfigBuilder internationalizationEnabled(boolean enabled) {
+        rep.setInternationalizationEnabled(enabled);
         return this;
     }
 
@@ -148,6 +148,11 @@ public class RealmConfigBuilder {
             rep.setSupportedLocales(new HashSet<>());
         }
         rep.getSupportedLocales().addAll(Set.of(supportedLocales));
+        return this;
+    }
+
+    public RealmConfigBuilder defaultLocale(String locale) {
+        rep.setDefaultLocale(locale);
         return this;
     }
 

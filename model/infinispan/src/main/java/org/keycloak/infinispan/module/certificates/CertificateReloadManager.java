@@ -66,7 +66,7 @@ public class CertificateReloadManager implements Lifecycle {
     public static final String CERTIFICATE_ID = "crt_jgroups";
     private static final String JGROUPS_SUBJECT = "jgroups";
     private static final Duration RETRY_WAIT_TIME = Duration.ofMinutes(1);
-    private static final Duration BOOT_PERIOD = Duration.ofMillis(200);
+    private static final Duration BOOT_PERIOD = Duration.ofMillis(500);
 
     private final KeycloakSessionFactory sessionFactory;
     private final JGroupsCertificateHolder certificateHolder;
@@ -204,7 +204,7 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     private void bootReload() {
-        logger.info("[Boot] reloading certificate.");
+        logger.debug("[Boot] reloading certificate.");
         lock.lock();
         try (lock) {
             var maybeCrt = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::loadCertificateInTransaction);

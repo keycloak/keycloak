@@ -49,6 +49,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -136,8 +137,16 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         // receive error from navigator.credentials.get()
         String errorMsgFromWebAuthnApi = params.getFirst(WebAuthnConstants.ERROR);
-        if (errorMsgFromWebAuthnApi != null && !errorMsgFromWebAuthnApi.isEmpty()) {
+        if (StringUtil.isNotBlank(errorMsgFromWebAuthnApi)) {
             setErrorResponse(context, WEBAUTHN_ERROR_API_GET, errorMsgFromWebAuthnApi);
+            return;
+        }
+
+        if (StringUtil.isBlank(params.getFirst(WebAuthnConstants.CREDENTIAL_ID))
+                || StringUtil.isBlank(params.getFirst(WebAuthnConstants.CLIENT_DATA_JSON))
+                || StringUtil.isBlank(params.getFirst(WebAuthnConstants.AUTHENTICATOR_DATA))
+                || StringUtil.isBlank(params.getFirst(WebAuthnConstants.SIGNATURE))) {
+            setErrorResponse(context, WEBAUTHN_ERROR_API_GET, "Missing compulsory webauthn parameters");
             return;
         }
 
@@ -156,7 +165,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         final String userHandle = params.getFirst(WebAuthnConstants.USER_HANDLE);
         final String userId;
         // existing User Handle means that the authenticator used Resident Key supported public key credential
-        if (userHandle == null || userHandle.isEmpty()) {
+        if (StringUtil.isBlank(userHandle)) {
             // Resident Key not supported public key credential was used
             // so rely on the user set in a previous step (if available)
             if (context.getUser() != null) {

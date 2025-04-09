@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
@@ -73,7 +74,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         return composites;
     }
 
-    public MultivaluedHashMap<String, String> getAttributes(Supplier<RoleModel> roleModel) {
-        return attributes.get(roleModel);
+    public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<RoleModel> roleModel) {
+        return attributes.get(session, roleModel);
     }
 }

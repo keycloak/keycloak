@@ -115,7 +115,7 @@ m|0
 |Rolling Update is possible.
 
 m|1
-|Unexpected error occurred (e.g., the metadata file is missing or corrupted).
+|Unexpected error occurred (such as the metadata file is missing or corrupted).
 
 m|2
 |Invalid CLI option.
