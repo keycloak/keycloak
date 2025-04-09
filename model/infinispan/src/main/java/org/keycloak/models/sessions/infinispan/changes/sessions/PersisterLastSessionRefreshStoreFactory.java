@@ -33,7 +33,7 @@ public class PersisterLastSessionRefreshStoreFactory extends AbstractLastSession
     }
 
 
-    private PersisterLastSessionRefreshStore createAndInit(KeycloakSession kcSession,
+    public PersisterLastSessionRefreshStore createAndInit(KeycloakSession kcSession,
                                                           long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
         PersisterLastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, offline);
 
