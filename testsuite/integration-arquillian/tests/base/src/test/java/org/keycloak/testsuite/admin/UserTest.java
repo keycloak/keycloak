@@ -45,9 +45,11 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -71,6 +73,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -3378,6 +3381,47 @@ public class UserTest extends AbstractAdminTest {
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
         Assert.assertEquals(newLabel, user.credentials().stream().filter(cr -> cr.getId().equals(otpCred.getId()))
                 .findFirst().orElseThrow().getUserLabel());
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelIsEmpty() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        CredentialRepresentation otpCred = user.credentials().get(0);
+            BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+                user.setCredentialUserLabel(otpCred.getId(), "   ");
+            });
+            Response response = ex.getResponse();
+            String body = response.readEntity(String.class);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertTrue(body.contains("missingCredentialLabel"));
+            assertTrue(body.contains("Credential label must not be empty"));
+    }
+
+    @Test
+    public void testShouldFailToSetCredentialUserLabelWhenLabelAlreadyExists() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-credentials");
+
+        List<CredentialRepresentation> credentials = user.credentials();
+        assertEquals(2, credentials.size());
+
+        String firstId = credentials.get(0).getId();
+        String secondId = credentials.get(1).getId();
+
+        user.setCredentialUserLabel(firstId, "Device");
+        user.setCredentialUserLabel(secondId, "Second Device");
+
+        // Attempt to update second credential to use the same label as the first
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            user.setCredentialUserLabel(secondId, "Device");
+        });
+
+        Response response = ex.getResponse();
+        assertEquals(String.valueOf(Response.Status.BAD_REQUEST.getStatusCode()), response.getStatus(), "Expected HTTP 400 Bad Request");
+
+        String body = response.readEntity(String.class);
+        assertNotNull(body);
+        assertTrue(body.contains("Device already exists with the same name"));
     }
 
     @Test
