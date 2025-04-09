@@ -26,6 +26,7 @@ public interface AdminPermissionEvaluator {
     RealmPermissionEvaluator realm();
 
     void requireAnyAdminRole();
+    boolean hasOneAdminRole(String... adminRoles);
 
     AdminAuth adminAuth();
 

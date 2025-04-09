@@ -147,6 +147,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return hasOneAdminRole(realm, AdminRoles.ALL_REALM_ROLES);
     }
 
+    @Override
     public boolean hasOneAdminRole(String... adminRoles) {
         return hasOneAdminRole(realm, adminRoles);
     }

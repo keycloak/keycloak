@@ -88,14 +88,15 @@ public class OrganizationMemberResource {
     @Operation(summary = "Adds the user with the specified id as a member of the organization", description = "Adds, or associates, " +
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
-    @RequestBody(description = "Payload should contain only id of the user to be added to the organization (UUID without quotes).", required = true)
+    @RequestBody(description = "Payload should contain only id of the user to be added to the organization (UUID with or without quotes). " +
+            "Surrounding whitespace characters will be trimmed.", required = true)
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addMember(String id) {
-        id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
         
         UserModel user = session.users().getUserById(realm, id);
 

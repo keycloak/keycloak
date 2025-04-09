@@ -45,7 +45,7 @@ public class TracingSpec {
     @JsonPropertyDescription("OpenTelemetry sampler to use for tracing (default 'traceidratio'). For more information, check the Tracing guide.")
     private String samplerType;
 
-    @JsonPropertyDescription("OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected double value in interval <0,1).")
+    @JsonPropertyDescription("OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected double value in interval [0,1].")
     private Double samplerRatio;
 
     @JsonPropertyDescription("OpenTelemetry compression method used to compress payloads. If unset, compression is disabled. Possible values are: gzip, none.")

@@ -1,5 +1,6 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -21,7 +22,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.admin.ui.rest.model.ClientRole;
 import org.keycloak.admin.ui.rest.model.RoleMapper;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -32,12 +35,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import static org.keycloak.services.resources.admin.permissions.ClientPermissionManagement.MAP_ROLES_CLIENT_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.ClientPermissionManagement.MAP_ROLES_COMPOSITE_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.ClientPermissionManagement.MAP_ROLES_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.RolePermissionManagement.MAP_ROLE_SCOPE;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLE_COMPOSITE;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES_CLIENT_SCOPE;
+import static org.keycloak.authorization.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
 
 public class AvailableRoleMappingResource extends RoleMappingResource {
     public AvailableRoleMappingResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth) {
@@ -66,18 +69,20 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
         @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("search") @DefaultValue("") String search) {
         ClientScopeModel scopeModel = this.realm.getClientScopeById(id);
         if (scopeModel == null) {
-            throw new NotFoundException("Could not find client scope");
+            if (auth.clients().canListClientScopes()) throw new NotFoundException("Could not find client scope");
+            else throw new ForbiddenException();
         } else {
-            if(this.auth.clients().canManage() || !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                this.auth.clients().requireManage();
+            if (auth.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
                 Stream<String> excludedRoleIds = scopeModel.getScopeMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
-            } else {
-                this.auth.clients().requireView(scopeModel);
-                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_CLIENT_SCOPE_SCOPE, MAP_ROLES_CLIENT_SCOPE);
+            }
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                auth.clients().requireView(scopeModel);
+                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_CLIENT_SCOPE, MAP_ROLES_CLIENT_SCOPE);
                 scopeModel.getScopeMappingsStream().forEach(role -> roleIds.remove(role.getId()));
                 return searchForClientRolesByIds(realm, roleIds.stream(), search, first, max);
             }
+            return Collections.emptyList();
         }
     }
 
@@ -103,18 +108,20 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
         @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("search") @DefaultValue("") String search) {
         ClientModel client = this.realm.getClientById(id);
         if (client == null) {
-            throw new NotFoundException("Could not find client");
+            if (auth.clients().canList()) throw new NotFoundException("Could not find client");
+            else throw new ForbiddenException();
         } else {
-            if(this.auth.clients().canManage() || !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                this.auth.clients().requireManage();
+            if (auth.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
                 Stream<String> excludedRoleIds = Stream.concat(client.getScopeMappingsStream(), client.getRolesStream()).filter(RoleModel::isClientRole).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
-            } else {
-                this.auth.clients().requireView(client);
-                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_CLIENT_SCOPE_SCOPE, MAP_ROLES_CLIENT_SCOPE);
+            }
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                auth.clients().requireView(client);
+                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_CLIENT_SCOPE, MAP_ROLES_CLIENT_SCOPE);
                 Stream.concat(client.getScopeMappingsStream(), client.getRolesStream()).forEach(role -> roleIds.remove(role.getId()));
                 return searchForClientRolesByIds(realm, roleIds.stream(), search, first, max);
             }
+            return Collections.emptyList();
         }
     }
 
@@ -140,18 +147,20 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
         @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("search") @DefaultValue("") String search) {
         GroupModel group = this.realm.getGroupById(id);
         if (group == null) {
-            throw new NotFoundException("Could not find group");
+            if (auth.groups().canList()) throw new NotFoundException("Could not find group");
+            else throw new ForbiddenException();
         } else {
-            if(this.auth.users().canManage() || !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                this.auth.users().requireManage();
+            if (auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
                 Stream<String> excludedRoleIds = group.getRoleMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
-            } else {
-                this.auth.groups().requireView(group);
-                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_SCOPE, MAP_ROLES_SCOPE);
+            }
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                auth.groups().requireView(group);
+                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE, MAP_ROLES);
                 group.getRoleMappingsStream().forEach(role -> roleIds.remove(role.getId()));
                 return searchForClientRolesByIds(realm, roleIds.stream(), search, first, max);
             }
+            return Collections.emptyList();
         }
     }
 
@@ -181,16 +190,20 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
             if (auth.users().canQuery()) throw new NotFoundException("User not found");
             else throw new ForbiddenException();
         } else {
-            if (this.auth.users().canManage() || !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                this.auth.users().requireManage();
+            if (auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
                 Stream<String> excludedRoleIds = userModel.getRoleMappingsStream().filter(RoleModel::isClientRole).map(RoleModel::getId);
                 return searchForClientRolesByExcludedIds(realm, search, first, max, excludedRoleIds);
-            } else {
-                this.auth.users().requireView(userModel);
-                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_SCOPE, MAP_ROLES_SCOPE);
+            }
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                auth.users().requireView(userModel);
+                if (!auth.users().canMapRoles(userModel)) {
+                    return Collections.emptyList();
+                }
+                Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE, MAP_ROLES);
                 userModel.getRoleMappingsStream().forEach(role -> roleIds.remove(role.getId()));
                 return searchForClientRolesByIds(realm, roleIds.stream(), search, first, max);
             }
+            return Collections.emptyList();
         }
     }
 
@@ -214,19 +227,20 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
     )
     public final List<ClientRole> listAvailableRoleMappings(@PathParam("id") String id, @QueryParam("first") @DefaultValue("0") int first,
             @QueryParam("max") @DefaultValue("10") int max, @QueryParam("search") @DefaultValue("") String search) {
-        if (this.auth.users().canManage() || !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-            this.auth.users().requireManage();
+        if (auth.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return searchForClientRolesByExcludedIds(realm, search, first, max, Stream.of(id));
-        } else {
-            Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_COMPOSITE_SCOPE, MAP_ROLES_COMPOSITE_SCOPE);
+        }
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            Set<String> roleIds = getRoleIdsWithPermissions(MAP_ROLE_COMPOSITE, MAP_ROLES_COMPOSITE);
             roleIds.remove(id);
             return searchForClientRolesByIds(realm, roleIds.stream(), search, first, max);
         }
+        return Collections.emptyList();
     }
 
     private Set<String> getRoleIdsWithPermissions(String roleResourceScope, String clientResourceScope) {
-        Set<String> roleIds = this.auth.roles().getRoleIdsWithViewPermission(roleResourceScope);
-        Set<String> clientIds = this.auth.clients().getClientIdsWithViewPermission(clientResourceScope);
+        Set<String> roleIds = this.auth.roles().getRoleIdsByScope(roleResourceScope);
+        Set<String> clientIds = this.auth.clients().getClientIdsByScope(clientResourceScope);
         clientIds.stream().flatMap(cid -> realm.getClientById(cid).getRolesStream()).forEach(role -> roleIds.add(role.getId()));
         return roleIds;
     }
