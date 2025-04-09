@@ -34,10 +34,10 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 public class PartialEvaluationContext {
 
     private final ResourceType resourceType;
-    private final CriteriaQuery<?> criteriaQuery;
-    private final Path<?> path;
-    private final PartialEvaluationStorageProvider storage;
-    private final CriteriaBuilder criteriaBuilder;
+    private CriteriaQuery<?> criteriaQuery;
+    private Path<?> path;
+    private PartialEvaluationStorageProvider storage;
+    private CriteriaBuilder criteriaBuilder;
     private final Set<String> allowedResources;
     private final Set<String> deniedResources;
     private Set<String> allowedGroups = Set.of();
@@ -115,5 +115,21 @@ public class PartialEvaluationContext {
 
     public Set<String> getDeniedResources() {
         return deniedResources;
+    }
+
+    public void setStorage(PartialEvaluationStorageProvider storage) {
+        this.storage = storage;
+    }
+
+    public void setCriteriaBuilder(CriteriaBuilder criteriaBuilder) {
+        this.criteriaBuilder = criteriaBuilder;
+    }
+
+    public void setCriteriaQuery(CriteriaQuery<?> criteriaQuery) {
+        this.criteriaQuery = criteriaQuery;
+    }
+
+    public void setPath(Path<?> path) {
+        this.path = path;
     }
 }

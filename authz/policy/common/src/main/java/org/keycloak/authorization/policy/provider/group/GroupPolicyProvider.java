@@ -110,14 +110,9 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<GroupModel> subjectGroups = user.getGroupsStream().toList();
-        Stream<Policy> policies = Stream.of();
+        List<String> groupIds = user.getGroupsStream().map(GroupModel::getId).toList();
 
-        for (GroupModel subjectGroup : subjectGroups) {
-            policies = Stream.concat(policies, policyStore.findDependentPolicies(resourceServer, resourceType.getType(), GroupPolicyProviderFactory.ID, "groups", subjectGroup.getId()));
-        }
-
-        return policies;
+        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
     }
 
     @Override

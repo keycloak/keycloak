@@ -281,6 +281,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         client = clients.addClient(realm, Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        client.setProtocol("openid-connect");
 
         realm.setAdminPermissionsClient(client);
 

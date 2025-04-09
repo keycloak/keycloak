@@ -439,6 +439,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
+    public Map<String, Boolean> getAccessForListing(UserModel user) {
+        return Map.of("manage", canManage(user));
+    }
+
+    @Override
     public boolean canMapRoles(UserModel user) {
         if (canManage(user)) return true;
 
