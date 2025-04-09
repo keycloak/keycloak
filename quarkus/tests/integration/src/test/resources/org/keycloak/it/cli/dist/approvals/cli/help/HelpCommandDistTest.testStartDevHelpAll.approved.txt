@@ -435,7 +435,7 @@ Tracing:
                        is enabled.
 --tracing-sampler-ratio <ratio>
                      OpenTelemetry sampler ratio. Probability that a span will be sampled. Expected
-                       double value in interval <0,1). Default: 1.0. Available only when Tracing is
+                       double value in interval [0,1]. Default: 1.0. Available only when Tracing is
                        enabled.
 --tracing-sampler-type <type>
                      OpenTelemetry sampler to use for tracing. Possible values are: always_on,
