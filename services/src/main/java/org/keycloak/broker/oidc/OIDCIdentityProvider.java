@@ -65,6 +65,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import jakarta.ws.rs.GET;
@@ -1003,5 +1004,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return keyStorage.reloadKeys(modelKey, new OIDCIdentityProviderPublicKeyLoader(session, getConfig()));
         }
         return false;
+    }
+
+    @Override
+    protected String createJwtClientAssertionAudience() {
+        String audience = getConfig().getClientAssertionAudience();
+        if (StringUtil.isBlank(audience)) {
+            if (!StringUtil.isBlank(getConfig().getIssuer())) {
+                // Note: using issuer instead of the tokenUrl, see: private_key_jwt https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9
+                audience = getConfig().getIssuer();
+            } else {
+                // fallback to previous token url for backwards compatibility
+                audience = getConfig().getTokenUrl();
+            }
+        }
+        return audience;
     }
 }
