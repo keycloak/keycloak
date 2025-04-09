@@ -129,7 +129,7 @@ class ClientPermissionsV2 extends ClientPermissions {
     }
 
     @Override
-    public Set<String> getClientIdsWithViewPermission(String scope) {
+    public Set<String> getClientIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }

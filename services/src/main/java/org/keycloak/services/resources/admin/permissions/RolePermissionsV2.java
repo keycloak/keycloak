@@ -83,7 +83,7 @@ public class RolePermissionsV2 extends RolePermissions {
     }
 
     @Override
-    public Set<String> getRoleIdsWithViewPermission(String scope) {
+    public Set<String> getRoleIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }

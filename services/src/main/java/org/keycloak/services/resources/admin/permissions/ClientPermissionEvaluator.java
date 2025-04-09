@@ -196,9 +196,9 @@ public interface ClientPermissionEvaluator {
     Map<String, Boolean> getAccess(ClientModel client);
 
     /**
-     * Returns the IDs of the clients that the current user can view..
+     * Returns the IDs of the clients that the current user can perform based on {@code scope}.
      *
-     * @return Stream of IDs of clients with view permission.
+     * @return Stream of IDs of clients with {@code scope} permission.
      */
-    Set<String> getClientIdsWithViewPermission(String scope);
+    Set<String> getClientIdsByScope(String scope);
 }

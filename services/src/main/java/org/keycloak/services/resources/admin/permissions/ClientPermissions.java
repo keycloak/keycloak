@@ -671,7 +671,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     @Override
-    public Set<String> getClientIdsWithViewPermission(String scope) {
+    public Set<String> getClientIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
