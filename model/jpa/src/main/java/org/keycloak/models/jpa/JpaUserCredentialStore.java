@@ -131,7 +131,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
         return getStoredCredentialsStream(realm, user).filter(credential ->
-                        Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
                 .findFirst().orElse(null);
     }
 
