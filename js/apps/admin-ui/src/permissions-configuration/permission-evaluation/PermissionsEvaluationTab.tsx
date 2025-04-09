@@ -196,6 +196,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
                       defaultValue={[]}
                       variant="typeahead"
                       isRequired
+                      isRadio
                     />
                   )}
                   <SelectControl

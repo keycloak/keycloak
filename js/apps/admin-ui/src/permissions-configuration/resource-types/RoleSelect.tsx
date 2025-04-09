@@ -12,14 +12,13 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { AddRoleMappingModal } from "../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../components/role-mapping/RoleMapping";
-import { PermissionsConfigurationTabsParams } from "../routes/PermissionsConfigurationTabs";
-import { useParams } from "react-router-dom";
 
 type RoleSelectorProps = {
   name: string;
+  isRadio?: boolean;
 };
 
-export const RoleSelect = ({ name }: RoleSelectorProps) => {
+export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const {
@@ -30,7 +29,6 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
   const values = getValues(name) || [];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
-  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   useFetch(
     async () => {
@@ -55,12 +53,10 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
 
   return (
     <FormGroup
-      label={tab !== "evaluation" ? t("roles") : t("role")}
+      label={isRadio ? t("role") : t("roles")}
       labelIcon={
         <HelpItem
-          helpText={
-            tab !== "evaluation" ? t("policyRolesHelp") : t("selectRole")
-          }
+          helpText={isRadio ? t("selectRole") : t("policyRolesHelp")}
           fieldLabelId="roles"
         />
       }
@@ -71,19 +67,21 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
         <AddRoleMappingModal
           id="role"
           type="roles"
+          title={t("selectRole")}
+          actionLabel={t("select")}
+          isRadio={isRadio}
           onAssign={(rows) => {
             setValue(name, [
-              ...values,
+              ...(!isRadio ? values : []),
               ...rows
                 .filter((row) => row.role.id !== undefined)
                 .map((row) => row.role.id!),
             ]);
 
-            setSelectedRoles([...selectedRoles, ...rows]);
+            setSelectedRoles(isRadio ? rows : [...selectedRoles, ...rows]);
             setIsModalOpen(false);
           }}
           onClose={() => setIsModalOpen(false)}
-          isLDAPmapper
         />
       )}
       <Button
@@ -91,7 +89,7 @@ export const RoleSelect = ({ name }: RoleSelectorProps) => {
         variant="secondary"
         onClick={() => setIsModalOpen(true)}
       >
-        {tab !== "evaluation" ? t("addRoles") : t("selectRole")}
+        {isRadio ? t("selectRole") : t("addRoles")}
       </Button>
       {selectedRoles.length > 0 && (
         <Table variant="compact">
