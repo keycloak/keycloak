@@ -546,7 +546,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     @Override
-    public Set<String> getRoleIdsWithViewPermission(String scope) {
+    public Set<String> getRoleIdsByScope(String scope) {
         if (!root.isAdminSameRealm()) {
             return Collections.emptySet();
         }
