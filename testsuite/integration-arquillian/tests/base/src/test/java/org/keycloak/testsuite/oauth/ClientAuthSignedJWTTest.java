@@ -570,84 +570,83 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testAllowIssuerAudienceWithStrictClientJwtAuthentication() throws Exception {
-        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
-        try {
-            testEndpointAsAudience(getRealmInfoUrl());
-        } finally {
-            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
-        }
+        testEndpointAsAudience(getRealmInfoUrl());
     }
 
     @Test
     public void testRejectTokenEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
-        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
         try {
             testEndpointAsAudience(oauth.getEndpoints().getToken());
             Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
         } catch (RuntimeException ex) {
             assertThat(ex.getMessage(), containsString("invalid_client"));
             assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
-        } finally {
-            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
         }
     }
 
     @Test
     public void testRejectIntrospectionEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
-        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
         try {
             testEndpointAsAudience(oauth.getEndpoints().getIntrospection());
             Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
         } catch(RuntimeException ex) {
             assertThat(ex.getMessage(), containsString("invalid_client"));
             assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
-        } finally {
-            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
         }
     }
 
     @Test
     public void testRejectParEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
-        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
         try {
             testEndpointAsAudience(oauth.getEndpoints().getPushedAuthorizationRequest());
             Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
         } catch(RuntimeException ex) {
             assertThat(ex.getMessage(), containsString("invalid_client"));
             assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
-        } finally {
-            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
         }
     }
 
     @Test
     public void testRejectCibaBackchannelEndpointInAudienceWithStrictClientJwtAuthentication() throws Exception {
-        useClientAuthenticationFlow(CLIENTS_STRICT_FLOW_ALIAS);
         try {
             testEndpointAsAudience(oauth.getEndpoints().getBackchannelAuthentication());
             Assert.fail("Strict client audience validation should only allow the realm issuer as audience");
         } catch(RuntimeException ex) {
             assertThat(ex.getMessage(), containsString("invalid_client"));
             assertThat(ex.getMessage(), containsString("Token audience doesn't match domain"));
+        }
+    }
+
+    @Test
+    public void testParEndpointAsAudience() throws Exception {
+        useClientAuthenticationFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getPushedAuthorizationRequest());
         } finally {
             useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
         }
     }
 
     @Test
-    public void testParEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getEndpoints().getPushedAuthorizationRequest());
-    }
-
-    @Test
     public void testBackchannelAuthenticationEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getEndpoints().getBackchannelAuthentication());
+        useClientAuthenticationFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getBackchannelAuthentication());
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
     }
 
     @Test
     public void testTokenIntrospectionEndpointAsAudience() throws Exception {
-        testEndpointAsAudience(oauth.getEndpoints().getIntrospection());
+        useClientAuthenticationFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS);
+        try {
+            testEndpointAsAudience(oauth.getEndpoints().getIntrospection());
+        } finally {
+            useClientAuthenticationFlow(CLIENT_AUTHENTICATION_FLOW);
+        }
     }
+
     @Test
     public void testInvalidAudience() throws Exception {
         ClientRepresentation clientRepresentation = app2;

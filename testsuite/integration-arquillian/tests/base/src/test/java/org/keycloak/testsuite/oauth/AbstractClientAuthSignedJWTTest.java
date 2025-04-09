@@ -131,7 +131,7 @@ import static org.keycloak.models.utils.DefaultAuthenticationFlows.CLIENT_AUTHEN
 
 public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
-    public static final String CLIENTS_STRICT_FLOW_ALIAS = "clients-strict";
+    public static final String CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS = "clients-lenient-aud";
 
     public static final String TEST_REALM = "test";
 
@@ -172,16 +172,16 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
     protected void configureStrictClientAuthenticationFlowAsAdditionalAuthFlow() {
         testingClient.server(TEST_REALM).run(session ->
-                FlowUtil.inCurrentRealm(session).copyClientFlow(CLIENTS_STRICT_FLOW_ALIAS)
+                FlowUtil.inCurrentRealm(session).copyClientFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS)
         );
 
         testingClient.server(TEST_REALM).run(session -> {
             List<AuthenticationExecutionModel> clientAuthExecutions = FlowUtil.inCurrentRealm(session)
-                    .selectFlow(CLIENTS_STRICT_FLOW_ALIAS)
+                    .selectFlow(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS)
                     .getExecutions();
 
             RealmModel realm = session.getContext().getRealm();
-            String strictClientFlowId = realm.getFlowByAlias(CLIENTS_STRICT_FLOW_ALIAS).getId();
+            String strictClientFlowId = realm.getFlowByAlias(CLIENTS_FLOW_LENIENT_AUD_VALIDATION_ALIAS).getId();
 
             for (var execution : clientAuthExecutions) {
                 switch (execution.getAuthenticator()) {
@@ -189,7 +189,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                     case JWTClientAuthenticator.PROVIDER_ID:
                         // fall-through
                     case JWTClientSecretAuthenticator.PROVIDER_ID: {
-                        FlowUtil.setAuthenticatorConfig(session, strictClientFlowId, execution.getAuthenticator(), AbstractJwtClientAuthenticator.ISSUER_ONLY_AUDIENCE_PROPERTY, "true");
+                        FlowUtil.setAuthenticatorConfig(session, strictClientFlowId, execution.getAuthenticator(), AbstractJwtClientAuthenticator.LENIENT_AUDIENCE_VALIDATION_PROPERTY, "true");
                     }
                     default: {
                         // noop

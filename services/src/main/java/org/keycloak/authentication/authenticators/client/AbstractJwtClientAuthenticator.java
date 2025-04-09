@@ -37,11 +37,11 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
 
     private static final Logger LOG = Logger.getLogger(AbstractJwtClientAuthenticator.class);
 
-    public static final String ISSUER_ONLY_AUDIENCE_PROPERTY = "issuer-only-audience";
+    public static final String LENIENT_AUDIENCE_VALIDATION_PROPERTY = "lenient-audience-validation";
 
-    public static final String ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT = "true";
+    public static final boolean LENIENT_AUDIENCE_VALIDATION_DEFAULT_VALUE = false;
 
-    protected boolean useIssuerOnlyAudience;
+    protected boolean useLenientAudienceValidation;
 
     @Override
     public boolean isConfigurable() {
@@ -51,11 +51,11 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         ProviderConfigProperty allowAudienceIssuerOnly = new ProviderConfigProperty();
-        allowAudienceIssuerOnly.setName(ISSUER_ONLY_AUDIENCE_PROPERTY);
-        allowAudienceIssuerOnly.setLabel("Require Issuer-Only Audience");
-        allowAudienceIssuerOnly.setHelpText("Requires the audience (aud) claim in private_key_jwt client assertions to be only the OIDC Issuer URL. Enable this for stricter validation compliant with the OIDC core specification. If this is 'off' the Issuer, Token, Introspection, and PAR endpoint URLs are allowed as audience for backwards compatibility.");
+        allowAudienceIssuerOnly.setName(LENIENT_AUDIENCE_VALIDATION_PROPERTY);
+        allowAudienceIssuerOnly.setLabel("Lenient Audience Validation");
+        allowAudienceIssuerOnly.setHelpText("If 'off' requires the audience (aud) claim in private_key_jwt client assertions to be only the OIDC Issuer URL. If this is 'on' the Issuer, Token, Introspection, and PAR endpoint URLs are allowed as audience for backwards compatibility.");
         allowAudienceIssuerOnly.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        allowAudienceIssuerOnly.setDefaultValue(useIssuerOnlyAudience);
+        allowAudienceIssuerOnly.setDefaultValue(useLenientAudienceValidation);
         return List.of(allowAudienceIssuerOnly);
     }
 
@@ -63,15 +63,15 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
 
         AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
         if (authenticatorConfig == null) {
-            return "true".equals(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT);
+            return !isUseLenientAudienceValidation();
         }
 
         Map<String, String> config = authenticatorConfig.getConfig();
         if (config == null) {
-            return "true".equals(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT);
+            return !isUseLenientAudienceValidation();
         }
 
-        return "true".equals(config.getOrDefault(ISSUER_ONLY_AUDIENCE_PROPERTY, Boolean.toString(isUseIssuerOnlyAudience())));
+        return "false".equals(config.getOrDefault(LENIENT_AUDIENCE_VALIDATION_PROPERTY, Boolean.toString(isUseLenientAudienceValidation())));
     }
 
     protected void validateTokenAudience(ClientAuthenticationFlowContext context, RealmModel realm, JsonWebToken token) {
@@ -103,18 +103,19 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
     public void init(Config.Scope config) {
         super.init(config);
 
-        // This allows to override the server-wide default for JWT client authentication, via command line options.
-        // --spi-client-authenticator-client-jwt-issuer-only-audience=true
-        // --spi-client-authenticator-client-secret-jwt-issuer-only-audience=true
+        // This allows to override the server-wide default for JWT client assertion based audience validation in client authentication, via command line options.
+        // to explicitly use the lenient audience validation, one can use:
+        // --spi-client-authenticator-client-jwt-lenient-audience-validation=true
+        // --spi-client-authenticator-client-secret-jwt-lenient-audience-validation=true
         // if nothing is configured, we use the secure default which restricts the audience to be the issuer only audience.
-        this.useIssuerOnlyAudience = config.getBoolean("issuer-only-audience", Boolean.parseBoolean(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT));
+        this.useLenientAudienceValidation = config.getBoolean("lenient-audience-validation", LENIENT_AUDIENCE_VALIDATION_DEFAULT_VALUE);
 
-        if (!useIssuerOnlyAudience) {
-            LOG.warn("Client authentication via private_key_jwt or client_secret_jwt is configured to allow broader audience for backwards compatibility (issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl, backchannelAuthenticationUrl). It is recommended to adjust the JWT client authentication configurations to only allow the realm issuer in the audience.");
+        if (useLenientAudienceValidation) {
+            LOG.warnf("The client authentication '%s' with JWT based client assertions is configured as 'lenient' to allow a broader audience for backward compatibility (issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl, backchannelAuthenticationUrl). It is recommended that the JWT client authentication configurations be adjusted to allow only the realm issuer in the audience.", getId());
         }
     }
 
-    public boolean isUseIssuerOnlyAudience() {
-        return useIssuerOnlyAudience;
+    public boolean isUseLenientAudienceValidation() {
+        return useLenientAudienceValidation;
     }
 }
