@@ -16,6 +16,8 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
@@ -31,23 +33,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthenticator{
+public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthenticator {
+
+    private static final Logger LOG = Logger.getLogger(AbstractJwtClientAuthenticator.class);
 
     public static final String ISSUER_ONLY_AUDIENCE_PROPERTY = "issuer-only-audience";
 
-    public static final String ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT = "false";
+    public static final String ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT = "true";
 
-    private static final List<ProviderConfigProperty> configProperties;
-
-    static {
-        ProviderConfigProperty allowAudienceIssuerOnly = new ProviderConfigProperty();
-        allowAudienceIssuerOnly.setName(ISSUER_ONLY_AUDIENCE_PROPERTY);
-        allowAudienceIssuerOnly.setLabel("Require Issuer-Only Audience");
-        allowAudienceIssuerOnly.setHelpText("Requires the audience (aud) claim in private_key_jwt client assertions to be only the OIDC Issuer URL. Enable this for stricter validation compliant with the OIDC core specification. If this is off (default) the Issuer, Token, Introspection, and PAR endpoint URLs are allowed as audience for backwards compatibility.");
-        allowAudienceIssuerOnly.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        allowAudienceIssuerOnly.setDefaultValue(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT);
-        configProperties = List.of(allowAudienceIssuerOnly);
-    }
+    protected boolean useIssuerOnlyAudience;
 
     @Override
     public boolean isConfigurable() {
@@ -56,7 +50,13 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return List.copyOf(configProperties);
+        ProviderConfigProperty allowAudienceIssuerOnly = new ProviderConfigProperty();
+        allowAudienceIssuerOnly.setName(ISSUER_ONLY_AUDIENCE_PROPERTY);
+        allowAudienceIssuerOnly.setLabel("Require Issuer-Only Audience");
+        allowAudienceIssuerOnly.setHelpText("Requires the audience (aud) claim in private_key_jwt client assertions to be only the OIDC Issuer URL. Enable this for stricter validation compliant with the OIDC core specification. If this is 'off' the Issuer, Token, Introspection, and PAR endpoint URLs are allowed as audience for backwards compatibility.");
+        allowAudienceIssuerOnly.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        allowAudienceIssuerOnly.setDefaultValue(useIssuerOnlyAudience);
+        return List.of(allowAudienceIssuerOnly);
     }
 
     protected boolean isIssuerOnlyAudienceRequired(ClientAuthenticationFlowContext context) {
@@ -71,7 +71,7 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
             return "true".equals(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT);
         }
 
-        return "true".equals(config.getOrDefault(ISSUER_ONLY_AUDIENCE_PROPERTY, ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT));
+        return "true".equals(config.getOrDefault(ISSUER_ONLY_AUDIENCE_PROPERTY, Boolean.toString(isUseIssuerOnlyAudience())));
     }
 
     protected void validateTokenAudience(ClientAuthenticationFlowContext context, RealmModel realm, JsonWebToken token) {
@@ -97,5 +97,24 @@ public abstract class AbstractJwtClientAuthenticator extends AbstractClientAuthe
         expectedAudiences.add(backchannelAuthenticationUrl);
 
         return expectedAudiences;
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+        super.init(config);
+
+        // This allows to override the server-wide default for JWT client authentication, via command line options.
+        // --spi-client-authenticator-client-jwt-issuer-only-audience=true
+        // --spi-client-authenticator-client-secret-jwt-issuer-only-audience=true
+        // if nothing is configured, we use the secure default which restricts the audience to be the issuer only audience.
+        this.useIssuerOnlyAudience = config.getBoolean("issuer-only-audience", Boolean.parseBoolean(ISSUER_ONLY_AUDIENCE_PROPERTY_DEFAULT));
+
+        if (!useIssuerOnlyAudience) {
+            LOG.warn("Client authentication via private_key_jwt or client_secret_jwt is configured to allow broader audience for backwards compatibility (issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl, backchannelAuthenticationUrl). It is recommended to adjust the JWT client authentication configurations to only allow the realm issuer in the audience.");
+        }
+    }
+
+    public boolean isUseIssuerOnlyAudience() {
+        return useIssuerOnlyAudience;
     }
 }
