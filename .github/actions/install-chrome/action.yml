@@ -3,17 +3,17 @@ description: Download and install the compatible Chrome and Chromedriver
 
 inputs:
   version:
-    description: The version of Chrome and Chromedriver to install.
+    description: The version of Chrome and Chromedriver to install. By default none is installed.
     required: false
-    default: 134.0.6998.165 # Ensures compatibility with the testsuite
+    default: default # E.g. 135.0.7049.84 (fixed version), default (chrome provided by GHA box)
 
 runs:
   using: composite
   steps:
 
-    # Cannot use Chrome for Testing. Acts weirdly and would probably require some changes in the testsuite.
     - id: install-chrome
       name: Install Chrome
+      if: inputs.version != 'default'
       shell: bash
       run: |
         sudo apt-get remove google-chrome-stable
@@ -22,6 +22,7 @@ runs:
 
     - id: install-chromedriver
       name: Install Chromedriver
+      if: inputs.version != 'default'
       shell: bash
       run: |
         wget https://storage.googleapis.com/chrome-for-testing-public/${{ inputs.version }}/linux64/chromedriver-linux64.zip -O /tmp/chromedriver.zip --no-verbose

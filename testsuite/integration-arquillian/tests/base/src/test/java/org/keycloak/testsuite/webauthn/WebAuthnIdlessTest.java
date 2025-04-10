@@ -91,18 +91,13 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
     private static final Logger logger = Logger.getLogger(WebAuthnIdlessTest.class);
 
     protected final static String username = "test-user@localhost";
-    protected final static String password = "password";
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
 
         testRealms.add(realmRepresentation);
+        configureTestRealm(realmRepresentation);
     }
 
     // Register webauthn-passwordless credential (resident key)
@@ -208,7 +203,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         loginPage.open();
         loginPage.assertCurrent();
-        loginPage.login(username, password);
+        loginPage.login(username, getPassword(username));
 
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
@@ -298,7 +293,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         selectAuthenticatorPage.assertCurrent();
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.USERNAMEPASSWORD);
         loginPage.assertCurrent();
-        loginPage.login(username, password);
+        loginPage.login(username, getPassword(username));
         webAuthnLoginPage.assertCurrent();
         webAuthnLoginPage.clickAuthenticate();
         appPage.assertCurrent();

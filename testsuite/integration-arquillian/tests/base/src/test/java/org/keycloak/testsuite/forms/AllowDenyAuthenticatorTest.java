@@ -13,8 +13,7 @@ import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -35,7 +34,7 @@ import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
+public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Page
     protected LoginUsernameOnlyPage loginUsernameOnlyPage;
@@ -48,10 +47,6 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Test
     public void testDenyAccessWithDefaultMessage() {
@@ -258,7 +253,7 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
             loginUsernameOnlyPage.login(userCondNotMatch);
 
             passwordPage.assertCurrent();
-            passwordPage.login("password");
+            passwordPage.login(getPassword(userCondNotMatch));
 
             events.expectLogin().user(userCondNotMatchId)
                     .detail(Details.USERNAME, userCondNotMatch)
@@ -291,7 +286,7 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
             final String testUserWithoutRoleId = testRealm().users().search(userWithoutRole).get(0).getId();
 
             passwordPage.assertCurrent();
-            passwordPage.login("password");
+            passwordPage.login(getPassword(userWithoutRole));
 
             events.expectLogin()
                     .user(testUserWithoutRoleId)
@@ -344,7 +339,7 @@ public class AllowDenyAuthenticatorTest extends AbstractTestRealmKeycloakTest {
 
         try {
             oauth.clientId(clientId);
-            AccessTokenResponse response = oauth.doPasswordGrantRequest(user, "password");
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(user, getPassword("test-user@localhost"));
             assertEquals(401, response.getStatusCode());
             assertEquals("Access denied", response.getError());
             assertNull(response.getErrorDescription());

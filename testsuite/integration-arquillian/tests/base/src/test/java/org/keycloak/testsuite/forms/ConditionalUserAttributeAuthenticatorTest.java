@@ -49,7 +49,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
     private final static String APPROVED_USER = "approved";
     private final static String APPROVED_BY_GROUP_USER = "approved-by-group";
     private final static String APPROVED_BY_SUBGROUP_USER = "approved-by-subgroup";
-    private final static String PASSWORD = "password";
+    private final static String PASSWORD = generatePassword();
 
     @Page
     protected LoginUsernameOnlyPage loginUsernameOnlyPage;

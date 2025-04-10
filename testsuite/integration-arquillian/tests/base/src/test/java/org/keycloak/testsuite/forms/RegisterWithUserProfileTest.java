@@ -125,7 +125,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "", "registerUserSuccessLastNameOptional@email", "registerUserSuccessLastNameOptional", "password", "password");
+        registerPage.register("firstName", "", "registerUserSuccessLastNameOptional@email", "registerUserSuccessLastNameOptional", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -146,7 +146,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_notRequested@email", "registerUserSuccessLastNameRequiredForScope_notRequested", "password", "password");
+        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_notRequested@email", "registerUserSuccessLastNameRequiredForScope_notRequested", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -168,14 +168,14 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_requested@email", "registerUserSuccessLastNameRequiredForScope_requested", "password", "password");
+        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_requested@email", "registerUserSuccessLastNameRequiredForScope_requested", generatePassword());
 
         //error reported
         registerPage.assertCurrent();
         assertEquals("Please specify this field.", registerPage.getInputAccountErrors().getLastNameError());
 
         //submit correct form
-        registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_requested@email", "registerUserSuccessLastNameRequiredForScope_requested", "password", "password");
+        registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_requested@email", "registerUserSuccessLastNameRequiredForScope_requested", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -194,14 +194,14 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_clientDefault@email", "registerUserSuccessLastNameRequiredForScope_clientDefault", "password", "password");
+        registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_clientDefault@email", "registerUserSuccessLastNameRequiredForScope_clientDefault", generatePassword());
 
         //error reported
         registerPage.assertCurrent();
         assertEquals("Please specify this field.", registerPage.getInputAccountErrors().getLastNameError());
 
         //submit correct form
-        registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_clientDefault@email", "registerUserSuccessLastNameRequiredForScope_clientDefault", "password", "password");
+        registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_clientDefault@email", "registerUserSuccessLastNameRequiredForScope_clientDefault", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -219,7 +219,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "last", "registerUserSuccessLastNameLengthValidation@email", "registerUserSuccessLastNameLengthValidation", "password", "password");
+        registerPage.register("firstName", "last", "registerUserSuccessLastNameLengthValidation@email", "registerUserSuccessLastNameLengthValidation", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -240,7 +240,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "L", "registerUserInvalidLastNameLength@email", "registerUserInvalidLastNameLength", "password", "password");
+        registerPage.register("firstName", "L", "registerUserInvalidLastNameLength@email", "registerUserInvalidLastNameLength", generatePassword());
 
         registerPage.assertCurrent();
         assertEquals("Length must be between 3 and 255.", registerPage.getInputAccountErrors().getLastNameError());
@@ -448,7 +448,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertFalse(registerPage.isDepartmentPresent());
 
 
-        registerPage.register("FirstName", "LastName", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration@email", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration", "password", "password");
+        registerPage.register("FirstName", "LastName", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration@email", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration", generatePassword());
 
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -469,10 +469,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         //check required validation works
-        registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", "password", "password", "");
+        final String password = generatePassword();
+        registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", password, password, "");
         registerPage.assertCurrent();
 
-        registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", "password", "password", "DepartmentAA");
+        registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", password, password, "DepartmentAA");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -497,7 +498,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         Assert.assertTrue(registerPage.isDepartmentPresent());
-        registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "attributeNotRequiredAndSelectedByScopeCanBeIgnored", "password", "password");
+        registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "attributeNotRequiredAndSelectedByScopeCanBeIgnored", generatePassword());
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -523,7 +524,8 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         Assert.assertTrue(registerPage.isDepartmentPresent());
-        registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "attributeNotRequiredAndSelectedByScopeCanBeSet", "password", "password", "Department AA");
+        final String password = generatePassword();
+        registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "attributeNotRequiredAndSelectedByScopeCanBeSet", password, password, "Department AA");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -549,7 +551,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         Assert.assertFalse(registerPage.isDepartmentPresent());
-        registerPage.register("FirstAA", "LastAA", "attributeRequiredButNotSelectedByScopeIsNotRendered@email", "attributeRequiredButNotSelectedByScopeIsNotRendered", "password", "password");
+        registerPage.register("FirstAA", "LastAA", "attributeRequiredButNotSelectedByScopeIsNotRendered@email", "attributeRequiredButNotSelectedByScopeIsNotRendered", generatePassword());
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -574,7 +576,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", generatePassword());
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
@@ -591,7 +593,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", generatePassword());
         registerPage.assertCurrent();
         assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
                 containsString("Please specify email"),
@@ -613,7 +615,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", generatePassword());
         assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
                 containsString("Please specify email"),
                 containsString("Please specify this field")
