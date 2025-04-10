@@ -30,6 +30,7 @@ import { usePreviewLogo } from "./LogoContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
+import { UploadJar } from "./UploadJar";
 
 type ThemeType = "light" | "dark";
 
@@ -103,8 +104,8 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     });
   };
 
-  const setupForm = () => {
-    const values = JSON.parse(realm.attributes?.style || "{}");
+  const setupForm = (value: string = realm.attributes?.style || "{}") => {
+    const values = JSON.parse(value);
     if (values[theme]) {
       form.reset(values);
     } else {
@@ -196,6 +197,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           <Button type="button" variant="link" onClick={reset}>
             {t("defaults")}
           </Button>
+        <UploadJar onUpload={setupForm} />
         </FixedButtonsGroup>
       </PageSection>
     </>
