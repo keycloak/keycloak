@@ -143,6 +143,8 @@ Due to fundamental changes in the permission model, **automatic migration from V
   ** The *user-impersonated* user permission has been _removed_.
   ** The *configure* client permission has been _removed_. With the introduction of explicit operation scoping in V2, the distinction between manage and configure became ambiguous.
   ** The *user-impersonated* user permission has been _removed_. Instead, you can use the `impersonate-members` scope of the `Groups` resource type to allow or deny impersonation of group members.
+  ** Permissions to `manage-members` of a group do not allow a realm administrator to unassign members from groups. The reason for that is that in V1 this was allowing a member of a group to become
+     a regular realm user, and workaround permissions to create users in a realm. In the future, we will be working to provide additional scopes to allow deleting members from groups.
 * Flexible resource scoping:
   ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
   ** Administrators can now define permissions for:
