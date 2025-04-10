@@ -113,6 +113,7 @@ public class ShowConfigCommandDistTest {
         result.assertMessage("(quarkus.properties)");
         result.assertMessage("(Persisted)");
         result.assertMessage("(config-keystore)");
+        result.assertMessage("(classpath application.properties)");
         result.assertMessage("(keycloak-keystore.conf)");
     }
 }
