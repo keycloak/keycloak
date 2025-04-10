@@ -139,7 +139,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
         LockEntry myLock = new LockEntry(myAddress);
 
-        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(workCache, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsent(workCache, cacheKey, myLock, taskTimeoutInSeconds);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());

@@ -116,7 +116,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // clusterStartTime not yet initialized. Let's try to put our startupTime
             int serverStartTime = (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-            existingClusterStartTime = putIfAbsentWithRetries(workCache, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
+            existingClusterStartTime = putIfAbsent(workCache, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
             if (existingClusterStartTime == null) {
                 logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
@@ -127,34 +127,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         }
     }
 
-    // Will retry few times for the case when backup site not available in cross-dc environment.
-    // The site might be taken offline automatically if "take-offline" properly configured
-    // TODO: mhajas Check if retries needed in single cluster
-    static <V> V putIfAbsentWithRetries(BasicCache<String, Object> workCache, String key, V value, int taskTimeoutInSeconds) {
-        AtomicReference<V> resultRef = new AtomicReference<>();
-
-        Retry.executeWithBackoff(iteration -> {
-
-            try {
-                V result;
-                if (taskTimeoutInSeconds > 0) {
-                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(workCache, Time.toMillis(taskTimeoutInSeconds));
-                    result = (V) workCache.putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
-                } else {
-                    result = (V) workCache.putIfAbsent(key, value);
-                }
-                resultRef.set(result);
-
-            } catch (HotRodClientException re) {
-                logger.warnf(re, "Failed to write key '%s' and value '%s' in iteration '%d' . Retrying", key, value, iteration);
-
-                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                throw re;
-            }
-
-        }, 10, 10);
-
-        return resultRef.get();
+    static <V> V putIfAbsent(BasicCache<String, Object> workCache, String key, V value, int taskTimeoutInSeconds) {
+        if (taskTimeoutInSeconds > 0) {
+            long lifespanMs = InfinispanUtil.toHotrodTimeMs(workCache, Time.toMillis(taskTimeoutInSeconds));
+            return (V) workCache.putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
+        } else {
+            return (V) workCache.putIfAbsent(key, value);
+        }
     }
 
     @Override
