@@ -453,15 +453,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());
-        String audience = getConfig().getClientAssertionAudience();
-        if (StringUtil.isBlank(audience)) {
-            audience = getConfig().getTokenUrl();
-        }
+        String audience = createJwtClientAssertionAudience();
         jwt.audience(audience);
         long expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
         jwt.exp(Time.currentTime() + expirationDelay);
         jwt.issuedNow();
         return jwt;
+    }
+
+    protected String createJwtClientAssertionAudience() {
+        String audience = getConfig().getClientAssertionAudience();
+        if (StringUtil.isBlank(audience)) {
+            // Note: here we should use the issuer instead of the tokenUrl, see: private_key_jwt https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9
+            audience = getConfig().getTokenUrl();
+        }
+        return audience;
     }
 
     protected SignatureSignerContext getSignatureContext() {
