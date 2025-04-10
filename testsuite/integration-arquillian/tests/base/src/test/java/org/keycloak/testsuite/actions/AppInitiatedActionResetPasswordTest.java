@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.RealmModel;
@@ -238,6 +239,12 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.cancel();
 
         assertKcActionStatus(CANCELLED);
+
+        events.expect(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name())
+                .error(Errors.REJECTED_BY_USER)
+                .assertEvent();
+        events.expectLogin().assertEvent();
     }
 
     @Test

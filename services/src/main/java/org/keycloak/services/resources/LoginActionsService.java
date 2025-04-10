@@ -1171,10 +1171,12 @@ public class LoginActionsService {
 
         Response response;
 
+        boolean cancelled = false;
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
             context.success();
+            cancelled = true;
         } else {
             provider.processAction(context);
         }
@@ -1184,7 +1186,11 @@ public class LoginActionsService {
         }
 
         if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
-            event.clone().success();
+            if (cancelled) {
+                event.clone().error(Errors.REJECTED_BY_USER);
+            } else {
+                event.clone().success();
+            }
             initLoginEvent(authSession);
             event.event(EventType.LOGIN);
             authSession.removeRequiredAction(factory.getId());
