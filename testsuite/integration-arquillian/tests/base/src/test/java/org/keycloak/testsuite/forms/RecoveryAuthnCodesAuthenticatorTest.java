@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -65,7 +65,7 @@ import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @EnableFeature(value = RECOVERY_CODES, skipRestart = true)
-public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeycloakTest {
+public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedUserPasswordsTest {
 
     private static final String BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES = "Browser with Recovery Authentication Codes";
 
@@ -115,11 +115,6 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-
-    }
-
     void configureBrowserFlowWithRecoveryAuthnCodes(KeycloakTestingClient testingClient, long delay) {
         final String newFlowAlias = BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES;
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
@@ -144,14 +139,14 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
         );
 
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
-        createUser("test", "test-user@localhost", "password", UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+        createUser("test", "test-user@localhost", generatePassword("test-user@localhost"), UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
     }
 
     private void testSetupRecoveryAuthnCodesLogoutOtherSessions(boolean logoutOtherSessions) {
         // login with the user using the second driver
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-        oauth2.doLogin("test-user@localhost", "password");
+        oauth2.doLogin("test-user@localhost", getPassword("test-user@localhost"));
         EventRepresentation event1 = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());
 
@@ -162,7 +157,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
 
         // login and configure codes
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         setupRecoveryAuthnCodesPage.assertCurrent();
         if (!logoutOtherSessions) {
             setupRecoveryAuthnCodesPage.uncheckLogoutSessions();
@@ -217,7 +212,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         setupRecoveryAuthnCodesPage.assertCurrent();
 
         // modify generatedAt to a fixed value
@@ -249,7 +244,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         setupRecoveryAuthnCodesPage.assertCurrent();
 
         // modify the codes with a new generated ones
@@ -412,7 +407,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
             passwordPage.assertCurrent();
             //passwordPage.assertAttemptedUsernameAvailability(true);
             Assert.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
-            passwordPage.login("password");
+            passwordPage.login(getPassword("test-user@localhost"));
             setupRecoveryAuthnCodesPage.assertCurrent();
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
         } finally {
