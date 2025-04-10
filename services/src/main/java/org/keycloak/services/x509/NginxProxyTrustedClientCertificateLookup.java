@@ -39,10 +39,15 @@ public class NginxProxyTrustedClientCertificateLookup extends AbstractClientCert
 
     private static final Logger log = Logger.getLogger(NginxProxyTrustedClientCertificateLookup.class);
 
+    private final boolean certIsUrlEncoded;
+
     public NginxProxyTrustedClientCertificateLookup(String sslCientCertHttpHeader,
                                                 String sslCertChainHttpHeaderPrefix,
-                                                int certificateChainLength) {
+                                                int certificateChainLength,
+                                                boolean certIsUrlEncoded) {
         super(sslCientCertHttpHeader, sslCertChainHttpHeaderPrefix, certificateChainLength);
+
+        this.certIsUrlEncoded = certIsUrlEncoded;
     }
 
     @Override
@@ -67,7 +72,9 @@ public class NginxProxyTrustedClientCertificateLookup extends AbstractClientCert
             log.warn("End user TLS Certificate is NULL! ");
             return null;
         }
-        pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
+        if (certIsUrlEncoded) {
+            pem = java.net.URLDecoder.decode(pem, StandardCharsets.UTF_8);
+        }
 
 
         return PemUtils.decodeCertificate(pem);
