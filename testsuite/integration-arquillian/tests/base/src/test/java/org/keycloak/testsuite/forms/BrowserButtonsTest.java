@@ -27,9 +27,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -52,13 +51,9 @@ import org.keycloak.testsuite.util.UserBuilder;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
+public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest {
 
     private String userId;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
 
     @Before
     public void setup() {
@@ -70,7 +65,8 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password", true);
+        generatePasswords("login-test");
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, getPassword("login-test"), true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 
@@ -146,11 +142,11 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
@@ -174,7 +170,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Click browser refresh. Assert still on updatePassword page
@@ -182,7 +178,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword("password", "password");
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
@@ -198,7 +194,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         // Login again and assert on "updateProfile" page
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updateProfilePage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
@@ -222,8 +218,8 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
         // Login and go through required actions
         loginPage.open();
-        loginPage.login("login-test", "password");
-        updatePasswordPage.changePassword("password", "password");
+        loginPage.login("login-test", getPassword("login-test"));
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
 
         // Assert on consent screen
@@ -303,7 +299,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
 
         // Login and assert on "updatePassword" page
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Click browser back. I should be on login page . URL corresponds to OIDC AuthorizationEndpoint
@@ -316,7 +312,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
         loginPage.open();
-        loginPage.login("login-test", "bad-username");
+        loginPage.login("login-test", getPassword("login-test") + "bad-username");
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -346,7 +342,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         // Click browser back. And continue login. Should be on updatePasswordPage
         driver.navigate().back();
         loginPage.assertCurrent();
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
     }
 
@@ -363,7 +359,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
 
         // Login
-        loginPage.login("login-test", "password");
+        loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'

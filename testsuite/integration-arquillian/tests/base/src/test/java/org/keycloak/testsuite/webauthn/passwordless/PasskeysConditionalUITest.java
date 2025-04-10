@@ -61,6 +61,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
         switchExecutionInBrowserFormToPasskeysConditionalUI(realmRepresentation);
 
         testRealms.add(realmRepresentation);
+        configureTestRealm(realmRepresentation);
     }
 
     @Override

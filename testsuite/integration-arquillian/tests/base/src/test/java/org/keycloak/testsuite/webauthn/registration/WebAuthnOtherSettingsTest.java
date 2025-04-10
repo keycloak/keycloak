@@ -137,7 +137,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("firstName", "lastName", EMAIL, USERNAME, PASSWORD, PASSWORD);
+            registerPage.register("firstName", "lastName", EMAIL, USERNAME, generatePassword(USERNAME));
 
             // User was registered. Now he needs to register WebAuthn credential
             webAuthnRegisterPage.assertCurrent();

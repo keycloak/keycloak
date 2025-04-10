@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.actions;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,23 +28,25 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.messages.Messages;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.util.List;
 import java.util.Map;
@@ -61,38 +62,19 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
+public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Drone
-    @JavascriptBrowser
-    private WebDriver jsDriver;
-
     @Page
-    @JavascriptBrowser
     protected AppPage appPage;
 
     @Page
-    @JavascriptBrowser
     protected LoginPage loginPage;
 
     @Page
-    @JavascriptBrowser
     protected TermsAndConditionsPage termsPage;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
-    @Before
-    public void driver() {
-        appPage.setDriver(jsDriver);
-        termsPage.setDriver(jsDriver);
-        loginPage.setDriver(jsDriver);
-        DroneUtils.addWebDriver(jsDriver);
-    }
 
     @Before
     public void addTermsAndConditionRequiredAction() {
@@ -109,7 +91,7 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
     public void termsAccepted() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(termsPage.isCurrent());
 
@@ -118,6 +100,8 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        Assert.assertNotNull(response.getCode());
 
         events.expectLogin().assertEvent();
 
@@ -139,13 +123,46 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void termsDeclined() {
+    public void termsDeclined() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        Assert.assertTrue(termsPage.isCurrent());
+
+        termsPage.declineTerms();
+        WaitUtils.waitForPageToLoad();
+
+        // assert on app page with reject login
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        Assert.assertNull(response.getCode());
+        Assert.assertEquals(Errors.ACCESS_DENIED, response.getError());
+        Assert.assertEquals(Messages.TERMS_AND_CONDITIONS_DECLINED, response.getErrorDescription());
+
+        // assert event
+        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+                .error(Errors.REJECTED_BY_USER)
+                .removeDetail(Details.CONSENT)
+                .session(Matchers.nullValue(String.class))
+                .assertEvent();
+
+        // assert user attribute is properly removed
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        Map<String,List<String>> attributes = user.getAttributes();
+        if (attributes != null) {
+            assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
+                    attributes.get(TermsAndConditions.USER_ATTRIBUTE));
+        }
+    }
+
+    @Test // only for firefox and chrome as it needs to go to the account console
+    @IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
+    public void termsDeclinedAccount() {
         appPage.open();
         appPage.openAccount();
 
         loginPage.assertCurrent();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(termsPage.isCurrent());
 
@@ -190,7 +207,7 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertTrue(appPage.isCurrent());
 

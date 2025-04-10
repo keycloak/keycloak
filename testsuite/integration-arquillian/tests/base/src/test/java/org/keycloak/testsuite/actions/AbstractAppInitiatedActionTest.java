@@ -21,7 +21,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -49,7 +49,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 /**
  * @author Stan Silvert
  */
-public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractAppInitiatedActionTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected static final String SUCCESS = "success";
     protected static final String CANCELLED = "cancelled";
