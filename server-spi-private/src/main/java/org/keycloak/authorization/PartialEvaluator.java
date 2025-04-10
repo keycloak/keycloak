@@ -92,7 +92,7 @@ public class PartialEvaluator {
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
             policyProvider.getPermissions(session, resourceType, adminUser).forEach(permission -> {
-                Set<String> ids = permission.getResources().stream().map(Resource::getName).collect(Collectors.toSet());
+                Set<String> ids = permission.getResourceNames();
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {

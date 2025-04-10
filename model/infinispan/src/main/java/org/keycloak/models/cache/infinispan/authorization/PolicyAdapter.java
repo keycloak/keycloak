@@ -240,6 +240,12 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     }
 
     @Override
+    public Set<String> getResourceNames() {
+        if (isUpdated()) return getResources().stream().map(Resource::getName).collect(Collectors.toSet());
+        return cached.getResourceNames(session, modelSupplier);
+    }
+
+    @Override
     public void addScope(Scope scope) {
         getDelegateForUpdate();
         cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(session, modelSupplier), new HashSet<>(Arrays.asList(scope.getId())), cached.getConfig(session, modelSupplier).get("defaultResourceType"), cached.getResourceServerId());

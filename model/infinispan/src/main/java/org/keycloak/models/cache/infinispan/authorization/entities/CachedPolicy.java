@@ -48,6 +48,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
     private final String resourceServerId;
     private final LazyLoader<Policy, Set<String>> associatedPoliciesIds;
     private final LazyLoader<Policy, Set<String>> resourcesIds;
+    private final LazyLoader<Policy, Set<String>> resourcesNames;
     private final LazyLoader<Policy, Set<String>> scopesIds;
     private final LazyLoader<Policy, Map<String, String>> config;
     private final String owner;
@@ -64,6 +65,7 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         this.associatedPoliciesIds = new DefaultLazyLoader<>(source -> source.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet()), Collections::emptySet);
 
         this.resourcesIds = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.resourcesNames = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getName).collect(Collectors.toSet()), Collections::emptySet);
 
         this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
 
@@ -102,6 +104,10 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
 
     public Set<String> getResourcesIds(KeycloakSession session, Supplier<Policy> policy) {
         return this.resourcesIds.get(session, policy);
+    }
+
+    public Set<String> getResourceNames(KeycloakSession session, Supplier<Policy> policy) {
+        return this.resourcesNames.get(session, policy);
     }
 
     public Set<String> getScopesIds(KeycloakSession session, Supplier<Policy> policy) {
