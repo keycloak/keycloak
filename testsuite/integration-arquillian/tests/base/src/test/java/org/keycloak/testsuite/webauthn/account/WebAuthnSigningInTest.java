@@ -268,7 +268,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     }
 
     @Test
-    @Ignore // TODO: Enable once chromedriver version 113.0.5672.92 is available in https://chromedriver.storage.googleapis.com/
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void checkAuthenticatorTimeLocale() throws ParseException, IOException {
         addWebAuthnCredential("authenticator#1");
 
