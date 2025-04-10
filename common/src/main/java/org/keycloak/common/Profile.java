@@ -125,9 +125,6 @@ public class Profile {
 
         PASSKEYS("Passkeys", Type.PREVIEW),
 
-        // TODO: mhajas DELETE!
-        CACHE_EMBEDDED_REMOTE_STORE("Support for remote-store in embedded Infinispan caches", Type.EXPERIMENTAL),
-
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
