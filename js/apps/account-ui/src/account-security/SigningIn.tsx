@@ -20,7 +20,7 @@ import {
   ExclamationTriangleIcon,
   InfoAltIcon,
 } from "@patternfly/react-icons";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, Fragment, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { getCredentials } from "../api/methods";
@@ -194,7 +194,7 @@ export const SigningIn = () => {
           {credentials
             .filter((cred) => cred.category == category)
             .map((container) => (
-              <>
+              <Fragment key={container.category}>
                 <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
                   <SplitItem>
                     <Title
@@ -295,7 +295,7 @@ export const SigningIn = () => {
                     </DataListItem>
                   ))}
                 </DataList>
-              </>
+              </Fragment>
             ))}
         </PageSection>
       ))}
