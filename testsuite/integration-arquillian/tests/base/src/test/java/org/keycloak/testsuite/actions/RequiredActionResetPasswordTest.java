@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.events.Details;
@@ -47,6 +48,7 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -137,11 +139,24 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     }
 
     private void resetPassword(boolean logoutOtherSessions) {
+        // create a regular session
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
         oauth2.doLogin("test-user@localhost", "password");
-        EventRepresentation event1 = events.expectLogin().assertEvent();
+        EventRepresentation regularSession = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());
+
+        // navigate to a neutral URL to then clear the cookies on that domain
+        oauth2.getDriver().navigate().to(oauth2.getEndpoints().getJwks());
+        oauth2.getDriver().manage().deleteAllCookies();
+
+        // create an offline session
+        oauth2.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AuthorizationEndpointResponse os = oauth2.doLogin("test-user@localhost", "password");
+        EventRepresentation offlineSession = events.expectLogin().assertEvent();
+        AccessTokenResponse at = oauth2.doAccessTokenRequest(os.getCode());
+        String clientUuid = testRealm().clients().findByClientId(oauth2.getClientId()).get(0).getId();
+        assertEquals(1, testUser.getOfflineSessions(clientUuid).size());
 
         requireUpdatePassword();
 
@@ -156,23 +171,30 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
 
         if (logoutOtherSessions) {
-            events.expectLogout(event1.getSessionId())
+            events.expectLogout(regularSession.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
+                    .assertEvent(true);
+            events.expectLogout(offlineSession.getSessionId())
                     .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
                     .assertEvent();
         }
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent(true);
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
         EventRepresentation event2 = events.expectLogin().assertEvent();
-        List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+        List<UserSessionRepresentation> regularSessions = testUser.getUserSessions();
+        List<UserSessionRepresentation> offlineSessions = testUser.getOfflineSessions(clientUuid);
         if (logoutOtherSessions) {
-            assertEquals(1, sessions.size());
-            assertEquals(event2.getSessionId(), sessions.iterator().next().getId());
+            assertEquals(1, regularSessions.size());
+            assertEquals(event2.getSessionId(), regularSessions.iterator().next().getId());
+            assertEquals(0, offlineSessions.size());
         } else {
-            assertEquals(2, sessions.size());
-            MatcherAssert.assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
-                    Matchers.containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
+            assertEquals(2, regularSessions.size());
+            MatcherAssert.assertThat(regularSessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder(regularSession.getSessionId(), event2.getSessionId()));
+            MatcherAssert.assertThat(offlineSessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
+                    Matchers.containsInAnyOrder(offlineSession.getSessionId()));
         }
     }
 
