@@ -43,6 +43,58 @@ image::configure-operator.png["Configure {project_name} Operator"]
 
 You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
 
+==== Configuring Manual Approval for OLM Upgrades
+
+[WARNING]
+====
+*Important: Automatic OLM Upgrades*
+
+By default, OLM automatically updates the {project_name} Operator when a new version is released. This can cause several significant issues:
+
+* When using the default {project_name} image, the Operator uses a matching image of the corresponding {project_name} version, resulting in *unintended {project_name} upgrades* when the Operator is upgraded
+* *Even when using custom images*, major Operator upgrades can introduce significant compatibility issues with your existing Keycloak CR configuration, potentially requiring manual intervention
+* New fields in Keycloak CR or behavioral changes could impact existing deployments
+* No option to downgrade to the previous {project_name} version due to changes related to database migration
+
+*Recommendation:*
+
+*We strongly recommend using manual approval mode for the Keycloak Operator.* This ensures you can:
+
+1. Review release notes and follow migration changes before approving upgrades
+2. Schedule maintenance windows for upgrades
+3. Test upgrades in a non-production environment first
+4. Back up the database to allow downgrading to the previous {project_name} in case of issues
+====
+
+To prevent automatic upgrades by OLM, set the approval strategy to `Manual` when installing the Operator:
+
+===== Using the OpenShift web console
+
+When installing the Operator, select `Manual` approval in the update approval strategy section:
+
+image::manual-approval-olm.png["Configure manual approval in OLM"]
+
+===== Using the CLI
+
+For command-line installation, create a Subscription with `installPlanApproval: Manual`:
+
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: keycloak-operator
+  namespace: <target-namespace>
+spec:
+  channel: fast
+  name: keycloak-operator
+  source: <catalog-source>
+  sourceNamespace: <catalog-namespace>
+  installPlanApproval: Manual
+----
+
+After installation, any upgrade will require manual approval through the OLM interface or via the CLI.
+
 <@profile.ifCommunity>
 === Installing by using kubectl without Operator Lifecycle Manager
 
