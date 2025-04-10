@@ -121,7 +121,6 @@
 :jdgserver_name: Infinispan
 :jdgserver_version: 9.4.19
 :jdgserver_version_latest: 11.0.9
-:jdgserver_crossdcdocs_link: https://infinispan.org/docs/11.0.x/titles/xsite/xsite.html
 :jdgserver_version_latest: 11.0.8
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0

@@ -47,7 +47,7 @@ public class TopologyInfo {
     // name
     private final String myNodeName;
 
-    // Used just if "site" is configured (typically in cross-dc environment). Otherwise null
+    // Used just if "site" is configured (typically in multi-site environment). Otherwise null
     private final String mySiteName;
 
     private final boolean isGeneratedNodeName;
