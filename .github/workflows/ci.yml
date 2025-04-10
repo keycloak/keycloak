@@ -116,6 +116,8 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - uses: ./.github/actions/install-chrome
+
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
@@ -156,6 +158,8 @@ jobs:
 
       - name: Build app servers
         run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
+
+      - uses: ./.github/actions/install-chrome
 
       - name: Run adapter tests
         run: |
@@ -771,6 +775,9 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
+
       - name: Run Forms IT
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
@@ -812,6 +819,9 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+
+      - uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
 
       - name: Run WebAuthn IT
         run: |
