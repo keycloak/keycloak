@@ -39,6 +39,15 @@ The following SPI configuration enables `lenient-audience-validation` by default
 ** `--spi-client-authenticator-client-jwt-lenient-audience-validation=true`
 ** `--spi-client-authenticator-client-secret-jwt-lenient-audience-validation=true`
 
+=== New Audience in JWT Client Assertion for OIDC Identity Providers with JWT based client authentication
+
+Related to the change in OIDC JWT Client Authentication alignment, we now use the OIDC Identity Provider `issuer` URL by default
+as the audience of the generated JWT Client Assertion when the client authentication methods `JWT signed with private key` or `JWT signed with client secret` is used.
+
+Previously,  the audience in the JWT client assertion was set to the token endpoint URL of the OIDC Identity Provider.
+
+Users who want to use the old behavior can explicitly set the audience to the token endpoint URL via the `Client assertion audience` configuration property of the OIDC Identity Provider.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
