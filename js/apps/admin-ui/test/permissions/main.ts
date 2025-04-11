@@ -1,6 +1,8 @@
 import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import { Page } from "@playwright/test";
 import { selectItem } from "../utils/form";
+import { confirmModal } from "../utils/modal";
+import { clickRowKebabItem } from "../utils/table";
 
 type PermissionForm = PolicyRepresentation & {
   enforcementMode?: "allResources" | "specificResources";
@@ -67,4 +69,9 @@ export async function openSearchPanel(page: Page) {
 
 export async function clickSearchButton(page: Page) {
   await page.getByTestId("search-btn").click();
+}
+
+export async function deletePermission(page: Page, name: string) {
+  await clickRowKebabItem(page, name, "Delete");
+  await confirmModal(page);
 }
