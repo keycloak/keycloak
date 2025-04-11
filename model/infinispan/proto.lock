@@ -72,6 +72,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "CollectionToStreamMapper",
+        "type_id" : 65609,
+        "fields" : [ ]
+      }, {
         "name" : "GroupListPredicate",
         "type_id" : 65568,
         "fields" : [ {
@@ -80,6 +84,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "AuthClientSessionSetMapper",
+        "type_id" : 65608,
+        "fields" : [ ]
       }, {
         "name" : "RemoveUserSessionsEvent",
         "type_id" : 65564,
@@ -529,6 +537,45 @@
           }
         } ]
       }, {
+        "name" : "PermissionTicketRemovedEvent",
+        "type_id" : 65613,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "requester",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "resource",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "resourceName",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "scope",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "serverId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
         "name" : "SessionPredicate",
         "type_id" : 65565,
         "fields" : [ {
@@ -915,6 +962,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "ReloadCertificateFunction",
+        "type_id" : 65615,
+        "fields" : [ ]
+      }, {
         "name" : "UserConsentsUpdatedEvent",
         "type_id" : 65590,
         "fields" : [ {
@@ -923,6 +974,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "MapEntryToKeyMapper",
+        "type_id" : 65611,
+        "fields" : [ ]
       }, {
         "name" : "ClientScopeRemovedEvent",
         "type_id" : 65579,
@@ -967,6 +1022,45 @@
         }, {
           "id" : 4,
           "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        } ]
+      }, {
+        "name" : "PermissionTicketUpdatedEvent",
+        "type_id" : 65614,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "id",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "owner",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "requester",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 4,
+          "name" : "resource",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 5,
+          "name" : "resourceName",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 6,
+          "name" : "scope",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 7,
+          "name" : "serverId",
           "type" : "string",
           "optional" : true
         } ]
@@ -1053,6 +1147,11 @@
           "name" : "containerId",
           "type" : "string",
           "optional" : true
+        }, {
+          "id" : 3,
+          "name" : "roleName",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "GroupAddedEvent",
@@ -1102,6 +1201,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "GroupAndCountCollectorSupplier",
+        "type_id" : 65610,
+        "fields" : [ ]
       }, {
         "name" : "ReplaceFunction",
         "type_id" : 65656,
@@ -1267,6 +1370,10 @@
           "type" : "string",
           "optional" : true
         } ]
+      }, {
+        "name" : "SessionUnwrapMapper",
+        "type_id" : 65612,
+        "fields" : [ ]
       }, {
         "name" : "InIdentityProviderPredicate",
         "type_id" : 65572,
