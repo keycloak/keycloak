@@ -21,6 +21,7 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  fileName?: string;
   favicon?: File;
   logo?: File;
   bgimage?: File;
@@ -37,7 +38,7 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
 
-    const { favicon, logo, bgimage, ...rest } = realm;
+    const { favicon, logo, bgimage, fileName, ...rest } = realm;
 
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
@@ -135,7 +136,7 @@ styles=css/login.css css/theme-styles.css
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "quick-theme.jar";
+      a.download = fileName || "quick-theme.jar";
       a.click();
       URL.revokeObjectURL(url);
     });
