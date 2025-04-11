@@ -187,7 +187,7 @@ test.describe("Roles tab test", () => {
     await goToAssociatedRolesTab(page);
 
     // Add associated client roles
-    await addAssociatedRoles(page, "accountmanage-account", "client");
+    await addAssociatedRoles(page, "manage-account", "client");
     await assertNotificationMessage(page, "Associated roles have been added");
   });
 

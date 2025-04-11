@@ -137,13 +137,13 @@ test.describe("Realm roles test", () => {
 
     // Add associated client role from search bar
     await pickRoleType(page, "client");
-    await pickRole(page, "accountmanage-account", true);
+    await pickRole(page, "manage-account", true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
 
     // Add associated client role
     await pickRoleType(page, "client");
-    await pickRole(page, "accountmanage-consent", true);
+    await pickRole(page, "manage-consent", true);
     await confirmModalAssign(page);
     await assertNotificationMessage(page, "Associated roles have been added");
   });
@@ -203,7 +203,7 @@ test.describe("Realm roles test", () => {
     await goToAssociatedRolesTab(page);
 
     await pickRoleType(page, "client");
-    await pickRole(page, "accountview-profile", true);
+    await pickRole(page, "view-profile", true);
     await confirmModalAssign(page);
 
     await assertUnassignDisabled(page);
@@ -218,7 +218,7 @@ test.describe("Realm roles test", () => {
     await goToAssociatedRolesTab(page);
 
     await pickRoleType(page, "client");
-    await pickRole(page, "accountview-profile", true);
+    await pickRole(page, "view-profile", true);
     await confirmModalAssign(page);
 
     await clickRowKebabItem(page, "account view-profile", "Unassign");
@@ -235,7 +235,7 @@ test.describe("Realm roles test", () => {
     await goToAssociatedRolesTab(page);
 
     await pickRoleType(page, "client");
-    await pickRole(page, "accountview-profile", true);
+    await pickRole(page, "view-profile", true);
     await confirmModalAssign(page);
 
     await page.locator('input[name="check-all"]').check();

@@ -9,7 +9,6 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import {
   AddRoleButton,
@@ -92,15 +91,14 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
         />
       )}
       <AddRoleButton
-        label={tab !== "evaluation" ? t("addRoles") : t("selectRole")}
+        label={isRadio ? t("selectRole") : t("addRoles")}
         data-testid="select-role-button"
         variant="secondary"
         onFilerTypeChange={(type) => {
           setFilterType(type);
           setIsModalOpen(true);
-        }}>
-           {isRadio ? t("selectRole") : t("addRoles")}
-      </Button>
+        }}
+      />
       {selectedRoles.length > 0 && (
         <Table variant="compact">
           <Thead>

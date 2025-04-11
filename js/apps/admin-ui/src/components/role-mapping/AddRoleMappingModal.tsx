@@ -21,7 +21,7 @@ import { useAccess } from "../../context/access/Access";
 import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort from "../../utils/useLocaleSort";
 import useToggle from "../../utils/useToggle";
-import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
+import { ResourcesKey, Row } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
 
@@ -180,10 +180,37 @@ export const AddRoleMappingModal = ({
     );
   };
 
+  const columns = [
+    {
+      name: "role.name",
+      displayKey: "name",
+      transforms: [cellWidth(30)],
+    },
+    {
+      name: "client.clientId",
+      displayKey: "clientId",
+    },
+    {
+      name: "role.description",
+      displayKey: "description",
+      cellRenderer: RoleDescription,
+    },
+  ];
+
+  if (filterType === "roles") {
+    columns.splice(1, 1);
+  }
+
   return (
     <Modal
       variant={ModalVariant.large}
-      title={title || t("assignRolesTo", { client: name })}
+      title={
+        title ||
+        t("assignRolesTo", {
+          type: filterType === "roles" ? t("realm") : t("client"),
+          client: name,
+        })
+      }
       isOpen
       onClose={onClose}
       actions={[
@@ -211,24 +238,15 @@ export const AddRoleMappingModal = ({
     >
       <KeycloakDataTable
         onSelect={(rows) => setSelectedRows([...rows])}
-        searchPlaceholderKey="searchByRoleName"
+        searchPlaceholderKey={
+          filterType === "roles" ? "searchByRoleName" : "search"
+        }
         isPaginated={!(filterType === "roles" && type !== "roles")}
         canSelectAll
         isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="associatedRolesText"
-        columns={[
-          {
-            name: "name",
-            cellRenderer: ServiceRole,
-            transforms: [cellWidth(30)],
-          },
-          {
-            name: "role.description",
-            displayKey: "description",
-            cellRenderer: RoleDescription,
-          },
-        ]}
+        columns={columns}
         emptyState={
           <ListEmptyState
             message={t("noRoles")}
