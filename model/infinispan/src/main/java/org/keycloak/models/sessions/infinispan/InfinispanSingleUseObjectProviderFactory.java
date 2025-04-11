@@ -27,14 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.Flag;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -62,7 +59,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
-    protected volatile Supplier<BasicCache<String, SingleUseObjectValueEntity>> singleUseObjectCache;
+    protected BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache;
 
     private volatile boolean initialized;
     private boolean persistRevokedTokens;
@@ -94,17 +91,16 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             synchronized (this) {
                 if (!initialized) {
                     RevokedTokenPersisterProvider provider = session.getProvider(RevokedTokenPersisterProvider.class);
-                    BasicCache<String, SingleUseObjectValueEntity> cache = singleUseObjectCache.get();
-                    if (cache.get(LOADED) == null) {
+                    if (singleUseObjectCache.get(LOADED) == null) {
                         // in a cluster, multiple Keycloak instances might load the same data in parallel, but that wouldn't matter
                         provider.getAllRevokedTokens().forEach(revokedToken -> {
                             long lifespanSeconds = revokedToken.expiry() - Time.currentTime();
                             if (lifespanSeconds > 0) {
-                                cache.put(revokedToken.tokenId() + SingleUseObjectProvider.REVOKED_KEY, new SingleUseObjectValueEntity(Collections.emptyMap()),
-                                        InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds)), TimeUnit.MILLISECONDS);
+                                singleUseObjectCache.put(revokedToken.tokenId() + SingleUseObjectProvider.REVOKED_KEY, new SingleUseObjectValueEntity(Collections.emptyMap()),
+                                         Time.toMillis(lifespanSeconds), TimeUnit.MILLISECONDS);
                             }
                         });
-                        cache.put(LOADED, new SingleUseObjectValueEntity(Collections.emptyMap()));
+                        singleUseObjectCache.put(LOADED, new SingleUseObjectValueEntity(Collections.emptyMap()));
                     }
                     initialized = true;
                 }
@@ -117,7 +113,8 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
         // means also listeners will start only after first cache initialization - that would be too late
         if (singleUseObjectCache == null) {
-            this.singleUseObjectCache = getSingleUseObjectCache(factory.create());
+            InfinispanConnectionProvider connections = factory.create().getProvider(InfinispanConnectionProvider.class);
+            singleUseObjectCache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
         }
 
         if (persistRevokedTokens) {
