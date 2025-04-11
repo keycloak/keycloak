@@ -102,7 +102,7 @@ public interface ClusterProvider extends Provider {
         LOCAL_DC_ONLY,
 
         /** Send message to all cluster nodes in all datacenters, but NOT to this datacenter. Option "ignoreSender" of method {@link #notify} will be ignored as sender is ignored anyway due it is in this datacenter **/
-        ALL_BUT_LOCAL_DC
+         ALL_BUT_LOCAL_DC
     }
 
 }

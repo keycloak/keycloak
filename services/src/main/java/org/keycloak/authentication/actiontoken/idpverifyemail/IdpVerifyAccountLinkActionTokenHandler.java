@@ -123,12 +123,6 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
-            } else {
-
-                session.authenticationSessions().updateNonlocalSessionAuthNotes(
-                        compoundId,
-                  Collections.singletonMap(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername())
-                );
             }
 
             return session.getProvider(LoginFormsProvider.class)
