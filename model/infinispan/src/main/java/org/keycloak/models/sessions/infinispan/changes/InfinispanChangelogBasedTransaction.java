@@ -40,7 +40,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
     protected final KeycloakSession kcSession;
-    private final String cacheName;
     protected final Cache<K, SessionEntityWrapper<V>> cache;
 
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
@@ -52,7 +51,6 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache,
                                                SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, SerializeExecutionsByKey<K> serializer) {
         this.kcSession = kcSession;
-        this.cacheName = cache.getName();
         this.cache = cache;
         this.lifespanMsLoader = lifespanMsLoader;
         this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
