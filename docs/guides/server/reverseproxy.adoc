@@ -223,7 +223,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
 
 |cert-is-url-encoded
-| Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables.
+| Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables. This can also be used for the Traefik PassTlsClientCert middleware, as it sends the client certficate unencoded.
 |===
 
 === Configuring the NGINX provider
