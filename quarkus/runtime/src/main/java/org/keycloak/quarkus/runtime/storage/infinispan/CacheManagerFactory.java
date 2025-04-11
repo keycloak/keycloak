@@ -402,7 +402,7 @@ public class CacheManagerFactory {
             ConfigurationBuilder cacheConfigurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
 
             if (cacheConfigurationBuilder != null && hasRemoteStore(cacheConfigurationBuilder)) {
-                if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
                     logger.warnf("Feature %s is enabled and remote store detected for cache '%s'. Remote stores are no longer needed when sessions stored in the database. The configuration will be ignored.", Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), cacheName);
                     cacheConfigurationBuilder.persistence().stores().removeIf(RemoteStoreConfigurationBuilder.class::isInstance);
                 } else {
