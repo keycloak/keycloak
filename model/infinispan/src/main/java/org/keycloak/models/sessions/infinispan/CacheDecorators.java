@@ -35,4 +35,13 @@ public class CacheDecorators {
         return cache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL);
     }
 
+    /**
+     * Adds {@link Flag#IGNORE_RETURN_VALUES} flag to the cache.
+     * @param cache
+     * @return Cache with the flag applied.
+     */
+    public static <K, V> AdvancedCache<K, V> ignoreReturnValues(Cache<K, V> cache) {
+        return cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES);
+    }
+
 }

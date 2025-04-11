@@ -50,13 +50,10 @@ public class EmbeddedCachesChangesPerformer<K, V extends SessionEntity> implemen
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                cache.getAdvancedCache()
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .remove(key);
+                CacheDecorators.ignoreReturnValues(cache).remove(key);
                 break;
             case ADD:
-                cache.getAdvancedCache()
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
+                CacheDecorators.ignoreReturnValues(cache)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
 
                 LOG.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
@@ -189,13 +188,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                cache.getAdvancedCache()
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .remove(key);
+                CacheDecorators.ignoreReturnValues(cache).remove(key);
                 break;
             case ADD:
-                cache.getAdvancedCache()
-                        .withFlags(Flag.IGNORE_RETURN_VALUES)
+                CacheDecorators.ignoreReturnValues(cache)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
 
                 logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
@@ -232,7 +228,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
                 if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
                     logger.debugf("Entity %s removed after evaluation", key);
-                    cache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).remove(key);
+                    CacheDecorators.ignoreReturnValues(cache).remove(key);
                     return;
                 }
 
