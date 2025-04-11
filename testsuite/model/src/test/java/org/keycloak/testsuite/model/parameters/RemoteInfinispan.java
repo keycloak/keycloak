@@ -38,9 +38,7 @@ import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 
 /**
- * Copied from {@link MultiSiteInfinispan}.
- * <p>
- * Adds the new provider factories implementation
+ * Enables RemoteInfinispan and adds all classes needed to connect to remote Infinispan to allowed factories
  */
 public class RemoteInfinispan extends KeycloakModelParameters {
 
@@ -77,11 +75,7 @@ public class RemoteInfinispan extends KeycloakModelParameters {
                     .config("nodeName", "node-" + NODE_COUNTER.get())
                     .config("siteName", siteName(NODE_COUNTER.get()))
                     .config("remoteStorePort", siteName(NODE_COUNTER.get()).equals("site-2") ? "11333" : "11222")
-                    .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()))
-                    .spi(UserSessionSpi.NAME)
-                    .provider(InfinispanUtils.EMBEDDED_PROVIDER_ID)
-                    .config("offlineSessionCacheEntryLifespanOverride", "43200")
-                    .config("offlineClientSessionCacheEntryLifespanOverride", "43200");
+                    .config("jgroupsUdpMcastAddr", mcastAddr(NODE_COUNTER.get()));
         }
     }
 

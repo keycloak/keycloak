@@ -238,7 +238,7 @@
         <profile>
             <id>jpa+multi-site-infinispan</id>
             <properties>
-                <keycloak.model.parameters>MultiSiteInfinispan,Jpa</keycloak.model.parameters>
+                <keycloak.model.parameters>RemoteInfinispan,Jpa</keycloak.model.parameters>
             </properties>
             <build>
                 <plugins>
