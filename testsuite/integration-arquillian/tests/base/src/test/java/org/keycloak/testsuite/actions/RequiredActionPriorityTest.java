@@ -242,7 +242,13 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).assertEvent();
 
-        // Second, update profile
+        // Second, accept terms
+        termsPage.assertCurrent();
+        termsPage.acceptTerms();
+        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+
+        // Finally, update profile. Action specified by "kc_action" should be always triggered last
         updateProfilePage.assertCurrent();
         updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
                 .email(NEW_EMAIL).submit();
@@ -251,12 +257,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.PREVIOUS_EMAIL, EMAIL)
                 .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
                 .assertEvent();
-
-        // Finally, accept terms
-        termsPage.assertCurrent();
-        termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
 
         // Logged in
         appPage.assertCurrent();
