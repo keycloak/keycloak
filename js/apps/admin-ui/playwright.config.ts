@@ -25,5 +25,12 @@ export default defineConfig({
         viewport: { width: 1920, height: 1200 },
       },
     },
+    {
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 1920, height: 1200 },
+      },
+    },
   ],
 });
