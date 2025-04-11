@@ -79,8 +79,8 @@ Cache:
                        Available only when metrics are enabled.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
-                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
-                       Required when feature 'multi-site' or 'clusterless' is set.
+                       'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
+                       'clusterless' is set.
 --cache-remote-password <password>
                      The password for the authentication to the external Infinispan cluster. It is
                        optional if connecting to an unsecure external Infinispan cluster. If the
