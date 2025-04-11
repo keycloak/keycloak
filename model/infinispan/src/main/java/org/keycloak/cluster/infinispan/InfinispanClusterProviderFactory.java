@@ -116,7 +116,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // clusterStartTime not yet initialized. Let's try to put our startupTime
             int serverStartTime = (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-            existingClusterStartTime = putIfAbsent(workCache, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
+            existingClusterStartTime = (Integer) workCache.putIfAbsent(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime);
             if (existingClusterStartTime == null) {
                 logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
@@ -129,8 +129,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     static <V> V putIfAbsent(BasicCache<String, Object> workCache, String key, V value, int taskTimeoutInSeconds) {
         if (taskTimeoutInSeconds > 0) {
-            long lifespanMs = InfinispanUtil.toHotrodTimeMs(workCache, Time.toMillis(taskTimeoutInSeconds));
-            return (V) workCache.putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
+            return (V) workCache.putIfAbsent(key, value, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         } else {
             return (V) workCache.putIfAbsent(key, value);
         }

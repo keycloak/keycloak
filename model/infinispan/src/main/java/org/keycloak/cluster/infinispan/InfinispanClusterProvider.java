@@ -31,6 +31,7 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.Time;
 
 /**
  *
@@ -139,7 +140,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
         LockEntry myLock = new LockEntry(myAddress);
 
-        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsent(workCache, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = (LockEntry) workCache.putIfAbsent(cacheKey, myLock, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
