@@ -518,7 +518,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
 
         envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
-                .withFieldPath("status.podIP").endFieldRef().endValueFrom().build());
+                .withFieldPath("status.podIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
     }
