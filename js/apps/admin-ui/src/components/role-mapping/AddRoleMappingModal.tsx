@@ -24,8 +24,6 @@ import useLocaleSort from "../../utils/useLocaleSort";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
-import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
-import { useParams } from "react-router-dom";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -34,7 +32,8 @@ type AddRoleMappingModalProps = {
   isRadio?: boolean;
   onAssign: (rows: Row[]) => void;
   onClose: () => void;
-  isLDAPmapper?: boolean;
+  title?: string;
+  actionLabel?: string;
 };
 
 type FilterType = "roles" | "clients";
@@ -52,9 +51,11 @@ export const AddRoleMappingModal = ({
   id,
   name,
   type,
-  isLDAPmapper,
+  isRadio,
   onAssign,
   onClose,
+  title,
+  actionLabel,
 }: AddRoleMappingModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -71,7 +72,6 @@ export const AddRoleMappingModal = ({
 
   const localeSort = useLocaleSort();
   const compareRow = ({ role: { name } }: Row) => name?.toUpperCase();
-  const { tab } = useParams<PermissionsConfigurationTabsParams>();
 
   const loader = async (
     first?: number,
@@ -123,13 +123,7 @@ export const AddRoleMappingModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={
-        tab !== "evaluation"
-          ? isLDAPmapper
-            ? t("assignRole")
-            : t("assignRolesTo", { client: name })
-          : t("selectRole")
-      }
+      title={title || t("assignRolesTo", { client: name })}
       isOpen
       onClose={onClose}
       actions={[
@@ -143,7 +137,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {tab !== "evaluation" ? t("assign") : t("select")}
+          {actionLabel || t("assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -157,13 +151,7 @@ export const AddRoleMappingModal = ({
     >
       <KeycloakDataTable
         key={key}
-        onSelect={(rows) => {
-          if (tab === "evaluation") {
-            setSelectedRows(rows.length > 0 ? [rows[0]] : []);
-          } else {
-            setSelectedRows([...rows]);
-          }
-        }}
+        onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
@@ -202,7 +190,7 @@ export const AddRoleMappingModal = ({
           )
         }
         canSelectAll
-        isRadio={tab === "evaluation"}
+        isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="associatedRolesText"
         columns={[
