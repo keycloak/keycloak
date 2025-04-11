@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.RealmModel;
@@ -38,12 +39,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -51,7 +56,9 @@ import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,6 +85,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
+
+    @Page
+    protected LoginConfigTotpPage totpPage;
 
     @Drone
     @SecondBrowser
@@ -238,6 +248,35 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.cancel();
 
         assertKcActionStatus(CANCELLED);
+
+        events.expect(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
+                .detail(Details.CUSTOM_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name())
+                .error(Errors.REJECTED_BY_USER)
+                .assertEvent();
+        events.expectLogin().assertEvent();
+    }
+
+    @Test
+    public void cancelWhenOTPRequiredAction() throws Exception {
+        // Add OTP required action to the user
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRep = user.toRepresentation();
+        UserBuilder.edit(userRep).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        user.update(userRep);
+
+        doAIA();
+        loginPage.login("test-user@localhost", "password");
+
+        // Cancel button should not be displayed
+        totpPage.assertCurrent();
+        Assert.assertFalse(totpPage.isCancelDisplayed());
+
+        // Try to manually send POST request from browser with cancel the AIA
+        String actionUrl = URLUtils.getActionUrlFromCurrentPage(driver);
+        URLUtils.sendPOSTRequestWithWebDriver(actionUrl, Map.of(LoginActionsService.CANCEL_AIA, "true"));
+
+        // Assert OTP required action still on the user
+        Assert.assertThat(user.toRepresentation().getRequiredActions(), contains(UserModel.RequiredAction.CONFIGURE_TOTP.name()));
     }
 
     @Test
