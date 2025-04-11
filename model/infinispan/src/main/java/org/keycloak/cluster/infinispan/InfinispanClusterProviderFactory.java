@@ -23,11 +23,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.context.Flag;
@@ -43,7 +41,6 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -100,7 +97,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                     String myAddress = topologyInfo.getMyNodeName();
                     String mySite = topologyInfo.getMySiteName();
 
-                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite);
+                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite);
                 }
             }
         }

@@ -31,7 +31,6 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
-import org.keycloak.models.KeycloakSession;
 
 import java.util.Collection;
 import java.util.List;
@@ -69,7 +68,7 @@ public class InfinispanNotificationsManager {
 
 
     // Create and init manager including all listeners etc
-    public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Object> workCache, String myAddress, String mySite) {
+    public static InfinispanNotificationsManager create(Cache<String, Object> workCache, String myAddress, String mySite) {
         InfinispanNotificationsManager manager = new InfinispanNotificationsManager(workCache, myAddress, mySite);
 
         // We need CacheEntryListener for communication within current DC
