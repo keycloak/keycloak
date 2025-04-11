@@ -120,8 +120,6 @@
 
 :jdgserver_name: Infinispan
 :jdgserver_version: 9.4.19
-:jdgserver_version_latest: 11.0.9
-:jdgserver_version_latest: 11.0.8
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:12.0
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
