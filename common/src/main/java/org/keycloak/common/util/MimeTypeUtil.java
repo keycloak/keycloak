@@ -33,6 +33,7 @@ public class MimeTypeUtil {
         map.addMimeTypes("image/png png PNG");
         map.addMimeTypes("image/svg+xml svg SVG");
         map.addMimeTypes("text/html html htm HTML HTM");
+        map.addMimeTypes("application/wasm wasm WASM");
     }
 
     public static String getContentType(File file) {
