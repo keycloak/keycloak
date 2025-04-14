@@ -122,9 +122,10 @@ For instance, to disable trace info in the `console` log, you can turn it off as
 
 NOTE: When you explicitly override the log format for the particular log handlers, the `*-include-trace` options do not have any effect, and no tracing is included.
 
+[[sampling]]
 == Sampling
 
-Sampler decides whether a trace should be discarded or forwarded, effectively reducing overhead by limiting the number of collected traces sent to the collector.
+The sampler decides whether a trace should be discarded or forwarded, effectively reducing overhead by limiting the number of collected traces sent to the collector.
 It helps manage resource consumption, which leads to avoiding the huge storage costs of tracing every single request and potential performance penalty.
 
 WARNING: For a production-ready environment, sampling should be properly set to minimize infrastructure costs.
@@ -135,7 +136,6 @@ WARNING: For a production-ready environment, sampling should be properly set to 
 
 The used sampler can be changed via the `tracing-sampler-type` property.
 
-[[sampling]]
 === Default sampler
 The default sampler for {project_name} is `traceidratio`, which controls the rate of trace sampling based on a specified ratio configurable via the `tracing-sampler-ratio` property.
 
