@@ -29,7 +29,7 @@ It is still possible to directly set your own `javax.net.ssl` truststore System 
 You may refine how hostnames are verified by TLS connections with the `tls-hostname-verifier` property.
 
 * `DEFAULT` (the default) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with rules and exclusions for public suffixes based upon https://publicsuffix.org/list/
-* `ANY` means that the hostname is not verified.
+* `ANY` means that the hostname is not verified - this mode should not be used in production.
 * `WILDCARD` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com). Use DEFAULT instead.
 * `STRICT` (deprecated) allows wildcards in subdomain names (e.g. *.foo.com) to match names with the same number of levels (e.g. a.foo.com, but not a.b.foo.com) - with some limited exclusions. Use DEFAULT instead.
 +

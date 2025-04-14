@@ -13,7 +13,7 @@ public class TruststoreOptions {
 
     public static final Option<HostnameVerificationPolicy> HOSTNAME_VERIFICATION_POLICY = new OptionBuilder<>("tls-hostname-verifier", HostnameVerificationPolicy.class)
             .category(OptionCategory.TRUSTSTORE)
-            .description("The TLS hostname verification policy for out-going HTTPS and SMTP requests.")
+            .description("The TLS hostname verification policy for out-going HTTPS and SMTP requests. ANY should not be used in production.")
             .defaultValue(HostnameVerificationPolicy.DEFAULT)
             .deprecatedValues("STRICT and WILDCARD have been deprecated, use DEFAULT instead.", HostnameVerificationPolicy.STRICT, HostnameVerificationPolicy.WILDCARD)
             .build();
