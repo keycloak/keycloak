@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
+import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.Configuration;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
@@ -83,7 +84,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     private static final String CLIENT_INTELLIGENCE_DEFAULT = ClientIntelligence.getDefault().name();
     private static final int CONNECTION_POOL_MAX_ACTIVE_DEFAULT = 16;
     private static final String CONNECTION_POOL_EXHAUSTED_ACTION_DEFAULT = ExhaustedAction.CREATE_NEW.name();
-    private static final String AUTH_REALM_DEFAULT = "default";
     private static final String SASL_MECHANISM_DEFAULT = SCRAM_SHA_512;
 
     private volatile Configuration remoteConfiguration;
@@ -242,7 +242,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
                 .enable()
                 .username(username)
                 .password(password)
-                .realm(keycloakConfiguration.get(AUTH_REALM, AUTH_REALM_DEFAULT))
+                .realm(keycloakConfiguration.get(AUTH_REALM, AuthenticationConfigurationBuilder.DEFAULT_REALM))
                 .saslMechanism(keycloakConfiguration.get(SASL_MECHANISM, SASL_MECHANISM_DEFAULT));
     }
 
@@ -335,7 +335,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
                 .helpText("Specifies the Infinispan server realm to be used for authentication.")
                 .label("realm")
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue(AUTH_REALM_DEFAULT)
+                .defaultValue(AuthenticationConfigurationBuilder.DEFAULT_REALM)
                 .add();
         builder.property()
                 .name(SASL_MECHANISM)

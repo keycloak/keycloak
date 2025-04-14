@@ -226,20 +226,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     protected RemoteCacheManager createRemoteCacheManager(KeycloakSession session) {
-        var maybeConfig = session.getProvider(CacheRemoteConfigProvider.class).configuration();
-        if (maybeConfig.isEmpty()) {
+        var remoteConfig = session.getProvider(CacheRemoteConfigProvider.class).configuration();
+        if (remoteConfig.isEmpty()) {
             logger.debug("Remote Cache feature is disabled");
             return null;
         }
         logger.debug("Remote Cache feature is enabled");
-        var rcm = new RemoteCacheManager(maybeConfig.get());
+        var rcm = new RemoteCacheManager(remoteConfig.get());
 
         // upload the schema before trying to access the caches
-        uploadSchemaAndReindexCaches(rcm);
-        return rcm;
-    }
-
-    private static void uploadSchemaAndReindexCaches(RemoteCacheManager remoteCacheManager) {
+        // not caching the list; it is only used during startup
         var entities = List.of(
                 new KeycloakIndexSchemaUtil.IndexedEntity(RemoteUserLoginFailureProviderFactory.PROTO_ENTITY, LOGIN_FAILURE_CACHE_NAME),
                 new KeycloakIndexSchemaUtil.IndexedEntity(RemoteInfinispanAuthenticationSessionProviderFactory.PROTO_ENTITY, AUTHENTICATION_SESSIONS_CACHE_NAME),
@@ -248,7 +244,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 new KeycloakIndexSchemaUtil.IndexedEntity(UserSessionQueries.USER_SESSION, USER_SESSION_CACHE_NAME),
                 new KeycloakIndexSchemaUtil.IndexedEntity(UserSessionQueries.USER_SESSION, OFFLINE_USER_SESSION_CACHE_NAME)
         );
-        KeycloakIndexSchemaUtil.uploadAndReindexCaches(remoteCacheManager, KeycloakModelSchema.INSTANCE, entities);
+        KeycloakIndexSchemaUtil.uploadAndReindexCaches(rcm, KeycloakModelSchema.INSTANCE, entities);
+        return rcm;
     }
 
     protected EmbeddedCacheManager initContainerManaged(EmbeddedCacheManager cacheManager) {
