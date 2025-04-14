@@ -198,6 +198,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed);
 
+    boolean hideUserAlreadyRegisteredError();
+
+    void setHideUserAlreadyRegisteredError(boolean hideUserAlreadyRegisteredError);
+
     boolean isResetPasswordAllowed();
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);

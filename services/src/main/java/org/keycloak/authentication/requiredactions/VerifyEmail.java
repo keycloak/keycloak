@@ -60,7 +60,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
-        if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
+        boolean verifyEmail = context.getRealm().isVerifyEmail();
+        boolean userEmailVerified = context.getUser().isEmailVerified();
+        boolean hideUserAlreadyRegisteredError = context.getRealm().hideUserAlreadyRegisteredError();
+
+        if (verifyEmail && userEmailVerified && hideUserAlreadyRegisteredError) {
+            context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+            logger.debug("User already exists verified. Noop VerifyEmail started");
+        }
+        if (verifyEmail && !userEmailVerified) {
             context.getUser().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
             logger.debug("User is required to verify email");
         }
@@ -79,6 +87,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
+        var hideUserAlreadyExists = true;
+        if (context.getUser().isEmailVerified() && hideUserAlreadyExists) {
+            LoginFormsProvider loginFormsProvider = context.form();
+            loginFormsProvider.setAuthenticationSession(context.getAuthenticationSession());
+            Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+            context.challenge(challenge);
+
+            return;
+        }
         if (context.getUser().isEmailVerified()) {
             context.success();
             authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);

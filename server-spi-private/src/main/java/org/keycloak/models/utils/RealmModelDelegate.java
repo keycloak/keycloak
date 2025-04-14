@@ -280,6 +280,16 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
     }
 
+    @Override
+    public boolean hideUserAlreadyRegisteredError() {
+        return delegate.hideUserAlreadyRegisteredError();
+    }
+
+    @Override
+    public void setHideUserAlreadyRegisteredError(boolean hideUserAlreadyRegisteredError) {
+        delegate.setHideUserAlreadyRegisteredError(hideUserAlreadyRegisteredError);
+    }
+
     public boolean isResetPasswordAllowed() {
         return delegate.isResetPasswordAllowed();
     }
