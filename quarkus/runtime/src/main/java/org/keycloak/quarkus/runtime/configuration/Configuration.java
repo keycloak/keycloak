@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -28,6 +29,7 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -49,6 +51,18 @@ public final class Configuration {
 
     public static boolean isTrue(Option<Boolean> option) {
         return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
+    }
+
+    public static boolean isUserModifiable(ConfigValue configValue) {
+        // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
+        // for now we won't validate these as it's not expected for the user to specify options via system properties
+        return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
+    }
+
+    public static boolean isSet(Option<?> option) {
+        return Optional.ofNullable(getKcConfigValue(option.getKey()))
+                .filter(Configuration::isUserModifiable)
+                .isPresent();
     }
 
     public static boolean isTrue(String propertyName) {

@@ -20,8 +20,6 @@ package org.keycloak.it.cli.dist;
 import java.nio.file.Paths;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -33,8 +31,6 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 @DistributionTest
@@ -45,33 +41,33 @@ public class OptionsDistTest {
     @Test
     @Order(1)
     @Launch({"build", "--db=invalid"})
-    public void failInvalidOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+    public void failInvalidOptionValue(CLIResult result) {
+        result.assertError("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @DryRun
     @Test
     @Order(2)
     @Launch({"start", "--db=dev-file", "--test=invalid"})
-    public void testServerDoesNotStartIfValidationFailDuringReAugStart(LaunchResult result) {
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
+    public void testServerDoesNotStartIfValidationFailDuringReAugStart(CLIResult result) {
+        result.assertError("Unknown option: '--test'");
     }
 
     @DryRun
     @Test
     @Order(3)
     @Launch({"start", "--db=dev-file", "--log=console", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
-    public void testServerDoesNotStartIfDisabledFileLogOption(LaunchResult result) {
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Possible solutions: --log, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-level")).count());
+    public void testServerDoesNotStartIfDisabledFileLogOption(CLIResult result) {
+        result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
+        result.assertError("--log, --log-async, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
     }
 
     @DryRun
     @Test
     @Order(4)
     @Launch({"start", "--db=dev-file", "--log=file", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
-    public void testServerStartIfEnabledFileLogOption(LaunchResult result) {
-        assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
+    public void testServerStartIfEnabledFileLogOption(CLIResult result) {
+        result.assertNoError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
     }
 
     @Test
@@ -105,42 +101,42 @@ public class OptionsDistTest {
     @Test
     @Order(7)
     @Launch({"start-dev", "--test=invalid"})
-    public void testServerDoesNotStartIfValidationFailDuringReAugStartDev(LaunchResult result) {
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
+    public void testServerDoesNotStartIfValidationFailDuringReAugStartDev(CLIResult result) {
+        result.assertError("Unknown option: '--test'");
     }
 
     @DryRun
     @Test
     @Order(8)
     @Launch({"start-dev", "--log=console", "--log-file-output=json"})
-    public void testServerDoesNotStartDevIfDisabledFileLogOption(LaunchResult result) {
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Possible solutions: --log, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-level")).count());
+    public void testServerDoesNotStartDevIfDisabledFileLogOption(CLIResult result) {
+        result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
+        result.assertError("Possible solutions: --log, --log-async, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
     }
 
     @DryRun
     @Test
     @Order(9)
     @Launch({"start-dev", "--log=file", "--log-file-output=json", "--log-console-color=true"})
-    public void testServerStartDevIfEnabledFileLogOption(LaunchResult result) {
-        assertEquals(0, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-file-output'. Available only when File log handler is activated")).count());
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Disabled option: '--log-console-color'. Available only when Console log handler is activated")).count());
-        assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Possible solutions: --log, --log-file, --log-file-level, --log-file-format, --log-file-json-format, --log-file-output, --log-level, --log-level")).count());
+    public void testServerStartDevIfEnabledFileLogOption(CLIResult result) {
+        result.assertNoError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
+        result.assertError("Disabled option: '--log-console-color'. Available only when Console log handler is activated");
+        result.assertError("Possible solutions: --log, --log-async, --log-file, --log-file-level, --log-file-format, --log-file-json-format, --log-file-output, --log-file-async, --log-level, --log-level-<category>");
     }
 
     @DryRun
     @Test
     @Order(10)
     @Launch({"start-dev", "--cache-remote-host=localhost"})
-    public void testCacheRemoteHostWithoutMultiSite(LaunchResult result) {
-        assertErrorStreamContains(result, "cache-remote-host available only when feature 'multi-site' or 'clusterless' is set");
+    public void testCacheRemoteHostWithoutMultiSite(CLIResult result) {
+        result.assertError( "cache-remote-host available only when feature 'multi-site' or 'clusterless' is set");
     }
 
     @DryRun
     @Test
     @Order(11)
     @Launch({"start-dev", "--cache-remote-port=11222"})
-    public void testCacheRemotePortWithoutCacheRemoteHost(LaunchResult result) {
+    public void testCacheRemotePortWithoutCacheRemoteHost(CLIResult result) {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-port");
     }
 
@@ -148,7 +144,7 @@ public class OptionsDistTest {
     @Test
     @Order(12)
     @Launch({"start-dev", "--cache-remote-username=user"})
-    public void testCacheRemoteUsernameWithoutCacheRemoteHost(LaunchResult result) {
+    public void testCacheRemoteUsernameWithoutCacheRemoteHost(CLIResult result) {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-username");
     }
 
@@ -156,7 +152,7 @@ public class OptionsDistTest {
     @Test
     @Order(13)
     @Launch({"start-dev", "--cache-remote-password=pass"})
-    public void testCacheRemotePasswordWithoutCacheRemoteHost(LaunchResult result) {
+    public void testCacheRemotePasswordWithoutCacheRemoteHost(CLIResult result) {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-password");
     }
 
@@ -164,7 +160,7 @@ public class OptionsDistTest {
     @Test
     @Order(14)
     @Launch({"start-dev", "--cache-remote-tls-enabled=false"})
-    public void testCacheRemoteTlsEnabledWithoutCacheRemoteHost(LaunchResult result) {
+    public void testCacheRemoteTlsEnabledWithoutCacheRemoteHost(CLIResult result) {
         assertDisabledDueToMissingRemoteHost(result, "--cache-remote-tls-enabled");
     }
 
@@ -172,31 +168,27 @@ public class OptionsDistTest {
     @Test
     @Order(15)
     @Launch({"start-dev", "--features=multi-site"})
-    public void testMultiSiteWithoutCacheRemoteHost(LaunchResult result) {
-        assertErrorStreamContains(result, "- cache-remote-host: Required when feature 'multi-site' or 'clusterless' is set.");
+    public void testMultiSiteWithoutCacheRemoteHost(CLIResult result) {
+        result.assertError("- cache-remote-host: Required when feature 'multi-site' or 'clusterless' is set.");
     }
 
     @DryRun
     @Test
     @Order(16)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-username=user"})
-    public void testCacheRemoteUsernameWithoutCacheRemotePassword(LaunchResult result) {
-        assertErrorStreamContains(result, "The option 'cache-remote-password' is required when 'cache-remote-username' is set.");
+    public void testCacheRemoteUsernameWithoutCacheRemotePassword(CLIResult result) {
+        result.assertError("The option 'cache-remote-password' is required when 'cache-remote-username' is set.");
     }
 
     @DryRun
     @Test
     @Order(17)
     @Launch({"start-dev", "--features=multi-site", "--cache-remote-host=localhost", "--cache-remote-password=secret"})
-    public void testCacheRemotePasswordWithoutCacheRemoteUsername(LaunchResult result) {
-        assertErrorStreamContains(result, "The option 'cache-remote-username' is required when 'cache-remote-password' is set.");
+    public void testCacheRemotePasswordWithoutCacheRemoteUsername(CLIResult result) {
+        result.assertError("The option 'cache-remote-username' is required when 'cache-remote-password' is set.");
     }
 
-    private static void assertDisabledDueToMissingRemoteHost(LaunchResult result, String option) {
-        assertErrorStreamContains(result, "Disabled option: '%s'. Available only when remote host is set".formatted(option));
-    }
-
-    private static void assertErrorStreamContains(LaunchResult result, String msg) {
-        assertTrue(result.getErrorStream().stream().anyMatch(s -> s.contains(msg)));
+    private static void assertDisabledDueToMissingRemoteHost(CLIResult result, String option) {
+        result.assertError("Disabled option: '%s'. Available only when remote host is set".formatted(option));
     }
 }
