@@ -20,11 +20,8 @@ package org.keycloak.models.sessions.infinispan.events;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 
@@ -51,34 +48,13 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
             T provider = session.getProvider(providerClazz);
             SE sessionEvent = (SE) event;
 
-            boolean shouldResendEvent = shouldResendEvent(session, sessionEvent);
-
             if (log.isDebugEnabled()) {
-                log.debugf("Received user session event '%s'. Should resend event: %b", sessionEvent.toString(), shouldResendEvent);
+                log.debugf("Received user session event '%s'.", sessionEvent.toString());
             }
 
             eventReceived(provider, sessionEvent);
-
-            if (shouldResendEvent) {
-                session.getProvider(ClusterProvider.class).notify(sessionEvent.getEventKey(), event, true);
-            }
-
         });
     }
 
     protected abstract void eventReceived(T provider, SE sessionEvent);
-
-
-    private boolean shouldResendEvent(KeycloakSession session, SessionClusterEvent event) {
-        if (!event.isResendingEvent()) {
-            return false;
-        }
-
-        // Just the initiator will re-send the event after receiving it
-        TopologyInfo topology = InfinispanUtil.getTopologyInfo(session);
-        String myNode = topology.getMyNodeName();
-        String mySite = topology.getMySiteName();
-        return (event.getNodeId() != null && event.getNodeId().equals(myNode) && event.getSiteId() != null && event.getSiteId().equals(mySite));
-    }
-
 }

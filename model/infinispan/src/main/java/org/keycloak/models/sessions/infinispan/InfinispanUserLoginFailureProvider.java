@@ -105,7 +105,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         log.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
         clusterEventsSenderTx.addEvent(
-                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId(), true),
+                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId()),
                 ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 

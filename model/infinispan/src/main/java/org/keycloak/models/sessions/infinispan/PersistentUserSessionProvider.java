@@ -459,7 +459,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     public void removeUserSessions(RealmModel realm) {
         // Send message to all DCs as each site might have different entries in the cache
         clusterEventsSenderTx.addEvent(
-                RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
+                RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId()),
                 ClusterProvider.DCNotify.ALL_DCS);
 
         session.getProvider(UserSessionPersisterProvider.class).removeUserSessions(realm);
@@ -508,7 +508,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     public void onRealmRemoved(RealmModel realm) {
         // Send message to all DCs, as each DC might have different entries in their site cache
         clusterEventsSenderTx.addEvent(
-                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.REALM_REMOVED_SESSION_EVENT, session, realm.getId(), true),
+                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.REALM_REMOVED_SESSION_EVENT, session, realm.getId()),
                 ClusterProvider.DCNotify.ALL_DCS);
 
         UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
