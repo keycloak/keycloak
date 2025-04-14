@@ -239,9 +239,14 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
     }
 
     private Set<String> getRoleIdsWithPermissions(String roleResourceScope, String clientResourceScope) {
-        Set<String> roleIds = this.auth.roles().getRoleIdsByScope(roleResourceScope);
-        Set<String> clientIds = this.auth.clients().getClientIdsByScope(clientResourceScope);
-        clientIds.stream().flatMap(cid -> realm.getClientById(cid).getRolesStream()).forEach(role -> roleIds.add(role.getId()));
+        Set<String> roleIds;
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && canPerformOnAllClients(clientResourceScope)) {
+            roleIds = session.clients().getClientsStream(realm).flatMap(client -> client.getRolesStream()).map(RoleModel::getId).collect(Collectors.toSet());
+        } else {
+            roleIds = this.auth.roles().getRoleIdsByScope(roleResourceScope);
+            Set<String> clientIds = this.auth.clients().getClientIdsByScope(clientResourceScope);
+            clientIds.stream().flatMap(cid -> realm.getClientById(cid).getRolesStream()).forEach(role -> roleIds.add(role.getId()));
+        }
         return roleIds;
     }
 
@@ -253,5 +258,18 @@ public class AvailableRoleMappingResource extends RoleMappingResource {
     private List<ClientRole> searchForClientRolesByExcludedIds(RealmModel realm, String search, int first, int max, Stream<String> excludedIds) {
         Stream<RoleModel> result = session.roles().searchForClientRolesStream(realm, search, excludedIds, first, max);
         return result.map(role -> RoleMapper.convertToModel(role, realm)).collect(Collectors.toList());
+    }
+
+    private boolean canPerformOnAllClients(String scope) {
+        switch (scope) {
+            case MAP_ROLES:
+                return auth.clients().canMapRoles(null);
+            case MAP_ROLES_COMPOSITE:
+                return auth.clients().canMapCompositeRoles(null);
+            case MAP_ROLES_CLIENT_SCOPE:
+                return auth.clients().canMapClientScopeRoles(null);
+            default:
+                return false;
+        }
     }
 }
