@@ -42,7 +42,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class DeleteAccount implements RequiredActionProvider, RequiredActionFactory {
 
@@ -94,7 +96,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
             .detail(Details.USERNAME, user.getUsername())
             .success();
 
-        cleanSession(context, RequiredActionContext.KcActionStatus.SUCCESS);
+        removeAuthenticationSession(context, session);
 
         context.challenge(context.form()
             .setAttribute("messageHeader", "")
@@ -184,5 +186,10 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
   @Override
   public int getMaxAuthAge() {
     return 0;
+  }
+
+  private void removeAuthenticationSession(RequiredActionContext context, KeycloakSession session) {
+    AuthenticationSessionModel authSession = context.getAuthenticationSession();
+    new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
   }
 }
