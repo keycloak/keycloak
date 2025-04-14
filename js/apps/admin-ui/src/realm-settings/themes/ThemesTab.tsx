@@ -100,8 +100,13 @@ styles=css/login.css css/theme-styles.css
       "theme-settings.json",
       JSON.stringify({
         ...styles,
-        logo: logo ? logoName : "",
-        bgimage: bgimage ? bgimageName : "",
+        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
+        bgimage: bgimage
+          ? `theme/quick-theme/common/resources/${bgimageName}`
+          : "",
+        favicon: favicon
+          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          : "",
       }),
     );
 

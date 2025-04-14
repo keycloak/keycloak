@@ -104,13 +104,15 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
     });
   };
 
-  const setupForm = (value: string = realm.attributes?.style || "{}") => {
-    const values = JSON.parse(value);
-    if (values[theme]) {
-      form.reset(values);
-    } else {
-      reset();
-    }
+  const setupForm = () => {
+    reset();
+  };
+
+  const upload = (values: ThemeRealmRepresentation) => {
+    form.setValue("bgimage", values.bgimage);
+    form.setValue("favicon", values.favicon);
+    form.setValue("logo", values.logo);
+    form.reset(values);
   };
 
   const convert = (values: Record<string, File | string>) => {
@@ -197,7 +199,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           <Button type="button" variant="link" onClick={reset}>
             {t("defaults")}
           </Button>
-        <UploadJar onUpload={setupForm} />
+          <UploadJar onUpload={upload} />
         </FixedButtonsGroup>
       </PageSection>
     </>
