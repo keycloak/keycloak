@@ -296,6 +296,10 @@ export default function FlowDetails() {
           >
             {t("editInfo")}
           </DropdownItem>,
+        ]
+      : []),
+    ...(!builtIn && !usedBy
+      ? [
           <DropdownItem
             data-testid="delete-flow"
             key="delete"
