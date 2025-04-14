@@ -26,7 +26,7 @@ import picocli.CommandLine;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractNonServerCommand extends AbstractStartCommand implements Runnable {
+public abstract class AbstractNonServerCommand extends AbstractStartCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin;
@@ -35,10 +35,8 @@ public abstract class AbstractNonServerCommand extends AbstractStartCommand impl
     HelpAllMixin helpAllMixin;
 
     @Override
-    public void run() {
-        Environment.setProfile(Environment.NON_SERVER_MODE);
-
-        super.run();
+    public String getDefaultProfile() {
+        return Environment.NON_SERVER_MODE;
     }
 
     @Override

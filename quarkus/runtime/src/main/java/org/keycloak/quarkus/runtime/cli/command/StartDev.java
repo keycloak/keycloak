@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.common.util.Environment;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -30,7 +30,7 @@ import picocli.CommandLine.Mixin;
         },
         footer = "%nDo NOT start the server using this command when deploying to production.%n%n"
                 + "Use '${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --help-all' to list all available options, including build options.")
-public final class StartDev extends AbstractStartCommand implements Runnable {
+public final class StartDev extends AbstractStartCommand {
 
     public static final String NAME = "start-dev";
 
@@ -41,8 +41,13 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
     ImportRealmMixin importRealmMixin;
 
     @Override
-    protected void doBeforeRun() {
-        Environment.forceDevProfile();
+    public String getInitProfile() {
+        return Environment.DEV_PROFILE_VALUE; // only ever dev - could be a validation instead
+    }
+
+    @Override
+    public String getDefaultProfile() {
+        return Environment.DEV_PROFILE_VALUE;
     }
 
     @Override

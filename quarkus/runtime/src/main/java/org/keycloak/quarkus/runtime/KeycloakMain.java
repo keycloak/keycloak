@@ -29,7 +29,9 @@ import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
+import io.quarkus.arc.Arc;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
@@ -38,6 +40,7 @@ import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 
@@ -54,6 +57,8 @@ public class KeycloakMain implements QuarkusApplication {
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
 
     public static final int MIN_VT_POOL_SIZE = 2;
+
+    private static AbstractNonServerCommand COMMAND;
 
     static {
         // enable Infinispan and JGroups virtual threads by default
@@ -98,12 +103,15 @@ public class KeycloakMain implements QuarkusApplication {
             picocli.usageException(e.getMessage(), e.getCause());
             return;
         }
-        
+
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
         }
 
         if (cliArgs.isEmpty()) {
+            if (Environment.isRebuildCheck()) {
+                return; // nothing to do - not currently caught by the shell scripts
+            }
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
@@ -140,7 +148,8 @@ public class KeycloakMain implements QuarkusApplication {
         return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
+    public static void start(AbstractNonServerCommand command, ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
+        COMMAND = command; // it would be nice to not do this statically - start quarkus with an instance of KeycloakMain, rather than a class for example
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
@@ -168,17 +177,19 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        int exitCode = ApplicationLifecycleManager.getExitCode();
-
+        if (COMMAND != null) {
+            QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
+            COMMAND.onStart(application);
+        }
         if (isTestLaunchMode() || isNonServerMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
-            Quarkus.asyncExit(exitCode);
+            Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
             Quarkus.waitForExit();
         }
 
-        return exitCode;
+        return ApplicationLifecycleManager.getExitCode();
     }
 
 }
