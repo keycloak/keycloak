@@ -60,7 +60,7 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
             eventReceived(provider, sessionEvent);
 
             if (shouldResendEvent) {
-                session.getProvider(ClusterProvider.class).notify(sessionEvent.getEventKey(), event, true, ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC);
+                session.getProvider(ClusterProvider.class).notify(sessionEvent.getEventKey(), event, true);
             }
 
         });

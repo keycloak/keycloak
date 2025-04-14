@@ -78,8 +78,13 @@ public interface ClusterProvider extends Provider {
      * @param event
      * @param ignoreSender if true, then sender node itself won't receive the notification
      * @param dcNotify Specify which DCs to notify. See {@link DCNotify} enum values for more info
+     * @deprecated use {@link ClusterProvider#notify(String, ClusterEvent, boolean)} instead. {@link DCNotify} is deprecated
      */
     void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify);
+
+    default void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
+        notify(taskKey, event, ignoreSender, DCNotify.ALL_DCS);
+    }
 
     /**
      * An alternative to {@link #notify(String, ClusterEvent, boolean, DCNotify)} that sends multiple events in a single
@@ -89,11 +94,17 @@ public interface ClusterProvider extends Provider {
      * given {@code taskKey}
      *
      * @see #notify(String, ClusterEvent, boolean, DCNotify)
+     * @deprecated use {@link ClusterProvider#notify(String, Collection, boolean)} instead. {@link DCNotify} is deprecated
      */
     default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
         events.forEach(event -> notify(taskKey, event, ignoreSender, dcNotify));
     }
 
+    default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
+        events.forEach(event -> notify(taskKey, event, ignoreSender, DCNotify.ALL_DCS));
+    }
+
+    @Deprecated(since = "26", forRemoval = true)
     enum DCNotify {
         /** Send message to all cluster nodes in all DCs **/
         ALL_DCS,
