@@ -18,8 +18,10 @@ package org.keycloak.testsuite.ssl;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.events.Details;
@@ -50,6 +52,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author fkiss
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
@@ -149,12 +152,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void verifyEmailWithSslEnabled() {
-        verifyEmailWithSslEnabled(false);
-    }
-
-    @Test
-    public void verifyEmailWithSslWrongCertificate() throws Exception {
+    public void test01VerifyEmailWithSslWrongCertificate() throws Exception {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
@@ -179,7 +177,17 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void verifyEmailWithSslWrongHostname() throws Exception {
+    public void test02VerifyEmailWithSslWrongCertificateAndAnyHostnamePolicy() throws Exception {
+        testingClient.testing().modifyTruststoreSpiHostnamePolicy(HostnameVerificationPolicy.ANY);
+        try {
+            test01VerifyEmailWithSslWrongCertificate();
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    public void test03erifyEmailWithSslWrongHostname() throws Exception {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
@@ -208,19 +216,24 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void verifyEmailWithSslWrongHostnameButAnyHostnamePolicy() throws Exception {
+    public void test04VerifyEmailWithSslEnabled() {
+        verifyEmailWithSslEnabled(false);
+    }
+
+    @Test
+    public void test05VerifyEmailWithSslWrongHostnameButAnyHostnamePolicy() throws Exception {
         testingClient.testing().modifyTruststoreSpiHostnamePolicy(HostnameVerificationPolicy.ANY);
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
                 .setSmtpServer("host", "localhost.localdomain")
                 .update()) {
-            verifyEmailWithSslEnabled();
+            test04VerifyEmailWithSslEnabled();
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
     }
 
     @Test
-    public void verifyEmailOpportunisticEncryptionWithAnyHostnamePolicy() throws Exception {
+    public void test06VerifyEmailOpportunisticEncryptionWithAnyHostnamePolicy() throws Exception {
         testingClient.testing().modifyTruststoreSpiHostnamePolicy(HostnameVerificationPolicy.ANY);
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
                 .setSmtpServer("host", "localhost.localdomain")
