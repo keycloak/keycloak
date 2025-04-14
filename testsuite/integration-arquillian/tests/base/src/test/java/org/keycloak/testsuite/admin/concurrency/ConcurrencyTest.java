@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -34,6 +35,8 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.model.StoreProvider;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -43,8 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-
-import org.junit.Ignore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,8 +68,13 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
     // KEYCLOAK-8141 Verify that no attribute values are duplicated, and there are no locking exceptions when adding attributes in parallell
     @Test
-    @Ignore
     public void createUserAttributes() throws Throwable {
+        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+
+        testRealm().users().userProfile().update(upConfig);
+
         AtomicInteger c = new AtomicInteger();
 
         UsersResource users = testRealm().users();
@@ -82,6 +88,7 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
         concurrentTest((threadIndex, keycloak, realm) -> {
             UserRepresentation rep = user.toRepresentation();
+            rep.setAttributes(new HashMap<>());
             rep.singleAttribute("a-" + c.getAndIncrement(), "value");
             user.update(rep);
         });
