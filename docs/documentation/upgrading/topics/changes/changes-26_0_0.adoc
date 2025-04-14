@@ -366,7 +366,7 @@ If you are using a bundler like Vite or Webpack nothing changes, you'll have the
 </script>
 ----
 
-You can also opt to use an link:https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap[import map] make the import of the library less verbose:
+You can also opt to use an link:https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/importmap[import map] make the import of the library less verbose:
 
 [source,html]
 ----
