@@ -444,6 +444,10 @@ public class IdentityProviderResource {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireViewIdentityProviders();
 
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
+
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         if (!permissions.idps().isPermissionsEnabled(identityProviderModel)) {
             return new ManagementPermissionReference();
@@ -477,6 +481,11 @@ public class IdentityProviderResource {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireManageIdentityProviders();
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
+
         permissions.idps().setPermissionsEnabled(identityProviderModel, ref.isEnabled());
         if (ref.isEnabled()) {
             return toMgmtRef(identityProviderModel, permissions);
@@ -493,6 +502,11 @@ public class IdentityProviderResource {
     @Operation(summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.")
     public boolean reloadKeys() {
         this.auth.realm().requireManageIdentityProviders();
+
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
+
         IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
     }
