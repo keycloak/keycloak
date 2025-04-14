@@ -2,6 +2,7 @@ import { KeycloakTextArea } from "../controls/keycloak-text-area/KeycloakTextAre
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
 import { fieldName, isRequiredAttribute } from "./utils";
+import { TextAreaReadOnlyVariant } from "@patternfly/react-core";
 
 export const TextAreaComponent = (props: UserProfileFieldProps) => {
   const { form, attribute } = props;
@@ -15,7 +16,9 @@ export const TextAreaComponent = (props: UserProfileFieldProps) => {
         {...form.register(fieldName(attribute.name))}
         cols={attribute.annotations?.["inputTypeCols"] as number}
         rows={attribute.annotations?.["inputTypeRows"] as number}
-        readOnly={attribute.readOnly}
+        readOnlyVariant={
+          attribute.readOnly ? TextAreaReadOnlyVariant.default : undefined
+        }
         isRequired={isRequired}
       />
     </UserProfileGroup>

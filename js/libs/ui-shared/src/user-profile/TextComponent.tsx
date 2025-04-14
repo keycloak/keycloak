@@ -1,4 +1,8 @@
-import { TextInput, TextInputTypes } from "@patternfly/react-core";
+import {
+  TextInput,
+  TextInputReadOnlyVariant,
+  TextInputTypes,
+} from "@patternfly/react-core";
 
 import { UserProfileFieldProps } from "./UserProfileFields";
 import { UserProfileGroup } from "./UserProfileGroup";
@@ -29,7 +33,9 @@ export const TextComponent = (props: UserProfileFieldProps) => {
                 ] as string,
               )
         }
-        readOnly={attribute.readOnly}
+        readOnlyVariant={
+          attribute.readOnly ? TextInputReadOnlyVariant.default : undefined
+        }
         isRequired={isRequired}
         {...form.register(fieldName(attribute.name))}
       />
