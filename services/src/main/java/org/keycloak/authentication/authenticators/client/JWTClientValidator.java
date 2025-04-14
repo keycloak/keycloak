@@ -19,6 +19,10 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -33,8 +37,15 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.Urls;
 
 /**
  * Common validation for JWT client authentication with private_key_jwt or with client_secret
@@ -245,6 +256,37 @@ public class JWTClientValidator {
             logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
             throw new RuntimeException("Token reuse detected");
         }
+    }
+
+    public void validateTokenAudience(ClientAuthenticationFlowContext context, RealmModel realm, JsonWebToken token) {
+        List<String> expectedAudiences = getExpectedAudiences(context, realm);
+        if (!token.hasAnyAudience(expectedAudiences)) {
+            throw new RuntimeException("Token audience doesn't match domain. Expected audiences are any of " + expectedAudiences
+                    + " but audience from token is '" + Arrays.asList(token.getAudience()) + "'");
+        }
+
+        if (!isAllowMultipleAudiencesForJwtClientAuthentication(context) && token.getAudience().length > 1) {
+            throw new RuntimeException("Multiple audiences not allowed in the JWT token for client authentication");
+        }
+    }
+
+    private boolean isAllowMultipleAudiencesForJwtClientAuthentication(ClientAuthenticationFlowContext context) {
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) context.getSession().getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig config = loginProtocol.getConfig();
+        return config.isAllowMultipleAudiencesForJwtClientAuthentication();
+    }
+
+    private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
+
+        String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+        String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
+        String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        expectedAudiences.add(backchannelAuthenticationUrl);
+
+        return expectedAudiences;
     }
 
     public ClientAuthenticationFlowContext getContext() {

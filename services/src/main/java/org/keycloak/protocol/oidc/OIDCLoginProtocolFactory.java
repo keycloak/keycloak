@@ -115,11 +115,21 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE = "add-req-params-max-overall-size";
     public static final String CONFIG_OIDC_REQ_PARAMS_FAIL_FAST = "add-req-params-fail-fast";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
     public void init(Config.Scope config) {
         this.providerConfig = new OIDCProviderConfig(config);
+        if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
+            logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
+                    + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
+        }
+
         initBuiltIns();
     }
 

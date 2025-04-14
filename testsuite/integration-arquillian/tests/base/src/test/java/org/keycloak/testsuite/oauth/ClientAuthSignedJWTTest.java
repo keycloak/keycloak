@@ -588,27 +588,60 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         clientRepresentation = clientResource.toRepresentation();
 
         try {
-            KeyPair keyPair = setupJwksUrl(Algorithm.PS256, clientRepresentation, clientResource);
-            PublicKey publicKey = keyPair.getPublic();
-            PrivateKey privateKey = keyPair.getPrivate();
-            JsonWebToken assertion = createRequestToken(app2.getClientId(), getRealmInfoUrl());
-
-            assertion.audience("https://as.other.org");
-
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
-            parameters
-                .add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION,
-                createSignledRequestToken(privateKey, publicKey, Algorithm.PS256, null, assertion)));
+            List<NameValuePair> parameters = createTokenWithSpecifiedAudience(clientResource, clientRepresentation, "https://as.other.org");
 
             try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
                 AccessTokenResponse response = new AccessTokenResponse(resp);
                 assertNull(response.getAccessToken());
+                assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
             }
         } finally {
             revertJwksUriSettings(clientRepresentation, clientResource);
         }
+    }
+
+    @Test
+    public void testMultipleAudiencesRejected() throws Exception {
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+
+        try {
+            List<NameValuePair> parameters = createTokenWithSpecifiedAudience(clientResource, clientRepresentation, getRealmInfoUrl(), oauth.getEndpoints().getToken());
+
+            try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
+                AccessTokenResponse response = new AccessTokenResponse(resp);
+                assertNull(response.getAccessToken());
+                assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
+            }
+        } finally {
+            revertJwksUriSettings(clientRepresentation, clientResource);
+        }
+
+    }
+
+    @Test
+    public void testMultipleAudiencesAllowed() throws Exception {
+        // TODO: The test might be removed once we remove the option of allow-multiple-audiences-for-jwt-client-authentication
+        ClientRepresentation clientRepresentation = app2;
+        ClientResource clientResource = getClient(testRealm.getRealm(), clientRepresentation.getId());
+        clientRepresentation = clientResource.toRepresentation();
+
+        allowMultipleAudiencesForClientJWTOnServer(true);
+
+        try {
+            List<NameValuePair> parameters = createTokenWithSpecifiedAudience(clientResource, clientRepresentation, getRealmInfoUrl(), "https://as.other.org");
+
+            try (CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters)) {
+                AccessTokenResponse response = new AccessTokenResponse(resp);
+                assertNotNull(response.getAccessToken());
+                assertNull(response.getError());
+            }
+        } finally {
+            revertJwksUriSettings(clientRepresentation, clientResource);
+            allowMultipleAudiencesForClientJWTOnServer(false);
+        }
+
     }
 
     @Test

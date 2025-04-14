@@ -67,6 +67,7 @@ export default function UserFederationLdapSettings() {
   );
 
   const setupForm = (component: ComponentRepresentation) => {
+    form.reset({});
     form.reset(component);
     form.setValue(
       "config.periodicChangedUsersSync",

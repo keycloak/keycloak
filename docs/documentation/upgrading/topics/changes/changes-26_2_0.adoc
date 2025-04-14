@@ -19,6 +19,26 @@ the `X-Forwarded-Port` header with the desired port.
 The required JAR for the Oracle JDBC driver that needs to be explicitly added to the distribution has changed.
 Instead of providing `ojdbc11` JAR, use `ojdbc17` JAR as stated in the https://www.keycloak.org/server/db#_installing_the_oracle_database_driver[Installing the Oracle Database driver] guide.
 
+=== JWT Client authentication aligned with the latest OIDC specification
+
+The latest draft version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect core specification] changed the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt`.
+
+Previously, the `aud` claim of a JWT client assertion was loosely defined as `The Audience SHOULD be the URL of the Authorization Server's Token Endpoint`, which did not exclude the usage of other URLs.
+
+The revised OIDC Core specification uses a stricter audience check: `The Audience value MUST be the OP's Issuer Identifier passed as a string, and not a single-element array.`.
+
+We adapted the JWT client authentication authenticators of both `private_key_jwt` and `client_secret_jwt` to allow only a single audience in the token by default. For now, the audience can be
+issuer, token endpoint, introspection endpoint or some other OAuth/OIDC endpoint, which is used by client JWT authentication. However since there is single audience allowed now, it means that it is not possible
+to use other unrelated audience values, which is to make sure that JWT token is really only useful by the {project_name} for client authentication.
+
+This strict audience check can be reverted to the previous more lenient check with a new option of OIDC login protocol SPI. It will be still allowed to use multiple audiences in JWT if server is started with the option:
+
+`--spi-login-protocol-openid-connect-allow-multiple-audiences-for-jwt-client-authentication=true`
+
+Note that this option might be removed in the future. Possibly in {project_name} 27. So it is highly recommended to update your clients to use single audience instead of using this option. It is also
+recommended that your clients use the issuer URL for the audience when sending JWT for client authentication as that is going to be compatible with the future version of OIDC specification.
+
 == Notable changes
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
@@ -123,6 +143,8 @@ Due to fundamental changes in the permission model, **automatic migration from V
   ** The *user-impersonated* user permission has been _removed_.
   ** The *configure* client permission has been _removed_. With the introduction of explicit operation scoping in V2, the distinction between manage and configure became ambiguous.
   ** The *user-impersonated* user permission has been _removed_. Instead, you can use the `impersonate-members` scope of the `Groups` resource type to allow or deny impersonation of group members.
+  ** Permissions to `manage-members` of a group do not allow a realm administrator to unassign members from groups. The reason for that is that in V1 this was allowing a member of a group to become
+     a regular realm user, and workaround permissions to create users in a realm. In the future, we will be working to provide additional scopes to allow deleting members from groups.
 * Flexible resource scoping:
   ** Unlike V1, where permissions were granted either to *a single resource* (for clients, groups, and roles) or *all resources* (for users), V2 introduces greater flexibility.
   ** Administrators can now define permissions for:

@@ -132,6 +132,10 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
             return null;
         }
 
+        if (deniedGroups.isEmpty()) {
+            return null;
+        }
+
         return cb.not(cb.exists(createUserMembershipSubquery(context, root -> root.get("groupId").in(deniedGroups))));
     }
 

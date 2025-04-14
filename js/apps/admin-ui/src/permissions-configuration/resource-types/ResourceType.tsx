@@ -96,6 +96,7 @@ export const ResourceType = ({
           })}
           defaultValue={[]}
           variant="typeaheadMulti"
+          isRequired={withEnforceAccessTo}
         />
       )}
     </>

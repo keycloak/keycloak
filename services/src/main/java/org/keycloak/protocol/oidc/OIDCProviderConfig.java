@@ -48,12 +48,26 @@ public class OIDCProviderConfig {
      */
     private final int additionalReqParamsMaxOverallSize;
 
+    /**
+     * @deprecated to be removed in Keycloak 27
+     */
+    public static final boolean DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = false;
+
+    /**
+     * Whether to allow multiple audiences for JWT client authentication
+     * @deprecated To be removed in Keycloak 27
+     */
+    private final boolean allowMultipleAudiencesForJwtClientAuthentication;
+
+
 
     public OIDCProviderConfig(Config.Scope config) {
         this.additionalReqParamsMaxNumber = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_MAX_NUMBER, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_NUMBER);
         this.additionalReqParamsMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_MAX_SIZE, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_SIZE);
         this.additionalReqParamsMaxOverallSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_MAX_OVERALL_SIZE, DEFAULT_ADDITIONAL_REQ_PARAMS_MAX_OVERALL_SIZE);
         this.additionalReqParamsFailFast = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_FAIL_FAST, DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST);
+
+        this.allowMultipleAudiencesForJwtClientAuthentication = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION);
     }
 
     public int getAdditionalReqParamsMaxNumber() {
@@ -70,5 +84,9 @@ public class OIDCProviderConfig {
 
     public int getAdditionalReqParamsMaxOverallSize() {
         return additionalReqParamsMaxOverallSize;
+    }
+
+    public boolean isAllowMultipleAudiencesForJwtClientAuthentication() {
+        return allowMultipleAudiencesForJwtClientAuthentication;
     }
 }

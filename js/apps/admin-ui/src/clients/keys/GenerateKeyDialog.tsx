@@ -96,10 +96,12 @@ export const KeyForm = ({
             render={({ field }) => (
               <FileUpload
                 id="importFile"
+                type="text"
                 value={field.value}
+                hideDefaultPreview
                 filename={filename}
                 browseButtonText={t("browse")}
-                onTextChange={(value) => {
+                onDataChange={(_, value) => {
                   field.onChange(value);
                 }}
                 onFileInputChange={(_, file) => setFilename(file.name)}
