@@ -80,6 +80,7 @@ public interface ClusterProvider extends Provider {
      * @param dcNotify Specify which DCs to notify. See {@link DCNotify} enum values for more info
      * @deprecated use {@link ClusterProvider#notify(String, ClusterEvent, boolean)} instead. {@link DCNotify} is deprecated
      */
+    @Deprecated(since = "26", forRemoval = true)
     void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify);
 
     default void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
@@ -96,6 +97,7 @@ public interface ClusterProvider extends Provider {
      * @see #notify(String, ClusterEvent, boolean, DCNotify)
      * @deprecated use {@link ClusterProvider#notify(String, Collection, boolean)} instead. {@link DCNotify} is deprecated
      */
+    @Deprecated(since = "26", forRemoval = true)
     default void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
         events.forEach(event -> notify(taskKey, event, ignoreSender, dcNotify));
     }
@@ -104,6 +106,10 @@ public interface ClusterProvider extends Provider {
         events.forEach(event -> notify(taskKey, event, ignoreSender, DCNotify.ALL_DCS));
     }
 
+    /**
+     * This is now used only in deprecated methods.
+     * All methods that are using this enum have a Javadoc suggesting alternative.
+     */
     @Deprecated(since = "26", forRemoval = true)
     enum DCNotify {
         /** Send message to all cluster nodes in all DCs **/
