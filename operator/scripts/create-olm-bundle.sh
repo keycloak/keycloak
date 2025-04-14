@@ -69,6 +69,12 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.metadata.labels.name =
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
 
+# Add image references (both operator and operand) allowing offline (airgap installs) on OpenShift
+# See https://docs.openshift.com/container-platform/4.12/operators/admin/olm-restricted-networks.html#olm-mirror-catalog_olm-restricted-networks
+KEYCLOAK_IMAGE=`yq eval  '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env.[] | select(.name == "OPERATOR_KEYCLOAK_IMAGE") | .value' "$CSV_PATH"`
+yq ea -i ".spec.relatedImages += [{\"image\":\"$OPERATOR_DOCKER_IMAGE:$VERSION\", \"name\":\"OPERATOR_IMAGE\"}]" "$CSV_PATH"
+yq ea -i ".spec.relatedImages += [{\"image\":\"$KEYCLOAK_IMAGE\", \"name\":\"KEYCLOAK_IMAGE\"}]" "$CSV_PATH"
+
 { set +x; } 2>/dev/null
 echo ""
 echo "Created OLM bundle ok!"
