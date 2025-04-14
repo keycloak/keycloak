@@ -174,6 +174,7 @@ public class UpdateTest extends BaseOperatorTest {
     @Test
     public void testExplicitStrategy() throws InterruptedException {
         var kc = createInitialDeployment(UpdateStrategy.EXPLICIT);
+        disableProbes(kc);
 
         var updateCondition = assertUnknownUpdateTypeStatus(kc);
         deployKeycloak(k8sclient, kc, true);
