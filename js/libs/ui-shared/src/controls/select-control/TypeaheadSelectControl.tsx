@@ -79,6 +79,17 @@ export const TypeaheadSelectControl = <
     [focusedItemIndex, filteredOptions],
   );
 
+  const updateValue = (
+    option: string | string[],
+    field: ControllerRenderProps<FieldValues, string>,
+  ) => {
+    if (field.value.includes(option)) {
+      field.onChange(field.value.filter((item: string) => item !== option));
+    } else {
+      field.onChange([...field.value, option]);
+    }
+  };
+
   const onInputKeyDown = (
     event: React.KeyboardEvent<HTMLDivElement>,
     field: ControllerRenderProps<FieldValues, string>,
@@ -96,11 +107,8 @@ export const TypeaheadSelectControl = <
           setFilterValue("");
         }
 
-        field.onChange(
-          Array.isArray(field.value)
-            ? [...field.value, key(focusedItem)]
-            : key(focusedItem),
-        );
+        updateValue(key(focusedItem), field);
+
         setOpen(false);
         setFocusedItemIndex(0);
 
@@ -263,13 +271,8 @@ export const TypeaheadSelectControl = <
               event?.stopPropagation();
               const option = v?.toString();
               if (isTypeaheadMulti && Array.isArray(field.value)) {
-                if (field.value.includes(option)) {
-                  field.onChange(
-                    field.value.filter((item: string) => item !== option),
-                  );
-                } else {
-                  field.onChange([...field.value, option]);
-                }
+                setFilterValue("");
+                updateValue(option || "", field);
               } else {
                 field.onChange(Array.isArray(field.value) ? [option] : option);
                 setOpen(false);
