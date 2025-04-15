@@ -454,8 +454,4 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     private ScopePermissionRepresentation createAllUserPermission(UserPolicyRepresentation policy, Set<String> scopes) {
         return createAllPermission(client, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, scopes);
     }
-
-    private ScopePermissionRepresentation createGroupPermission(GroupRepresentation group, Set<String> scopes, UserPolicyRepresentation... policies) {
-        return createPermission(client, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, scopes, policies);
-    }
 }
