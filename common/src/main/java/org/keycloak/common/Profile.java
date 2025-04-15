@@ -93,7 +93,7 @@ public class Profile {
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
-        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        RECOVERY_CODES("Recovery codes", Type.DEFAULT),
 
         UPDATE_EMAIL("Update Email Action", Type.PREVIEW),
 

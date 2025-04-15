@@ -93,7 +93,6 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
 import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
 /**
@@ -101,7 +100,6 @@ import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialT
  *
  * @author <a href="mailto:sebastian.zoescher@prime-sign.com">Sebastian Zoescher</a>
  */
-@EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
     private final static String FLOW_ALIAS = "browser -  Level of Authentication FLow";
