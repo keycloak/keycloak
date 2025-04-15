@@ -62,6 +62,7 @@ public class ApplianceBootstrap {
 
     public boolean isNoMasterUser() {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
+        session.getContext().setRealm(realm);
         return session.users().getUsersCount(realm) == 0;
     }
 
