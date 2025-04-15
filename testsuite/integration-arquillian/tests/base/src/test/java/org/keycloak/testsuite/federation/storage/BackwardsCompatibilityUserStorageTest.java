@@ -45,7 +45,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
@@ -71,7 +70,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
 import static org.wildfly.common.Assert.assertTrue;
 
 /**
@@ -79,7 +77,6 @@ import static org.wildfly.common.Assert.assertTrue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeycloakTest {
 
     private static final String BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES = "Browser with Recovery Authentication Codes";

@@ -6,10 +6,6 @@ The Recovery Codes are a number of sequential one-time passwords (currently 12) 
 
 Due to its nature, the Recovery Codes work normally as a backup for another 2FA methods. They can complement the `OTP Form` or the `WebAuthn Authenticator` to give a backing way to log inside {project_name}, for example, if the software or hardware device used for the previous 2FA methods is broken or unavailable.
 
-:tech_feature_name: RecoveryCodes
-:tech_feature_id: recovery-codes
-include::../templates/techpreview.adoc[]
-
 ==== Enable Recovery Codes required action
 
 Check the Recovery Codes action is enabled in {project_name}:
