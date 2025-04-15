@@ -45,7 +45,7 @@ export const SingleSelectControl = <
 
   return (
     <FormLabel
-      name={name}
+      name={id || name}
       label={label}
       isRequired={required}
       error={get(errors, name)}
@@ -74,7 +74,7 @@ export const SingleSelectControl = <
             }
             toggle={(ref) => (
               <MenuToggle
-                id={id || name.slice(name.lastIndexOf(".") + 1)}
+                id={id || name}
                 ref={ref}
                 onClick={() => setOpen(!open)}
                 isExpanded={open}
