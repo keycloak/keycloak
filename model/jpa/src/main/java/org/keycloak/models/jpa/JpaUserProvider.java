@@ -727,13 +727,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, String search, Boolean exact, Integer first, Integer max) {
-        TypedQuery<UserEntity> query;
         if (StringUtil.isBlank(search)) {
             return getGroupMembersStream(realm, group, first, max);
         }
-
-        // select g.user from UserGroupMembershipEntity g where g.groupId = :groupId and " +
-        //                "(g.user.username = :search or g.user.email = :search or g.user.firstName = :search or g.user.lastName = :search) order by g.user.username
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
