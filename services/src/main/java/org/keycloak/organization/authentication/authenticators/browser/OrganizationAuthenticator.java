@@ -19,6 +19,7 @@ package org.keycloak.organization.authentication.authenticators.browser;
 
 import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
 import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
@@ -33,7 +34,6 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
@@ -51,8 +51,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareAuthenticationContextBean;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
@@ -280,9 +280,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return null;
         }
 
-        UserProvider users = session.users();
         RealmModel realm = session.getContext().getRealm();
-        UserModel user = Optional.ofNullable(users.getUserByEmail(realm, username)).orElseGet(() -> users.getUserByUsername(realm, username));
+        UserModel user = findUserByNameOrEmail(session, realm, username);
 
         // make sure the organization will be resolved based on the username provided
         clearAuthenticationSession(context);
