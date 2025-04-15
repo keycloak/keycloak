@@ -35,7 +35,7 @@ This "dropper" tool can be used to select your background color to match a color
 image::images/easy-theme-find-color.png[alt="Find a color with the dropper tool", title="Find a color with the dropper tool"]
 ====
 
-When your new theme is complete, press the `Download theme JAR` button to download a theme JAR that is ready for deployment.
+When your new theme is complete, click *Download theme JAR* to download a theme JAR that is ready for deployment.
 
 === Deploying your theme
 Once you have downloaded your theme's archive jar, it's time to deploy and try it out. To deploy the archive to {project_name}, add it to the `providers/` directory of {project_name} and restart the server if it is already running.
