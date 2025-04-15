@@ -123,8 +123,7 @@ A language that misses that goal will be removed from Weblate, and translations 
 3. When notified that translation changes have been merged in a PR, review the translations that originated either from the community of from a co-maintainer of the language in that pull request, and issue any necessary updates via Weblate.
 
 > [!TIP]
-> We recommend language maintainers to set up notifications in Weblate to receive email notifications of outstanding
-> tasks.
+> We recommend language maintainers to set up notifications in Weblate to receive email notifications of outstanding tasks.
 
 All language maintainers are set up in Weblate as reviewers for their language according to Weblate's "Dedicated Reviewers" process.
 
