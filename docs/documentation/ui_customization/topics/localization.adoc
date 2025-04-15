@@ -80,7 +80,7 @@ Previous versions of {project_name} had support for specifying the encoding in t
 
 You also have the option to declare translations that take effect for an entire realm.  You specify key/value pairs in the realm settings.  Any key specified in this way overrides the key/value pairs deployed with a theme.
 
-CAUTION: Using realm overrides is not the typical way to do localization in {project_name}.  Consider carefully if you want every theme in your realm to use these key/value pairs.
+CAUTION: Using realm overrides is not the recommended way to achieve localization in {project_name}.  Consider carefully if you want every theme in your realm to use key/value pairs.
 
 .Procedure to add a realm override
 
