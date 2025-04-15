@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.dataconversion.MediaType;
@@ -131,16 +130,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         lock.lock();
         try {
             task.run();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public static <T> T runWithReadLockOnCacheManager(Supplier<T> task) {
-        Lock lock = DefaultInfinispanConnectionProviderFactory.READ_WRITE_LOCK.readLock();
-        lock.lock();
-        try {
-            return task.get();
         } finally {
             lock.unlock();
         }
