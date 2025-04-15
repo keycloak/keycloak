@@ -100,7 +100,7 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated For removal in Keycloak 27
      */
     @Deprecated(since = "26.3", forRemoval = true)
-    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {};
+    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {}
 
     default void migrate(String modelVersion) {
     }
