@@ -258,7 +258,9 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private void updateUser(UserResource user, UserRepresentation userRep) {
-        user.update(userRep);
+        try (Response response = user.update(userRep)) {
+            // handling auto closable Response object
+        }
         List<CredentialRepresentation> credentials = userRep.getCredentials();
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), StripSecretsUtils.stripSecrets(null, userRep), ResourceType.USER);
         userRep.setCredentials(credentials);
@@ -1750,36 +1752,46 @@ public class UserTest extends AbstractAdminTest {
         String user1Id = createUser(user1);
         user1 = realm.users().get(user1Id).toRepresentation();
 
+        user1.singleAttribute("usercertificate", "foo");
+        user1.singleAttribute("saml.persistent.name.id.for.foo", "bar");
+        user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
+
         // Update of the user should be rejected due adding the "denied" attribute LDAP_ID
-        try {
-            user1.singleAttribute("usercertificate", "foo");
-            user1.singleAttribute("saml.persistent.name.id.for.foo", "bar");
-            user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
-            updateUser(realm.users().get(user1Id), user1);
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = realm.users().get(user1Id).update(user1)){
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException expected) {
             // Expected
             assertAdminEvents.assertEmpty();
-            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("updateReadOnlyAttributesRejectedMessage", error.getErrorMessage());
         }
 
+        user1.getAttributes().remove(LDAPConstants.LDAP_ID);
+        user1.singleAttribute("LDap_Id", "baz");
+
         // The same test as before, but with the case-sensitivity used
-        try {
-            user1.getAttributes().remove(LDAPConstants.LDAP_ID);
-            user1.singleAttribute("LDap_Id", "baz");
-            updateUser(realm.users().get(user1Id), user1);
+        try (Response response = realm.users().get(user1Id).update(user1)) {
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException bre) {
             // Expected
             assertAdminEvents.assertEmpty();
         }
 
+        user1.getAttributes().remove("LDap_Id");
+        user1.singleAttribute("deniedSomeAdmin", "baz");
+
         // Attribute "deniedSomeAdmin" was denied for administrator
-        try {
-            user1.getAttributes().remove("LDap_Id");
-            user1.singleAttribute("deniedSomeAdmin", "baz");
-            updateUser(realm.users().get(user1Id), user1);
+        try (Response response = realm.users().get(user1Id).update(user1)) {
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException bre) {
             // Expected
@@ -2665,13 +2677,17 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation rep = new UserRepresentation();
         rep.setFirstName("Firstname");
 
-        user.update(rep);
+        try (Response response = user.update(rep)) {
+            // handling auto closable Response object
+        }
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
 
         rep = new UserRepresentation();
         rep.setLastName("Lastname");
 
-        user.update(rep);
+        try (Response response = user.update(rep)) {
+            // handling auto closable Response object
+        }
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
 
         rep = realm.users().get(id).toRepresentation();
@@ -2733,14 +2749,16 @@ public class UserTest extends AbstractAdminTest {
         assertNotNull(userRep);
         userRep.setEmail("user2@localhost");
 
-        try {
-            updateUser(user, userRep);
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = user.update(userRep)) {
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 409) {
+                throw new ClientErrorException(response);
+            }
             fail("Expected failure - Email conflict");
         } catch (ClientErrorException e) {
             assertNotNull(e.getResponse());
             assertThat(e.getResponse().getStatus(), is(409));
-
-            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("User exists with same email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
@@ -2786,11 +2804,14 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation userRep = user.toRepresentation();
         userRep.setUsername("user11");
 
-        try {
-            updateUser(user, userRep);
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = user.update(userRep)) {
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             fail("Should fail because realm does not allow edit username");
         } catch (BadRequestException expected) {
-            ErrorRepresentation error = expected.getResponse().readEntity(ErrorRepresentation.class);
             assertEquals("error-user-attribute-read-only", error.getErrorMessage());
         }
 
@@ -2829,16 +2850,17 @@ public class UserTest extends AbstractAdminTest {
         userRep.setUsername("user2");
 
         String createdId = createUser(userRep);
+        UserResource user = realm.users().get(createdId);
+        userRep = user.toRepresentation();
+        userRep.setUsername("user1");
 
-        try {
-            UserResource user = realm.users().get(createdId);
-            userRep = user.toRepresentation();
-            userRep.setUsername("user1");
-            user.update(userRep);
+        try (Response response = user.update(userRep)) {
+            if (response.getStatus() == 409) {
+                throw new ClientErrorException(response);
+            }
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(409, e.getResponse().getStatus());
-
             assertAdminEvents.assertEmpty();
         } finally {
             enableBruteForce(false);

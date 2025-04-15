@@ -310,32 +310,37 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
         try {
             // Attempt to disable user should fail
-            try {
-                johnRep.setFirstName("John2");
-                johnRep.setLastName("Doe2");
-                johnRep.setEnabled(false);
-
-                john.update(johnRep);
+            johnRep.setFirstName("John2");
+            johnRep.setLastName("Doe2");
+            johnRep.setEnabled(false);
+            try (Response response = john.update(johnRep)){
+                if (response.getStatus() == 400) {
+                    throw new BadRequestException(response);
+                }
                 Assert.fail("Not supposed to successfully update 'enabled' state of the user");
             } catch (BadRequestException bre) {
                 // Expected
             }
 
             // Attempt to set requiredAction to the user should fail
-            try {
-                johnRep = john.toRepresentation();
-                johnRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
-                john.update(johnRep);
+            johnRep = john.toRepresentation();
+            johnRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
+            try (Response response = john.update(johnRep)){
+                if (response.getStatus() == 400) {
+                    throw new BadRequestException(response);
+                }
                 Assert.fail("Not supposed to successfully add requiredAction to the user");
             } catch (BadRequestException bre) {
                 // Expected
             }
 
             // Attempt to add some new attribute should fail
-            try {
-                johnRep = john.toRepresentation();
-                johnRep.singleAttribute("foo", "bar");
-                john.update(johnRep);
+            johnRep = john.toRepresentation();
+            johnRep.singleAttribute("foo", "bar");
+            try (Response response = john.update(johnRep)){
+                if (response.getStatus() == 400) {
+                    throw new BadRequestException(response);
+                }
                 Assert.fail("Not supposed to successfully add attribute to the user");
             } catch (BadRequestException bre) {
                 // Expected
@@ -346,7 +351,9 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             johnRep.setFirstName("John2");
             johnRep.setLastName("Doe2");
             johnRep.singleAttribute("postal_code", "654321");
-            john.update(johnRep);
+            try (Response response = john.update(johnRep)) {
+                // handling auto closable Response object
+            }
 
             johnRep = john.toRepresentation();
             Assert.assertEquals("John2", johnRep.getFirstName());
@@ -358,7 +365,9 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             johnRep.setFirstName(firstNameOrig);
             johnRep.setLastName(lastNameOrig);
             johnRep.singleAttribute("postal_code", postalCodeOrig);
-            john.update(johnRep);
+            try (Response response = john.update(johnRep)) {
+                // handling auto closable Response object
+            }
             Assert.assertEquals(firstNameOrig, johnRep.getFirstName());
             Assert.assertEquals(lastNameOrig, johnRep.getLastName());
             Assert.assertEquals(emailOrig, johnRep.getEmail());
@@ -370,13 +379,17 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     public void testCannotUpdateReadOnlyUserImportDisabled() {
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
-        try {
-            UserRepresentation rep = user.toRepresentation();
-            rep.setRequiredActions(List.of(RequiredAction.VERIFY_EMAIL.name()));
-            user.update(rep);
+        UserRepresentation rep = user.toRepresentation();
+        rep.setRequiredActions(List.of(RequiredAction.VERIFY_EMAIL.name()));
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = user.update(rep)){
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             fail("Should fail as the user is read-only");
         } catch (BadRequestException bde) {
-            Assert.assertEquals("The user is read-only. Not possible to write 'required action VERIFY_EMAIL' when updating user 'johnkeycloak'.", bde.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
+            Assert.assertEquals("The user is read-only. Not possible to write 'required action VERIFY_EMAIL' when updating user 'johnkeycloak'.", error.getErrorMessage());
         }
     }
 

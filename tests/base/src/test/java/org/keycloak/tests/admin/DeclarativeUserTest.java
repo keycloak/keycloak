@@ -155,7 +155,9 @@ public class DeclarativeUserTest {
         user1.setAttributes(null);
 
         // do not validate REQUIRED_ATTR_KEY because the attribute list is not provided and the user has the attribute
-        userResource.update(user1);
+        try (Response response = userResource.update(user1)) {
+            // handling auto closable Response object
+        }
         user1 = userResource.toRepresentation();
         Assertions.assertEquals("changed", user1.getFirstName());
 
@@ -164,18 +166,17 @@ public class DeclarativeUserTest {
         verifyUserUpdateFails(managedRealm.admin().users(), user1Id, user1, expectedErrorMessage);
     }
 
-    private void verifyUserUpdateFails(UsersResource usersResource, String userId, UserRepresentation user,
-            String expectedErrorMessage) {
+    private void verifyUserUpdateFails(UsersResource usersResource, String userId, UserRepresentation user, String expectedErrorMessage) {
         UserResource userResource = usersResource.get(userId);
-        try {
-            userResource.update(user);
+        ErrorRepresentation error = new ErrorRepresentation();
+        try (Response response = userResource.update(user)) {
+            error = response.readEntity(ErrorRepresentation.class);
+            if (response.getStatus() == 400) {
+                throw new BadRequestException();
+            }
             Assertions.fail("Should fail with errorMessage: " + expectedErrorMessage);
         } catch (BadRequestException badRequest) {
-            try (Response response = badRequest.getResponse()) {
-                assertThat(response.getStatus(), equalTo(400));
-                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-                assertThat(error.getErrorMessage(), equalTo(expectedErrorMessage));
-            }
+            assertThat(error.getErrorMessage(), equalTo(expectedErrorMessage));
         }
     }
 

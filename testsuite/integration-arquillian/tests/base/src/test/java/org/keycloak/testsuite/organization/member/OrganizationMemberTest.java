@@ -220,8 +220,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(disabledUser, notNullValue());
         // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
         disabledUser.setEnabled(true);
-        try {
-            testRealm().users().get(disabledUser.getId()).update(disabledUser);
+        try (Response response = testRealm().users().get(disabledUser.getId()).update(disabledUser)){
+            if (response.getStatus() == 400) {
+                throw new BadRequestException(response);
+            }
             fail("Should not be possible to update disabled org user");
         } catch(BadRequestException ignored) {
         }
@@ -258,8 +260,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
                     // try to update the disabled user (for example, try to re-enable the user) - should not be possible.
                     user.setEnabled(Boolean.TRUE);
-                    try {
-                        testRealm().users().get(user.getId()).update(user);
+                    try (Response response = testRealm().users().get(user.getId()).update(user)){
+                        if (response.getStatus() == 400) {
+                            throw new BadRequestException(response);
+                        }
                         fail("Should not be possible to update disabled org user");
                     } catch(BadRequestException expected) {}
                 } else {
