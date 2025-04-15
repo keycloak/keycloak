@@ -94,17 +94,13 @@ out to the language maintainers listed below:
 
 * German: [Robin Meese](https://github.com/robson90) && [Alexander Schwartz](https://github.com/ahus1)
 * Dutch: [Jon Koops](https://github.com/jonkoops) && [janher](https://github.com/janher)
-*
-
-Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro) && [tnorimat](https://github.com/tnorimat)
-
+* Japanese: [y-tabata](https://github.com/y-tabata) && [wadahiro](https://github.com/wadahiro) && [tnorimat](https://github.com/tnorimat)
 * Catalan: [jmallach](https://github.com/jmallach) && [Ecron](https://github.com/Ecron)
 * Spanish: [herver1971](https://github.com/herver1971) && [anthieni](https://github.com/anthieni)
 * Slovenian: [mathmul](https://github.com/mathmul) && [SaraPristovnik](https://github.com/SaraPristovnik)
 * Italian: [GioviQ](https://github.com/GioviQ) && [EdoardoTona](https://github.com/EdoardoTona)
 * Romanian: [edwint88](https://github.com/edwint88) && [liviuroman](https://github.com/liviuroman)
-* Portuguese (
-  Brasil): [rafaelrddc](https://github.com/rafaelrddc) && [felipebz](https://github.com/felipebz) && [julianorodrigox](https://github.com/julianorodrigox)
+* Portuguese (Brasil): [rafaelrddc](https://github.com/rafaelrddc) && [felipebz](https://github.com/felipebz) && [julianorodrigox](https://github.com/julianorodrigox)
 * French: [jmorille](https://github.com/jmorille) && [blackholegalaxy](https://github.com/blackholegalaxy)
 
 To add a new language, see the section "Steps to Add a new language to Weblate" below.
