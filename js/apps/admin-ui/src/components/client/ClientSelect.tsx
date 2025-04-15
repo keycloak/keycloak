@@ -2,6 +2,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import {
   SelectControl,
+  SelectControlOption,
   SelectVariant,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
@@ -11,6 +12,7 @@ import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../dynamic/components";
 import { PermissionsConfigurationTabsParams } from "../../permissions-configuration/routes/PermissionsConfigurationTabs";
 import { useParams } from "react-router-dom";
+import { useFormContext, useWatch } from "react-hook-form";
 
 type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
@@ -35,8 +37,17 @@ export const ClientSelect = ({
   const { t } = useTranslation();
 
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
+  const [selectedClients, setSelectedClients] =
+    useState<SelectControlOption[]>();
   const [search, setSearch] = useState("");
   const { tab } = useParams<PermissionsConfigurationTabsParams>();
+
+  const { control } = useFormContext();
+  const value = useWatch({
+    control,
+    name: name!,
+    defaultValue: defaultValue || "",
+  });
 
   useFetch(
     () => {
@@ -51,6 +62,30 @@ export const ClientSelect = ({
     },
     (clients) => setClients(clients),
     [search],
+  );
+
+  useFetch(
+    () => {
+      const values = ((value as string[]) || []).map(async (clientId) => {
+        if (clientKey === "clientId") {
+          return (await adminClient.clients.find({ clientId }))[0];
+        } else {
+          return adminClient.clients.findOne({ id: clientId });
+        }
+      });
+      return Promise.all(values);
+    },
+    (clients) => {
+      setSelectedClients(
+        clients
+          .filter((client) => !!client)
+          .map((client) => ({
+            key: client[clientKey] as string,
+            value: client.clientId!,
+          })),
+      );
+    },
+    [],
   );
 
   return (
@@ -70,6 +105,7 @@ export const ClientSelect = ({
       onFilter={(value) => setSearch(value)}
       variant={variant}
       isDisabled={isDisabled}
+      selectedOptions={selectedClients}
       options={clients.map((client) => ({
         key: client[clientKey] as string,
         value: client.clientId!,

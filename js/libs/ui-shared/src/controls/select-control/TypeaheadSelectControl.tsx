@@ -43,6 +43,7 @@ export const TypeaheadSelectControl = <
   name,
   label,
   options,
+  selectedOptions = [],
   controller,
   labelIcon,
   placeholderText,
@@ -57,6 +58,9 @@ export const TypeaheadSelectControl = <
   const [open, setOpen] = useState(false);
   const [filterValue, setFilterValue] = useState("");
   const [focusedItemIndex, setFocusedItemIndex] = useState<number>(0);
+  const [selectedOptionsState, setSelectedOptions] = useState<
+    SelectControlOption[]
+  >([]);
   const textInputRef = useRef<HTMLInputElement>();
   const required = getRuleValue(controller.rules?.required) === true;
   const isTypeaheadMulti = variant === SelectVariant.typeaheadMulti;
@@ -85,8 +89,19 @@ export const TypeaheadSelectControl = <
   ) => {
     if (field.value.includes(option)) {
       field.onChange(field.value.filter((item: string) => item !== option));
+      if (isSelectBasedOptions(options)) {
+        setSelectedOptions(
+          selectedOptionsState.filter((item) => item.key !== option),
+        );
+      }
     } else {
       field.onChange([...field.value, option]);
+      if (isSelectBasedOptions(options)) {
+        setSelectedOptions([
+          ...selectedOptionsState,
+          options.find((o) => o.key === option)!,
+        ]);
+      }
     }
   };
 
@@ -240,8 +255,11 @@ export const TypeaheadSelectControl = <
                                 }}
                               >
                                 {isSelectBasedOptions(options)
-                                  ? options.find((o) => selection === o.key)
-                                      ?.value
+                                  ? [
+                                      ...options,
+                                      ...selectedOptionsState,
+                                      ...selectedOptions,
+                                    ].find((o) => selection === o.key)?.value
                                   : getValue(selection)}
                               </Chip>
                             ),
