@@ -22,11 +22,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
-import org.infinispan.commons.api.BasicCache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
@@ -121,14 +119,6 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
                 logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
                 return existingClusterStartTime;
             }
-        }
-    }
-
-    static <V> V putIfAbsent(BasicCache<String, Object> workCache, String key, V value, int taskTimeoutInSeconds) {
-        if (taskTimeoutInSeconds > 0) {
-            return (V) workCache.putIfAbsent(key, value, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
-        } else {
-            return (V) workCache.putIfAbsent(key, value);
         }
     }
 
