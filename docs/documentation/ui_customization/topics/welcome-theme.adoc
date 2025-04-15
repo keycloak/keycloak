@@ -5,7 +5,7 @@ The welcome theme is the web page that is served when you request the default pa
 
 By default, the welcome theme is only used to create the initial temporary admin user.  Once that user is created, whenever users navigate to the welcome theme, they are redirected to the Admin Console.  However, this behavior can be changed and the welcome theme can be completely customized or replaced.
 
-Since the welcome theme is not associated with a realm, it can not be selected in the admin console like other themes.
+Since the welcome theme is not associated with a realm, it cannot be selected in the admin console like other themes.
 
 To change the welcome theme, simply create and deploy a new welcome theme as discussed in <<_creating-a-theme,Creating a theme>>.  Then, start the keycloak server using the `spi-theme-welcom-theme` option.
 [source,bash]
