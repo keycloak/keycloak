@@ -107,8 +107,7 @@ public class InfinispanNotificationsManager {
             logger.tracef("Sending event with key %s: %s", eventKey, events);
         }
 
-        // Just put it to workCache, but skip notifying remoteCache
-        workCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_CACHE_STORE)
+        workCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                 .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
     }
 
