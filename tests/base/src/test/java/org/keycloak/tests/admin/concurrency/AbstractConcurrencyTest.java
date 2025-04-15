@@ -41,7 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */

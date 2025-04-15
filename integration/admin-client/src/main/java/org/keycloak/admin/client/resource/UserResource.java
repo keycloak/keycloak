@@ -52,7 +52,7 @@ public interface UserResource {
     UserRepresentation toRepresentation(@QueryParam("userProfileMetadata") boolean userProfileMetadata);
 
     @PUT
-    void update(UserRepresentation userRepresentation);
+    Response update(UserRepresentation userRepresentation);
 
     @DELETE
     void remove();
