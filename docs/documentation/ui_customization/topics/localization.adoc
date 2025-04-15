@@ -34,7 +34,7 @@ Texts of these message bundles can be overwritten by realm-specific values, whic
 . Create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme.
 
 . Add this file to the `locales` property in `<THEME TYPE>/theme.properties`.
-For a language to be available to users the realms `login`, `account` and `email`, the theme has to support the language, so you need to add your language for those theme types.
+For a language to be available to users in a realm, the login, account, and email theme types must support the language, so you need to add your language for those theme types.
 +
 For example, to add Norwegian translations to the `mytheme` theme, create the file `themes/mytheme/login/messages/messages_no.properties` with the
 following content:
