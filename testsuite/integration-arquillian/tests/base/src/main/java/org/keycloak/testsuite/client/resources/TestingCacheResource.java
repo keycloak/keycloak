@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.testsuite.rest.representation.RemoteCacheStats;
 import org.keycloak.utils.MediaType;
 
 import jakarta.ws.rs.Consumes;

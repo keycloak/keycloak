@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;

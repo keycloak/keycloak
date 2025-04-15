@@ -51,8 +51,6 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.HttpClientUtils;
-import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
@@ -68,7 +66,6 @@ import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
