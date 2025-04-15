@@ -74,7 +74,7 @@ Previous versions of {project_name} had support for specifying the encoding in t
 
 [role="_additional-resources"]
 .Additional resources
-* See <<_locale_selector,Locale Selector>> for details on how the current locale is selected.
+* For details on how the current locale is selected, see <<_locale_selector,Locale Selector>>.
 
 === Overriding localized text for an entire realm
 
