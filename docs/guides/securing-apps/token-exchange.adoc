@@ -54,7 +54,7 @@ Many other use-cases exist for token exchange, but the preceding example is the 
 
 ==== Example token exchange request
 
-The folowing is an example token exchange request of the client `requester-client` in the realm `test`. Note that `subject_token` is the access token issued to the `initial-client`:
+The following is an example token exchange request of the client `requester-client` in the realm `test`. Note that `subject_token` is the access token issued to the `initial-client`:
 
 [source,bash]
 ----
