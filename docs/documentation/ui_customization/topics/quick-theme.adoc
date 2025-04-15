@@ -51,6 +51,6 @@ jar xf quick-theme.jar
 ----
 
 === Trying out your new theme
-Your theme will include the images and colors you provided.  These will then be used throughout the `account console`, `admin console`, and `login`.
+Your theme includes the images and colors you provided. They appear throughout the Account Console, Admin Console, and login page.
 
 Once your "Quick Theme" archive jar is deployed, you can fully test it using the procedures shown in the <<_themes, Themes chapter>>.  Essentially, you just need to choose your new theme on the Realm settings --> Themes tab.
