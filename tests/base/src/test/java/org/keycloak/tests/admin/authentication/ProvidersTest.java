@@ -173,6 +173,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
         addProviderInfo(result, "webauthn-authenticator", "WebAuthn Authenticator", "Authenticator for WebAuthn. Usually used for WebAuthn two-factor authentication");
         addProviderInfo(result, "webauthn-authenticator-passwordless", "WebAuthn Passwordless Authenticator", "Authenticator for Passwordless WebAuthn authentication");
+        addProviderInfo(result, "auth-recovery-authn-code-form", "Recovery Authentication Code Form", "Validates a Recovery Authentication Code");
 
         addProviderInfo(result, "auth-username-form", "Username Form",
                 "Selects a user from his username.");

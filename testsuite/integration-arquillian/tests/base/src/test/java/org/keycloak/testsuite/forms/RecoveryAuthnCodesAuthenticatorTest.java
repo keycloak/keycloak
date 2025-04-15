@@ -41,7 +41,6 @@ import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -67,7 +66,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction.WARNING_THRESHOLD;
-import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
 
 /**
  * Backup Code Authentication test
@@ -75,7 +73,6 @@ import static org.keycloak.common.Profile.Feature.RECOVERY_CODES;
  * @author <a href="mailto:vnukala@redhat.com">Venkata Nukala</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@EnableFeature(value = RECOVERY_CODES, skipRestart = true)
 public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedUserPasswordsTest {
 
     private static final String BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES = "Browser with Recovery Authentication Codes";

@@ -19,6 +19,7 @@ import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.ReadOnlyException;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -89,7 +90,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                     }
                 }
                 if (recoveryCodeCredentialModel == null || recoveryCodeCredentialModel.allCodesUsed()) {
-                    authenticatedUser.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+                    addRequiredAction(authnFlowContext);
                 }
             }
         }
@@ -97,6 +98,15 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
             authnFlowContext.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.SESSION_INVALID, "true");
         }
         return result;
+    }
+
+    protected void addRequiredAction(AuthenticationFlowContext authnFlowContext) {
+        try {
+            authnFlowContext.getUser().addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+        } catch (ReadOnlyException e) {
+            // user is read-only, at least add the action to the auth session
+            authnFlowContext.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+        }
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {

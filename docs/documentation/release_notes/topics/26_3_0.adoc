@@ -25,3 +25,7 @@ https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Inst
 In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
 If you are using this broker, it is recommended to use the Facebook Identity Broker instead. For more
 details, see link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Recovery Codes supported
+
+In this release, the *Recovery Codes* two-factor authentication is promoted from preview to supported feature. For more information about the 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
