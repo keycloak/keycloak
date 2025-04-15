@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.Version;
+import org.keycloak.compatibility.CompatibilityResult;
 import org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider;
 import org.keycloak.infinispan.compatibility.CachingCompatibilityMetadataProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -98,6 +99,7 @@ public class UpdateCommandDistTest {
         JsonSerialization.mapper.writeValue(jsonFile, info);
 
         var result = distribution.run(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath());
+        result.assertExitCode(CompatibilityResult.ExitCode.RECREATE.value());
         result.assertError("[%s] Rolling Update is not available. '%s.version' is incompatible: 0.0.0.Final -> %s.".formatted(KeycloakCompatibilityMetadataProvider.ID, KeycloakCompatibilityMetadataProvider.ID, Version.VERSION));
 
         // incompatible infinispan version
