@@ -10,3 +10,13 @@ All available log handlers now support asynchronous logging capabilities.
 Asynchronous logging might be useful for deployments requiring **high throughput** and **low latency** to move log operations in a separate thread.
 
 For more details, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Deprecated for removal the Instagram Identity Broker
+
+It has been a while since discussions started about any activity around the Instagram Identity Broker
+and any objection from the community about deprecating it for removal. For more details, see
+https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
+
+In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
+If you are using this broker, it is recommended to use the Facebook Identity Broker instead. For more
+details, see link:{upgradingguide_link}[{upgradingguide_name}].
