@@ -2,7 +2,7 @@
 
 == Customizing with Quick Theme
 
-"Quick Theme" is an experimental feature which allows you to quickly and easily create themes with new logos and colors.  Often, this is all you need to facilitate branding and skinning for account console, admin console, and login.
+"Quick Theme" is an experimental feature which allows you to quickly and easily create themes with new logos and colors.  Often, this is all you need to facilitate branding and skinning for the Account Console, Admin Console, and login page.
 
 === Enabling Quick Theme
 
