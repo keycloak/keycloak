@@ -17,9 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.infinispan.client.hotrod.ProtocolVersion;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.commons.time.TimeService;
 import org.infinispan.commons.util.FileLookup;
@@ -56,27 +53,6 @@ public class InfinispanUtil {
         return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();
     }
 
-
-    /**
-     * Convert the given value to the proper value, which can be used when calling operations for the infinispan remoteCache.
-     *
-     * Infinispan HotRod protocol of versions older than 3.0 uses the "lifespan" or "maxIdle" as the normal expiration time when the value is 30 days or less.
-     * However for the bigger values, it assumes that the value is unix timestamp.
-     *
-     * @param ispnCache
-     * @param lifespanOrigMs
-     * @return
-     */
-    public static long toHotrodTimeMs(BasicCache<?, ?> ispnCache, long lifespanOrigMs) {
-        if (ispnCache instanceof RemoteCache<?, ?> remoteCache && lifespanOrigMs > 2592000000L) {
-            ProtocolVersion protocolVersion = remoteCache.getRemoteCacheContainer().getConfiguration().version();
-            if (ProtocolVersion.PROTOCOL_VERSION_30.compareTo(protocolVersion) > 0) {
-                return Time.currentTimeMillis() + lifespanOrigMs;
-            }
-        }
-
-        return lifespanOrigMs;
-    }
 
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 
