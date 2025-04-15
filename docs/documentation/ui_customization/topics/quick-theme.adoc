@@ -40,7 +40,7 @@ When your new theme is complete, click *Download theme JAR* to download a theme 
 === Deploying your theme
 Once you have downloaded your theme's archive jar, it's time to deploy and try it out. To deploy the archive to {project_name}, add it to the `providers/` directory of {project_name} and restart the server if it is already running.
 
-CAUTION: For security reasons, never deploy a theme unless you are confident of its origin.  An image can be a possible attack vector.  This is why {project_name} does not allow automatic deployment of a theme through the administration console.  Only those with file access to your production server should deploy a theme in production.
+CAUTION: For security reasons, never deploy a theme unless you are confident of its origin.  An image can be a possible attack vector.  This issue is the reason that {project_name} does not allow automatic deployment of a theme through the Admin Console.  Only those administrators with file access to your production server should deploy a theme in production.
 
 Another deployment option is to "unjar" the archive into the `themes/` directory.  This allows you to explore the theme and make manual changes.
 
