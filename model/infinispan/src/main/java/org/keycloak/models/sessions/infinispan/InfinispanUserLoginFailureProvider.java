@@ -18,7 +18,6 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
@@ -105,8 +104,8 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         log.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
         clusterEventsSenderTx.addEvent(
-                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId()),
-                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId())
+        );
     }
 
     protected void removeAllLocalUserLoginFailuresEvent(String realmId) {

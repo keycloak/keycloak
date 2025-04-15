@@ -117,8 +117,8 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     public void onRealmRemoved(RealmModel realm) {
         // Send message to all DCs. The remoteCache will notify client listeners on all DCs for remove authentication sessions
         clusterEventsSenderTx.addEvent(
-                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanAuthenticationSessionProviderFactory.REALM_REMOVED_AUTHSESSION_EVENT, session, realm.getId()),
-                ClusterProvider.DCNotify.ALL_DCS);
+                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanAuthenticationSessionProviderFactory.REALM_REMOVED_AUTHSESSION_EVENT, session, realm.getId())
+        );
     }
 
     protected void onRealmRemovedEvent(String realmId) {

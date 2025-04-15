@@ -42,8 +42,8 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
         this.session = session;
     }
 
-    public void addEvent(SessionClusterEvent event, ClusterProvider.DCNotify dcNotify) {
-        var group = new EventGroup(event.getEventKey(), dcNotify);
+    public void addEvent(SessionClusterEvent event) {
+        var group = new EventGroup(event.getEventKey());
         sessionEvents.computeIfAbsent(group, eventGroup -> new ArrayList<>()).add(event);
     }
 
@@ -51,7 +51,7 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
     protected void commitImpl() {
         var cluster = session.getProvider(ClusterProvider.class);
         for (var entry : sessionEvents.entrySet()) {
-            cluster.notify(entry.getKey().eventKey(), entry.getValue(), false, entry.getKey().dcNotify());
+            cluster.notify(entry.getKey().eventKey(), entry.getValue(), false);
         }
     }
 
@@ -61,5 +61,5 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
         sessionEvents.clear();
     }
 
-    private record EventGroup(String eventKey, ClusterProvider.DCNotify dcNotify) {}
+    private record EventGroup(String eventKey) {}
 }
