@@ -42,7 +42,7 @@ Once you have downloaded your theme's archive jar, it's time to deploy and try i
 
 CAUTION: For security reasons, never deploy a theme unless you are confident of its origin.  An image can be a possible attack vector.  This issue is the reason that {project_name} does not allow automatic deployment of a theme through the Admin Console.  Only those administrators with file access to your production server should deploy a theme in production.
 
-Another deployment option is to "unjar" the archive into the `themes/` directory.  This allows you to explore the theme and make manual changes.
+Another deployment option is to "unjar" the archive into the `themes/` directory.  With this option, you explore the theme and make manual changes.
 
 Many compression utilities or "zip tools" support `jar` files and you can use these to "unjar" the file.  If no such utility is available, you can use the `jar` utility that comes with the java JDK.
 
