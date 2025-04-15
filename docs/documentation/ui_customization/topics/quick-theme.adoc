@@ -31,6 +31,7 @@ image::images/color-chooser.png[alt="Color chooser with dropper", title="Color c
 
 This "dropper" tool can be used to select your background color to match a color in your logo.
 
+.Find a color with the dropper tool
 image::images/easy-theme-find-color.png[alt="Find a color with the dropper tool", title="Find a color with the dropper tool"]
 ====
 
