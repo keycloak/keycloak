@@ -18,7 +18,9 @@
 package org.keycloak.tests.admin.concurrency;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -55,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @KeycloakIntegrationTest
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class ConcurrencyTest extends AbstractConcurrencyTest {
 
     // Verify that no attribute values are duplicated, and there are no locking exceptions when adding attributes in parallel
@@ -71,9 +74,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
         UserRepresentation u = UserConfigBuilder.create().username("attributes").build();
 
-        Response response = users.create(u);
-        String userId = ApiUtil.getCreatedId(response);
-        response.close();
+        String userId;
+        try (Response response = users.create(u)) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
         UserResource user = users.get(userId);
 
@@ -128,9 +132,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
     public void createClientRole() throws Throwable {
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
-        Response response = managedRealm.admin().clients().create(c);
-        final String clientId = ApiUtil.getCreatedId(response);
-        response.close();
+        final String clientId;
+        try (Response response = managedRealm.admin().clients().create(c)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
 
         AtomicInteger uniqueCounter = new AtomicInteger();
         concurrentTest(new CreateClientRole(uniqueCounter, clientId));
@@ -163,9 +168,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             String name = "c-" + clientIndex.getAndIncrement();
             ClientRepresentation c = new ClientRepresentation();
             c.setClientId(name);
-            Response response = realm.clients().create(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            String id;
+            try (Response response = realm.clients().create(c)) {
+                id = ApiUtil.getCreatedId(response);
+            }
 
             c = realm.clients().get(id).toRepresentation();
             assertNotNull(c);
@@ -197,9 +203,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             c.setClientId(name);
             final ClientsResource clients = realm.clients();
 
-            Response response = clients.create(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            String id;
+            try (Response response = clients.create(c)) {
+                id = ApiUtil.getCreatedId(response);
+            }
             final ClientResource client = clients.get(id);
 
             c = client.toRepresentation();
@@ -243,9 +250,10 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
             String name = "g-" + uniqueIndex.getAndIncrement();
             GroupRepresentation c = new GroupRepresentation();
             c.setName(name);
-            Response response = realm.groups().add(c);
-            String id = ApiUtil.getCreatedId(response);
-            response.close();
+            String id;
+            try (Response response = realm.groups().add(c)) {
+                id = ApiUtil.getCreatedId(response);
+            }
 
             c = realm.groups().group(id).toRepresentation();
             assertNotNull(c);
