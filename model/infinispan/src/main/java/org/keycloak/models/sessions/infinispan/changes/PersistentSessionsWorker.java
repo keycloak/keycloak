@@ -69,8 +69,14 @@ public class PersistentSessionsWorker {
                 try {
                     process(queue);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+                    // The arjuna transaction reaper might interrupt this thread due to a long-running transaction.
+                    // But we will not terminate this thread as it will need to continue handling requests.
+                    if (!stop) {
+                        LOG.warn("Caught interrupted exception", e);
+                    }
+                } catch (RuntimeException e) {
+                    // We will need to continue
+                    LOG.warn("Exception when processing queue events", e);
                 }
             }
         }
@@ -138,6 +144,7 @@ public class PersistentSessionsWorker {
             try {
                 t.join(TimeUnit.MINUTES.toMillis(1));
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
         });
