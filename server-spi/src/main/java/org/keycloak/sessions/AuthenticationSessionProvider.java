@@ -98,9 +98,9 @@ public interface AuthenticationSessionProvider extends Provider {
      * @param compoundId {@code AuthenticationSessionCompoundId} The method has no effect if {@code null}.
      * @param authNotesFragment {@code Map<String, String>} Map with authNote values.
      * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
-     * @deprecated
+     * @deprecated For removal in Keycloak 27
      */
-    @Deprecated(since = "26", forRemoval = true)
+    @Deprecated(since = "26.3", forRemoval = true)
     default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {};
 
     default void migrate(String modelVersion) {
