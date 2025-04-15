@@ -1,7 +1,7 @@
 [[_welcome_theme]]
 == Customizing the Welcome Theme
 
-The welcome theme is simply the web page that is served when you request the default page from the {project_name} server.  For instance, if your server is deployed on your local machine at port 8080 then http://localhost:8080 will serve the welcome theme.
+The welcome theme is the web page that is served when you request the default page from the {project_name} server.  For instance, if your server is deployed on your local machine at port 8080, http://localhost:8080 serves the welcome theme.
 
 By default, the welcome theme is only used to create the initial, temporary admin user.  Once that user is created, any time users navigate to the welcome theme, they will be redirected to the admin console.  However, this behavior can be changed and the welcome theme can be completely customized or replaced.
 
