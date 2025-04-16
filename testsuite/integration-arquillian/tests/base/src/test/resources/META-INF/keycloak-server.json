@@ -189,6 +189,13 @@
         }
     },
 
+    "cacheRemote": {
+        "default": {
+            "hostname": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+            "port": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
+        }
+    },
+
     "truststore": {
         "file": {
             "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",

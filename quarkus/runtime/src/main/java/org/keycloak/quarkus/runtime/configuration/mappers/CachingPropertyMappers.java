@@ -92,23 +92,28 @@ final class CachingPropertyMappers {
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_HOST)
                         .paramLabel("hostname")
+                        .to("kc.spi-cache-remote-default-hostname")
                         .addValidateEnabled(CachingPropertyMappers::isRemoteCacheHostEnabled, MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET)
                         .isRequired(InfinispanUtils::isRemoteInfinispan, MULTI_SITE_FEATURE_SET)
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_PORT)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-port")
                         .paramLabel("port")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_TLS_ENABLED)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-tls-enabled")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_USERNAME)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-username")
                         .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_USERNAME, CachingOptions.CACHE_REMOTE_PASSWORD))
                         .paramLabel("username")
                         .build(),
                 fromOption(CachingOptions.CACHE_REMOTE_PASSWORD)
                         .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote-default-password")
                         .validator((value) -> validateCachingOptionIsPresent(CachingOptions.CACHE_REMOTE_PASSWORD, CachingOptions.CACHE_REMOTE_USERNAME))
                         .paramLabel("password")
                         .isMasked(true)
