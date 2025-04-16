@@ -50,6 +50,20 @@ Read the section https://www.keycloak.org/operator/rolling-updates[Managing Roll
 
 The checks to determine if a rolling update is possible are also available on the {project_name} command line so you can use them in your deployment pipeline. Continue reading in the https://www.keycloak.org/server/update-compatibility[Update Compatibility Tool] guide for more information about the functionality available on the command line.
 
+= Metrics on user activities
+
+Event metrics provide admins an aggregated view of the different user activities in a Keycloak instance.
+For now, only metrics for user events are captured. For example, you can monitor the number of logins, login failures, or token refreshes performed.
+For more information, see Monitoring user activities with event metrics.
+
+While this was a preview feature in 26.1, this is now fully supported in 26.2.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bohmber[Bernd Bohmann] for the contribution.
+endif::[]
+
+For more information, check the link:https://www.keycloak.org/observability/event-metrics[Monitoring user activities with event metrics] {section}.
+
 = Additional query parameters in Admin Events API
 
 The Admin Events API now supports filtering for events based on Epoc timestamps in addition to the previous
