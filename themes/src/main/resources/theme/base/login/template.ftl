@@ -44,11 +44,12 @@
         </#list>
     </#if>
     <script type="module">
-        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling, disableAfterClick } from "${url.resourcesPath}/js/authChecker.js";
 
         startSessionPolling(
-          "${url.ssoLoginInOtherTabsUrl?no_esc}"
+            "${url.ssoLoginInOtherTabsUrl?no_esc}"
         );
+        disableAfterClick('[data-id="social-link"]', '${properties.kcFormSocialAccountListButtonDisabledClass!?no_esc}');
     </script>
     <#if authenticationSession??>
         <script type="module">
