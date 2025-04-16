@@ -20,7 +20,7 @@ image::add-client-1.png[Add client]
 * Set *Web origins* to `+https://www.keycloak.org+`
 . Click *Save*.
 
-.Update client]
+.Update client
 image::add-client-2.png[Update client]
 
 To confirm the client was created successfully, you can use the SPA testing application on the https://www.keycloak.org/app/[Keycloak website].
