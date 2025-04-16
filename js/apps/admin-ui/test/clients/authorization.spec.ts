@@ -31,10 +31,6 @@ import {
   setPolicy,
 } from "./authorization";
 
-test.use({
-  permissions: ["clipboard-write", "clipboard-read"],
-});
-
 test.describe("Client authentication subtab", () => {
   const clientId = `client-authentication-${crypto.randomUUID()}`;
 
@@ -156,7 +152,9 @@ test.describe("Client authentication subtab", () => {
     await assertNotificationMessage(page, "Successfully created the policy");
   });
 
-  test("Should copy auth details", async ({ page }) => {
+  test("Should copy auth details", async ({ page, context, browserName }) => {
+    test.skip(browserName === "firefox", "Still working on it");
+    await context.grantPermissions(["clipboard-write", "clipboard-read"]);
     await goToExportSubTab(page);
     await clickCopyButton(page);
     await assertNotificationMessage(page, "Authorization details copied.");

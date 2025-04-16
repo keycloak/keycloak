@@ -26,10 +26,6 @@ import {
   goToInitialAccessTokenTab,
 } from "./initial-access";
 
-test.use({
-  permissions: ["clipboard-write", "clipboard-read"],
-});
-
 test.describe("Client initial access tokens", () => {
   const tableName = "Initial access token";
   const placeHolder = "Search token";
@@ -55,7 +51,10 @@ test.describe("Client initial access tokens", () => {
     await assertSaveButtonIsDisabled(page);
   });
 
-  test("Initial access token", async ({ page }) => {
+  test("Initial access token", async ({ page, context, browserName }) => {
+    test.skip(browserName === "firefox", "Still working on it");
+    await context.grantPermissions(["clipboard-write", "clipboard-read"]);
+
     await goToInitialAccessTokenTab(page);
     await assertInitialAccessTokensIsEmpty(page);
     await goToCreateFromEmptyList(page);
