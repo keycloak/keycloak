@@ -86,7 +86,10 @@ public class GroupsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being filled.")
+    @Operation(
+            summary = "Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search` or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being filled.",
+            operationId = "getGroups"
+    )
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
@@ -125,7 +128,10 @@ public class GroupsResource {
      * @return
      */
     @Path("{group-id}")
-    @Operation( summary = "Get group details. Does not expand hierarchy.  Subgroups will not be set.")
+    @Operation(
+            summary = "Get group details. Does not expand hierarchy.  Subgroups will not be set.",
+            operationId = "getGroupById"
+    )
     public GroupResource getGroupById(@PathParam("group-id") String id) {
         GroupModel group = realm.getGroupById(id);
 
@@ -150,7 +156,7 @@ public class GroupsResource {
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Returns the groups counts.")
+    @Operation(summary = "Returns the groups counts.", operationId = "getGroupCount")
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
@@ -179,8 +185,11 @@ public class GroupsResource {
             @APIResponse(responseCode = "204", description = "No Content")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "create or add a top level realm groupSet or create child.",
-        description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
+    @Operation(
+            summary = "create or add a top level realm groupSet or create child.",
+            description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.",
+            operationId = "addTopLevelGroup"
+    )
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 

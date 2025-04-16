@@ -97,7 +97,7 @@ public class GroupResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation()
+    @Operation(operationId = "getGroup")
     public GroupRepresentation getGroup() {
         this.auth.groups().requireView(group);
 
@@ -116,7 +116,7 @@ public class GroupResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Update group, ignores subgroups.")
+    @Operation(summary = "Update group, ignores subgroups.", operationId = "updateGroup")
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
@@ -154,7 +154,7 @@ public class GroupResource {
 
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation()
+    @Operation(operationId = "deleteGroup")
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
 
@@ -167,7 +167,10 @@ public class GroupResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
+    @Operation(
+            summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL",
+            operationId = "getSubGroups"
+    )
     public Stream<GroupRepresentation> getSubGroups(
             @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
@@ -198,7 +201,11 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Set or create child.", description = "This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
+    @Operation(
+            summary = "Set or create child.",
+            description = "This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.",
+            operationId = "addChild"
+    )
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
@@ -296,7 +303,10 @@ public class GroupResource {
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters")
+    @Operation(
+            summary = "Get users Returns a stream of users, filtered according to query parameters",
+            operationId = "getMembers"
+    )
     public Stream<UserRepresentation> getMembers(@Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
                                                  @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
                                                  @Parameter(description = "Only return basic information (only guaranteed to return id, username, created, first and last name, email, enabled state, email verification state, federation link, and access. Note that it means that namely user attributes, required actions, and not before are not returned.)")
@@ -323,7 +333,10 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference",
+            operationId = "getManagementPermissions"
+    )
     public ManagementPermissionReference getManagementPermissions() {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.groups().requireView(group);
@@ -356,7 +369,10 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
-    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference",
+            operationId = "setManagementPermissionsEnabled"
+    )
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.groups().requireManage(group);

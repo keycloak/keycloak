@@ -136,7 +136,10 @@ public class UsersResource {
         @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Create a new user Username must be unique.")
+    @Operation(
+            summary = "Create a new user Username must be unique.",
+            operationId = "createUser"
+    )
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -269,7 +272,10 @@ public class UsersResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(
+            summary = "Get users Returns a stream of users, filtered according to query parameters.",
+            operationId = "getUsers"
+    )
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -396,7 +402,9 @@ public class UsersResource {
             description = "It can be called in three different ways. " +
                     "1. Don’t specify any criteria and pass {@code null}. The number of all users within that realm will be returned. <p> " +
                     "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
-                    "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
+                    "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.",
+            operationId = "getUsersCount"
+    )
     public Integer getUsersCount(
             @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "last name filter") @QueryParam("lastName") String last,

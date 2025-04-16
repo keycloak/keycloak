@@ -75,7 +75,7 @@ public class RealmLocalizationResource {
     @PUT
     @Consumes(MediaType.TEXT_PLAIN)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "saveRealmLocalizationText")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -101,7 +101,10 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Import localization from uploaded JSON file")
+    @Operation(
+            summary = "Import localization from uploaded JSON file",
+            operationId = "createOrUpdateRealmLocalizationTextsFromFile"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -128,7 +131,7 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "createOrUpdateRealmLocalizationTexts")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -142,7 +145,7 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "deleteRealmLocalizationTexts")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -158,7 +161,7 @@ public class RealmLocalizationResource {
     @Path("{locale}/{key}")
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "deleteRealmLocalizationText")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -174,7 +177,7 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getRealmLocalizationLocales")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -189,7 +192,7 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getRealmLocalizationTexts")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -219,7 +222,7 @@ public class RealmLocalizationResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getRealmLocalizationText")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden"),

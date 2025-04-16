@@ -90,7 +90,7 @@ public class OrganizationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Creates a new organization")
+    @Operation(summary = "Creates a new organization", operationId = "createOrganization")
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -137,7 +137,10 @@ public class OrganizationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns a paginated list of organizations filtered according to the specified parameters")
+    @Operation(
+            summary = "Returns a paginated list of organizations filtered according to the specified parameters",
+            operationId = "search"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -196,7 +199,7 @@ public class OrganizationsResource {
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns the organizations counts.")
+    @Operation(summary = "Returns the organizations counts.", operationId = "getOrganizationCount")
     public long getOrganizationCount(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
@@ -217,7 +220,10 @@ public class OrganizationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns the organizations associated with the user that has the specified id")
+    @Operation(
+            summary = "Returns the organizations associated with the user that has the specified id",
+            operationId = "getOrganizations"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "400", description = "Bad Request")

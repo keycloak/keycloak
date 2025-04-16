@@ -180,7 +180,7 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Update the user")
+    @Operation(summary = "Update the user", operationId = "updateUser")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
@@ -335,7 +335,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get representation of the user")
+    @Operation(summary = "Get representation of the user", operationId = "getUser")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -376,7 +376,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Impersonate the user")
+    @Operation(summary = "Impersonate the user", operationId = "impersonate")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
@@ -441,7 +441,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get sessions associated with the user")
+    @Operation(summary = "Get sessions associated with the user", operationId = "getSessions")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -461,7 +461,10 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get offline sessions associated with the user and client")
+    @Operation(
+            summary = "Get offline sessions associated with the user and client",
+            operationId = "getOfflineSessions"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -488,7 +491,10 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get social logins associated with the user")
+    @Operation(
+            summary = "Get social logins associated with the user",
+            operationId = "getFederatedIdentity"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = FederatedIdentityRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -515,7 +521,10 @@ public class UserResource {
     @POST
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Add a social login provider to the user")
+    @Operation(
+            summary = "Add a social login provider to the user",
+            operationId = "addFederatedIdentity"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -542,7 +551,10 @@ public class UserResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Remove a social login provider from user")
+    @Operation(
+            summary = "Remove a social login provider from user",
+            operationId = "removeFederatedIdentity"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -566,7 +578,10 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get consents granted by the user")
+    @Operation(
+            summary = "Get consents granted by the user",
+            operationId = "getConsents"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -640,7 +655,10 @@ public class UserResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Revoke consent and offline tokens for particular client from user")
+    @Operation(
+            summary = "Revoke consent and offline tokens for particular client from user",
+            operationId = "revokeConsent"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -670,7 +688,10 @@ public class UserResource {
     @Path("logout")
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Remove all user sessions associated with the user Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user.")
+    @Operation(
+            summary = "Remove all user sessions associated with the user Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user.",
+            operationId = "logout"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -695,7 +716,7 @@ public class UserResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Delete the user")
+    @Operation(summary = "Delete the user", operationId = "deleteUser")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
@@ -729,7 +750,10 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Disable all credentials for a user of a specific type")
+    @Operation(
+            summary = "Disable all credentials for a user of a specific type",
+            operationId = "disableCredentialType"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -752,7 +776,10 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Set up a new password for the user.")
+    @Operation(
+            summary = "Set up a new password for the user.",
+            operationId = "resetPassword"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -803,7 +830,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "credentials")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = CredentialRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -827,7 +854,10 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Return credential types, which are provided by the user storage where user is stored.", description = "Returned values can contain for example \"password\", \"otp\" etc. This will always return empty list for \"local\" users, which are not backed by any user storage")
+    @Operation(
+            summary = "Return credential types, which are provided by the user storage where user is stored.", description = "Returned values can contain for example \"password\", \"otp\" etc. This will always return empty list for \"local\" users, which are not backed by any user storage",
+            operationId = "getConfiguredUserStorageCredentialTypes"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = String.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -847,7 +877,7 @@ public class UserResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Remove a credential for a user")
+    @Operation(summary = "Remove a credential for a user", operationId = "removeCredential")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -872,7 +902,10 @@ public class UserResource {
     @Consumes(MediaType.TEXT_PLAIN)
     @Path("credentials/{credentialId}/userLabel")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Update a credential label for a user")
+    @Operation(
+            summary = "Update a credential label for a user",
+            operationId = "setCredentialUserLabel"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -896,7 +929,10 @@ public class UserResource {
     @Path("credentials/{credentialId}/moveToFirst")
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Move a credential to a first position in the credentials list of the user")
+    @Operation(
+            summary = "Move a credential to a first position in the credentials list of the user",
+            operationId = "moveCredentialToFirst"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -914,7 +950,10 @@ public class UserResource {
     @Path("credentials/{credentialId}/moveAfter/{newPreviousCredentialId}")
     @POST
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Move a credential to a position behind another credential")
+    @Operation(
+            summary = "Move a credential to a position behind another credential",
+            operationId = "moveCredentialAfter"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -952,7 +991,9 @@ public class UserResource {
     @Operation(
             summary = "Send an email to the user with a link they can click to reset their password.",
             description = "The redirectUri and clientId parameters are optional. The default for the redirect is the account client. This endpoint has been deprecated.  Please use the execute-actions-email passing a list with UPDATE_PASSWORD within it.",
-            deprecated = true)
+            operationId = "resetPasswordEmail",
+            deprecated = true
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
@@ -988,7 +1029,8 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Send an email to the user with a link they can click to execute particular actions.",
-            description = "An email contains a link the user can click to perform a set of required actions. The redirectUri and clientId parameters are optional. If no redirect is given, then there will be no link back to click after actions have completed. Redirect uri must be a valid uri for the particular clientId."
+            description = "An email contains a link the user can click to perform a set of required actions. The redirectUri and clientId parameters are optional. If no redirect is given, then there will be no link back to click after actions have completed. Redirect uri must be a valid uri for the particular clientId.",
+            operationId = "executeActionsEmail"
     )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
@@ -1053,7 +1095,8 @@ public class UserResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(
             summary = "Send an email-verification email to the user An email contains a link the user can click to verify their email address.",
-            description = "The redirectUri, clientId and lifespan parameters are optional. The default for the redirect is the account client. The default for the lifespan is 12 hours"
+            description = "The redirectUri, clientId and lifespan parameters are optional. The default for the redirect is the account client. The default for the lifespan is 12 hours",
+            operationId = "sendVerifyEmail"
     )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
@@ -1098,7 +1141,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "groupMembership")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1116,7 +1159,7 @@ public class UserResource {
     @Path("groups/count")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "getGroupMembershipCount")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -1139,7 +1182,7 @@ public class UserResource {
     @Path("groups/{groupId}")
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "removeMembership")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -1181,7 +1224,7 @@ public class UserResource {
     @Path("groups/{groupId}")
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "joinGroup")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -1212,7 +1255,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation()
+    @Operation(operationId = "getUnmanagedAttributes")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK"),
         @APIResponse(responseCode = "403", description = "Forbidden")

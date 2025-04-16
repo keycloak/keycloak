@@ -61,7 +61,7 @@ public class KeyResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.KEY)
-    @Operation()
+    @Operation(operationId = "getKeyMetadata")
     public KeysMetadataRepresentation getKeyMetadata() {
         auth.realm().requireViewRealm();
 

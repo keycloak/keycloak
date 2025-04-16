@@ -74,7 +74,9 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Adds the identity provider with the specified id to the organization",
         description = "Adds, or associates, an existing identity provider with the organization. If no identity provider is found, " +
-                "or if it is already associated with the organization, an error response is returned")
+                "or if it is already associated with the organization, an error response is returned",
+        operationId = "addIdentityProvider"
+    )
     @RequestBody(description = "Payload should contain only id or alias of the identity provider to be associated with the organization " + 
                 "(id or alias with or without quotes). Surrounding whitespace characters will be trimmed.", required = true)
     @APIResponses(value = {
@@ -107,7 +109,10 @@ public class OrganizationIdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns all identity providers associated with the organization")
+    @Operation(
+            summary = "Returns all identity providers associated with the organization",
+            operationId = "getIdentityProviders"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY)))
     })
@@ -122,7 +127,9 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the identity provider associated with the organization that has the specified alias",
         description = "Searches for an identity provider with the given alias. If one is found and is associated with the " +
-                "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned")
+                "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned",
+        operationId = "getIdentityProvider"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class))),
         @APIResponse(responseCode = "404", description = "Not Found")
@@ -143,7 +150,9 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Removes the identity provider with the specified alias from the organization",
         description = "Breaks the association between the identity provider and the organization. The provider itself is not deleted. " +
-                "If no provider is found, or if it is not currently associated with the org, an error response is returned")
+                "If no provider is found, or if it is not currently associated with the org, an error response is returned",
+        operationId = "deleteIdentityProvider"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),

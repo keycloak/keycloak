@@ -111,7 +111,7 @@ public class ClientScopeResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation(summary = "Update the client scope")
+    @Operation(summary = "Update the client scope", operationId = "updateClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -143,7 +143,7 @@ public class ClientScopeResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation(summary = "Get representation of the client scope")
+    @Operation(summary = "Get representation of the client scope", operationId = "getClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ClientScopeRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -160,7 +160,7 @@ public class ClientScopeResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
-    @Operation(summary = "Delete the client scope")
+    @Operation(summary = "Delete the client scope", operationId = "deleteClientScope")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),

@@ -94,7 +94,7 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Get a specific role's representation")
+    @Operation(summary = "Get a specific role's representation", operationId = "getRole")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -122,7 +122,7 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Delete the role")
+    @Operation(summary = "Delete the role", operationId = "deleteRole")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -159,7 +159,7 @@ public class RoleByIdResource extends RoleResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Update the role")
+    @Operation(summary = "Update the role", operationId = "updateRole")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -188,7 +188,10 @@ public class RoleByIdResource extends RoleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Make the role a composite role by associating some child roles")
+    @Operation(
+            summary = "Make the role a composite role by associating some child roles",
+            operationId = "addComposites"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -212,7 +215,10 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Get role's children Returns a set of role's children provided the role is a composite.")
+    @Operation(
+            summary = "Get role's children Returns a set of role's children provided the role is a composite.",
+            operationId = "getRoleComposites"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -245,7 +251,10 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Get realm-level roles that are in the role's composite")
+    @Operation(
+            summary = "Get realm-level roles that are in the role's composite",
+            operationId = "getRealmRoleComposites"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -268,7 +277,10 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Get client-level roles for the client that are in the role's composite")
+    @Operation(
+            summary = "Get client-level roles for the client that are in the role's composite",
+            operationId = "getClientRoleComposites"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
@@ -296,7 +308,10 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Remove a set of roles from the role's composite")
+    @Operation(
+            summary = "Remove a set of roles from the role's composite",
+            operationId = "deleteComposites"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -320,7 +335,10 @@ public class RoleByIdResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference",
+            operationId = "getManagementPermissions"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -358,7 +376,10 @@ public class RoleByIdResource extends RoleResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES_BY_ID)
-    @Operation(summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether role Authorization permissions have been initialized or not and a reference",
+            operationId = "setManagementPermissionsEnabled"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = ManagementPermissionReference.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
