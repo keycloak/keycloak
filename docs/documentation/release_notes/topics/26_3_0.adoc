@@ -1,0 +1,3 @@
+= Recovery Codes supported
+
+In this release, the *Recovery Codes* two-factor authentication is promoted from preview to supported feature. For more information about the 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
