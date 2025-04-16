@@ -40,6 +40,7 @@ COPY --from=ubi-micro-build --chown=1000:0 /vunet/dist/vsmaps-extensions.jar /op
 COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/recaptcha-login.jar /opt/keycloak/providers/recaptcha-login.jar
 COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/single-handshake-thirdparty-multifactor-authentication-1.0.0.jar
 COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/sms-based-thirdparty-multifactor-authentication-1.0.0.jar /opt/keycloak/providers/sms-based-thirdparty-multifactor-authentication-1.0.0.jar
+COPY --from=ubi-micro-build --chown=1000:0 /vunet/plugins/custom-username-password-form-1.0.0.jar /opt/keycloak/providers/custom-username-password-form-1.0.0.jar
 COPY --from=ubi-micro-build --chown=1000:0 /vunet/theme/ /opt/keycloak/themes/
 
 RUN echo "keycloak:x:0:root" >> /etc/group && \
