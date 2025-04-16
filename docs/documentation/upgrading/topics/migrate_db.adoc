@@ -1,4 +1,4 @@
-f[[_migrate_db]]
+[[_migrate_db]]
 
 == Migrating the database
 
