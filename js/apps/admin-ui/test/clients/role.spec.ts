@@ -170,7 +170,6 @@ test.describe("Roles tab test", () => {
     await goToAssociatedRolesTab(page);
 
     // Add associated realm role
-    await page.getByTestId("no-roles-in-this-realm-empty-action").click();
     await addAssociatedRoles(page, createRealmRoleName);
     await assertNotificationMessage(page, "Associated roles have been added");
 
@@ -188,8 +187,7 @@ test.describe("Roles tab test", () => {
     await goToAssociatedRolesTab(page);
 
     // Add associated client roles
-    await page.getByTestId("no-roles-in-this-realm-empty-action").click();
-    await addAssociatedRoles(page, "accountmanage-account", "client");
+    await addAssociatedRoles(page, "manage-account", "client");
     await assertNotificationMessage(page, "Associated roles have been added");
   });
 

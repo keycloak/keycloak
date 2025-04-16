@@ -1,6 +1,6 @@
 import { expect, Page } from "@playwright/test";
 import {
-  changeRoleTypeFilter,
+  pickRoleType,
   confirmModalAssign,
   pickRole,
   RoleType,
@@ -45,7 +45,7 @@ export async function addAssociatedRoles(
   roleName: string,
   roleType: RoleType = "roles",
 ) {
-  await changeRoleTypeFilter(page, roleType);
+  await pickRoleType(page, roleType);
   await pickRole(page, roleName, true);
   await confirmModalAssign(page);
 }

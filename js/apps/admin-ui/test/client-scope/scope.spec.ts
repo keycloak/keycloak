@@ -5,7 +5,7 @@ import { login } from "../utils/login";
 import { assertNotificationMessage } from "../utils/masthead";
 import { assertModalTitle, confirmModal } from "../utils/modal";
 import {
-  changeRoleTypeFilter,
+  pickRoleType,
   clickHideInheritedRoles,
   clickUnassign,
   confirmModalAssign,
@@ -20,7 +20,7 @@ import {
   getTableData,
   searchItem,
 } from "../utils/table";
-import { assignRole, goToScopeTab } from "./scope";
+import { goToScopeTab } from "./scope";
 
 test.describe("Scope tab test", () => {
   const scopeName = `client-scope-mapper-${uuidv4()}`;
@@ -47,8 +47,7 @@ test.describe("Scope tab test", () => {
   test("Assign and unassign role", async ({ page }) => {
     const role = "admin";
 
-    await assignRole(page);
-    await changeRoleTypeFilter(page, "roles");
+    await pickRoleType(page, "roles");
     await pickRole(page, role, true);
     await confirmModalAssign(page);
 
