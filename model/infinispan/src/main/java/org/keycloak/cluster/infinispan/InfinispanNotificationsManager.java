@@ -31,6 +31,7 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 
 import java.util.Collection;
 import java.util.List;
@@ -107,7 +108,7 @@ public class InfinispanNotificationsManager {
             logger.tracef("Sending event with key %s: %s", eventKey, events);
         }
 
-        workCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+        CacheDecorators.ignoreReturnValues(workCache)
                 .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
     }
 
