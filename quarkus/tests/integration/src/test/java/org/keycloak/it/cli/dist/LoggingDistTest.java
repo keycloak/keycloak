@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
@@ -41,6 +42,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import io.quarkus.deployment.util.FileUtil;
@@ -256,6 +258,12 @@ public class LoggingDistTest {
         String data = readDefaultFileLog(path);
         assertThat(data, containsString("ecs.version"));
         assertThat(data, containsString("@timestamp"));
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-async=true"})
+    void asyncLogging(CLIResult cliResult) {
+        cliResult.assertStartedDevMode();
     }
 
     protected static String readDefaultFileLog(RawDistRootPath path) {
