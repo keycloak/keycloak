@@ -31,7 +31,6 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -39,10 +38,6 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEnt
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
-import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitializer;
-import org.keycloak.models.sessions.infinispan.initializer.InitializerState;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -74,7 +69,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
 
-    private RemoteCacheInvoker remoteCacheInvoker;
     SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
     
     @Override
@@ -90,7 +84,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        this.remoteCacheInvoker = new RemoteCacheInvoker();
         keyGenerator = new InfinispanKeyGenerator();
         factory.register(new ProviderEventListener() {
 
@@ -139,7 +132,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
         this.authSessionsCache = cache;
-        return new InfinispanAuthenticationSessionProvider(session, remoteCacheInvoker, keyGenerator, cache, authSessionsLimit, serializer);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, cache, authSessionsLimit, serializer);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {

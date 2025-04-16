@@ -28,15 +28,11 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.util.Collections;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -123,12 +119,6 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
-            } else {
-
-                session.authenticationSessions().updateNonlocalSessionAuthNotes(
-                        compoundId,
-                  Collections.singletonMap(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername())
-                );
             }
 
             return session.getProvider(LoginFormsProvider.class)

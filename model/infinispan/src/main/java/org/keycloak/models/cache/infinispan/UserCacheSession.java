@@ -113,7 +113,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     public void clear() {
         cache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), true, ClusterProvider.DCNotify.ALL_DCS);
+        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), true);
     }
 
     public UserProvider getDelegate() {

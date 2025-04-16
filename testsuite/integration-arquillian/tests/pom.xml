@@ -785,7 +785,6 @@
                                     -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
                                 </cache.server.crossdc2.jvm.debug.args>
 
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                             </systemPropertyVariables>
                         </configuration>
@@ -898,8 +897,6 @@
                                 <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
                                 <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
 
-                                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled}</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                                <keycloak.connectionsInfinispan.hotrodProtocolVersion>${keycloak.connectionsInfinispan.hotrodProtocolVersion}</keycloak.connectionsInfinispan.hotrodProtocolVersion>
 
                                 <!--8101-->
                                 <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
@@ -951,8 +948,6 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1022,8 +1017,6 @@
                 <cache.server.legacy>true</cache.server.legacy>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1093,8 +1086,6 @@
                 <cache.server>infinispan</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1190,8 +1181,6 @@
                 <cache.server>datagrid</cache.server>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
-                <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>

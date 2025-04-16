@@ -23,7 +23,6 @@ import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScena
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
 import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
-import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.decider.BrowserDriverIgnoreDecider;
@@ -61,11 +60,9 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
-                .service(TestEnricher.class, CacheStatisticsControllerEnricher.class)
                 .observer(JmxConnectorRegistryCreator.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
-                .observer(CrossDCTestEnricher.class)
                 .observer(H2TestEnricher.class);
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)

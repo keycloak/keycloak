@@ -195,14 +195,8 @@ public class TokenManager {
         ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
-        // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
         if (clientSession == null) {
-            userSession = session.sessions().getUserSessionIfClientExists(realm, userSession.getId(), offline, client.getId());
-            if (userSession != null) {
-                clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            } else {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
-            }
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
         }
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {

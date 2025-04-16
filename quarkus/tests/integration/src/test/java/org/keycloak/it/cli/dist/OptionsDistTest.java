@@ -133,7 +133,7 @@ public class OptionsDistTest {
     @Order(10)
     @Launch({"start-dev", "--cache-remote-host=localhost"})
     public void testCacheRemoteHostWithoutMultiSite(LaunchResult result) {
-        assertErrorStreamContains(result, "cache-remote-host available only when feature 'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set");
+        assertErrorStreamContains(result, "cache-remote-host available only when feature 'multi-site' or 'clusterless' is set");
     }
 
     @DryRun

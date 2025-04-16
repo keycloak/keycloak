@@ -409,7 +409,7 @@ public class RealmAdapter implements CachedRealmModel {
                 @Override
                 protected void commitImpl() {
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), false, ClusterProvider.DCNotify.ALL_DCS);
+                    cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, ClearCacheEvent.getInstance(), false);
                 }
 
                 @Override

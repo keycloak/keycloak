@@ -53,8 +53,8 @@ Cache:
                      The maximum number of entries that can be stored in-memory by the users cache.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
-                       'multi-site', 'clusterless' or 'cache-embedded-remote-store' is set.
-                       Required when feature 'multi-site' or 'clusterless' is set.
+                       'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
+                       'clusterless' is set.
 
 Config:
 

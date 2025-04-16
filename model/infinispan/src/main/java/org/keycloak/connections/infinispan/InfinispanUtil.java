@@ -17,10 +17,6 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.ProtocolVersion;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.commons.time.TimeService;
 import org.infinispan.commons.util.FileLookup;
@@ -29,13 +25,10 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.factories.impl.BasicComponentRegistry;
 import org.infinispan.factories.impl.ComponentRef;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.manager.PersistenceManager;
-import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.EmbeddedTimeService;
 import org.jboss.logging.Logger;
@@ -44,7 +37,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 
 import java.time.Instant;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -57,47 +49,10 @@ public class InfinispanUtil {
 
     public static final int MAXIMUM_REPLACE_RETRIES = 25;
 
-    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-    public static Set<RemoteStore> getRemoteStores(Cache<?, ?> ispnCache) {
-        return ComponentRegistry.componentOf(ispnCache, PersistenceManager.class).getStores(RemoteStore.class);
-    }
-
-
-    public static RemoteCache getRemoteCache(Cache<?, ?> ispnCache) {
-        Set<RemoteStore> remoteStores = getRemoteStores(ispnCache);
-        if (remoteStores.isEmpty()) {
-            return null;
-        } else {
-            return remoteStores.iterator().next().getRemoteCache();
-        }
-    }
-
-
     public static TopologyInfo getTopologyInfo(KeycloakSession session) {
         return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();
     }
 
-
-    /**
-     * Convert the given value to the proper value, which can be used when calling operations for the infinispan remoteCache.
-     *
-     * Infinispan HotRod protocol of versions older than 3.0 uses the "lifespan" or "maxIdle" as the normal expiration time when the value is 30 days or less.
-     * However for the bigger values, it assumes that the value is unix timestamp.
-     *
-     * @param ispnCache
-     * @param lifespanOrigMs
-     * @return
-     */
-    public static long toHotrodTimeMs(BasicCache<?, ?> ispnCache, long lifespanOrigMs) {
-        if (ispnCache instanceof RemoteCache<?, ?> remoteCache && lifespanOrigMs > 2592000000L) {
-            ProtocolVersion protocolVersion = remoteCache.getRemoteCacheContainer().getConfiguration().version();
-            if (ProtocolVersion.PROTOCOL_VERSION_30.compareTo(protocolVersion) > 0) {
-                return Time.currentTimeMillis() + lifespanOrigMs;
-            }
-        }
-
-        return lifespanOrigMs;
-    }
 
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 

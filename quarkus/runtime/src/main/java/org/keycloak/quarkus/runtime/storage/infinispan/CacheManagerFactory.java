@@ -42,14 +42,12 @@ import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
-import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
-import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.protostream.descriptors.FileDescriptor;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
@@ -87,6 +85,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
@@ -325,7 +324,6 @@ public class CacheManagerFactory {
                 if (jGroupsConfigurator.isLocal()) {
                     throw new RuntimeException("Unable to use clustered cache with local mode.");
                 }
-                configureRemoteStores(builder);
             }
             jGroupsConfigurator.configure(session);
             configureCacheMaxCount(builder, CachingOptions.CLUSTERED_MAX_COUNT_CACHES);
@@ -385,75 +383,34 @@ public class CacheManagerFactory {
         return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
     }
 
-    private static void configureRemoteStores(ConfigurationBuilderHolder builder) {
-        //if one of remote store command line parameters is defined, some other are required, otherwise assume it'd configured via xml only
-        if (Configuration.getOptionalKcValue(CACHE_REMOTE_HOST_PROPERTY).isPresent()) {
-
-            String cacheRemoteHost = requiredStringProperty(CACHE_REMOTE_HOST_PROPERTY);
-            Integer cacheRemotePort = Configuration.getOptionalKcValue(CACHE_REMOTE_PORT_PROPERTY)
-                    .map(Integer::parseInt)
-                    .orElse(ConfigurationProperties.DEFAULT_HOTROD_PORT);
-
-            SSLContext sslContext = createSSLContext();
-
-            Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(cacheName -> {
-                PersistenceConfigurationBuilder persistenceCB = builder.getNamedConfigurationBuilders().get(cacheName).persistence();
-
-                //if specified via command line -> cannot be defined in the xml file
-                if (!persistenceCB.stores().isEmpty()) {
-                    throw new RuntimeException(String.format("Remote store for cache '%s' is already configured via CLI parameters. It should not be present in the XML file.", cacheName));
-                }
-
-                var storeBuilder = persistenceCB.addStore(RemoteStoreConfigurationBuilder.class);
-                storeBuilder
-                        .rawValues(true)
-                        .shared(true)
-                        .segmented(false)
-                        .remoteCacheName(cacheName)
-                        .connectionPool()
-                            .maxActive(16)
-                            .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                        .addServer()
-                        .host(cacheRemoteHost)
-                        .port(cacheRemotePort);
-
-                if (isRemoteTLSEnabled()) {
-                    storeBuilder.remoteSecurity()
-                            .ssl()
-                            .enable()
-                            .sslContext(sslContext)
-                            .sniHostName(cacheRemoteHost);
-                }
-
-                if (isRemoteAuthenticationEnabled()) {
-                    storeBuilder.remoteSecurity()
-                            .authentication()
-                            .enable()
-                            .username(requiredStringProperty(CACHE_REMOTE_USERNAME_PROPERTY))
-                            .password(requiredStringProperty(CACHE_REMOTE_PASSWORD_PROPERTY))
-                            .realm("default")
-                            .saslMechanism(SCRAM_SHA_512);
-                }
-            });
-        }
-    }
-
+    /**
+     *
+     * RemoteStores were previously used when running Keycloak in the CrossDC environment, and Keycloak code
+     * contained a lot of performance optimizations to make this work smoothly.
+     * These optimizations are now removed as recommended multi-site setup no longer relies on RemoteStores.
+     * A lot of blueprints in the wild may turn into very ineffective setups.
+     * <p />
+     * For this reason, we need to be more opinionated on what configurations we allow,
+     * especially for user and client sessions.
+     * This method is responsible for checking the Infinispan configuration used and either change the configuration to
+     * more effective when possible or refuse to start with recommendations for users to change their config.
+     *
+     * @param builder Cache configuration builder
+     */
     private static void checkForRemoteStores(ConfigurationBuilderHolder builder) {
-        if (Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE) && Profile.isFeatureEnabled(Profile.Feature.MULTI_SITE)) {
-            logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
-                    Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.MULTI_SITE.getKey());
-            throw new RuntimeException("The features " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " and " + Profile.Feature.MULTI_SITE.getKey() + " must not be enabled at the same time.");
-        }
-        if (Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE) && Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) {
-            logger.fatalf("Feature %s is now deprecated.%nFor multi-site (cross-dc) support, enable only %s.",
-                    Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
-            throw new RuntimeException("The features " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " and " + Profile.Feature.CLUSTERLESS.getKey() + " must not be enabled at the same time.");
-        }
-        if (!Profile.isFeatureEnabled(Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE)) {
-            if (builder.getNamedConfigurationBuilders().values().stream().anyMatch(CacheManagerFactory::hasRemoteStore)) {
-                logger.fatalf("Remote stores are not supported for embedded caches as feature %s is not enabled. This feature is disabled by default as it is now deprecated.%nFor keeping user sessions across restarts, use feature %s which is enabled by default.%nFor multi-site (cross-dc) support, enable %s.",
-                        Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey(), Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), Profile.Feature.MULTI_SITE.getKey());
-                throw new RuntimeException("Remote store is not supported as feature " + Profile.Feature.CACHE_EMBEDDED_REMOTE_STORE.getKey() + " is not enabled.");
+        for (String cacheName : USER_AND_CLIENT_SESSION_CACHES) {
+            ConfigurationBuilder cacheConfigurationBuilder = builder.getNamedConfigurationBuilders().get(cacheName);
+
+            if (cacheConfigurationBuilder != null && hasRemoteStore(cacheConfigurationBuilder)) {
+                if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                    logger.warnf("Feature %s is enabled and remote store detected for cache '%s'. Remote stores are no longer needed when sessions stored in the database. The configuration will be ignored.", Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), cacheName);
+                    cacheConfigurationBuilder.persistence().stores().removeIf(RemoteStoreConfigurationBuilder.class::isInstance);
+                } else {
+                    logger.fatalf("Remote stores are not supported for embedded caches storing user and client sessions.%nFor keeping user sessions across restarts, use feature %s which is enabled by default.%nFor multi-site support, enable %s.",
+                            Profile.Feature.PERSISTENT_USER_SESSIONS.getKey(), Profile.Feature.MULTI_SITE.getKey());
+
+                    throw new RuntimeException("Remote stores for storing user and client sessions are not supported.");
+                }
             }
         }
     }

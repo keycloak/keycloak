@@ -1,0 +1,7 @@
+= Usage of remote stores for embedded caches is restricted
+
+Previously, usage of remote stores was discouraged and the experimental feature `cache-embedded-remote-store` needed to be enabled to run in this setup.
+In this release, the experimental feature was removed and usage of remote stores was restricted.
+If you previously used the `cache-embedded-remote-store` feature, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+
+

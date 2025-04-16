@@ -249,7 +249,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").logout();
 
             // Code should be successfully exchanged for the token at max once. In some cases (EG. Cross-DC) it may not be even successfully exchanged
-            assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(1));
+            assertThat(codeToTokenSuccessCount.get(), Matchers.equalTo(1));
             assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS - 1));
 
             log.infof("Iteration %d passed successfully", i);

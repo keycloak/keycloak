@@ -81,10 +81,6 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
     @Test
     public void testAuthSessionCookieWithAttachedRoute() throws Exception {
-        // TODO Maybe add compatibility between cluster and cross-dc tests regarding route name (jboss.node.name). Cross-dc tests use arquillian container qualifier when cluster tests just 'node1' .
-//        String node1Route = backendNode(0).getArquillianContainer().getName();
-//        String node2Route = backendNode(1).getArquillianContainer().getName();
-
         OAuthClient oAuthClient = oauth;
         oAuthClient.baseUrl(UriBuilder.fromUri(backendNode(0).getUriBuilder().build() + "/auth").build("test").toString());
 
