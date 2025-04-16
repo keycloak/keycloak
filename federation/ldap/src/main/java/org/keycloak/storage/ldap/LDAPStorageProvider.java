@@ -120,6 +120,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserProfileDecorator {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
+    public static final List<String> INTERNAL_ATTRIBUTES = List.of(UserModel.LOCALE);
 
     protected LDAPStorageProviderFactory factory;
     protected KeycloakSession session;
@@ -1201,6 +1202,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // 3 - make all attributes read-only for LDAP users in case that LDAP itself is read-only
         if (getEditMode() == EditMode.READ_ONLY) {
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
+                    .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
         }
 
