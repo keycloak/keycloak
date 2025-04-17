@@ -215,6 +215,7 @@ export default function ClientDetails() {
   const form = useForm<FormFields>();
   const { clientId } = useParams<ClientParams>();
   const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   const isAdminPermissionsClient = useIsAdminPermissionsClient(clientId);
 
@@ -465,6 +466,7 @@ export default function ClientDetails() {
                   <Keys
                     clientId={clientId}
                     save={save}
+                    refresh={refresh}
                     hasConfigureAccess={client.access?.configure}
                   />
                 )}
@@ -487,7 +489,7 @@ export default function ClientDetails() {
                     key={key}
                     client={client}
                     save={save}
-                    refresh={() => setKey(key + 1)}
+                    refresh={refresh}
                   />
                 </Tab>
               )}
