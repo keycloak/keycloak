@@ -44,6 +44,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -135,22 +136,35 @@ public class IdpLinkAction implements RequiredActionProvider, RequiredActionFact
             }
         }
 
-        ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realm, authSession);
-        clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        String noteValue = authSession.getParentSession().getId() + client.getClientId() + identityProviderAlias;
-        authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, noteValue);
-        authSession.setAuthNote(KC_ACTION_LINKING_IDENTITY_PROVIDER, "true");
-
-        IdentityBrokerService brokerService = new IdentityBrokerService(session);
-        Response response = brokerService.performClientInitiatedAccountLogin(identityProviderAlias, clientSessionCode);
-        context.challenge(response);
+        String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProviderModel);
+        Response challenge = context.form()
+                .setAttribute("idpDisplayName", idpDisplayName)
+                .createForm("link-idp-action.ftl");
+        context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        KeycloakSession session = context.getSession();
+        RealmModel realm = context.getRealm();
+        ClientModel client = authSession.getClient();
 
-        if (Boolean.parseBoolean(authSession.getAuthNote(IdpLinkAction.KC_ACTION_LINKING_IDENTITY_PROVIDER))) {
+        if (!Boolean.parseBoolean(authSession.getAuthNote(IdpLinkAction.KC_ACTION_LINKING_IDENTITY_PROVIDER))) {
+            // User confirmed IDP linking. We can redirect to IDP
+            String identityProviderAlias = authSession.getClientNote(Constants.KC_ACTION_PARAMETER);
+
+            ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realm, authSession);
+            clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+            String noteValue = authSession.getParentSession().getId() + client.getClientId() + identityProviderAlias;
+            authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, noteValue);
+            authSession.setAuthNote(KC_ACTION_LINKING_IDENTITY_PROVIDER, "true");
+
+            IdentityBrokerService brokerService = new IdentityBrokerService(session);
+            Response response = brokerService.performClientInitiatedAccountLogin(identityProviderAlias, clientSessionCode);
+            context.challenge(response);
+        } else {
+            // User already authenticated with IDP
             EventBuilder event = context.getEvent();
             event.event(EventType.FEDERATED_IDENTITY_LINK);
 

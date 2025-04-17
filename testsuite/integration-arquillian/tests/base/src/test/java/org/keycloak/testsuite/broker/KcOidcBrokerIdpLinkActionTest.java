@@ -26,6 +26,7 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,6 +45,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
@@ -70,6 +72,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    private IdpLinkActionPage idpLinkActionPage;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -114,6 +119,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         // Redirect to link account on behalf of "broker-app" and login to the IDP
         String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
         oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+
+        // Login to provider
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         events.clear();
@@ -144,6 +152,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         oauth.realm(bc.consumerRealmName());
         oauth.loginForm().kcAction(kcAction).open();
         loginPage.login("user1", "password");
+        confirmIdpLinking();
 
         // Login to provider
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
@@ -164,12 +173,55 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     }
 
     @Test
-    public void testAccountLinkingConsentRejected() throws Exception {
+    public void testAccountLinkingCancel() throws Exception {
         loginToConsumer();
 
         // Redirect to link account on behalf of "broker-app" and login to the IDP
         String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
         oauth.loginForm().kcAction(kcAction).open();
+        events.clear();
+
+        idpLinkActionPage.assertCurrent();
+        idpLinkActionPage.assertIdpInMessage(bc.getIDPAlias());
+        idpLinkActionPage.cancel();
+
+        appPage.assertCurrent();
+        assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.CANCELLED.name().toLowerCase());
+
+        // Check that user is not linked to the IDP
+        assertUserLinkedToIDP(false);
+
+        assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+            events.expect(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
+                    .realm(consumerRealmId)
+                    .client("broker-app")
+                    .user(consumerUserId)
+                    .detail(Details.CUSTOM_REQUIRED_ACTION, IdpLinkAction.PROVIDER_ID)
+                    .detail(Details.USERNAME, consumerUsername)
+                    .error(Errors.REJECTED_BY_USER)
+                    .assertEvent();
+
+            events.expect(EventType.LOGIN)
+                    .realm(consumerRealmId)
+                    .client("broker-app")
+                    .user(consumerUserId)
+                    .session(Matchers.any(String.class))
+                    .detail(Details.USERNAME, consumerUsername)
+                    .assertEvent();
+
+            events.assertEmpty();
+        });
+    }
+
+    @Test
+    public void testAccountLinkingConsentRejectedAtIdp() throws Exception {
+        loginToConsumer();
+
+        // Redirect to link account on behalf of "broker-app" and login to the IDP
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         events.clear();
@@ -212,6 +264,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
         oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         events.clear();
@@ -316,6 +370,12 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertUserLinkedToIDP(false);
 
         return userSessionId;
+    }
+
+    private void confirmIdpLinking() {
+        idpLinkActionPage.assertCurrent();
+        idpLinkActionPage.assertIdpInMessage(bc.getIDPAlias());
+        idpLinkActionPage.confirm();
     }
 
     private static String getKcActionParamForLinkIdp(String providerAlias) {
