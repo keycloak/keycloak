@@ -1,6 +1,9 @@
 
 ==== Instagram
 
+IMPORTANT: The Instagram Identity Broker is deprecated for removal. Prefer using the Facebook Identity Broker instead.
+To enable it, start the server with `--features=instagram-broker`.
+
 .Procedure
 . Click *Identity Providers* in the menu.
 . From the *Add provider* list, select *Instagram*.
@@ -25,7 +28,7 @@ image:images/meta-select-app-type.png[Select an app type]
 .Create an app
 image:images/meta-create-app.png[Create an app]
 +
-.. Fill in all required fields. 
+.. Fill in all required fields.
 .. Click *Create app*. Meta then brings you to the dashboard.
 .. In the navigation panel, select *App settings* - *Basic*.
 .. Select *+ Add Platform* at the bottom of the page.
