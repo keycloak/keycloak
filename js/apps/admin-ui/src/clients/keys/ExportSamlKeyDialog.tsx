@@ -1,5 +1,6 @@
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { Button, Form, Modal } from "@patternfly/react-core";
+import { Button, Form } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

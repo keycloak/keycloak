@@ -7,10 +7,10 @@ import {
   Divider,
   Form,
   FormGroup,
-  Modal,
   Radio,
   Switch,
 } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
@@ -65,7 +65,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
           <Form isHorizontal>
             <FormGroup
               label={t("policyEnforcementMode")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("policyEnforcementModeHelp")}
                   fieldLabelId="policyEnforcementMode"
@@ -87,7 +87,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
             </FormGroup>
             <FormGroup
               label={t("decisionStrategy")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("decisionStrategyHelp")}
                   fieldLabelId="decisionStrategy"
@@ -109,7 +109,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               hasNoPaddingTop
               label={t("allowRemoteResourceManagement")}
               fieldId="allowRemoteResourceManagement"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("allowRemoteResourceManagement")}
                   fieldLabelId="allowRemoteResourceManagement"
@@ -119,7 +119,6 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               <Switch
                 id="allowRemoteResourceManagement"
                 label={t("on")}
-                labelOff={t("off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
                 aria-label={t("allowRemoteResourceManagement")}

@@ -1,4 +1,4 @@
-import { ChipGroupProps, SelectProps } from "@patternfly/react-core";
+import { LabelGroupProps, SelectProps } from "@patternfly/react-core";
 import {
   ControllerProps,
   FieldPath,
@@ -49,7 +49,7 @@ export type SelectControlProps<
     isDisabled?: boolean;
     menuAppendTo?: string;
     placeholderText?: string;
-    chipGroupProps?: ChipGroupProps;
+    chipGroupProps?: LabelGroupProps;
     onSelect?: (
       value: string | string[],
       onChangeHandler: (value: string | string[]) => void,

@@ -4,8 +4,9 @@ import {
   DropdownItem,
   Masthead,
   MastheadBrand,
-  MastheadBrandProps,
   MastheadContent,
+  MastheadLogo,
+  MastheadLogoProps,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -40,7 +41,7 @@ function loggedInUserName(
   return givenName || familyName || preferredUsername || t("unknownUser");
 }
 
-type BrandLogo = MastheadBrandProps;
+type BrandLogo = MastheadLogoProps;
 
 type KeycloakMastheadProps = MastheadMainProps & {
   keycloak: Keycloak;
@@ -100,15 +101,17 @@ const KeycloakMasthead = ({
           <BarsIcon />
         </PageToggleButton>
       </MastheadToggle>
-      <MastheadBrand {...brandProps}>
-        <img src={src} alt={alt} className={className} />
+      <MastheadBrand>
+        <MastheadLogo {...brandProps}>
+          <img src={src} alt={alt} className={className} />
+        </MastheadLogo>
       </MastheadBrand>
       <MastheadContent>
         {toolbar}
         <Toolbar>
           <ToolbarContent>
             {toolbarItems?.map((item, index) => (
-              <ToolbarItem key={index} align={{ default: "alignRight" }}>
+              <ToolbarItem key={index} align={{ default: "alignEnd" }}>
                 {item}
               </ToolbarItem>
             ))}
@@ -129,7 +132,7 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              align={{ default: "alignLeft" }}
+              align={{ default: "alignStart" }}
               visibility={{
                 md: "hidden",
               }}
@@ -144,8 +147,7 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              variant="overflow-menu"
-              align={{ default: "alignRight" }}
+              align={{ default: "alignEnd" }}
               className="pf-v5-u-m-0-on-lg"
             >
               {picture || avatar?.src ? (

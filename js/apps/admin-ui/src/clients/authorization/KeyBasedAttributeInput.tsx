@@ -217,14 +217,13 @@ export const KeyBasedAttributeInput = ({
             />
             <Td>
               <Button
+                icon={<MinusCircleIcon />}
                 id={`${name}-minus-button-${rowIndex}`}
                 variant="link"
                 className="kc-attributes__minus-icon"
                 onClick={() => remove(rowIndex)}
                 aria-label={t("remove")}
-              >
-                <MinusCircleIcon />
-              </Button>
+              ></Button>
             </Td>
           </Tr>
         ))}

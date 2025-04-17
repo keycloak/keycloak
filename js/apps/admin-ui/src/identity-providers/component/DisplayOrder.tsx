@@ -12,7 +12,7 @@ export const DisplayOrder = () => {
   return (
     <FormGroup
       label={t("displayOrder")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t("displayOrderHelp")}
           fieldLabelId="displayOrder"

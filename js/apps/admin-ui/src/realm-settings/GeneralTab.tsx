@@ -152,7 +152,7 @@ function RealmSettingsGeneralTabForm({
   );
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
         <FormAccess
           isHorizontal
@@ -207,7 +207,7 @@ function RealmSettingsGeneralTabForm({
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("acrToLoAMappingHelp")}
                 fieldLabelId="acrToLoAMapping"
@@ -273,7 +273,7 @@ function RealmSettingsGeneralTabForm({
           />
           <FormGroup
             label={t("endpoints")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("endpointsHelp")}
                 fieldLabelId="endpoints"
