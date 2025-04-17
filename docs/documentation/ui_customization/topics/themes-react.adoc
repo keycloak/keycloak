@@ -1,0 +1,70 @@
+[[_theme_react]]
+== Themes based on React
+
+The Admin Console and Account Console are based on React.
+To fully customize these consoles, you can use the React based npm packages.
+Two packages exist:
+
+* `@keycloak/keycloak-admin-ui`: This is the base theme for the Admin Console.
+* `@keycloak/keycloak-account-ui`: This is the base theme for the Account Console.
+Both packages are available on npm.
+
+=== Installing the packages
+
+To install the packages, run the following command:
+
+[source,bash]
+----
+pnpm install @keycloak/keycloak-account-ui
+----
+
+=== Using the packages
+
+To use these pages, you add KeycloakProvider in your component hierarchy to choose the client, realm, and URL that you need.
+
+[source,javascript]
+----
+import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";
+
+//...
+
+<KeycloakProvider environment={{
+      serverBaseUrl: "http://localhost:8080",
+      realm: "master",
+      clientId: "security-admin-console"
+  }}>
+  {/* rest of you application */}
+</KeycloakProvider>
+----
+
+=== Translating the pages
+
+The pages are translated using the `i18next` library.
+You can set it up as described on the https://react.i18next.com/[react-i18next Website].
+If you want to use the translations that are provided, add i18next-http-backend to your project and add the following:
+
+[source,javascript]
+----
+backend: {
+  loadPath: `http://localhost:8080/resources/master/account/{lng}}`,
+  parse: (data: string) => {
+    const messages = JSON.parse(data);
+
+    const result: Record<string, string> = {};
+    messages.forEach((v) => (result[v.key] = v.value)); //need to convert to record
+    return result;
+  },
+},
+----
+
+=== Using the pages
+
+All "pages" are React components that can be used in your application.
+To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
+Instead, you can consider the (quick start)(https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
+
+=== Using the pages again
+
+All "pages" are React components that can be used in your application.
+To see what components are available, see the [source](https://github.com/keycloak/keycloak/blob/main/js/apps/account-ui/src/index.ts).
+Instead, you can consider the (quick start)(https://github.com/keycloak/keycloak-quickstarts/tree/main/extension/extend-account-console-node) to see how to use them.
