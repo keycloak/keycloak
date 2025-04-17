@@ -61,6 +61,7 @@ org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
 org.keycloak.authentication.AuthenticatorSpi
 org.keycloak.authentication.ClientAuthenticatorSpi
+org.keycloak.authentication.RequestedLevelOfAuthenticationSpi
 org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
