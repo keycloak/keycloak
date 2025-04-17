@@ -17,26 +17,18 @@
 
 package org.keycloak.tests.admin;
 
-import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jgroups.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -45,14 +37,9 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -60,215 +47,37 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
-import org.keycloak.testframework.admin.AdminClientFactory;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.RoleBuilder;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@KeycloakIntegrationTest(config = PermissionsTest.PermissionsTestServerConfig.class)
-public class PermissionsTest {
+@KeycloakIntegrationTest
+public class PermissionsTest extends AbstractPermissionsTest {
 
     @InjectRealm(config = PermissionsTestRealmConfig1.class, ref = "realm1")
     ManagedRealm managedRealm1;
 
     @InjectRealm(config = PermissionsTestRealmConfig2.class, ref = "realm2")
     ManagedRealm managedRealm2;
-
-    @InjectRealm(attachTo = "master", ref = "masterRealm")
-    ManagedRealm managedMasterRealm;
-
-    @InjectAdminClient
-    Keycloak adminClient;
-
-    @InjectAdminClientFactory
-    AdminClientFactory adminClientFactory;
-
-    private static final String REALM_NAME = "permissions-test";
-
-    private Map<String, Keycloak> clients = new HashMap<>();
-
-    @BeforeEach
-    public void beforeMethod() { // todo rewrite
-        Response response = managedMasterRealm.admin().users().create(UserConfigBuilder.create()
-                .username("permissions-test-master-none")
-                .password("password")
-                .build()
-        );
-        String userUuid = ApiUtil.getCreatedId(response);
-        managedMasterRealm.cleanup().add(r -> r.users().delete(userUuid));
-
-        for (String role : AdminRoles.ALL_REALM_ROLES) {
-            response = managedMasterRealm.admin().users().create(UserConfigBuilder.create()
-                    .username("permissions-test-master-" + role)
-                    .password("password")
-                    .build());
-            String roleUserUuid = ApiUtil.getCreatedId(response);
-            managedMasterRealm.cleanup().add(r -> r.users().delete(roleUserUuid));
-
-            String clientUuid = managedMasterRealm.admin().clients().findByClientId(REALM_NAME + "-realm").get(0).getId();
-            RoleRepresentation roleRep = managedMasterRealm.admin().clients().get(clientUuid).roles().get(role).toRepresentation();
-            managedMasterRealm.admin().users().get(roleUserUuid).roles().clientLevel(clientUuid).add(Collections.singletonList(roleRep));
-        }
-
-        clients.put(AdminRoles.REALM_ADMIN,
-                adminClientFactory.create().realm(REALM_NAME).username(AdminRoles.REALM_ADMIN).password("password").clientId("test-client").clientSecret("secret").build());
-
-        clients.put("none",
-                adminClientFactory.create().realm(REALM_NAME).username("none").password("password").clientId("test-client").clientSecret("secret").build());
-
-        clients.put("multi",
-                adminClientFactory.create().realm(REALM_NAME).username("multi").password("password").clientId("test-client").clientSecret("secret").build());
-
-        for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put(role, adminClientFactory.create().realm(REALM_NAME).username(role).password("password").clientId("test-client").build());
-        }
-
-        clients.put("REALM2", adminClientFactory.create().realm("realm2").username("admin").password("password").clientId("test-client").build());
-
-        clients.put("master-admin", adminClient); // todo maybe dont put it in the list
-
-        clients.put("master-none", adminClientFactory.create().realm("master").username("permissions-test-master-none").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
-
-        for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put("master-" + role,
-                    adminClientFactory.create().realm("master").username("permissions-test-master-" + role).password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
-        }
-
-    }
-
-    @Test
-    public void realms() throws Exception {
-        // Check returned realms
-        invoke((RealmResource realm) -> clients.get("master-none").realms().findAll(), clients.get("none"), false);
-        invoke((RealmResource realm) -> clients.get("none").realms().findAll(), clients.get("none"), false);
-        Assert.assertNames(clients.get("master-admin").realms().findAll(), "master", REALM_NAME, "realm2");
-        Assert.assertNames(clients.get(AdminRoles.REALM_ADMIN).realms().findAll(), REALM_NAME);
-        Assert.assertNames(clients.get("REALM2").realms().findAll(), "realm2");
-
-        // Check realm only contains name if missing view realm permission
-        List<RealmRepresentation> realms = clients.get(AdminRoles.VIEW_USERS).realms().findAll();
-        Assert.assertNames(realms, REALM_NAME);
-        assertGettersEmpty(realms.get(0));
-
-        realms = clients.get(AdminRoles.VIEW_REALM).realms().findAll();
-        Assert.assertNames(realms, REALM_NAME);
-        assertNotNull(realms.get(0).getAccessTokenLifespan());
-
-        // Check the same when access with users from 'master' realm
-        realms = clients.get("master-" + AdminRoles.VIEW_USERS).realms().findAll();
-        Assert.assertNames(realms, REALM_NAME);
-        assertGettersEmpty(realms.get(0));
-
-        realms = clients.get("master-" + AdminRoles.VIEW_REALM).realms().findAll();
-        Assert.assertNames(realms, REALM_NAME);
-        assertNotNull(realms.get(0).getAccessTokenLifespan());
-
-        // Create realm
-        invoke(realm -> clients.get("master-admin").realms().create(RealmConfigBuilder.create().name("master").build()),
-                adminClient, true);
-        invoke(realm -> clients.get("master-" + AdminRoles.MANAGE_USERS).realms().create(RealmConfigBuilder.create().name("master").build()),
-                adminClient, false);
-        invoke(realm -> clients.get(AdminRoles.REALM_ADMIN).realms().create(RealmConfigBuilder.create().name("master").build()),
-                adminClient, false);
-
-        // Get realm
-        invoke(RealmResource::toRepresentation, Resource.REALM, false, true);
-
-        RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
-        assertGettersEmpty(realm);
-        assertNull(realm.isRegistrationEmailAsUsername());
-        assertNull(realm.getAttributes());
-
-        realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
-        assertNotNull(realm.isRegistrationEmailAsUsername());
-
-        realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
-        assertNotNull(realm.isRegistrationEmailAsUsername());
-
-        // query users only if granted through fine-grained admin
-        realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
-        assertNull(realm.isRegistrationEmailAsUsername());
-        assertNull(realm.getAttributes());
-
-        // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
-        for (String role : AdminRoles.ALL_QUERY_ROLES) {
-            invoke(realmm -> clients.get(role).realms().realm(REALM_NAME).toRepresentation(), clients.get(role), true);
-        }
-
-        invoke(realm1 -> realm1.update(new RealmRepresentation()), Resource.REALM, true);
-        invoke(RealmResource::pushRevocation, Resource.REALM, true);
-        invoke(realm4 -> realm4.deleteSession("nosuch", false), Resource.USER, true);
-        invoke(RealmResource::getClientSessionStats, Resource.REALM, false);
-
-        invoke(RealmResource::getDefaultGroups, Resource.REALM, false);
-        invoke(realm7 -> realm7.addDefaultGroup("nosuch"), Resource.REALM, true);
-        invoke(realm9 -> realm9.removeDefaultGroup("nosuch"), Resource.REALM, true);
-        GroupRepresentation newGroup = new GroupRepresentation();
-        newGroup.setName("sample");
-        adminClient.realm(REALM_NAME).groups().add(newGroup);
-        GroupRepresentation group = adminClient.realms().realm(REALM_NAME).getGroupByPath("sample");
-
-        invoke(realm2 -> realm2.getGroupByPath("sample"), Resource.USER, false);
-
-        adminClient.realms().realm(REALM_NAME).groups().group(group.getId()).remove();
-
-        invoke((realm5, response) -> {
-            TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
-                    "nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch");
-            response.set(realm5.testLDAPConnection(config.getAction(), config.getConnectionUrl(), config.getBindDn(),
-                    config.getBindCredential(), config.getUseTruststoreSpi(), config.getConnectionTimeout()));
-            response.set(realm5.testLDAPConnection(config));
-        }, Resource.REALM, true);
-
-        invoke((realm3, response) ->
-                        response.set(realm3.partialImport(new PartialImportRepresentation())),
-                Resource.REALM, true);
-
-        invoke(RealmResource::clearRealmCache, Resource.REALM, true);
-        invoke(RealmResource::clearUserCache, Resource.REALM, true);
-
-        // Delete realm
-        invoke(realm6 -> clients.get("master-admin").realms().realm("nosuch").remove(), adminClient, true);
-        invoke(realm8 -> clients.get("REALM2").realms().realm(REALM_NAME).remove(), adminClient, false);
-        invoke(realm11 -> clients.get(AdminRoles.MANAGE_USERS).realms().realm(REALM_NAME).remove(), adminClient, false);
-        invoke(realm10 -> clients.get(AdminRoles.REALM_ADMIN).realms().realm(REALM_NAME).remove(), adminClient, true);
-
-        // Revert realm removal
-//        recreatePermissionRealm();
-    }
 
     @Test
     public void realmLogoutAll() {
@@ -588,57 +397,6 @@ public class PermissionsTest {
     }
 
     @Test
-    public void flows() throws Exception {
-        invoke(realm -> realm.flows().getFormProviders(), Resource.REALM, false);
-        invoke(realm -> realm.flows().getAuthenticatorProviders(), Resource.REALM, false);
-        invoke(realm -> realm.flows().getClientAuthenticatorProviders(), Resource.REALM, false, true);
-        invoke(realm -> realm.flows().getFormActionProviders(), Resource.REALM, false);
-        invoke(realm -> realm.flows().getFlows(), Resource.REALM, false, true);
-        invoke((realm, response) -> response.set(realm.flows().createFlow(new AuthenticationFlowRepresentation())), Resource.REALM, true);
-        invoke(realm -> realm.flows().getFlow("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().deleteFlow("nosuch"), Resource.REALM, true);
-        invoke((realm, response) -> response.set(realm.flows().copy("nosuch", Map.of())), Resource.REALM, true);
-        invoke(realm -> realm.flows().addExecutionFlow("nosuch", Map.of()), Resource.REALM, true);
-        invoke(realm -> realm.flows().addExecution("nosuch", Map.of()), Resource.REALM, true);
-        invoke(realm -> realm.flows().getExecutions("nosuch"), Resource.REALM, false);
-        invoke((RealmResource realm) -> realm.flows().getExecution("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().updateExecutions("nosuch", new AuthenticationExecutionInfoRepresentation()), Resource.REALM, true);
-        invoke((realm, response) -> {
-            AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
-            rep.setAuthenticator("auth-cookie");
-            rep.setRequirement("CONDITIONAL");
-            response.set(realm.flows().addExecution(rep));
-        }, Resource.REALM, true);
-        invoke(realm -> realm.flows().raisePriority("nosuch"), Resource.REALM, true);
-        invoke(realm -> realm.flows().lowerPriority("nosuch"), Resource.REALM, true);
-        invoke(realm -> realm.flows().removeExecution("nosuch"), Resource.REALM, true);
-        invoke((realm, response) ->
-                response.set(realm.flows().newExecutionConfig("nosuch", new AuthenticatorConfigRepresentation())), Resource.REALM, true);
-        invoke(realm -> realm.flows().getAuthenticatorConfig("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().getUnregisteredRequiredActions(), Resource.REALM, false);
-        invoke(realm -> realm.flows().registerRequiredAction(new RequiredActionProviderSimpleRepresentation()), Resource.REALM, true);
-        invoke(realm -> realm.flows().getRequiredActions(), Resource.REALM, false, true);
-        invoke(realm -> realm.flows().getRequiredAction("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().removeRequiredAction("nosuch"), Resource.REALM, true);
-        invoke(realm -> realm.flows().updateRequiredAction("nosuch", new RequiredActionProviderRepresentation()), Resource.REALM, true);
-        invoke(realm -> realm.flows().getAuthenticatorConfigDescription("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().getPerClientConfigDescription(), Resource.REALM, false, true);
-        invoke(realm -> realm.flows().getAuthenticatorConfig("nosuch"), Resource.REALM, false);
-        invoke(realm -> realm.flows().removeAuthenticatorConfig("nosuch"), Resource.REALM, true);
-        invoke(realm -> realm.flows().updateAuthenticatorConfig("nosuch", new AuthenticatorConfigRepresentation()), Resource.REALM, true);
-        invoke(realm -> {
-            clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getPerClientConfigDescription();
-            clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getClientAuthenticatorProviders();
-            clients.get(AdminRoles.VIEW_REALM).realm(REALM_NAME).flows().getRequiredActions();
-        }, adminClient, true);
-
-        // Re-create realm
-//        adminClient.realm(REALM_NAME).remove();
-//
-//        recreatePermissionRealm();
-    }
-
-    @Test
     public void rolesById() {
         RoleRepresentation newRole = RoleBuilder.create().name("role-by-id").build();
         managedRealm1.admin().roles().create(newRole);
@@ -877,232 +635,5 @@ public class PermissionsTest {
         invoke(invocation, clients.get("master-admin"), true);
         invoke(invocation, clients.get("none"), false);
         invoke(invocation, clients.get("REALM2"), false);
-    }
-
-    private void invoke(final Invocation invocation, Resource resource, boolean manage) {
-        invoke((realm, response) ->
-                        invocation.invoke(realm),
-                resource, manage);
-    }
-
-    private void invoke(final Invocation invocation, Resource resource, boolean manage, boolean skipDifferentRole) {
-        invoke((realm, response) ->
-                        invocation.invoke(realm),
-                resource, manage, skipDifferentRole);
-    }
-
-    private void invoke(InvocationWithResponse invocation, Resource resource, boolean manage) {
-        invoke(invocation, resource, manage, false);
-    }
-
-    private void invoke(InvocationWithResponse invocation, Resource resource, boolean manage, boolean skipDifferentRole) {
-        String viewRole = getViewRole(resource);
-        String manageRole = getManageRole(resource);
-        String differentViewRole = getDifferentViewRole(resource);
-        String differentManageRole = getDifferentManageRole(resource);
-
-        invoke(invocation, clients.get("master-none"), false);
-        invoke(invocation, clients.get("master-admin"), true);
-        invoke(invocation, clients.get("master-" + viewRole), !manage);
-        invoke(invocation, clients.get("master-" + manageRole), true);
-        if (!skipDifferentRole) {
-            invoke(invocation, clients.get("master-" + differentViewRole), false);
-            invoke(invocation, clients.get("master-" + differentManageRole), false);
-        }
-
-        invoke(invocation, clients.get("none"), false);
-        invoke(invocation, clients.get(AdminRoles.REALM_ADMIN), true);
-        invoke(invocation, clients.get(viewRole), !manage);
-        invoke(invocation, clients.get(manageRole), true);
-        if (!skipDifferentRole) {
-            invoke(invocation, clients.get(differentViewRole), false);
-            invoke(invocation, clients.get(differentManageRole), false);
-        }
-
-        invoke(invocation, clients.get("REALM2"), false);
-    }
-
-    private void invoke(final Invocation invocation, Keycloak client, boolean expectSuccess) {
-        invoke((realm, response) ->
-                        invocation.invoke(realm),
-                client, expectSuccess);
-    }
-
-    private void invoke(InvocationWithResponse invocation, Keycloak client, boolean expectSuccess) {
-        int statusCode;
-        try {
-            AtomicReference<Response> responseReference = new AtomicReference<>();
-            invocation.invoke(client.realm(REALM_NAME), responseReference);
-            Response response = responseReference.get();
-            if (response != null) {
-                statusCode = response.getStatus();
-            } else {
-                // OK (we don't care about the exact status code
-                statusCode = 200;
-            }
-        } catch (ClientErrorException e) {
-            statusCode = e.getResponse().getStatus();
-        }
-
-        if (expectSuccess) {
-            if (!(statusCode == 200 || statusCode == 201 || statusCode == 204 || statusCode == 404 || statusCode == 409 || statusCode == 400)) {
-                fail("Expected permitted, but was " + statusCode);
-            }
-        } else {
-            if (statusCode != 403) {
-                fail("Expected 403, but was " + statusCode);
-            }
-        }
-    }
-
-    private String getViewRole(Resource resource) {
-        return switch (resource) {
-            case CLIENT -> AdminRoles.VIEW_CLIENTS;
-            case USER -> AdminRoles.VIEW_USERS;
-            case REALM -> AdminRoles.VIEW_REALM;
-            case EVENTS -> AdminRoles.VIEW_EVENTS;
-            case IDENTITY_PROVIDER -> AdminRoles.VIEW_IDENTITY_PROVIDERS;
-            case AUTHORIZATION -> AdminRoles.VIEW_AUTHORIZATION;
-            default -> throw new RuntimeException("Unexpected resource");
-        };
-    }
-
-    private String getManageRole(Resource resource) {
-        return switch (resource) {
-            case CLIENT -> AdminRoles.MANAGE_CLIENTS;
-            case USER -> AdminRoles.MANAGE_USERS;
-            case REALM -> AdminRoles.MANAGE_REALM;
-            case EVENTS -> AdminRoles.MANAGE_EVENTS;
-            case IDENTITY_PROVIDER -> AdminRoles.MANAGE_IDENTITY_PROVIDERS;
-            case AUTHORIZATION -> AdminRoles.MANAGE_AUTHORIZATION;
-            default -> throw new RuntimeException("Unexpected resource");
-        };
-    }
-
-    private String getDifferentViewRole(Resource resource) {
-        return switch (resource) {
-            case CLIENT -> AdminRoles.VIEW_USERS;
-            case USER -> AdminRoles.VIEW_CLIENTS;
-            case REALM -> AdminRoles.VIEW_EVENTS;
-            case EVENTS, AUTHORIZATION -> AdminRoles.VIEW_IDENTITY_PROVIDERS;
-            case IDENTITY_PROVIDER -> AdminRoles.VIEW_REALM;
-            default -> throw new RuntimeException("Unexpected resouce");
-        };
-    }
-
-    private String getDifferentManageRole(Resource resource) {
-        return switch (resource) {
-            case CLIENT -> AdminRoles.MANAGE_USERS;
-            case USER -> AdminRoles.MANAGE_CLIENTS;
-            case REALM -> AdminRoles.MANAGE_EVENTS;
-            case EVENTS, AUTHORIZATION -> AdminRoles.MANAGE_IDENTITY_PROVIDERS;
-            case IDENTITY_PROVIDER -> AdminRoles.MANAGE_REALM;
-            default -> throw new RuntimeException("Unexpected resouce");
-        };
-    }
-
-    public interface Invocation {
-
-        void invoke(RealmResource realm);
-
-    }
-
-    public interface InvocationWithResponse {
-
-        void invoke(RealmResource realm, AtomicReference<Response> response);
-
-    }
-
-    private void assertGettersEmpty(RealmRepresentation rep) {
-        assertGettersEmpty(rep, "getRealm", "getAttributesOrEmpty", "getDisplayNameHtml",
-                "getDisplayName", "getDefaultLocale", "getSupportedLocales");
-    }
-
-    private void assertGettersEmpty(Object rep, String... ignore) {
-        List<String> ignoreList = Arrays.asList(ignore);
-
-        for (Method m : rep.getClass().getDeclaredMethods()) {
-            if (m.getParameterCount() == 0 && m.getName().startsWith("get") && !ignoreList.contains(m.getName())) {
-                try {
-                    Object o = m.invoke(rep);
-                    assertNull(o, "Expected " + m.getName() + " to be null");
-                } catch (Exception e) {
-                    fail(e.getMessage());
-                }
-            }
-        }
-    }
-
-    private static class PermissionsTestRealmConfig1 implements RealmConfig {
-
-        @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.name(REALM_NAME);
-            realm.addClient("test-client")
-                    .enabled(true)
-                    .publicClient(true)
-                    .directAccessGrants();
-
-            realm.addUser(AdminRoles.REALM_ADMIN)
-                    .name("realm-admin", "realm-admin")
-                    .email("realmadmin@localhost.com")
-                    .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-
-            realm.addUser("multi")
-                    .name("multi", "multi")
-                    .email("multi@localhost.com")
-                    .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS, AdminRoles.MANAGE_REALM, AdminRoles.VIEW_CLIENTS);
-
-            realm.addUser("none")
-                    .name("none", "none")
-                    .email("none@localhost.com")
-                    .password("password");
-
-            for (String role : AdminRoles.ALL_REALM_ROLES) {
-                realm.addUser(role)
-                        .name(role, role)
-                        .email(role + "@localhost.com")
-                        .password("password")
-                        .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, role);
-            }
-
-            realm.addUser("admin")
-                    .name("admin", "admin")
-                    .email("admin" + "@localhost.com")
-                    .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-
-            realm.smtp(MailServerConfiguration.HOST, Integer.parseInt(MailServerConfiguration.PORT), MailServerConfiguration.FROM);
-
-            return realm;
-        }
-    }
-
-    private static class PermissionsTestRealmConfig2 implements RealmConfig {
-        @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.name("realm2");
-
-            realm.addClient("test-client")
-                    .publicClient(true)
-                    .directAccessGrants();
-
-            realm.addUser("admin")
-                    .name("admin", "admin")
-                    .email("admin" + "@localhost.com")
-                    .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-
-            return realm;
-        }
-    }
-
-    static class PermissionsTestServerConfig implements KeycloakServerConfig {
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.AUTHORIZATION);
-        }
     }
 }
