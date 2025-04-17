@@ -141,6 +141,11 @@ public class ScriptBasedMapper extends AbstractSAMLProtocolMapper implements SAM
                 bindings.put("userSession", userSession);
                 bindings.put("keycloakSession", session);
             });
+            if (attributeValue == null) {
+                // Treat as a no-op
+                LOGGER.info("Null value received from ProtocolMapper script. Treating as a no-op");
+                return;
+            }
             //If the result is a an array or is iterable, get all values
             if (attributeValue.getClass().isArray()){
                 attributeValue = Arrays.asList((Object[])attributeValue);
