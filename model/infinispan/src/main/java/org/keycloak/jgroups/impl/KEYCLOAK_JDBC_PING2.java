@@ -1,10 +1,12 @@
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
+package org.keycloak.jgroups.impl;
 
 import org.jgroups.protocols.JDBC_PING2;
 import org.jgroups.protocols.PingData;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 
 /**
  * Enhanced JDBC_PING2 to handle entries transactionally.
@@ -12,6 +14,9 @@ import java.sql.SQLException;
  * Workaround for issue <a href="https://issues.redhat.com/browse/JGRP-2870">JGRP-2870</a>
  */
 public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
+
+    private JpaConnectionProviderFactory factory;
+
     @Override
     protected void writeToDB(PingData data, String clustername) throws SQLException {
         lock.lock();
@@ -46,5 +51,19 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             lock.unlock();
         }
 
+    }
+
+    @Override
+    protected void loadDriver() {
+        //no-op, using JpaConnectionProviderFactory
+    }
+
+    @Override
+    protected Connection getConnection() {
+        return factory.getConnection();
+    }
+
+    public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
+        this.factory = Objects.requireNonNull(factory);
     }
 }

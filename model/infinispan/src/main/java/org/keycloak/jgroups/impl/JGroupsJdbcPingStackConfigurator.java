@@ -15,28 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan.jgroups.impl;
+package org.keycloak.jgroups.impl;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.arc.Arc;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.JDBC_PING2;
+import org.jgroups.stack.Protocol;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.jgroups.JGroupsConfigurator;
+import org.keycloak.jgroups.JGroupsStackConfigurator;
+import org.keycloak.jgroups.JGroupsUtil;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsStackConfigurator;
-import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsUtil;
-
-import javax.sql.DataSource;
 
 /**
  * JGroups discovery configuration using {@link JDBC_PING2}.
@@ -47,9 +43,10 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
 
     private JGroupsJdbcPingStackConfigurator() {}
 
-    @Override
-    public boolean requiresKeycloakSession() {
-        return true;
+    static {
+        // Use custom Keycloak JDBC_PING implementation to use the connection from JpaConnectionProviderFactory
+        // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
+        ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
     }
 
     @Override
@@ -59,12 +56,11 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
         var stack = getProtocolConfigurations(tableName, isUdp ? "PING" : "MPING");
-        holder.addJGroupsStack(new EmbeddedJGroupsChannelConfigurator(stackName, stack, null), isUdp ? "udp" : "tcp");
+        var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack,connectionFactory, isUdp), null);
 
-        Supplier<DataSource> dataSourceSupplier = Arc.container().select(AgroalDataSource.class)::get;
-        JGroupsUtil.transportOf(holder).addProperty(JGroupsTransport.DATA_SOURCE, dataSourceSupplier);
         JGroupsUtil.transportOf(holder).stack(stackName);
-        CacheManagerFactory.logger.info("JGroups JDBC_PING discovery enabled.");
+        JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, String discoveryProtocol) {
@@ -82,11 +78,25 @@ public class JGroupsJdbcPingStackConfigurator implements JGroupsStackConfigurato
                 "stack.combine", "REPLACE",
                 "stack.position", discoveryProtocol
         );
-
-        // Use custom Keycloak JDBC_PING implementation that workarounds issue https://issues.redhat.com/browse/JGRP-2870
-        // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
-        ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
         return List.of(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), attributes));
+    }
+
+    private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
+
+        private final JpaConnectionProviderFactory factory;
+
+        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp) {
+            super(name, stack, null, isUdp ? "udp" : "tcp");
+            this.factory = factory;
+        }
+
+        @Override
+        public void afterCreation(Protocol protocol) {
+            super.afterCreation(protocol);
+            if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
+                kcPing.setJpaConnectionProviderFactory(factory);
+            }
+        }
     }
 
 
