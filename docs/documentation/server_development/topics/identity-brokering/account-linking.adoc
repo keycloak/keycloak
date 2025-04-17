@@ -14,12 +14,11 @@ back to the server.  The server establishes the link and redirects back to the a
 There are some preconditions that must be met by the client application before it can initiate this protocol:
 
 * The desired identity provider must be configured and enabled for the user's realm in the admin console.
-* The user account must already be logged in as an existing user via the OIDC protocol
 * The user must have an `account.manage-account` or `account.manage-account-links` role mapping.
 * The application must be granted the scope for those roles within its access token
 
 The protocol is realized by the link:{adminguide_link}#con-aia_server_administration_guide[Application-initiated action (AIA)]. If you want the user, who is authenticated in your client application, to link
-to the identity provider, attach the parameter `kc_action` with the value `idp_link:<identity-provider-alias>` to the OIDC authentication URL and redirect the user to this URL. For example, 
+to the identity provider, attach the parameter `kc_action` with the value `idp_link:<identity-provider-alias>` to the OIDC authentication URL and redirect the user to this URL. For example,
 to request linking to the identity provider with the alias `my-oidc-provider`, attach the parameter such as:
 
 [source,subs="attributes+"]
@@ -38,6 +37,7 @@ your client application to the AIA based protocol described above because legacy
 
 In addition to the preconditions above, the legacy client initiated account linking has another precondition:
 
+* The user account must already be logged in as an existing user via the OIDC protocol
 * The application must have access to its access token as it needs information within it to generate the redirect URL.
 
 To initiate the login, the application must fabricate a URL and redirect the user's browser to this URL.  The URL looks like this:

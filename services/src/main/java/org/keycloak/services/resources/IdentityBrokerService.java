@@ -317,6 +317,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
+        authSession.setAuthenticatedUser(userSession.getUser());
 
         // Refresh the cookie
         new AuthenticationSessionManager(session).setAuthSessionCookie(userSession.getId());
@@ -573,10 +574,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             shouldMigrateId = true;
         }
 
-        // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authenticationSession);
-        if (isDoingAccountLinking(authenticationSession, userSession, true, providerAlias)) {
-            return performAccountLinking(authenticationSession, userSession, context, federatedIdentityModel, federatedUser);
+        // Check if linking was requested (for example by kc_action) or if we're authenticating
+        if (isDoingAccountLinking(authenticationSession, true, providerAlias)) {
+            return performAccountLinking(authenticationSession, context, federatedIdentityModel, federatedUser);
         }
 
         if (federatedUser == null) {
@@ -915,9 +915,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
         event.detail(Details.IDENTITY_PROVIDER, idpConfig.getAlias());
 
-        // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (isDoingAccountLinking(authSession, userSession, true, idpConfig.getAlias())) {
+        // Check if linking was requested (for example by kc_action) or if we're authenticating
+        if (isDoingAccountLinking(authSession, true, idpConfig.getAlias())) {
             authSession.setAuthNote(IdpLinkAction.IDP_LINK_STATUS, RequiredActionContext.KcActionStatus.CANCELLED.name());
             return redirectAfterIDPLinking(authSession);
         }
@@ -930,9 +929,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
         event.detail(Details.IDENTITY_PROVIDER, idpConfig.getAlias());
 
-        // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
+        // Check if linking was requested (for example by kc_action) or if we're authenticating
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-        if (isDoingAccountLinking(authSession, userSession, true, idpConfig.getAlias())) {
+        if (isDoingAccountLinking(authSession, true, idpConfig.getAlias())) {
             return redirectToErrorWhenLinkingFailed(authSession, message);
         }
 
@@ -945,23 +944,19 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
 
-    private boolean isDoingAccountLinking(AuthenticationSessionModel authSession, UserSessionModel userSession, boolean checkProviderAlias, String providerAlias) {
+    private boolean isDoingAccountLinking(AuthenticationSessionModel authSession, boolean checkProviderAlias, String providerAlias) {
         String noteFromSession = authSession.getAuthNote(LINKING_IDENTITY_PROVIDER);
         if (noteFromSession == null) {
             return false;
         }
 
         boolean linkingValid;
-        if (userSession == null) {
-            linkingValid = false;
+        if (checkProviderAlias) {
+            String expectedNote = authSession.getParentSession().getId() + authSession.getClient().getClientId() + providerAlias;
+            linkingValid = expectedNote.equals(noteFromSession);
         } else {
-            if (checkProviderAlias) {
-                String expectedNote = userSession.getId() + authSession.getClient().getClientId() + providerAlias;
-                linkingValid = expectedNote.equals(noteFromSession);
-            } else {
-                String expectedNotePrefix = userSession.getId() + authSession.getClient().getClientId();
-                linkingValid = noteFromSession.startsWith(expectedNotePrefix);
-            }
+            String expectedNotePrefix = authSession.getParentSession().getId() + authSession.getClient().getClientId();
+            linkingValid = noteFromSession.startsWith(expectedNotePrefix);
         }
 
         if (linkingValid) {
@@ -973,15 +968,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
 
-    private Response performAccountLinking(AuthenticationSessionModel authSession, UserSessionModel userSession, BrokeredIdentityContext context, FederatedIdentityModel newModel, UserModel federatedUser) {
-        logger.debugf("Will try to link identity provider [%s] to user [%s]", context.getIdpConfig().getAlias(), userSession.getUser().getUsername());
-
+    private Response performAccountLinking(AuthenticationSessionModel authSession, BrokeredIdentityContext context, FederatedIdentityModel newModel, UserModel federatedUser) {
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
-
-
-        UserModel authenticatedUser = userSession.getUser();
+        UserModel authenticatedUser = authSession.getAuthenticatedUser();
         authSession.setAuthenticatedUser(authenticatedUser);
+
+        logger.debugf("Will try to link identity provider [%s] to user [%s]", context.getIdpConfig().getAlias(), authenticatedUser.getUsername());
 
         if (federatedUser != null && !authenticatedUser.getId().equals(federatedUser.getId())) {
             logger.debugf("Cannot link user '%s' to identity provider '%s' . Other user '%s' already linked with the identity provider", authenticatedUser.getUsername(), context.getIdpConfig().getAlias(), federatedUser.getUsername());
@@ -1025,7 +1018,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         // we do this to make sure that the parent IDP is logged out when this user session is complete.
         // But for the case when userSession was previously authenticated with broker1 and now is linked to another broker2, we shouldn't override broker1 notes with the broker2 for sure.
         // Maybe broker logout should be rather always skiped in case of broker-linking
-        if (userSession.getNote(Details.IDENTITY_PROVIDER) == null) {
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+        if (userSession != null && userSession.getNote(Details.IDENTITY_PROVIDER) == null) {
             userSession.setNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());
             userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
         }
@@ -1034,6 +1028,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (!Boolean.parseBoolean(authSession.getAuthNote(IdpLinkAction.KC_ACTION_LINKING_IDENTITY_PROVIDER))) {
             // Legacy client-initiated account linking
+
+            // In legacy client-initiated account linking, the userSession should exists before linking was started, however it might be expired during the time when user is authenticating to the IDP
+            if (userSession == null) {
+                return redirectToErrorWhenLinkingFailed(authSession, Messages.BROKER_LINKING_SESSION_EXPIRED);
+            }
+
             AuthenticationManager.setClientScopesInSession(session, authSession);
             TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
@@ -1202,8 +1202,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             AuthenticationSessionModel authSession = checks.getAuthenticationSession();
             if (authSession != null) {
                 // Check if error happened during login or during linking from some application like account console
-                UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
-                if (isDoingAccountLinking(authSession, userSession, false, null)) {
+                if (isDoingAccountLinking(authSession, false, null)) {
                     Response accountManagementFailedLinking = redirectToErrorWhenLinkingFailed(authSession, Messages.STALE_CODE_ACCOUNT);
                     throw new WebApplicationException(accountManagementFailedLinking);
                 } else {

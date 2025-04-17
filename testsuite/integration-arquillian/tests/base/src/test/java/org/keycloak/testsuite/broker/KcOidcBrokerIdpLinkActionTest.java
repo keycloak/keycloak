@@ -132,6 +132,37 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         });
     }
 
+
+    @Test
+    public void testAccountLinkingSuccessTriggeredWhenUserNotAuthenticated() throws Exception {
+        // Check that user is not linked to the IDP
+        assertUserLinkedToIDP(false);
+
+        // Login to consumer with "kc_action" when user not authenticated yet
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.loginForm().kcAction(kcAction).open();
+        loginPage.login("user1", "password");
+
+        // Login to provider
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        appPage.assertCurrent();
+        assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
+
+        // Check that user is linked to the IDP
+        assertUserLinkedToIDP(true);
+
+        assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+            assertProviderEventsSuccess(providerRealmId, providerUserId);
+            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+        });
+    }
+
     @Test
     public void testAccountLinkingConsentRejected() throws Exception {
         loginToConsumer();

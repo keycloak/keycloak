@@ -109,14 +109,6 @@ public class IdpLinkAction implements RequiredActionProvider, RequiredActionFact
         EventBuilder event = context.getEvent().clone();
         event.event(EventType.FEDERATED_IDENTITY_LINK);
 
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(),
-                context.getRealm(), true);
-        if (authResult == null) {
-            event.error(Errors.NOT_LOGGED_IN);
-            context.ignore();
-            return;
-        }
-
         String identityProviderAlias = authSession.getClientNote(Constants.KC_ACTION_PARAMETER);
         if (identityProviderAlias == null) {
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
@@ -145,7 +137,7 @@ public class IdpLinkAction implements RequiredActionProvider, RequiredActionFact
 
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realm, authSession);
         clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        String noteValue = authResult.getSession().getId() + client.getClientId() + identityProviderAlias;
+        String noteValue = authSession.getParentSession().getId() + client.getClientId() + identityProviderAlias;
         authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, noteValue);
         authSession.setAuthNote(KC_ACTION_LINKING_IDENTITY_PROVIDER, "true");
 
