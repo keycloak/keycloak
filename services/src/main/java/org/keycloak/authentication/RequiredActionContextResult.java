@@ -146,6 +146,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
+    public void cancel() {
+        status = Status.CANCELLED;
+    }
+
+    @Override
     public void ignore() {
         status = Status.IGNORE;
     }

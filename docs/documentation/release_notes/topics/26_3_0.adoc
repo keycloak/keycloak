@@ -11,6 +11,11 @@ Asynchronous logging might be useful for deployments requiring **high throughput
 
 For more details, see the https://www.keycloak.org/server/logging[Logging guide].
 
+= Client initiated linking of the user account to identity provider is based on AIA
+
+In this release, we added Application initiated action (AIA) implementation for linking a user account to the identity provider. The custom protocol, which was previously
+used for client initiated account linking is deprecated now. For more information, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
 = Deprecated for removal the Instagram Identity Broker
 
 It has been a while since discussions started about any activity around the Instagram Identity Broker

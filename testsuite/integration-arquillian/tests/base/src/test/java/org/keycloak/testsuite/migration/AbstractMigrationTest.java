@@ -443,6 +443,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
     }
 
+    protected void testMigrationTo26_3_0() {
+        testIdpLinkActionAvailable(migrationRealm);
+    }
+
     private void testClientContainsExpectedClientScopes() {
         // Test OIDC client contains expected client scopes
         ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
@@ -995,6 +999,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                     assertEquals(1000, action.getPriority());
                 } else if (action.getAlias().equals("delete_credential")) {
                     assertEquals(100, action.getPriority());
+                } else if (action.getAlias().equals("idp_link")) {
+                    assertEquals(110, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -1345,6 +1351,17 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals("delete_credential", rep.getProviderId());
         assertEquals("Delete Credential", rep.getName());
         assertEquals(100, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
+    }
+
+    private void testIdpLinkActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("idp_link");
+        assertNotNull(rep);
+        assertEquals("idp_link", rep.getAlias());
+        assertEquals("idp_link", rep.getProviderId());
+        assertEquals("Linking Identity Provider", rep.getName());
+        assertEquals(110, rep.getPriority());
         assertTrue(rep.isEnabled());
         assertFalse(rep.isDefaultAction());
     }
