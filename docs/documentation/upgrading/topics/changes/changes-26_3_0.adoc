@@ -24,10 +24,17 @@ Notable changes where an internal behavior changed to prevent common misconfigur
 
 === Usage of remote stores embedded caches is restricted
 
-The experimental feature `cache-embedded-remote-store` was removed in this release and usage of remote stores for embedded caches was restricted.
-Consider the following cases and recommended migration steps.
+The experimental feature `cache-embedded-remote-store` was removed in this release and usage of remote stores for embedded caches is now restricted.
 
-. If you are using remote stores for running {project_name} in multiple data centers, follow link:{highavailabilityguide_link}[{highavailabilityguide_name}] for deploying {project_name}.
-. If you are using remote stores to keep user sessions available after a {project_name} restart, use the `peristent-user-session` feature which is enabled by default since.
+Consider one of the following cases and recommended migration steps:
 
-WARNING: {project_name} will refuse to start if the `persistent-user-session` feature is disabled and remote store is configured for any of the user session caches.
+* If you are using remote stores for running {project_name} in multiple data centers especially if they do not have a direct networking connection to allow all {project_name} nodes to form a cluster, follow the link:{highavailabilityguide_link}[{highavailabilityguide_name}] for deploying a multi-site {project_name} setup.
+* If you are using remote stores to keep user sessions available after a {project_name} restart, use the `peristent-user-session` feature which is enabled by default.
+
+[WARNING]
+====
+* {project_name} refuses to start if the `persistent-user-session` feature is disabled and remote store is configured for any of the user session caches.
+
+* With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
+====
+
