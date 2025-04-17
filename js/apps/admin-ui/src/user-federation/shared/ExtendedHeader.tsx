@@ -68,6 +68,7 @@ export const ExtendedHeader = ({
   const syncChangedUsers = async () => {
     try {
       if (id) {
+        addAlert(t("syncUsersStarted"), AlertVariant.info);
         const response = await adminClient.userStorageProvider.sync({
           id: id,
           action: "triggerChangedUsersSync",
@@ -90,6 +91,7 @@ export const ExtendedHeader = ({
   const syncAllUsers = async () => {
     try {
       if (id) {
+        addAlert(t("syncUsersStarted"), AlertVariant.info);
         const response = await adminClient.userStorageProvider.sync({
           id: id,
           action: "triggerFullSync",
