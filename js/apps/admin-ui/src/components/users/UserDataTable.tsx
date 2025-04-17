@@ -11,18 +11,17 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Chip,
-  ChipGroup,
   EmptyState,
   FlexItem,
   Label,
-  Text,
-  TextContent,
+  LabelGroup,
+  Content,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
+
 import {
   ExclamationCircleIcon,
   InfoCircleIcon,
@@ -265,7 +264,7 @@ export function UserDataTable() {
           <>
             {Object.values(activeFilters.userAttribute).map((entry) => {
               return (
-                <ChipGroup
+                <LabelGroup
                   className="pf-v5-u-mt-md pf-v5-u-mr-md"
                   data-testid="user-attribute-search-chips-group"
                   key={entry.name}
@@ -289,10 +288,10 @@ export function UserDataTable() {
                     refresh();
                   }}
                 >
-                  <Chip key={entry.name} isReadOnly>
+                  <Label variant="outline" key={entry.name}>
                     {entry.value}
-                  </Chip>
-                </ChipGroup>
+                  </Label>
+                </LabelGroup>
               );
             })}
           </>
@@ -368,9 +367,11 @@ export function UserDataTable() {
                 <ToolbarContent>{toolbar()}</ToolbarContent>
               </Toolbar>
               <EmptyState data-testid="empty-state" variant="lg">
-                <TextContent className="kc-search-users-text">
-                  <Text>{t("searchForUserDescription")}</Text>
-                </TextContent>
+                <Content className="kc-search-users-text">
+                  <Content component="p">
+                    {t("searchForUserDescription")}
+                  </Content>
+                </Content>
               </EmptyState>
             </>
           ) : (

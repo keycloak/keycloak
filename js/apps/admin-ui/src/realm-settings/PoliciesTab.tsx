@@ -186,7 +186,7 @@ export const PoliciesTab = () => {
   return (
     <>
       <DeleteConfirm />
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <Flex className="kc-policies-config-section">
           <FlexItem>
             <Title headingLevel="h1" size="md">
@@ -352,7 +352,6 @@ const SwitchRenderer = ({
         render={({ field }) => (
           <Switch
             label={t("enabled")}
-            labelOff={t("disabled")}
             isChecked={field.value}
             isDisabled={clientPolicy.global}
             onChange={(_event, value) => {

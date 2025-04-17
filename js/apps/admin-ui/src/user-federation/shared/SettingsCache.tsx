@@ -73,7 +73,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     <>
       <FormGroup
         label={t("cachePolicy")}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("cachePolicyHelp")}
             fieldLabelId="cachePolicy"
@@ -144,7 +144,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         <>
           <FormGroup
             label={t("evictionHour")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("evictionHourHelp")}
                 fieldLabelId="evictionHour"
@@ -177,7 +177,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           </FormGroup>
           <FormGroup
             label={t("evictionMinute")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("evictionMinuteHelp")}
                 fieldLabelId="evictionMinute"
@@ -213,7 +213,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
       {isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
         <FormGroup
           label={t("maxLifespan")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("maxLifespanHelp")}
               fieldLabelId="maxLifespan"

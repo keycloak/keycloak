@@ -15,8 +15,7 @@ import {
   FormGroup,
   PageSection,
   Switch,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
@@ -90,12 +89,12 @@ const KeySection = ({
         />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
-        <TextContent className="pf-v5-u-pb-lg">
-          <Text>{t(`${title}Explain`)}</Text>
-        </TextContent>
+        <Content className="pf-v5-u-pb-lg">
+          <Content component="p">{t(`${title}Explain`)}</Content>
+        </Content>
         <FormAccess role="manage-clients" isHorizontal>
           <FormGroup
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t(`${key}Help`)} fieldLabelId={key} />
             }
             label={t(key)}
@@ -111,7 +110,6 @@ const KeySection = ({
                   data-testid={key}
                   id={key}
                   label={t("on")}
-                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(_event, value) => {
                     const v = value.toString();
@@ -130,7 +128,7 @@ const KeySection = ({
         </FormAccess>
       </FormPanel>
       {keyInfo?.certificate && section === "true" && (
-        <Card isFlat>
+        <Card>
           <CardBody className="kc-form-panel__body">
             <Form isHorizontal>
               <Certificate keyInfo={keyInfo} />
@@ -230,7 +228,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   });
 
   return (
-    <PageSection variant="light" className="keycloak__form">
+    <PageSection hasBodyWrapper={false} className="keycloak__form">
       {isChanged && (
         <SamlKeysDialog
           id={clientId}

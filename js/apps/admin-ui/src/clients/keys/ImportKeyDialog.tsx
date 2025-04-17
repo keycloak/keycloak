@@ -5,11 +5,9 @@ import {
   FileUpload,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -82,9 +80,9 @@ export const ImportKeyDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("generateKeysDescription")}</Content>
+      </Content>
       <Form className="pf-v5-u-pt-lg">
         <FormProvider {...form}>
           <SelectControl

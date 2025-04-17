@@ -208,7 +208,7 @@ export default function LdapMapperDetails() {
               ]
         }
       />
-      <PageSection variant="light" isFilled>
+      <PageSection hasBodyWrapper={false} isFilled>
         <FormProvider {...form}>
           <FormAccess
             role="manage-realm"
@@ -248,7 +248,7 @@ export default function LdapMapperDetails() {
             ) : (
               <FormGroup
                 label={t("mapperType")}
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={
                       mapper?.helpText ? mapper.helpText : t("mapperTypeHelp")

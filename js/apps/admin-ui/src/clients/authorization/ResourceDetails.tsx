@@ -184,7 +184,7 @@ export default function ResourceDetails() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
@@ -219,7 +219,7 @@ export default function ResourceDetails() {
             <FormGroup
               label={t("uris")}
               fieldId="uris"
-              labelIcon={
+              labelHelp={
                 <HelpItem helpText={t("urisHelp")} fieldLabelId="uris" />
               }
             >
@@ -245,7 +245,7 @@ export default function ResourceDetails() {
             <FormGroup
               hasNoPaddingTop
               label={t("resourceAttribute")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("resourceAttributeHelp")}
                   fieldLabelId="resourceAttribute"
