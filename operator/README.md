@@ -84,9 +84,9 @@ kubectl delete -k <previously-used-folder>
 
 ### Testing
 
-Testing allows 3 methods specified in the property `test.operator.deployment` : `local_apiserer`, `local` & `remote`. 
+Testing allows 3 methods specified in the property `test.operator.deployment` : `local_apiserver`, `local` & `remote`. 
 
-`local_apiserver` : the default, where resources will be deployed to a jenvtest controlled api server (not a full kube environment) and the operator will run locally - not all tests can run in this mode. This is the fasted mode of testing as no externally managed kube environment is needed. As long as your test does not need a running Keycloak instance, this level of testing should be applicable.
+`local_apiserver` : the default, where resources will be deployed to a jenvtest controlled api server (not a full kube environment) and the operator will run locally - not all tests can run in this mode. This is the fastest mode of testing as no externally managed kube environment is needed. As long as your test does not need a running Keycloak instance, this level of testing should be applicable.
 
 `local` : resources will be deployed to the local cluster and the operator will run out of the cluster
 
