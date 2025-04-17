@@ -5,6 +5,7 @@ import { FormErrorText } from "./FormErrorText";
 import { HelpItem } from "./HelpItem";
 
 export type FieldProps<T extends FieldValues = FieldValues> = {
+  id?: string | undefined;
   label?: string;
   name: string;
   labelIcon?: string | ReactNode;
@@ -15,6 +16,7 @@ export type FieldProps<T extends FieldValues = FieldValues> = {
 type FormLabelProps = FieldProps & Omit<FormGroupProps, "label" | "labelIcon">;
 
 export const FormLabel = ({
+  id,
   name,
   label,
   labelIcon,
@@ -24,7 +26,7 @@ export const FormLabel = ({
 }: PropsWithChildren<FormLabelProps>) => (
   <FormGroup
     label={label || name}
-    fieldId={name}
+    fieldId={id || name.slice(name.lastIndexOf(".") + 1)}
     labelIcon={
       labelIcon ? (
         <HelpItem helpText={labelIcon} fieldLabelId={name} />
