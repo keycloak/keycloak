@@ -105,7 +105,7 @@ export default function UserFederationLdapSettings() {
         editMode={component.config?.editMode}
         save={() => form.handleSubmit(onSubmit)()}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs
           defaultLocation={toUserFederationLdap({
             realm,
@@ -119,7 +119,7 @@ export default function UserFederationLdapSettings() {
             title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
               <UserFederationLdapForm id={id} onSubmit={onSubmit} />
             </PageSection>
           </Tab>

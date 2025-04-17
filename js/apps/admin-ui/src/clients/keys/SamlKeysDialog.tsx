@@ -9,15 +9,13 @@ import {
   FlexItem,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
   Radio,
   Split,
   SplitItem,
-  Text,
-  TextContent,
+  Content,
   Title,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -119,10 +117,12 @@ export const SamlKeysDialog = ({
       variant={ModalVariant.medium}
       aria-label={t("enableClientSignatureRequiredModal")}
       header={
-        <TextContent>
+        <Content>
           <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
-          <Text>{t("enableClientSignatureRequiredExplain")}</Text>
-        </TextContent>
+          <Content component="p">
+            {t("enableClientSignatureRequiredExplain")}
+          </Content>
+        </Content>
       }
       isOpen={true}
       onClose={onClose}
@@ -185,7 +185,7 @@ export const SamlKeysDialog = ({
             <FormGroup
               label={t("certificate")}
               fieldId="certificate"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("certificateHelp")}
                   fieldLabelId="certificate"

@@ -23,8 +23,8 @@ import {
   FlexItem,
   Label,
   PageSection,
-  Text,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { Fragment, useMemo, useState } from "react";
@@ -221,7 +221,7 @@ export default function ClientProfileForm() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess isHorizontal role="view-realm" className="pf-v5-u-mt-lg">
             <TextControl
@@ -280,13 +280,16 @@ export default function ClientProfileForm() {
               <>
                 <Flex>
                   <FlexItem>
-                    <Text className="kc-executors" component={TextVariants.h1}>
+                    <Content
+                      className="kc-executors"
+                      component={ContentVariants.h1}
+                    >
                       {t("executors")}
                       <HelpItem
                         helpText={t("executorsHelpText")}
                         fieldLabelId="executors"
                       />
-                    </Text>
+                    </Content>
                   </FlexItem>
                   {!isGlobalProfile && (
                     <FlexItem align={{ default: "alignRight" }}>
@@ -411,12 +414,12 @@ export default function ClientProfileForm() {
                 {profileExecutors.length === 0 && (
                   <>
                     <Divider />
-                    <Text
+                    <Content
                       className="kc-emptyExecutors"
-                      component={TextVariants.h2}
+                      component={ContentVariants.h2}
                     >
                       {t("emptyExecutors")}
-                    </Text>
+                    </Content>
                   </>
                 )}
               </>

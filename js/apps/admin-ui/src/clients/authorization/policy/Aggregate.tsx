@@ -17,7 +17,7 @@ export const Aggregate = () => {
       <FormGroup
         label={t("applyPolicy")}
         fieldId="policies"
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("applyPolicyHelp")} fieldLabelId="policies" />
         }
       >

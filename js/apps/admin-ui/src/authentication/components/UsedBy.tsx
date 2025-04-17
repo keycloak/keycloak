@@ -1,13 +1,11 @@
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
-  Modal,
-  ModalVariant,
   Popover,
-  Text,
-  TextContent,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -57,14 +55,14 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   return (
     <Modal
       header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("flowUsedBy")}</Text>
-          <Text>
+        <Content>
+          <Content component={ContentVariants.h1}>{t("flowUsedBy")}</Content>
+          <Content component="p">
             {t("flowUsedByDescription", {
               value: isSpecificClient ? t("clients") : t("identiyProviders"),
             })}
-          </Text>
-        </TextContent>
+          </Content>
+        </Content>
       }
       variant={ModalVariant.medium}
       isOpen

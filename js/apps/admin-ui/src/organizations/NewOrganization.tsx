@@ -39,7 +39,7 @@ export default function NewOrganization() {
   return (
     <>
       <ViewHeader titleKey="createOrganization" />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess role="anyone" onSubmit={handleSubmit(save)} isHorizontal>
           <FormProvider {...form}>
             <OrganizationForm />

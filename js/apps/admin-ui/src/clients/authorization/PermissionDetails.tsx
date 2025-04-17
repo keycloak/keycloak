@@ -209,7 +209,7 @@ export default function PermissionDetails() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="manage-authorization"
@@ -238,7 +238,7 @@ export default function PermissionDetails() {
             <FormGroup
               label={t("applyToResourceTypeFlag")}
               fieldId="applyToResourceTypeFlag"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("applyToResourceTypeFlagHelp")}
                   fieldLabelId="applyToResourceTypeFlag"
@@ -249,7 +249,6 @@ export default function PermissionDetails() {
                 id="applyToResourceTypeFlag"
                 name="applyToResourceTypeFlag"
                 label={t("on")}
-                labelOff={t("off")}
                 isChecked={applyToResourceTypeFlag}
                 onChange={(_event, val) => setApplyToResourceTypeFlag(val)}
                 aria-label={t("applyToResourceTypeFlag")}
@@ -271,7 +270,7 @@ export default function PermissionDetails() {
               <FormGroup
                 label={t("resource")}
                 fieldId="resources"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("permissionResources")}
                     fieldLabelId="resources"
@@ -300,7 +299,7 @@ export default function PermissionDetails() {
               <FormGroup
                 label={t("authorizationScopes")}
                 fieldId="scopes"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("permissionScopesHelp")}
                     fieldLabelId="scopesSelect"
@@ -319,7 +318,7 @@ export default function PermissionDetails() {
             <FormGroup
               label={t("policies")}
               fieldId="policies"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("permissionPoliciesHelp")}
                   fieldLabelId="policies"
@@ -334,7 +333,7 @@ export default function PermissionDetails() {
             </FormGroup>
             <FormGroup
               label={t("decisionStrategy")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("permissionDecisionStrategyHelp")}
                   fieldLabelId="decisionStrategy"

@@ -50,7 +50,7 @@ export const TokenLifespan = ({
     <FormGroup
       label={t(id)}
       fieldId={id}
-      labelIcon={<HelpItem helpText={t(`${id}Help`)} fieldLabelId={id} />}
+      labelHelp={<HelpItem helpText={t(`${id}Help`)} fieldLabelId={id} />}
       data-testid={`token-lifespan-${id}`}
     >
       <Controller

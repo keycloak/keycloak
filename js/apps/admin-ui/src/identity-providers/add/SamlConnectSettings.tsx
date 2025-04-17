@@ -103,7 +103,7 @@ export const SamlConnectSettings = () => {
           <FormGroup
             label={t("importConfig")}
             fieldId="kc-import-config"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("importConfigHelp")}
                 fieldLabelId="importConfig"

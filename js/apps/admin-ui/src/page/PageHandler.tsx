@@ -88,7 +88,7 @@ export const PageHandler = ({
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <Form
         isHorizontal
         onSubmit={form.handleSubmit(onSubmit)}

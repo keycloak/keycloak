@@ -5,11 +5,10 @@ import {
   ButtonVariant,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
-  TextContent,
+  Content,
   TextInput,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -159,9 +158,9 @@ export const RevocationModal = ({
         </Button>,
       ]}
     >
-      <TextContent className="kc-revocation-description-text">
+      <Content className="kc-revocation-description-text">
         {t("revocationDescription")}
-      </TextContent>
+      </Content>
       <Form
         id="revocation-modal-form"
         isHorizontal

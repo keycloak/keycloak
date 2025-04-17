@@ -46,7 +46,7 @@ export const UserProfileGroup = ({
       label={labelAttribute(t, attribute) || ""}
       fieldId={attribute.name}
       isRequired={isRequiredAttribute(attribute)}
-      labelIcon={
+      labelHelp={
         helpText ? (
           <HelpItem helpText={helpText} fieldLabelId={attribute.name!} />
         ) : undefined

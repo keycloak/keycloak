@@ -10,16 +10,17 @@ import {
   UserProfileFields,
 } from "@keycloak/keycloak-ui-shared";
 import {
+  Label,
+  LabelGroup,
   AlertVariant,
   Button,
-  Chip,
-  ChipGroup,
   FormGroup,
   InputGroup,
   InputGroupItem,
   Switch,
   TextInput,
 } from "@patternfly/react-core";
+
 import { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
@@ -224,7 +225,7 @@ export const UserForm = ({
         {user?.federationLink && canViewFederationLink && (
           <FormGroup
             label={t("federationLink")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("federationLinkHelp")}
                 fieldLabelId="federationLink"
@@ -295,7 +296,7 @@ export const UserForm = ({
           <FormGroup
             label={t("temporaryLocked")}
             fieldId="temporaryLocked"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("temporaryLockedHelp")}
                 fieldLabelId="temporaryLocked"
@@ -312,7 +313,6 @@ export const UserForm = ({
               isChecked={locked}
               isDisabled={!locked}
               label={t("on")}
-              labelOff={t("off")}
             />
           </FormGroup>
         )}
@@ -320,7 +320,7 @@ export const UserForm = ({
           <FormGroup
             label={t("groups")}
             fieldId="kc-groups"
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t("groupsHelp")} fieldLabelId="groups" />
             }
           >
@@ -331,16 +331,17 @@ export const UserForm = ({
               render={() => (
                 <InputGroup>
                   <InputGroupItem>
-                    <ChipGroup categoryName={" "}>
+                    <LabelGroup categoryName={" "}>
                       {selectedGroups.map((currentChip) => (
-                        <Chip
+                        <Label
+                          variant="outline"
                           key={currentChip.id}
-                          onClick={() => deleteItem(currentChip.name!)}
+                          onClose={() => deleteItem(currentChip.name!)}
                         >
                           {currentChip.path}
-                        </Chip>
+                        </Label>
                       ))}
-                    </ChipGroup>
+                    </LabelGroup>
                   </InputGroupItem>
                   <InputGroupItem>
                     <Button

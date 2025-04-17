@@ -5,9 +5,8 @@ import {
   ClipboardCopy,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 
 type AccessTokenDialogProps = {
   token: string;

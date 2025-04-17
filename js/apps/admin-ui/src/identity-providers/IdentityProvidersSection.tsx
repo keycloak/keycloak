@@ -24,9 +24,8 @@ import {
   PageSection,
   Split,
   SplitItem,
-  Text,
-  TextContent,
-  TextVariants,
+  Content,
+  ContentVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { groupBy, sortBy } from "lodash-es";
@@ -206,21 +205,25 @@ export default function IdentityProvidersSection() {
         helpUrl={helpUrls.identityProvidersUrl}
       />
       <PageSection
+        hasBodyWrapper={false}
         variant={!hasProviders ? "default" : "light"}
         className={!hasProviders ? "" : "pf-v5-u-p-0"}
       >
         {!hasProviders && (
           <>
-            <TextContent>
-              <Text component={TextVariants.p}>{t("getStarted")}</Text>
-            </TextContent>
+            <Content>
+              <Content component={ContentVariants.p}>{t("getStarted")}</Content>
+            </Content>
             {Object.keys(identityProviders).map((group) => (
               <Fragment key={group}>
-                <TextContent>
-                  <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
+                <Content>
+                  <Content
+                    className="pf-v5-u-mt-lg"
+                    component={ContentVariants.h2}
+                  >
                     {group}:
-                  </Text>
-                </TextContent>
+                  </Content>
+                </Content>
                 <hr className="pf-v5-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (

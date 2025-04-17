@@ -12,9 +12,8 @@ import {
   DropdownItem,
   DropdownList,
   MenuToggle,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
 import { sortBy } from "lodash-es";
 import { useState } from "react";

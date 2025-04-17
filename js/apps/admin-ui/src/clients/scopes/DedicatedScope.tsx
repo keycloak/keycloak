@@ -77,7 +77,7 @@ export const DedicatedScope = ({
   };
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         role="manage-clients"
         fineGrainedAccess={client.access?.manage}
@@ -86,7 +86,7 @@ export const DedicatedScope = ({
         <FormGroup
           hasNoPaddingTop
           label={t("fullScopeAllowed")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("fullScopeAllowedHelp")}
               fieldLabelId="fullScopeAllowed"
@@ -97,7 +97,6 @@ export const DedicatedScope = ({
           <Switch
             id="fullScopeAllowed"
             label={t("on")}
-            labelOff={t("off")}
             isChecked={client.fullScopeAllowed}
             onChange={update}
             aria-label={t("fullScopeAllowed")}

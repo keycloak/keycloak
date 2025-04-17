@@ -19,10 +19,9 @@ import {
   MenuToggle,
   SelectGroup,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
@@ -348,14 +347,14 @@ export const RealmOverrides = ({
           form={translationForm}
         />
       )}
-      <TextContent>
-        <Text
+      <Content>
+        <Content
           className="pf-v5-u-mt-lg pf-v5-u-ml-md"
-          component={TextVariants.p}
+          component={ContentVariants.p}
         >
           {t("realmOverridesDescription")}
-        </Text>
-      </TextContent>
+        </Content>
+      </Content>
       <PaginatingTableToolbar
         count={translations.length}
         first={first}
@@ -569,6 +568,7 @@ export const RealmOverrides = ({
                               {(row.cells?.[1] as IRowCell).props.value}
                             </span>
                             <Button
+                              icon={<PencilAltIcon />}
                               onClick={() => {
                                 const currentValue = (
                                   tableRows[rowIndex].cells?.[1] as IRowCell
@@ -584,9 +584,7 @@ export const RealmOverrides = ({
                               variant="link"
                               className="pf-m-plain"
                               data-testid={`editTranslationBtn-${rowIndex}`}
-                            >
-                              <PencilAltIcon />
-                            </Button>
+                            ></Button>
                           </>
                         )}
                       </FormGroup>

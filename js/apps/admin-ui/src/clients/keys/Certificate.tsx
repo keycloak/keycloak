@@ -37,7 +37,7 @@ export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
     <FormGroup
       label={t("certificate")}
       fieldId={id}
-      labelIcon={<HelpItem helpText={t("certificateHelp")} fieldLabelId={id} />}
+      labelHelp={<HelpItem helpText={t("certificateHelp")} fieldLabelId={id} />}
     >
       <CertificateDisplay id={id} keyInfo={keyInfo} />
     </FormGroup>

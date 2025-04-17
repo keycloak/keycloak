@@ -175,7 +175,6 @@ export const RequiredActions = () => {
               <Switch
                 id={`enable-${toKey(row.name || "")}`}
                 label={t("on")}
-                labelOff={t("off")}
                 isChecked={row.enabled}
                 onChange={() => {
                   updateAction(row.data, "enabled");
@@ -194,7 +193,6 @@ export const RequiredActions = () => {
                 id={`default-${toKey(row.name || "")}`}
                 label={t("on")}
                 isDisabled={!row.enabled}
-                labelOff={!row.enabled ? t("disabledOff") : t("off")}
                 isChecked={row.defaultAction}
                 onChange={() => {
                   updateAction(row.data, "defaultAction");
@@ -210,12 +208,11 @@ export const RequiredActions = () => {
             cellRenderer: (row) =>
               row.data.configurable ? (
                 <Button
+                  icon={<CogIcon />}
                   variant="plain"
                   aria-label={t("settings")}
                   onClick={() => setSelectedAction(row.data)}
-                >
-                  <CogIcon />
-                </Button>
+                />
               ) : undefined,
             width: 10,
           },

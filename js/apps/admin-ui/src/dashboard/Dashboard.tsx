@@ -16,7 +16,6 @@ import {
   DescriptionListTerm,
   EmptyState,
   EmptyStateBody,
-  EmptyStateHeader,
   Grid,
   GridItem,
   Label,
@@ -26,9 +25,8 @@ import {
   PageSection,
   Tab,
   TabTitleText,
-  Text,
-  TextContent,
-  TextVariants,
+  Content,
+  ContentVariants,
   Title,
 } from "@patternfly/react-core";
 import { useMemo } from "react";
@@ -56,15 +54,13 @@ const EmptyDashboard = () => {
   const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
   return (
-    <PageSection variant="light">
-      <EmptyState variant="lg">
+    <PageSection hasBodyWrapper={false}>
+      <EmptyState headingLevel="h1" titleText={realmDisplayInfo} variant="lg">
         <Brand
           src={environment.resourceUrl + brandImage}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
-        <EmptyStateHeader titleText={<>{t("welcome")}</>} headingLevel="h2" />
-        <EmptyStateHeader titleText={realmDisplayInfo} headingLevel="h1" />
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
     </PageSection>
@@ -134,12 +130,14 @@ const Dashboard = () => {
 
   return (
     <>
-      <PageSection variant="light">
-        <TextContent className="pf-v5-u-mr-sm">
-          <Text component="h1">{t("realmNameTitle", { name: realm })}</Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content className="pf-v5-u-mr-sm">
+          <Content component="h1">
+            {t("realmNameTitle", { name: realm })}
+          </Content>
+        </Content>
       </PageSection>
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
@@ -155,7 +153,7 @@ const Dashboard = () => {
             title={<TabTitleText>{t("welcomeTabTitle")}</TabTitleText>}
             {...welcomeTab}
           >
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
               <div className="pf-v5-l-grid pf-v5-u-ml-lg">
                 <div className="pf-v5-l-grid__item pf-m-12-col">
                   <Title
@@ -168,7 +166,9 @@ const Dashboard = () => {
                   </Title>
                 </div>
                 <div className="pf-v5-l-grid__item keycloak__dashboard_welcome_tab">
-                  <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
+                  <Content component={ContentVariants.h3}>
+                    {t("welcomeText")}
+                  </Content>
                 </div>
                 <div className="pf-v5-l-grid__item pf-m-10-col pf-v5-u-mt-md">
                   <Button
@@ -222,7 +222,7 @@ const Dashboard = () => {
             title={<TabTitleText>{t("serverInfo")}</TabTitleText>}
             {...infoTab}
           >
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
               <Grid hasGutter>
                 <GridItem lg={2} sm={12}>
                   <Card className="keycloak__dashboard_card">

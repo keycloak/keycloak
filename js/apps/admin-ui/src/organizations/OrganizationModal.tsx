@@ -1,7 +1,8 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import { Button } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { TableText } from "@patternfly/react-table";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";

@@ -1,20 +1,20 @@
 import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
+  Label,
+  LabelGroup,
   ActionGroup,
   Button,
-  Chip,
-  ChipGroup,
   Divider,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
+
 import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -202,14 +202,14 @@ export const EffectiveMessageBundles = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <TextContent>
-            <Text
+          <Content>
+            <Content
               className="pf-v5-u-mb-md pf-v5-u-mt-0 pf-v5-u-mr-md"
-              component={TextVariants.p}
+              component={ContentVariants.p}
             >
               {t("effectiveMessageBundlesDescription")}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         </FlexItem>
         <FlexItem>
           <DropdownPanel
@@ -255,17 +255,18 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectThemesOpen}
                       aria-label={t("selectTheme")}
                       chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
+                        <LabelGroup>
+                          <Label
+                            variant="outline"
                             key={field.value}
-                            onClick={(theme) => {
+                            onClose={(theme) => {
                               theme.stopPropagation();
                               field.onChange("");
                             }}
                           >
                             {field.value}
-                          </Chip>
-                        </ChipGroup>
+                          </Label>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -321,17 +322,18 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectThemeTypeOpen}
                       aria-label={t("selectThemeType")}
                       chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
+                        <LabelGroup>
+                          <Label
+                            variant="outline"
                             key={field.value}
-                            onClick={(themeType) => {
+                            onClose={(themeType) => {
                               themeType.stopPropagation();
                               field.onChange("");
                             }}
                           >
                             {field.value}
-                          </Chip>
-                        </ChipGroup>
+                          </Label>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -383,11 +385,12 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectLanguageOpen}
                       aria-label={t("selectLanguage")}
                       chipGroupComponent={
-                        <ChipGroup>
+                        <LabelGroup>
                           {field.value ? (
-                            <Chip
+                            <Label
+                              variant="outline"
                               key={field.value}
-                              onClick={(language) => {
+                              onClose={(language) => {
                                 language.stopPropagation();
                                 field.onChange("");
                               }}
@@ -396,9 +399,9 @@ export const EffectiveMessageBundles = ({
                                 field.value,
                                 whoAmI.getLocale(),
                               )}
-                            </Chip>
+                            </Label>
                           ) : null}
-                        </ChipGroup>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -444,11 +447,12 @@ export const EffectiveMessageBundles = ({
                           }
                         }}
                       />
-                      <ChipGroup>
+                      <LabelGroup>
                         {field.value.map((word: string, index: number) => (
-                          <Chip
+                          <Label
+                            variant="outline"
                             key={index}
-                            onClick={(e) => {
+                            onClose={(e) => {
                               e.stopPropagation();
                               const newWords = field.value.filter(
                                 (_: string, i: number) => i !== index,
@@ -457,9 +461,9 @@ export const EffectiveMessageBundles = ({
                             }}
                           >
                             {word}
-                          </Chip>
+                          </Label>
                         ))}
-                      </ChipGroup>
+                      </LabelGroup>
                     </div>
                   )}
                 />
@@ -497,7 +501,7 @@ export const EffectiveMessageBundles = ({
                   string | string[],
                 ];
                 return (
-                  <ChipGroup
+                  <LabelGroup
                     className="pf-v5-u-mt-md pf-v5-u-mr-md"
                     key={key}
                     categoryName={filterLabels[key]}
@@ -505,25 +509,26 @@ export const EffectiveMessageBundles = ({
                     onClick={() => removeFilter(key)}
                   >
                     {typeof value === "string" ? (
-                      <Chip isReadOnly>
+                      <Label variant="outline">
                         {key === "locale"
                           ? localeToDisplayName(
                               value,
                               whoAmI.getLocale(),
                             )?.toLowerCase()
                           : value}
-                      </Chip>
+                      </Label>
                     ) : (
                       value.map((entry) => (
-                        <Chip
+                        <Label
+                          variant="outline"
                           key={entry}
-                          onClick={() => removeFilterValue(key, entry)}
+                          onClose={() => removeFilterValue(key, entry)}
                         >
                           {entry}
-                        </Chip>
+                        </Label>
                       ))
                     )}
-                  </ChipGroup>
+                  </LabelGroup>
                 );
               })}
             </>

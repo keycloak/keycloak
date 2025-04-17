@@ -7,10 +7,9 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
-  ModalVariant,
   Tooltip,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -141,12 +140,11 @@ export const ExecutionConfigModal = ({
     <>
       <Tooltip content={t("settings")}>
         <Button
+          icon={<CogIcon />}
           variant="plain"
           aria-label={t("settings")}
           onClick={() => setShow(true)}
-        >
-          <CogIcon />
-        </Button>
+        />
       </Tooltip>
       {configDescription && (
         <Modal
@@ -184,6 +182,7 @@ export const ExecutionConfigModal = ({
               </Button>
               {config && (
                 <Button
+                  icon={<TrashIcon />}
                   className="pf-v5-u-ml-4xl"
                   data-testid="clear"
                   variant={ButtonVariant.link}
@@ -195,7 +194,7 @@ export const ExecutionConfigModal = ({
                     setShow(false);
                   }}
                 >
-                  {t("clear")} <TrashIcon />
+                  {t("clear")}
                 </Button>
               )}
             </ActionGroup>

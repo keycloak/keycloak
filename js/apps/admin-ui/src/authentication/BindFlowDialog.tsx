@@ -5,8 +5,8 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
 } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";

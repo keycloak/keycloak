@@ -1,4 +1,3 @@
-import "@patternfly/patternfly/patternfly-addons.css";
 import "@patternfly/react-core/dist/styles/base.css";
 
 import { KeycloakProvider } from "@keycloak/keycloak-ui-shared";

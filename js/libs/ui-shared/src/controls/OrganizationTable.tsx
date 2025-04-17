@@ -1,5 +1,6 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import { Badge, Chip, ChipGroup } from "@patternfly/react-core";
+import { Label, LabelGroup, Badge } from "@patternfly/react-core";
+
 import { TableText } from "@patternfly/react-table";
 import { FunctionComponent, PropsWithChildren, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,20 +37,20 @@ const OrgDetailLink = ({ link, organization }: OrgDetailLinkProps) => {
 const Domains = (org: OrganizationRepresentation) => {
   const { t } = useTranslation();
   return (
-    <ChipGroup
-      numChips={2}
+    <LabelGroup
+      numLabels={2}
       expandedText={t("hide")}
       collapsedText={t("showRemaining")}
     >
       {org.domains?.map((dn) => {
         const name = typeof dn === "string" ? dn : dn.name;
         return (
-          <Chip key={name} isReadOnly>
+          <Label variant="outline" key={name}>
             {name}
-          </Chip>
+          </Label>
         );
       })}
-    </ChipGroup>
+    </LabelGroup>
   );
 };
 

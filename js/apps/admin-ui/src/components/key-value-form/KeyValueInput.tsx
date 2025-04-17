@@ -134,14 +134,13 @@ export const KeyValueInput = ({
               </GridItem>
               <GridItem span={2}>
                 <Button
+                  icon={<MinusCircleIcon />}
                   variant="link"
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
                   isDisabled={isDisabled}
-                >
-                  <MinusCircleIcon />
-                </Button>
+                ></Button>
               </GridItem>
             </Fragment>
           );

@@ -1,13 +1,7 @@
 import { ResourceTypesRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useTranslation } from "react-i18next";
-import {
-  Modal,
-  ModalVariant,
-  TextContent,
-  Text,
-  TextVariants,
-  Alert,
-} from "@patternfly/react-core";
+import { Content, ContentVariants, Alert } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
 type NewPermissionConfigurationDialogProps = {
@@ -28,15 +22,17 @@ export const NewPermissionConfigurationDialog = ({
       aria-label={t("createPermission")}
       variant={ModalVariant.medium}
       header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("chooseAResourceType")}</Text>
+        <Content>
+          <Content component={ContentVariants.h1}>
+            {t("chooseAResourceType")}
+          </Content>
           <Alert
             variant="info"
             isInline
             title={t("chooseAResourceTypeInstructions")}
             component="p"
           />
-        </TextContent>
+        </Content>
       }
       isOpen
       onClose={toggleDialog}

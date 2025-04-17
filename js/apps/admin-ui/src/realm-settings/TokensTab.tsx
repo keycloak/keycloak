@@ -16,9 +16,9 @@ import {
   PageSection,
   SelectOption,
   Switch,
-  Text,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -78,7 +78,7 @@ export const RealmSettingsTokensTab = ({
   });
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormPanel title={t("general")} className="kc-sso-session-template">
         <FormAccess
           isHorizontal
@@ -88,7 +88,7 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("defaultSigAlg")}
             fieldId="kc-default-signature-algorithm"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("defaultSigAlgHelp")}
                 fieldLabelId="algorithm"
@@ -134,7 +134,7 @@ export const RealmSettingsTokensTab = ({
               <FormGroup
                 label={t("oAuthDeviceCodeLifespan")}
                 fieldId="oAuthDeviceCodeLifespan"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("oAuthDeviceCodeLifespanHelp")}
                     fieldLabelId="oAuthDeviceCodeLifespan"
@@ -159,7 +159,7 @@ export const RealmSettingsTokensTab = ({
               <FormGroup
                 label={t("oAuthDevicePollingInterval")}
                 fieldId="oAuthDevicePollingInterval"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("oAuthDevicePollingIntervalHelp")}
                     fieldLabelId="oAuthDevicePollingInterval"
@@ -195,7 +195,7 @@ export const RealmSettingsTokensTab = ({
               <FormGroup
                 label={t("shortVerificationUri")}
                 fieldId="shortVerificationUri"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("shortVerificationUriTooltipHelp")}
                     fieldLabelId="shortVerificationUri"
@@ -211,7 +211,7 @@ export const RealmSettingsTokensTab = ({
               <FormGroup
                 label={t("parRequestUriLifespan")}
                 fieldId="parRequestUriLifespan"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("parRequestUriLifespanHelp")}
                     fieldLabelId="parRequestUriLifespan"
@@ -251,7 +251,7 @@ export const RealmSettingsTokensTab = ({
             hasNoPaddingTop
             label={t("revokeRefreshToken")}
             fieldId="kc-revoke-refresh-token"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("revokeRefreshTokenHelp")}
                 fieldLabelId="revokeRefreshToken"
@@ -268,7 +268,6 @@ export const RealmSettingsTokensTab = ({
                   data-testid="revoke-refresh-token-switch"
                   aria-label={t("revokeRefreshToken")}
                   label={t("enabled")}
-                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -278,7 +277,7 @@ export const RealmSettingsTokensTab = ({
           {revokeRefreshToken && (
             <FormGroup
               label={t("refreshTokenMaxReuse")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("refreshTokenMaxReuseHelp")}
                   fieldLabelId="refreshTokenMaxReuse"
@@ -322,7 +321,7 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("accessTokenLifespanHelp")}
                 fieldLabelId="accessTokenLifespan"
@@ -365,7 +364,7 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("accessTokenLifespanImplicitFlow")}
             fieldId="accessTokenLifespanImplicitFlow"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("accessTokenLifespanImplicitFlow")}
                 fieldLabelId="accessTokenLifespanImplicitFlow"
@@ -389,7 +388,7 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("clientLoginTimeout")}
             fieldId="clientLoginTimeout"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("clientLoginTimeoutHelp")}
                 fieldLabelId="clientLoginTimeout"
@@ -417,7 +416,7 @@ export const RealmSettingsTokensTab = ({
               label={t("offlineSessionMax")}
               fieldId="offlineSessionMax"
               id="offline-session-max-label"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("offlineSessionMaxHelp")}
                   fieldLabelId="offlineSessionMax"
@@ -455,7 +454,7 @@ export const RealmSettingsTokensTab = ({
             label={t("userInitiatedActionLifespan")}
             id="kc-user-initiated-action-lifespan"
             fieldId="userInitiatedActionLifespan"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("userInitiatedActionLifespanHelp")}
                 fieldLabelId="userInitiatedActionLifespan"
@@ -481,7 +480,7 @@ export const RealmSettingsTokensTab = ({
             label={t("defaultAdminInitiated")}
             fieldId="defaultAdminInitiated"
             id="default-admin-initiated-label"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("defaultAdminInitiatedActionLifespanHelp")}
                 fieldLabelId="defaultAdminInitiated"
@@ -503,17 +502,17 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
-          <Text
+          <Content
             className="kc-override-action-tokens-subtitle"
-            component={TextVariants.h1}
+            component={ContentVariants.h1}
           >
             {t("overrideActionTokens")}
-          </Text>
+          </Content>
           <FormGroup
             label={t("emailVerification")}
             fieldId="emailVerification"
             id="email-verification"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("emailVerificationHelp")}
                 fieldLabelId="emailVerification"
@@ -541,7 +540,7 @@ export const RealmSettingsTokensTab = ({
             label={t("idpAccountEmailVerification")}
             fieldId="idpAccountEmailVerification"
             id="idp-acct-label"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("idpAccountEmailVerificationHelp")}
                 fieldLabelId="idpAccountEmailVerification"
@@ -569,7 +568,7 @@ export const RealmSettingsTokensTab = ({
             label={t("forgotPassword")}
             fieldId="forgotPassword"
             id="forgot-password-label"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("forgotPasswordHelp")}
                 fieldLabelId="forgotPassword"
@@ -597,7 +596,7 @@ export const RealmSettingsTokensTab = ({
             label={t("executeActions")}
             fieldId="executeActions"
             id="execute-actions"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("executeActionsHelp")}
                 fieldLabelId="executeActions"

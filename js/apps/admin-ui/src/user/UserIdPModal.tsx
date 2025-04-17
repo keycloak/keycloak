@@ -5,10 +5,9 @@ import {
   ButtonVariant,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
   TextInput,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { capitalize } from "lodash-es";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

@@ -18,7 +18,7 @@ const WarnBanner = ({ msg, className }: WarnBannerProps) => {
   return (
     <Banner
       screenReaderText={t(msg)}
-      variant="gold"
+      color="yellow"
       className={className || style.banner}
     >
       <Flex

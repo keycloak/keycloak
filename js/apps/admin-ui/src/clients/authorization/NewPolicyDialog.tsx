@@ -1,11 +1,6 @@
 import { useTranslation } from "react-i18next";
-import {
-  Modal,
-  ModalVariant,
-  TextContent,
-  Text,
-  TextVariants,
-} from "@patternfly/react-core";
+import { Content, ContentVariants } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
@@ -38,10 +33,12 @@ export const NewPolicyDialog = ({
       aria-label={t("createPolicy")}
       variant={ModalVariant.medium}
       header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("chooseAPolicyType")}</Text>
-          <Text>{t("chooseAPolicyTypeInstructions")}</Text>
-        </TextContent>
+        <Content>
+          <Content component={ContentVariants.h1}>
+            {t("chooseAPolicyType")}
+          </Content>
+          <Content component="p">{t("chooseAPolicyTypeInstructions")}</Content>
+        </Content>
       }
       isOpen
       onClose={toggleDialog}

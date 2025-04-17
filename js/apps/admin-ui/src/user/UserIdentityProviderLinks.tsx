@@ -6,8 +6,7 @@ import {
   ButtonVariant,
   Label,
   PageSection,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
 import { capitalize } from "lodash-es";
@@ -239,13 +238,13 @@ export const UserIdentityProviderLinks = ({
         />
       )}
       <UnlinkConfirm />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <FormPanel title={t("linkedIdPs")} className="kc-linked-idps">
-          <TextContent>
-            <Text className="kc-available-idps-text">
+          <Content>
+            <Content component="p" className="kc-available-idps-text">
               {t("linkedIdPsText")}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
           <KeycloakDataTable
             loader={linkedIdPsLoader}
             key={key}
@@ -254,19 +253,19 @@ export const UserIdentityProviderLinks = ({
             className="kc-linked-IdPs-table"
             columns={linkedIdpColumns()}
             emptyState={
-              <TextContent className="kc-no-providers-text">
-                <Text>{t("noProvidersLinked")}</Text>
-              </TextContent>
+              <Content className="kc-no-providers-text">
+                <Content component="p">{t("noProvidersLinked")}</Content>
+              </Content>
             }
           />
         </FormPanel>
         {hasAccess("manage-users") && canQueryIDPDetails && (
           <FormPanel className="kc-available-idps" title={t("availableIdPs")}>
-            <TextContent>
-              <Text className="kc-available-idps-text">
+            <Content>
+              <Content component="p" className="kc-available-idps-text">
                 {t("availableIdPsText")}
-              </Text>
-            </TextContent>
+              </Content>
+            </Content>
             <KeycloakDataTable
               loader={availableIdPsLoader}
               key={key}
@@ -292,9 +291,11 @@ export const UserIdentityProviderLinks = ({
                 },
               ]}
               emptyState={
-                <TextContent className="kc-no-providers-text">
-                  <Text>{t("noAvailableIdentityProviders")}</Text>
-                </TextContent>
+                <Content className="kc-no-providers-text">
+                  <Content component="p">
+                    {t("noAvailableIdentityProviders")}
+                  </Content>
+                </Content>
               }
             />
           </FormPanel>

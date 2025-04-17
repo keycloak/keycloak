@@ -157,7 +157,7 @@ export default function ExecutorForm() {
         titleKey={editMode ? executorName : t("addExecutor")}
         divider
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -167,7 +167,7 @@ export default function ExecutorForm() {
           <FormGroup
             label={t("executorType")}
             fieldId="kc-executorType"
-            labelIcon={
+            labelHelp={
               executors.length > 0 && executors[0].helpText! !== "" ? (
                 <HelpItem
                   helpText={executors[0].helpText}

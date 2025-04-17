@@ -1,13 +1,6 @@
-import { SelectControl, FileUploadControl } from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
-} from "@patternfly/react-core";
+import { FileUploadControl, SelectControl } from "@keycloak/keycloak-ui-shared";
+import { Button, ButtonVariant, Content, Form } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -78,9 +71,9 @@ export const ImportKeyDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("generateKeysDescription")}</Content>
+      </Content>
       <Form className="pf-v5-u-pt-lg">
         <FormProvider {...form}>
           <SelectControl

@@ -1,5 +1,6 @@
 import type { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { AlertVariant, Form, ModalVariant } from "@patternfly/react-core";
+import { AlertVariant, Form } from "@patternfly/react-core";
+import { ModalVariant } from "@patternfly/react-core/deprecated";
 import { isEmpty } from "lodash-es";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

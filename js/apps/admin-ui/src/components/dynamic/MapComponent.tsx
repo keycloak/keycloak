@@ -78,7 +78,7 @@ export const MapComponent = ({
   return map.length !== 0 ? (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
@@ -123,14 +123,13 @@ export const MapComponent = ({
             </FlexItem>
             <FlexItem>
               <Button
+                icon={<MinusCircleIcon />}
                 variant="link"
                 title={t("removeAttribute")}
                 isDisabled={isDisabled}
                 onClick={() => remove(index)}
                 data-testid={`${fieldName}.${index}.remove`}
-              >
-                <MinusCircleIcon />
-              </Button>
+              ></Button>
             </FlexItem>
           </Flex>
         ))}

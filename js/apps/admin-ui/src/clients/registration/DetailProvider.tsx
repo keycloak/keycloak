@@ -128,7 +128,7 @@ export default function DetailProvider() {
         }
       />
       <DeleteConfirm />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-clients"

@@ -32,7 +32,7 @@ export const JsonEditorTab = () => {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <CodeEditor
         language="json"
         value={code}

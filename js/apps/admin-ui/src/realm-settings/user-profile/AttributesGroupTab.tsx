@@ -125,7 +125,7 @@ export const AttributesGroupTab = ({
   }
 
   return (
-    <PageSection variant="light" className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
       <DeleteConfirm />
       <KeycloakDataTable
         key={key}

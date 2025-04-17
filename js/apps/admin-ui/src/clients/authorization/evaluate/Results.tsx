@@ -85,7 +85,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
   const noFilteredData = filteredResources.length === 0;
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <Toolbar>
         <ToolbarGroup className="providers-toolbar">
           <ToolbarItem>
@@ -103,12 +103,11 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
               </InputGroupItem>
               <InputGroupItem>
                 <Button
+                  icon={<SearchIcon />}
                   variant={ButtonVariant.control}
                   aria-label={t("search")}
                   onClick={() => confirmSearchQuery()}
-                >
-                  <SearchIcon />
-                </Button>
+                ></Button>
               </InputGroupItem>
             </InputGroup>
           </ToolbarItem>

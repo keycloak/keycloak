@@ -151,7 +151,7 @@ export default function PermissionsConfigurationSection() {
             })}
           </>
         </ConfirmDialogModal>
-        <PageSection variant="light" className="pf-v5-u-p-0">
+        <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
           <FormProvider {...form}>
             <ViewHeader
               titleKey={t("permissions")}

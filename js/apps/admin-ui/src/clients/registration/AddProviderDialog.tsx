@@ -4,9 +4,8 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

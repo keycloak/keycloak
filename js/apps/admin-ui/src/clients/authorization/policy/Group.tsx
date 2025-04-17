@@ -55,7 +55,7 @@ export const Group = () => {
       />
       <FormGroup
         label={t("groups")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
         }
         fieldId="groups"

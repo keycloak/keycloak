@@ -1,7 +1,7 @@
 import {
+  Label,
+  LabelGroup,
   Button,
-  Chip,
-  ChipGroup,
   MenuFooter,
   MenuToggle,
   MenuToggleStatus,
@@ -12,6 +12,7 @@ import {
   TextInputGroupMain,
   TextInputGroupUtilities,
 } from "@patternfly/react-core";
+
 import { TimesIcon } from "@patternfly/react-icons";
 import { Children, useRef, useState } from "react";
 import {
@@ -160,24 +161,26 @@ export const TypeaheadSelect = ({
                 (chipGroupComponent ? (
                   chipGroupComponent
                 ) : (
-                  <ChipGroup {...chipGroupProps}>
+                  <LabelGroup {...chipGroupProps}>
                     {selections.map((selection, index: number) => (
-                      <Chip
+                      <Label
+                        variant="outline"
                         key={index}
-                        onClick={(ev) => {
+                        onClose={(ev) => {
                           ev.stopPropagation();
                           onSelect?.(selection);
                         }}
                       >
                         {selection}
-                      </Chip>
+                      </Label>
                     ))}
-                  </ChipGroup>
+                  </LabelGroup>
                 ))}
             </TextInputGroupMain>
             <TextInputGroupUtilities>
               {!!filterValue && (
                 <Button
+                  icon={<TimesIcon aria-hidden />}
                   variant="plain"
                   onClick={() => {
                     onSelect?.("");
@@ -186,9 +189,7 @@ export const TypeaheadSelect = ({
                     textInputRef?.current?.focus();
                   }}
                   aria-label="Clear input value"
-                >
-                  <TimesIcon aria-hidden />
-                </Button>
+                />
               )}
             </TextInputGroupUtilities>
           </TextInputGroup>

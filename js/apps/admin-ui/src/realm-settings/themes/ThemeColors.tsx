@@ -8,8 +8,7 @@ import {
   InputGroup,
   InputGroupItem,
   PageSection,
-  Text,
-  TextContent,
+  Content,
   TextInputProps,
 } from "@patternfly/react-core";
 import { useEffect, useMemo } from "react";
@@ -151,10 +150,10 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           onClose={toggle}
         />
       )}
-      <PageSection variant="light">
-        <TextContent className="pf-v5-u-mb-lg">
-          <Text>{t("themeColorInfo")}</Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content className="pf-v5-u-mb-lg">
+          <Content component="p">{t("themeColorInfo")}</Content>
+        </Content>
         {mediaQuery.matches && theme === "light" && (
           <Alert variant="info" isInline title={t("themePreviewInfo")} />
         )}

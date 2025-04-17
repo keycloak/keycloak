@@ -241,7 +241,7 @@ export default function PermissionConfigurationDetails() {
             : undefined
         }
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess isHorizontal onSubmit={handleSubmit(save)} role="anyone">
           <FormProvider {...form}>
             <NameDescription clientId={permissionClientId} />

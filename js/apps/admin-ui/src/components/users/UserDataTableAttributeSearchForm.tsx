@@ -15,10 +15,9 @@ import {
   InputGroup,
   InputGroupItem,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
@@ -198,9 +197,11 @@ export function UserDataTableAttributeSearchForm({
       className="user-attribute-search-form"
       data-testid="user-attribute-search-form"
     >
-      <TextContent className="user-attribute-search-form-headline">
-        <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
-      </TextContent>
+      <Content className="user-attribute-search-form-headline">
+        <Content component={ContentVariants.h2}>
+          {t("selectAttributes")}
+        </Content>
+      </Content>
       <Alert
         isInline
         className="user-attribute-search-form-alert"
@@ -208,14 +209,14 @@ export function UserDataTableAttributeSearchForm({
         title={t("searchUserByAttributeDescription")}
         component="h3"
       />
-      <TextContent className="user-attribute-search-form-key-value">
+      <Content className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h3}>{t("key")}</Text>
+          <Content component={ContentVariants.h3}>{t("key")}</Content>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h3}>{t("value")}</Text>
+          <Content component={ContentVariants.h3}>{t("value")}</Content>
         </div>
-      </TextContent>
+      </Content>
       <div className="user-attribute-search-form-left">
         {createAttributeKeyInputField()}
       </div>

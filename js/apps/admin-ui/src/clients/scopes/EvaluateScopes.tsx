@@ -24,8 +24,7 @@ import {
   TabContent,
   Tabs,
   TabTitleText,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
@@ -237,19 +236,19 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
   return (
     <>
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         {enabled && (
-          <TextContent className="keycloak__section_intro__help">
-            <Text>
+          <Content className="keycloak__section_intro__help">
+            <Content component="p">
               <QuestionCircleIcon /> {t("evaluateExplain")}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         )}
         <Form isHorizontal>
           <FormGroup
             label={t("scopeParameter")}
             fieldId="scopeParameter"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("scopeParameterHelp")}
                 fieldLabelId="scopeParameter"

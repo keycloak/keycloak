@@ -542,7 +542,7 @@ export default function DetailSettings() {
         )}
       />
 
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"

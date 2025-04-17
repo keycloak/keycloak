@@ -4,11 +4,10 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
-  ModalVariant,
   PageSection,
   Radio,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
@@ -25,7 +24,7 @@ const AuthenticationProviderList = ({
   setValue,
 }: AuthenticationProviderListProps) => {
   return (
-    <PageSection variant="light" className="pf-v5-u-py-lg">
+    <PageSection hasBodyWrapper={false} className="pf-v5-u-py-lg">
       <Form isHorizontal>
         {list?.map((provider) => (
           <Radio

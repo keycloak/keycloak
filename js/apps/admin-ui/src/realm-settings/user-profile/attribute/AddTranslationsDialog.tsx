@@ -10,13 +10,11 @@ import {
   Form,
   FormGroup,
   Label,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
@@ -159,14 +157,14 @@ export const AddTranslationsDialog = ({
               />
             </FormGroup>
             <FlexItem>
-              <TextContent>
-                <Text
+              <Content>
+                <Content
                   className="pf-v5-u-font-size-sm pf-v5-u-font-weight-bold"
-                  component={TextVariants.p}
+                  component={ContentVariants.p}
                 >
                   {t("translationsTableHeading")}
-                </Text>
-              </TextContent>
+                </Content>
+              </Content>
               <PaginatingTableToolbar
                 count={translations.length}
                 first={first}
