@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.Arrays;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -299,13 +300,10 @@ public class UsersResource {
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                if (userModel != null) {
-                    userModels = Stream.of(userModel);
-                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                        userModels = userModels.filter(userPermissionEvaluator::canView);
-                    }
+                String[] userIds = search.substring(SEARCH_ID_PARAMETER.length()).trim().split("\\s+");
+                userModels = Arrays.stream(userIds).map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                    userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
