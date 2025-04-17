@@ -77,7 +77,7 @@ If the Keycloak CR configured a `podTemplate` as part of the `unsupported` confi
 
 As a consequence, the Operator might draw the wrong conclusions if a rolling update is possible from changes to the `podTemplate` or information pulled in from Secrets, ConfigMaps or Volumes in the `podTemplate`.
 
-Therefore, the recommended way is to run the `Auto` command without setting the `podTemplate`.
+Therefore, if you are using the unsupported `podTemplate`, you may need to use one of the other update strategies.
 ====
 
 The `Explicit` update strategy delegates the update decision to the user.
