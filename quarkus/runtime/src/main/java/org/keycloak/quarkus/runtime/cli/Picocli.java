@@ -48,6 +48,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
@@ -289,7 +290,11 @@ public class Picocli {
     }
 
     private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if(!isDevMode() && cmd != null) {
+        if (cmd == null) {
+            throw new IllegalStateException("CommandLine is null when trying to run re-augmentation. (CLI args: '%s')".formatted(String.join(", ", cliArgs)));
+        }
+
+        if (!isDevMode()) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
             if (Configuration.isOptimized()) {
                 checkChangesInBuildOptionsDuringAutoBuild(cmd.getOut());
@@ -306,6 +311,7 @@ public class Picocli {
             }
         }, ignored -> {});
 
+        cmd = cmd.setUnmatchedArgumentsAllowed(true);
         int exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
@@ -747,7 +753,9 @@ public class Picocli {
 
         addMappedOptionsToArgGroups(commandLine, mappers);
 
-        allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
+        if (CollectionUtil.isEmpty(allowedMappers)) {
+            allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
+        }
     }
 
     private static <T extends Map<OptionCategory, List<PropertyMapper<?>>>> void combinePropertyMappers(T origMappers, T additionalMappers) {
