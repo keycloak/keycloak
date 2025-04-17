@@ -2,7 +2,6 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
-  Button,
   Flex,
   FlexItem,
   FormGroup,
@@ -30,6 +29,7 @@ import { usePreviewLogo } from "./LogoContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
+import { UploadJar } from "./UploadJar";
 
 type ThemeType = "light" | "dark";
 
@@ -104,12 +104,14 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
   };
 
   const setupForm = () => {
-    const values = JSON.parse(realm.attributes?.style || "{}");
-    if (values[theme]) {
-      form.reset(values);
-    } else {
-      reset();
-    }
+    reset();
+  };
+
+  const upload = (values: ThemeRealmRepresentation) => {
+    form.setValue("bgimage", values.bgimage);
+    form.setValue("favicon", values.favicon);
+    form.setValue("logo", values.logo);
+    form.reset(values);
   };
 
   const convert = (values: Record<string, File | string>) => {
@@ -193,9 +195,7 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           save={toggle}
           reset={setupForm}
         >
-          <Button type="button" variant="link" onClick={reset}>
-            {t("defaults")}
-          </Button>
+          <UploadJar onUpload={upload} />
         </FixedButtonsGroup>
       </PageSection>
     </>
