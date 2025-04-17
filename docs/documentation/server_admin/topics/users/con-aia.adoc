@@ -74,5 +74,6 @@ to use this action directly from your own applications. However, relying on the 
 [id="con-aia-available-actions_{context}"]
 == Available actions
 
-To see all available actions, log in to the Admin Console and go to the top right top corner to click `Realm info` -> tab `Provider info` -> Find provider `required-action` .
-But note that this can be further restricted based on what actions are enabled for your realm in the <<proc-setting-default-required-actions_{context}, Required actions tab>>.
+To see all available actions, log in to the Admin Console and select `master` realm. Then go to the right top corner and click on the name of the user -> select `Realm info` -> tab `Provider info`. Then in the table, find SPI `required-action` . In the
+2nd column, there are available providers. Those can be used as values of the `kc_action` parameter (unless parameterized as described above). But note that this can be further restricted based on what actions are enabled for your realm in
+the <<proc-setting-default-required-actions_{context}, Required actions tab>>.
