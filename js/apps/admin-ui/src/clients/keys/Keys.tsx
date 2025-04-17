@@ -29,13 +29,19 @@ import { ImportFile, ImportKeyDialog } from "./ImportKeyDialog";
 
 type KeysProps = {
   save: () => void;
+  refresh: () => void;
   clientId: string;
   hasConfigureAccess?: boolean;
 };
 
 const attr = "jwt.credential";
 
-export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
+export const Keys = ({
+  clientId,
+  save,
+  refresh: refreshParent,
+  hasConfigureAccess,
+}: KeysProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -51,7 +57,10 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     useToggle();
   const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
+  const refresh = () => {
+    setKey(key + 1);
+    refreshParent();
+  };
 
   const useJwksUrl = useWatch({
     control,
