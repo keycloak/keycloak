@@ -2,7 +2,6 @@ import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmR
 import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
-  Button,
   Flex,
   FlexItem,
   FormGroup,
@@ -196,9 +195,6 @@ export const ThemeColors = ({ realm, save, theme }: ThemeColorsProps) => {
           save={toggle}
           reset={setupForm}
         >
-          <Button type="button" variant="link" onClick={reset}>
-            {t("defaults")}
-          </Button>
           <UploadJar onUpload={upload} />
         </FixedButtonsGroup>
       </PageSection>
