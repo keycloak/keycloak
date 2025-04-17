@@ -9,7 +9,6 @@ import {
   DrawerPanelContent,
   DropdownItem,
   PageSection,
-  PageSectionVariants,
   Tab,
   TabTitleText,
   Tabs,
@@ -132,7 +131,7 @@ export default function GroupsSection() {
           handleModalToggle={() => setRename(undefined)}
         />
       )}
-      <PageSection variant={PageSectionVariants.light} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <Drawer isInline isExpanded={open} key={key} position="left">
           <DrawerContent
             panelContent={

@@ -194,7 +194,7 @@ export default function NewClientPolicyCondition() {
         }
         divider
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -205,7 +205,7 @@ export default function NewClientPolicyCondition() {
           <FormGroup
             label={t("conditionType")}
             fieldId="conditionType"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={
                   conditionType

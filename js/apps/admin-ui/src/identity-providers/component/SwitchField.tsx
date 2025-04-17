@@ -32,7 +32,6 @@ export const SwitchField = ({
           <Switch
             id={label}
             label={t("on")}
-            labelOff={t("off")}
             isChecked={
               fieldType === "string"
                 ? field.value === "true"

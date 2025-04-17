@@ -19,9 +19,8 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { AngleRightIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -374,12 +373,13 @@ const GroupRow = ({
           id="actions"
           aria-labelledby={`select-${group.name}`}
           aria-label={t("groupName")}
-          isPlainButtonAction
         >
           {(canBrowse || type === "selectOne") && group.subGroupCount !== 0 && (
-            <Button variant="link" aria-label={t("select")}>
-              <AngleRightIcon />
-            </Button>
+            <Button
+              icon={<AngleRightIcon />}
+              variant="link"
+              aria-label={t("select")}
+            ></Button>
           )}
         </DataListAction>
       </DataListItemRow>

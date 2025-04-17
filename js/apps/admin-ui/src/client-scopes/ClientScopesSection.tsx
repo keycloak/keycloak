@@ -193,7 +193,7 @@ export default function ClientScopesSection() {
         subKey="clientScopeExplain"
         helpUrl={helpUrls.clientScopesUrl}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}

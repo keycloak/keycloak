@@ -8,12 +8,10 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
@@ -91,21 +89,21 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       }
       variant={ModalVariant.medium}
       header={
-        <TextContent
+        <Content
           role="dialog"
           aria-label={
             isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
           }
         >
-          <Text component={TextVariants.h1}>
+          <Content component={ContentVariants.h1}>
             {isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")}
-          </Text>
-          <Text>
+          </Content>
+          <Content component="p">
             {isBuiltIn
               ? t("predefinedMappingDescription")
               : t("configureMappingDescription")}
-          </Text>
-        </TextContent>
+          </Content>
+        </Content>
       }
       isOpen={props.open}
       onClose={props.toggleDialog}

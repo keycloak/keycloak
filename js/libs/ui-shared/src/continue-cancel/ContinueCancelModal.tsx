@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
-import { Button, ButtonProps, Modal, ModalProps } from "@patternfly/react-core";
+import { Button, ButtonProps } from "@patternfly/react-core";
+import { Modal, ModalProps } from "@patternfly/react-core/deprecated";
 
 export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
   modalTitle: string;

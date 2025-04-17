@@ -12,12 +12,13 @@ import {
   Variant,
 } from "@keycloak/keycloak-ui-shared";
 import {
+  Label,
+  LabelGroup,
   Button,
   ButtonVariant,
-  Chip,
-  ChipGroup,
   SelectOption,
 } from "@patternfly/react-core";
+
 import { useState } from "react";
 import {
   Controller,
@@ -219,11 +220,12 @@ export const ResourcesPolicySelect = ({
     field: ControllerRenderProps<PolicyRepresentation, Type>,
   ) => {
     return (
-      <ChipGroup>
+      <LabelGroup>
         {selected?.map((item) => (
-          <Chip
+          <Label
+              variant="outline"
             key={item.id}
-            onClick={() => {
+            onClose={() => {
               field.onChange(field.value?.filter((id) => id !== item.id) || []);
               setSelected(selected?.filter((p) => p.id !== item.id) || []);
             }}
@@ -244,9 +246,9 @@ export const ResourcesPolicySelect = ({
             ) : (
               item.name
             )}
-          </Chip>
+          </Label>
         ))}
-      </ChipGroup>
+      </LabelGroup>
     );
   };
 

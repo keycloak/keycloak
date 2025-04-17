@@ -147,7 +147,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
   };
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <Split hasGutter>
         <SplitItem>
           <FormProvider {...form}>
