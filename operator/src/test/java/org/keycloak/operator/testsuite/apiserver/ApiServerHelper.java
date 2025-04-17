@@ -1,7 +1,10 @@
 package org.keycloak.operator.testsuite.apiserver;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.keycloak.operator.Utils;
 
 import io.fabric8.kubeapitest.KubeAPIServer;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -28,7 +31,8 @@ public class ApiServerHelper {
         config.setNamespace(namespace);
         var result = new KubernetesClientBuilder().withConfig(config).build();
 
-        // fake statefulset controller
+        // fake statefulset controller - we don't have to worry about closing this
+        // that will happen automatically when the client is closed
         result.apps().statefulSets().inAnyNamespace().inform(new ResourceEventHandler<StatefulSet>() {
 
             @Override
@@ -38,7 +42,7 @@ public class ApiServerHelper {
 
             private void updateStatefulSet(StatefulSet obj) {
                 int replicas = obj.getSpec().getReplicas();
-                String revision = String.valueOf(Math.abs(obj.getSpec().hashCode()));
+                String revision = Utils.hash(List.of(obj.getSpec())).substring(1);
                 if (!Objects.equals(Optional.ofNullable(obj.getStatus().getReplicas()).orElse(0), replicas)
                         || !Objects.equals(revision, obj.getStatus().getUpdateRevision())
                         || !Objects.equals(obj.getStatus().getCurrentRevision(), obj.getStatus().getUpdateRevision())) {

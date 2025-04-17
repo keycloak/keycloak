@@ -55,56 +55,19 @@ jobs:
           upload-m2-repo: false
           upload-dist: true
 
-  test-local:
-    name: Test local
+  test-local-apiserver:
+    name: Test local apiserver
     runs-on: ubuntu-latest
     needs: [build]
-    strategy:
-      matrix:
-        suite: [slow, fast]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set version
-        id: vars
-        run: echo "version_local=0.0.1-${GITHUB_SHA::6}" >> $GITHUB_ENV
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
-      - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.13.1
-        with:
-          minikube version: ${{ env.MINIKUBE_VERSION }}
-          kubernetes version: ${{ env.KUBERNETES_VERSION }}
-          github token: ${{ secrets.GITHUB_TOKEN }}
-          driver: docker
-          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
-
-      - name: Download keycloak distribution
-        id: download-keycloak-dist
-        uses: actions/download-artifact@v4
-        with:
-          name: keycloak-dist
-          path: quarkus/container
-
-      - name: Build Keycloak Docker images
-        run: |
-          eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_local }})
-          (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_local }} keycloak custom-keycloak)
-
       - name: Test operator running locally
         run: |
-          declare -A PARAMS
-          PARAMS["slow"]="-Dkc.quarkus.tests.groups=slow"
-          PARAMS["fast"]='-Dkc.quarkus.tests.groups=!slow'
-          
-          ./mvnw install -Poperator -pl :keycloak-operator -am \
-              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-              -Dkc.operator.keycloak.image=keycloak:${{ env.version_local }} \
-              -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
-              -Dkc.operator.keycloak.image-pull-policy=Never ${PARAMS["${{ matrix.suite }}"]}
+          ./mvnw install -Poperator -pl :keycloak-operator -am
 
   test-remote:
     name: Test remote
@@ -250,7 +213,7 @@ jobs:
     needs:
       - conditional
       - build
-      - test-local
+      - test-local-apiserver
       - test-remote
       - test-olm
     runs-on: ubuntu-latest
