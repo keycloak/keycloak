@@ -174,11 +174,11 @@ class AuthenticationSelectionResolver {
         }
 
         Authenticator localAuthenticator = processor.getSession().getProvider(Authenticator.class, execution.getAuthenticator());
-        if (!(localAuthenticator instanceof CredentialValidator)) {
-            nonCredentialExecutions.add(execution);
-        } else {
+        if (localAuthenticator instanceof CredentialValidator && localAuthenticator.requiresUser()) {
             CredentialValidator<?> cv = (CredentialValidator<?>) localAuthenticator;
             typeAuthExecMap.put(cv.getType(processor.getSession()), execution);
+        } else {
+            nonCredentialExecutions.add(execution);
         }
     }
 
