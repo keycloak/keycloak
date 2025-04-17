@@ -71,7 +71,10 @@ public class UserProfileResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(description = "Get the configuration for the user profile")
+    @Operation(
+            description = "Get the configuration for the user profile",
+            operationId = "getConfiguration"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UPConfig.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -85,7 +88,10 @@ public class UserProfileResource {
     @Path("/metadata")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(description = "Get the UserProfileMetadata from the configuration")
+    @Operation(
+            description = "Get the UserProfileMetadata from the configuration",
+            operationId = "getMetadata"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserProfileMetadata.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -100,7 +106,10 @@ public class UserProfileResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(description = "Set the configuration for the user profile")
+    @Operation(
+            description = "Set the configuration for the user profile",
+            operationId = "updateUserProfile"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UPConfig.class))),
         @APIResponse(responseCode = "403", description = "Forbidden")

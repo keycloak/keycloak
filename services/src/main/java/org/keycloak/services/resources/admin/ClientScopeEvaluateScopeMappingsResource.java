@@ -81,8 +81,11 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Get effective scope mapping of all roles of particular role container, which this client is defacto allowed to have in the accessToken issued for him.",
-            description = "This contains scope mappings, which this client has directly, as well as scope mappings, which are granted to all client scopes, which are linked with this client.")
+    @Operation(
+            summary = "Get effective scope mapping of all roles of particular role container, which this client is defacto allowed to have in the accessToken issued for him.",
+            description = "This contains scope mappings, which this client has directly, as well as scope mappings, which are granted to all client scopes, which are linked with this client.",
+            operationId = "getGrantedScopeMappings"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -102,7 +105,10 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation(summary = "Get roles, which this client doesn't have scope for and can't have them in the accessToken issued for him.", description = "Defacto all the other roles of particular role container, which are not in {@link #getGrantedScopeMappings()}")
+    @Operation(
+            summary = "Get roles, which this client doesn't have scope for and can't have them in the accessToken issued for him.", description = "Defacto all the other roles of particular role container, which are not in {@link #getGrantedScopeMappings()}",
+            operationId = "getNotGrantedScopeMappings"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = RoleRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")

@@ -68,7 +68,7 @@ public class OrganizationResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Returns the organization representation")
+    @Operation(summary = "Returns the organization representation", operationId = "getOrganization")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class)))
     })
@@ -78,7 +78,7 @@ public class OrganizationResource {
 
     @DELETE
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Deletes the organization")
+    @Operation(summary = "Deletes the organization", operationId = "deleteOrganization")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request")
@@ -96,7 +96,7 @@ public class OrganizationResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Updates the organization")
+    @Operation(summary = "Updates the organization", operationId = "updateOrganization")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request")
