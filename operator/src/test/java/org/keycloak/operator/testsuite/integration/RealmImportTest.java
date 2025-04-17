@@ -38,6 +38,7 @@ import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -58,6 +59,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
 
+@DisabledIfApiServerTest
 @QuarkusTest
 public class RealmImportTest extends BaseOperatorTest {
 
@@ -103,6 +105,7 @@ public class RealmImportTest extends BaseOperatorTest {
         K8sUtils.set(k8sclient, getResourceFromFile("example-smtp-secret.yaml", Secret.class));
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImport() {
         // Arrange
@@ -119,6 +122,7 @@ public class RealmImportTest extends BaseOperatorTest {
         assertWorkingRealmImport(kc);
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImportWithReplacement() {
         // Arrange

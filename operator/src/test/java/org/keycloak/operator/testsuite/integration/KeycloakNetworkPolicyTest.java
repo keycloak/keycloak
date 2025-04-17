@@ -35,6 +35,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -51,6 +52,7 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
                 .get();
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testHttpAndHttps() {
         var kc = create();
@@ -69,6 +71,7 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         CRAssert.assertManagementInterfaceAccessibleViaService(k8sclient, kc, true, mngtPort);
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testServiceConnectivity() {
         var kc = create();
@@ -128,6 +131,7 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         }
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testJGroupsConnectivity() {
         var kc = create();

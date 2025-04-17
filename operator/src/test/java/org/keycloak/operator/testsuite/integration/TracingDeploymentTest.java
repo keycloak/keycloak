@@ -24,6 +24,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +35,7 @@ import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResou
 import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
+@DisabledIfApiServerTest
 @QuarkusTest
 public class TracingDeploymentTest extends BaseOperatorTest {
 

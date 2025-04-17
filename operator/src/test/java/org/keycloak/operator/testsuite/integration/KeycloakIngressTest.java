@@ -34,6 +34,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.util.Map;
@@ -48,6 +49,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {
 
+    @DisabledIfApiServerTest
     @Test
     public void testIngressOnHTTP() {
         var kc = getTestKeycloakDeployment(false);
@@ -76,6 +78,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         testIngressURLs(baseUrl);
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testIngressOnHTTPSAndProxySettings() {
         var kc = getTestKeycloakDeployment(false);
