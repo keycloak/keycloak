@@ -84,6 +84,7 @@ import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.TracingOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -146,11 +147,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
@@ -298,35 +302,21 @@ class KeycloakProcessor {
                 // We do not want to initialize the JDBC driver class
                 Class.forName(dbDriver.get(), false, Thread.currentThread().getContextClassLoader());
             } catch (ClassNotFoundException e) {
-                throwConfigError(String.format("Unable to find the JDBC driver (%s). You need to install it.", dbDriver.get()));
+                KeycloakRecorder.throwConfigError(String.format("Unable to find the JDBC driver (%s). You need to install it.", dbDriver.get()));
             }
         }
     }
 
-    // Inspired by AgroalProcessor
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
+    @Consume(ConfigBuildItem.class)
     @Produce(CheckMultipleDatasourcesBuildStep.class)
-    void checkMultipleDatasourcesUseXA(TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig, DataSourcesJdbcBuildTimeConfig jdbcConfig) {
+    void checkMultipleDatasourcesUseXA(KeycloakRecorder recorder, TransactionManagerBuildTimeConfig transactionManagerConfig, DataSourcesBuildTimeConfig dataSourcesConfig) {
         if (transactionManagerConfig.unsafeMultipleLastResources()
                 .orElse(UnsafeMultipleLastResourcesMode.DEFAULT) != UnsafeMultipleLastResourcesMode.FAIL) {
             return;
         }
-        long nonXADatasourcesCount = dataSourcesConfig.dataSources().keySet().stream()
-                .map(ds -> jdbcConfig.dataSources().get(ds).jdbc())
-                .filter(jdbc -> jdbc.enabled() && jdbc.transactions() != TransactionIntegration.XA)
-                .count();
-        if (nonXADatasourcesCount > 1) {
-            throwConfigError("Multiple datasources are configured but more than 1 is using non-XA transactions. " +
-                    "All the datasources except one must must be XA to be able to use Last Resource Commit Optimization (LRCO). " +
-                    "Please update your configuration by setting --transaction-xa-enabled=true " +
-                    "and/or quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa.");
-        }
-    }
-
-    private void throwConfigError(String msg) {
-        // Ignore queued TRACE and DEBUG messages for not initialized log handlers
-        InitialConfigurator.DELAYED_HANDLER.setBuildTimeHandlers(new Handler[]{});
-        throw new ConfigurationException(msg);
+        recorder.assertMultipleDatasourcesUseXa(dataSourcesConfig);
     }
 
     /**
@@ -399,7 +389,6 @@ class KeycloakProcessor {
 
     @BuildStep
     @Consume(CheckJdbcBuildStep.class)
-    @Consume(CheckMultipleDatasourcesBuildStep.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
                 Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));

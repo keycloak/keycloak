@@ -21,9 +21,12 @@ import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
+import io.quarkus.bootstrap.logging.InitialConfigurator;
+import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.runtime.configuration.ConfigurationException;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
@@ -37,6 +40,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -51,6 +56,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.utils.StringUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -63,10 +69,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 @Recorder
 public class KeycloakRecorder {
@@ -214,5 +222,32 @@ public class KeycloakRecorder {
 
     public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
         Marshalling.setSchemas(schemas);
+    }
+
+    public static void throwConfigError(String msg) {
+        // Ignore queued TRACE and DEBUG messages for not initialized log handlers
+        InitialConfigurator.DELAYED_HANDLER.setBuildTimeHandlers(new java.util.logging.Handler[]{});
+        throw new ConfigurationException(msg);
+    }
+
+    public void assertMultipleDatasourcesUseXa(DataSourcesBuildTimeConfig dataSourcesConfig) {
+        Predicate<String> isDatasourceEnabled = ds -> DatabaseOptions.getResultNamedKey(DatabaseOptions.DB_ENABLED_DATASOURCE, ds)
+                .map(Configuration::isTrue)
+                .orElse(DatabaseOptions.DB_ENABLED_DATASOURCE.getDefaultValue().orElse(true));
+
+        List<String> nonXADatasources = dataSourcesConfig.dataSources().keySet().stream()
+                .filter(StringUtil::isNotBlank)
+                .filter(ds -> {
+                    var enabled = ds.equals("<default>") || isDatasourceEnabled.test(ds);
+                    return enabled && !Configuration.isTrue(NS_KEYCLOAK_PREFIX + TransactionOptions.getNamedTxXADatasource(ds));
+                })
+                .toList();
+
+        if (nonXADatasources.size() > 1) {
+            throwConfigError("Multiple datasources are configured but more than 1 (%s) is using non-XA transactions. ".formatted(String.join(", ", nonXADatasources)) +
+                    "All the datasources except one must must be XA to be able to use Last Resource Commit Optimization (LRCO). " +
+                    "Please update your configuration by setting --transaction-xa-enabled=true " +
+                    "and/or --transaction-xa-enabled-<your-datasource-name>=true.");
+        }
     }
 }
