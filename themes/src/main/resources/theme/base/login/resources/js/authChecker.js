@@ -15,6 +15,36 @@ forms.forEach((form) =>
 globalThis.addEventListener("beforeunload", () => stopSessionPolling());
 
 /**
+ * Get all elements specified by the selectors and add the disable onclick.
+ * @param {string} selectors The selector to locate the elements to disable
+ * @param {string} disableClass The class to assign to the element
+ */
+export function disableAfterClick(selectors, disableClass) {
+  document.querySelectorAll(selectors).forEach((element) =>
+    element.addEventListener('click', (event) => checkDisable(event, element, disableClass))
+  );
+}
+
+/**
+ * Disables the element after being called the first time adding
+ * attribute 'aria-disabled' to true.
+ * @param {Event} event The click event
+ * @param {Element} element The element to check
+ * @param {string} disableClass The class to assign to the element
+ * @returns true if first call, false if already disabled
+ */
+function checkDisable(event, element, disableClass) {
+  if (element.getAttribute('aria-disabled') === 'true') {
+      event.preventDefault();
+  } else {
+      element.setAttribute('aria-disabled', 'true');
+      if (disableClass && disableClass.trim().length > 0) {
+        element.classList.add(...disableClass.trim().split(/\s+/));
+      }
+  }
+}
+
+/**
  * Starts polling to check if a new session was started in another context (e.g. a tab or window), and redirects to the specified URL if a session is detected.
  * @param {string} redirectUrl - The URL to redirect to if a new session is detected.
  */
