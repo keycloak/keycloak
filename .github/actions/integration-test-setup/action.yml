@@ -14,6 +14,10 @@ inputs:
 runs:
   using: composite
   steps:
+    - id: update-hosts
+      name: Update /etc/hosts
+      uses: ./.github/actions/update-hosts
+
     - id: setup-java
       name: Setup Java
       uses: ./.github/actions/java-setup

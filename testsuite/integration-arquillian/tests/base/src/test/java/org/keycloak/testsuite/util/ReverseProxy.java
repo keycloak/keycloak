@@ -11,7 +11,7 @@ import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
 
 public class ReverseProxy implements TestRule {
 
-    public static String DEFAULT_PROXY_HOST = "127.0.0.1";
+    public static String DEFAULT_PROXY_HOST = "proxy.kc.127.0.0.1.nip.io";
     public static final int DEFAULT_HTTP_PORT = 8666;
     public static final int DEFAULT_HTTPS_PORT = 8667;
 
