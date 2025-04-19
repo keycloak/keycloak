@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Directory Structure"
-summary="Understand the purpose of the directories under the installation root"
+summary="Understand the purpose of the directories under the installation root."
 includedOptions="">
 
 == Installation Locations

@@ -3,8 +3,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-    title="Importing and Exporting Realms"
-    summary="An overview about how to import and export realms">
+    title="Importing and exporting realms"
+    summary="Import and export realms as JSON files.">
 
 In this {section}, you are going to understand the different approaches for importing and exporting realms using JSON files.
 

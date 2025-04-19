@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Deploy an AWS Global Accelerator load balancer"
-summary="Building block for a load balancer"
+title="Deploying an AWS Global Accelerator load balancer"
+summary="Deploy an AWS Global Accelerator as the load-balancer building block in a multi-site deployment."
 tileVisible="false" >
 
 This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-site {project_name} deployments.

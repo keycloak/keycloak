@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="JVM metrics"
-summary="Learn about key JVM metrics for observing performance of {project_name}"
+summary="Use JVM metrics to observe performance of {project_name}."
 tileVisible="false"
 >
 

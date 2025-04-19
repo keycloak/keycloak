@@ -2,8 +2,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Bring site online"
-summary="This guide describes how to bring a site online so that it can process client requests." >
+title="Bringing a site online"
+summary="Bring a site online so that it can process client requests." >
 
 == When to use this procedure
 

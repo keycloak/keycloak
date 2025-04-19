@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Clustering metrics"
-summary="Learn about metrics monitoring communication between {project_name} nodes."
+summary="Use metrics to monitor communication between {project_name} nodes."
 tileVisible="false"
 >
 

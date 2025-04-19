@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="{project_name} Operator Installation"
-summary="How to install the {project_name} Operator on Kubernetes and OpenShift">
+summary="Install the {project_name} Operator on Kubernetes and OpenShift.">
 
 == Installing the {project_name} Operator
 This {section} describes how to install the {project_name} Operator in a Kubernetes or OpenShift cluster.

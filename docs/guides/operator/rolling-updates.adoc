@@ -6,7 +6,7 @@
 
 <@tmpl.guide
 title="Avoiding downtime with rolling updates"
-summary="Avoid downtimes when changing themes, providers or configurations in optimized images.">
+summary="Avoid downtime when changing themes, providers, or configurations in optimized images.">
 
 By default, the {project_name} Operator will perform rolling updates on configuration changes without downtime, and recreate updates with downtime when the image name or tag changes.
 

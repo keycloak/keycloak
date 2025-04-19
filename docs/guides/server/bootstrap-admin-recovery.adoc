@@ -3,8 +3,8 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Admin bootstrap and recovery"
-summary="Learn how to bootstrap and recover admin account.">
+title="Bootstrapping and recovering an admin account"
+summary="Bootstrap {project_name} and recover access by creating a temporary admin account.">
 
 == A temporary admin account
 
