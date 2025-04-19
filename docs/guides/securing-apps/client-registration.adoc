@@ -2,9 +2,9 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Client registration service"
+title="Using the client registration service"
 priority=100
-summary="Using the client registration service">
+summary="Use the client registration service.">
 
 In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
 An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {project_name} client registration service.

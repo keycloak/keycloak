@@ -4,7 +4,7 @@
 <@tmpl.guide
 title="Using token exchange"
 priority=120
-summary="Configuring and using Token exchange with {project_name}">
+summary="Configure Token exchange for {project_name}">
 
 Token exchange is the process that allows a client application to exchange one token for another token. In {project_name}, two features implement token exchange:
 
