@@ -170,9 +170,9 @@
         <dependency.keystore>${dependency.keystore.root}/keycloak.jks</dependency.keystore>
         <dependency.keystore.password>secret</dependency.keystore.password>
 
-        <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
-        <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
-        <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
+        <keycloak.cacheRemote.hostname>localhost</keycloak.cacheRemote.hostname>
+        <keycloak.cacheRemote.port>12232</keycloak.cacheRemote.port>
+        <keycloak.cacheRemote.port.2>13232</keycloak.cacheRemote.port.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
         <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
@@ -582,9 +582,9 @@
                             <cache.server.java.home>${cache.server.java.home}</cache.server.java.home>
                             <cache.server.auth>${cache.server.auth}</cache.server.auth>
 
-                            <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
-                            <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
-                            <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                            <keycloak.cacheRemote.port>${keycloak.cacheRemote.port}</keycloak.cacheRemote.port>
+                            <keycloak.cacheRemote.port.2>${keycloak.cacheRemote.port.2}</keycloak.cacheRemote.port.2>
+                            <keycloak.cacheRemote.hostname>${keycloak.cacheRemote.hostname}</keycloak.cacheRemote.hostname>
                             <keycloak.connectionsInfinispan.sessionsOwners>${keycloak.connectionsInfinispan.sessionsOwners}</keycloak.connectionsInfinispan.sessionsOwners>
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 

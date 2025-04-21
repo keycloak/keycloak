@@ -63,14 +63,14 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
  */
 public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, CacheRemoteConfigProvider, EnvironmentDependentProviderFactory {
 
-    private static final String PROVIDER_ID = "default";
+    public static final String PROVIDER_ID = "default";
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     // configuration
     private static final String PROPERTIES_FILE = "propertiesFile";
     private static final String CLIENT_INTELLIGENCE = "clientIntelligence";
-    private static final String HOSTNAME = "hostname";
-    private static final String PORT = "port";
+    public static final String HOSTNAME = "hostname";
+    public static final String PORT = "port";
     private static final String TLS_ENABLED = "tlsEnabled";
     private static final String TLS_SNI_HOSTNAME = "tlsSniHostname";
     private static final String USERNAME = "username";
@@ -199,15 +199,17 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     }
 
     private void configureHostname(ConfigurationBuilder builder) {
-        var cacheRemoteHost = keycloakConfiguration.get(HOSTNAME);
-        if (cacheRemoteHost == null) {
+        var host = keycloakConfiguration.get(HOSTNAME);
+        if (host == null) {
             logger.debug("Hot Rod hostname not configured.");
             return;
         }
+        var port = keycloakConfiguration.getInt(PORT, ConfigurationProperties.DEFAULT_HOTROD_PORT);
+        logger.debugf("Hot Rod connecting to %s:%s", host, port);
 
         builder.addServer()
-                .host(cacheRemoteHost)
-                .port(keycloakConfiguration.getInt(PORT, ConfigurationProperties.DEFAULT_HOTROD_PORT));
+                .host(host)
+                .port(port);
     }
 
     private void configureConnectionPool(ConfigurationBuilder builder) {
