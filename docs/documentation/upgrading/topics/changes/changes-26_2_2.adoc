@@ -1,0 +1,7 @@
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== local admin deprecation
+
+`UrlType.LOCAL_ADMIN` and the corresponding welcome theme variable `localAdminUrl` have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created.
