@@ -1,0 +1,130 @@
+{
+    "name": "@types/react-router",
+    "version": "5.1.18",
+    "description": "TypeScript definitions for React Router",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-router",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Sergey Buturlakin",
+            "url": "https://github.com/sergey-buturlakin",
+            "githubUsername": "sergey-buturlakin"
+        },
+        {
+            "name": "Yuichi Murata",
+            "url": "https://github.com/mrk21",
+            "githubUsername": "mrk21"
+        },
+        {
+            "name": "Václav Ostrožlík",
+            "url": "https://github.com/vasek17",
+            "githubUsername": "vasek17"
+        },
+        {
+            "name": "Nathan Brown",
+            "url": "https://github.com/ngbrown",
+            "githubUsername": "ngbrown"
+        },
+        {
+            "name": "Alex Wendland",
+            "url": "https://github.com/awendland",
+            "githubUsername": "awendland"
+        },
+        {
+            "name": "Kostya Esmukov",
+            "url": "https://github.com/KostyaEsmukov",
+            "githubUsername": "KostyaEsmukov"
+        },
+        {
+            "name": "John Reilly",
+            "url": "https://github.com/johnnyreilly",
+            "githubUsername": "johnnyreilly"
+        },
+        {
+            "name": "Karol Janyst",
+            "url": "https://github.com/LKay",
+            "githubUsername": "LKay"
+        },
+        {
+            "name": "Dovydas Navickas",
+            "url": "https://github.com/DovydasNavickas",
+            "githubUsername": "DovydasNavickas"
+        },
+        {
+            "name": "Huy Nguyen",
+            "url": "https://github.com/huy-nguyen",
+            "githubUsername": "huy-nguyen"
+        },
+        {
+            "name": "Jérémy Fauvel",
+            "url": "https://github.com/grmiade",
+            "githubUsername": "grmiade"
+        },
+        {
+            "name": "Daniel Roth",
+            "url": "https://github.com/DaIgeb",
+            "githubUsername": "DaIgeb"
+        },
+        {
+            "name": "Egor Shulga",
+            "url": "https://github.com/egorshulga",
+            "githubUsername": "egorshulga"
+        },
+        {
+            "name": "Rahul Raina",
+            "url": "https://github.com/rraina",
+            "githubUsername": "rraina"
+        },
+        {
+            "name": "Duong Tran",
+            "url": "https://github.com/t49tran",
+            "githubUsername": "t49tran"
+        },
+        {
+            "name": "Ben Smith",
+            "url": "https://github.com/8enSmith",
+            "githubUsername": "8enSmith"
+        },
+        {
+            "name": "Wesley Tsai",
+            "url": "https://github.com/wezleytsai",
+            "githubUsername": "wezleytsai"
+        },
+        {
+            "name": "Sebastian Silbermann",
+            "url": "https://github.com/eps1lon",
+            "githubUsername": "eps1lon"
+        },
+        {
+            "name": "Nicholas Hehr",
+            "url": "https://github.com/HipsterBrown",
+            "githubUsername": "HipsterBrown"
+        },
+        {
+            "name": "Pawel Fajfer",
+            "url": "https://github.com/pawfa",
+            "githubUsername": "pawfa"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "typesVersions": {
+        "<=4.0": {
+            "*": [
+                "ts4.0/*"
+            ]
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react-router"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/history": "^4.7.11",
+        "@types/react": "*"
+    },
+    "typesPublisherContentHash": "29ffae2537b7f6d31a084661ddb4821ce78b2018a2f478baee639cdde3b4b03a",
+    "typeScriptVersion": "3.8"
+}

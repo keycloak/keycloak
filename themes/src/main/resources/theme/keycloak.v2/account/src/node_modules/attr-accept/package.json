@@ -1,0 +1,85 @@
+{
+  "name": "attr-accept",
+  "description": "JavaScript implementation of the \"accept\" attribute for HTML5 <input type=\"file\">",
+  "version": "1.1.3",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "webpack -p",
+    "prepublish": "npm test && npm run build",
+    "pretest": "npm run lint",
+    "test": "mocha --compilers js:babel-core/register --recursive",
+    "test:watch": "npm test -- --watch",
+    "lint": "eslint src/ test/",
+    "precommit": "lint-staged",
+    "size": "size-limit",
+    "size:why": "size-limit --why",
+    "travis-deploy-once": "travis-deploy-once"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/okonet/attr-accept.git"
+  },
+  "keywords": [
+    "html5",
+    "input",
+    "tag",
+    "attribute",
+    "attr",
+    "accept",
+    "file"
+  ],
+  "author": "Andrey Okonetchnikov @okonetchnikov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/okonet/attr-accept/issues"
+  },
+  "homepage": "https://github.com/okonet/attr-accept#readme",
+  "dependencies": {
+    "core-js": "^2.5.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.0.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.0",
+    "cz-conventional-changelog": "^1.2.0",
+    "eslint": "^4.6.1",
+    "eslint-config-airbnb": "^15.1.0",
+    "eslint-config-okonet": "^6.1.3",
+    "eslint-config-prettier": "^2.4.0",
+    "eslint-plugin-flowtype": "^2.35.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsx-a11y": "^5.1.1",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-prettier": "^2.2.0",
+    "eslint-plugin-react": "^7.3.0",
+    "expect": "^1.20.2",
+    "husky": "^0.14.3",
+    "lint-staged": "^4.1.3",
+    "mocha": "^3.5.0",
+    "prettier": "^1.6.1",
+    "size-limit": "^0.14.0",
+    "travis-deploy-once": "^4.3.4",
+    "webpack": "^3.5.5"
+  },
+  "engines": {
+    "node": ">=4"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "2 KB"
+    }
+  ]
+}

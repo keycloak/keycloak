@@ -1,0 +1,40 @@
+{
+    "name": "@types/history",
+    "version": "4.7.11",
+    "description": "TypeScript definitions for history",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/history",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Sergey Buturlakin",
+            "url": "https://github.com/sergey-buturlakin",
+            "githubUsername": "sergey-buturlakin"
+        },
+        {
+            "name": "Nathan Brown",
+            "url": "https://github.com/ngbrown",
+            "githubUsername": "ngbrown"
+        },
+        {
+            "name": "Young Rok Kim",
+            "url": "https://github.com/rokoroku",
+            "githubUsername": "rokoroku"
+        },
+        {
+            "name": "Daniel Nixon",
+            "url": "https://github.com/danielnixon",
+            "githubUsername": "danielnixon"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/history"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "141516ba36ab9f2b221dc957cba4ac21d9a06776c05786e6773c5581f8cf7455",
+    "typeScriptVersion": "3.8"
+}

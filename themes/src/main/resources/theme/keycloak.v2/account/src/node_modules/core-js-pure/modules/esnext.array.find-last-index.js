@@ -1,0 +1,2 @@
+// TODO: Remove from `core-js@4`
+require('../modules/es.array.find-last-index');

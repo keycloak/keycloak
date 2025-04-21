@@ -1,0 +1,48 @@
+{
+    "name": "@types/react-router-dom",
+    "version": "4.3.5",
+    "description": "TypeScript definitions for React Router",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Huy Nguyen",
+            "url": "https://github.com/huy-nguyen",
+            "githubUsername": "huy-nguyen"
+        },
+        {
+            "name": "Philip Jackson",
+            "url": "https://github.com/p-jackson",
+            "githubUsername": "p-jackson"
+        },
+        {
+            "name": "John Reilly",
+            "url": "https://github.com/johnnyreilly",
+            "githubUsername": "johnnyreilly"
+        },
+        {
+            "name": "Sebastian Silbermann",
+            "url": "https://github.com/eps1lon",
+            "githubUsername": "eps1lon"
+        },
+        {
+            "name": "Daniel Nixon",
+            "url": "https://github.com/danielnixon",
+            "githubUsername": "danielnixon"
+        }
+    ],
+    "main": "",
+    "types": "index",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react-router-dom"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/history": "*",
+        "@types/react": "*",
+        "@types/react-router": "*"
+    },
+    "typesPublisherContentHash": "92ef7ed68051a719ada317bfe27b9e2b2038454faeed45558228df99215563ae",
+    "typeScriptVersion": "2.8"
+}

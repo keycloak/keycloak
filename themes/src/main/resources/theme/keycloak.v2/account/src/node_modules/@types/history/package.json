@@ -1,0 +1,13 @@
+{
+    "name": "@types/history",
+    "version": "5.0.0",
+    "typings": null,
+    "description": "Stub TypeScript definitions entry for history, which provides its own types definitions",
+    "main": "",
+    "scripts": {},
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "history": "*"
+    }
+}

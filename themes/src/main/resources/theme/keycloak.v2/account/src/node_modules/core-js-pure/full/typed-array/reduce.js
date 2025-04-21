@@ -1,0 +1,3 @@
+var parent = require('../../actual/typed-array/reduce');
+
+module.exports = parent;

@@ -1,0 +1,33 @@
+{
+  "name": "@rushstack/eslint-patch",
+  "version": "1.1.4",
+  "description": "A patch that improves how ESLint loads plugins when working in a monorepo with a reusable toolchain",
+  "main": "lib/usage.js",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/microsoft/rushstack.git",
+    "type": "git",
+    "directory": "eslint/eslint-patch"
+  },
+  "homepage": "https://rushstack.io",
+  "keywords": [
+    "eslintrc",
+    "config",
+    "module",
+    "resolve",
+    "resolver",
+    "plugin",
+    "relative",
+    "package"
+  ],
+  "devDependencies": {
+    "@rushstack/heft": "0.45.6",
+    "@rushstack/heft-node-rig": "1.9.7",
+    "@types/node": "12.20.24"
+  },
+  "scripts": {
+    "build": "heft build --clean",
+    "_phase:build": "heft build --clean"
+  },
+  "readme": "# @rushstack/eslint-patch\n\nA patch that improves how ESLint loads plugins when working in a monorepo with a reusable toolchain\n\n\n## What it does\n\nThis patch is a workaround for a longstanding [ESLint feature request](https://github.com/eslint/eslint/issues/3458)\nthat would allow a shared ESLint config to bring along its own plugins, rather than imposing peer dependencies\non every consumer of the config.  In a monorepo scenario, this enables your lint setup to be consolidated in a\nsingle NPM package.  Doing so greatly reduces the copy+pasting and version management for all the other projects\nthat use your standard lint rule set, but don't want to be bothered with the details.\n\nESLint provides partial solutions such as the `--resolve-plugins-relative-to` CLI option, however they are\nawkward to use.  For example, the VS Code extension for ESLint must be manually configured with this CLI option.\nIf some developers use other editors such as WebStorm, a different manual configuration is needed.\nAlso, the `--resolve-plugins-relative-to` parameter does not support multiple paths, for example if a config package\nbuilds upon another package that also provides plugins.  See\n[this discussion](https://github.com/eslint/eslint/issues/3458#issuecomment-516666620)\nfor additional technical background.\n\n\n## Why it's a patch\n\nESLint's long awaited module resolver overhaul still has not materialized as of ESLint 8.  As a stopgap,\nwe created a small **.eslintrc.js** patch that solves the problem adequately for most real world scenarios.\nThis patch was proposed as an ESLint feature with [PR 12460](https://github.com/eslint/eslint/pull/12460), however\nthe maintainers were not able to accept it unless it is reworked into a fully correct design.  Such a requirement\nwould impose the same hurdles as the original GitHub issue; thus, it seems best to stay with the patch approach.\n\nSince the patch is now in wide use, we've converted it into a proper NPM package to simplify maintenance.\n\n\n## How to use it\n\nAdd a `require()` call to the to top of the **.eslintrc.js** file for each project that depends on your shared\nESLint config, for example:\n\n**.eslintrc.js**\n```ts\nrequire(\"@rushstack/eslint-patch/modern-module-resolution\");\n\n// Add your \"extends\" boilerplate here, for example:\nmodule.exports = {\n  extends: ['@your-company/eslint-config'],\n  parserOptions: { tsconfigRootDir: __dirname }\n};\n```\n\nWith this change, the local project no longer needs any ESLint plugins in its **package.json** file.\nInstead, the hypothetical `@your-company/eslint-config` NPM package would declare the plugins as its\nown dependencies.\n\nThis patch works by modifying the ESLint engine so that its module resolver will load relative to the folder of\nthe referencing config file, rather than the project folder.  The patch is compatible with ESLint 6, 7, and 8.\nIt also works with any editor extensions that load ESLint as a library.\n\nFor an even leaner setup, `@your-company/eslint-config` can provide the patch as its own dependency.  See\n[@rushstack/eslint-config](https://www.npmjs.com/package/@rushstack/eslint-config) for a real world example\nand recommended approach.\n\n\n## Links\n\n- [CHANGELOG.md](https://github.com/microsoft/rushstack/blob/main/eslint/eslint-patch/CHANGELOG.md) - Find\n  out what's new in the latest version\n\n`@rushstack/eslint-patch` is part of the [Rush Stack](https://rushstack.io/) family of projects.\n"
+}

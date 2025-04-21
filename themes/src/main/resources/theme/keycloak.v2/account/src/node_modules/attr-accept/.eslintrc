@@ -1,0 +1,7 @@
+{
+  "extends": "okonet",
+  "env": {
+    "browser": true,
+    "mocha": true
+  }
+}

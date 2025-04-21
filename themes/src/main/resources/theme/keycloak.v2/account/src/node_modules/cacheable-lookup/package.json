@@ -1,0 +1,45 @@
+{
+  "name": "cacheable-lookup",
+  "version": "2.0.1",
+  "description": "A cacheable dns.lookup(…) that respects the TTL",
+  "engines": {
+    "node": ">=10"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "xo && nyc ava && tsd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/szmarczak/cacheable-lookup.git"
+  },
+  "keywords": [
+    "dns",
+    "lookup",
+    "cacheable",
+    "ttl"
+  ],
+  "author": "Szymon Marczak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/szmarczak/cacheable-lookup/issues"
+  },
+  "homepage": "https://github.com/szmarczak/cacheable-lookup#readme",
+  "devDependencies": {
+    "ava": "^3.1.0",
+    "benchmark": "^2.1.4",
+    "coveralls": "^3.0.9",
+    "nyc": "^15.0.0",
+    "proxyquire": "^2.1.3",
+    "tsd": "^0.11.0",
+    "xo": "^0.25.3"
+  },
+  "dependencies": {
+    "@types/keyv": "^3.1.1",
+    "keyv": "^4.0.0"
+  }
+}

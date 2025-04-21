@@ -1,0 +1,97 @@
+{
+  "name": "compress-brotli",
+  "description": "Simple cross Node.js inteface for using brotli compression",
+  "homepage": "https://nicedoc.io/Kikobeats/compress-brotli",
+  "version": "1.3.8",
+  "main": "src/index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kikobeats/compress-brotli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/compress-brotli/issues"
+  },
+  "keywords": [
+    "api",
+    "brotli",
+    "compress",
+    "compressed",
+    "compression",
+    "decode",
+    "decompress",
+    "decompression",
+    "encode",
+    "format",
+    "zlib"
+  ],
+  "dependencies": {
+    "@types/json-buffer": "~3.0.0",
+    "json-buffer": "~3.0.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "ava": "latest",
+    "c8": "latest",
+    "ci-publish": "latest",
+    "conventional-github-releaser": "latest",
+    "finepack": "latest",
+    "git-authors-cli": "latest",
+    "git-dirty": "latest",
+    "nano-staged": "latest",
+    "npm-check-updates": "latest",
+    "prettier-standard": "latest",
+    "simple-git-hooks": "latest",
+    "sinon": "latest",
+    "standard": "latest",
+    "standard-markdown": "latest",
+    "standard-version": "latest"
+  },
+  "engines": {
+    "node": ">= 12"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "contributors": "(git-authors-cli && finepack && git add package.json && git commit -m 'build: contributors' --no-verify) || true",
+    "lint": "standard-markdown README.md && standard",
+    "postrelease": "npm run release:tags && npm run release:github && (ci-publish || npm publish --access=public)",
+    "prerelease": "npm run update:check && npm run contributors",
+    "pretest": "npm run lint",
+    "release": "standard-version -a",
+    "release:github": "conventional-github-releaser -p angular",
+    "release:tags": "git push --follow-tags origin HEAD:master",
+    "test": "c8 ava",
+    "update": "ncu -u",
+    "update:check": "ncu -- --error-level 2"
+  },
+  "license": "MIT",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "nano-staged": {
+    "*.js,!*.min.js,": [
+      "prettier-standard"
+    ],
+    "*.md": [
+      "standard-markdown"
+    ],
+    "package.json": [
+      "finepack"
+    ]
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx commitlint --edit",
+    "pre-commit": "npx nano-staged"
+  },
+  "types": "src/index.d.ts"
+}

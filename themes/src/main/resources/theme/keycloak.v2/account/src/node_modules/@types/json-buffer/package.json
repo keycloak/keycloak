@@ -1,0 +1,24 @@
+{
+    "name": "@types/json-buffer",
+    "version": "3.0.0",
+    "description": "TypeScript definitions for json-buffer",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Paul Hawxby",
+            "url": "https://github.com/phawxby",
+            "githubUsername": "phawxby"
+        }
+    ],
+    "main": "",
+    "types": "index",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/json-buffer"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "3e653db758e5ea8bb43afa948bb570021ae1b6d1fc4169f3fc96ec2a25faff3a",
+    "typeScriptVersion": "2.0"
+}

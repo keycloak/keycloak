@@ -1,0 +1,69 @@
+> 🛑 This file is source code, not the primary documentation location! 🛑
+>
+> See **https://typescript-eslint.io/rules/prefer-reduce-type-parameter** for documentation.
+
+It's common to call `Array#reduce` with a generic type, such as an array or object, as the initial value.
+Since these values are empty, their types are not usable:
+
+- `[]` has type `never[]`, which can't have items pushed into it as nothing is type `never`
+- `{}` has type `{}`, which doesn't have an index signature and so can't have properties added to it
+
+A common solution to this problem is to cast the initial value. While this will work, it's not the most optimal
+solution as casting has subtle effects on the underlying types that can allow bugs to slip in.
+
+A better (and lesser known) solution is to pass the type in as a generic parameter to `Array#reduce` explicitly.
+This means that TypeScript doesn't have to try to infer the type, and avoids the common pitfalls that come with casting.
+
+## Rule Details
+
+This rule looks for calls to `Array#reduce`, and warns if an initial value is being passed & casted,
+suggesting instead to pass the cast type to `Array#reduce` as its generic parameter.
+
+Examples of code for this rule:
+
+<!--tabs-->
+
+### ❌ Incorrect
+
+```ts
+[1, 2, 3].reduce((arr, num) => arr.concat(num * 2), [] as number[]);
+
+['a', 'b'].reduce(
+  (accum, name) => ({
+    ...accum,
+    [name]: true,
+  }),
+  {} as Record<string, boolean>,
+);
+```
+
+### ✅ Correct
+
+```ts
+[1, 2, 3].reduce<number[]>((arr, num) => arr.concat(num * 2), []);
+
+['a', 'b'].reduce<Record<string, boolean>>(
+  (accum, name) => ({
+    ...accum,
+    [name]: true,
+  }),
+  {},
+);
+```
+
+## Options
+
+```jsonc
+// .eslintrc.json
+{
+  "rules": {
+    "@typescript-eslint/prefer-reduce-type-parameter": "warn"
+  }
+}
+```
+
+This rule is not configurable.
+
+## When Not To Use It
+
+If you don't want to use typechecking in your linting, you can't use this rule.
