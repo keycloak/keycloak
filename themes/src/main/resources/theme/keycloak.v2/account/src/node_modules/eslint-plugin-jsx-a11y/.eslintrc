@@ -1,0 +1,51 @@
+{
+  "extends": [
+    "airbnb-base",
+    "plugin:flowtype/recommended"
+  ],
+  "parser": "@babel/eslint-parser",
+  "plugins": [
+    "flowtype",
+  ],
+  "rules": {
+    "max-len": "off",
+    "no-template-curly-in-string": "off",
+  },
+  "overrides": [
+    {
+      "files": ["src/rules/*"],
+      "extends": ["plugin:eslint-plugin/rules-recommended"],
+      "rules": {
+        "eslint-plugin/require-meta-docs-url": [
+          "error",
+          { "pattern": "https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/tree/HEAD/docs/rules/{{name}}.md" },
+        ],
+        "eslint-plugin/require-meta-type": "off",
+      },
+    },
+    {
+      "files": ["markdown.config.js"],
+      "parserOptions": {
+        "sourceType": "script",
+      },
+      "rules": {
+        "no-console": 0,
+        "import/no-extraneous-dependencies":  [
+           "error",
+           { "devDependencies": true },
+        ],
+        "strict": ["error", "global"],
+      },
+    },
+    {
+      "files": ["__tests__/src/rules/*.js"],
+      "extends": ["plugin:eslint-plugin/tests-recommended"],
+    },
+    {
+      "files": ["__tests__/**/*"],
+      "env": {
+        "jest": true,
+      },
+    },
+  ],
+}

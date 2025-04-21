@@ -1,0 +1,78 @@
+{
+  "name": "tiny-invariant",
+  "version": "1.2.0",
+  "description": "A tiny invariant function",
+  "author": "Alex Reardon <alexreardon@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "invariant",
+    "error",
+    "assert",
+    "asserts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexreardon/tiny-invariant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexreardon/tiny-invariant/issues"
+  },
+  "main": "dist/tiny-invariant.cjs.js",
+  "module": "dist/tiny-invariant.esm.js",
+  "types": "dist/tiny-invariant.d.ts",
+  "sideEffects": false,
+  "files": [
+    "/dist",
+    "/src"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/tiny-invariant.min.js",
+      "limit": "175B"
+    },
+    {
+      "path": "dist/tiny-invariant.js",
+      "limit": "176B"
+    },
+    {
+      "path": "dist/tiny-invariant.cjs.js",
+      "limit": "164B"
+    },
+    {
+      "path": "dist/tiny-invariant.esm.js",
+      "import": "foo",
+      "limit": "49B"
+    }
+  ],
+  "scripts": {
+    "test": "yarn jest",
+    "test:size": "yarn build && yarn size-limit",
+    "prettier:write": "yarn prettier --debug-check src/** test/**",
+    "prettier:check": "yarn prettier --write src/** test/**",
+    "typescript:check": "yarn tsc --noEmit src/*.ts test/*.ts",
+    "validate": "yarn prettier:check && yarn typescript:check",
+    "build:clean": "rimraf dist",
+    "build:flow": "cp src/tiny-invariant.js.flow dist/tiny-invariant.cjs.js.flow",
+    "build:typescript": "tsc ./src/tiny-invariant.ts --emitDeclarationOnly --declaration --outDir ./dist",
+    "build:dist": "yarn rollup --config rollup.config.js",
+    "build": "yarn build:clean && yarn build:dist && yarn build:typescript",
+    "prepublishOnly": "yarn build"
+  },
+  "devDependencies": {
+    "@rollup/plugin-replace": "^3.0.0",
+    "@rollup/plugin-typescript": "^8.3.0",
+    "@size-limit/preset-small-lib": "^6.0.3",
+    "@types/jest": "^27.0.2",
+    "@types/rollup": "^0.54.0",
+    "expect-type": "^0.13.0",
+    "jest": "^27.3.1",
+    "prettier": "^2.4.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.58.3",
+    "rollup-plugin-terser": "^7.0.2",
+    "size-limit": "^6.0.3",
+    "ts-jest": "^27.0.7",
+    "tslib": "^2.3.1",
+    "typescript": "^4.4.4"
+  }
+}

@@ -1,0 +1,112 @@
+name: 'Tests: node.js'
+
+on: [pull_request, push]
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      latest: ${{ steps.set-matrix.outputs.requireds }}
+    steps:
+      - uses: ljharb/actions/node/matrix@main
+        id: set-matrix
+        with:
+          versionsAsRoot: true
+          type: 'majors'
+          preset: '>=4'
+
+  latest:
+    needs: [matrix]
+    name: 'latest majors'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ${{ fromJson(needs.matrix.outputs.latest) }}
+        eslint:
+          - 8
+          - 7
+          - 6
+          - 5
+          - 4
+          - 3
+        exclude:
+          - node-version: 15
+            eslint: 8
+          - node-version: 13
+            eslint: 8
+          - node-version: 11
+            eslint: 8
+          - node-version: 11
+            eslint: 7
+          - node-version: 10
+            eslint: 8
+          - node-version: 9
+            eslint: 8
+          - node-version: 9
+            eslint: 7
+          - node-version: 8
+            eslint: 8
+          - node-version: 8
+            eslint: 7
+          - node-version: 7
+            eslint: 8
+          - node-version: 7
+            eslint: 7
+          - node-version: 7
+            eslint: 6
+          - node-version: 6
+            eslint: 8
+          - node-version: 6
+            eslint: 7
+          - node-version: 6
+            eslint: 6
+          - node-version: 5
+            eslint: 8
+          - node-version: 5
+            eslint: 7
+          - node-version: 5
+            eslint: 6
+          - node-version: 5
+            eslint: 5
+          - node-version: 5
+            eslint: 4
+          - node-version: 5 # TODO: fix
+            eslint: 3
+          - node-version: 4
+            eslint: 8
+          - node-version: 4
+            eslint: 7
+          - node-version: 4
+            eslint: 6
+          - node-version: 4
+            eslint: 5
+          - node-version: 4 # TODO: fix
+            eslint: 4
+          - node-version: 4 # TODO: fix
+            eslint: 3
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+            fetch-depth: 0
+      - uses: ljharb/actions/node/install@main
+        name: 'nvm install ${{ matrix.node-version }} && npm install'
+        env:
+          NPM_CONFIG_LEGACY_PEER_DEPS: true
+        with:
+          after_install: npm uninstall --no-save eslint-config-airbnb-base && npm install --no-save "eslint@${{ matrix.eslint }}"
+          node-version: ${{ matrix.node-version }}
+          skip-ls-check: true
+      - run: rm __tests__/src/util/getComputedRole-test.js
+        if: ${{ matrix.node-version < 7 }}
+      - run: npm run test:ci
+      - uses: codecov/codecov-action@v2
+
+  node:
+    name: 'node 4+'
+    needs: [latest]
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo tests completed'

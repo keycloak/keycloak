@@ -1,0 +1,21 @@
+{
+  "name": "@pika/react",
+  "version": "16.13.1",
+  "license": "MIT",
+  "description": "An actively maintained ESM build of React, the JavaScript library for building user interfaces.",
+  "main": "source.production.js",
+  "module": "source.production.js",
+  "homepage": "https://reactjs.org/",
+  "bugs": {
+    "url": "https://github.com/facebook/react/issues"
+  },
+  "dependencies": {},
+  "keywords": [
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/react.git",
+    "directory": "packages/react"
+  }
+}

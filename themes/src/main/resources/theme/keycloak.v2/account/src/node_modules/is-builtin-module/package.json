@@ -1,0 +1,44 @@
+{
+	"name": "is-builtin-module",
+	"version": "3.1.0",
+	"description": "Check if a string matches the name of a Node.js builtin module",
+	"license": "MIT",
+	"repository": "sindresorhus/is-builtin-module",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=6"
+	},
+	"scripts": {
+		"test": "xo && ava"
+	},
+	"files": [
+		"index.js"
+	],
+	"keywords": [
+		"builtin",
+		"built-in",
+		"builtins",
+		"node",
+		"modules",
+		"core",
+		"bundled",
+		"list",
+		"array",
+		"names",
+		"is",
+		"detect",
+		"check",
+		"match"
+	],
+	"dependencies": {
+		"builtin-modules": "^3.0.0"
+	},
+	"devDependencies": {
+		"ava": "^0.25.0",
+		"xo": "^0.23.0"
+	}
+}

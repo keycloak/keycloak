@@ -1,0 +1,80 @@
+{
+  "name": "shx",
+  "version": "0.3.4",
+  "description": "Portable Shell Commands for Node",
+  "bin": {
+    "shx": "lib/cli.js"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "check-node-support": "node scripts/check-node-support",
+    "prebuild": "rimraf lib",
+    "build": "babel src -d lib",
+    "build:watch": "npm run build -- -w",
+    "dev": "concurrently -rk 'npm run build:watch' 'npm run lint:watch'",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint --silent -- --fix",
+    "lint:watch": "watch 'npm run lint --silent' src test",
+    "prepublish": "npm run build",
+    "posttest": "npm run lint --silent",
+    "release:major": "shelljs-release major",
+    "release:minor": "shelljs-release minor",
+    "release:patch": "shelljs-release patch",
+    "changelog": "shelljs-changelog",
+    "codecov": "codecov",
+    "test": "nyc --reporter=text --reporter=lcov mocha",
+    "test:watch": "concurrently -rk 'npm run test --silent -- -w' 'npm run lint:watch'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shelljs/shx.git"
+  },
+  "keywords": [
+    "shelljs",
+    "shell",
+    "unix",
+    "bash",
+    "sh",
+    "exec",
+    "cli",
+    "zsh"
+  ],
+  "contributors": [
+    "Ari Porad <ari@ariporad.com> (http://ariporad.com/)",
+    "Levi Thomason <me@levithomason.com> (https://github.com/levithomason)",
+    "Nate Fischer <ntfschr@gmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shelljs/shx/issues"
+  },
+  "homepage": "https://github.com/shelljs/shx#readme",
+  "devDependencies": {
+    "babel-cli": "^6.6.5",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.7.2",
+    "codecov": "^3.0.2",
+    "concurrently": "^2.1.0",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.17.3",
+    "js-yaml": "^3.12.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1",
+    "rimraf": "^2.5.2",
+    "shelljs-changelog": "^0.2.6",
+    "shelljs-plugin-open": "^0.2.1",
+    "shelljs-release": "^0.5.1",
+    "should": "^13.2.3",
+    "watch": "^1.0.2"
+  },
+  "dependencies": {
+    "minimist": "^1.2.3",
+    "shelljs": "^0.8.5"
+  },
+  "engines": {
+    "node": ">=6"
+  }
+}

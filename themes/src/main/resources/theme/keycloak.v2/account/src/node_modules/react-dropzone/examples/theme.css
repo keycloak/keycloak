@@ -1,0 +1,12 @@
+section {
+  display: flex;
+}
+
+.dropzone {
+  flex: 1 auto;
+  width: 50%;
+}
+
+aside {
+  width: 50%;
+}

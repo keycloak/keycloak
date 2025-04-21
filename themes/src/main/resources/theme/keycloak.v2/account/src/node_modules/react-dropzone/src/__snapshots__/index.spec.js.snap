@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Dropzone basics should render children 1`] = `"<div tabindex=\\"0\\"><input type=\\"file\\" style=\\"display: none;\\" multiple=\\"\\" autocomplete=\\"off\\" tabindex=\\"-1\\"></div>"`;
+
+exports[`Dropzone document drop protection does not prevent stray drops when preventDropOnDocument is false 1`] = `"<div tabindex=\\"0\\"><input type=\\"file\\" style=\\"display: none;\\" multiple=\\"\\" autocomplete=\\"off\\" tabindex=\\"-1\\"></div>"`;
+
+exports[`Dropzone document drop protection installs hooks to prevent stray drops from taking over the browser window 1`] = `"<div tabindex=\\"0\\"><input type=\\"file\\" style=\\"display: none;\\" multiple=\\"\\" autocomplete=\\"off\\" tabindex=\\"-1\\"><p>Content</p></div>"`;

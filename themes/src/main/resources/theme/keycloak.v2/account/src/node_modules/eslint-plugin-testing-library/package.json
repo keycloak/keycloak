@@ -1,0 +1,85 @@
+{
+  "name": "eslint-plugin-testing-library",
+  "version": "5.5.1",
+  "description": "ESLint rules for Testing Library",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "lint",
+    "testing-library",
+    "testing"
+  ],
+  "author": {
+    "name": "Mario Beltrán Alarcón",
+    "email": "belco90@gmail.com",
+    "url": "https://mario.dev/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/testing-library/eslint-plugin-testing-library"
+  },
+  "homepage": "https://github.com/testing-library/eslint-plugin-testing-library",
+  "bugs": {
+    "url": "https://github.com/testing-library/eslint-plugin-testing-library/issues"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "cpy README.md ./dist && cpy package.json ./dist && cpy LICENSE ./dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "generate:configs": "ts-node tools/generate-configs",
+    "generate:rules-list": "ts-node tools/generate-rules-list",
+    "lint": "eslint . --max-warnings 0 --ext .js,.ts",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage",
+    "test:update": "npm run test -- --u",
+    "test:watch": "npm run test -- --watch",
+    "type-check": "tsc --noEmit",
+    "semantic-release": "semantic-release",
+    "prepare": "is-ci || husky install"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "^5.13.0"
+  },
+  "devDependencies": {
+    "@babel/eslint-plugin": "^7.16.5",
+    "@commitlint/cli": "^16.0.2",
+    "@commitlint/config-conventional": "^16.0.0",
+    "@types/jest": "^27.5.0",
+    "@types/node": "^16.11.19",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "cpy-cli": "^4.1.0",
+    "eslint": "^8.6.0",
+    "eslint-config-kentcdodds": "^20.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jest": "^26.1.5",
+    "eslint-plugin-jest-formatting": "^3.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-remote-tester": "^2.1.1",
+    "eslint-remote-tester-repositories": "^0.0.5",
+    "husky": "^7.0.4",
+    "is-ci": "^3.0.1",
+    "jest": "^28.1.0",
+    "lint-staged": "^12.1.7",
+    "prettier": "2.6.2",
+    "semantic-release": "^19.0.2",
+    "ts-jest": "^28.0.1",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  },
+  "peerDependencies": {
+    "eslint": "^7.5.0 || ^8.0.0"
+  },
+  "engines": {
+    "node": "^12.22.0 || ^14.17.0 || >=16.0.0",
+    "npm": ">=6"
+  },
+  "license": "MIT"
+}

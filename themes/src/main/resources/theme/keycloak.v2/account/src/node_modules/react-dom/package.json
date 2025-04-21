@@ -1,0 +1,23 @@
+{
+  "name": "@pika/react-dom",
+  "description": "An actively maintained ESM build of React-DOM, a package for working with the DOM.",
+  "version": "16.13.1",
+  "license": "MIT",
+  "main": "source.production.js",
+  "module": "source.production.js",
+  "peerDependencies": {
+    "react": "^16.0.0"
+  },
+  "keywords": [
+    "react"
+  ],
+  "homepage": "https://reactjs.org/",
+  "bugs": {
+    "url": "https://github.com/facebook/react/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/react.git",
+    "directory": "packages/react-dom"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "es-module-lexer",
+  "version": "0.3.26",
+  "description": "Lexes ES modules returning their import/export metadata",
+  "main": "dist/lexer.cjs",
+  "module": "dist/lexer.js",
+  "scripts": {
+    "test": "NODE_OPTIONS=\"--experimental-modules\" mocha -b -u tdd test/*.cjs",
+    "build": "node --experimental-modules build.js && babel dist/lexer.js | terser -o dist/lexer.cjs",
+    "build-wasm": "make lib/lexer.wasm && node build.js",
+    "bench": "node --experimental-modules --expose-gc bench/index.js",
+    "prepublishOnly": "npm run build",
+    "footprint": "npm run build && cat dist/lexer.js | gzip -9f | wc -c"
+  },
+  "author": "Guy Bedford",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.5.0",
+    "kleur": "^2.0.2",
+    "mocha": "^5.2.0",
+    "terser": "^4.1.4"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guybedford/es-module-lexer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/guybedford/es-module-lexer/issues"
+  },
+  "homepage": "https://github.com/guybedford/es-module-lexer#readme"
+}

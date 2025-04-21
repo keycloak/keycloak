@@ -1,0 +1,8 @@
+{
+  "globals": {
+    "Dropzone": true
+  },
+  "rules": {
+    "react/jsx-no-bind": "off"
+  }
+}

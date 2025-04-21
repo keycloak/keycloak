@@ -1,0 +1,20 @@
+{
+  "name": "history",
+  "version": "5.3.0",
+  "description": "Manage session history with JavaScript",
+  "author": "Remix Software <hello@remix.run>",
+  "repository": "remix-run/history",
+  "license": "MIT",
+  "main": "main.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "unpkg": "umd/history.production.min.js",
+  "sideEffects": false,
+  "dependencies": {
+    "@babel/runtime": "^7.7.6"
+  },
+  "keywords": [
+    "history",
+    "location"
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "name": "react-dropzone",
+  "description": "Simple HTML5 drag-drop zone with React.js",
+  "main": "dist/index.js",
+  "module": "dist/es/index.js",
+  "scripts": {
+    "ci": "git-cz",
+    "clean": "rimraf ./dist",
+    "build": "npm run clean && npm run build:umd && npm run build:es",
+    "build:umd": "cross-env NODE_ENV=es rollup -c",
+    "build:es": "cross-env BABEL_ENV=es babel ./src --out-dir ./dist/es --ignore spec.js",
+    "start": "styleguidist server",
+    "styleguide": "styleguidist build",
+    "test": "npm run eslint:src && jest --coverage && npm run typescript",
+    "eslint:src": "eslint .",
+    "commitmsg": "commitlint -e",
+    "precommit": "lint-staged",
+    "prepublish": "npm run build && npm run size",
+    "logo": "cd logo && sketchtool export artboards logo.sketch",
+    "imagemin": "imagemin --out-dir=logo --plugin=pngquant --plugin=svgo",
+    "size": "size-limit",
+    "size:why": "size-limit --why",
+    "typescript": "tsc --project ./typings/tests"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "7 KB"
+    },
+    {
+      "path": "dist/es/index.js",
+      "limit": "7 KB"
+    }
+  ],
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ],
+    "*.ts": [
+      "tslint"
+    ],
+    "*.{svg,png}": [
+      "imagemin",
+      "git add"
+    ]
+  },
+  "jest": {
+    "setupTestFrameworkScriptFile": "<rootDir>/testSetup.js",
+    "clearMocks": true,
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/testSetup.js"
+    ]
+  },
+  "keywords": [
+    "react-component",
+    "react",
+    "drag",
+    "drop",
+    "upload"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/react-dropzone/react-dropzone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/react-dropzone/react-dropzone/issues"
+  },
+  "homepage": "https://github.com/react-dropzone/react-dropzone",
+  "author": "Param Aggarwal",
+  "contributors": [
+    "Andrey Okonetchnikov <andrey@okonet.ru> (http://okonet.ru)",
+    "Mike Olson <me@mwolson.org>",
+    "Param Aggarwal",
+    "Tyler Waters <tyler.waters@gmail.com>",
+    "Rick Markins <rmarkins@gmail.com>"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=0.14.0"
+  },
+  "dependencies": {
+    "attr-accept": "^1.1.3",
+    "file-selector": "^0.1.8",
+    "prop-types": "^15.6.2",
+    "prop-types-extra": "^1.1.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.0.0",
+    "@commitlint/config-angular": "^7.0.1",
+    "@commitlint/prompt": "^7.0.0",
+    "@commitlint/prompt-cli": "^7.0.0",
+    "@types/react": "^16.4.6",
+    "@types/react-dom": "^16.0.4",
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "*",
+    "babel-jest": "^23.4.2",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.3.13",
+    "babel-preset-stage-1": "^6.24.1",
+    "babel-register": "^6.9.0",
+    "commitizen": "^2.10.1",
+    "cross-env": "^5.2.0",
+    "enzyme": "^3.4.4",
+    "enzyme-adapter-react-16": "^1.2.0",
+    "eslint": "4.x",
+    "eslint-config-okonet": "^7.0.2",
+    "eslint-config-prettier": "2.x",
+    "eslint-plugin-flowtype": "2.x",
+    "eslint-plugin-import": "2.x",
+    "eslint-plugin-jsx-a11y": "5.x",
+    "eslint-plugin-node": "5.x",
+    "eslint-plugin-prettier": "2.x",
+    "eslint-plugin-react": "7.x",
+    "husky": "^0.14.3",
+    "imagemin-cli": "^3.0.0",
+    "imagemin-pngquant": "^6.0.0",
+    "jest": "^23.5.0",
+    "jest-enzyme": "^6.0.3",
+    "lint-staged": "^7.2.2",
+    "markdownlint-cli": "^0.13.0",
+    "prettier": "*",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-styleguidist": "^7.2.3",
+    "react-test-renderer": "^16.4.2",
+    "rimraf": "^2.5.2",
+    "rollup": "^0.58.2",
+    "rollup-plugin-babel": "^3.0.4",
+    "rollup-plugin-commonjs": "^9.1.3",
+    "rollup-plugin-node-resolve": "^3.3.0",
+    "rollup-plugin-uglify": "^3.0.0",
+    "size-limit": "^0.19.2",
+    "styled-components": "^4.1.2",
+    "webpack-blocks": "^1.0.0",
+    "sinon": "^3.2.1",
+    "style-loader": "^0.18.2",
+    "tslint": "^5.9.1",
+    "typescript": "^2.8.1",
+    "webpack": "^3.5.5"
+  },
+  "typings": "typings/react-dropzone.d.ts",
+  "config": {
+    "commitizen": {
+      "path": "@commitlint/prompt"
+    }
+  },
+  "version": "9.0.0",
+  "engines": {
+    "node": ">= 6"
+  }
+}

@@ -1,0 +1,40 @@
+name: 'Tests: pretest/posttest'
+
+on: [pull_request, push]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ljharb/actions/node/install@main
+        name: 'nvm install lts/* && npm install'
+        with:
+          node-version: 'lts/*'
+          skip-ls-check: true
+      - run: npm run lint
+
+  flow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ljharb/actions/node/install@main
+        name: 'nvm install lts/* && npm install'
+        with:
+          node-version: 'lts/*'
+          skip-ls-check: true
+      - run: npm run flow
+
+  posttest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ljharb/actions/node/install@main
+        name: 'nvm install lts/* && npm install'
+        with:
+          node-version: 'lts/*'
+          skip-ls-check: true
+      - run: npm run posttest

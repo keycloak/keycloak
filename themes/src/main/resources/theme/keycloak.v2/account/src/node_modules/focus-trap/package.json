@@ -1,0 +1,99 @@
+{
+  "name": "focus-trap",
+  "version": "6.9.2",
+  "description": "Trap focus within a DOM node.",
+  "main": "dist/focus-trap.js",
+  "module": "dist/focus-trap.esm.js",
+  "types": "index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "package.json",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "LICENSE",
+    "index.js",
+    "index.d.ts",
+    "dist"
+  ],
+  "scripts": {
+    "demo-bundle": "yarn compile:demo",
+    "format": "prettier --write \"{*,src/**/*,test/**/*,docs/js/**/*,.github/workflows/*,cypress/**/*}.+(js|yml)\"",
+    "format:check": "prettier --check \"{*,src/**/*,test/**/*,docs/js/**/*,.github/workflows/*,cypress/**/*}.+(js|yml)\"",
+    "format:watch": "onchange \"{*,src/**/*,test/**/*,docs/js/**/*,.github/workflows/*,cypress/**/*}.+(js|yml)\" -- prettier --write {{changed}}",
+    "lint": "eslint \"*.js\" \"docs/js/**/*.js\" \"cypress/**/*.js\"",
+    "clean": "rm -rf ./dist",
+    "compile:esm": "cross-env BUILD_ENV=esm BABEL_ENV=esm rollup -c",
+    "compile:cjs": "cross-env BUILD_ENV=cjs BABEL_ENV=es5 rollup -c",
+    "compile:umd": "cross-env BUILD_ENV=umd BABEL_ENV=es5 rollup -c",
+    "compile:demo": "cross-env BUILD_ENV=demo BABEL_ENV=es5 rollup -c",
+    "compile": "yarn compile:esm && yarn compile:cjs && yarn compile:umd",
+    "build": "yarn clean && yarn compile",
+    "start": "yarn compile:demo --watch --environment SERVE,RELOAD,IS_CYPRESS_ENV:''",
+    "start:cypress": "yarn compile:demo --environment SERVE,IS_CYPRESS_ENV:\"$CYPRESS_BROWSER\"",
+    "test:types": "tsc index.d.ts",
+    "test:unit": "echo \"No unit tests to run!\"",
+    "test:cypress": "CYPRESS_BROWSER=ANY start-server-and-test start:cypress 9966 'cypress open'",
+    "test:cypress:ci": "start-server-and-test start:cypress 9966 'cypress run --browser $CYPRESS_BROWSER --headless'",
+    "test:chrome": "CYPRESS_BROWSER=chrome yarn test:cypress:ci",
+    "test": "yarn format:check && yarn lint && yarn test:unit && yarn test:types && CYPRESS_BROWSER=chrome yarn test:cypress:ci",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test && yarn build",
+    "release": "yarn build && changeset publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/focus-trap/focus-trap.git"
+  },
+  "keywords": [
+    "focus",
+    "accessibility",
+    "trap",
+    "capture",
+    "keyboard",
+    "modal"
+  ],
+  "author": {
+    "name": "David Clark",
+    "url": "http://davidtheclark.com/"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/focus-trap/focus-trap/issues"
+  },
+  "homepage": "https://github.com/focus-trap/focus-trap#readme",
+  "dependencies": {
+    "tabbable": "^5.3.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.17.10",
+    "@babel/core": "^7.17.10",
+    "@babel/eslint-parser": "^7.17.0",
+    "@babel/preset-env": "^7.17.10",
+    "@changesets/cli": "^2.22.0",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@testing-library/cypress": "^8.0.2",
+    "@types/jquery": "^3.5.14",
+    "all-contributors-cli": "^6.20.0",
+    "babel-loader": "^8.2.5",
+    "cross-env": "^7.0.3",
+    "cypress": "^9.6.0",
+    "cypress-plugin-tab": "^1.0.5",
+    "eslint": "^8.14.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-cypress": "^2.12.1",
+    "eslint-plugin-jest": "^26.1.5",
+    "onchange": "^7.1.0",
+    "prettier": "^2.6.2",
+    "rollup": "^2.71.1",
+    "rollup-plugin-inject-process-env": "^1.3.1",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-serve": "^1.1.0",
+    "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-terser": "^7.0.1",
+    "start-server-and-test": "^1.14.0",
+    "typescript": "^4.6.4"
+  }
+}
