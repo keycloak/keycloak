@@ -1,0 +1,31 @@
+//
+// Bootstrap Touchspin
+// --------------------------------------------------
+
+.bootstrap-touchspin .input-group-btn-vertical {
+  > .btn {
+    padding-bottom: 6px;
+    padding-top: 6px;
+  }
+  .bootstrap-touchspin-down {
+    border-bottom-right-radius: @border-radius-base;
+  }
+  .bootstrap-touchspin-up {
+    border-top-right-radius: @border-radius-base;
+  }
+  i {
+    font-size: (@font-size-base - 4);
+    left: 6px;
+    top: 2px;
+    &.fa-angle-down,
+    &.fa-angle-up {
+      font-size: @font-size-base;
+      line-height: @font-size-base;
+      top: 0;
+    }
+    &.fa-angle-down,
+    &.fa-angle-up {
+      left: 7px;
+    }
+  }
+}

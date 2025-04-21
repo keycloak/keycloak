@@ -1,0 +1,25 @@
+.loading-state-pf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: ($spinner-size * .5);
+  height: 100%;
+
+  &:before {
+    content: "";
+    height: 25%;
+    display: block;
+  }
+
+  &.loading-state-pf-lg {
+    font-size: ($spinner-size-lg * .5);
+  }
+
+  &.loading-state-pf-sm {
+    font-size: ($spinner-size-sm * .5);
+  }
+
+  &.loading-state-pf-xs {
+    font-size: ($spinner-size-xs * .5);
+  }
+}

@@ -1,0 +1,132 @@
+//
+// Bootstrap-Datepicker
+// --------------------------------------------------
+
+.bootstrap-datepicker.form-control[readonly] {
+  background-color: $input-bg;
+  border-color: $input-border !important;
+  color: $input-color;
+  @include box-shadow(inset 0 1px 1px rgba($color-pf-black, (7.5/100)));
+  @include form-control-outline();
+  &:focus {
+    // TODO Create global variables for validation box shadows?
+    $input-validation-focus-box-shadow: rgba($color-pf-black, (7.5/100));
+    border-color: $input-border-focus !important;
+    .has-error & {
+      // TODO Create global variables for validation box shadows?
+      $state-danger-input-focus: lighten($state-danger-text, 20%);
+      $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-danger-input-focus}");
+      border-color: darken($state-danger-text, 10%);
+      @include box-shadow($shadow);
+    }
+    .has-success & {
+      // TODO Create global variables for validation box shadows?
+      $state-success-input-focus: lighten($state-success-text, 20%);
+      $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-success-input-focus}");
+      border-color: darken($state-success-text, 10%);
+      @include box-shadow($shadow);
+    }
+    .has-warning & {
+      // TODO Create global variables for validation box shadows?
+      $state-warning-input-focus: lighten($state-warning-text, 20%);
+      $shadow: unquote("inset 0 1px 1px #{$input-validation-focus-box-shadow}, 0 0 6px #{$state-warning-input-focus}");
+      border-color: darken($state-warning-text, 10%);
+      @include box-shadow($shadow);
+    }
+  }
+  &:hover {
+    border-color: $input-border-hover !important;
+    .has-error & {
+      border-color: darken($state-danger-text, 10%) !important;
+    }
+    .has-success & {
+      border-color: darken($state-success-text, 10%) !important;
+    }
+    .has-warning & {
+      border-color: darken($state-warning-text, 10%) !important;
+    }
+  }
+  .has-error & {
+    border-color: $state-danger-text !important;
+  }
+  .has-success & {
+    border-color: $state-success-text !important;
+  }
+  .has-warning & {
+    border-color: $state-warning-text !important;
+  }
+}
+
+.datepicker {
+  border-radius: $border-radius-base;
+  .datepicker-switch,
+  tfoot .clear,
+  tfoot .today {
+    font-size: $font-size-large;
+    font-weight: 500;
+  }
+  .next,
+  .prev {
+    font-weight: 500;
+  }
+  table tr {
+    td,
+    th {
+      border-radius: $border-radius-base;
+    }
+    td {
+      &.active,
+      &.active:hover,
+      &.active.disabled,
+      &.active.disabled:hover {
+        background: $dropdown-link-active-bg !important;
+        color: $color-pf-white !important;
+        text-shadow: none;
+      }
+      &.day:hover,
+      &.day.focused {
+        background: $dropdown-link-hover-bg;
+      }
+      &.selected,
+      &.selected:hover,
+      &.selected.disabled,
+      &.selected.disabled:hover {
+        text-shadow: none;
+      }
+      span {
+        border-radius: $border-radius-base;
+        &.active,
+        &.active:hover,
+        &.active.disabled,
+        &.active.disabled:hover {
+          background: $dropdown-link-active-bg;
+          text-shadow: none;
+        }
+        &:hover {
+          background: $dropdown-link-hover-bg;
+        }
+      }
+    }
+  }
+  thead tr:first-child th,
+  tfoot tr th {
+    &:hover {
+      background: $dropdown-link-hover-bg;
+    }
+  }
+}
+
+.input-daterange {
+  input:first-child {
+    border-radius: $border-radius-base 0 0 $border-radius-base;
+  }
+  input:last-child {
+    border-radius: 0 $border-radius-base $border-radius-base 0;
+  }
+  .input-group-addon {
+    background-color: $input-group-addon-bg;
+    border-color: $input-group-addon-border-color;
+    line-height: $line-height-base;
+    padding: $padding-base-vertical $padding-base-horizontal;
+  }
+}

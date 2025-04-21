@@ -1,0 +1,81 @@
+//
+// Patternfly Mixins
+// --------------------------------------------------
+// PatternFly-specific mixins
+
+// Patternfly button variants.
+.button-variant(@color; @background; @background-image-start; @background-image-stop; @border) {
+  background-color: @background;
+  #gradient > .vertical(@background-image-start, @background-image-stop);
+  border-color: @border;
+  color: @color;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.active,
+  .open .dropdown-toggle& {
+    background-color: @background;
+    background-image: none;
+    border-color: @border;
+    color: @color;
+  }
+  &:active,
+  &.active,
+  .open .dropdown-toggle& {
+    background-image: none;
+    &:hover,
+    &:focus,
+    &.focus {
+      background-color: darken(@background, 5%);
+          border-color: darken(@border, 7%);
+    }
+  }
+  &.disabled,
+  &[disabled],
+  fieldset[disabled] & {
+    &,
+    &:hover,
+    &:focus,
+    &:active,
+    &.active {
+      background-color: @background;
+      border-color: @border;
+    }
+  }
+}
+
+// SASS CONVERSION FIX.
+// Allows inclusion of sr-only rules in nested media queries where @extends .sr-only
+// will not work.
+.sr-only-pf() {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.tab-indicator(@background: @gray-light-pf, @left: 15px, @right: 15px) {
+  &:before {
+    background: @background;
+    bottom: -1px;
+    content: "";
+    display: block;
+    height: 2px;
+    left: @left;
+    position: absolute;
+    right: @right;
+  }
+}
+
+// Ellipse overflow text
+.text-overflow-pf {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: normal;
+}

@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "@patternfly/react-core": "./@patternfly/react-core.js",
+    "@patternfly/react-icons": "./@patternfly/react-icons.js",
+    "@patternfly/react-styles": "./@patternfly/react-styles.js",
+    "react": "./react.js",
+    "react-dom": "./react-dom.js",
+    "react-router-dom": "./react-router-dom.js"
+  }
+}

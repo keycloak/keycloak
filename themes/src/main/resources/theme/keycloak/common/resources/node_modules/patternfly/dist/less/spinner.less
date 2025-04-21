@@ -1,0 +1,72 @@
+//
+// Spinner
+// --------------------------------------------------
+
+@keyframes rotation {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(359deg);}
+}
+
+.spinner {
+  animation: rotation 600ms infinite linear;
+  border-bottom: 4px solid fade(@color-pf-black, 25%);
+  border-left: 4px solid fade(@color-pf-black, 25%);
+  border-right: 4px solid fade(@color-pf-black, 25%);
+  border-radius: 100%;
+  border-top: 4px solid fade(@color-pf-black, 75%);
+  height: @spinner-size;
+  margin: 0 auto;
+  position: relative;
+  width: @spinner-size;
+  &.spinner-inline {
+    display: inline-block;
+    margin-right: 3px;
+  }
+  &.spinner-lg {
+    border-width: 5px;
+    height: @spinner-size-lg;
+    width: @spinner-size-lg;
+  }
+  &.spinner-sm {
+    border-width: 3px;
+    height: @spinner-size-sm;
+    width: @spinner-size-sm;
+  }
+  &.spinner-xs {
+    border-width: 2px;
+    height: @spinner-size-xs;
+    width: @spinner-size-xs;
+  }
+  &.spinner-inverse {
+    border-bottom-color: fade(@color-pf-white, 25%);
+    border-left-color: fade(@color-pf-white, 25%);
+    border-right-color: fade(@color-pf-white, 25%);
+    border-top-color: fade(@color-pf-white, 75%);
+  }
+}
+
+.ie9 .spinner {
+  background: url("@{img-path}/@{img-spinner}") no-repeat;
+  border: 0;
+  &.spinner-inverse {
+    background-image: url("@{img-path}/@{img-spinner-inverse}");
+  }
+  &.spinner-inverse-lg {
+    background-image: url("@{img-path}/@{img-spinner-inverse-lg}");
+  }
+  &.spinner-inverse-sm {
+    background-image: url("@{img-path}/@{img-spinner-inverse-sm}");
+  }
+  &.spinner-inverse-xs {
+    background-image: url("@{img-path}/@{img-spinner-inverse-xs}");
+  }
+  &.spinner-lg {
+    background-image: url("@{img-path}/@{img-spinner-lg}");
+  }
+  &.spinner-sm {
+    background-image: url("@{img-path}/@{img-spinner-sm}");
+  }
+  &.spinner-xs {
+    background-image: url("@{img-path}/@{img-spinner-xs}");
+  }
+}

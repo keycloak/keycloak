@@ -1,0 +1,220 @@
+//
+// Application Launcher
+// --------------------------------------------------
+.applauncher-pf {
+
+  display: inline-block;
+  overflow: visible;
+
+  .applauncher-pf-title {
+    .sr-only-pf();
+  }
+
+  .dropdown-toggle {
+    &.disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  &.open > .dropdown-menu {
+    display:flex;
+    flex-wrap:wrap;
+  }
+
+  .applauncher-pf-item {
+    width: 100%;
+  }
+
+  .applauncher-pf-link {
+    display:flex;
+    white-space: initial;
+    align-items: center;
+  }
+
+  &-block-list {
+    .applauncher-pf-item {
+      @media (min-width: @screen-sm-min) {
+        flex:0 0 50%;
+      }
+    }
+
+    .applauncher-pf-link {
+        flex-wrap: wrap;
+      @media (min-width: @screen-sm-min) {
+          flex-direction:column;
+          text-align: center;
+          padding:15px 0;
+          height: 100%;
+      }
+    }
+
+    .applauncher-pf-link-icon {
+      padding: 0;
+    }
+
+    .applauncher-pf-link-title {
+      margin-top: auto;
+    }
+  }//block-list
+
+  &:not(.applauncher-pf-block-list) {
+
+    .applauncher-pf-link {
+      @media (min-width: @screen-sm-min) {
+        padding:@applauncher-pf-dropdown-menu-padding;
+        &-icon {
+          flex:1 0 0;
+          text-align: left;
+        }
+        &-title{flex:3;}
+      }
+    }
+  }
+
+  .dropdown-menu {
+    padding: @applauncher-pf-dropdown-menu-padding;
+    min-width: @applauncher-pf-dropdown-menu-width;
+  }
+
+  .applauncher-pf-link {
+    border-style: solid;
+    border-width: @applauncher-pf-menu-link-border-width;
+    border-color: transparent;
+
+    &:hover {
+      background-color: @applauncher-pf-menu-link-background-color-hover;
+      border-color: @applauncher-pf-menu-link-border-color-hover;
+      color: @applauncher-pf-menu-link-color-hover;
+      text-decoration: none;
+
+      .box-shadow(0 0 2px 0 @applauncher-pf-menu-link-shadow);
+    }
+  }
+
+  .applauncher-pf-link-icon {
+    font-size: 1.2em;
+    text-align: center;
+    width: @applauncher-pf-menu-link-icon-width;
+
+    @media (min-width: @screen-sm-min) {
+      font-size: @applauncher-pf-menu-link-icon-font-size;
+    }
+  }
+
+}//.applauncher-pf
+
+.navbar-utility .applauncher-pf {
+    .dropdown-menu {
+      @media (min-width: @screen-sm-min) {
+              right:0;
+            }
+    }//.dropdown-menu
+}
+
+.navbar-pf, .navbar-pf-alt {
+
+  .navbar-utility .applauncher-pf, .applauncher-pf {
+
+    &.open {
+      > .dropdown-toggle {
+        &,
+        &:focus {
+          background-color: @navbar-pf-navbar-nav-active-bg-color;
+          color: @navbar-pf-active-color;
+
+          @media (min-width: @screen-sm-min) {
+            background-color: @navbar-pf-navbar-utility-open-bg-color;
+            border-color: @navbar-pf-navbar-utility-border-color;
+            color: @navbar-pf-navbar-utility-color;
+          }
+        }
+      }
+    }
+
+        &.open {
+          .dropdown-menu > li > a {
+            @media (max-width: @grid-float-breakpoint-max) {
+              padding-left: 20px;
+              .applauncher-pf-link-icon {
+                padding-right: 20px;
+              }
+            }
+          }
+        }
+
+        &.dropdown > .dropdown-toggle,
+            .dropdown-toggle {
+              color: @applauncher-pf-menu-link-color;
+              text-align: left;
+              text-decoration: none;
+              border-width: 0;
+              display: block;
+              padding-left: 20px;
+
+              &.disabled {
+                color: @applauncher-pf-menu-link-color-disabled !important;
+              }
+
+              &:hover,
+              &:focus {
+                color: @navbar-pf-active-color;
+              }
+
+              @media (min-width: @screen-sm-min) {
+                border-left: 1px solid @navbar-pf-navbar-utility-border-color;
+                padding: @applauncher-pf-dropdown-toggle-padding;
+                line-height: 1;
+              }
+        }
+
+        .applauncher-pf-icon {
+              padding-right: @navbar-pf-item-icon-padding-right;
+              position: relative;
+              
+              @media (min-width: @screen-sm-min) {
+                padding: 0;
+              }
+            }
+
+        .applauncher-pf-title {
+          display: inline;
+          position: relative;
+          margin: 0;
+        }
+
+        .applauncher-pf-link {
+          overflow: hidden;
+          width: 100%;
+
+          &:hover {
+            background-color: transparent;
+            border-color: transparent;
+            .box-shadow(none);
+          }
+        }
+
+        .applauncher-pf-link-title {
+          overflow: hidden;
+        }
+
+        @media (min-width: @screen-sm-min) {
+          //Apply mixin
+          .applauncher-pf;
+        }
+    }
+}//.navbar-pf .navbar-pf-alt ovrerides
+
+.navbar-iconic {
+
+  .navbar-utility .applauncher-pf,
+  .applauncher-pf {
+
+    &.dropdown > .dropdown-toggle,
+    .dropdown-toggle {
+
+      @media (min-width: @screen-sm-min) {
+        padding: 22px 10px;
+      }
+    }
+  }
+}

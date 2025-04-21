@@ -1,0 +1,52 @@
+//
+// Blank Slate
+// --------------------------------------------------
+
+.blank-slate-pf {
+  @media (min-width: @screen-sm-min) {
+    padding: (@jumbotron-padding * 2) (@jumbotron-padding * 2);
+  }
+  @media (min-width: @screen-md-min) {
+    padding: (@jumbotron-padding * 3) (@jumbotron-padding * 4);
+  }
+  background-color: @well-bg;
+  border: 1px solid @well-border;
+  border-radius: @border-radius-base;
+  margin-bottom: 20px;
+  padding: @jumbotron-padding;
+  text-align: center;
+  .blank-slate-pf-icon {
+    color: @gray-light;
+    font-size: (@font-size-h1 * 2.4);
+    line-height: (@font-size-h1 * 2.4);
+  }
+  .blank-slate-pf-main-action {
+    margin-top: @line-height-computed;
+  }
+  .blank-slate-pf-secondary-action {
+    margin-top: @line-height-computed;
+    a {
+      display: inline-block;
+      padding: @blank-slate-pf-secondary-link-padding-top @blank-slate-pf-secondary-link-padding-left;
+      & + a:before {
+        background-color: @color-pf-black-500;
+        content: "";
+        display: inline-block;
+        height: ceil((@font-size-base * .8));
+        left: ~"calc(-@{blank-slate-pf-secondary-link-padding-left} - 2px)";
+        position: relative;
+        width: 1px;
+      }
+    }
+  }
+  button {
+    margin-bottom: 5px;
+  }
+
+  &.blank-slate-content-pf {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 20px;
+  }
+}

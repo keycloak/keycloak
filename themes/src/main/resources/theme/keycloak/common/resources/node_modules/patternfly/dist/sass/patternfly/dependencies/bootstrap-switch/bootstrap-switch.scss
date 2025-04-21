@@ -1,0 +1,195 @@
+$bootstrap-switch-base: bootstrap-switch !default;
+
+.#{$bootstrap-switch-base} {
+  display: inline-block;
+  direction: ltr;
+  cursor: pointer;
+  border-radius: $border-radius-base;
+  border: 1px solid;
+  border-color: $btn-default-border;
+  position: relative;
+  text-align: left;
+  overflow: hidden;
+  line-height: 8px;
+  z-index: 0;
+  @include user-select(none);
+  vertical-align: middle;
+  @include transition(unquote("border-color ease-in-out .15s, box-shadow ease-in-out .15s"));
+
+  .#{$bootstrap-switch-base}-container {
+    display: inline-block;
+    top: 0;
+    border-radius: $border-radius-base;
+    @include translate3d(0, 0, 0);
+  }
+
+  .#{$bootstrap-switch-base}-handle-on,
+  .#{$bootstrap-switch-base}-handle-off,
+  .#{$bootstrap-switch-base}-label {
+    @include box-sizing(border-box);
+    cursor: pointer;
+    display: table-cell;
+    vertical-align: middle;
+    padding: $padding-base-vertical $padding-base-horizontal;
+    font-size: $font-size-base;
+    line-height: $line-height-computed;
+  }
+
+  .#{$bootstrap-switch-base}-handle-on,
+  .#{$bootstrap-switch-base}-handle-off {
+    text-align: center;
+    z-index: 1;
+
+    &.#{$bootstrap-switch-base}-primary {
+      color: #fff;
+      background: $btn-primary-bg;
+    }
+
+    &.#{$bootstrap-switch-base}-info {
+      color: #fff;
+      background: $btn-info-bg;
+    }
+
+    &.#{$bootstrap-switch-base}-success {
+      color: #fff;
+      background: $btn-success-bg;
+    }
+
+    &.#{$bootstrap-switch-base}-warning {
+      background: $btn-warning-bg;
+      color: #fff;
+    }
+
+    &.#{$bootstrap-switch-base}-danger {
+      color: #fff;
+      background: $btn-danger-bg;
+    }
+
+    &.#{$bootstrap-switch-base}-default {
+      color: #000;
+      background: $gray-lighter;
+    }
+  }
+
+  .#{$bootstrap-switch-base}-label {
+    text-align: center;
+    margin-top: -1px;
+    margin-bottom: -1px;
+    z-index: 100;
+    color: $btn-default-color;
+    background: $btn-default-bg;
+  }
+
+  span::before {
+    content: "\200b";
+  }
+
+  .#{$bootstrap-switch-base}-handle-on {
+    @include border-left-radius($border-radius-base - 1);
+  }
+
+  .#{$bootstrap-switch-base}-handle-off {
+    @include border-right-radius($border-radius-base - 1);
+  }
+
+  input[type='radio'],
+  input[type='checkbox'] {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    margin: 0;
+    z-index: -1;
+    @include opacity(0);
+    visibility: hidden;
+  }
+
+  &.#{$bootstrap-switch-base}-mini {
+
+    .#{$bootstrap-switch-base}-handle-on,
+    .#{$bootstrap-switch-base}-handle-off,
+    .#{$bootstrap-switch-base}-label {
+      padding: $padding-xs-vertical $padding-xs-horizontal;
+      font-size: $font-size-small;
+      line-height: $line-height-small;
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-small {
+
+    .#{$bootstrap-switch-base}-handle-on,
+    .#{$bootstrap-switch-base}-handle-off,
+    .#{$bootstrap-switch-base}-label {
+      padding: $padding-small-vertical $padding-small-horizontal;
+      font-size: $font-size-small;
+      line-height: $line-height-small;
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-large {
+
+    .#{$bootstrap-switch-base}-handle-on,
+    .#{$bootstrap-switch-base}-handle-off,
+    .#{$bootstrap-switch-base}-label {
+      padding: $padding-base-vertical $padding-large-horizontal;
+      font-size: $font-size-large;
+      line-height: $line-height-large;
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-disabled,
+  &.#{$bootstrap-switch-base}-readonly,
+  &.#{$bootstrap-switch-base}-indeterminate {
+    cursor: default !important;
+
+    .#{$bootstrap-switch-base}-handle-on,
+    .#{$bootstrap-switch-base}-handle-off,
+    .#{$bootstrap-switch-base}-label {
+      @include opacity(.5);
+      cursor: default !important;
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-animate {
+
+    .#{$bootstrap-switch-base}-container {
+      @include transition(margin-left .5s);
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-inverse {
+
+    .#{$bootstrap-switch-base}-handle-on {
+      @include border-left-radius(0);
+      @include border-right-radius($border-radius-base - 1);
+    }
+
+    .#{$bootstrap-switch-base}-handle-off {
+      @include border-right-radius(0);
+      @include border-left-radius($border-radius-base - 1);
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-focused {
+    $color-rgba: rgba(red($input-border-focus), green($input-border-focus), blue($input-border-focus), .6);
+    border-color: $input-border-focus;
+    outline: 0;
+    @include box-shadow(unquote("inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px #{$color-rgba}"));
+  }
+
+  &.#{$bootstrap-switch-base}-on,
+  &.#{$bootstrap-switch-base}-inverse.#{$bootstrap-switch-base}-off {
+
+    .#{$bootstrap-switch-base}-label {
+      @include border-right-radius($border-radius-base - 1);
+    }
+  }
+
+  &.#{$bootstrap-switch-base}-off,
+  &.#{$bootstrap-switch-base}-inverse.#{$bootstrap-switch-base}-on {
+
+
+    .#{$bootstrap-switch-base}-label {
+      @include border-left-radius($border-radius-base - 1);
+    }
+  }
+}

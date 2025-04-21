@@ -1,0 +1,20 @@
+//
+// Breadcrumbs
+// --------------------------------------------------
+
+.breadcrumb {
+  padding-left: 0;
+  > .active strong {
+    font-weight: 600;
+  }
+  > li {
+      display: inline; /* IE8 */
+      + li:before {
+      color: $gray-light;
+      content: $fa-var-angle-right;
+      font-family: $icon-font-name-fa;
+      font-size: ($font-size-base - 1);
+      padding: 0 9px 0 7px;
+    }
+  }
+}

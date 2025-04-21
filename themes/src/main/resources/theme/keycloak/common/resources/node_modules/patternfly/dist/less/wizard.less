@@ -1,0 +1,665 @@
+//
+// Wizard
+// --------------------------------------------------
+.wizard-pf {
+  padding: 10px;
+  margin: 0 auto;
+  max-height: 900px;
+  width: auto;
+
+  .modal-content {
+    min-height:100%;
+  }
+}
+
+// Wizard header
+// Top section of the wizard w/ title and dismiss
+.wizard-pf-body {
+    background:@color-pf-white;
+    padding: 0;
+    position: static;
+}
+
+/* styles the sidebard containing the sub-steps */
+.wizard-pf-sidebar {
+    background: @color-pf-black-100;
+    border-right: 1px solid @color-pf-black-300;
+    display:none;
+
+  @media (min-width: @screen-sm-min) {
+    display:inherit;
+    flex:0 0 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    .list-group {
+      border-top: 0;
+      margin-bottom: 0;
+    }
+
+    .list-group-item {
+      background-color: transparent;
+      border-color: @color-pf-black-200;
+      padding: 0;
+
+      > a {
+        color: @color-pf-black;
+        cursor: pointer;
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        height: 50px;
+        outline: 0;
+        padding-top: 11px;
+        padding-left: 20px;
+        position: relative;
+        white-space: nowrap;
+        width: 14em;
+
+        &:hover {
+          background-color: @color-pf-black-200;
+          text-decoration: none;
+
+          &:focus {
+            //corrects odd behavior when hover and focus are combined.
+            text-decoration: none;
+
+            span {
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+
+      &.active {
+        background-color: @color-pf-black-200;
+
+        //override default behavior
+        &:hover {
+          border-color: @color-pf-black-200;
+        }
+
+        > a {
+          color: @color-pf-blue-300;
+          cursor: default;
+
+          // line to left side showing active substep
+          &:before {
+            content: " ";
+            background: @color-pf-blue-300;
+            height: 100%;
+            left: 0;
+            position: absolute;
+            top: 0;
+            width: 3px;
+          }
+
+          // caret to right showing active substep
+          &:after {
+            color: @color-pf-blue-300;
+            content: "\f105"; // right caret
+            display: block;
+            font-family: FontAwesome;
+            font-size: 24px;
+            font-weight: 500;
+            line-height: 30px;
+            padding-top: 10px;
+            position: absolute;
+            right: 23px;
+            top: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+.wizard-pf-substep-number {
+  display:inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+  width: 25px;
+}
+
+.wizard-pf-substep-title {
+  display:inline-block;
+  margin-right: 5px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* styles the steps indicator across the top of the wizard */
+.wizard-pf-steps {
+  border-bottom: solid 1px @color-pf-black-300;
+    @media (min-width: @screen-sm-min) {
+      text-align: center;
+    }
+}
+
+.wizard-pf-steps-indicator {
+  background: @color-pf-black-200;
+  border-top: 1px solid @color-pf-black-300;
+  display: inline-block;
+  display: flex;
+  font-size: ceil((@font-size-base * 1.3333));
+  list-style: none;
+  margin-bottom: 0;
+  padding: 15px 0;
+
+  @media (min-width: @screen-sm-min) {
+    background: @color-pf-white;
+    height: 120px;
+    padding: 38px 0 0;
+    justify-content: space-around;
+  }
+
+  .wizard-pf-step {
+    counter-increment: section;
+    float:left; /* float for IE9 since it doesn't support flex. If items wrap, they overlap */
+    flex-grow: 1;
+    flex-basis: 0;
+    line-height: 15px;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    text-align: center;
+
+    &:not(.active) {
+      display: none;
+
+      @media (min-width: @screen-sm-min) {
+        display: block;
+      }
+    }
+
+    a {
+      align-items: center;
+      display: flex;
+      flex-wrap:wrap;
+      font-weight: 700;
+
+      @media (min-width: @screen-sm-min) {
+        font-weight: normal;
+        justify-content: center;
+      }
+      .wizard-pf-step-title {
+        margin-left: 10px;
+
+        @media(min-width: @screen-sm-min) {
+          margin-left: 0;
+        }
+
+        &-substep {
+          font-weight: normal;
+          margin-left: 10px;
+          text-transform: capitalize;
+
+          &:before {
+            content:"\00BB";
+            font-size: 20px;
+            margin-right: 10px;
+          }
+
+          &:not(.active) {
+            display: none;
+          }
+        }
+      }
+    }
+
+    /* draw the line between the circles */
+    @media (min-width: @screen-sm-min) {
+      .wizard-pf-step-title-substep {
+        display: none;
+      }
+
+      &:before {
+        background-color: @color-pf-black-400;
+        content: "";
+        height: 2px;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 40px; // needed for IE9/10 calculate 50% of just the li, others calc 50% of the entire thing including the a:before
+        //otherwise, use top: calc(50% - 1px);
+      }
+
+      /* don't draw the line between the circles on the ends */
+      &:first-child:before {
+        left: 50%;
+        right: 0;
+      }
+
+      &:last-child:before {
+        left: 0;
+        right: 50%;
+      }
+
+      &:only-of-type:before {
+        background-color: transparent;
+      }
+    }
+
+    a {
+      color: @color-pf-black;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left:1em;
+      margin-right:1em;
+      text-decoration: none;
+    }
+
+    &:not(.active):not(.disabled) {
+      a:hover {
+        .wizard-pf-step-number {
+          background-color: @color-pf-black-400;
+          border-color: @color-pf-black-400;
+          color: @color-pf-white;
+        }
+      }
+    }
+
+    .wizard-pf-step-number {
+      background-color: @color-pf-white;
+      border-radius: 50%;
+      border: solid 2px @color-pf-blue-300;
+      color: @color-pf-black-400;
+      font-size: @font-size-base;
+      font-weight: 700;
+      height: 25px;
+      line-height: 22px;
+      width: 25px;
+      display: inline-block;
+
+      @media (min-width: @screen-sm-min) {
+        left: ~"calc(50% - 13px)";
+        position: absolute;
+        top: 27px;
+      }
+    }
+  
+    &.active {
+      .wizard-pf-step-number {
+        background-color: @color-pf-blue-300;
+        border-color: @color-pf-blue-300;
+        cursor: default;
+        color: @color-pf-white;
+      }
+
+      & ~ .wizard-pf-step {
+        .wizard-pf-step-number {
+          border-color: @color-pf-black-400;
+          background: @color-pf-white;
+        }
+      }
+    }
+  }
+}
+
+/* styles the main content portion of the wizard */
+.wizard-pf-main {
+  height: 100%;
+  padding:1em;
+  vertical-align: top;
+  width:100%;
+
+  @media (min-width: @screen-sm-min) {
+    overflow: auto;
+    padding:3em;
+    flex:1 1 auto;
+  }
+
+  .blank-slate-pf {
+    background-color: transparent;
+    border: none;
+    left: 0;
+    right: 0;
+  }
+}
+
+.wizard-pf-contents textarea {
+  resize: vertical;
+}
+
+/* styles the content of a review page */
+.wizard-pf-review-steps {
+  list-style: none;
+
+  .list-group,
+  .list-group-item {
+    border: none;
+    margin-bottom: 0;
+  }
+
+  > ul {
+    > li {
+      float: left;
+      line-height: 15px;
+      margin: 0;
+      padding-top: 0;
+      position: relative;
+      width: 100%;
+
+      > a {
+        color: #030303;
+        cursor: pointer;
+        font-size: 16px;
+        padding-left: 30px;
+        padding-right: 5px;
+        text-decoration: none;
+        transition: 250ms;
+
+        &:before {
+          content: "\f107";
+          display: block;
+          font-family: FontAwesome;
+          font-size: 24px;
+          font-weight: 500;
+          left: 20px;
+          position: absolute;
+          top: 0;
+        }
+
+        &.collapsed {
+          &:before {
+            content: "\f105";
+          }
+        }
+      }
+    }
+  }
+}
+
+.wizard-pf-review-substeps {
+  padding-left: 22px;
+
+  > ul {
+    > li {
+      float: left;
+      line-height: 15px;
+      margin: 0;
+      position: relative;
+      width: 100%;
+
+      a {
+        color: #030303;
+        cursor: pointer;
+        font-size: 16px;
+        padding-left: 30px;
+        padding-right: 5px;
+        text-decoration: none;
+        transition: 250ms;
+
+        &:before {
+          content: "\f107";
+          display: block;
+          font-family: FontAwesome;
+          font-size: 24px;
+          font-weight: 500;
+          left: 20px;
+          position: absolute;
+          top: 10px;
+        }
+
+        &.collapsed {
+          &:before {
+            content: "\f105";
+          }
+        }
+      }
+    }
+  }
+}
+
+.wizard-pf-review-content {
+  padding-top: 10px;
+  padding-left: 40px;
+
+  .wizard-pf-review-item {
+    padding: 5px 0;
+
+    &.sub-item {
+      margin-left: 10px;
+    }
+
+    .wizard-pf-review-item-label {
+      font-weight: 700;
+      padding-right: 10px;
+    }
+
+    .wizard-pf-review-item-field {
+      font-weight: 700;
+      margin: 5px 0;
+      padding-right: 10px;
+
+      &:first-of-type {
+        margin-top: 0;
+      }
+
+      &:last-of-type {
+        margin-bottom: 0;
+      }
+
+      &.sub-field {
+        margin-left: 10px;
+      }
+    }
+  }
+}
+
+.wizard-pf-success-icon {
+  color: @color-pf-green-400;
+  font-size: (@font-size-base * 5.6);
+  line-height: (@font-size-base * 5.6);
+}
+
+/* styles the footer */
+.wizard-pf-footer {
+  background:@color-pf-white;
+  border-top: 1px solid @color-pf-black-300;
+  margin-top: 0;
+  padding-bottom: 17px;
+  display: flex;
+  justify-content: flex-end;
+
+  .wizard-pf-cancel {
+    margin-right:25px;
+    order: -1;
+  }
+
+  .wizard-pf-next {
+    order: 1;
+    margin-left: 8px;
+  }
+}
+
+.wizard-pf-row {
+  @media (min-width: @screen-sm-min) {
+    display: flex;
+    width:100%;
+    height: 900px;
+    max-height: 65vh;
+  }
+}
+
+// Scale up the modal
+@media (min-width: @screen-md-min) {
+  // increasing space around modal for larger viewports
+  .wizard-pf {
+    padding: 30px 0;
+    width: 900px;
+  }
+
+  // increasing width of sidebar for larger viewports
+  .wizard-pf-sidebar .list-group-item > a {
+    width: 18em;
+  }
+}
+
+//
+//
+// This is for the new wizard that is more robust on mobile.
+// --------------------------------------------------
+.wizard-pf-steps-alt,
+.wizard-pf-steps-alt ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wizard-pf-steps-alt {
+  margin: 15px 0 15px 15px;
+
+  @media (min-width: @screen-sm-min) {
+    display:none;
+  }
+
+  &-indicator {
+    position: relative;
+
+    // caret to top showing active substep
+    &:after {
+      color: @color-pf-black-700;
+      content: "\f107"; // top caret
+      display: block;
+      font-family: FontAwesome;
+      font-size: 24px;
+      font-weight: 500;
+      position: absolute;
+      right: 17px;
+      top: 50%;
+      transform:translateY(-50%);
+      @media (min-width: @screen-sm-min) {
+        display:none;
+      }
+    }
+
+    &.active {
+      &:after {
+        content: "\f106";
+      }
+    }
+  }//indicator
+}//.wizard-pf-steps-alt
+
+.wizard-pf-step-alt {
+  position: relative;
+  z-index: 1;
+
+  &:not(:last-child) {
+    padding-bottom: 10px;
+  }
+
+  a {
+    display:flex;
+    flex:1;
+
+    &:hover,
+    &:focus {
+      text-decoration: none;
+
+      .wizard-pf-step-alt-title {
+        color: @color-pf-blue-300;
+      }
+    }
+  }
+
+  ul {
+    margin-left: 11px;
+  }
+
+  .wizard-pf-step-alt-number {
+    border-radius: 50%;
+    font-size: @font-size-base;
+    font-weight: 700;
+    height: 24px;
+    width: 24px;
+    display: inline-block;
+    text-align: center;
+    flex:0 0 auto;
+    border: 2px solid @color-pf-blue-300;
+    background-color: @color-pf-white;
+  }
+
+  .wizard-pf-step-alt-title {
+    color: @color-pf-black;
+    font-weight: 700;
+    text-transform: capitalize;
+    display:inline-block;
+    margin-left: 5px;
+    align-self:center;
+  }
+
+  &.active {
+    .wizard-pf-step-alt-number {
+      background-color: @color-pf-blue-300;
+      border-color: @color-pf-blue-300;
+      cursor: default;
+      color: @color-pf-white;
+    }
+
+    .wizard-pf-step-alt-title {
+      color: @color-pf-blue-300;
+    }
+
+    & ~ .wizard-pf-step-alt {
+      .wizard-pf-step-alt-number {
+        color: @color-pf-black-400;
+        border-color: @color-pf-black-400;
+      }
+    }
+  }
+
+  &:not(.active) {
+    a:hover {
+      .wizard-pf-step-alt-number {
+        border-color: @color-pf-black-400;
+        background: @color-pf-black-400;
+        color: @color-pf-white;
+      }
+    }
+  }
+
+  &:before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    height: 100%;
+    border-left: 2px solid @color-pf-black-400;
+    z-index: -1;
+  }
+}//.wizard-pf-step-alt
+
+.wizard-pf-step-alt-substep {
+  display:flex;
+  border-left: 2px solid transparent;
+
+  a {
+    padding:5px 0 5px 18px;
+    color: @color-pf-black-800;
+  }
+
+  &.active,
+  &:not(.disabled):hover {
+    background-color: @color-pf-black-200;
+    border-color: @color-pf-blue-300;
+    a {
+      color:@color-pf-blue-300;
+    }
+  }
+  &.active {
+    a {
+      font-weight:700;
+    }
+  }
+}
+
+.wizard-pf-step,
+.wizard-pf-step-alt-substep,
+.wizard-pf-sidebar .list-group-item {
+  &.disabled {
+    > a:hover {
+      cursor: not-allowed;
+    }
+  }
+}

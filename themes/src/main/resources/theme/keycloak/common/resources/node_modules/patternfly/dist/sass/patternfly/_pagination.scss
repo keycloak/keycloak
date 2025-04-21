@@ -1,0 +1,121 @@
+//
+// Pagination
+// --------------------------------------------------
+
+.pagination {
+  > li {
+    > a,
+    > span {
+      @include button-variant($btn-default-color, $btn-default-bg, $btn-default-bg-img-start, $btn-default-bg-img-stop, $btn-default-border);
+      cursor: default;
+      font-weight: 600;
+      padding: $padding-base-vertical $padding-large-horizontal;
+      > .i {
+        font-size: 15px;
+        vertical-align: top;
+        margin: 2px 0;
+      }
+    }
+  }
+  > li > a,
+  > li > span {
+    &:active {
+      @include box-shadow(inset 0 2px 8px rgba($color-pf-black, (20/100)));
+    }
+  }
+  > .active > a,
+  > .active > span {
+    &,
+    &:hover,
+    &:focus {
+      background-color: $btn-default-bg;
+      border-color: $pagination-border;
+      @include box-shadow(inset 0 2px 8px rgba($color-pf-black, (20/100)));
+      color: $btn-default-color;
+      @include gradient-vertical($btn-default-bg-img-start, $btn-default-bg-img-stop);
+    }
+  }
+  > .disabled {
+    > span,
+    > span:hover,
+    > span:focus,
+    > a,
+    > a:hover,
+    > a:focus {
+      @include box-shadow(none);
+      cursor: not-allowed;
+      @include gradient-vertical($btn-default-bg-img-start, $btn-default-bg-img-stop);
+    }
+  }
+}
+
+.pagination-sm {
+  @include pagination-size($padding-small-vertical, $padding-small-horizontal, $font-size-small, $line-height-small, $border-radius-small);
+  > li {
+    > a,
+    > span {
+      font-weight: 400;
+      > .i {
+        font-size: 12px;
+        margin-top: 2px;
+      }
+    }
+  }
+}
+
+.content-view-pf-pagination {
+  background-color: $table-bg-accent;
+  border: 1px solid $table-border-color;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  &.table-view-pf-pagination {
+    border-top: none;
+  }
+  .form-group {
+    align-items: baseline;
+    display: flex;
+    flex-grow: 1;
+    float: left; //IE9 fallback
+    @supports (display: flex) {
+      float: none;
+    }
+    margin: 5px;
+    &:last-child {
+      justify-content: flex-end; // if pagination controls wrap, pagination buttons stay on the right
+      float: right; //IE9 fallback
+      @supports (display: flex) {
+        float: none;
+      }
+    }
+    .pagination-pf-pagesize.bootstrap-select.btn-group,
+    .pagination-pf-pagesize.btn-group {
+      display: flex;
+      float: none;
+      margin-bottom: 0;
+      margin-left: 0;
+      margin-right: 5px;
+      width: auto;
+    }
+    .dropdown-menu {
+      min-width: auto;
+    }
+  }
+  .pagination-pf-page {
+    margin-left: 10px;
+    margin-right: 5px;
+    padding: 0 2px 2px;
+    text-align: right;
+    width: 2.5em;
+  }
+  .pagination {
+    display: flex;
+    margin: 0 0 0 10px;
+    a {
+      float: none;
+      @supports (display: flex) {
+        display: block;
+      }
+    }
+  }
+}
