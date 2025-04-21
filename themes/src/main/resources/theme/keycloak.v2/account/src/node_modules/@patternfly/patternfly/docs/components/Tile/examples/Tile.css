@@ -1,0 +1,14 @@
+#ws-core-c-tile-basic-tiles .ws-preview-html .pf-c-tile,
+#ws-core-c-tile-extra-content .ws-preview-html .pf-c-tile,
+#ws-core-c-tile-stacked-tiles .ws-preview-html .pf-c-tile,
+#ws-core-c-tile-stacked-tiles-large .ws-preview-html .pf-c-tile {
+  margin-right: 8px;
+}
+
+#ws-core-c-tile-extra-content .ws-preview-html {
+  display: flex;
+}
+
+#ws-core-c-tile-extra-content .ws-preview-html .pf-c-tile {
+  width: 300px;
+}

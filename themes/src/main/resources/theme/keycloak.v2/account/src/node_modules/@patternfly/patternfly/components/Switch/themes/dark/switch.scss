@@ -1,0 +1,10 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-switch() {
+  .pf-c-switch {
+    --pf-c-switch__toggle-icon--Color: var(--pf-global--BackgroundColor--100);
+    --pf-c-switch__input--not-checked__label--Color: var(--pf-global--Color--100);
+    --pf-c-switch__input--disabled__toggle--before--BackgroundColor: var(--pf-global--disabled-color--100);
+    --pf-c-switch__toggle--before--BoxShadow: none;
+  }
+}

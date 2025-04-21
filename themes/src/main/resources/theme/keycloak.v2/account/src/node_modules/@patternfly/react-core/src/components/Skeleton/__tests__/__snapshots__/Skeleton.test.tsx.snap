@@ -1,0 +1,264 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`skeleton circle skeleton 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-circle"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton default 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 2xl font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-2xl"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 3xl font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-3xl"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 4xl font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-4xl"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 25% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 25%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 25% width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Width: 25%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 33% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 33%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 33% width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Width: 33%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 50% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 50%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 50% width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Width: 50%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 66% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 66%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 66% width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Width: 66%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 75% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 75%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 75% width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Width: 75%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with 100% height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton"
+    style="--pf-c-skeleton--Height: 100%;"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with lg font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-lg"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with md font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-md"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with sm font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-sm"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton skeleton with xl font size 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-text-xl"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`skeleton square skeleton 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-skeleton pf-m-square"
+  >
+    <span
+      class="pf-u-screen-reader"
+    />
+  </div>
+</DocumentFragment>
+`;

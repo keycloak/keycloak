@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DrawerPanelContent should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer__panel ''"
+    hidden=""
+    id="pf-drawer-panel-0"
+  />
+</DocumentFragment>
+`;

@@ -1,0 +1,1 @@
+{"version":3,"file":"HintTitle.d.ts","sourceRoot":"","sources":["../../../../src/components/Hint/HintTitle.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,KAAK,MAAM,OAAO,CAAC;AAI/B,MAAM,WAAW,cAAc;IAC7B,8CAA8C;IAC9C,QAAQ,CAAC,EAAE,KAAK,CAAC,SAAS,CAAC;IAC3B,oDAAoD;IACpD,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB;AAED,eAAO,MAAM,SAAS,EAAE,KAAK,CAAC,iBAAiB,CAAC,cAAc,CAQ7D,CAAC"}

@@ -1,0 +1,8 @@
+@import "themes/dark/patternfly-charts-theme-dark";
+
+$pf-theme-dark-class: ".pf-theme-dark" !default;
+$pf-charts-theme-dark-class: $pf-theme-dark-class !default;
+
+:where(#{$pf-theme-dark-class}) {
+  @include pf-charts-theme-dark($pf-charts-theme-dark-class);
+}

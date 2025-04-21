@@ -1,0 +1,510 @@
+@font-face {
+  font-family: "pficon";
+  src: url("./assets/pficon/pficon.woff2") format("woff2"), url("./assets/pficon/pficon.woff") format("woff");
+}
+.pf-icon-zone:before, .pf-icon-warning-triangle:before, .pf-icon-volume:before, .pf-icon-virtual-machine:before, .pf-icon-users:before, .pf-icon-user:before, .pf-icon-unplugged:before, .pf-icon-unlocked:before, .pf-icon-unknown:before, .pf-icon-trend-up:before, .pf-icon-trend-down:before, .pf-icon-topology:before, .pf-icon-thumb-tack:before, .pf-icon-tenant:before, .pf-icon-task:before, .pf-icon-storage-domain:before, .pf-icon-spinner2:before, .pf-icon-spinner:before, .pf-icon-services:before, .pf-icon-service:before, .pf-icon-service-catalog:before, .pf-icon-server:before, .pf-icon-server-group:before, .pf-icon-security:before, .pf-icon-screen:before, .pf-icon-save:before, .pf-icon-running:before, .pf-icon-resources-full:before, .pf-icon-resources-empty:before, .pf-icon-resources-almost-full:before, .pf-icon-resources-almost-empty:before, .pf-icon-resource-pool:before, .pf-icon-repository:before, .pf-icon-replicator:before, .pf-icon-remove2:before, .pf-icon-registry:before, .pf-icon-regions:before, .pf-icon-rebooting:before, .pf-icon-rebalance:before, .pf-icon-project:before, .pf-icon-process-automation:before, .pf-icon-private:before, .pf-icon-print:before, .pf-icon-port:before, .pf-icon-plugged:before, .pf-icon-pficon-vcenter:before, .pf-icon-pficon-template:before, .pf-icon-pficon-sort-common-desc:before, .pf-icon-pficon-sort-common-asc:before, .pf-icon-pficon-satellite:before, .pf-icon-pficon-network-range:before, .pf-icon-pficon-history:before, .pf-icon-pficon-dragdrop:before, .pf-icon-pending:before, .pf-icon-paused:before, .pf-icon-panel-open:before, .pf-icon-panel-close:before, .pf-icon-package:before, .pf-icon-os-image:before, .pf-icon-orders:before, .pf-icon-optimize:before, .pf-icon-openstack:before, .pf-icon-openshift:before, .pf-icon-on:before, .pf-icon-on-running:before, .pf-icon-ok:before, .pf-icon-off:before, .pf-icon-not-started:before, .pf-icon-new-process:before, .pf-icon-network:before, .pf-icon-namespaces:before, .pf-icon-monitoring:before, .pf-icon-module:before, .pf-icon-migration:before, .pf-icon-middleware:before, .pf-icon-messages:before, .pf-icon-memory:before, .pf-icon-maintenance:before, .pf-icon-locked:before, .pf-icon-key:before, .pf-icon-integration:before, .pf-icon-infrastructure:before, .pf-icon-info:before, .pf-icon-in-progress:before, .pf-icon-import:before, .pf-icon-home:before, .pf-icon-history:before, .pf-icon-help:before, .pf-icon-globe-route:before, .pf-icon-folder-open:before, .pf-icon-folder-close:before, .pf-icon-flavor:before, .pf-icon-filter:before, .pf-icon-export:before, .pf-icon-error-circle-o:before, .pf-icon-equalizer:before, .pf-icon-enterprise:before, .pf-icon-enhancement:before, .pf-icon-edit:before, .pf-icon-domain:before, .pf-icon-disconnected:before, .pf-icon-degraded:before, .pf-icon-critical-risk:before, .pf-icon-cpu:before, .pf-icon-container-node:before, .pf-icon-connected:before, .pf-icon-cluster:before, .pf-icon-cloud-tenant:before, .pf-icon-cloud-security:before, .pf-icon-close:before, .pf-icon-chat:before, .pf-icon-catalog:before, .pf-icon-bundle:before, .pf-icon-builder-image:before, .pf-icon-build:before, .pf-icon-blueprint:before, .pf-icon-bell:before, .pf-icon-automation:before, .pf-icon-attention-bell:before, .pf-icon-asleep:before, .pf-icon-arrow:before, .pf-icon-applications:before, .pf-icon-ansible-tower:before, .pf-icon-add-circle-o:before {
+  font-family: "pficon";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.pf-icon-add-circle-o:before {
+  content: "\e61b";
+}
+
+.pf-icon-ansible-tower:before {
+  content: "\e950";
+}
+
+.pf-icon-applications:before {
+  content: "\e936";
+}
+
+.pf-icon-arrow:before {
+  content: "\e929";
+}
+
+.pf-icon-asleep:before {
+  content: "\e92e";
+}
+
+.pf-icon-attention-bell:before {
+  content: "\e951";
+}
+
+.pf-icon-automation:before {
+  content: "\e937";
+}
+
+.pf-icon-bell:before {
+  content: "\e952";
+}
+
+.pf-icon-blueprint:before {
+  content: "\e915";
+}
+
+.pf-icon-build:before {
+  content: "\e902";
+}
+
+.pf-icon-builder-image:before {
+  content: "\e800";
+}
+
+.pf-icon-bundle:before {
+  content: "\e918";
+}
+
+.pf-icon-catalog:before {
+  content: "\e953";
+}
+
+.pf-icon-chat:before {
+  content: "\e954";
+}
+
+.pf-icon-close:before {
+  content: "\e60b";
+}
+
+.pf-icon-cloud-security:before {
+  content: "\e903";
+}
+
+.pf-icon-cloud-tenant:before {
+  content: "\e904";
+}
+
+.pf-icon-cluster:before {
+  content: "\e620";
+}
+
+.pf-icon-connected:before {
+  content: "\e938";
+}
+
+.pf-icon-container-node:before {
+  content: "\e621";
+}
+
+.pf-icon-cpu:before {
+  content: "\e927";
+}
+
+.pf-icon-critical-risk:before {
+  content: "\e976";
+}
+
+.pf-icon-degraded:before {
+  content: "\e91b";
+}
+
+.pf-icon-disconnected:before {
+  content: "\e955";
+}
+
+.pf-icon-domain:before {
+  content: "\e919";
+}
+
+.pf-icon-edit:before {
+  content: "\e60a";
+}
+
+.pf-icon-enhancement:before {
+  content: "\e93a";
+}
+
+.pf-icon-enterprise:before {
+  content: "\e906";
+}
+
+.pf-icon-equalizer:before {
+  content: "\e956";
+}
+
+.pf-icon-error-circle-o:before {
+  content: "\e926";
+}
+
+.pf-icon-export:before {
+  content: "\e616";
+}
+
+.pf-icon-filter:before {
+  content: "\e943";
+}
+
+.pf-icon-flavor:before {
+  content: "\e957";
+}
+
+.pf-icon-folder-close:before {
+  content: "\e607";
+}
+
+.pf-icon-folder-open:before {
+  content: "\e606";
+}
+
+.pf-icon-globe-route:before {
+  content: "\e958";
+}
+
+.pf-icon-help:before {
+  content: "\e605";
+}
+
+.pf-icon-history:before {
+  content: "\e617";
+}
+
+.pf-icon-home:before {
+  content: "\e618";
+}
+
+.pf-icon-import:before {
+  content: "\e615";
+}
+
+.pf-icon-in-progress:before {
+  content: "\e933";
+}
+
+.pf-icon-info:before {
+  content: "\e92b";
+}
+
+.pf-icon-infrastructure:before {
+  content: "\e93d";
+}
+
+.pf-icon-integration:before {
+  content: "\e948";
+}
+
+.pf-icon-key:before {
+  content: "\e924";
+}
+
+.pf-icon-locked:before {
+  content: "\e923";
+}
+
+.pf-icon-maintenance:before {
+  content: "\e932";
+}
+
+.pf-icon-memory:before {
+  content: "\e908";
+}
+
+.pf-icon-messages:before {
+  content: "\e603";
+}
+
+.pf-icon-middleware:before {
+  content: "\e917";
+}
+
+.pf-icon-migration:before {
+  content: "\e931";
+}
+
+.pf-icon-module:before {
+  content: "\e959";
+}
+
+.pf-icon-monitoring:before {
+  content: "\e95a";
+}
+
+.pf-icon-namespaces:before {
+  content: "\e95b";
+}
+
+.pf-icon-network:before {
+  content: "\e909";
+}
+
+.pf-icon-new-process:before {
+  content: "\e95c";
+}
+
+.pf-icon-not-started:before {
+  content: "\e95d";
+}
+
+.pf-icon-off:before {
+  content: "\e92d";
+}
+
+.pf-icon-ok:before {
+  content: "\e602";
+}
+
+.pf-icon-on-running:before {
+  content: "\e925";
+}
+
+.pf-icon-on:before {
+  content: "\e92c";
+}
+
+.pf-icon-openshift:before {
+  content: "\e95e";
+}
+
+.pf-icon-openstack:before {
+  content: "\e95f";
+}
+
+.pf-icon-optimize:before {
+  content: "\e93e";
+}
+
+.pf-icon-orders:before {
+  content: "\e93f";
+}
+
+.pf-icon-os-image:before {
+  content: "\e960";
+}
+
+.pf-icon-package:before {
+  content: "\e961";
+}
+
+.pf-icon-panel-close:before {
+  content: "\e962";
+}
+
+.pf-icon-panel-open:before {
+  content: "\e963";
+}
+
+.pf-icon-paused:before {
+  content: "\e92f";
+}
+
+.pf-icon-pending:before {
+  content: "\e964";
+}
+
+.pf-icon-pficon-dragdrop:before {
+  content: "\e965";
+}
+
+.pf-icon-pficon-history:before {
+  content: "\e966";
+}
+
+.pf-icon-pficon-network-range:before {
+  content: "\e967";
+}
+
+.pf-icon-pficon-satellite:before {
+  content: "\e968";
+}
+
+.pf-icon-pficon-sort-common-asc:before {
+  content: "\e94e";
+}
+
+.pf-icon-pficon-sort-common-desc:before {
+  content: "\e94f";
+}
+
+.pf-icon-pficon-template:before {
+  content: "\e94c";
+}
+
+.pf-icon-pficon-vcenter:before {
+  content: "\e969";
+}
+
+.pf-icon-plugged:before {
+  content: "\e96a";
+}
+
+.pf-icon-port:before {
+  content: "\e96b";
+}
+
+.pf-icon-print:before {
+  content: "\e612";
+}
+
+.pf-icon-private:before {
+  content: "\e914";
+}
+
+.pf-icon-process-automation:before {
+  content: "\e949";
+}
+
+.pf-icon-project:before {
+  content: "\e96c";
+}
+
+.pf-icon-rebalance:before {
+  content: "\e91c";
+}
+
+.pf-icon-rebooting:before {
+  content: "\e96d";
+}
+
+.pf-icon-regions:before {
+  content: "\e90a";
+}
+
+.pf-icon-registry:before {
+  content: "\e623";
+}
+
+.pf-icon-remove2:before {
+  content: "\e96e";
+}
+
+.pf-icon-replicator:before {
+  content: "\e624";
+}
+
+.pf-icon-repository:before {
+  content: "\e90b";
+}
+
+.pf-icon-resource-pool:before {
+  content: "\e90c";
+}
+
+.pf-icon-resources-almost-empty:before {
+  content: "\e91d";
+}
+
+.pf-icon-resources-almost-full:before {
+  content: "\e912";
+}
+
+.pf-icon-resources-empty:before {
+  content: "\e96f";
+}
+
+.pf-icon-resources-full:before {
+  content: "\e913";
+}
+
+.pf-icon-running:before {
+  content: "\e970";
+}
+
+.pf-icon-save:before {
+  content: "\e601";
+}
+
+.pf-icon-screen:before {
+  content: "\e971";
+}
+
+.pf-icon-security:before {
+  content: "\e946";
+}
+
+.pf-icon-server-group:before {
+  content: "\e91a";
+}
+
+.pf-icon-server:before {
+  content: "\e90d";
+}
+
+.pf-icon-service-catalog:before {
+  content: "\e972";
+}
+
+.pf-icon-service:before {
+  content: "\e61e";
+}
+
+.pf-icon-services:before {
+  content: "\e947";
+}
+
+.pf-icon-spinner:before {
+  content: "\e973";
+}
+
+.pf-icon-spinner2:before {
+  content: "\e613";
+}
+
+.pf-icon-storage-domain:before {
+  content: "\e90e";
+}
+
+.pf-icon-task:before {
+  content: "\e974";
+}
+
+.pf-icon-tenant:before {
+  content: "\e916";
+}
+
+.pf-icon-thumb-tack:before {
+  content: "\e920";
+}
+
+.pf-icon-topology:before {
+  content: "\e608";
+}
+
+.pf-icon-trend-down:before {
+  content: "\e900";
+}
+
+.pf-icon-trend-up:before {
+  content: "\e901";
+}
+
+.pf-icon-unknown:before {
+  content: "\e935";
+}
+
+.pf-icon-unlocked:before {
+  content: "\e922";
+}
+
+.pf-icon-unplugged:before {
+  content: "\e942";
+}
+
+.pf-icon-user:before {
+  content: "\e91e";
+}
+
+.pf-icon-users:before {
+  content: "\e91f";
+}
+
+.pf-icon-virtual-machine:before {
+  content: "\e90f";
+}
+
+.pf-icon-volume:before {
+  content: "\e910";
+}
+
+.pf-icon-warning-triangle:before {
+  content: "\e975";
+}
+
+.pf-icon-zone:before {
+  content: "\e911";
+}

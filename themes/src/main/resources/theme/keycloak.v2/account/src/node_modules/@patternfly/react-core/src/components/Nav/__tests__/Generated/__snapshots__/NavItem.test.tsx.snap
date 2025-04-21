@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NavItem should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-nav__item ''"
+    data-ouia-component-id="OUIA-Generated-NavItem-1"
+    data-ouia-component-type="PF4/NavItem"
+    data-ouia-safe="true"
+  >
+    ReactNode
+  </li>
+</DocumentFragment>
+`;

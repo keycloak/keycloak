@@ -1,0 +1,38 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyStateIcon should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <svg
+    aria-hidden="true"
+    aria-labelledby="icon-title-0"
+    class="pf-c-empty-state__icon ''"
+    fill="string"
+    height="1em"
+    role="img"
+    style="vertical-align: -0.125em;"
+    viewBox="0 0 448 512"
+    width="1em"
+  >
+    <title
+      id="icon-title-0"
+    >
+      string
+    </title>
+    <path
+      d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"
+    />
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`EmptyStateIcon should match snapshot for variant container 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state__icon ''"
+  >
+    <div>
+      Component
+    </div>
+  </div>
+</DocumentFragment>
+`;

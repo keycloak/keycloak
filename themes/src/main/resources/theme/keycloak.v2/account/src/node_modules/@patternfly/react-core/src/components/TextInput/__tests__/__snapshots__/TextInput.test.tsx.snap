@@ -1,0 +1,78 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextInput disabled text input 1`] = `
+<DocumentFragment>
+  <input
+    aria-invalid="false"
+    aria-label="disabled text input"
+    class="pf-c-form-control"
+    data-ouia-component-id="OUIA-Generated-TextInputBase-3"
+    data-ouia-component-type="PF4/TextInput"
+    data-ouia-safe="true"
+    disabled=""
+    type="text"
+    value=""
+  />
+</DocumentFragment>
+`;
+
+exports[`TextInput invalid text input 1`] = `
+<DocumentFragment>
+  <input
+    aria-invalid="true"
+    aria-label="invalid text input"
+    class="pf-c-form-control"
+    data-ouia-component-id="OUIA-Generated-TextInputBase-5"
+    data-ouia-component-type="PF4/TextInput"
+    data-ouia-safe="true"
+    type="text"
+    value="test input"
+  />
+</DocumentFragment>
+`;
+
+exports[`TextInput readonly text input 1`] = `
+<DocumentFragment>
+  <input
+    aria-invalid="false"
+    aria-label="readonly text input"
+    class="pf-c-form-control"
+    data-ouia-component-id="OUIA-Generated-TextInputBase-4"
+    data-ouia-component-type="PF4/TextInput"
+    data-ouia-safe="true"
+    readonly=""
+    type="text"
+    value="read only"
+  />
+</DocumentFragment>
+`;
+
+exports[`TextInput simple text input 1`] = `
+<DocumentFragment>
+  <input
+    aria-invalid="false"
+    aria-label="simple text input"
+    class="pf-c-form-control"
+    data-ouia-component-id="OUIA-Generated-TextInputBase-2"
+    data-ouia-component-type="PF4/TextInput"
+    data-ouia-safe="true"
+    type="text"
+    value="test input"
+  />
+</DocumentFragment>
+`;
+
+exports[`TextInput validated text input error 1`] = `
+<DocumentFragment>
+  <input
+    aria-invalid="true"
+    aria-label="validated text input"
+    class="pf-c-form-control"
+    data-ouia-component-id="OUIA-Generated-TextInputBase-8"
+    data-ouia-component-type="PF4/TextInput"
+    data-ouia-safe="true"
+    type="text"
+    value="test input"
+  />
+</DocumentFragment>
+`;

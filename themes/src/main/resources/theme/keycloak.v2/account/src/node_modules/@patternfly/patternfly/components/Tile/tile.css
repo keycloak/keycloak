@@ -1,0 +1,144 @@
+.pf-c-tile {
+  --pf-c-tile--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-tile--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-tile--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-tile--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-tile--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-tile--Transition: none;
+  --pf-c-tile--TranslateY: 0;
+  --pf-c-tile--before--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-tile--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-tile--after--Height: var(--pf-global--BorderWidth--lg);
+  --pf-c-tile--after--BackgroundColor: transparent;
+  --pf-c-tile--after--Transition: none;
+  --pf-c-tile--after--ScaleY: 1;
+  --pf-c-tile--after--TranslateY: 0;
+  --pf-c-tile__icon--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-tile__icon--FontSize: var(--pf-global--icon--FontSize--md);
+  --pf-c-tile__icon--Color: var(--pf-global--Color--100);
+  --pf-c-tile__title--Color: var(--pf-global--Color--100);
+  --pf-c-tile__body--Color: var(--pf-global--Color--100);
+  --pf-c-tile__body--FontSize: var(--pf-global--FontSize--xs);
+  --pf-c-tile--hover--after--BackgroundColor: var(--pf-global--active-color--400);
+  --pf-c-tile--hover__icon--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--hover__title--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--focus--after--BackgroundColor: var(--pf-global--active-color--400);
+  --pf-c-tile--focus__icon--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--focus__title--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--m-selected--TranslateY: calc(-1 * var(--pf-c-tile--m-selected--after--ScaleY) * var(--pf-c-tile--m-selected--after--Height));
+  --pf-c-tile--m-selected--Transition: var(--pf-global--Transition);
+  --pf-c-tile--m-selected--after--Height: var(--pf-global--BorderWidth--lg);
+  --pf-c-tile--m-selected--after--BackgroundColor: var(--pf-global--active-color--100);
+  --pf-c-tile--m-selected--after--Transition: var(--pf-global--Transition);
+  --pf-c-tile--m-selected--after--ScaleY: 2;
+  --pf-c-tile--m-selected__icon--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--m-selected__title--Color: var(--pf-global--primary-color--100);
+  --pf-c-tile--m-disabled--BackgroundColor: var(--pf-global--disabled-color--300);
+  --pf-c-tile--m-disabled__icon--Color: var(--pf-global--disabled-color--100);
+  --pf-c-tile--m-disabled__title--Color: var(--pf-global--disabled-color--100);
+  --pf-c-tile--m-disabled__body--Color: var(--pf-global--disabled-color--100);
+  --pf-c-tile__header--m-stacked__icon--MarginBottom: var(--pf-global--spacer--xs);
+  --pf-c-tile__header--m-stacked__icon--FontSize: var(--pf-global--icon--FontSize--lg);
+  --pf-c-tile--m-display-lg__header--m-stacked__icon--FontSize: var(--pf-global--icon--FontSize--xl);
+  position: relative;
+  display: inline-grid;
+  padding: var(--pf-c-tile--PaddingTop) var(--pf-c-tile--PaddingRight) var(--pf-c-tile--PaddingBottom) var(--pf-c-tile--PaddingLeft);
+  text-align: center;
+  cursor: pointer;
+  background-color: var(--pf-c-tile--BackgroundColor);
+  grid-template-rows: min-content;
+  transition: var(--pf-c-tile--Transition);
+  transform: translateY(var(--pf-c-tile--TranslateY));
+}
+.pf-c-tile::before, .pf-c-tile::after {
+  position: absolute;
+  pointer-events: none;
+  content: "";
+}
+.pf-c-tile::before {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: var(--pf-c-tile--before--BorderWidth) solid var(--pf-c-tile--before--BorderColor);
+}
+.pf-c-tile::after {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--pf-c-tile--after--Height);
+  background-color: var(--pf-c-tile--after--BackgroundColor);
+  transition: var(--pf-c-tile--after--Transition);
+  transform: scaleY(var(--pf-c-tile--after--ScaleY)) translateY(var(--pf-c-tile--after--TranslateY));
+}
+.pf-c-tile:hover {
+  --pf-c-tile__title--Color: var(--pf-c-tile--hover__title--Color);
+  --pf-c-tile__icon--Color: var(--pf-c-tile--hover__icon--Color);
+  --pf-c-tile--after--BackgroundColor: var(--pf-c-tile--hover--after--BackgroundColor);
+}
+.pf-c-tile:focus {
+  --pf-c-tile__title--Color: var(--pf-c-tile--focus__title--Color);
+  --pf-c-tile__icon--Color: var(--pf-c-tile--focus__icon--Color);
+  --pf-c-tile--after--BackgroundColor: var(--pf-c-tile--focus--after--BackgroundColor);
+}
+.pf-c-tile:active, .pf-c-tile.pf-m-selected {
+  --pf-c-tile__title--Color: var(--pf-c-tile--m-selected__title--Color);
+  --pf-c-tile__icon--Color: var(--pf-c-tile--m-selected__icon--Color);
+  --pf-c-tile--TranslateY: var(--pf-c-tile--m-selected--TranslateY);
+  --pf-c-tile--Transition: var(--pf-c-tile--m-selected--Transition);
+  --pf-c-tile--after--Height: var(--pf-c-tile--m-selected--after--Height);
+  --pf-c-tile--after--BackgroundColor: var(--pf-c-tile--m-selected--after--BackgroundColor);
+  --pf-c-tile--after--Transition: var(--pf-c-tile--m-selected--after--Transition);
+  --pf-c-tile--after--ScaleY: var(--pf-c-tile--m-selected--after--ScaleY);
+}
+.pf-c-tile.pf-m-disabled {
+  --pf-c-tile--BackgroundColor: var(--pf-c-tile--m-disabled--BackgroundColor);
+  --pf-c-tile__title--Color: var(--pf-c-tile--m-disabled__title--Color);
+  --pf-c-tile__body--Color: var(--pf-c-tile--m-disabled__body--Color);
+  --pf-c-tile--before--BorderWidth: 0;
+  --pf-c-tile__icon--Color: var(--pf-c-tile--m-disabled__icon--Color);
+  pointer-events: none;
+}
+.pf-c-tile.pf-m-display-lg .pf-c-tile__header.pf-m-stacked {
+  --pf-c-tile__icon--FontSize: var(--pf-c-tile--m-display-lg__header--m-stacked__icon--FontSize);
+}
+
+.pf-c-tile__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pf-c-tile__header.pf-m-stacked {
+  --pf-c-tile__icon--MarginRight: 0;
+  --pf-c-tile__icon--FontSize: var(--pf-c-tile__header--m-stacked__icon--FontSize);
+  flex-direction: column;
+  justify-content: initial;
+}
+.pf-c-tile__header.pf-m-stacked .pf-c-tile__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--pf-c-tile__header--m-stacked__icon--MarginBottom);
+}
+
+.pf-c-tile__title {
+  color: var(--pf-c-tile__title--Color);
+}
+
+.pf-c-tile__body {
+  font-size: var(--pf-c-tile__body--FontSize);
+  color: var(--pf-c-tile__body--Color);
+}
+
+.pf-c-tile__icon {
+  margin-right: var(--pf-c-tile__icon--MarginRight);
+  font-size: var(--pf-c-tile__icon--FontSize);
+  color: var(--pf-c-tile__icon--Color);
+}
+
+:where(.pf-theme-dark) .pf-c-tile {
+  --pf-c-tile--m-disabled--BackgroundColor: var(--pf-global--disabled-color--200);
+  --pf-c-tile--m-disabled__title--Color: var(--pf-global--disabled-color--300);
+  --pf-c-tile--m-disabled__icon--Color: var(--pf-global--disabled-color--300);
+  --pf-c-tile--m-disabled__body--Color: var(--pf-global--disabled-color--300);
+}

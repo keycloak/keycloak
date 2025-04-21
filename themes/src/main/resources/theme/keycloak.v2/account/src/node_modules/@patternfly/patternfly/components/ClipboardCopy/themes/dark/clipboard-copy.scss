@@ -1,0 +1,19 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-clipboard-copy() {
+  .pf-c-clipboard-copy {
+    --pf-c-clipboard-copy__expandable-content--BackgroundColor: var(--pf-global--BackgroundColor--400);
+  }
+
+  .pf-c-clipboard-copy__group {
+    > * + * {
+      margin-left: 0;
+      // stylelint-disable-next-line
+      border-left: 1px solid var(--pf-global--palette--black-700) !important;
+    }
+  }
+
+  .pf-c-clipboard-copy__expandable-content {
+    border: 0;
+  }
+}

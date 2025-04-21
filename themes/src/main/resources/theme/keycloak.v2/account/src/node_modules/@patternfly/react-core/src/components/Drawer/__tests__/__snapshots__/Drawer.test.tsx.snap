@@ -1,0 +1,540 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Drawer expands from bottom 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded pf-m-panel-bottom"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        id="pf-drawer-panel-5"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          <div
+            class="pf-c-drawer__head"
+          >
+            <span>
+              drawer-panel
+            </span>
+            <div
+              class="pf-c-drawer__actions"
+            >
+              <div
+                class="pf-c-drawer__close"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Close drawer panel"
+                  class="pf-c-button pf-m-plain"
+                  data-ouia-component-id="OUIA-Generated-Button-plain-4"
+                  data-ouia-component-type="PF4/Button"
+                  data-ouia-safe="true"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="pf-c-drawer__body"
+        >
+          drawer-panel
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer has resizable callback and id 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded pf-m-panel-left"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel pf-m-resizable"
+        id="test-id"
+      >
+        <div
+          aria-controls="test-id"
+          aria-label="Resize"
+          aria-orientation="vertical"
+          aria-valuemax="100"
+          aria-valuemin="0"
+          aria-valuenow="0"
+          class="pf-c-drawer__splitter pf-m-vertical"
+          role="separator"
+          tabindex="0"
+        >
+          <div
+            aria-hidden="true"
+            class="pf-c-drawer__splitter-handle"
+          />
+        </div>
+        <div
+          class="pf-c-drawer__panel-main"
+        >
+          <div
+            class="pf-c-drawer__body"
+          >
+            <div
+              class="pf-c-drawer__head"
+            >
+              <span>
+                drawer-panel
+              </span>
+              <div
+                class="pf-c-drawer__actions"
+              >
+                <div
+                  class="pf-c-drawer__close"
+                >
+                  <button
+                    aria-disabled="false"
+                    aria-label="Close drawer panel"
+                    class="pf-c-button pf-m-plain"
+                    data-ouia-component-id="OUIA-Generated-Button-plain-6"
+                    data-ouia-component-type="PF4/Button"
+                    data-ouia-safe="true"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 352 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="pf-c-drawer__body"
+          >
+            drawer-panel
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer has resizable css and color variants 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded pf-m-panel-left"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel pf-m-resizable pf-m-light-200"
+        id="pf-drawer-panel-6"
+        style="--pf-c-drawer__panel--md--FlexBasis: 300px; --pf-c-drawer__panel--md--FlexBasis--min: 200px; --pf-c-drawer__panel--md--FlexBasis--max: 400px;"
+      >
+        <div
+          aria-controls="pf-drawer-panel-6"
+          aria-label="Resize"
+          aria-orientation="vertical"
+          aria-valuemax="100"
+          aria-valuemin="0"
+          aria-valuenow="0"
+          class="pf-c-drawer__splitter pf-m-vertical"
+          role="separator"
+          tabindex="0"
+        >
+          <div
+            aria-hidden="true"
+            class="pf-c-drawer__splitter-handle"
+          />
+        </div>
+        <div
+          class="pf-c-drawer__panel-main"
+        >
+          <div
+            class="pf-c-drawer__body"
+          >
+            <div
+              class="pf-c-drawer__head"
+            >
+              <span>
+                drawer-panel
+              </span>
+              <div
+                class="pf-c-drawer__actions"
+              >
+                <div
+                  class="pf-c-drawer__close"
+                >
+                  <button
+                    aria-disabled="false"
+                    aria-label="Close drawer panel"
+                    class="pf-c-button pf-m-plain"
+                    data-ouia-component-id="OUIA-Generated-Button-plain-5"
+                    data-ouia-component-type="PF4/Button"
+                    data-ouia-safe="true"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 352 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="pf-c-drawer__body"
+          >
+            drawer-panel
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer isExpanded = false and isInline = false and isStatic = false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        hidden=""
+        id="pf-drawer-panel-1"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer isExpanded = false and isInline = true and isStatic = false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        hidden=""
+        id="pf-drawer-panel-3"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer isExpanded = true and isInline = false and isStatic = false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        id="pf-drawer-panel-0"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          <div
+            class="pf-c-drawer__head"
+          >
+            <span>
+              drawer-panel
+            </span>
+            <div
+              class="pf-c-drawer__actions"
+            >
+              <div
+                class="pf-c-drawer__close"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Close drawer panel"
+                  class="pf-c-button pf-m-plain"
+                  data-ouia-component-id="OUIA-Generated-Button-plain-1"
+                  data-ouia-component-type="PF4/Button"
+                  data-ouia-safe="true"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="pf-c-drawer__body"
+        >
+          drawer-panel
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer isExpanded = true and isInline = false and isStatic = true 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        id="pf-drawer-panel-4"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          <div
+            class="pf-c-drawer__head"
+          >
+            <span>
+              drawer-panel
+            </span>
+            <div
+              class="pf-c-drawer__actions"
+            >
+              <div
+                class="pf-c-drawer__close"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Close drawer panel"
+                  class="pf-c-button pf-m-plain"
+                  data-ouia-component-id="OUIA-Generated-Button-plain-3"
+                  data-ouia-component-type="PF4/Button"
+                  data-ouia-safe="true"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="pf-c-drawer__body"
+        >
+          drawer-panel
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Drawer isExpanded = true and isInline = true and isStatic = false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-drawer pf-m-expanded"
+  >
+    <div
+      class="pf-c-drawer__main"
+    >
+      <div
+        class="pf-c-drawer__content"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium est a porttitor vehicula. Quisque vel commodo urna. Morbi mattis rutrum ante, id vehicula ex accumsan ut. Morbi viverra, eros vel porttitor facilisis, eros purus aliquet erat,nec lobortis felis elit pulvinar sem. Vivamus vulputate, risus eget commodo eleifend, eros nibh porta quam, vitae lacinia leo libero at magna. Maecenas aliquam sagittis orci, et posuere nisi ultrices sit amet. Aliquam ex odio, malesuada sed posuere quis, pellentesque at mauris. Phasellus venenatis massa ex, eget pulvinar libero auctor pretium. Aliquam erat volutpat. Duis euismod justo in quam ullamcorper, in commodo massa vulputate.
+        </div>
+      </div>
+      <div
+        class="pf-c-drawer__panel"
+        id="pf-drawer-panel-2"
+      >
+        <div
+          class="pf-c-drawer__body"
+        >
+          <div
+            class="pf-c-drawer__head"
+          >
+            <span>
+              drawer-panel
+            </span>
+            <div
+              class="pf-c-drawer__actions"
+            >
+              <div
+                class="pf-c-drawer__close"
+              >
+                <button
+                  aria-disabled="false"
+                  aria-label="Close drawer panel"
+                  class="pf-c-button pf-m-plain"
+                  data-ouia-component-id="OUIA-Generated-Button-plain-2"
+                  data-ouia-component-type="PF4/Button"
+                  data-ouia-safe="true"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="pf-c-drawer__body"
+        >
+          drawer-panel
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

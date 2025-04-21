@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardHeader should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-wizard__header"
+  >
+    <h2
+      aria-label="string"
+      class="pf-c-title pf-m-3xl pf-c-wizard__title"
+      data-ouia-component-id="OUIA-Generated-Title-1"
+      data-ouia-component-type="PF4/Title"
+      data-ouia-safe="true"
+      id="string"
+    >
+      string
+    </h2>
+    <p
+      class="pf-c-wizard__description"
+      id="string"
+    />
+    <div>
+      ReactNode
+    </div>
+    <p />
+  </div>
+</DocumentFragment>
+`;

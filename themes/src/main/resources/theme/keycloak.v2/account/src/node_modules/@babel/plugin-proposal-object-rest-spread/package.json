@@ -1,0 +1,39 @@
+{
+  "name": "@babel/plugin-proposal-object-rest-spread",
+  "version": "7.18.9",
+  "description": "Compile object rest and spread to ES5",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/babel/babel.git",
+    "directory": "packages/babel-plugin-proposal-object-rest-spread"
+  },
+  "homepage": "https://babel.dev/docs/en/next/babel-plugin-proposal-object-rest-spread",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./lib/index.js",
+  "keywords": [
+    "babel-plugin"
+  ],
+  "dependencies": {
+    "@babel/compat-data": "^7.18.8",
+    "@babel/helper-compilation-targets": "^7.18.9",
+    "@babel/helper-plugin-utils": "^7.18.9",
+    "@babel/plugin-syntax-object-rest-spread": "^7.8.3",
+    "@babel/plugin-transform-parameters": "^7.18.8"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.0.0-0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.18.9",
+    "@babel/helper-plugin-test-runner": "^7.18.6",
+    "@babel/parser": "^7.18.9"
+  },
+  "engines": {
+    "node": ">=6.9.0"
+  },
+  "author": "The Babel Team (https://babel.dev/team)",
+  "type": "commonjs"
+}

@@ -1,0 +1,83 @@
+.pf-c-simple-list {
+  --pf-c-simple-list__item-link--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-simple-list__item-link--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-simple-list__item-link--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-simple-list__item-link--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-simple-list__item-link--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-simple-list__item-link--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-simple-list__item-link--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-simple-list__item-link--m-current--Color: var(--pf-global--link--Color);
+  --pf-c-simple-list__item-link--m-current--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-simple-list__item-link--m-current--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-simple-list__item-link--hover--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--hover--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-simple-list__item-link--focus--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--focus--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-simple-list__item-link--focus--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-simple-list__item-link--active--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--active--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-simple-list__item-link--active--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-simple-list__title--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-simple-list__title--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-simple-list__title--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-simple-list__title--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-simple-list__title--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-simple-list__title--Color: var(--pf-global--Color--dark-200);
+  --pf-c-simple-list__title--FontWeight: var(--pf-global--FontWeight--semi-bold);
+  --pf-c-simple-list__section--section--MarginTop: var(--pf-global--spacer--sm);
+}
+
+.pf-c-simple-list__item-link {
+  display: block;
+  width: 100%;
+  padding: var(--pf-c-simple-list__item-link--PaddingTop) var(--pf-c-simple-list__item-link--PaddingRight) var(--pf-c-simple-list__item-link--PaddingBottom) var(--pf-c-simple-list__item-link--PaddingLeft);
+  font-size: var(--pf-c-simple-list__item-link--FontSize);
+  font-weight: var(--pf-c-simple-list__item-link--FontWeight);
+  color: var(--pf-c-simple-list__item-link--Color);
+  text-align: left;
+  background-color: var(--pf-c-simple-list__item-link--BackgroundColor);
+  border: none;
+}
+.pf-c-simple-list__item-link:hover {
+  text-decoration: none;
+  --pf-c-simple-list__item-link--BackgroundColor: var(--pf-c-simple-list__item-link--hover--BackgroundColor);
+  --pf-c-simple-list__item-link--Color: var(--pf-c-simple-list__item-link--hover--Color);
+}
+.pf-c-simple-list__item-link:focus {
+  --pf-c-simple-list__item-link--FontWeight: var(--pf-c-simple-list__item-link--focus--FontWeight);
+  --pf-c-simple-list__item-link--BackgroundColor: var(--pf-c-simple-list__item-link--focus--BackgroundColor);
+  --pf-c-simple-list__item-link--Color: var(--pf-c-simple-list__item-link--focus--Color);
+}
+.pf-c-simple-list__item-link:active {
+  --pf-c-simple-list__item-link--FontWeight: var(--pf-c-simple-list__item-link--active--FontWeight);
+  --pf-c-simple-list__item-link--BackgroundColor: var(--pf-c-simple-list__item-link--active--BackgroundColor);
+  --pf-c-simple-list__item-link--Color: var(--pf-c-simple-list__item-link--active--Color);
+}
+.pf-c-simple-list__item-link.pf-m-current {
+  --pf-c-simple-list__item-link--FontWeight: var(--pf-c-simple-list__item-link--m-current--FontWeight);
+  --pf-c-simple-list__item-link--BackgroundColor: var(--pf-c-simple-list__item-link--m-current--BackgroundColor);
+  --pf-c-simple-list__item-link--Color: var(--pf-c-simple-list__item-link--m-current--Color);
+}
+
+.pf-c-simple-list__title {
+  padding: var(--pf-c-simple-list__title--PaddingTop) var(--pf-c-simple-list__title--PaddingRight) var(--pf-c-simple-list__title--PaddingBottom) var(--pf-c-simple-list__title--PaddingLeft);
+  font-size: var(--pf-c-simple-list__title--FontSize);
+  font-weight: var(--pf-c-simple-list__title--FontWeight);
+  color: var(--pf-c-simple-list__title--Color);
+}
+
+.pf-c-simple-list__section + .pf-c-simple-list__section {
+  margin-top: var(--pf-c-simple-list__section--section--MarginTop);
+}
+
+:where(.pf-theme-dark) .pf-c-simple-list {
+  --pf-c-simple-list__item-link--m-current--Color: var(--pf-global--active-color--100);
+  --pf-c-simple-list__item-link--m-current--BackgroundColor: var(--pf-global--BackgroundColor--400);
+  --pf-c-simple-list__item-link--hover--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+  --pf-c-simple-list__item-link--focus--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--focus--BackgroundColor: var(--pf-global--BackgroundColor--400);
+  --pf-c-simple-list__item-link--active--Color: var(--pf-global--Color--100);
+  --pf-c-simple-list__item-link--active--BackgroundColor: var(--pf-global--BackgroundColor--400);
+}

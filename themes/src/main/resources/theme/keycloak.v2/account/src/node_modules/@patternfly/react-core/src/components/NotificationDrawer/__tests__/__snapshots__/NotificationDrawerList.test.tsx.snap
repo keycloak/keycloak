@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NotificationDrawerList drawer list with hidden applied  1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-notification-drawer__list"
+    hidden=""
+  />
+</DocumentFragment>
+`;
+
+exports[`NotificationDrawerList renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-notification-drawer__list"
+  />
+</DocumentFragment>
+`;

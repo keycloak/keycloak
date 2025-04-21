@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`danger banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="danger"
+    class="pf-c-banner pf-m-danger"
+  >
+    danger Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      danger banner
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`default banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="default"
+    class="pf-c-banner"
+  >
+    default Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      default banner
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`info banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="info"
+    class="pf-c-banner pf-m-info"
+  >
+    info Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      info banner
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`sticky banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="sticky"
+    class="pf-c-banner pf-m-sticky"
+  >
+    Sticky Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      default banner
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`success banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="success"
+    class="pf-c-banner pf-m-success"
+  >
+    success Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      success banner
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`warning banner 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="warning"
+    class="pf-c-banner pf-m-warning"
+  >
+    warning Banner
+    <span
+      class="pf-u-screen-reader"
+    >
+      warning banner
+    </span>
+  </div>
+</DocumentFragment>
+`;

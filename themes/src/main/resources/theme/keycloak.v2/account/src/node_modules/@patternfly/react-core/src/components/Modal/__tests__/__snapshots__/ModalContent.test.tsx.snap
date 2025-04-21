@@ -1,0 +1,561 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Modal Content Test description 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-3"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+          <div
+            class="pf-c-modal-box__description"
+            id="descriptorId"
+          >
+            This is a test description.
+          </div>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+        >
+          This is a ModalBox header
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Content Test isOpen 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Content Test only body 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Content Test with footer 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-4"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+        <footer
+          class="pf-c-modal-box__footer"
+        >
+          Testing
+        </footer>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Content Test with onclose 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box pf-m-lg"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-6"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+        <footer
+          class="pf-c-modal-box__footer"
+        >
+          Testing footer
+        </footer>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Content test without footer 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-5"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Content title
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Test with custom footer 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box pf-m-lg"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-8"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <h1
+            class="pf-c-modal-box__title"
+            id="labelId"
+          >
+            <span
+              class="pf-c-modal-box__title-text"
+            >
+              Test Modal Custom Footer
+            </span>
+          </h1>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+        <footer
+          class="pf-c-modal-box__footer"
+        >
+          <span
+            id="test-custom-footer"
+          >
+            TEST
+          </span>
+        </footer>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Modal Test with custom header 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="descriptorId"
+        aria-labelledby="labelId"
+        aria-modal="true"
+        class="pf-c-modal-box pf-m-lg"
+        data-ouia-component-type="PF4/ModalContent"
+        data-ouia-safe="true"
+        id="boxId"
+        role="dialog"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="Close"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-7"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 352 512"
+            width="1em"
+          >
+            <path
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
+        </button>
+        <header
+          class="pf-c-modal-box__header"
+        >
+          <span
+            id="test-custom-header"
+          >
+            TEST
+          </span>
+        </header>
+        <div
+          class="pf-c-modal-box__body"
+          id="descriptorId"
+        >
+          This is a ModalBox header
+        </div>
+        <footer
+          class="pf-c-modal-box__footer"
+        >
+          Testing footer
+        </footer>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,115 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`check loginpage example against snapshot 1`] = `
+<DocumentFragment>
+  <div
+    alt="Pf-background"
+    class="pf-c-background-image"
+    style="--pf-c-background-image--BackgroundImage: url(Background src); --pf-c-background-image--BackgroundImage-2x: url(Background src); --pf-c-background-image--BackgroundImage--sm: url(Background src); --pf-c-background-image--BackgroundImage--sm-2x: url(Background src); --pf-c-background-image--BackgroundImage--lg: url(Background src); --pf-c-background-image--Filter: url(#patternfly-background-image-filter-overlay0);"
+  >
+    <svg
+      class="pf-c-background-image__filter"
+      height="0"
+      width="0"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <filter
+        id="patternfly-background-image-filter-overlay0"
+      >
+        <fecolormatrix
+          type="matrix"
+          values="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 1 0"
+        />
+        <fecomponenttransfer
+          color-interpolation-filters="sRGB"
+          result="duotone"
+        >
+          <fefuncr
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncg
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncb
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefunca
+            tableValues="0 1"
+            type="table"
+          />
+        </fecomponenttransfer>
+      </filter>
+    </svg>
+  </div>
+  <div
+    class="pf-c-login"
+  >
+    <div
+      class="pf-c-login__container"
+    >
+      <header
+        class="pf-c-login__header"
+      >
+        <img
+          alt="Pf-logo"
+          class="pf-c-brand"
+          src="Brand src"
+        />
+      </header>
+      <main
+        class="pf-c-login__main"
+      >
+        <header
+          class="pf-c-login__main-header"
+        >
+          <h2
+            class="pf-c-title pf-m-3xl"
+            data-ouia-component-id="OUIA-Generated-Title-1"
+            data-ouia-component-type="PF4/Title"
+            data-ouia-safe="true"
+          >
+            Log into your account
+          </h2>
+        </header>
+        <div
+          class="pf-c-login__main-body"
+        />
+        <div
+          class="pf-c-login__main-footer"
+        >
+          <ul
+            class="pf-c-login__main-footer-links"
+          >
+            Footer
+          </ul>
+          <div
+            class="pf-c-login__main-footer-band"
+          >
+            Login to your account 
+            <a
+              href="https://www.patternfly.org"
+            >
+              Need an account?
+            </a>
+          </div>
+        </div>
+      </main>
+      <footer
+        class="pf-c-login__footer"
+      >
+        <p>
+          This is placeholder text only.
+        </p>
+        <ul
+          class="pf-c-list pf-m-inline"
+        >
+          English
+        </ul>
+      </footer>
+    </div>
+  </div>
+</DocumentFragment>
+`;

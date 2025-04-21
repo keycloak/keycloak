@@ -1,0 +1,16 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-table() {
+  .pf-c-table {
+    --pf-c-table--m-striped__tr--BackgroundColor: var(--pf-global--BackgroundColor--150);
+  }
+
+  .pf-c-table__favorite {
+    .pf-c-button {
+      &:hover,
+      &:focus {
+        --pf-c-button--m-plain--Color: var(--pf-global--palette--gold-100);
+      }
+    }
+  }
+}

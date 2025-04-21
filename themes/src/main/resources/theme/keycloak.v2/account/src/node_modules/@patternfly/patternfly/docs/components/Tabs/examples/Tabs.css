@@ -1,0 +1,10 @@
+.tabs-example-block {
+  --tabs-example-block--BackgroundColor: transparent;
+
+  min-height: 40px;
+  background-color: var(--tabs-example-block--BackgroundColor);
+}
+
+.tabs-example-block--m-color-scheme--light-300 {
+  --tabs-example-block--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+}

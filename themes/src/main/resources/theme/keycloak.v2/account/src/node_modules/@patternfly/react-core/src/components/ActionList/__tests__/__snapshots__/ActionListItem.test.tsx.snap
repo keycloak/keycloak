@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`action list item renders successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-action-list__item"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;

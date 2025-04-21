@@ -1,0 +1,10 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-skeleton() {
+  .pf-c-skeleton {
+    --pf-c-skeleton--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-skeleton--after--LinearGradientColorStop1: var(--pf-global--palette--black-600);
+    --pf-c-skeleton--after--LinearGradientColorStop2: var(--pf-global--palette--black-500);
+    --pf-c-skeleton--after--LinearGradientColorStop3: var(--pf-global--palette--black-600);
+  }
+}

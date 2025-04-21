@@ -1,0 +1,44 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-nav() {
+  .pf-c-nav {
+    --pf-c-nav__item--item__link--after--Top: -1px;
+    --pf-c-nav__item--before--BorderColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav__link--hover--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-nav__link--focus--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-nav__link--active--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-nav__link--m-current--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-nav__link--before--BorderColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav--m-tertiary__scroll-button--before--BorderColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav__section-title--Color: var(--pf-global--Color--200);
+    --pf-c-nav__section-title--BorderBottomColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav__scroll-button--before--BorderColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav--c-divider--BackgroundColor: var(--pf-global--BorderColor--100);
+    --pf-c-nav__link--hover--before--BorderBottomWidth: 0;
+    --pf-c-nav__link--focus--before--BorderBottomWidth: 0;
+    --pf-c-nav__link--active--before--BorderBottomWidth: 0;
+    --pf-c-nav__link--m-current--before--BorderBottomWidth: 0;
+  }
+
+  .pf-c-nav__link {
+    &::before {
+      bottom: 0;
+    }
+
+    &::after {
+      top: var(--pf-c-nav__item--item__link--after--Top);
+    }
+  }
+
+  .pf-c-nav__item + .pf-c-nav__item {
+    --pf-c-nav__link--after--Top: var(--pf-c-nav__item--item__link--after--Top);
+  }
+
+  .pf-c-nav__subnav {
+    --pf-c-nav__item--item__link--after--Top: 0;
+  }
+
+  .pf-c-nav__section {
+    --pf-c-nav__item--item__link--after--Top: 0;
+  }
+}

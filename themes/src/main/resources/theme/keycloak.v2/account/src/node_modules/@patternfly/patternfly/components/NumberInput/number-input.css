@@ -1,0 +1,32 @@
+.pf-c-number-input .pf-c-form-control {
+  appearance: textfield;
+}
+.pf-c-number-input .pf-c-form-control::-webkit-inner-spin-button, .pf-c-number-input .pf-c-form-control::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.pf-c-number-input {
+  --pf-c-number-input__unit--c-input-group--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-number-input__icon--FontSize: var(--pf-global--FontSize--xs);
+  --pf-c-number-input--c-form-control--width-base: calc(var(--pf-global--spacer--sm) * 2 + var(--pf-global--BorderWidth--sm) * 2);
+  --pf-c-number-input--c-form-control--width-chars: 4;
+  --pf-c-number-input--c-form-control--Width: calc(var(--pf-c-number-input--c-form-control--width-base) + var(--pf-c-number-input--c-form-control--width-chars) * 1ch);
+  display: inline-flex;
+  align-items: center;
+}
+.pf-c-number-input .pf-c-form-control {
+  display: inline-flex;
+  width: var(--pf-c-number-input--c-form-control--Width);
+  text-align: right;
+}
+
+.pf-c-input-group + .pf-c-number-input__unit,
+.pf-c-number-input__unit + .pf-c-input-group {
+  margin-left: var(--pf-c-number-input__unit--c-input-group--MarginLeft);
+}
+
+.pf-c-number-input__icon {
+  display: flex;
+  font-size: var(--pf-c-number-input__icon--FontSize);
+}

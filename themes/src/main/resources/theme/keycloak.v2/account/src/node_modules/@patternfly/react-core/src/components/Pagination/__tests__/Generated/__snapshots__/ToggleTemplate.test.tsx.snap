@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ToggleTemplate should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <b>
+    0 - 0
+  </b>
+   of 
+  <b>
+    0
+  </b>
+   'items'
+</DocumentFragment>
+`;

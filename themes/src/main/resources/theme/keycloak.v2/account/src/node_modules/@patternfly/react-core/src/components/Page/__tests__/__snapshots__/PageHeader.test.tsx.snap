@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Check page vertical layout example against snapshot 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-page__header"
+  >
+    <div
+      class="pf-c-page__header-brand"
+    >
+      <a
+        class="pf-c-page__header-brand-link"
+      >
+        Logo
+      </a>
+    </div>
+    PageHeaderTools | Avatar
+  </header>
+</DocumentFragment>
+`;

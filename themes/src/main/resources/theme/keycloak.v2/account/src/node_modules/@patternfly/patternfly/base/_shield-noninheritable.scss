@@ -1,0 +1,13 @@
+@mixin shield-noninheritable {
+  [class*="pf-c-"],
+  [class*="pf-l-"] {
+    &,
+    &::before,
+    &::after {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+      background-color: transparent;
+    }
+  }
+}

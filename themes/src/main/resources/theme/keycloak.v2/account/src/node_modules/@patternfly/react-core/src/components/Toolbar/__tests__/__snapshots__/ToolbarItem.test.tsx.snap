@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ToolbarItem should map width breakpoints 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toolbar__item"
+    style="--pf-c-toolbar__item--Width: 100px; --pf-c-toolbar__item--Width-on-sm: 80px; --pf-c-toolbar__item--Width-on-md: 150px; --pf-c-toolbar__item--Width-on-lg: 200px; --pf-c-toolbar__item--Width-on-xl: 250px; --pf-c-toolbar__item--Width-on-2xl: 300px;"
+  >
+    Test
+  </div>
+</DocumentFragment>
+`;

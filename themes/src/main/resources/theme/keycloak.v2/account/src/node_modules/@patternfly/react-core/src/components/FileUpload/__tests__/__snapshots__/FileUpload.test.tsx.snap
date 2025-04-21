@@ -1,0 +1,73 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`simple fileupload 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-file-upload"
+  >
+    <div
+      class="pf-c-file-upload__file-select"
+    >
+      <div
+        class="pf-c-input-group"
+      >
+        <input
+          aria-describedby="simple-text-file-browse-button"
+          aria-invalid="false"
+          aria-label="Drag a file here or browse to upload"
+          class="pf-c-form-control"
+          data-ouia-component-id="OUIA-Generated-TextInputBase-1"
+          data-ouia-component-type="PF4/TextInput"
+          data-ouia-safe="true"
+          id="simple-text-file-filename"
+          name="simple-text-file-filename"
+          placeholder="Drag a file here or browse to upload"
+          readonly=""
+          type="text"
+          value=""
+        />
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-control"
+          data-ouia-component-id="OUIA-Generated-Button-control-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          id="simple-text-file-browse-button"
+          type="button"
+        >
+          Browse...
+        </button>
+        <button
+          aria-disabled="true"
+          class="pf-c-button pf-m-control pf-m-disabled"
+          data-ouia-component-id="OUIA-Generated-Button-control-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          disabled=""
+          type="button"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+    <div
+      class="pf-c-file-upload__file-details"
+    >
+      <textarea
+        aria-invalid="false"
+        aria-label="File upload"
+        class="pf-c-form-control pf-m-resize-vertical"
+        id="simple-text-file"
+        name="simple-text-file"
+        placeholder=""
+      />
+    </div>
+    <input
+      autocomplete="off"
+      style="display: none;"
+      tabindex="-1"
+      type="file"
+    />
+  </div>
+</DocumentFragment>
+`;

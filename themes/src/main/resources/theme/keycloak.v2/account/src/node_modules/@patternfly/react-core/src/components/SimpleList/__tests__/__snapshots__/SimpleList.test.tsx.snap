@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SimpleList renders content 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-simple-list"
+  >
+    <ul>
+      <li
+        class=""
+      >
+        <button
+          class="pf-c-simple-list__item-link"
+          type="button"
+        >
+          Item 1
+        </button>
+      </li>
+      <li
+        class=""
+      >
+        <button
+          class="pf-c-simple-list__item-link"
+          type="button"
+        >
+          Item 2
+        </button>
+      </li>
+      <li
+        class=""
+      >
+        <button
+          class="pf-c-simple-list__item-link"
+          type="button"
+        >
+          Item 3
+        </button>
+      </li>
+    </ul>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SimpleList renders grouped content 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-simple-list"
+  >
+    <section
+      class="pf-c-simple-list__section"
+    >
+      <h2
+        aria-hidden="true"
+        class="pf-c-simple-list__title"
+        id=""
+      >
+        Group 1
+      </h2>
+      <ul
+        aria-labelledby=""
+        class=""
+      >
+        <li
+          class=""
+        >
+          <button
+            class="pf-c-simple-list__item-link"
+            type="button"
+          >
+            Item 1
+          </button>
+        </li>
+        <li
+          class=""
+        >
+          <button
+            class="pf-c-simple-list__item-link"
+            type="button"
+          >
+            Item 2
+          </button>
+        </li>
+        <li
+          class=""
+        >
+          <button
+            class="pf-c-simple-list__item-link"
+            type="button"
+          >
+            Item 3
+          </button>
+        </li>
+      </ul>
+    </section>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,106 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`extra large spinner 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Contents"
+    aria-valuetext="Loading..."
+    class="pf-c-spinner pf-m-xl"
+    role="progressbar"
+  >
+    <span
+      class="pf-c-spinner__clipper"
+    />
+    <span
+      class="pf-c-spinner__lead-ball"
+    />
+    <span
+      class="pf-c-spinner__tail-ball"
+    />
+  </span>
+</DocumentFragment>
+`;
+
+exports[`large spinner 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Contents"
+    aria-valuetext="Loading..."
+    class="pf-c-spinner pf-m-lg"
+    role="progressbar"
+  >
+    <span
+      class="pf-c-spinner__clipper"
+    />
+    <span
+      class="pf-c-spinner__lead-ball"
+    />
+    <span
+      class="pf-c-spinner__tail-ball"
+    />
+  </span>
+</DocumentFragment>
+`;
+
+exports[`medium spinner 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Contents"
+    aria-valuetext="Loading..."
+    class="pf-c-spinner pf-m-md"
+    role="progressbar"
+  >
+    <span
+      class="pf-c-spinner__clipper"
+    />
+    <span
+      class="pf-c-spinner__lead-ball"
+    />
+    <span
+      class="pf-c-spinner__tail-ball"
+    />
+  </span>
+</DocumentFragment>
+`;
+
+exports[`simple spinner 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Contents"
+    aria-valuetext="Loading..."
+    class="pf-c-spinner pf-m-xl"
+    role="progressbar"
+  >
+    <span
+      class="pf-c-spinner__clipper"
+    />
+    <span
+      class="pf-c-spinner__lead-ball"
+    />
+    <span
+      class="pf-c-spinner__tail-ball"
+    />
+  </span>
+</DocumentFragment>
+`;
+
+exports[`small spinner 1`] = `
+<DocumentFragment>
+  <span
+    aria-label="Contents"
+    aria-valuetext="Loading..."
+    class="pf-c-spinner pf-m-sm"
+    role="progressbar"
+  >
+    <span
+      class="pf-c-spinner__clipper"
+    />
+    <span
+      class="pf-c-spinner__lead-ball"
+    />
+    <span
+      class="pf-c-spinner__tail-ball"
+    />
+  </span>
+</DocumentFragment>
+`;

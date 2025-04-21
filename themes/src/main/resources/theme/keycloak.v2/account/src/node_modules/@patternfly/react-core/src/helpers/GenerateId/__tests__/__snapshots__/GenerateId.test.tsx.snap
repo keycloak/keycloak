@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`generates id 1`] = `
+<DocumentFragment>
+  <div
+    id="pf-random-id-0"
+  >
+    div with random ID
+  </div>
+</DocumentFragment>
+`;

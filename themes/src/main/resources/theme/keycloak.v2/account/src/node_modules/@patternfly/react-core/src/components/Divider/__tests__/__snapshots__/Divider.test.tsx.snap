@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`divider using div 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-divider"
+    role="separator"
+  />
+</DocumentFragment>
+`;
+
+exports[`divider using hr 1`] = `
+<DocumentFragment>
+  <hr
+    class="pf-c-divider"
+  />
+</DocumentFragment>
+`;
+
+exports[`divider using li 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-divider"
+    role="separator"
+  />
+</DocumentFragment>
+`;
+
+exports[`vertical divider 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-flex"
+  >
+    <div
+      class=""
+    >
+      first item
+    </div>
+    <hr
+      class="pf-c-divider pf-m-vertical"
+    />
+    <div
+      class=""
+    >
+      second item
+    </div>
+  </div>
+</DocumentFragment>
+`;

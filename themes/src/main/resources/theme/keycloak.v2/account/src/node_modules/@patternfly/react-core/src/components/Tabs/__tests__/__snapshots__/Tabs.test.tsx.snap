@@ -1,0 +1,2247 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should render accessible tabs 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="accessible Tabs example"
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-9"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="accessibleTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <a
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          href="#/items/1"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </a>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <a
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          href="#/items/2"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </a>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <a
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          href="#/items/3"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </a>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </nav>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render box tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-box"
+    data-ouia-component-id="OUIA-Generated-Tabs-8"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="boxTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-3-tab4"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-3-tab4"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-icon"
+          >
+            <i>
+              4
+            </i>
+          </span>
+           
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Users
+          </span>
+           
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-3-tab4"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-3-tab4"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 4 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render box tabs of light variant 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-box pf-m-color-scheme--light-300"
+    data-ouia-component-id="OUIA-Generated-Tabs-15"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="boxLightVariantTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content pf-m-light-300"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content pf-m-light-300"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content pf-m-light-300"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render expandable vertical tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-vertical pf-m-expandable"
+    data-ouia-component-id="OUIA-Generated-Tabs-6"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="verticalTabs"
+  >
+    <div
+      class="pf-c-tabs__toggle"
+    >
+      <div
+        class="pf-c-tabs__toggle-button"
+      >
+        <button
+          aria-disabled="false"
+          aria-labelledby="pf-random-id-0-text pf-random-id-0-button"
+          class="pf-c-button pf-m-plain"
+          data-ouia-component-id="OUIA-Generated-Button-plain-3"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          id="pf-random-id-0-button"
+          type="button"
+        >
+          <span
+            class="pf-c-tabs__toggle-icon"
+          >
+            <svg
+              aria-hidden="true"
+              arian-hidden="true"
+              fill="currentColor"
+              height="1em"
+              role="img"
+              style="vertical-align: -0.125em;"
+              viewBox="0 0 256 512"
+              width="1em"
+            >
+              <path
+                d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+              />
+            </svg>
+          </span>
+          <span
+            class="pf-c-tabs__toggle-text"
+            id="pf-random-id-0-text"
+          >
+            toggle
+          </span>
+        </button>
+      </div>
+    </div>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-3-tab4"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-3-tab4"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-icon"
+          >
+            <i>
+              4
+            </i>
+          </span>
+           
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Users
+          </span>
+           
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-3-tab4"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-3-tab4"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 4 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render filled tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-fill"
+    data-ouia-component-id="OUIA-Generated-Tabs-10"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="filledTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render secondary tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-11"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="primarieTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-primarieTabs"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-primarieTabs"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-primarieTabs"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-primarieTabs"
+    role="tabpanel"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tabs pf-m-secondary"
+      data-ouia-component-id="OUIA-Generated-Tabs-12"
+      data-ouia-component-type="PF4/Tabs"
+      data-ouia-safe="true"
+      id="secondaryTabs"
+    >
+      <button
+        aria-hidden="true"
+        aria-label="Scroll left"
+        class="pf-c-tabs__scroll-button pf-m-secondary"
+        disabled=""
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+          />
+        </svg>
+      </button>
+      <ul
+        class="pf-c-tabs__list"
+        role="tablist"
+      >
+        <li
+          class="pf-c-tabs__item"
+          role="presentation"
+        >
+          <button
+            aria-controls="pf-tab-section-10-secondary tab1"
+            aria-selected="false"
+            class="pf-c-tabs__link"
+            data-ouia-component-type="PF4/TabButton"
+            data-ouia-safe="true"
+            id="pf-tab-10-secondary tab1"
+            role="tab"
+          >
+            <span
+              class="pf-c-tabs__item-text"
+            >
+              "Secondary Tab item 1"
+            </span>
+          </button>
+        </li>
+        <li
+          class="pf-c-tabs__item"
+          role="presentation"
+        >
+          <button
+            aria-controls="pf-tab-section-11-secondary tab2"
+            aria-selected="false"
+            class="pf-c-tabs__link"
+            data-ouia-component-type="PF4/TabButton"
+            data-ouia-safe="true"
+            id="pf-tab-11-secondary tab2"
+            role="tab"
+          >
+            <span
+              class="pf-c-tabs__item-text"
+            >
+              "Secondary Tab item 2"
+            </span>
+          </button>
+        </li>
+        <li
+          class="pf-c-tabs__item"
+          role="presentation"
+        >
+          <button
+            aria-controls="pf-tab-section-12-secondary tab3"
+            aria-selected="false"
+            class="pf-c-tabs__link"
+            data-ouia-component-type="PF4/TabButton"
+            data-ouia-safe="true"
+            id="pf-tab-12-secondary tab3"
+            role="tab"
+          >
+            <span
+              class="pf-c-tabs__item-text"
+            >
+              "Secondary Tab item 3"
+            </span>
+          </button>
+        </li>
+      </ul>
+      <button
+        aria-hidden="true"
+        aria-label="Scroll right"
+        class="pf-c-tabs__scroll-button pf-m-secondary"
+        disabled=""
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </button>
+    </div>
+    <section
+      aria-labelledby="pf-tab-10-secondary tab1"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      hidden=""
+      id="pf-tab-section-10-secondary tab1"
+      role="tabpanel"
+      tabindex="0"
+    >
+      Secondary Tab 1 section
+    </section>
+    <section
+      aria-labelledby="pf-tab-11-secondary tab2"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      hidden=""
+      id="pf-tab-section-11-secondary tab2"
+      role="tabpanel"
+      tabindex="0"
+    >
+      Secondary Tab 2 section
+    </section>
+    <section
+      aria-labelledby="pf-tab-12-secondary tab3"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      hidden=""
+      id="pf-tab-section-12-secondary tab3"
+      role="tabpanel"
+      tabindex="0"
+    >
+      Secondary Tab 3 section
+    </section>
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render simple tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-1"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="simpleTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-3-tab4"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-3-tab4"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-icon"
+          >
+            <i>
+              4
+            </i>
+          </span>
+           
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Users
+          </span>
+           
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-3-tab4"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-3-tab4"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 4 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render tabs with eventKey Strings 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-13"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="eventKeyTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-one-tab1"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-one-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Secondary Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-two-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-two-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Secondary Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-three-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-three-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Secondary Tab item 3"
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-one-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-one-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-two-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-two-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-three-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-three-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render tabs with no bottom border 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-no-border-bottom"
+    data-ouia-component-id="OUIA-Generated-Tabs-16"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="noBottomBorderTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render tabs with separate content 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-14"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="separateTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="refTab1Section"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-separateTabs"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Tab item 1
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="refTab2Section"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-separateTabs"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Tab item 2
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="refTab3Section"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-separateTabs"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Tab item 3
+          </span>
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <div>
+    <section
+      aria-label="Tab item 1"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      id="refTab1Section"
+      role="tabpanel"
+      tabindex="0"
+    >
+      Tab 1 section
+    </section>
+    <section
+      aria-label="Tab item 2"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      hidden=""
+      id="refTab2Section"
+      role="tabpanel"
+      tabindex="0"
+    >
+      <div
+        class="pf-c-tab-content__body"
+      >
+        Tab 2 section
+      </div>
+    </section>
+    <section
+      aria-label="Tab item 3"
+      class="pf-c-tab-content"
+      data-ouia-component-type="PF4/TabContent"
+      data-ouia-safe="true"
+      hidden=""
+      id="refTab3Section"
+      role="tabpanel"
+      tabindex="0"
+    >
+      <div
+        class="pf-c-tab-content__body pf-m-padding"
+      >
+        Tab 3 section with padding 
+      </div>
+    </section>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`should render uncontrolled tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs"
+    data-ouia-component-id="OUIA-Generated-Tabs-4"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-3-tab4"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-3-tab4"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-icon"
+          >
+            <i>
+              4
+            </i>
+          </span>
+           
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Users
+          </span>
+           
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-3-tab4"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-3-tab4"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 4 section
+  </section>
+</DocumentFragment>
+`;
+
+exports[`should render vertical tabs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tabs pf-m-vertical"
+    data-ouia-component-id="OUIA-Generated-Tabs-5"
+    data-ouia-component-type="PF4/Tabs"
+    data-ouia-safe="true"
+    id="verticalTabs"
+  >
+    <button
+      aria-hidden="true"
+      aria-label="Scroll left"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+        />
+      </svg>
+    </button>
+    <ul
+      class="pf-c-tabs__list"
+      role="tablist"
+    >
+      <li
+        class="pf-c-tabs__item pf-m-current"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-0-tab1"
+          aria-selected="true"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-0-tab1"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 1"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-1-tab2"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-1-tab2"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 2"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-2-tab3"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-2-tab3"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            "Tab item 3"
+          </span>
+        </button>
+      </li>
+      <li
+        class="pf-c-tabs__item"
+        role="presentation"
+      >
+        <button
+          aria-controls="pf-tab-section-3-tab4"
+          aria-selected="false"
+          class="pf-c-tabs__link"
+          data-ouia-component-type="PF4/TabButton"
+          data-ouia-safe="true"
+          id="pf-tab-3-tab4"
+          role="tab"
+        >
+          <span
+            class="pf-c-tabs__item-icon"
+          >
+            <i>
+              4
+            </i>
+          </span>
+           
+          <span
+            class="pf-c-tabs__item-text"
+          >
+            Users
+          </span>
+           
+        </button>
+      </li>
+    </ul>
+    <button
+      aria-hidden="true"
+      aria-label="Scroll right"
+      class="pf-c-tabs__scroll-button"
+      disabled=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 256 512"
+        width="1em"
+      >
+        <path
+          d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+        />
+      </svg>
+    </button>
+  </div>
+  <section
+    aria-labelledby="pf-tab-0-tab1"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    id="pf-tab-section-0-tab1"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 1 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-1-tab2"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-1-tab2"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 2 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-2-tab3"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-2-tab3"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 3 section
+  </section>
+  <section
+    aria-labelledby="pf-tab-3-tab4"
+    class="pf-c-tab-content"
+    data-ouia-component-type="PF4/TabContent"
+    data-ouia-safe="true"
+    hidden=""
+    id="pf-tab-section-3-tab4"
+    role="tabpanel"
+    tabindex="0"
+  >
+    Tab 4 section
+  </section>
+</DocumentFragment>
+`;

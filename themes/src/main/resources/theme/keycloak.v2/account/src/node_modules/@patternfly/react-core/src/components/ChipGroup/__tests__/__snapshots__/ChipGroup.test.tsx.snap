@@ -1,0 +1,308 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ChipGroup chip group default 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Chip group category"
+    class="pf-c-chip-group"
+    data-ouia-component-type="PF4/ChipGroup"
+    data-ouia-safe="true"
+    role="group"
+  >
+    <div
+      class="pf-c-chip-group__main"
+    >
+      <ul
+        aria-label="Chip group category"
+        class="pf-c-chip-group__list"
+        role="list"
+      >
+        <li
+          class="pf-c-chip-group__list-item"
+        >
+          <div
+            class="pf-c-chip"
+            data-ouia-component-id="OUIA-Generated-Chip-1"
+            data-ouia-component-type="PF4/Chip"
+            data-ouia-safe="true"
+          >
+            <span
+              class="pf-c-chip__text"
+              id="pf-random-id-1"
+            >
+              1.1
+            </span>
+            <button
+              aria-disabled="false"
+              aria-label="close"
+              aria-labelledby="remove_pf-random-id-1 pf-random-id-1"
+              class="pf-c-button pf-m-plain"
+              data-ouia-component-id="close"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              id="remove_pf-random-id-1"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 352 512"
+                width="1em"
+              >
+                <path
+                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                />
+              </svg>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ChipGroup chip group with category 1`] = `
+<DocumentFragment>
+  <div
+    aria-labelledby="pf-random-id-2"
+    class="pf-c-chip-group pf-m-category"
+    data-ouia-component-type="PF4/ChipGroup"
+    data-ouia-safe="true"
+    role="group"
+  >
+    <div
+      class="pf-c-chip-group__main"
+    >
+      <span
+        class="pf-c-chip-group__label"
+        id="pf-random-id-2"
+      >
+        category
+      </span>
+      <ul
+        aria-labelledby="pf-random-id-2"
+        class="pf-c-chip-group__list"
+        role="list"
+      >
+        <li
+          class="pf-c-chip-group__list-item"
+        >
+          <div
+            class="pf-c-chip"
+            data-ouia-component-id="OUIA-Generated-Chip-2"
+            data-ouia-component-type="PF4/Chip"
+            data-ouia-safe="true"
+          >
+            <span
+              class="pf-c-chip__text"
+              id="pf-random-id-3"
+            >
+              1.1
+            </span>
+            <button
+              aria-disabled="false"
+              aria-label="close"
+              aria-labelledby="remove_pf-random-id-3 pf-random-id-3"
+              class="pf-c-button pf-m-plain"
+              data-ouia-component-id="close"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              id="remove_pf-random-id-3"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 352 512"
+                width="1em"
+              >
+                <path
+                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                />
+              </svg>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ChipGroup chip group with category and tooltip 1`] = `
+<DocumentFragment>
+  <div
+    aria-labelledby="pf-random-id-12"
+    class="pf-c-chip-group pf-m-category"
+    data-ouia-component-type="PF4/ChipGroup"
+    data-ouia-safe="true"
+    role="group"
+  >
+    <div
+      class="pf-c-chip-group__main"
+    >
+      <span
+        class="pf-c-chip-group__label"
+        id="pf-random-id-12"
+      >
+        A very long category name
+      </span>
+      <ul
+        aria-labelledby="pf-random-id-12"
+        class="pf-c-chip-group__list"
+        role="list"
+      >
+        <li
+          class="pf-c-chip-group__list-item"
+        >
+          <div
+            class="pf-c-chip"
+            data-ouia-component-id="OUIA-Generated-Chip-9"
+            data-ouia-component-type="PF4/Chip"
+            data-ouia-safe="true"
+          >
+            <span
+              class="pf-c-chip__text"
+              id="pf-random-id-13"
+            >
+              1.1
+            </span>
+            <button
+              aria-disabled="false"
+              aria-label="close"
+              aria-labelledby="remove_pf-random-id-13 pf-random-id-13"
+              class="pf-c-button pf-m-plain"
+              data-ouia-component-id="close"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              id="remove_pf-random-id-13"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 352 512"
+                width="1em"
+              >
+                <path
+                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                />
+              </svg>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ChipGroup chip group with closable category 1`] = `
+<DocumentFragment>
+  <div
+    aria-labelledby="pf-random-id-4"
+    class="pf-c-chip-group pf-m-category"
+    data-ouia-component-type="PF4/ChipGroup"
+    data-ouia-safe="true"
+    role="group"
+  >
+    <div
+      class="pf-c-chip-group__main"
+    >
+      <span
+        class="pf-c-chip-group__label"
+        id="pf-random-id-4"
+      >
+        category
+      </span>
+      <ul
+        aria-labelledby="pf-random-id-4"
+        class="pf-c-chip-group__list"
+        role="list"
+      >
+        <li
+          class="pf-c-chip-group__list-item"
+        >
+          <div
+            class="pf-c-chip"
+            data-ouia-component-id="OUIA-Generated-Chip-3"
+            data-ouia-component-type="PF4/Chip"
+            data-ouia-safe="true"
+          >
+            <span
+              class="pf-c-chip__text"
+              id="pf-random-id-5"
+            >
+              1.1
+            </span>
+            <button
+              aria-disabled="false"
+              aria-label="close"
+              aria-labelledby="remove_pf-random-id-5 pf-random-id-5"
+              class="pf-c-button pf-m-plain"
+              data-ouia-component-id="close"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              id="remove_pf-random-id-5"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 352 512"
+                width="1em"
+              >
+                <path
+                  d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                />
+              </svg>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div
+      class="pf-c-chip-group__close"
+    >
+      <button
+        aria-disabled="false"
+        aria-label="Close chip group"
+        aria-labelledby="remove_group_pf-random-id-4 pf-random-id-4"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="Close chip group"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        id="remove_group_pf-random-id-4"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

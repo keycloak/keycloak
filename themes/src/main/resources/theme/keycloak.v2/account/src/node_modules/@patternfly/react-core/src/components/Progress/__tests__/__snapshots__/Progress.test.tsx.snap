@@ -1,0 +1,859 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Progress measure location inside 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-inside pf-m-lg pf-m-singleline"
+    id="inside-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="inside-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    />
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        >
+          33%
+        </span>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress measure location inside and small should render large 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-inside pf-m-lg pf-m-singleline"
+    id="large-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="large-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    />
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        >
+          33%
+        </span>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress measure location none 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="none-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="none-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    />
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress measure location outside 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-outside pf-m-singleline"
+    id="outside-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="outside-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress measure location top 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="top-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="top-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress size lg 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-lg pf-m-singleline"
+    id="lg-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="lg-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress size md 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="md-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="md-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress size sm 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-sm pf-m-singleline"
+    id="sm-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="sm-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress variant danger 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-danger pf-m-singleline"
+    id="danger-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="danger-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+      <span
+        class="pf-c-progress__status-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+          />
+        </svg>
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress variant success 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-success pf-m-singleline"
+    id="success-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="success-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+      <span
+        class="pf-c-progress__status-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+          />
+        </svg>
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress variant warning 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-warning pf-m-singleline"
+    id="warning-progress"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="warning-progress-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+      <span
+        class="pf-c-progress__status-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 576 512"
+          width="1em"
+        >
+          <path
+            d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+          />
+        </svg>
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Progress with aria-valuetext 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="progress-aria-valuetext"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="progress-aria-valuetext-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      aria-valuetext="Descriptive text here"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Simple progress 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="progress-simple-example"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="progress-simple-example-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        33%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`additional label 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="additional-label"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="additional-label-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        Additional label
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 33%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`no value specified 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="no-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="no-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        0%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="0"
+      aria-valuenow="0"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 0%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`value higher than maxValue 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="higher-max-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="higher-max-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        100%
+      </span>
+    </div>
+    <div
+      aria-valuemax="60"
+      aria-valuemin="0"
+      aria-valuenow="77"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 100%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`value lower than minValue 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="lower-min-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="lower-min-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        0%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="40"
+      aria-valuenow="33"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 0%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`value scaled between minValue and maxValue 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="scaled-range-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="scaled-range-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        57%
+      </span>
+    </div>
+    <div
+      aria-valuemax="80"
+      aria-valuemin="10"
+      aria-valuenow="50"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 57%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`value scaled with maxValue 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="scaled-max-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="scaled-max-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        62%
+      </span>
+    </div>
+    <div
+      aria-valuemax="80"
+      aria-valuemin="0"
+      aria-valuenow="50"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 62%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`value scaled with minValue 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-progress pf-m-singleline"
+    id="scaled-min-value"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__description"
+      id="scaled-min-value-description"
+    />
+    <div
+      aria-hidden="true"
+      class="pf-c-progress__status"
+    >
+      <span
+        class="pf-c-progress__measure"
+      >
+        44%
+      </span>
+    </div>
+    <div
+      aria-valuemax="100"
+      aria-valuemin="10"
+      aria-valuenow="50"
+      class="pf-c-progress__bar"
+      role="progressbar"
+    >
+      <div
+        class="pf-c-progress__indicator"
+        style="width: 44%;"
+      >
+        <span
+          class="pf-c-progress__measure"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

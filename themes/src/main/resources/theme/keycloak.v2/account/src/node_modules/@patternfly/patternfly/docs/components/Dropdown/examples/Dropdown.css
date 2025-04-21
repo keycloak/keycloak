@@ -1,0 +1,61 @@
+#ws-core-c-dropdown-badge-toggle,
+#ws-core-c-dropdown-badge-drillup-toggle,
+#ws-core-c-dropdown-expanded,
+#ws-core-c-dropdown-kebab,
+#ws-core-c-dropdown-kebab-align-right,
+#ws-core-c-dropdown-align-right,
+#ws-core-c-dropdown-align-on-different-breakpoint,
+#ws-core-c-dropdown-align-top,
+#ws-core-c-dropdown-primary-toggle,
+#ws-core-c-dropdown-secondary-toggle,
+#ws-core-c-dropdown-menu-item-icons,
+#ws-core-c-dropdown-aria-disabled-items,
+#ws-core-c-dropdown-plain-with-text {
+  min-height: 310px;
+}
+
+#ws-core-c-dropdown-kebab-align-right,
+#ws-core-c-dropdown-align-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+#ws-core-c-dropdown-align-on-different-breakpoint {
+  display: flex;
+  justify-content: center;
+}
+
+#ws-core-c-dropdown-align-top {
+  display: flex;
+  align-items: flex-end;
+}
+
+#ws-core-c-dropdown-with-groups,
+#ws-core-c-dropdown-with-groups-and-dividers-between-groups,
+#ws-core-c-dropdown-with-groups-and-dividers-between-items {
+  min-height: 440px;
+}
+
+#ws-core-c-dropdown-dropdown-with-image-and-text .ws-preview-html {
+  min-height: 19rem;
+}
+
+#ws-core-c-dropdown-split-button-checkbox,
+#ws-core-c-dropdown-split-button-action,
+#ws-core-c-dropdown-split-button-primary-checkbox,
+#ws-core-c-dropdown-split-button-primary-action,
+#ws-core-c-dropdown-split-button-secondary-action {
+  min-height: 210px;
+}
+
+[id^="ws-core-c-dropdown-split-button"] .pf-c-dropdown:not(:last-child) {
+  margin-right: 4px;
+}
+
+#ws-core-c-dropdown-panel {
+  min-height: 130px;
+}
+
+#ws-core-c-dropdown-dropdown-with-description {
+  min-height: 400px;
+}

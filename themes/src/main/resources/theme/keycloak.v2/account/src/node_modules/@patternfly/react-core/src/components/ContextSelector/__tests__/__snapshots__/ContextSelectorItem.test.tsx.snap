@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renders ContextSelectorItem 1`] = `
+<DocumentFragment>
+  <li
+    role="none"
+  >
+    <button
+      class="pf-c-context-selector__menu-list-item"
+    >
+      My Project
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`Renders ContextSelectorItem disabled and hovered 1`] = `
+<DocumentFragment>
+  <li
+    role="none"
+  >
+    <button
+      class="pf-c-context-selector__menu-list-item"
+      disabled=""
+    >
+      My Project
+    </button>
+  </li>
+</DocumentFragment>
+`;

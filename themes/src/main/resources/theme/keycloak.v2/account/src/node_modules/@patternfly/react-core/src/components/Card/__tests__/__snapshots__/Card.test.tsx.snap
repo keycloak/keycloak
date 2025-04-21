@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Card card with isCompact applied  1`] = `
+<DocumentFragment>
+  <article
+    class="pf-c-card pf-m-compact"
+    data-ouia-component-id="OUIA-Generated-Card-7"
+    data-ouia-component-type="PF4/Card"
+    data-ouia-safe="true"
+    id=""
+  />
+</DocumentFragment>
+`;
+
+exports[`Card card with isHoverable applied  1`] = `
+<DocumentFragment>
+  <article
+    class="pf-c-card pf-m-selectable"
+    data-ouia-component-id="OUIA-Generated-Card-6"
+    data-ouia-component-type="PF4/Card"
+    data-ouia-safe="true"
+    id=""
+  />
+</DocumentFragment>
+`;
+
+exports[`Card renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <article
+    class="pf-c-card"
+    data-ouia-component-id="OUIA-Generated-Card-1"
+    data-ouia-component-type="PF4/Card"
+    data-ouia-safe="true"
+    id=""
+  />
+</DocumentFragment>
+`;

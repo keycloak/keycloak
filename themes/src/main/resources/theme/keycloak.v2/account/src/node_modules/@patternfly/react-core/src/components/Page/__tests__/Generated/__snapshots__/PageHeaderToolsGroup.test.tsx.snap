@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PageHeaderToolsGroup should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__header-tools-group string"
+  >
+    <div>
+      ReactNode
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,181 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ContextSelector Renders ContextSelector 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-context-selector"
+    data-ouia-component-id="OUIA-Generated-ContextSelector-1"
+    data-ouia-component-type="PF4/ContextSelector"
+    data-ouia-safe="true"
+  >
+    <button
+      aria-expanded="false"
+      aria-labelledby="pf-context-selector-label-id-0 pf-context-selector-toggle-id-0"
+      class="pf-c-context-selector__toggle"
+      id="pf-context-selector-toggle-id-0"
+      type="button"
+    >
+      <span
+        class="pf-c-context-selector__toggle-text"
+      />
+      <span
+        class="pf-c-context-selector__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ContextSelector Renders ContextSelector open 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-context-selector pf-m-expanded"
+    data-ouia-component-id="OUIA-Generated-ContextSelector-2"
+    data-ouia-component-type="PF4/ContextSelector"
+    data-ouia-safe="true"
+  >
+    <button
+      aria-expanded="true"
+      aria-labelledby="pf-context-selector-label-id-0 pf-context-selector-toggle-id-0"
+      class="pf-c-context-selector__toggle"
+      id="pf-context-selector-toggle-id-0"
+      type="button"
+    >
+      <span
+        class="pf-c-context-selector__toggle-text"
+      />
+      <span
+        class="pf-c-context-selector__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </button>
+    <div
+      class="pf-c-context-selector__menu"
+    >
+      <div>
+        <div
+          class="pf-c-context-selector__menu-search"
+        >
+          <div
+            class="pf-c-input-group"
+          >
+            <input
+              aria-describedby="pf-context-selector-search-button-id-0"
+              aria-invalid="false"
+              aria-labelledby="pf-context-selector-search-button-id-0"
+              class="pf-c-form-control"
+              data-ouia-component-id="OUIA-Generated-TextInputBase-1"
+              data-ouia-component-type="PF4/TextInput"
+              data-ouia-safe="true"
+              placeholder="Search"
+              type="search"
+              value=""
+            />
+            <button
+              aria-disabled="false"
+              aria-label="Search menu items"
+              class="pf-c-button pf-m-control"
+              data-ouia-component-id="OUIA-Generated-Button-control-1"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              id="pf-context-selector-search-button-id-0"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <ul
+          class="pf-c-context-selector__menu-list"
+          role="menu"
+        >
+          <li
+            role="none"
+          >
+            <button
+              class="pf-c-context-selector__menu-list-item"
+            >
+              My Project
+            </button>
+          </li>
+          <li
+            role="none"
+          >
+            <button
+              class="pf-c-context-selector__menu-list-item"
+            >
+              OpenShift Cluster
+            </button>
+          </li>
+          <li
+            role="none"
+          >
+            <button
+              class="pf-c-context-selector__menu-list-item"
+            >
+              Production Ansible
+            </button>
+          </li>
+          <li
+            role="none"
+          >
+            <button
+              class="pf-c-context-selector__menu-list-item"
+            >
+              AWS
+            </button>
+          </li>
+          <li
+            role="none"
+          >
+            <button
+              class="pf-c-context-selector__menu-list-item"
+            >
+              Azure
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

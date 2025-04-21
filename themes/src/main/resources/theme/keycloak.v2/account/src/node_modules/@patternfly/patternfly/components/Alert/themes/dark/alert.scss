@@ -1,0 +1,17 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-alert() {
+  .pf-c-alert {
+    --pf-c-alert--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-alert__title--Color: var(--pf-global--default-color--200);
+    --pf-c-alert--m-success__title--Color: var(--pf-global--success-color--100);
+    --pf-c-alert--m-danger__title--Color: var(--pf-global--danger-color--100);
+    --pf-c-alert--m-warning__title--Color: var(--pf-global--warning-color--100);
+    --pf-c-alert--m-info__title--Color: var(--pf-global--info-color--100);
+    --pf-c-alert--m-inline--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-alert--m-inline--m-success--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-alert--m-inline--m-danger--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-alert--m-inline--m-warning--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-alert--m-inline--m-info--BackgroundColor: var(--pf-global--palette--black-600);
+  }
+}

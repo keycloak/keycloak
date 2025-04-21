@@ -1,0 +1,402 @@
+.pf-c-divider {
+  --pf-hidden-visible--visible--Visibility: visible;
+  --pf-hidden-visible--hidden--Display: none;
+  --pf-hidden-visible--hidden--Visibility: hidden;
+  --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+  --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  display: var(--pf-hidden-visible--Display);
+  visibility: var(--pf-hidden-visible--Visibility);
+}
+.pf-m-hidden.pf-c-divider {
+  --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+  --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+}
+@media screen and (min-width: 576px) {
+  .pf-m-hidden-on-sm.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+  .pf-m-visible-on-sm.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  }
+}
+@media screen and (min-width: 768px) {
+  .pf-m-hidden-on-md.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+  .pf-m-visible-on-md.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  }
+}
+@media screen and (min-width: 992px) {
+  .pf-m-hidden-on-lg.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+  .pf-m-visible-on-lg.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  }
+}
+@media screen and (min-width: 1200px) {
+  .pf-m-hidden-on-xl.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+  .pf-m-visible-on-xl.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  }
+}
+@media screen and (min-width: 1450px) {
+  .pf-m-hidden-on-2xl.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+  .pf-m-visible-on-2xl.pf-c-divider {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  }
+}
+
+.pf-c-divider {
+  --pf-c-divider--BorderWidth--base: var(--pf-global--BorderWidth--sm);
+  --pf-c-divider--BorderColor--base: var(--pf-c-divider--BackgroundColor);
+  --pf-c-divider--Height: var(--pf-c-divider--BorderWidth--base);
+  --pf-c-divider--BackgroundColor: var(--pf-global--BorderColor--100);
+  --pf-c-divider--after--BackgroundColor: var(--pf-c-divider--BorderColor--base);
+  --pf-c-divider--after--FlexBasis: 100%;
+  --pf-c-divider--after--Inset: 0%;
+  --pf-c-divider--m-vertical--after--FlexBasis: 100%;
+  --pf-c-divider--m-horizontal--Display: flex;
+  --pf-c-divider--m-horizontal--FlexDirection: row;
+  --pf-c-divider--m-horizontal--after--Height: var(--pf-c-divider--Height);
+  --pf-c-divider--m-horizontal--after--Width: auto;
+  --pf-c-divider--m-vertical--Display: inline-flex;
+  --pf-c-divider--m-vertical--FlexDirection: column;
+  --pf-c-divider--m-vertical--after--Height: auto;
+  --pf-c-divider--m-vertical--after--Width: var(--pf-c-divider--BorderWidth--base);
+  --pf-hidden-visible--visible--Display: var(--pf-c-divider--Display);
+  --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+  --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+  --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+  --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+  width: 100%;
+  height: auto;
+  display: var(--pf-c-divider--Display);
+  flex-direction: var(--pf-c-divider--FlexDirection);
+  align-items: center;
+  align-self: stretch;
+  flex-shrink: 0;
+  justify-content: center;
+  border: 0;
+}
+.pf-c-divider::after {
+  flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+}
+.pf-c-divider::after {
+  align-self: stretch;
+  width: var(--pf-c-divider--after--Width);
+  height: var(--pf-c-divider--after--Height);
+  content: "";
+  background-color: var(--pf-c-divider--after--BackgroundColor);
+  justify-self: center;
+}
+.pf-c-divider.pf-m-vertical {
+  --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+  --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+  --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+  --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+  width: auto;
+  height: inherit;
+}
+.pf-c-divider.pf-m-vertical::after {
+  flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+}
+.pf-c-divider.pf-m-inset-none {
+  --pf-c-divider--after--Inset: 0%;
+}
+.pf-c-divider.pf-m-inset-xs {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+}
+.pf-c-divider.pf-m-inset-sm {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+}
+.pf-c-divider.pf-m-inset-md {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+}
+.pf-c-divider.pf-m-inset-lg {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+}
+.pf-c-divider.pf-m-inset-xl {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+}
+.pf-c-divider.pf-m-inset-2xl {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+}
+.pf-c-divider.pf-m-inset-3xl {
+  --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+}
+@media (min-width: 576px) {
+  .pf-c-divider.pf-m-horizontal-on-sm {
+    --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+    width: 100%;
+    height: auto;
+  }
+  .pf-c-divider.pf-m-horizontal-on-sm::after {
+    flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+  }
+}
+@media (min-width: 576px) {
+  .pf-c-divider.pf-m-vertical-on-sm {
+    --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+    width: auto;
+    height: inherit;
+  }
+  .pf-c-divider.pf-m-vertical-on-sm::after {
+    flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+  }
+}
+@media (min-width: 576px) {
+  .pf-c-divider.pf-m-inset-none-on-sm {
+    --pf-c-divider--after--Inset: 0%;
+  }
+  .pf-c-divider.pf-m-inset-xs-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+  }
+  .pf-c-divider.pf-m-inset-sm-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+  }
+  .pf-c-divider.pf-m-inset-md-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+  }
+  .pf-c-divider.pf-m-inset-lg-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+  }
+  .pf-c-divider.pf-m-inset-xl-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+  }
+  .pf-c-divider.pf-m-inset-2xl-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+  }
+  .pf-c-divider.pf-m-inset-3xl-on-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-divider.pf-m-horizontal-on-md {
+    --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+    width: 100%;
+    height: auto;
+  }
+  .pf-c-divider.pf-m-horizontal-on-md::after {
+    flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-divider.pf-m-vertical-on-md {
+    --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+    width: auto;
+    height: inherit;
+  }
+  .pf-c-divider.pf-m-vertical-on-md::after {
+    flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-divider.pf-m-inset-none-on-md {
+    --pf-c-divider--after--Inset: 0%;
+  }
+  .pf-c-divider.pf-m-inset-xs-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+  }
+  .pf-c-divider.pf-m-inset-sm-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+  }
+  .pf-c-divider.pf-m-inset-md-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+  }
+  .pf-c-divider.pf-m-inset-lg-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+  }
+  .pf-c-divider.pf-m-inset-xl-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+  }
+  .pf-c-divider.pf-m-inset-2xl-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+  }
+  .pf-c-divider.pf-m-inset-3xl-on-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-divider.pf-m-horizontal-on-lg {
+    --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+    width: 100%;
+    height: auto;
+  }
+  .pf-c-divider.pf-m-horizontal-on-lg::after {
+    flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-divider.pf-m-vertical-on-lg {
+    --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+    width: auto;
+    height: inherit;
+  }
+  .pf-c-divider.pf-m-vertical-on-lg::after {
+    flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-divider.pf-m-inset-none-on-lg {
+    --pf-c-divider--after--Inset: 0%;
+  }
+  .pf-c-divider.pf-m-inset-xs-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+  }
+  .pf-c-divider.pf-m-inset-sm-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+  }
+  .pf-c-divider.pf-m-inset-md-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+  }
+  .pf-c-divider.pf-m-inset-lg-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+  }
+  .pf-c-divider.pf-m-inset-xl-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+  }
+  .pf-c-divider.pf-m-inset-2xl-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+  }
+  .pf-c-divider.pf-m-inset-3xl-on-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-divider.pf-m-horizontal-on-xl {
+    --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+    width: 100%;
+    height: auto;
+  }
+  .pf-c-divider.pf-m-horizontal-on-xl::after {
+    flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-divider.pf-m-vertical-on-xl {
+    --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+    width: auto;
+    height: inherit;
+  }
+  .pf-c-divider.pf-m-vertical-on-xl::after {
+    flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-divider.pf-m-inset-none-on-xl {
+    --pf-c-divider--after--Inset: 0%;
+  }
+  .pf-c-divider.pf-m-inset-xs-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+  }
+  .pf-c-divider.pf-m-inset-sm-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+  }
+  .pf-c-divider.pf-m-inset-md-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+  }
+  .pf-c-divider.pf-m-inset-lg-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+  }
+  .pf-c-divider.pf-m-inset-xl-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+  }
+  .pf-c-divider.pf-m-inset-2xl-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+  }
+  .pf-c-divider.pf-m-inset-3xl-on-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-divider.pf-m-horizontal-on-2xl {
+    --pf-c-divider--Display: var(--pf-c-divider--m-horizontal--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-horizontal--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-horizontal--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-horizontal--after--Height);
+    width: 100%;
+    height: auto;
+  }
+  .pf-c-divider.pf-m-horizontal-on-2xl::after {
+    flex-basis: calc( var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2) );
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-divider.pf-m-vertical-on-2xl {
+    --pf-c-divider--Display: var(--pf-c-divider--m-vertical--Display);
+    --pf-c-divider--FlexDirection: var(--pf-c-divider--m-vertical--FlexDirection);
+    --pf-c-divider--after--Width: var(--pf-c-divider--m-vertical--after--Width);
+    --pf-c-divider--after--Height: var(--pf-c-divider--m-vertical--after--Height);
+    width: auto;
+    height: inherit;
+  }
+  .pf-c-divider.pf-m-vertical-on-2xl::after {
+    flex-basis: calc( var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset) );
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-divider.pf-m-inset-none-on-2xl {
+    --pf-c-divider--after--Inset: 0%;
+  }
+  .pf-c-divider.pf-m-inset-xs-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs);
+  }
+  .pf-c-divider.pf-m-inset-sm-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm);
+  }
+  .pf-c-divider.pf-m-inset-md-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md);
+  }
+  .pf-c-divider.pf-m-inset-lg-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg);
+  }
+  .pf-c-divider.pf-m-inset-xl-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl);
+  }
+  .pf-c-divider.pf-m-inset-2xl-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl);
+  }
+  .pf-c-divider.pf-m-inset-3xl-on-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl);
+  }
+}

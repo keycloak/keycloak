@@ -1,0 +1,199 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Tile basic 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tile"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header"
+    >
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders disabled 1`] = `
+<DocumentFragment>
+  <div
+    aria-disabled="true"
+    class="pf-c-tile pf-m-disabled"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header"
+    >
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders selected 1`] = `
+<DocumentFragment>
+  <div
+    aria-selected="true"
+    class="pf-c-tile pf-m-selected"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header"
+    >
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders with icon 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tile"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header"
+    >
+      <div
+        class="pf-c-tile__icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 448 512"
+          width="1em"
+        >
+          <path
+            d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+          />
+        </svg>
+      </div>
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders with stacked icon 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tile"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header pf-m-stacked"
+    >
+      <div
+        class="pf-c-tile__icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 448 512"
+          width="1em"
+        >
+          <path
+            d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+          />
+        </svg>
+      </div>
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders with stacked large icon 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tile pf-m-display-lg"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header pf-m-stacked"
+    >
+      <div
+        class="pf-c-tile__icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 448 512"
+          width="1em"
+        >
+          <path
+            d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"
+          />
+        </svg>
+      </div>
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Tile renders with subtext 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-tile"
+    role="option"
+    tabindex="0"
+  >
+    <div
+      class="pf-c-tile__header"
+    >
+      <div
+        class="pf-c-tile__title"
+      >
+        test
+      </div>
+    </div>
+    <div
+      class="pf-c-tile__body"
+    >
+      test subtext
+    </div>
+  </div>
+</DocumentFragment>
+`;

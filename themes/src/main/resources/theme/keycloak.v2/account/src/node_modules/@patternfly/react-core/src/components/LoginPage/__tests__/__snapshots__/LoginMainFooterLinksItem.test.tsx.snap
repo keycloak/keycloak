@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginMainFooterLinksItem className is added to the root element 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-login__main-footer-links-item extra-class"
+  >
+    <a
+      class="pf-c-login__main-footer-links-item-link"
+      href=""
+      target=""
+    />
+  </li>
+</DocumentFragment>
+`;
+
+exports[`LoginMainFooterLinksItem renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-login__main-footer-links-item"
+  >
+    <a
+      class="pf-c-login__main-footer-links-item-link"
+      href="#"
+      target=""
+    />
+  </li>
+</DocumentFragment>
+`;
+
+exports[`LoginMainFooterLinksItem with custom node 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-login__main-footer-links-item"
+  >
+    <a
+      class="pf-c-login__main-footer-links-item-link"
+      href=""
+      target=""
+    >
+      <div>
+        My custom node
+      </div>
+    </a>
+  </li>
+</DocumentFragment>
+`;

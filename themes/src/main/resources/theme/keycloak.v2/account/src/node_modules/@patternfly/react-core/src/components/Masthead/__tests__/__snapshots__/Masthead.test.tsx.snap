@@ -1,0 +1,245 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Masthead verify basic 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify custom class 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md custom-css"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify full structure 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md"
+  >
+    <span
+      class="pf-c-masthead__toggle"
+    >
+      Toggle
+    </span>
+    <div
+      class="pf-c-masthead__main"
+    >
+      <a
+        class="pf-c-masthead__brand"
+        tabindex="0"
+      >
+        Logo
+      </a>
+    </div>
+    <div
+      class="pf-c-masthead__content"
+    >
+      <span>
+        Content
+      </span>
+    </div>
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify inline display breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline pf-m-display-inline-on-sm pf-m-display-inline-on-md pf-m-display-inline-on-lg pf-m-display-inline-on-xl pf-m-display-inline-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify inset2xl inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-2xl pf-m-inset-2xl-on-sm pf-m-inset-2xl-on-md pf-m-inset-2xl-on-lg pf-m-inset-2xl-on-xl pf-m-inset-2xl-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify inset3xl inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetLg inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-lg pf-m-inset-lg-on-sm pf-m-inset-lg-on-md pf-m-inset-lg-on-lg pf-m-inset-lg-on-xl pf-m-inset-lg-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetMd inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-md pf-m-inset-md-on-sm pf-m-inset-md-on-md pf-m-inset-md-on-lg pf-m-inset-md-on-xl pf-m-inset-md-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetNone inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-none pf-m-inset-none-on-sm pf-m-inset-none-on-md pf-m-inset-none-on-lg pf-m-inset-none-on-xl pf-m-inset-none-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetSm inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-sm pf-m-inset-sm-on-sm pf-m-inset-sm-on-md pf-m-inset-sm-on-lg pf-m-inset-sm-on-xl pf-m-inset-sm-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetXl inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md pf-m-inset-xl pf-m-inset-xl-on-sm pf-m-inset-xl-on-md pf-m-inset-xl-on-lg pf-m-inset-xl-on-xl pf-m-inset-xl-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify insetXs inset breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-inline-on-md"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Masthead verify stack display breakpoints 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-masthead pf-m-display-stack pf-m-display-stack-on-sm pf-m-display-stack-on-md pf-m-display-stack-on-lg pf-m-display-stack-on-xl pf-m-display-stack-on-2xl"
+  >
+    test
+  </header>
+</DocumentFragment>
+`;
+
+exports[`MastheadBrand verify basic 1`] = `
+<DocumentFragment>
+  <a
+    class="pf-c-masthead__brand"
+    tabindex="0"
+  >
+    test
+  </a>
+</DocumentFragment>
+`;
+
+exports[`MastheadBrand verify custom class 1`] = `
+<DocumentFragment>
+  <a
+    class="pf-c-masthead__brand custom-css"
+    tabindex="0"
+  >
+    test
+  </a>
+</DocumentFragment>
+`;
+
+exports[`MastheadBrand verify custom component 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-masthead__brand"
+    tabindex="0"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MastheadContent verify basic 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-masthead__content"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MastheadContent verify custom class 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-masthead__content custom-css"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MastheadMain verify basic 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-masthead__main"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MastheadMain verify custom class 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-masthead__main custom-css"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MastheadToggle verify basic 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-masthead__toggle"
+  >
+    test
+  </span>
+</DocumentFragment>
+`;
+
+exports[`MastheadToggle verify custom class 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-masthead__toggle custom-css"
+  >
+    test
+  </span>
+</DocumentFragment>
+`;

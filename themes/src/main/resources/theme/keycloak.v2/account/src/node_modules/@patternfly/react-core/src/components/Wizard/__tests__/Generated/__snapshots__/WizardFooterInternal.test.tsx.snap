@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardFooterInternal should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <footer
+    class="pf-c-wizard__footer"
+  >
+    <button
+      aria-disabled="false"
+      class="pf-c-button pf-m-primary"
+      data-ouia-component-id="OUIA-Generated-Button-primary-1"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="submit"
+    >
+      <div>
+        ReactNode
+      </div>
+    </button>
+    <button
+      aria-disabled="true"
+      class="pf-c-button pf-m-secondary pf-m-disabled"
+      data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      disabled=""
+      type="button"
+    >
+      <div>
+        ReactNode
+      </div>
+    </button>
+    <div
+      class="pf-c-wizard__footer-cancel"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link"
+        data-ouia-component-id="OUIA-Generated-Button-link-1"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <div>
+          ReactNode
+        </div>
+      </button>
+    </div>
+  </footer>
+</DocumentFragment>
+`;

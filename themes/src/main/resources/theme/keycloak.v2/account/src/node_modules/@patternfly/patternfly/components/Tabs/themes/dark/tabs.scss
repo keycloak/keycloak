@@ -1,0 +1,9 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-tabs() {
+  .pf-c-tabs {
+    --pf-c-tabs__scroll-button--BackgroundColor: transparent;
+    --pf-c-tabs__link--disabled--BackgroundColor: var(--pf-global--disabled-color--200);
+    --pf-c-tabs--m-color-scheme--light-300__link--disabled--BackgroundColor: var(--pf-global--disabled-color--200);
+  }
+}

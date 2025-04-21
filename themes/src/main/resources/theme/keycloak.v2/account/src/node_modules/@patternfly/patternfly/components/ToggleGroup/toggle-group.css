@@ -1,0 +1,111 @@
+.pf-c-toggle-group {
+  --pf-c-toggle-group__button--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-toggle-group__button--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-toggle-group__button--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-toggle-group__button--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-toggle-group__button--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-toggle-group__button--LineHeight: calc(var(--pf-global--FontSize--md) * var(--pf-global--LineHeight--md));
+  --pf-c-toggle-group__button--Color: var(--pf-global--Color--100);
+  --pf-c-toggle-group__button--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-toggle-group__button--ZIndex: auto;
+  --pf-c-toggle-group__button--hover--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-toggle-group__button--hover--ZIndex: var(--pf-global--ZIndex--xs);
+  --pf-c-toggle-group__button--hover--before--BorderColor: var(--pf-global--BorderColor--200);
+  --pf-c-toggle-group__button--focus--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-toggle-group__button--focus--ZIndex: var(--pf-global--ZIndex--xs);
+  --pf-c-toggle-group__button--focus--before--BorderColor: var(--pf-global--BorderColor--200);
+  --pf-c-toggle-group__button--disabled--BackgroundColor: var(--pf-global--disabled-color--200);
+  --pf-c-toggle-group__button--disabled--Color: var(--pf-global--disabled-color--100);
+  --pf-c-toggle-group__button--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-toggle-group__button--before--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-toggle-group__item--item--MarginLeft: calc(-1 * var(--pf-global--BorderWidth--sm));
+  --pf-c-toggle-group__item--first-child__button--BorderTopLeftRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-toggle-group__item--first-child__button--BorderBottomLeftRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-toggle-group__item--last-child__button--BorderTopRightRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-toggle-group__item--last-child__button--BorderBottomRightRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-toggle-group__icon--text--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-toggle-group__button--m-selected--BackgroundColor: var(--pf-global--palette--blue-50);
+  --pf-c-toggle-group__button--m-selected--before--BorderColor: var(--pf-global--primary-color--100);
+  --pf-c-toggle-group__button--m-selected--ZIndex: var(--pf-global--ZIndex--xs);
+  --pf-c-toggle-group--m-compact__button--PaddingTop: 0;
+  --pf-c-toggle-group--m-compact__button--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-toggle-group--m-compact__button--PaddingBottom: 0;
+  --pf-c-toggle-group--m-compact__button--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-toggle-group--m-compact__button--FontSize: var(--pf-global--FontSize--xs);
+  display: flex;
+}
+.pf-c-toggle-group.pf-m-compact {
+  --pf-c-toggle-group__button--PaddingTop: var(--pf-c-toggle-group--m-compact__button--PaddingTop);
+  --pf-c-toggle-group__button--PaddingRight: var(--pf-c-toggle-group--m-compact__button--PaddingRight);
+  --pf-c-toggle-group__button--PaddingBottom: var(--pf-c-toggle-group--m-compact__button--PaddingBottom);
+  --pf-c-toggle-group__button--PaddingLeft: var(--pf-c-toggle-group--m-compact__button--PaddingLeft);
+  --pf-c-toggle-group__button--FontSize: var(--pf-c-toggle-group--m-compact__button--FontSize);
+}
+
+.pf-c-toggle-group__item + .pf-c-toggle-group__item {
+  margin-left: var(--pf-c-toggle-group__item--item--MarginLeft);
+}
+.pf-c-toggle-group__item:first-child .pf-c-toggle-group__button, .pf-c-toggle-group__item:first-child .pf-c-toggle-group__button::before {
+  border-top-left-radius: var(--pf-c-toggle-group__item--first-child__button--BorderTopLeftRadius);
+  border-bottom-left-radius: var(--pf-c-toggle-group__item--first-child__button--BorderBottomLeftRadius);
+}
+.pf-c-toggle-group__item:last-child .pf-c-toggle-group__button, .pf-c-toggle-group__item:last-child .pf-c-toggle-group__button::before {
+  border-top-right-radius: var(--pf-c-toggle-group__item--last-child__button--BorderTopRightRadius);
+  border-bottom-right-radius: var(--pf-c-toggle-group__item--last-child__button--BorderBottomRightRadius);
+}
+
+.pf-c-toggle-group__button {
+  position: relative;
+  z-index: var(--pf-c-toggle-group__button--ZIndex);
+  display: inline-flex;
+  padding: var(--pf-c-toggle-group__button--PaddingTop) var(--pf-c-toggle-group__button--PaddingRight) var(--pf-c-toggle-group__button--PaddingBottom) var(--pf-c-toggle-group__button--PaddingLeft);
+  font-size: var(--pf-c-toggle-group__button--FontSize);
+  line-height: var(--pf-c-toggle-group__button--LineHeight);
+  color: var(--pf-c-toggle-group__button--Color);
+  background-color: var(--pf-c-toggle-group__button--BackgroundColor);
+  border: 0;
+}
+.pf-c-toggle-group__button::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  content: "";
+  border: var(--pf-c-toggle-group__button--before--BorderWidth) solid var(--pf-c-toggle-group__button--before--BorderColor);
+}
+.pf-c-toggle-group__button:hover {
+  --pf-c-toggle-group__button--BackgroundColor: var(--pf-c-toggle-group__button--hover--BackgroundColor);
+  --pf-c-toggle-group__button--ZIndex: var(--pf-c-toggle-group__button--hover--ZIndex);
+  --pf-c-toggle-group__button--before--BorderColor: var(--pf-c-toggle-group__button--hover--before--BorderColor);
+  text-decoration: none;
+}
+.pf-c-toggle-group__button:focus {
+  --pf-c-toggle-group__button--BackgroundColor: var(--pf-c-toggle-group__button--focus--BackgroundColor);
+  --pf-c-toggle-group__button--ZIndex: var(--pf-c-toggle-group__button--focus--ZIndex);
+  --pf-c-toggle-group__button--before--BorderColor: var(--pf-c-toggle-group__button--focus--before--BorderColor);
+}
+.pf-c-toggle-group__button.pf-m-selected {
+  --pf-c-toggle-group__button--BackgroundColor: var(--pf-c-toggle-group__button--m-selected--BackgroundColor);
+  --pf-c-toggle-group__button--ZIndex: var(--pf-c-toggle-group__button--m-selected--ZIndex);
+  --pf-c-toggle-group__button--before--BorderColor: var(--pf-c-toggle-group__button--m-selected--before--BorderColor);
+}
+.pf-c-toggle-group__button:disabled, .pf-c-toggle-group__button.pf-m-disabled {
+  --pf-c-toggle-group__button--BackgroundColor: var(--pf-c-toggle-group__button--disabled--BackgroundColor);
+  --pf-c-toggle-group__button--Color: var(--pf-c-toggle-group__button--disabled--Color);
+  pointer-events: none;
+}
+
+.pf-c-toggle-group__icon + .pf-c-toggle-group__text,
+.pf-c-toggle-group__text + .pf-c-toggle-group__icon {
+  margin-left: var(--pf-c-toggle-group__icon--text--MarginLeft);
+}
+
+:where(.pf-theme-dark) .pf-c-toggle-group {
+  --pf-c-toggle-group__button--hover--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-toggle-group__button--focus--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-toggle-group__button--disabled--BackgroundColor: var(--pf-global--palette--black-600);
+  --pf-c-toggle-group__button--disabled--Color: var(--pf-global--palette--black-100);
+  --pf-c-toggle-group__button--m-selected--BackgroundColor: var(--pf-global--primary-color--300);
+}

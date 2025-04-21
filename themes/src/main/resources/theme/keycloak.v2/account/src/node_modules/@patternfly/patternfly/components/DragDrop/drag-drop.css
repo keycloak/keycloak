@@ -1,0 +1,55 @@
+.pf-c-draggable {
+  --pf-c-draggable--Cursor: auto;
+  --pf-c-draggable--m-dragging--Cursor: grabbing;
+  --pf-c-draggable--m-dragging--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-draggable--m-dragging--after--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-draggable--m-dragging--after--BorderColor: var(--pf-global--active-color--100);
+  --pf-c-draggable--m-drag-outside--Cursor: not-allowed;
+  --pf-c-draggable--m-drag-outside--after--BorderColor: var(--pf-global--danger-color--100);
+  cursor: var(--pf-c-draggable--Cursor);
+}
+.pf-c-draggable.pf-m-dragging {
+  --pf-c-draggable--Cursor: var(--pf-c-draggable--m-dragging--Cursor);
+  position: relative;
+  background-color: var(--pf-c-draggable--m-dragging--BackgroundColor);
+  box-shadow: var(--pf-c-draggable--m-dragging--BoxShadow);
+}
+.pf-c-draggable.pf-m-dragging::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  content: "";
+  border: var(--pf-c-draggable--m-dragging--after--BorderWidth) solid var(--pf-c-draggable--m-dragging--after--BorderColor);
+}
+.pf-c-draggable.pf-m-drag-outside {
+  --pf-c-draggable--m-dragging--Cursor: var(--pf-c-draggable--m-drag-outside--Cursor);
+  --pf-c-draggable--m-dragging--after--BorderColor: var(--pf-c-draggable--m-drag-outside--after--BorderColor);
+}
+
+.pf-c-droppable {
+  --pf-c-droppable--m-dragging--after--BackgroundColor: rgba(255, 255, 255, 0.6);
+  --pf-c-droppable--m-dragging--after--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-droppable--m-dragging--after--BorderColor: var(--pf-global--active-color--100);
+  --pf-c-droppable--m-drag-outside--after--BorderColor: var(--pf-global--danger-color--100);
+}
+.pf-c-droppable.pf-m-dragging {
+  position: relative;
+}
+.pf-c-droppable.pf-m-dragging::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  content: "";
+}
+.pf-c-droppable::after {
+  background-color: var(--pf-c-droppable--m-dragging--after--BackgroundColor);
+  border: var(--pf-c-droppable--m-dragging--after--BorderWidth) solid var(--pf-c-droppable--m-dragging--after--BorderColor);
+}
+.pf-c-droppable.pf-m-drag-outside {
+  --pf-c-droppable--m-dragging--after--BorderColor: var(--pf-c-droppable--m-drag-outside--after--BorderColor);
+}

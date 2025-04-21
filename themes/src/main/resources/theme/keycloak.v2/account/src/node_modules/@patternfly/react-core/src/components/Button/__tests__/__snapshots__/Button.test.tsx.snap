@@ -1,0 +1,384 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Button aria-disabled is set to true and tabIndex to -1 if component is not a button and is disabled 1`] = `
+<DocumentFragment>
+  <a
+    aria-disabled="true"
+    class="pf-c-button pf-m-primary pf-m-disabled"
+    data-ouia-component-id="OUIA-Generated-Button-primary-12"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    tabindex="-1"
+  >
+    Disabled Anchor Button
+  </a>
+</DocumentFragment>
+`;
+
+exports[`Button control button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="control"
+    class="pf-c-button pf-m-control"
+    data-ouia-component-id="OUIA-Generated-Button-control-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    control Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button danger button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="danger"
+    class="pf-c-button pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Button-danger-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    danger Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isAriaDisabled button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="true"
+    class="pf-c-button pf-m-primary pf-m-aria-disabled"
+    data-ouia-component-id="OUIA-Generated-Button-primary-5"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Disabled yet focusable button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isAriaDisabled link button 1`] = `
+<DocumentFragment>
+  <a
+    aria-disabled="true"
+    class="pf-c-button pf-m-primary pf-m-aria-disabled"
+    data-ouia-component-id="OUIA-Generated-Button-primary-6"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+  >
+    Disabled yet focusable button
+  </a>
+</DocumentFragment>
+`;
+
+exports[`Button isBlock 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-primary pf-m-block"
+    data-ouia-component-id="OUIA-Generated-Button-primary-3"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Block Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isDanger link 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-link pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Button-link-3"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Disabled Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isDanger secondary 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-secondary pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Button-secondary-2"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Disabled Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isDisabled 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="true"
+    class="pf-c-button pf-m-primary pf-m-disabled"
+    data-ouia-component-id="OUIA-Generated-Button-primary-4"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    disabled=""
+    type="button"
+  >
+    Disabled Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isInline 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-link pf-m-inline"
+    data-ouia-component-id="OUIA-Generated-Button-link-4"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Hovered Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isLarge 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-primary pf-m-display-lg"
+    data-ouia-component-id="OUIA-Generated-Button-primary-8"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Large Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isLoading 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-primary pf-m-progress pf-m-in-progress"
+    data-ouia-component-id="OUIA-Generated-Button-primary-9"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    <span
+      class="pf-c-button__progress"
+    >
+      <span
+        aria-label="Contents"
+        aria-valuetext="Loading"
+        class="pf-c-spinner pf-m-md"
+        role="progressbar"
+      >
+        <span
+          class="pf-c-spinner__clipper"
+        />
+        <span
+          class="pf-c-spinner__lead-ball"
+        />
+        <span
+          class="pf-c-spinner__tail-ball"
+        />
+      </span>
+    </span>
+    Loading Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isLoading icon only 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="Upload"
+    class="pf-c-button pf-m-plain pf-m-in-progress"
+    data-ouia-component-id="OUIA-Generated-Button-plain-2"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    <span
+      class="pf-c-button__progress"
+    >
+      <span
+        aria-label="Contents"
+        aria-valuetext="Loading"
+        class="pf-c-spinner pf-m-md"
+        role="progressbar"
+      >
+        <span
+          class="pf-c-spinner__clipper"
+        />
+        <span
+          class="pf-c-spinner__lead-ball"
+        />
+        <span
+          class="pf-c-spinner__tail-ball"
+        />
+      </span>
+    </span>
+    <div>
+      ICON
+    </div>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button isSmall 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-primary pf-m-small"
+    data-ouia-component-id="OUIA-Generated-Button-primary-7"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    Small Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button link button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="link"
+    class="pf-c-button pf-m-link"
+    data-ouia-component-id="OUIA-Generated-Button-link-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    link Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button link with icon 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-link"
+    data-ouia-component-id="OUIA-Generated-Button-link-2"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    <span
+      class="pf-c-button__icon pf-m-start"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M504.717 320H211.572l6.545 32h268.418c15.401 0 26.816 14.301 23.403 29.319l-5.517 24.276C523.112 414.668 536 433.828 536 456c0 31.202-25.519 56.444-56.824 55.994-29.823-.429-54.35-24.631-55.155-54.447-.44-16.287 6.085-31.049 16.803-41.548H231.176C241.553 426.165 248 440.326 248 456c0 31.813-26.528 57.431-58.67 55.938-28.54-1.325-51.751-24.385-53.251-52.917-1.158-22.034 10.436-41.455 28.051-51.586L93.883 64H24C10.745 64 0 53.255 0 40V24C0 10.745 10.745 0 24 0h102.529c11.401 0 21.228 8.021 23.513 19.19L159.208 64H551.99c15.401 0 26.816 14.301 23.403 29.319l-47.273 208C525.637 312.246 515.923 320 504.717 320zM403.029 192H360v-60c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v60h-43.029c-10.691 0-16.045 12.926-8.485 20.485l67.029 67.029c4.686 4.686 12.284 4.686 16.971 0l67.029-67.029c7.559-7.559 2.205-20.485-8.486-20.485z"
+        />
+      </svg>
+    </span>
+    Block Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button plain button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="plain"
+    class="pf-c-button pf-m-plain"
+    data-ouia-component-id="OUIA-Generated-Button-plain-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    plain Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button primary button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="primary"
+    class="pf-c-button pf-m-primary"
+    data-ouia-component-id="OUIA-Generated-Button-primary-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    primary Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button secondary button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="secondary"
+    class="pf-c-button pf-m-secondary"
+    data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    secondary Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button tertiary button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="tertiary"
+    class="pf-c-button pf-m-tertiary"
+    data-ouia-component-id="OUIA-Generated-Button-tertiary-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    tertiary Button
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button warning button 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    aria-label="warning"
+    class="pf-c-button pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Button-warning-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    warning Button
+  </button>
+</DocumentFragment>
+`;

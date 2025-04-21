@@ -1,0 +1,58 @@
+// stylelint-disable
+
+// Background color options
+$pf-u-background-color-options: (
+  background-color-100: (
+    background-color var(--pf-global--BackgroundColor--100)
+  ),
+  background-color-200: (
+    background-color var(--pf-global--BackgroundColor--200)
+  ),
+  background-color-active-color-100: (
+    background-color var(--pf-global--active-color--100)
+  ),
+  background-color-active-color-300: (
+    background-color var(--pf-global--active-color--300)
+  ),
+  background-color-primary-color-200: (
+    background-color var(--pf-global--primary-color--200)
+  ),
+  background-color-dark-100: (
+    background-color var(--pf-global--BackgroundColor--dark-100)
+  ),
+  background-color-dark-200: (
+    background-color var(--pf-global--BackgroundColor--dark-200)
+  ),
+  background-color-dark-300: (
+    background-color var(--pf-global--BackgroundColor--dark-300)
+  ),
+  background-color-dark-400: (
+    background-color var(--pf-global--BackgroundColor--dark-400)
+  ),
+  background-color-disabled-color-200: (
+    background-color var(--pf-global--disabled-color--200)
+  ),
+  background-color-disabled-color-300: (
+    background-color var(--pf-global--disabled-color--300)
+  ),
+  background-color-default: (
+    background-color var(--pf-global--palette--cyan-50)
+  ),
+  background-color-success: (
+    background-color var(--pf-global--palette--green-50)
+  ),
+  background-color-info: (
+    background-color var(--pf-global--palette--blue-50)
+  ),
+  background-color-warning: (
+    background-color var(--pf-global--palette--gold-50)
+  ),
+  background-color-danger: (
+    background-color var(--pf-global--palette--red-50)
+  )
+);
+
+@include pf-utility-builder($pf-u-background-color-options, $pf-global--breakpoint-list);
+
+// stylelint-enable
+

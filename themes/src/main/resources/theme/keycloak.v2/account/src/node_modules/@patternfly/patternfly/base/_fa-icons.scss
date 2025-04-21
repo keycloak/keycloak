@@ -1,0 +1,34 @@
+// Font Awesome 5 icons https://fontawesome.com
+%pf-fa-local {
+  @import "../assets/fontawesome/fontawesome";
+}
+
+@if not($pf-global--disable-fontawesome) {
+  @if $pf-global--enable-fontawesome-cdn {
+    // stylelint-disable no-invalid-position-at-import-rule
+    @import url("https://use.fontawesome.com/releases/v5.7.2/css/solid.css");
+    @import url("https://use.fontawesome.com/releases/v5.7.2/css/fontawesome.css");
+    // stylelint-enable no-invalid-position-at-import-rule
+  } @else {
+    @font-face {
+      font-family: "Font Awesome 5 Free";
+      font-style: normal;
+      font-weight: 900;
+      src:
+        url("#{$fa-font-path}/fa-solid-900.woff2") format("woff2"),
+        url("#{$fa-font-path}/fa-solid-900.woff") format("woff");
+    }
+
+    // stylelint-disable
+    .fa,
+    .fas {
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+    }
+    // stylelint-enable
+
+    * {
+      @extend %pf-fa-local;
+    }
+  }
+}

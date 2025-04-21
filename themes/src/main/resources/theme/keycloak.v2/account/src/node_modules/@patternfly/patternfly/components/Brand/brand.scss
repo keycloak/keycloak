@@ -1,0 +1,17 @@
+$pf-c-brand--breakpoint-map: build-breakpoint-map();
+
+.pf-c-brand {
+  --pf-c-brand--Width: auto;
+  --pf-c-brand--Height: auto;
+
+  width: var(--pf-c-brand--Width--base);
+  height: var(--pf-c-brand--Height--base);
+
+  @include pf-build-css-variable-stack("--pf-c-brand--Width--base", "--pf-c-brand--Width", $pf-c-brand--breakpoint-map);
+  @include pf-build-css-variable-stack("--pf-c-brand--Height--base", "--pf-c-brand--Height", $pf-c-brand--breakpoint-map);
+
+  &.pf-m-picture {
+    display: inline-flex;
+    max-width: 100%; // move to _globals.scss at breaking change
+  }
+}

@@ -1,0 +1,42 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OptionsMenuToggle should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-label="'Options menu'"
+    class="pf-c-dropdown__toggle"
+    data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+    data-ouia-component-type="PF4/DropdownToggle"
+    data-ouia-safe="true"
+    id="''-toggle"
+    type="button"
+  >
+    <span
+      class=""
+    >
+      <div>
+        ReactNode
+      </div>
+    </span>
+    <span
+      class=""
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 320 512"
+        width="1em"
+      >
+        <path
+          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+        />
+      </svg>
+    </span>
+  </button>
+</DocumentFragment>
+`;

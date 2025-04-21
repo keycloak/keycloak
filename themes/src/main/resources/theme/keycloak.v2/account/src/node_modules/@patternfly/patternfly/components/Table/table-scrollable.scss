@@ -1,0 +1,61 @@
+.pf-c-table {
+  --pf-c-table__sticky-column--cell-min-width--base: #{pf-size-prem(200px)};
+  --pf-c-table__sticky-column--MinWidth: var(--pf-c-table__sticky-column--cell-min-width--base);
+  --pf-c-table__sticky-column--Left: 0;
+  --pf-c-table__sticky-column--ZIndex: var(--pf-global--ZIndex--md);
+  --pf-c-table__sticky-column--Top: 0;
+  --pf-c-table__sticky-column--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-table__sticky-column--m-border-right--before--BorderRightWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table__sticky-column--m-border-right--before--BorderRightColor: var(--pf-global--BorderColor--100);
+  --pf-c-table__sticky-column--m-border-left--before--BorderLeftWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table__sticky-column--m-border-left--before--BorderLeftColor: var(--pf-global--BorderColor--100);
+  --pf-c-table--m-sticky-header--thead__sticky-column--ZIndex: calc(var(--pf-c-table__sticky-column--ZIndex) + 1);
+
+  .pf-c-table__sticky-column {
+    position: sticky;
+    left: var(--pf-c-table__sticky-column--Left);
+    z-index: var(--pf-c-table__sticky-column--ZIndex);
+    min-width: var(--pf-c-table__sticky-column--MinWidth);
+    background-color: var(--pf-c-table__sticky-column--BackgroundColor);
+    background-clip: padding-box;
+
+    &.pf-m-border-right::before {
+      --pf-c-table--cell--m-border-right--before--BorderRightWidth: var(--pf-c-table__sticky-column--m-border-right--before--BorderRightWidth);
+      --pf-c-table--cell--m-border-right--before--BorderRightColor: var(--pf-c-table__sticky-column--m-border-right--before--BorderRightColor);
+    }
+
+    &.pf-m-border-left::before {
+      --pf-c-table--cell--m-border-left--before--BorderLeftWidth: var(--pf-c-table__sticky-column--m-border-left--before--BorderLeftWidth);
+      --pf-c-table--cell--m-border-left--before--BorderLeftColor: var(--pf-c-table__sticky-column--m-border-left--before--BorderLeftColor);
+    }
+  }
+
+  &.pf-m-sticky-header {
+    --pf-c-table--cell--Overflow: visible;
+
+    thead {
+      .pf-c-table__sticky-column {
+        z-index: var(--pf-c-table--m-sticky-header--thead__sticky-column--ZIndex);
+      }
+    }
+  }
+}
+
+.pf-c-scroll-outer-wrapper {
+  --pf-c-scroll-outer-wrapper--MinHeight: #{pf-size-prem(400px)};
+
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  min-height: var(--pf-c-scroll-outer-wrapper--MinHeight);
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.pf-c-scroll-inner-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+}

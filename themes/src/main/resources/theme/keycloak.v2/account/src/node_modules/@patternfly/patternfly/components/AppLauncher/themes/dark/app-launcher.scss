@@ -1,0 +1,15 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-app-launcher() {
+  .pf-c-app-launcher {
+    --pf-c-app-launcher__menu--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-app-launcher__menu--Top: 100%;
+    --pf-c-app-launcher__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-app-launcher__menu-item--disabled--Color: var(--pf-global--palette--black-300); // question should we have a global var for this
+    --pf-c-app-launcher__menu-item--m-action--Color: var(--pf-global--Color--200);
+    --pf-c-app-launcher__menu-item--m-favorite__menu-item--m-action--Color: var(--pf-global--palette--gold-300);
+    --pf-c-app-launcher__menu-item--m-favorite__menu-item--m-action--hover--Color: var(--pf-global--palette--gold-100);
+    --pf-c-app-launcher__group-title--FontSize: var(--pf-global--FontSize--xs);
+    --pf-c-app-launcher__group-title--FontWeight: var(--pf-global--FontWeight--bold);
+  }
+}

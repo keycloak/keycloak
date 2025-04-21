@@ -1,0 +1,6 @@
+.ws-core-l-flex-border,
+.ws-core-l-flex .pf-l-flex .pf-l-flex,
+.ws-core-l-flex .pf-l-flex__item {
+  padding: .5rem !important;
+  border: 2px dashed #393f44;
+}

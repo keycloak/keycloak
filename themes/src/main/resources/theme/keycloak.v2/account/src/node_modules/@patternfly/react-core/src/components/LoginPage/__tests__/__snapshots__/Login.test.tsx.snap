@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Check login layout example against snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-login"
+  >
+    <div
+      class="pf-c-login__container"
+    >
+      <header
+        class="pf-c-login__header"
+      >
+        HeaderBrandHeader Text
+      </header>
+      <main
+        class="pf-c-login__main"
+      >
+        Main
+      </main>
+      <footer
+        class="pf-c-login__footer"
+      >
+        Footer
+      </footer>
+    </div>
+  </div>
+</DocumentFragment>
+`;

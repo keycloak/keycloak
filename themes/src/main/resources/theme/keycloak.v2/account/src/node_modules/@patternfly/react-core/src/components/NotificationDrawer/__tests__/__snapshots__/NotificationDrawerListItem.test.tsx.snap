@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NotificationDrawerListItem renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-notification-drawer__list-item pf-m-hoverable pf-m-default"
+    tabindex="0"
+  />
+</DocumentFragment>
+`;

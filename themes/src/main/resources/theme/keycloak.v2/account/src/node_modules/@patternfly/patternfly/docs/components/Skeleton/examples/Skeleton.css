@@ -1,0 +1,13 @@
+#ws-core-c-skeleton-percentage-height-modifiers .ws-preview-html {
+  height: 400px;
+}
+
+#ws-core-c-skeleton-percentage-height-modifiers .ws-preview-html {
+  display: flex;
+  align-items: flex-end;
+}
+
+#ws-core-c-skeleton-percentage-height-modifiers .ws-preview-html .pf-c-skeleton {
+  flex: 1;
+  margin: 0 2px;
+}

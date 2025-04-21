@@ -1,0 +1,23 @@
+[class*=pf-c-], [class*=pf-c-]::before, [class*=pf-c-]::after {
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+}
+
+html {
+  font-size: unset !important;
+}
+
+.pf-screen-reader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pf-m-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

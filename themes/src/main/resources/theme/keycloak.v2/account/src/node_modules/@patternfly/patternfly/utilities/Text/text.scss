@@ -1,0 +1,197 @@
+// stylelint-disable
+
+// Font family options
+$pf-u-font-family-options: (
+  font-family-sans-serif: (
+    font-family var(--pf-global--FontFamily--sans-serif)
+  ),
+  font-family-heading-sans-serif: (
+    font-family var(--pf-global--FontFamily--heading--sans-serif)
+  ),
+  font-family-monospace: (
+    font-family var(--pf-global--FontFamily--monospace)
+  ),
+  font-family-redhatVF-sans-serif: (
+    font-family var(--pf-global--FontFamily--redhatVF--sans-serif)
+  ),
+  font-family-redhatVF-heading-sans-serif: (
+    font-family var(--pf-global--FontFamily--redhatVF--heading--sans-serif)
+  ),
+  font-family-redhatVF-monospace: (
+    font-family var(--pf-global--FontFamily--redhatVF--monospace)
+  )
+);
+
+@include pf-utility-builder($pf-u-font-family-options);
+
+// Font size options
+$pf-u-font-size-options: (
+  font-size-xs: (
+    font-size var(--pf-global--FontSize--xs)
+  ),
+  font-size-sm: (
+    font-size var(--pf-global--FontSize--sm)
+  ),
+  font-size-md: (
+    font-size var(--pf-global--FontSize--md)
+  ),
+  font-size-lg: (
+    font-size var(--pf-global--FontSize--lg)
+  ),
+  font-size-xl: (
+    font-size var(--pf-global--FontSize--xl)
+  ),
+  font-size-2xl: (
+    font-size var(--pf-global--FontSize--2xl)
+  ),
+  font-size-3xl: (
+    font-size var(--pf-global--FontSize--3xl)
+  ),
+  font-size-4xl: (
+    font-size var(--pf-global--FontSize--4xl)
+  )
+);
+
+@include pf-utility-builder($pf-u-font-size-options, $pf-global--breakpoint-list);
+
+// Font weight options
+$pf-u-font-weight-options: (
+  font-weight-light: (
+    font-weight var(--pf-global--FontWeight--light)
+  ),
+  font-weight-normal: (
+    font-weight var(--pf-global--FontWeight--normal)
+  ),
+  font-weight-bold: (
+    font-weight var(--pf-global--FontWeight--bold)
+  )
+);
+
+@include pf-utility-builder($pf-u-font-weight-options, $pf-global--breakpoint-list);
+
+// Font color options
+$pf-u-font-color-options: (
+  color-100: (
+    color var(--pf-global--Color--100)
+  ),
+  color-200: (
+    color var(--pf-global--Color--200)
+  ),
+  color-300: (
+    color var(--pf-global--Color--300)
+  ),
+  color-400: (
+    color var(--pf-global--Color--400)
+  ),
+  active-color-100: (
+    color var(--pf-global--active-color--100)
+  ),
+  active-color-400: (
+    color var(--pf-global--active-color--400)
+  ),
+  primary-color-100: (
+    color var(--pf-global--primary-color--100)
+  ),
+  color-light-100: (
+    color var(--pf-global--Color--light-100)
+  ),
+  color-light-200: (
+    color var(--pf-global--Color--light-200)
+  ),
+  link-color: (
+    color var(--pf-global--link--Color)
+  ),
+  link-color-hover: (
+    color var(--pf-global--link--Color--hover)
+  ),
+  link-color-light: (
+    color var(--pf-global--link--Color--light)
+  ),
+  link-color-light-hover: (
+    color var(--pf-global--link--Color--light--hover)
+  ),
+  link-color-dark: (
+    color var(--pf-global--link--Color--dark)
+  ),
+  link-color-dark-hover: (
+    color var(--pf-global--link--Color--dark--hover)
+  ),
+  link-color-visited: (
+    color var(--pf-global--link--Color--visited)
+  ),
+  default-color-100: (
+    color var(--pf-global--default-color--100)
+  ),
+  default-color-200: (
+    color var(--pf-global--default-color--200)
+  ),
+  default-color-300: (
+    color var(--pf-global--default-color--300)
+  ),
+  success-color-100: (
+    color var(--pf-global--success-color--100)
+  ),
+  success-color-200: (
+    color var(--pf-global--success-color--200)
+  ),
+  info-color-100: (
+    color var(--pf-global--info-color--100)
+  ),
+  info-color-200: (
+    color var(--pf-global--info-color--200)
+  ),
+  warning-color-100: (
+    color var(--pf-global--warning-color--100)
+  ),
+  warning-color-200: (
+    color var(--pf-global--warning-color--200)
+  ),
+  danger-color-100: (
+    color var(--pf-global--danger-color--100)
+  ),
+  danger-color-200: (
+    color var(--pf-global--danger-color--200)
+  ),
+  danger-color-300: (
+    color var(--pf-global--danger-color--300)
+  ),
+  disabled-color-100: (
+    color var(--pf-global--disabled-color--100)
+  ),
+  disabled-color-200: (
+    color var(--pf-global--disabled-color--200)
+  ),
+  icon-color-light: (
+    color var(--pf-global--icon--Color--light)
+  ),
+  icon-color-dark: (
+    color var(--pf-global--icon--Color--dark)
+  )
+);
+
+@include pf-utility-builder($pf-u-font-color-options, $pf-global--breakpoint-list);
+
+// Font layout options
+$pf-u-font-alignment-options: (
+  text-break-word: (
+    word-break break-word
+  ),
+  text-nowrap: (
+    white-space nowrap
+  ),
+  text-wrap: (
+    white-space normal
+  )
+);
+
+@include pf-utility-builder($pf-u-font-alignment-options, $pf-global--breakpoint-list);
+
+.pf-u-text-truncate {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+// stylelint-enable

@@ -1,0 +1,104 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Breadcrumb component should render breadcrumb with aria-label 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="custom label"
+    class="pf-c-breadcrumb"
+    data-ouia-component-id="OUIA-Generated-Breadcrumb-3"
+    data-ouia-component-type="PF4/Breadcrumb"
+    data-ouia-safe="true"
+  >
+    <ol
+      class="pf-c-breadcrumb__list"
+    />
+  </nav>
+</DocumentFragment>
+`;
+
+exports[`Breadcrumb component should render breadcrumb with children 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Breadcrumb"
+    class="pf-c-breadcrumb"
+    data-ouia-component-id="OUIA-Generated-Breadcrumb-4"
+    data-ouia-component-type="PF4/Breadcrumb"
+    data-ouia-safe="true"
+  >
+    <ol
+      class="pf-c-breadcrumb__list"
+    >
+      <li
+        class="pf-c-breadcrumb__item"
+      >
+        <a
+          class="pf-c-breadcrumb__link"
+          href="#"
+        >
+          Item 1
+        </a>
+      </li>
+       
+      <li
+        class="pf-c-breadcrumb__item"
+      >
+        <span
+          class="pf-c-breadcrumb__item-divider"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+        <a
+          class="pf-c-breadcrumb__link"
+          href="#"
+        >
+          Item 1
+        </a>
+      </li>
+    </ol>
+  </nav>
+</DocumentFragment>
+`;
+
+exports[`Breadcrumb component should render breadcrumb with className 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Breadcrumb"
+    class="pf-c-breadcrumb className"
+    data-ouia-component-id="OUIA-Generated-Breadcrumb-2"
+    data-ouia-component-type="PF4/Breadcrumb"
+    data-ouia-safe="true"
+  >
+    <ol
+      class="pf-c-breadcrumb__list"
+    />
+  </nav>
+</DocumentFragment>
+`;
+
+exports[`Breadcrumb component should render default breadcrumb 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Breadcrumb"
+    class="pf-c-breadcrumb"
+    data-ouia-component-id="OUIA-Generated-Breadcrumb-1"
+    data-ouia-component-type="PF4/Breadcrumb"
+    data-ouia-safe="true"
+  >
+    <ol
+      class="pf-c-breadcrumb__list"
+    />
+  </nav>
+</DocumentFragment>
+`;

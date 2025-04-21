@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`expanded code content render 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-clipboard-copy__expandable-content class-1"
+    contenteditable="true"
+    id="id-1"
+  >
+    <pre>
+      {
+    "name": "@patternfly/react-core",
+    "version": "1.33.2"
+  }
+    </pre>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`expanded content render 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-clipboard-copy__expandable-content class-1"
+    contenteditable="true"
+    id="id-1"
+  >
+    This is my text
+  </div>
+</DocumentFragment>
+`;

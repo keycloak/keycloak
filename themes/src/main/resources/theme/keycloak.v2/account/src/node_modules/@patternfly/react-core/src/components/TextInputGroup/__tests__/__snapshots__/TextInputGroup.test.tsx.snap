@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextInputGroup matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-text-input-group"
+  >
+    Test
+  </div>
+</DocumentFragment>
+`;

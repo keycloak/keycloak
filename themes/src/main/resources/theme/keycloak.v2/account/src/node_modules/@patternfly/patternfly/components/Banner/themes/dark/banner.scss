@@ -1,0 +1,14 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-banner() {
+  .pf-c-banner {
+    &.pf-m-info,
+    &.pf-m-danger,
+    &.pf-m-success,
+    &.pf-m-warning {
+      color: var(--pf-global--palette--black-900);
+    }
+
+    @include pf-theme-dark--t-dark;
+  }
+}

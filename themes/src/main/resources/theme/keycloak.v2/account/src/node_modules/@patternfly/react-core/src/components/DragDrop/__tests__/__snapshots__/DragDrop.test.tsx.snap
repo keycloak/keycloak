@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders some divs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-droppable"
+    data-pf-droppable="defaultZone"
+    data-pf-droppableid="dropzone"
+  >
+    <div
+      class="pf-c-draggable"
+      data-pf-draggable-zone="defaultZone"
+      draggable="true"
+      id="draggable1"
+    >
+      item 1
+    </div>
+    <div
+      class="pf-c-draggable"
+      data-pf-draggable-zone="defaultZone"
+      draggable="true"
+      id="draggable2"
+    >
+      item 2
+    </div>
+  </div>
+</DocumentFragment>
+`;

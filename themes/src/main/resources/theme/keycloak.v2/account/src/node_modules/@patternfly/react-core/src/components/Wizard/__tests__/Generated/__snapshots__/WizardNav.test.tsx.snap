@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardNav should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="string"
+    aria-labelledby="string"
+    class="pf-c-wizard__nav"
+  >
+    <ol
+      class="pf-c-wizard__nav-list"
+    >
+      any
+    </ol>
+  </nav>
+</DocumentFragment>
+`;

@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`simple fileuploadfield 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-file-upload"
+  >
+    <div
+      class="pf-c-file-upload__file-select"
+    >
+      <div
+        class="pf-c-input-group"
+      >
+        <input
+          aria-describedby="custom-file-upload-browse-button"
+          aria-invalid="false"
+          aria-label="Do something custom with this!"
+          class="pf-c-form-control"
+          data-ouia-component-id="OUIA-Generated-TextInputBase-1"
+          data-ouia-component-type="PF4/TextInput"
+          data-ouia-safe="true"
+          id="custom-file-upload-filename"
+          name="custom-file-upload-filename"
+          placeholder="Do something custom with this!"
+          readonly=""
+          type="text"
+          value=""
+        />
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-control"
+          data-ouia-component-id="OUIA-Generated-Button-control-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          id="custom-file-upload-browse-button"
+          type="button"
+        >
+          Browse...
+        </button>
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-control"
+          data-ouia-component-id="OUIA-Generated-Button-control-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+    <div
+      class="pf-c-file-upload__file-details"
+    >
+      <textarea
+        aria-invalid="false"
+        aria-label="File upload"
+        class="pf-c-form-control pf-m-resize-vertical"
+        id="custom-file-upload"
+        name="custom-file-upload"
+        placeholder=""
+      />
+    </div>
+    <p>
+      A custom preview of the uploaded file can be passed as children
+    </p>
+  </div>
+</DocumentFragment>
+`;

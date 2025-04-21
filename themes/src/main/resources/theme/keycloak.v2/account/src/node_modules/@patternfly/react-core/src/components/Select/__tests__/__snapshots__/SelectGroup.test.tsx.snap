@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SelectGroup renders with children successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-select__menu-group"
+  >
+    <div
+      aria-hidden="true"
+      class="pf-c-select__menu-group-title"
+      id=""
+    >
+      test
+    </div>
+    <ul
+      role="listbox"
+    >
+      <div>
+        child
+      </div>
+    </ul>
+  </div>
+</DocumentFragment>
+`;

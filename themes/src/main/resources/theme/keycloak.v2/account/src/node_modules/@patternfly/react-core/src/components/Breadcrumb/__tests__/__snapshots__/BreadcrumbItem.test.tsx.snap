@@ -1,0 +1,89 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BreadcrumbItem component should render active breadcrumbItem 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    Item
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render breadcrumbItem with className 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item Class"
+  >
+    Item
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render breadcrumbItem with component 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    Stuff
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render breadcrumbItem with custom element 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    <h1>
+      Header
+    </h1>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render breadcrumbItem with id 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+    id="Item 1"
+  >
+    Item
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render breadcrumbItem with target 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    Item
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render default breadcrumbItem 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    Item
+  </li>
+</DocumentFragment>
+`;
+
+exports[`BreadcrumbItem component should render link breadcrumbItem 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-breadcrumb__item"
+  >
+    <a
+      class="pf-c-breadcrumb__link"
+      href="/somewhere"
+    >
+      Item
+    </a>
+  </li>
+</DocumentFragment>
+`;

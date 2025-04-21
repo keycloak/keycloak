@@ -1,0 +1,131 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ToggleGroup basic not selected 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toggle-group__item"
+  >
+    <button
+      aria-label="basic not selected"
+      aria-pressed="false"
+      class="pf-c-toggle-group__button"
+      id="toggleGroupItem"
+      type="button"
+    >
+      <span
+        class="pf-c-toggle-group__text"
+      >
+        test
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ToggleGroup basic selected 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toggle-group__item"
+  >
+    <button
+      aria-label="basic selected"
+      aria-pressed="true"
+      class="pf-c-toggle-group__button pf-m-selected"
+      id="toggleGroupItem"
+      type="button"
+    >
+      <span
+        class="pf-c-toggle-group__text"
+      >
+        test
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ToggleGroup icon variant 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toggle-group__item"
+  >
+    <button
+      aria-label="icon variant"
+      aria-pressed="true"
+      class="pf-c-toggle-group__button pf-m-selected"
+      id="toggleGroupItem"
+      type="button"
+    >
+      <span
+        class="pf-c-toggle-group__icon"
+      >
+        icon
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ToggleGroup isCompact 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Label"
+    class="pf-c-toggle-group pf-m-compact"
+    role="group"
+  >
+    <div
+      class="pf-c-toggle-group__item"
+    >
+      <button
+        aria-pressed="false"
+        class="pf-c-toggle-group__button"
+        type="button"
+      >
+        <span
+          class="pf-c-toggle-group__text"
+        >
+          Test
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-toggle-group__item"
+    >
+      <button
+        aria-pressed="false"
+        class="pf-c-toggle-group__button"
+        type="button"
+      >
+        <span
+          class="pf-c-toggle-group__text"
+        >
+          Test
+        </span>
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ToggleGroup isDisabled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toggle-group__item"
+  >
+    <button
+      aria-label="isDisabled"
+      aria-pressed="false"
+      class="pf-c-toggle-group__button"
+      disabled=""
+      id="toggleGroupItem"
+      type="button"
+    >
+      <span
+        class="pf-c-toggle-group__text"
+      >
+        test
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,82 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CodeBlock renders successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-code-block"
+  >
+    <div
+      class="pf-c-code-block__header"
+    >
+      <div
+        class="pf-c-code-block__actions"
+      />
+    </div>
+    <div
+      class="pf-c-code-block__content"
+    >
+      test text
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`CodeBlock with components renders successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-code-block"
+  >
+    <div
+      class="pf-c-code-block__header"
+    >
+      <div
+        class="pf-c-code-block__actions"
+      >
+        <div
+          class="pf-c-code-block__actions-item"
+        >
+          button
+        </div>
+      </div>
+    </div>
+    <div
+      class="pf-c-code-block__content"
+    >
+      <pre
+        class="pf-c-code-block__pre"
+      >
+        <code
+          class="pf-c-code-block__code"
+        >
+          inside pre/code tags
+        </code>
+      </pre>
+      test outer text
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`CodeBlockAction renders successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-code-block__actions-item"
+  >
+    action
+  </div>
+</DocumentFragment>
+`;
+
+exports[`CodeBlockCode renders successfully 1`] = `
+<DocumentFragment>
+  <pre
+    class="pf-c-code-block__pre"
+  >
+    <code
+      class="pf-c-code-block__code"
+    >
+      action
+    </code>
+  </pre>
+</DocumentFragment>
+`;

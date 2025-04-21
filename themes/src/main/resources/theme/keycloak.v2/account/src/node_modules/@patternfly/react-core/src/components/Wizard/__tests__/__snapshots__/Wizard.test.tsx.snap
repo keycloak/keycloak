@@ -1,0 +1,598 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Wizard Expandable Nav Wizard should match snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-wizard"
+  >
+    <div
+      class="pf-c-wizard__header"
+    >
+      <button
+        aria-disabled="false"
+        aria-label="Close"
+        class="pf-c-button pf-m-plain pf-c-wizard__close"
+        data-ouia-component-id="OUIA-Generated-Button-plain-2"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 352 512"
+          width="1em"
+        >
+          <path
+            d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+          />
+        </svg>
+      </button>
+      <h2
+        aria-label="Wizard title"
+        class="pf-c-title pf-m-3xl pf-c-wizard__title"
+        data-ouia-component-id="OUIA-Generated-Title-2"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+        id="pf-wizard-title-1"
+      >
+        Wizard title
+      </h2>
+      <p
+        class="pf-c-wizard__description"
+        id="pf-wizard-description-1"
+      >
+        Description here
+      </p>
+    </div>
+    <button
+      aria-expanded="false"
+      aria-label="Wizard Toggle"
+      class="pf-c-wizard__toggle"
+    >
+      <span
+        class="pf-c-wizard__toggle-list"
+      >
+        <span
+          class="pf-c-wizard__toggle-list-item"
+        >
+          <span
+            class="pf-c-wizard__toggle-num"
+          >
+            1
+          </span>
+           A
+        </span>
+      </span>
+      <span
+        class="pf-c-wizard__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </button>
+    <div
+      class="pf-c-wizard__outer-wrap"
+    >
+      <div
+        class="pf-c-wizard__inner-wrap"
+      >
+        <nav
+          aria-labelledby="pf-wizard-title-1"
+          class="pf-c-wizard__nav"
+        >
+          <ol
+            class="pf-c-wizard__nav-list"
+          >
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="step"
+                class="pf-c-wizard__nav-link pf-m-current"
+              >
+                A
+              </button>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item pf-m-expandable"
+            >
+              <button
+                aria-current="false"
+                aria-expanded="false"
+                class="pf-c-wizard__nav-link"
+              >
+                <span
+                  class="pf-c-wizard__nav-link-text"
+                >
+                  B
+                </span>
+                <span
+                  class="pf-c-wizard__nav-link-toggle"
+                >
+                  <span
+                    class="pf-c-wizard__nav-link-toggle-icon"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 256 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      />
+                    </svg>
+                  </span>
+                </span>
+              </button>
+              <ol
+                class="pf-c-wizard__nav-list"
+              >
+                <li
+                  class="pf-c-wizard__nav-item"
+                >
+                  <button
+                    aria-current="false"
+                    class="pf-c-wizard__nav-link"
+                  >
+                    B-1
+                  </button>
+                </li>
+                <li
+                  class="pf-c-wizard__nav-item"
+                >
+                  <button
+                    aria-current="false"
+                    class="pf-c-wizard__nav-link"
+                  >
+                    B-2
+                  </button>
+                </li>
+              </ol>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="false"
+                class="pf-c-wizard__nav-link"
+              >
+                C
+              </button>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="false"
+                class="pf-c-wizard__nav-link"
+              >
+                D
+              </button>
+            </li>
+          </ol>
+        </nav>
+        <div
+          aria-labelledby="pf-wizard-title-1"
+          class="pf-c-wizard__main"
+        >
+          <div
+            class="pf-c-wizard__main-body"
+          >
+            <p>
+              Step 1
+            </p>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="pf-c-wizard__footer"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-primary"
+          data-ouia-component-id="OUIA-Generated-Button-primary-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="submit"
+        >
+          Next
+        </button>
+        <button
+          aria-disabled="true"
+          class="pf-c-button pf-m-secondary pf-m-disabled"
+          data-ouia-component-id="OUIA-Generated-Button-secondary-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          disabled=""
+          type="button"
+        >
+          Back
+        </button>
+        <div
+          class="pf-c-wizard__footer-cancel"
+        >
+          <button
+            aria-disabled="false"
+            class="pf-c-button pf-m-link"
+            data-ouia-component-id="OUIA-Generated-Button-link-2"
+            data-ouia-component-type="PF4/Button"
+            data-ouia-safe="true"
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Wizard Wizard should match snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-wizard"
+  >
+    <div
+      class="pf-c-wizard__header"
+    >
+      <button
+        aria-disabled="false"
+        aria-label="Close"
+        class="pf-c-button pf-m-plain pf-c-wizard__close"
+        data-ouia-component-id="OUIA-Generated-Button-plain-1"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 352 512"
+          width="1em"
+        >
+          <path
+            d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+          />
+        </svg>
+      </button>
+      <h2
+        aria-label="Wizard title"
+        class="pf-c-title pf-m-3xl pf-c-wizard__title"
+        data-ouia-component-id="OUIA-Generated-Title-1"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+        id="pf-wizard-title-0"
+      >
+        Wizard title
+      </h2>
+      <p
+        class="pf-c-wizard__description"
+        id="pf-wizard-description-0"
+      >
+        Description here
+      </p>
+    </div>
+    <button
+      aria-expanded="false"
+      aria-label="Wizard Toggle"
+      class="pf-c-wizard__toggle"
+    >
+      <span
+        class="pf-c-wizard__toggle-list"
+      >
+        <span
+          class="pf-c-wizard__toggle-list-item"
+        >
+          <span
+            class="pf-c-wizard__toggle-num"
+          >
+            1
+          </span>
+           A
+        </span>
+      </span>
+      <span
+        class="pf-c-wizard__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </button>
+    <div
+      class="pf-c-wizard__outer-wrap"
+    >
+      <div
+        class="pf-c-wizard__inner-wrap"
+      >
+        <nav
+          aria-labelledby="pf-wizard-title-0"
+          class="pf-c-wizard__nav"
+        >
+          <ol
+            class="pf-c-wizard__nav-list"
+          >
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="step"
+                class="pf-c-wizard__nav-link pf-m-current"
+                id="step-A"
+              >
+                A
+              </button>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="false"
+                class="pf-c-wizard__nav-link"
+                id="step-B"
+              >
+                B
+              </button>
+              <ol
+                class="pf-c-wizard__nav-list"
+              >
+                <li
+                  class="pf-c-wizard__nav-item"
+                >
+                  <button
+                    aria-current="false"
+                    class="pf-c-wizard__nav-link"
+                    id="step-B-1"
+                  >
+                    B-1
+                  </button>
+                </li>
+                <li
+                  class="pf-c-wizard__nav-item"
+                >
+                  <button
+                    aria-current="false"
+                    class="pf-c-wizard__nav-link"
+                    id="step-B-2"
+                  >
+                    B-2
+                  </button>
+                </li>
+              </ol>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="false"
+                class="pf-c-wizard__nav-link"
+                id="step-C"
+              >
+                C
+              </button>
+            </li>
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="false"
+                class="pf-c-wizard__nav-link"
+                id="step-D"
+              >
+                D
+              </button>
+            </li>
+          </ol>
+        </nav>
+        <div
+          aria-labelledby="pf-wizard-title-0"
+          class="pf-c-wizard__main"
+        >
+          <div
+            class="pf-c-wizard__main-body"
+          >
+            <p>
+              Step 1
+            </p>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="pf-c-wizard__footer"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-primary"
+          data-ouia-component-id="OUIA-Generated-Button-primary-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="submit"
+        >
+          Next
+        </button>
+        <button
+          aria-disabled="true"
+          class="pf-c-button pf-m-secondary pf-m-disabled"
+          data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          disabled=""
+          type="button"
+        >
+          Back
+        </button>
+        <div
+          class="pf-c-wizard__footer-cancel"
+        >
+          <button
+            aria-disabled="false"
+            class="pf-c-button pf-m-link"
+            data-ouia-component-id="OUIA-Generated-Button-link-1"
+            data-ouia-component-type="PF4/Button"
+            data-ouia-safe="true"
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Wizard bare wiz 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-wizard"
+    id="inPageWizWithAnchorsId"
+  >
+    <button
+      aria-expanded="false"
+      aria-label="Wizard Toggle"
+      class="pf-c-wizard__toggle"
+    >
+      <span
+        class="pf-c-wizard__toggle-list"
+      >
+        <span
+          class="pf-c-wizard__toggle-list-item"
+        >
+          <span
+            class="pf-c-wizard__toggle-num"
+          >
+            1
+          </span>
+           A
+        </span>
+      </span>
+      <span
+        class="pf-c-wizard__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </button>
+    <div
+      class="pf-c-wizard__outer-wrap"
+    >
+      <div
+        class="pf-c-wizard__inner-wrap"
+      >
+        <nav
+          class="pf-c-wizard__nav"
+        >
+          <ol
+            class="pf-c-wizard__nav-list"
+          >
+            <li
+              class="pf-c-wizard__nav-item"
+            >
+              <button
+                aria-current="step"
+                class="pf-c-wizard__nav-link pf-m-current"
+              >
+                A
+              </button>
+            </li>
+          </ol>
+        </nav>
+        <div
+          class="pf-c-wizard__main"
+        >
+          <div
+            class="pf-c-wizard__main-body"
+          >
+            <p>
+              Step 1
+            </p>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="pf-c-wizard__footer"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-primary"
+          data-ouia-component-id="OUIA-Generated-Button-primary-3"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="submit"
+        >
+          Next
+        </button>
+        <button
+          aria-disabled="true"
+          class="pf-c-button pf-m-secondary pf-m-disabled"
+          data-ouia-component-id="OUIA-Generated-Button-secondary-3"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          disabled=""
+          type="button"
+        >
+          Back
+        </button>
+        <div
+          class="pf-c-wizard__footer-cancel"
+        >
+          <button
+            aria-disabled="false"
+            class="pf-c-button pf-m-link"
+            data-ouia-component-id="OUIA-Generated-Button-link-3"
+            data-ouia-component-type="PF4/Button"
+            data-ouia-safe="true"
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+</DocumentFragment>
+`;

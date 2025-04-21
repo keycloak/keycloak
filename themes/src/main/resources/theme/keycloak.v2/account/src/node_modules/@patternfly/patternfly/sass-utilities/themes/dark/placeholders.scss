@@ -1,0 +1,32 @@
+%pf-theme-dark--t-dark {
+  // global
+  --pf-global--Color--100: #{$pf-global--Color--100};
+  --pf-global--Color--200: #{$pf-global--Color--200};
+  --pf-global--BorderColor--100: #{$pf-global--BorderColor--100};
+  --pf-global--primary-color--100: #{$pf-global--primary-color--100};
+  --pf-global--link--Color: #{$pf-global--link--Color};
+  --pf-global--link--Color--hover: #{$pf-global--link--Color--hover};
+  --pf-global--BackgroundColor--100: #{$pf-global--BackgroundColor--100};
+
+  .pf-c-card {
+    --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  }
+
+  .pf-c-button {
+    // primary button
+    --pf-c-button--m-primary--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-primary--hover--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-primary--focus--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-primary--active--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-primary--BackgroundColor: var(--pf-global--primary-color--300);
+    --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--primary-color--200);
+    --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--primary-color--200);
+    --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--primary-color--200);
+
+    // secondary button
+    --pf-c-button--m-secondary--Color: var(--pf-global--primary-color--100);
+    --pf-c-button--m-secondary--hover--Color: var(--pf-global--primary-color--100);
+    --pf-c-button--m-secondary--focus--Color: var(--pf-global--primary-color--100);
+    --pf-c-button--m-secondary--active--Color: var(--pf-global--primary-color--100);
+  }
+}

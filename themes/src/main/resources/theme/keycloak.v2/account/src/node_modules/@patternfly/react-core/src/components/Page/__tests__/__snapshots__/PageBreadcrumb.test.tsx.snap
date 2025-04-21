@@ -1,0 +1,76 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`page breadcrumb Verify basic render 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify bottom shadow 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-shadow-bottom"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify bottom sticky 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-sticky-bottom"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify limited width 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-limit-width"
+  >
+    <div
+      class="pf-c-page__main-body"
+    >
+      test
+    </div>
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify overflow scroll 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-overflow-scroll"
+    tabindex="0"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify top shadow 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-shadow-top"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;
+
+exports[`page breadcrumb Verify top sticky 1`] = `
+<DocumentFragment>
+  <section
+    class="pf-c-page__main-breadcrumb pf-m-sticky-top"
+  >
+    test
+  </section>
+</DocumentFragment>
+`;

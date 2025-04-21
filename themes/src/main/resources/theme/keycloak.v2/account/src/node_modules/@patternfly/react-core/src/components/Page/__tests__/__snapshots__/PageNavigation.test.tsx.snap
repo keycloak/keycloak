@@ -1,0 +1,76 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`page navigation Verify basic render 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify bottom shadow 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-shadow-bottom"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify bottom sticky 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-sticky-bottom"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify limited width 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-limit-width"
+  >
+    <div
+      class="pf-c-page__main-body"
+    >
+      test
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify overflow scroll 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-overflow-scroll"
+    tabindex="0"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify top shadow 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-shadow-top"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`page navigation Verify top sticky 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-page__main-nav pf-m-sticky-top"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginHeader should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <header
+    class="pf-c-login__header ''"
+  >
+    ReactNode
+  </header>
+</DocumentFragment>
+`;

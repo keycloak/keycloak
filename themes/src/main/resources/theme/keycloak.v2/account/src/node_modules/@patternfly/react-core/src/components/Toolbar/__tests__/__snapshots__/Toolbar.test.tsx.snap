@@ -1,0 +1,505 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Toolbar should render inset 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toolbar pf-m-inset-none pf-m-inset-sm-on-md pf-m-inset-2xl-on-xl pf-m-inset-lg-on-2xl"
+    data-ouia-component-id="OUIA-Generated-Toolbar-1"
+    data-ouia-component-type="PF4/Toolbar"
+    data-ouia-safe="true"
+    id="toolbar"
+  >
+    <div
+      class="pf-c-toolbar__content"
+    >
+      <div
+        class="pf-c-toolbar__content-section"
+      >
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test
+        </div>
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test 2
+        </div>
+        <hr
+          class="pf-c-divider pf-m-vertical"
+        />
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test 3 
+        </div>
+      </div>
+      <div
+        class="pf-c-toolbar__expandable-content"
+        id="toolbar-expandable-content-0"
+      >
+        <div
+          class="pf-c-toolbar__group"
+        />
+      </div>
+    </div>
+    <div
+      class="pf-c-toolbar__content pf-m-hidden"
+      hidden=""
+    >
+      <div
+        class="pf-c-toolbar__group"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Toolbar should render with custom chip content 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toolbar pf-m-toggle-group-container"
+    data-ouia-component-id="OUIA-Generated-Toolbar-3"
+    data-ouia-component-type="PF4/Toolbar"
+    data-ouia-safe="true"
+    id="toolbar-with-filter"
+  >
+    <div
+      class="pf-c-toolbar__content"
+    >
+      <div
+        class="pf-c-toolbar__content-section"
+      >
+        <div
+          class="pf-c-toolbar__group pf-m-toggle-group pf-m-show-on-xl"
+        >
+          <div
+            class="pf-c-toolbar__toggle"
+          >
+            <button
+              aria-controls="toolbar-with-filter-expandable-content-3"
+              aria-disabled="false"
+              aria-haspopup="false"
+              aria-label="Show Filters"
+              class="pf-c-button pf-m-plain"
+              data-ouia-component-id="OUIA-Generated-Button-plain-1"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              type="button"
+            />
+          </div>
+          <div
+            class="pf-c-toolbar__group pf-m-filter-group"
+          >
+            <div
+              class="pf-c-toolbar__item"
+            >
+              <div
+                class="pf-c-select pf-m-expanded"
+                data-ouia-component-id="OUIA-Generated-Select-checkbox-2"
+                data-ouia-component-type="PF4/Select"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="true"
+                  aria-label="Options menu"
+                  aria-labelledby=" pf-select-toggle-id-1"
+                  class="pf-c-select__toggle"
+                  id="pf-select-toggle-id-1"
+                  type="button"
+                >
+                  <div
+                    class="pf-c-select__toggle-wrapper"
+                  >
+                    <span
+                      class="pf-c-select__toggle-text"
+                    >
+                      Status
+                    </span>
+                    <div
+                      class="pf-c-select__toggle-badge"
+                    >
+                      <span
+                        class="pf-c-badge pf-m-read"
+                      >
+                        2
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    class="pf-c-select__toggle-arrow"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                      />
+                    </svg>
+                  </span>
+                </button>
+                <ul
+                  aria-label="Status"
+                  class="pf-c-select__menu"
+                  role="listbox"
+                >
+                  <label
+                    class="pf-c-check pf-c-select__menu-item"
+                  >
+                    <input
+                      checked=""
+                      class="pf-c-check__input"
+                      id="pf-random-id-1-New"
+                      type="checkbox"
+                    />
+                    <span
+                      class="pf-c-check__label"
+                    >
+                      New
+                    </span>
+                  </label>
+                  <label
+                    class="pf-c-check pf-c-select__menu-item"
+                  >
+                    <input
+                      checked=""
+                      class="pf-c-check__input"
+                      id="pf-random-id-1-Pending"
+                      type="checkbox"
+                    />
+                    <span
+                      class="pf-c-check__label"
+                    >
+                      Pending
+                    </span>
+                  </label>
+                  <label
+                    class="pf-c-check pf-c-select__menu-item"
+                  >
+                    <input
+                      class="pf-c-check__input"
+                      id="pf-random-id-1-Running"
+                      type="checkbox"
+                    />
+                    <span
+                      class="pf-c-check__label"
+                    >
+                      Running
+                    </span>
+                  </label>
+                  <label
+                    class="pf-c-check pf-c-select__menu-item"
+                  >
+                    <input
+                      class="pf-c-check__input"
+                      id="pf-random-id-1-Cancelled"
+                      type="checkbox"
+                    />
+                    <span
+                      class="pf-c-check__label"
+                    >
+                      Cancelled
+                    </span>
+                  </label>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="pf-c-toolbar__expandable-content"
+        id="toolbar-with-filter-expandable-content-3"
+      >
+        <div
+          class="pf-c-toolbar__group"
+        />
+        <div
+          class="pf-c-toolbar__group pf-m-chip-container"
+        >
+          <div
+            class="pf-c-toolbar__group"
+          />
+          <div
+            class="pf-c-toolbar__item"
+          >
+            <button
+              aria-disabled="false"
+              class="pf-c-button pf-m-link pf-m-inline"
+              data-ouia-component-id="OUIA-Generated-Button-link-3"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              type="button"
+            >
+              Save filters
+            </button>
+          </div>
+          <div
+            class="pf-c-toolbar__item"
+          >
+            <button
+              aria-disabled="false"
+              class="pf-c-button pf-m-link pf-m-inline"
+              data-ouia-component-id="OUIA-Generated-Button-link-4"
+              data-ouia-component-type="PF4/Button"
+              data-ouia-safe="true"
+              type="button"
+            >
+              Clear all filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="pf-c-toolbar__content"
+    >
+      <div
+        aria-hidden="true"
+        class="pf-c-toolbar__group pf-m-hidden"
+        hidden=""
+      >
+        <div
+          class="pf-c-toolbar__item pf-m-chip-group"
+        >
+          <div
+            aria-labelledby="pf-random-id-2"
+            class="pf-c-chip-group pf-m-category"
+            data-ouia-component-type="PF4/ChipGroup"
+            data-ouia-safe="true"
+            role="group"
+          >
+            <div
+              class="pf-c-chip-group__main"
+            >
+              <span
+                class="pf-c-chip-group__label"
+                id="pf-random-id-2"
+              >
+                Status
+              </span>
+              <ul
+                aria-labelledby="pf-random-id-2"
+                class="pf-c-chip-group__list"
+                role="list"
+              >
+                <li
+                  class="pf-c-chip-group__list-item"
+                >
+                  <div
+                    class="pf-c-chip"
+                    data-ouia-component-id="OUIA-Generated-Chip-1"
+                    data-ouia-component-type="PF4/Chip"
+                    data-ouia-safe="true"
+                  >
+                    <span
+                      class="pf-c-chip__text"
+                      id="pf-random-id-3"
+                    >
+                      New
+                    </span>
+                    <button
+                      aria-disabled="false"
+                      aria-label="close"
+                      aria-labelledby="remove_pf-random-id-3 pf-random-id-3"
+                      class="pf-c-button pf-m-plain"
+                      data-ouia-component-id="close"
+                      data-ouia-component-type="PF4/Button"
+                      data-ouia-safe="true"
+                      id="remove_pf-random-id-3"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 352 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+                <li
+                  class="pf-c-chip-group__list-item"
+                >
+                  <div
+                    class="pf-c-chip"
+                    data-ouia-component-id="OUIA-Generated-Chip-2"
+                    data-ouia-component-type="PF4/Chip"
+                    data-ouia-safe="true"
+                  >
+                    <span
+                      class="pf-c-chip__text"
+                      id="pf-random-id-4"
+                    >
+                      Pending
+                    </span>
+                    <button
+                      aria-disabled="false"
+                      aria-label="close"
+                      aria-labelledby="remove_pf-random-id-4 pf-random-id-4"
+                      class="pf-c-button pf-m-plain"
+                      data-ouia-component-id="close"
+                      data-ouia-component-type="PF4/Button"
+                      data-ouia-safe="true"
+                      id="remove_pf-random-id-4"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 352 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div
+              class="pf-c-chip-group__close"
+            >
+              <button
+                aria-disabled="false"
+                aria-label="Close chip group"
+                aria-labelledby="remove_group_pf-random-id-2 pf-random-id-2"
+                class="pf-c-button pf-m-plain"
+                data-ouia-component-id="Close chip group"
+                data-ouia-component-type="PF4/Button"
+                data-ouia-safe="true"
+                id="remove_group_pf-random-id-2"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="pf-c-toolbar__group"
+      >
+        <div
+          class="pf-c-toolbar__item"
+        >
+          2 filters applied
+        </div>
+      </div>
+      <div
+        class="pf-c-toolbar__item"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-link pf-m-inline"
+          data-ouia-component-id="OUIA-Generated-Button-link-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          Save filters
+        </button>
+      </div>
+      <div
+        class="pf-c-toolbar__item"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-link pf-m-inline"
+          data-ouia-component-id="OUIA-Generated-Button-link-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          Clear all filters
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Toolbar should render with page inset flag 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toolbar pf-m-page-insets"
+    data-ouia-component-id="OUIA-Generated-Toolbar-2"
+    data-ouia-component-type="PF4/Toolbar"
+    data-ouia-safe="true"
+    id="toolbar"
+  >
+    <div
+      class="pf-c-toolbar__content"
+    >
+      <div
+        class="pf-c-toolbar__content-section"
+      >
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test
+        </div>
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test 2
+        </div>
+        <hr
+          class="pf-c-divider pf-m-vertical"
+        />
+        <div
+          class="pf-c-toolbar__item"
+        >
+          Test 3 
+        </div>
+      </div>
+      <div
+        class="pf-c-toolbar__expandable-content"
+        id="toolbar-expandable-content-1"
+      >
+        <div
+          class="pf-c-toolbar__group"
+        />
+      </div>
+    </div>
+    <div
+      class="pf-c-toolbar__content pf-m-hidden"
+      hidden=""
+    >
+      <div
+        class="pf-c-toolbar__group"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;

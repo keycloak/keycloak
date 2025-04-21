@@ -1,0 +1,113 @@
+{
+  "name": "@patternfly/patternfly",
+  "description": "Assets, source, tooling, and content for PatternFly 4",
+  "version": "4.202.1",
+  "keywords": [],
+  "license": "MIT",
+  "scripts": {
+    "a11y": "patternfly-a11y --config patternfly-a11y.config",
+    "build-patternfly": "gulp buildPatternfly",
+    "build": "gulp build",
+    "build:docs": "gulp buildWebpack",
+    "build:pficons": "gulp pfIcons",
+    "build:pficonfont": "gulp pfIconFont",
+    "clean": "gulp clean",
+    "dev": "gulp develop",
+    "develop": "gulp develop",
+    "format": "prettier --trailing-comma es5 --no-semi --single-quote --write src/**/*.js",
+    "lint": "npm run lint:css && npm run lint:sass && npm run lint:js",
+    "lint:size": "node .circleci/css-size-report/sizeReport run",
+    "lint:css": "gulp lintCSS",
+    "lint:fix": "npm run lint:js -- --fix && npm run lint:sass -- --fix",
+    "lint:sass": "stylelint 'src/**/*.scss'",
+    "lint:js": "eslint .",
+    "precommit": "lint-staged",
+    "screenshots": "rimraf src/generated/**/*.png && theme-patternfly-org screenshots --urlPrefix http://localhost:5000",
+    "serve": "theme-patternfly-org serve public",
+    "start": "gulp develop",
+    "test": "npm run a11y",
+    "workflows": "node .github/generate-workflows"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^13.1.0",
+    "@commitlint/config-conventional": "^13.1.0",
+    "@fortawesome/fontawesome": "^1.1.8",
+    "@octokit/rest": "^16.40.1",
+    "@patternfly/patternfly-a11y": "4.2.1",
+    "@patternfly/react-charts": "6.15.23",
+    "@patternfly/react-code-editor": "4.3.61",
+    "@patternfly/react-table": "4.30.3",
+    "@starptech/prettyhtml": "^0.10.0",
+    "babel-eslint": "^8.2.3",
+    "cheerio": "^1.0.0-rc.3",
+    "commander": "^5.1.0",
+    "cssnano": "^4.0.0",
+    "eslint": "^7.0.0",
+    "eslint-config-standard": "^16.0.0",
+    "eslint-config-standard-jsx": "^10.0.0",
+    "eslint-config-standard-react": "^11.0.0",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^5.0.0",
+    "eslint-plugin-react": "^7.0.0",
+    "glob": "^7.1.2",
+    "gulp": "^4.0.2",
+    "gulp-cli": "^2.2.0",
+    "gulp-iconfont": "^10.0.3",
+    "gulp-iconfont-css": "^3.0.0",
+    "gulp-postcss": "^8.0.0",
+    "gulp-rename": "^1.4.0",
+    "gulp-sourcemaps": "^2.6.5",
+    "husky": "^1.3.1",
+    "lint-staged": "^9.2.5",
+    "node-plop": "^0.18.0",
+    "postcss": "^8.3.11",
+    "postcss-css-variables": "^0.13.0",
+    "postcss-preset-env": "^6.7.0",
+    "prettier": "^1.12.1",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
+    "remark-parse": "^8.0.3",
+    "remark-stringify": "^8.1.0",
+    "rimraf": "*",
+    "sass": "^1.34.0",
+    "sass-graph": "^3.0.4",
+    "stylelint": "^14.1.0",
+    "stylelint-config-recommended-scss": "^5.0.2",
+    "stylelint-config-standard": "^24.0.0",
+    "stylelint-order": "^5.0.0",
+    "stylelint-scss": "^4.0.0",
+    "stylelint-value-no-unknown-custom-properties": "^3.0.0",
+    "surge": "^0.21.3",
+    "theme-patternfly-org": "0.11.32",
+    "unified": "^9.2.0",
+    "webpack": "^4.43.0"
+  },
+  "resolutions": {
+    "@babel/preset-env": "7.6.3",
+    "monaco-editor": "0.21.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/patternfly/patternfly.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "tag": "prerelease"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ],
+    "*.scss": [
+      "stylelint --fix",
+      "git add"
+    ]
+  }
+}

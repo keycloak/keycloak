@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Form component should render default form variant 1`] = `
+<DocumentFragment>
+  <form
+    class="pf-c-form"
+    novalidate=""
+  />
+</DocumentFragment>
+`;
+
+exports[`Form component should render form with limited width 1`] = `
+<DocumentFragment>
+  <form
+    class="pf-c-form pf-m-limit-width"
+    novalidate=""
+  />
+</DocumentFragment>
+`;
+
+exports[`Form component should render horizontal form variant 1`] = `
+<DocumentFragment>
+  <form
+    class="pf-c-form pf-m-horizontal"
+    novalidate=""
+  />
+</DocumentFragment>
+`;

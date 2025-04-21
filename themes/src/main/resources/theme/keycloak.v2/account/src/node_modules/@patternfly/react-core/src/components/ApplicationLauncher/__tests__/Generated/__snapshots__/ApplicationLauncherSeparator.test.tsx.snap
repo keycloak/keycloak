@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ApplicationLauncherSeparator should match snapshot 1`] = `
+<DocumentFragment>
+  <li
+    role="none"
+  >
+    <div
+      class="pf-c-divider"
+      role="separator"
+    />
+  </li>
+</DocumentFragment>
+`;

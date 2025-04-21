@@ -1,0 +1,166 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Chip closable 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-chip my-chp-cls"
+    data-ouia-component-id="OUIA-Generated-Chip-2"
+    data-ouia-component-type="PF4/Chip"
+    data-ouia-safe="true"
+  >
+    <span
+      class="pf-c-chip__text"
+      id="chip_one"
+    >
+      Chip
+    </span>
+    <button
+      aria-disabled="false"
+      aria-label="close"
+      aria-labelledby="remove_chip_one chip_one"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="close"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      id="remove_chip_one"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Chip closable with tooltip 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-chip my-chp-cls"
+    data-ouia-component-id="OUIA-Generated-Chip-3"
+    data-ouia-component-type="PF4/Chip"
+    data-ouia-safe="true"
+  >
+    <span
+      class="pf-c-chip__text"
+      id="chip_one"
+    >
+      1234567890123456789
+    </span>
+    <button
+      aria-disabled="false"
+      aria-label="close"
+      aria-labelledby="remove_chip_one chip_one"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="close"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      id="remove_chip_one"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Chip custom max-width text 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-chip my-chp-cls"
+    data-ouia-component-id="OUIA-Generated-Chip-5"
+    data-ouia-component-type="PF4/Chip"
+    data-ouia-safe="true"
+    style="--pf-c-chip__text--MaxWidth: 100px;"
+  >
+    <span
+      class="pf-c-chip__text"
+      id="pf-random-id-4"
+    >
+      4 more
+    </span>
+    <button
+      aria-disabled="false"
+      aria-label="close"
+      aria-labelledby="remove_pf-random-id-4 pf-random-id-4"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="close"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      id="remove_pf-random-id-4"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Chip overflow 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-chip pf-m-overflow my-chp-cls"
+    data-ouia-component-id="OUIA-Generated-Chip-1"
+    data-ouia-component-type="PF4/OverflowChip"
+    data-ouia-safe="true"
+  >
+    <span
+      class="pf-c-chip__text"
+    >
+      4 more
+    </span>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Chip readonly 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-chip my-chp-cls"
+    data-ouia-component-id="OUIA-Generated-Chip-4"
+    data-ouia-component-type="PF4/Chip"
+    data-ouia-safe="true"
+  >
+    <span
+      class="pf-c-chip__text"
+      id="pf-random-id-3"
+    >
+      4 more
+    </span>
+  </div>
+</DocumentFragment>
+`;

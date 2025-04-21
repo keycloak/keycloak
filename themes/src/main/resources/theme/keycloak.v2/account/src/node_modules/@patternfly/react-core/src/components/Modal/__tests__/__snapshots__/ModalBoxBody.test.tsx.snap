@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ModalBoxBody Test 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-modal-box__body test-box-class"
+    id="id"
+  >
+    This is a ModalBox header
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,1 @@
+{"version":3,"file":"ModalBoxFooter.d.ts","sourceRoot":"","sources":["../../../../src/components/Modal/ModalBoxFooter.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,KAAK,MAAM,OAAO,CAAC;AAI/B,MAAM,WAAW,mBAAmB;IAClC,yCAAyC;IACzC,QAAQ,CAAC,EAAE,KAAK,CAAC,SAAS,CAAC;IAC3B,6CAA6C;IAC7C,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB;AAED,eAAO,MAAM,cAAc,EAAE,KAAK,CAAC,iBAAiB,CAAC,mBAAmB,CAQvE,CAAC"}

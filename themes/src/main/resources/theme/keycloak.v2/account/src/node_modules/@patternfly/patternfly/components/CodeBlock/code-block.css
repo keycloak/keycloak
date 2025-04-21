@@ -1,0 +1,37 @@
+.pf-c-code-block {
+  --pf-c-code-block--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-code-block__header--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-code-block__header--BorderBottomColor: var(--pf-global--BorderColor--100);
+  --pf-c-code-block__content--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-code-block__content--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-code-block__content--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-code-block__content--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-code-block__pre--FontFamily: var(--pf-global--FontFamily--monospace);
+  --pf-c-code-block__pre--FontSize: var(--pf-global--FontSize--sm);
+  background-color: var(--pf-c-code-block--BackgroundColor);
+}
+
+.pf-c-code-block__header {
+  display: flex;
+  border-bottom: var(--pf-c-code-block__header--BorderBottomWidth) solid var(--pf-c-code-block__header--BorderBottomColor);
+}
+
+.pf-c-code-block__actions {
+  display: flex;
+  margin-left: auto;
+}
+
+.pf-c-code-block__content {
+  padding: var(--pf-c-code-block__content--PaddingTop) var(--pf-c-code-block__content--PaddingRight) var(--pf-c-code-block__content--PaddingBottom) var(--pf-c-code-block__content--PaddingLeft);
+}
+
+.pf-c-code-block__pre {
+  font-family: var(--pf-c-code-block__pre--FontFamily);
+  font-size: var(--pf-c-code-block__pre--FontSize);
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.pf-c-code-block__code {
+  font-family: var(--pf-c-code-block__code--FontFamily, inherit);
+}

@@ -1,0 +1,10 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-data-list() {
+  .pf-c-data-list {
+    --pf-c-data-list--BorderTopColor: var(--pf-global--BorderColor--100);
+    --pf-c-data-list--sm--BorderTopColor: var(--pf-global--BorderColor--100);
+    --pf-c-data-list__item--BorderBottomColor: var(--pf-global--BorderColor--100);
+    --pf-c-data-list__item--sm--BorderBottomColor: var(--pf-global--BorderColor--100);
+  }
+}

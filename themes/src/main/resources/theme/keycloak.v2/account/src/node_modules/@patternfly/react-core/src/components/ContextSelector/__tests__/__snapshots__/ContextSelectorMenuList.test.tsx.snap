@@ -1,0 +1,113 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renders ContextSelectorMenuList closed 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-context-selector__menu-list"
+    hidden=""
+    role="menu"
+  >
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        My Project
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        OpenShift Cluster
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        Production Ansible
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        AWS
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        Azure
+      </button>
+    </li>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`Renders ContextSelectorMenuList open 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-context-selector__menu-list"
+    hidden=""
+    role="menu"
+  >
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        My Project
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        OpenShift Cluster
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        Production Ansible
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        AWS
+      </button>
+    </li>
+    <li
+      role="none"
+    >
+      <button
+        class="pf-c-context-selector__menu-list-item"
+      >
+        Azure
+      </button>
+    </li>
+  </ul>
+</DocumentFragment>
+`;

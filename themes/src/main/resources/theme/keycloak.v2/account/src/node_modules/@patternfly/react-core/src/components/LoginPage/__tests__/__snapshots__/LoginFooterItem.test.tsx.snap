@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginFooterItem renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <a
+    href="#"
+    target="_self"
+  />
+</DocumentFragment>
+`;

@@ -1,0 +1,187 @@
+.pf-c-search-input {
+  --pf-c-search-input__text--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-search-input__text--before--BorderColor: var(--pf-global--BorderColor--300);
+  --pf-c-search-input__text--after--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-search-input__text--after--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-search-input__bar--hover__text--after--BorderBottomColor: var(--pf-global--primary-color--100);
+  --pf-c-search-input__text--focus-within--after--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-search-input__text--focus-within--after--BorderBottomColor: var(--pf-global--primary-color--100);
+  --pf-c-search-input__text-input--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-search-input__text-input--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-search-input__text-input--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-search-input__text-input--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-search-input__text-input--MinWidth: 6ch;
+  --pf-c-search-input__text-input--m-hint--Color: var(--pf-global--Color--dark-200);
+  --pf-c-search-input__icon--Left: var(--pf-global--spacer--sm);
+  --pf-c-search-input__icon--Color: var(--pf-global--Color--200);
+  --pf-c-search-input__text--hover__icon--Color: var(--pf-global--Color--100);
+  --pf-c-search-input__icon--TranslateY: -50%;
+  --pf-c-search-input__utilities--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-search-input__utilities--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--child--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--c-button--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--c-button--PaddingLeft: var(--pf-global--spacer--xs);
+  --pf-c-search-input__menu-body--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu-body--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu-body--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu-body--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-search-input__menu--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-search-input__menu--Top: calc(100% + var(--pf-global--spacer--xs));
+  --pf-c-search-input__menu--ZIndex: var(--pf-global--ZIndex--sm);
+  --pf-c-search-input--m-top__menu--Top: 0;
+  --pf-c-search-input--m-top__menu--TranslateY: calc(-100% - var(--pf-global--spacer--xs));
+  --pf-c-search-input__menu-list--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-search-input__menu-list--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-search-input__menu-item--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-search-input__menu-item--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu-item--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-search-input__menu-item--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-search-input__menu-item--Color: var(--pf-global--Color--100);
+  --pf-c-search-input__menu-item--BackgroundColor: transparent;
+  --pf-c-search-input__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-search-input__menu-item--focus--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  position: relative;
+  width: 100%;
+}
+
+.pf-c-search-input__bar {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+.pf-c-search-input__bar:hover {
+  --pf-c-search-input__text--after--BorderBottomColor: var(--pf-c-search-input__bar--hover__text--after--BorderBottomColor);
+}
+
+.pf-c-search-input__text {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "text-input";
+  flex: 1;
+}
+.pf-c-search-input__text::before, .pf-c-search-input__text::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  content: "";
+}
+.pf-c-search-input__text::before {
+  border: var(--pf-c-search-input__text--before--BorderWidth) solid var(--pf-c-search-input__text--before--BorderColor);
+}
+.pf-c-search-input__text::after {
+  border-bottom: var(--pf-c-search-input__text--after--BorderBottomWidth) solid var(--pf-c-search-input__text--after--BorderBottomColor);
+}
+.pf-c-search-input__text:hover, .pf-c-search-input__text:focus-within {
+  --pf-c-search-input__icon--Color: var(--pf-c-search-input__text--hover__icon--Color);
+}
+.pf-c-search-input__text:focus-within {
+  --pf-c-search-input__text--after--BorderBottomWidth: var(--pf-c-search-input__text--focus-within--after--BorderBottomWidth);
+  --pf-c-search-input__text--after--BorderBottomColor: var(--pf-c-search-input__text--focus-within--after--BorderBottomColor);
+}
+
+.pf-c-search-input__icon {
+  position: absolute;
+  top: 50%;
+  left: var(--pf-c-search-input__icon--Left);
+  color: var(--pf-c-search-input__icon--Color);
+  transform: translateY(var(--pf-c-search-input__icon--TranslateY));
+}
+
+.pf-c-search-input__text-input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  width: 100%;
+  min-width: var(--pf-c-search-input__text-input--MinWidth);
+  padding: var(--pf-c-search-input__text-input--PaddingTop) var(--pf-c-search-input__text-input--PaddingRight) var(--pf-c-search-input__text-input--PaddingBottom) var(--pf-c-search-input__text-input--PaddingLeft);
+  border: 0;
+}
+.pf-c-search-input__text-input, .pf-c-search-input__text-input.pf-m-hint {
+  grid-area: text-input;
+}
+.pf-c-search-input__text-input.pf-m-hint {
+  color: var(--pf-c-search-input__text-input--m-hint--Color);
+}
+
+.pf-c-search-input__utilities {
+  display: flex;
+  margin-right: var(--pf-c-search-input__utilities--MarginRight);
+  margin-left: var(--pf-c-search-input__utilities--MarginLeft);
+}
+.pf-c-search-input__utilities > * + * {
+  margin-left: var(--pf-c-search-input__utilities--child--MarginLeft);
+}
+.pf-c-search-input__utilities .pf-c-button {
+  --pf-c-button--PaddingRight: var(--pf-c-search-input__utilities--c-button--PaddingRight);
+  --pf-c-button--PaddingLeft: var(--pf-c-search-input__utilities--c-button--PaddingLeft);
+}
+
+.pf-c-search-input__nav {
+  display: flex;
+}
+
+.pf-c-search-input__count {
+  display: flex;
+  align-items: center;
+}
+
+.pf-c-search-input__menu {
+  position: absolute;
+  top: var(--pf-c-search-input__menu--Top);
+  z-index: var(--pf-c-search-input__menu--ZIndex);
+  min-width: 100%;
+  background-color: var(--pf-c-search-input__menu--BackgroundColor);
+  background-clip: padding-box;
+  box-shadow: var(--pf-c-search-input__menu--BoxShadow);
+}
+.pf-c-search-input.pf-m-top .pf-c-search-input__menu {
+  --pf-c-search-input__menu--Top: var(--pf-c-search-input--m-top__menu--Top);
+  transform: translateY(var(--pf-c-search-input--m-top__menu--TranslateY));
+}
+
+.pf-c-search-input__menu-body {
+  padding: var(--pf-c-search-input__menu-body--PaddingTop) var(--pf-c-search-input__menu-body--PaddingRight) var(--pf-c-search-input__menu-body--PaddingBottom) var(--pf-c-search-input__menu-body--PaddingLeft);
+}
+
+.pf-c-search-input__menu-list {
+  padding-top: var(--pf-c-search-input__menu-list--PaddingTop);
+  padding-bottom: var(--pf-c-search-input__menu-list--PaddingBottom);
+}
+
+.pf-c-search-input__menu-item {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  padding-top: var(--pf-c-search-input__menu-item--PaddingTop);
+  padding-right: var(--pf-c-search-input__menu-item--PaddingRight);
+  padding-bottom: var(--pf-c-search-input__menu-item--PaddingBottom);
+  padding-left: var(--pf-c-search-input__menu-item--PaddingLeft);
+  color: var(--pf-c-search-input__menu-item--Color);
+  text-align: left;
+  background-color: var(--pf-c-search-input__menu-item--BackgroundColor);
+  border: none;
+}
+.pf-c-search-input__menu-item:hover {
+  --pf-c-search-input__menu-item--BackgroundColor: var(--pf-c-search-input__menu-item--hover--BackgroundColor);
+}
+.pf-c-search-input__menu-item:focus {
+  --pf-c-search-input__menu-item--BackgroundColor: var(--pf-c-search-input__menu-item--focus--BackgroundColor);
+}
+
+.pf-c-search-input__menu-item-text {
+  flex-grow: 1;
+}
+
+:where(.pf-theme-dark) .pf-c-search-input {
+  --pf-c-search-input__text--before--BorderColor: transparent;
+  --pf-c-search-input__text--after--BorderBottomColor: var(--pf-global--BorderColor--400);
+  background-color: var(--pf-global--BackgroundColor--400);
+}
+:where(.pf-theme-dark) .pf-c-search-input__text::before {
+  border-bottom-color: var(--pf-global--BorderColor--400);
+}

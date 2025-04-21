@@ -1,0 +1,95 @@
+@import "../../../sass-utilities/themes/dark/all";
+
+@mixin _variables() {
+  // palette changes
+  --pf-global--palette--black-50: #{$pf-color-black-50};
+  --pf-global--palette--black-100: #{$pf-color-black-100};
+  --pf-global--palette--black-200: #{$pf-color-black-200};
+  --pf-global--palette--black-300: #{$pf-color-black-300};
+  --pf-global--palette--black-400: #{$pf-color-black-400};
+  --pf-global--palette--black-500: #{$pf-color-black-500};
+  --pf-global--palette--black-600: #{$pf-color-black-600};
+  --pf-global--palette--black-700: #{$pf-color-black-700};
+  --pf-global--palette--black-800: #{$pf-color-black-800};
+  --pf-global--palette--black-900: #{$pf-color-black-900};
+  --pf-global--palette--red-9999: #{$pf-color-red-9999};
+  --pf-global--palette--red-8888: #{$pf-color-red-8888};
+  --pf-global--palette--blue-300: #{$pf-color-blue-300};
+
+  // background colors
+  --pf-global--BackgroundColor--100: #{$pf-global--BackgroundColor--100};
+  --pf-global--BackgroundColor--150: #{$pf-global--BackgroundColor--150};
+  --pf-global--BackgroundColor--200: #{$pf-global--BackgroundColor--200};
+  --pf-global--BackgroundColor--300: #{$pf-global--BackgroundColor--300};
+  --pf-global--BackgroundColor--400: #{$pf-global--BackgroundColor--400};
+  --pf-global--BorderColor--100: #{$pf-global--BorderColor--100};
+  --pf-global--BorderColor--200: #{$pf-global--BorderColor--200};
+  --pf-global--BorderColor--300: #{$pf-global--BorderColor--300};
+  --pf-global--BorderColor--400: #{$pf-global--BorderColor--400};
+
+  // text colors
+  --pf-global--Color--100: #{$pf-global--Color--100};
+  --pf-global--Color--200: #{$pf-global--Color--200};
+  --pf-global--active-color--100: #{$pf-global--active-color--100};
+  --pf-global--primary-color--100: #{$pf-global--primary-color--100};
+  --pf-global--primary-color--300: #{$pf-global--primary-color--300};
+  --pf-global--success-color--100: #{$pf-global--success-color--100};
+  --pf-global--warning-color--100: #{$pf-global--warning-color--100};
+  --pf-global--warning-color--200: #{$pf-global--warning-color--200};
+  --pf-global--danger-color--100: #{$pf-global--danger-color--100};
+  --pf-global--danger-color--200: #{$pf-global--danger-color--200};
+  --pf-global--link--Color: #{$pf-global--link--Color};
+  --pf-global--link--Color--hover: #{$pf-global--link--Color--hover};
+  --pf-global--disabled-color--100: #{$pf-global--disabled-color--100};
+  --pf-global--disabled-color--200: #{$pf-global--disabled-color--200};
+  --pf-global--disabled-color--300: #{$pf-global--disabled-color--300};
+
+  // icons
+  --pf-global--icon--Color--light: #{$pf-global--icon--Color--light};
+  --pf-global--icon--Color--dark: #{$pf-global--icon--Color--dark};
+
+  // theme color resets
+  --pf-global--Color--dark-100: #{$pf-global--Color--dark-100};
+  --pf-global--Color--dark-200: #{$pf-global--Color--dark-200};
+  --pf-global--Color--light-100: #{$pf-global--Color--light-100};
+  --pf-global--Color--light-200: #{$pf-global--Color--light-200};
+  --pf-global--Color--light-300: #{$pf-global--Color--light-300};
+  --pf-global--BorderColor--dark-100: #{$pf-global--BorderColor--dark-100};
+  --pf-global--BorderColor--light-100: #{$pf-global--BorderColor--light-100};
+  --pf-global--primary-color--light-100: #{$pf-global--primary-color--light-100};
+  --pf-global--primary-color--dark-100: #{$pf-global--primary-color--dark-100};
+  --pf-global--link--Color--light: #{$pf-global--link--Color--light};
+  --pf-global--link--Color--light--hover: #{$pf-global--link--Color--light--hover};
+  --pf-global--link--Color--dark: #{$pf-global--link--Color--dark};
+  --pf-global--link--Color--dark--hover: #{$pf-global--link--Color--dark--hover};
+  --pf-global--BackgroundColor--light-100: #{$pf-global--BackgroundColor--light-100};
+  --pf-global--BackgroundColor--light-200: #{$pf-global--BackgroundColor--light-200};
+  --pf-global--BackgroundColor--light-300: #{$pf-global--BackgroundColor--light-300};
+  --pf-global--BackgroundColor--dark-100: #{$pf-global--BackgroundColor--dark-100};
+  --pf-global--BackgroundColor--dark-200: #{$pf-global--BackgroundColor--dark-200};
+  --pf-global--BackgroundColor--dark-300: #{$pf-global--BackgroundColor--dark-300};
+  --pf-global--BackgroundColor--dark-400: #{$pf-global--BackgroundColor--dark-400};
+
+  // Shadows
+  --pf-global--BoxShadow--sm: #{$pf-global--BoxShadow--sm};
+  --pf-global--BoxShadow--sm-top: #{$pf-global--BoxShadow--sm-top};
+  --pf-global--BoxShadow--sm-right: #{$pf-global--BoxShadow--sm-right};
+  --pf-global--BoxShadow--sm-bottom: #{$pf-global--BoxShadow--sm-bottom};
+  --pf-global--BoxShadow--sm-left: #{$pf-global--BoxShadow--sm-left};
+  --pf-global--BoxShadow--md: #{$pf-global--BoxShadow--md};
+  --pf-global--BoxShadow--md-top: #{$pf-global--BoxShadow--md-top};
+  --pf-global--BoxShadow--md-right: #{$pf-global--BoxShadow--md-right};
+  --pf-global--BoxShadow--md-bottom: #{$pf-global--BoxShadow--md-bottom};
+  --pf-global--BoxShadow--md-left: #{$pf-global--BoxShadow--md-left};
+  --pf-global--BoxShadow--lg: #{$pf-global--BoxShadow--lg};
+  --pf-global--BoxShadow--lg-top: #{$pf-global--BoxShadow--lg-top};
+  --pf-global--BoxShadow--lg-right: #{$pf-global--BoxShadow--lg-right};
+  --pf-global--BoxShadow--lg-bottom: #{$pf-global--BoxShadow--lg-bottom};
+  --pf-global--BoxShadow--lg-left: #{$pf-global--BoxShadow--lg-left};
+  --pf-global--BoxShadow--xl: #{$pf-global--BoxShadow--xl};
+  --pf-global--BoxShadow--xl-top: #{$pf-global--BoxShadow--xl-top};
+  --pf-global--BoxShadow--xl-right: #{$pf-global--BoxShadow--xl-right};
+  --pf-global--BoxShadow--xl-bottom: #{$pf-global--BoxShadow--xl-bottom};
+  --pf-global--BoxShadow--xl-left: #{$pf-global--BoxShadow--xl-left};
+  --pf-global--BoxShadow--inset: #{$pf-global--BoxShadow--inset};
+}

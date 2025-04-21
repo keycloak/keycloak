@@ -1,0 +1,17 @@
+#ws-react-c-navigation-basic,
+#ws-react-c-navigation-grouped,
+#ws-react-c-navigation-default,
+#ws-react-c-navigation-expandable,
+#ws-react-c-navigation-expandable-wsubnavigation-titles,
+#ws-react-c-navigation-mixed,
+#ws-react-c-navigation-expandable-third-level,
+#ws-react-c-navigation-horizontal-subnav,
+#ws-react-c-navigation-flyout,
+#ws-react-c-navigation-drilldown {
+  background-color: var(--pf-global--BackgroundColor--dark-300);
+}
+
+#ws-react-c-navigation-flyout,
+#ws-react-c-navigation-drilldown {
+  width: 300px;
+}

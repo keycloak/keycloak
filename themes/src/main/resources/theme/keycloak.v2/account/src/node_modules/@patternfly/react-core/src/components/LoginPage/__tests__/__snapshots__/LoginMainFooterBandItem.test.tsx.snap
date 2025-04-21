@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginMainFooterBandItem renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <p
+    class="pf-c-login__main-footer-band-item"
+  />
+</DocumentFragment>
+`;

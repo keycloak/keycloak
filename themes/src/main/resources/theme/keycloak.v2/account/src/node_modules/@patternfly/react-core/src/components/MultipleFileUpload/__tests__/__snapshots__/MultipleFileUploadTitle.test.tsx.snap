@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MultipleFileUploadTitle renders custom class names 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__title test"
+  />
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadTitle renders with expected class names 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__title"
+  />
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadTitle renders with title icon 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__title"
+  >
+    <div
+      class="pf-c-multiple-file-upload__title-icon"
+    >
+      icon
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadTitle renders with title text 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__title"
+  >
+    <div
+      class="pf-c-multiple-file-upload__title-text"
+    >
+      text 
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadTitle renders with title text separator 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__title"
+  >
+    <div
+      class="pf-c-multiple-file-upload__title-text"
+    >
+      text 
+      <div
+        class="pf-c-multiple-file-upload__title-text-separator"
+      >
+        text separator
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,28 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-input-group() {
+  .pf-c-input-group {
+    --pf-c-input-group--BackgroundColor: transparent;
+    --pf-c-input-group__text--BorderTopColor: transparent;
+    --pf-c-input-group__text--BorderRightColor: transparent;
+    --pf-c-input-group__text--BorderBottomColor: var(--pf-global--BorderColor--400);
+    --pf-c-input-group__text--BorderLeftColor: transparent;
+    --pf-c-input-group__text--BackgroundColor: var(--pf-global--palette--black-600);
+
+    > * + * {
+      margin-left: 0;
+      border-left: 1px solid var(--pf-global--palette--black-700); // global var
+    }
+  }
+
+  .pf-c-input-group__text {
+    --pf-c-input-group__text--BorderTopColor: transparent;
+    --pf-c-input-group__text--BorderRightColor: transparent;
+    --pf-c-input-group__text--BorderBottomColor: var(--pf-global--BorderColor--400);
+    --pf-c-input-group__text--BorderLeftColor: transparent;
+
+    &.pf-m-plain {
+      --pf-c-input-group__text--BackgroundColor: transparent;
+    }
+  }
+}

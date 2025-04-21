@@ -1,0 +1,65 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-page() {
+  .pf-c-page {
+    --pf-c-page__main-section--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-page__header-tools--c-button--m-selected--before--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-page__sidebar--BackgroundColor: var(--pf-global--BackgroundColor--100);
+    --pf-c-page__header--BackgroundColor: var(--pf-global--palette--black-1000);
+  }
+
+  .pf-c-page__header-tools-item {
+    &.pf-m-selected {
+      .pf-c-button {
+        color: var(--pf-global--Color--100);
+
+        // stylelint-disable
+        .pf-c-notification-badge {
+          &:hover {
+            &::before {
+              background-color: var(--pf-c-page__header-tools--c-button--m-selected--before--BackgroundColor);
+            }
+          }
+        }
+        // stylelint-enable
+      }
+    }
+  }
+
+  .pf-c-page__main-nav {
+    &.pf-m-sticky-top,
+    &.pf-m-sticky-bottom {
+      --pf-c-page__main-nav--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    }
+  }
+
+  .pf-c-page__main-breadcrumb {
+    &.pf-m-sticky-top,
+    &.pf-m-sticky-bottom {
+      --pf-c-page__main-breadcrumb--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    }
+  }
+
+  .pf-c-page__main-group {
+    &.pf-m-sticky-top,
+    &.pf-m-sticky-bottom {
+      --pf-c-page__main-section--m-light--BackgroundColor: var(--pf-global--BackgroundColor--300);
+      --pf-c-page__main-section--BackgroundColor: var(--pf-global--BackgroundColor--300);
+      --pf-c-page__main-breadcrumb--BackgroundColor: var(--pf-global--BackgroundColor--300);
+      --pf-c-page__main-nav--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    }
+  }
+
+  .pf-c-page__main-section {
+    &.pf-m-sticky-top,
+    &.pf-m-sticky-bottom {
+      --pf-c-page__main-section--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    }
+  }
+
+  .pf-c-page__sidebar-body.pf-m-menu .pf-c-context-selector,
+  .pf-c-page__main-section[class*="pf-m-dark-"],
+  .pf-c-page__header {
+    @include pf-theme-dark--t-dark;
+  }
+}

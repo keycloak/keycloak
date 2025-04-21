@@ -1,0 +1,59 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MultipleFileUploadButton renders custom class names 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__upload test"
+  >
+    <button
+      aria-disabled="false"
+      class="pf-c-button pf-m-secondary"
+      data-ouia-component-id="OUIA-Generated-Button-secondary-2"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      Upload
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadButton renders with aria-label applied to the button 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__upload"
+  >
+    <button
+      aria-disabled="false"
+      aria-label="test"
+      class="pf-c-button pf-m-secondary"
+      data-ouia-component-id="OUIA-Generated-Button-secondary-3"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      Upload
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`MultipleFileUploadButton renders with expected class names 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-multiple-file-upload__upload"
+  >
+    <button
+      aria-disabled="false"
+      class="pf-c-button pf-m-secondary"
+      data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      Upload
+    </button>
+  </div>
+</DocumentFragment>
+`;

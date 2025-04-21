@@ -1,0 +1,25 @@
+.ws-core-u-flex .pf-u-display-flex,
+.ws-core-u-flex .ws-example-flex-item,
+.ws-core-u-flex .pf-u-display-inline-flex {
+  flex-wrap: wrap;
+  padding: .5rem !important;
+  border: 2px dashed #393f44;
+}
+
+#ws-core-u-flex-aligned-items .pf-u-display-flex,
+#ws-core-u-flex-aligned-self .pf-u-display-flex,
+#ws-core-u-flex-aligned-content .pf-u-display-flex {
+  min-height: 160px;
+}
+
+#ws-core-u-flex-aligned-content .ws-example-flex-item {
+  height: 40px;
+}
+
+.ws-example-u-flex-md {
+  height: 60px;
+}
+
+.ws-example-u-flex-lg {
+  height: 80px;
+}

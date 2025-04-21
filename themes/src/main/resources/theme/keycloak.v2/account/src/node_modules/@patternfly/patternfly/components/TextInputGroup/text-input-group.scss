@@ -1,0 +1,198 @@
+.pf-c-text-input-group {
+  // Component
+  --pf-c-text-input-group--BackgroundColor: var(--pf-global--BackgroundColor--100);
+
+  // Base border
+  --pf-c-text-input-group__text--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-text-input-group__text--before--BorderColor: var(--pf-global--BorderColor--300);
+
+  // Bottom border
+  --pf-c-text-input-group__text--after--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-text-input-group__text--after--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-text-input-group--hover__text--after--BorderBottomColor: var(--pf-global--primary-color--100);
+  --pf-c-text-input-group__text--focus-within--after--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-text-input-group__text--focus-within--after--BorderBottomColor: var(--pf-global--primary-color--100);
+
+  // Main
+  --pf-c-text-input-group__main--first-child--not--text-input--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-text-input-group__main--m-icon__text-input--PaddingLeft: var(--pf-global--spacer--xl);
+
+  // Text input
+  --pf-c-text-input-group__text-input--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-text-input-group__text-input--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-text-input-group__text-input--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-text-input-group__text-input--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-text-input-group__text-input--MinWidth: 12ch;
+  --pf-c-text-input-group__text-input--m-hint--Color: var(--pf-global--Color--dark-200); // matches placeholder text color
+  --pf-c-text-input-group--placeholder--Color: var(--pf-global--Color--dark-200);
+
+  // Icon
+  --pf-c-text-input-group__icon--Left: var(--pf-global--spacer--sm);
+  --pf-c-text-input-group__icon--Color: var(--pf-global--Color--200);
+  --pf-c-text-input-group__text--hover__icon--Color: var(--pf-global--Color--100);
+  --pf-c-text-input-group__icon--TranslateY: -50%;
+
+  // Utilities
+  --pf-c-text-input-group__utilities--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-text-input-group__utilities--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-text-input-group__utilities--child--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-text-input-group__utilities--c-button--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-text-input-group__utilities--c-button--PaddingLeft: var(--pf-global--spacer--xs);
+
+  // input disabled style
+  --pf-c-text-input-group--m-disabled--Color: var(--pf-global--disabled-color--100);
+  --pf-c-text-input-group--m-disabled--BackgroundColor: var(--pf-global--disabled-color--300);
+
+  position: relative;
+  display: flex;
+  width: 100%; // when child of flex layout, take up space
+  color: var(--pf-c-text-input-group--Color, inherit);
+  background-color: var(--pf-c-text-input-group--BackgroundColor);
+
+  &:hover {
+    --pf-c-text-input-group__text--after--BorderBottomColor: var(--pf-c-text-input-group--hover__text--after--BorderBottomColor);
+  }
+
+  &.pf-m-disabled {
+    --pf-c-text-input-group__text--before--BorderWidth: 0;
+    --pf-c-text-input-group__text--after--BorderBottomWidth: 0;
+    --pf-c-text-input-group--Color: var(--pf-c-text-input-group--m-disabled--Color);
+    --pf-c-text-input-group__icon--Color: var(--pf-c-text-input-group--m-disabled--Color);
+    --pf-c-text-input-group--BackgroundColor: var(--pf-c-text-input-group--m-disabled--BackgroundColor);
+
+    pointer-events: none;
+  }
+
+  &.pf-m-plain {
+    --pf-c-text-input-group--BackgroundColor: transparent;
+
+    .pf-c-text-input-group__text {
+      &::before,
+      &::after {
+        border: 0;
+      }
+    }
+  }
+}
+
+.pf-c-text-input-group__main {
+  display: flex;
+  flex: 1;
+  gap: var(--pf-global--spacer--sm);
+  min-width: 0;
+
+  &.pf-m-icon {
+    --pf-c-text-input-group__text-input--PaddingLeft: var(--pf-c-text-input-group__main--m-icon__text-input--PaddingLeft);
+  }
+
+  > :first-child:not(.pf-c-text-input-group__text) {
+    margin-left: var(--pf-c-text-input-group__main--first-child--not--text-input--MarginLeft);
+  }
+
+  // Scroll chip group horizontally if there is overflow
+  .pf-c-chip-group {
+    overflow: auto;
+
+    // Hide scrollbar for IE, Edge and Firefox
+    -ms-overflow-style: none;  // IE and Edge
+    scrollbar-width: none;  // Firefox
+
+    // Hide scrollbar for Chrome, Safari and Opera
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .pf-c-chip-group,
+  .pf-c-chip-group__list {
+    flex-wrap: nowrap;
+  }
+}
+
+.pf-c-text-input-group__text {
+  display: inline-grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "text-input";
+  flex: 1;
+
+  &::before,
+  &::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    content: "";
+  }
+
+  &::before {
+    border: var(--pf-c-text-input-group__text--before--BorderWidth) solid var(--pf-c-text-input-group__text--before--BorderColor);
+  }
+
+  &::after {
+    border-bottom: var(--pf-c-text-input-group__text--after--BorderBottomWidth) solid var(--pf-c-text-input-group__text--after--BorderBottomColor);
+  }
+
+  &:hover,
+  &:focus-within {
+    --pf-c-text-input-group__icon--Color: var(--pf-c-text-input-group__text--hover__icon--Color);
+  }
+
+  &:focus-within {
+    --pf-c-text-input-group__text--after--BorderBottomWidth: var(--pf-c-text-input-group__text--focus-within--after--BorderBottomWidth);
+    --pf-c-text-input-group__text--after--BorderBottomColor: var(--pf-c-text-input-group__text--focus-within--after--BorderBottomColor);
+  }
+}
+
+.pf-c-text-input-group__icon {
+  position: absolute;
+  top: 50%;
+  left: var(--pf-c-text-input-group__icon--Left);
+  color: var(--pf-c-text-input-group__icon--Color);
+  transform: translateY(var(--pf-c-text-input-group__icon--TranslateY));
+}
+
+.pf-c-text-input-group__text-input {
+  @include pf-text-overflow;
+
+  position: relative;
+  width: 100%;
+  min-width: var(--pf-c-text-input-group__text-input--MinWidth);
+  padding: var(--pf-c-text-input-group__text-input--PaddingTop) var(--pf-c-text-input-group__text-input--PaddingRight) var(--pf-c-text-input-group__text-input--PaddingBottom) var(--pf-c-text-input-group__text-input--PaddingLeft);
+  border: 0;
+
+  &,
+  &.pf-m-hint {
+    grid-area: text-input;
+  }
+
+  &.pf-m-hint {
+    color: var(--pf-c-text-input-group__text-input--m-hint--Color);
+  }
+
+  &::placeholder {
+    color: var(--pf-c-text-input-group--placeholder--Color);
+  }
+}
+
+.pf-c-text-input-group__utilities {
+  display: flex;
+  align-items: center;
+  margin-right: var(--pf-c-text-input-group__utilities--MarginRight);
+  margin-left: var(--pf-c-text-input-group__utilities--MarginLeft);
+
+  > * + * {
+    margin-left: var(--pf-c-text-input-group__utilities--child--MarginLeft);
+  }
+
+  .pf-c-button {
+    --pf-c-button--PaddingRight: var(--pf-c-text-input-group__utilities--c-button--PaddingRight);
+    --pf-c-button--PaddingLeft: var(--pf-c-text-input-group__utilities--c-button--PaddingLeft);
+  }
+}
+
+
+.pf-c-text-input-group__group {
+  display: flex;
+}

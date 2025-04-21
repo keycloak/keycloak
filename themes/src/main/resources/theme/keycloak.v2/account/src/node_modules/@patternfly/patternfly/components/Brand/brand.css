@@ -1,0 +1,62 @@
+.pf-c-brand {
+  --pf-c-brand--Width: auto;
+  --pf-c-brand--Height: auto;
+  width: var(--pf-c-brand--Width--base);
+  height: var(--pf-c-brand--Height--base);
+  --pf-c-brand--Width--base: var(--pf-c-brand--Width);
+  --pf-c-brand--Height--base: var(--pf-c-brand--Height);
+}
+@media (min-width: 576px) {
+  .pf-c-brand {
+    --pf-c-brand--Width--base: var(--pf-c-brand--Width-on-sm, var(--pf-c-brand--Width));
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-brand {
+    --pf-c-brand--Width--base: var(--pf-c-brand--Width-on-md, var(--pf-c-brand--Width-on-sm, var(--pf-c-brand--Width)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-brand {
+    --pf-c-brand--Width--base: var(--pf-c-brand--Width-on-lg, var(--pf-c-brand--Width-on-md, var(--pf-c-brand--Width-on-sm, var(--pf-c-brand--Width))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-brand {
+    --pf-c-brand--Width--base: var(--pf-c-brand--Width-on-xl, var(--pf-c-brand--Width-on-lg, var(--pf-c-brand--Width-on-md, var(--pf-c-brand--Width-on-sm, var(--pf-c-brand--Width)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-brand {
+    --pf-c-brand--Width--base: var(--pf-c-brand--Width-on-2xl, var(--pf-c-brand--Width-on-xl, var(--pf-c-brand--Width-on-lg, var(--pf-c-brand--Width-on-md, var(--pf-c-brand--Width-on-sm, var(--pf-c-brand--Width))))));
+  }
+}
+@media (min-width: 576px) {
+  .pf-c-brand {
+    --pf-c-brand--Height--base: var(--pf-c-brand--Height-on-sm, var(--pf-c-brand--Height));
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-brand {
+    --pf-c-brand--Height--base: var(--pf-c-brand--Height-on-md, var(--pf-c-brand--Height-on-sm, var(--pf-c-brand--Height)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-brand {
+    --pf-c-brand--Height--base: var(--pf-c-brand--Height-on-lg, var(--pf-c-brand--Height-on-md, var(--pf-c-brand--Height-on-sm, var(--pf-c-brand--Height))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-brand {
+    --pf-c-brand--Height--base: var(--pf-c-brand--Height-on-xl, var(--pf-c-brand--Height-on-lg, var(--pf-c-brand--Height-on-md, var(--pf-c-brand--Height-on-sm, var(--pf-c-brand--Height)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-brand {
+    --pf-c-brand--Height--base: var(--pf-c-brand--Height-on-2xl, var(--pf-c-brand--Height-on-xl, var(--pf-c-brand--Height-on-lg, var(--pf-c-brand--Height-on-md, var(--pf-c-brand--Height-on-sm, var(--pf-c-brand--Height))))));
+  }
+}
+.pf-c-brand.pf-m-picture {
+  display: inline-flex;
+  max-width: 100%;
+}

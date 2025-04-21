@@ -1,0 +1,214 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Checkbox controlled - 3rd state 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-2"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox controlled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-1"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox isDisabled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-4"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      disabled=""
+      id="check"
+      type="checkbox"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox label is function 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-6"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+    <label
+      class="pf-c-check__label"
+      for="check"
+    >
+      <h1>
+        Header
+      </h1>
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox label is node 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-7"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+    <label
+      class="pf-c-check__label"
+      for="check"
+    >
+      <h1>
+        Header
+      </h1>
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox label is string 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-5"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+    <label
+      class="pf-c-check__label"
+      for="check"
+    >
+      Label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox passing HTML attribute 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      aria-labelledby="labelId"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-9"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+    <label
+      class="pf-c-check__label"
+      for="check"
+    >
+      label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox passing class 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check class-123"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-8"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+    <label
+      class="pf-c-check__label"
+      for="check"
+    >
+      label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Checkbox uncontrolled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-check pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      class="pf-c-check__input"
+      data-ouia-component-id="OUIA-Generated-Checkbox-3"
+      data-ouia-component-type="PF4/Checkbox"
+      data-ouia-safe="true"
+      id="check"
+      type="checkbox"
+    />
+  </div>
+</DocumentFragment>
+`;

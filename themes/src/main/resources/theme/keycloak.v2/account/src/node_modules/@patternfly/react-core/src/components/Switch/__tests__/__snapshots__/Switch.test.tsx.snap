@@ -1,0 +1,309 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Switch no label switch is checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-7"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="no-label-switch-is-checked"
+  >
+    <input
+      aria-label="Switch label"
+      checked=""
+      class="pf-c-switch__input"
+      id="no-label-switch-is-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    >
+      <div
+        aria-hidden="true"
+        class="pf-c-switch__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+          />
+        </svg>
+      </div>
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch no label switch is not checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-8"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="no-label-switch-is-not-checked"
+  >
+    <input
+      aria-label="Switch label"
+      class="pf-c-switch__input"
+      id="no-label-switch-is-not-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    >
+      <div
+        aria-hidden="true"
+        class="pf-c-switch__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+          />
+        </svg>
+      </div>
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch is checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-3"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-checked"
+  >
+    <input
+      aria-label="Switch label"
+      checked=""
+      class="pf-c-switch__input"
+      id="switch-is-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    />
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-on"
+    >
+      On
+    </span>
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-off"
+    >
+      Off
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch is checked and disabled 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-9"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-checked-and-disabled"
+  >
+    <input
+      aria-label="Switch label"
+      checked=""
+      class="pf-c-switch__input"
+      disabled=""
+      id="switch-is-checked-and-disabled"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    >
+      <div
+        aria-hidden="true"
+        class="pf-c-switch__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+          />
+        </svg>
+      </div>
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch is not checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-4"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-not-checked"
+  >
+    <input
+      aria-label="Switch label"
+      class="pf-c-switch__input"
+      id="switch-is-not-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    />
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-on"
+    >
+      On
+    </span>
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-off"
+    >
+      Off
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch is not checked and disabled 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-10"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-not-checked-and-disabled"
+  >
+    <input
+      aria-label="Switch label"
+      class="pf-c-switch__input"
+      disabled=""
+      id="switch-is-not-checked-and-disabled"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    >
+      <div
+        aria-hidden="true"
+        class="pf-c-switch__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+          />
+        </svg>
+      </div>
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch with only label is checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-5"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-checked"
+  >
+    <input
+      aria-label=""
+      aria-labelledby="switch-is-checked-on"
+      checked=""
+      class="pf-c-switch__input"
+      id="switch-is-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    />
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-on"
+      id="switch-is-checked-on"
+    >
+      On
+    </span>
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-off"
+      id="switch-is-checked-off"
+    >
+      On
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Switch switch with only label is not checked 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-switch"
+    data-ouia-component-id="OUIA-Generated-Switch-6"
+    data-ouia-component-type="PF4/Switch"
+    data-ouia-safe="true"
+    for="switch-is-not-checked"
+  >
+    <input
+      aria-label=""
+      aria-labelledby="switch-is-not-checked-on"
+      class="pf-c-switch__input"
+      id="switch-is-not-checked"
+      type="checkbox"
+    />
+    <span
+      class="pf-c-switch__toggle"
+    />
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-on"
+      id="switch-is-not-checked-on"
+    >
+      Off
+    </span>
+    <span
+      aria-hidden="true"
+      class="pf-c-switch__label pf-m-off"
+      id="switch-is-not-checked-off"
+    >
+      Off
+    </span>
+  </label>
+</DocumentFragment>
+`;

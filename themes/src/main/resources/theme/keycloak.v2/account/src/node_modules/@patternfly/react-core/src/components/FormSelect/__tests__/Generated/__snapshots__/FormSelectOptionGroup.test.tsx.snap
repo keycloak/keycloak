@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormSelectOptionGroup should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <optgroup
+    class="''"
+    label="string"
+  >
+    ReactNode
+  </optgroup>
+</DocumentFragment>
+`;

@@ -1,0 +1,23 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-select() {
+  .pf-c-select {
+    --pf-c-select__toggle--disabled--BackgroundColor: var(--pf-global--palette--black-500);
+    --pf-c-select__toggle--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-select__toggle--before--BorderTopColor: transparent;
+    --pf-c-select__toggle--before--BorderRightColor: transparent;
+    --pf-c-select__toggle--before--BorderBottomColor: var(--pf-global--BorderColor--400);
+    --pf-c-select__toggle--before--BorderLeftColor: transparent;
+    --pf-c-select__menu--Top: 100%;
+    --pf-c-select__menu--m-top--TranslateY: -100%;
+    --pf-c-select__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-select__menu--BackgroundColor: var(--pf-global--BackgroundColor--300);
+  }
+
+  .pf-c-select__toggle {
+    &:disabled,
+    &.pf-m-disabled {
+      color: var(--pf-global--palette--black-100);
+    }
+  }
+}

@@ -1,0 +1,48 @@
+$pf-c-avatar--breakpoint-map: build-breakpoint-map("base", "sm", "md", "lg", "xl", "2xl");
+$sizes: "sm", "md", "lg", "xl";
+
+.pf-c-avatar {
+  --pf-c-avatar--BorderColor: transparent;
+  --pf-c-avatar--BorderWidth: 0;
+  --pf-c-avatar--BorderRadius: var(--pf-global--BorderRadius--lg);
+  --pf-c-avatar--Width: #{pf-size-prem(36px)};
+  --pf-c-avatar--Height: #{pf-size-prem(36px)};
+  --pf-c-avatar--m-sm--Width: #{pf-size-prem(24px)};
+  --pf-c-avatar--m-sm--Height: #{pf-size-prem(24px)};
+  --pf-c-avatar--m-md--Width: #{pf-size-prem(36px)};
+  --pf-c-avatar--m-md--Height: #{pf-size-prem(36px)};
+  --pf-c-avatar--m-lg--Width: #{pf-size-prem(72px)};
+  --pf-c-avatar--m-lg--Height: #{pf-size-prem(72px)};
+  --pf-c-avatar--m-xl--Width: #{pf-size-prem(128px)};
+  --pf-c-avatar--m-xl--Height: #{pf-size-prem(128px)};
+
+  // Light
+  --pf-c-avatar--m-light--BorderColor: var(--pf-global--BorderColor--dark-100);
+  --pf-c-avatar--m-light--BorderWidth: var(--pf-global--BorderWidth--sm);
+
+  // Dark
+  --pf-c-avatar--m-dark--BorderColor: var(--pf-global--palette--black-700);
+  --pf-c-avatar--m-dark--BorderWidth: var(--pf-global--BorderWidth--sm);
+
+  width: var(--pf-c-avatar--Width);
+  height: var(--pf-c-avatar--Height);
+  border: var(--pf-c-avatar--BorderWidth) solid var(--pf-c-avatar--BorderColor);
+  border-radius: var(--pf-c-avatar--BorderRadius);
+
+  &.pf-m-light {
+    --pf-c-avatar--BorderColor: var(--pf-c-avatar--m-light--BorderColor);
+    --pf-c-avatar--BorderWidth: var(--pf-c-avatar--m-light--BorderWidth);
+  }
+
+  &.pf-m-dark {
+    --pf-c-avatar--BorderColor: var(--pf-c-avatar--m-dark--BorderColor);
+    --pf-c-avatar--BorderWidth: var(--pf-c-avatar--m-dark--BorderWidth);
+  }
+
+  @each $size in $sizes {
+    &.pf-m-#{$size} {
+      @include pf-build-css-variable-stack("--pf-c-avatar--Width", "--pf-c-avatar--m-#{$size}--Width", $pf-c-avatar--breakpoint-map);
+      @include pf-build-css-variable-stack("--pf-c-avatar--Height", "--pf-c-avatar--m-#{$size}--Height", $pf-c-avatar--breakpoint-map);
+    }
+  }
+}

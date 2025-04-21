@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CardHeadMain renders with PatternFly Core styles 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-card__head-main"
+  >
+    text
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormSelectOption should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <option
+    class="''"
+    value=""
+  >
+    string
+  </option>
+</DocumentFragment>
+`;

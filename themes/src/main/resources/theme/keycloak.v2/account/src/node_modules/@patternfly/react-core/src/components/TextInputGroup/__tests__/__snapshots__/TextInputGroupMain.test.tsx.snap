@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextInputGroupMain matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-text-input-group__main"
+  >
+    Test
+    <span
+      class="pf-c-text-input-group__text"
+    >
+      <input
+        aria-label="Type to filter"
+        class="pf-c-text-input-group__text-input"
+        type="text"
+        value=""
+      />
+    </span>
+  </div>
+</DocumentFragment>
+`;

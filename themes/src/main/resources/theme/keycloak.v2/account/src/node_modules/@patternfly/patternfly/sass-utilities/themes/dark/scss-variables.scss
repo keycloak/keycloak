@@ -1,0 +1,86 @@
+// background colors
+$pf-global--BackgroundColor--100: $pf-color-black-800; // primary background color
+$pf-global--BackgroundColor--150: $pf-color-black-850; // in-between special use case background color
+$pf-global--BackgroundColor--200: $pf-color-black-900; // secondary background color
+$pf-global--BackgroundColor--300: $pf-color-black-700; // floats on top of other elements
+$pf-global--BackgroundColor--400: $pf-color-black-600; // form control & item hover on --pf-global--BackgroundColor--300
+$pf-global--BorderColor--100: $pf-color-black-500; // primary border color
+$pf-global--BorderColor--200: $pf-color-black-500; // secondary border color
+$pf-global--BorderColor--300: $pf-color-black-400;
+$pf-global--BorderColor--400: $pf-color-black-200; // form control bottom border
+
+// text colors
+$pf-global--Color--100: $pf-color-black-50; // primary text color
+$pf-global--Color--200: $pf-color-black-200; // secondary text color
+$pf-global--active-color--100: $pf-color-blue-300;
+$pf-global--primary-color--100: $pf-color-blue-300; // primary blue against dark background - background, text, etc
+$pf-global--primary-color--300: $pf-color-blue-400; // primary blue with white text on top for contrast
+$pf-global--success-color--100: $pf-color-green-400;
+$pf-global--warning-color--100: $pf-color-gold-400;
+$pf-global--warning-color--200: $pf-color-gold-300;
+$pf-global--danger-color--100: $pf-color-red-9999;
+$pf-global--danger-color--200: $pf-color-red-8888;
+$pf-global--link--Color: $pf-color-blue-300;
+$pf-global--link--Color--hover: $pf-color-blue-200;
+$pf-global--disabled-color--100: $pf-color-black-400; // disabled text on regular background color
+$pf-global--disabled-color--200: $pf-color-black-500; // disabled background color
+$pf-global--disabled-color--300: $pf-color-black-200; // disabled text on disabled background color
+
+// icons
+$pf-global--icon--Color--light: $pf-color-black-300;
+
+// theme color resets
+$pf-global--Color--dark-100: $pf-global--Color--100;
+$pf-global--Color--dark-200: $pf-global--Color--200;
+$pf-global--Color--light-100: $pf-global--Color--100;
+$pf-global--Color--light-200: $pf-global--Color--200;
+$pf-global--Color--light-300: $pf-global--Color--300;
+$pf-global--BorderColor--dark-100: $pf-global--BorderColor--100;
+$pf-global--BorderColor--light-100: $pf-global--BorderColor--100;
+$pf-global--primary-color--light-100: $pf-global--primary-color--100;
+$pf-global--primary-color--dark-100: $pf-global--primary-color--100;
+$pf-global--link--Color--light: $pf-global--link--Color;
+$pf-global--link--Color--light--hover: $pf-global--link--Color--hover;
+$pf-global--link--Color--dark: $pf-global--link--Color;
+$pf-global--link--Color--dark--hover: $pf-global--link--Color--hover;
+$pf-global--BackgroundColor--light-100: $pf-global--BackgroundColor--100;
+$pf-global--BackgroundColor--light-200: $pf-global--BackgroundColor--200;
+$pf-global--BackgroundColor--light-300: $pf-global--BackgroundColor--300;
+$pf-global--BackgroundColor--dark-100: $pf-global--BackgroundColor--100;
+$pf-global--BackgroundColor--dark-200: $pf-global--BackgroundColor--200;
+$pf-global--BackgroundColor--dark-300: $pf-global--BackgroundColor--300;
+$pf-global--BackgroundColor--dark-400: $pf-global--BackgroundColor--400;
+$pf-global--icon--Color--light: $pf-color-black-200;
+$pf-global--icon--Color--dark: $pf-color-black-200;
+
+// Shadows
+// small
+$pf-global--BoxShadow--sm: 0 pf-size-prem(1px) pf-size-prem(2px) 0 rgba($pf-color-black-1000, .48), 0 0 pf-size-prem(2px) 0 rgba($pf-color-black-1000, .24);
+$pf-global--BoxShadow--sm-top: 0 pf-size-prem(-2px) pf-size-prem(4px) pf-size-prem(-1px) rgba($pf-color-black-1000, .64);
+$pf-global--BoxShadow--sm-right: pf-size-prem(2px) 0 pf-size-prem(4px) pf-size-prem(-1px) rgba($pf-color-black-1000, .64);
+$pf-global--BoxShadow--sm-bottom: 0 pf-size-prem(2px) pf-size-prem(4px) pf-size-prem(-1px) rgba($pf-color-black-1000, .64);
+$pf-global--BoxShadow--sm-left: pf-size-prem(-2px) 0 pf-size-prem(4px) pf-size-prem(-1px) rgba($pf-color-black-1000, .64);
+
+// medium
+$pf-global--BoxShadow--md: 0 pf-size-prem(4px) pf-size-prem(8px) pf-size-prem(0) rgba($pf-color-black-1000, .48), 0 0 pf-size-prem(4px) 0 rgba($pf-color-black-1000, .24);
+$pf-global--BoxShadow--md-top: 0 pf-size-prem(-8px) pf-size-prem(8px) pf-size-prem(-6px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--md-right: pf-size-prem(8px) 0 pf-size-prem(8px) pf-size-prem(-6px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--md-bottom: 0 pf-size-prem(8px) pf-size-prem(8px) pf-size-prem(-6px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--md-left: pf-size-prem(-8px) 0 pf-size-prem(8px) pf-size-prem(-6px) rgba($pf-color-black-1000, .72);
+
+// large
+$pf-global--BoxShadow--lg: 0 pf-size-prem(8px) pf-size-prem(16px) 0 rgba($pf-color-black-1000, .64), 0 0 pf-size-prem(6px) 0 rgba($pf-color-black-1000, .32);
+$pf-global--BoxShadow--lg-top: 0 pf-size-prem(-12px) pf-size-prem(12px) pf-size-prem(-8px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--lg-right: pf-size-prem(12px) 0 pf-size-prem(12px) pf-size-prem(-8px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--lg-bottom: 0 pf-size-prem(12px) pf-size-prem(12px) pf-size-prem(-8px) rgba($pf-color-black-1000, .72);
+$pf-global--BoxShadow--lg-left: pf-size-prem(-12px) 0 pf-size-prem(12px) pf-size-prem(-8px) rgba($pf-color-black-1000, .72);
+
+// x-large
+$pf-global--BoxShadow--xl: 0 pf-size-prem(16px) pf-size-prem(32px) 0 rgba($pf-color-black-1000, .64), 0 0 pf-size-prem(8px) 0 rgba($pf-color-black-1000, .4);
+$pf-global--BoxShadow--xl-top: 0 pf-size-prem(-16px) pf-size-prem(16px) pf-size-prem(-8px) rgba($pf-color-black-1000, .8);
+$pf-global--BoxShadow--xl-right: pf-size-prem(16px) 0 pf-size-prem(16px) pf-size-prem(-8px) rgba($pf-color-black-1000, .8);
+$pf-global--BoxShadow--xl-bottom: 0 pf-size-prem(16px) pf-size-prem(16px) pf-size-prem(-8px) rgba($pf-color-black-1000, .8);
+$pf-global--BoxShadow--xl-left: pf-size-prem(-16px) 0 pf-size-prem(16px) pf-size-prem(-8px) rgba($pf-color-black-1000, .8);
+
+// inset
+$pf-global--BoxShadow--inset: inset 0 0 pf-size-prem(10) 0 $pf-color-black-1000;

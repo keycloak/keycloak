@@ -1,0 +1,234 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SelectOption checked renders with checked successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      test
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption disabled renders disabled successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item pf-m-disabled"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      test
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption is selected renders selected successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      aria-selected="true"
+      class="pf-c-select__menu-item pf-m-selected"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      test
+      <span
+        class="pf-c-select__menu-item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 512 512"
+          width="1em"
+        >
+          <path
+            d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+          />
+        </svg>
+      </span>
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders custom component 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <div
+      class="pf-c-select__menu-item"
+      role="option"
+      type="button"
+    >
+      <div>
+        test display
+      </div>
+    </div>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with custom display and custom user object successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      role="option"
+      type="button"
+    >
+      <div>
+        test display
+      </div>
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with custom display successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      role="option"
+      type="button"
+    >
+      <div>
+        test display
+      </div>
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with custom user object successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      Mr.: Test User
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with description successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item pf-m-description"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      <span
+        class="pf-c-select__menu-item-main"
+      >
+        test
+      </span>
+      <span
+        class="pf-c-select__menu-item-description"
+      >
+        This is a description
+      </span>
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with item count successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      <span
+        class="pf-c-select__menu-item-row"
+      >
+        <span
+          class="pf-c-select__menu-item-text"
+        >
+          test
+        </span>
+        <span
+          class="pf-c-select__menu-item-count"
+        >
+          3
+        </span>
+      </span>
+    </button>
+  </li>
+</DocumentFragment>
+`;
+
+exports[`SelectOption renders with value parameter successfully 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-select__menu-wrapper"
+    id="option-1"
+    role="presentation"
+  >
+    <button
+      class="pf-c-select__menu-item"
+      data-testid="test-id"
+      role="option"
+      type="button"
+    >
+      test
+    </button>
+  </li>
+</DocumentFragment>
+`;

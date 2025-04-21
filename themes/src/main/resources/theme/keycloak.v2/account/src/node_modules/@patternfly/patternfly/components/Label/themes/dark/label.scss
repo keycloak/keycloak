@@ -1,0 +1,47 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-label() {
+  .pf-c-label {
+    --pf-c-label--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-blue--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-green--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-orange--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-red--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-purple--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label--m-cyan--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-label__content--before--BorderWidth: 0;
+    --pf-c-label__content--before--BorderColor: transparent;
+    --pf-c-label__content--link--hover--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+    --pf-c-label__content--link--focus--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+    --pf-c-label--m-blue__content--Color: var(--pf-global--primary-color--100);
+    --pf-c-label--m-outline--m-blue__content--before--BorderColor: var(--pf-global--active-color--200);
+    --pf-c-label--m-outline--m-blue__content--link--hover--before--BorderColor: var(--pf-global--active-color--200);
+    --pf-c-label--m-outline--m-blue__content--link--focus--before--BorderColor: var(--pf-global--active-color--200);
+    --pf-c-label--m-green__content--Color: var(--pf-global--success-color--100);
+    --pf-c-label--m-outline--m-green__content--before--BorderColor: var(--pf-global--palette--green-100);
+    --pf-c-label--m-outline--m-green__content--link--hover--before--BorderColor: var(--pf-global--palette--green-100);
+    --pf-c-label--m-outline--m-green__content--link--focus--before--BorderColor: var(--pf-global--palette--green-100);
+    --pf-c-label--m-orange__content--Color: var(--pf-global--palette--orange-300);
+    --pf-c-label--m-outline--m-orange__content--Color: var(--pf-global--palette--orange-300);
+    --pf-c-label--m-outline--m-orange__content--before--BorderColor: var(--pf-global--palette--gold-100);
+    --pf-c-label--m-outline--m-orange__content--link--hover--before--BorderColor: var(--pf-global--palette--gold-100);
+    --pf-c-label--m-outline--m-orange__content--link--focus--before--BorderColor: var(--pf-global--palette--gold-100);
+    --pf-c-label--m-red__content--Color: var(--pf-global--danger-color--100);
+    --pf-c-label--m-outline--m-red__content--before--BorderColor: var(--pf-global--danger-color--100);
+    --pf-c-label--m-outline--m-red__content--link--hover--before--BorderColor: var(--pf-global--danger-color--100);
+    --pf-c-label--m-outline--m-red__content--link--focus--before--BorderColor: var(--pf-global--danger-color--100);
+    --pf-c-label--m-purple__content--Color: var(--pf-global--palette--purple-300);
+    --pf-c-label--m-purple__icon--Color: var(--pf-global--palette--purple-300);
+    --pf-c-label--m-purple__content--link--hover--before--BorderColor: var(--pf-global--palette--purple-300);
+    --pf-c-label--m-purple__content--link--focus--before--BorderColor: var(--pf-global--palette--purple-300);
+    --pf-c-label--m-outline--m-purple__content--before--BorderColor: var(--pf-global--palette--purple-100);
+    --pf-c-label--m-outline--m-purple__content--link--hover--before--BorderColor: var(--pf-global--palette--purple-100);
+    --pf-c-label--m-outline--m-purple__content--link--focus--before--BorderColor: var(--pf-global--palette--purple-100);
+    --pf-c-label--m-outline--m-purple__content--Color: var(--pf-global--palette--purple-300);
+    --pf-c-label--m-cyan__content--Color: var(--pf-global--default-color--200);
+    --pf-c-label--m-outline--m-cyan__content--Color: var(--pf-global--default-color--200);
+    --pf-c-label--m-outline--m-cyan__content--before--BorderColor: var(--pf-global--palette--cyan-100);
+    --pf-c-label--m-outline--m-cyan__content--link--hover--before--BorderColor: var(--pf-global--palette--cyan-100);
+    --pf-c-label--m-outline--m-cyan__content--link--focus--before--BorderColor: var(--pf-global--palette--cyan-100);
+  }
+}

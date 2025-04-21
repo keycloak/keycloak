@@ -1,0 +1,248 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Radio controlled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-1"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio isDisabled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-3"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      disabled=""
+      id="check"
+      name="check"
+      type="radio"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio isLabelBeforeButton 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio"
+  >
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      Radio label
+    </label>
+    <input
+      aria-invalid="false"
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-4"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio isLabelWrapped 1`] = `
+<DocumentFragment>
+  <label
+    class="pf-c-radio"
+    for="check"
+  >
+    <input
+      aria-invalid="false"
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-5"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <span
+      class="pf-c-radio__label"
+    >
+      Radio label
+    </span>
+  </label>
+</DocumentFragment>
+`;
+
+exports[`Radio label is function 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio"
+  >
+    <input
+      aria-invalid="false"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-7"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      <h1>
+        Header
+      </h1>
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio label is node 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio"
+  >
+    <input
+      aria-invalid="false"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-8"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      <h1>
+        Header
+      </h1>
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio label is string 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio"
+  >
+    <input
+      aria-invalid="false"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-6"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      Label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio passing HTML attribute 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio"
+  >
+    <input
+      aria-invalid="false"
+      aria-labelledby="labelId"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-10"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio passing class 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio class-123"
+  >
+    <input
+      aria-invalid="false"
+      checked=""
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-9"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+    <label
+      class="pf-c-radio__label"
+      for="check"
+    >
+      label
+    </label>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Radio uncontrolled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-radio pf-m-standalone"
+  >
+    <input
+      aria-invalid="false"
+      aria-label="check"
+      class="pf-c-radio__input"
+      data-ouia-component-id="OUIA-Generated-Radio-2"
+      data-ouia-component-type="PF4/Radio"
+      data-ouia-safe="true"
+      id="check"
+      name="check"
+      type="radio"
+    />
+  </div>
+</DocumentFragment>
+`;

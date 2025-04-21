@@ -1,0 +1,1451 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Page Check dark page against snapshot 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      >
+        Navigation
+      </div>
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page horizontal layout example against snapshot 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify breadcrumb is created - PageBreadcrumb syntax 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-breadcrumb"
+      >
+        <nav
+          aria-label="Breadcrumb"
+          class="pf-c-breadcrumb"
+          data-ouia-component-id="OUIA-Generated-Breadcrumb-2"
+          data-ouia-component-type="PF4/Breadcrumb"
+          data-ouia-safe="true"
+        >
+          <ol
+            class="pf-c-breadcrumb__list"
+          >
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              Section Home
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                aria-current="page"
+                class="pf-c-breadcrumb__link pf-m-current"
+                href="#"
+              >
+                Section Landing
+              </a>
+            </li>
+          </ol>
+        </nav>
+      </section>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify breadcrumb is created 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-breadcrumb"
+      >
+        <nav
+          aria-label="Breadcrumb"
+          class="pf-c-breadcrumb"
+          data-ouia-component-id="OUIA-Generated-Breadcrumb-1"
+          data-ouia-component-type="PF4/Breadcrumb"
+          data-ouia-safe="true"
+        >
+          <ol
+            class="pf-c-breadcrumb__list"
+          >
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              Section Home
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                aria-current="page"
+                class="pf-c-breadcrumb__link pf-m-current"
+                href="#"
+              >
+                Section Landing
+              </a>
+            </li>
+          </ol>
+        </nav>
+      </section>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify grouped nav and breadcrumb - new components syntax 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <div
+        class="pf-c-page__main-group pf-m-sticky-bottom"
+      >
+        <section
+          class="pf-c-page__main-breadcrumb"
+        >
+          <nav
+            aria-label="Breadcrumb"
+            class="pf-c-breadcrumb"
+            data-ouia-component-id="OUIA-Generated-Breadcrumb-3"
+            data-ouia-component-type="PF4/Breadcrumb"
+            data-ouia-safe="true"
+          >
+            <ol
+              class="pf-c-breadcrumb__list"
+            >
+              <li
+                class="pf-c-breadcrumb__item"
+              >
+                Section Home
+              </li>
+              <li
+                class="pf-c-breadcrumb__item"
+              >
+                <span
+                  class="pf-c-breadcrumb__item-divider"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 256 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                    />
+                  </svg>
+                </span>
+                <a
+                  class="pf-c-breadcrumb__link"
+                  href="#"
+                >
+                  Section Title
+                </a>
+              </li>
+              <li
+                class="pf-c-breadcrumb__item"
+              >
+                <span
+                  class="pf-c-breadcrumb__item-divider"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 256 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                    />
+                  </svg>
+                </span>
+                <a
+                  class="pf-c-breadcrumb__link"
+                  href="#"
+                >
+                  Section Title
+                </a>
+              </li>
+              <li
+                class="pf-c-breadcrumb__item"
+              >
+                <span
+                  class="pf-c-breadcrumb__item-divider"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 256 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                    />
+                  </svg>
+                </span>
+                <a
+                  aria-current="page"
+                  class="pf-c-breadcrumb__link pf-m-current"
+                  href="#"
+                >
+                  Section Landing
+                </a>
+              </li>
+            </ol>
+          </nav>
+        </section>
+        <div
+          class="pf-c-page__main-nav"
+        >
+          <nav
+            aria-label="Nav"
+            class="pf-c-nav pf-m-horizontal pf-m-tertiary"
+            data-ouia-component-id="OUIA-Generated-Nav-tertiary-2"
+            data-ouia-component-type="PF4/Nav"
+            data-ouia-safe="true"
+          >
+            <button
+              aria-label="Scroll left"
+              class="pf-c-nav__scroll-button"
+              disabled=""
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 256 512"
+                width="1em"
+              >
+                <path
+                  d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+                />
+              </svg>
+            </button>
+            <ul
+              class="pf-c-nav__list"
+            >
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-6"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  aria-current="page"
+                  class="pf-c-nav__link pf-m-current"
+                >
+                  System Panel
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-7"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Policy
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-8"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Authentication
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-9"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Network Services
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-10"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Server
+                </a>
+              </li>
+            </ul>
+            <button
+              aria-label="Scroll right"
+              class="pf-c-nav__scroll-button"
+              disabled=""
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 256 512"
+                width="1em"
+              >
+                <path
+                  d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                />
+              </svg>
+            </button>
+          </nav>
+        </div>
+      </div>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify grouped nav and breadcrumb - old / props syntax 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <div
+        class="pf-c-page__main-group pf-m-sticky-bottom pf-m-shadow-top"
+      >
+        <div
+          class="pf-c-page__main-nav"
+        >
+          <nav
+            aria-label="Nav"
+            class="pf-c-nav pf-m-horizontal pf-m-tertiary"
+            data-ouia-component-id="OUIA-Generated-Nav-tertiary-3"
+            data-ouia-component-type="PF4/Nav"
+            data-ouia-safe="true"
+          >
+            <button
+              aria-label="Scroll left"
+              class="pf-c-nav__scroll-button"
+              disabled=""
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 256 512"
+                width="1em"
+              >
+                <path
+                  d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+                />
+              </svg>
+            </button>
+            <ul
+              class="pf-c-nav__list"
+            >
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-11"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  aria-current="page"
+                  class="pf-c-nav__link pf-m-current"
+                >
+                  System Panel
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-12"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Policy
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-13"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Authentication
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-14"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Network Services
+                </a>
+              </li>
+              <li
+                class="pf-c-nav__item"
+                data-ouia-component-id="OUIA-Generated-NavItem-15"
+                data-ouia-component-type="PF4/NavItem"
+                data-ouia-safe="true"
+              >
+                <a
+                  class="pf-c-nav__link"
+                >
+                  Server
+                </a>
+              </li>
+            </ul>
+            <button
+              aria-label="Scroll right"
+              class="pf-c-nav__scroll-button"
+              disabled=""
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 256 512"
+                width="1em"
+              >
+                <path
+                  d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                />
+              </svg>
+            </button>
+          </nav>
+        </div>
+        <section
+          class="pf-c-page__main-breadcrumb"
+        >
+          <section
+            class="pf-c-page__main-breadcrumb"
+          >
+            <nav
+              aria-label="Breadcrumb"
+              class="pf-c-breadcrumb"
+              data-ouia-component-id="OUIA-Generated-Breadcrumb-4"
+              data-ouia-component-type="PF4/Breadcrumb"
+              data-ouia-safe="true"
+            >
+              <ol
+                class="pf-c-breadcrumb__list"
+              >
+                <li
+                  class="pf-c-breadcrumb__item"
+                >
+                  Section Home
+                </li>
+                <li
+                  class="pf-c-breadcrumb__item"
+                >
+                  <span
+                    class="pf-c-breadcrumb__item-divider"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 256 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      />
+                    </svg>
+                  </span>
+                  <a
+                    class="pf-c-breadcrumb__link"
+                    href="#"
+                  >
+                    Section Title
+                  </a>
+                </li>
+                <li
+                  class="pf-c-breadcrumb__item"
+                >
+                  <span
+                    class="pf-c-breadcrumb__item-divider"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 256 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      />
+                    </svg>
+                  </span>
+                  <a
+                    class="pf-c-breadcrumb__link"
+                    href="#"
+                  >
+                    Section Title
+                  </a>
+                </li>
+                <li
+                  class="pf-c-breadcrumb__item"
+                >
+                  <span
+                    class="pf-c-breadcrumb__item-divider"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 256 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      />
+                    </svg>
+                  </span>
+                  <a
+                    aria-current="page"
+                    class="pf-c-breadcrumb__link pf-m-current"
+                    href="#"
+                  >
+                    Section Landing
+                  </a>
+                </li>
+              </ol>
+            </nav>
+          </section>
+        </section>
+      </div>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify nav is created - PageNavigation syntax 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <div
+        class="pf-c-page__main-nav"
+      >
+        <nav
+          aria-label="Nav"
+          class="pf-c-nav pf-m-horizontal pf-m-tertiary"
+          data-ouia-component-id="OUIA-Generated-Nav-tertiary-1"
+          data-ouia-component-type="PF4/Nav"
+          data-ouia-safe="true"
+        >
+          <button
+            aria-label="Scroll left"
+            class="pf-c-nav__scroll-button"
+            disabled=""
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              height="1em"
+              role="img"
+              style="vertical-align: -0.125em;"
+              viewBox="0 0 256 512"
+              width="1em"
+            >
+              <path
+                d="M31.7 239l136-136c9.4-9.4 24.6-9.4 33.9 0l22.6 22.6c9.4 9.4 9.4 24.6 0 33.9L127.9 256l96.4 96.4c9.4 9.4 9.4 24.6 0 33.9L201.7 409c-9.4 9.4-24.6 9.4-33.9 0l-136-136c-9.5-9.4-9.5-24.6-.1-34z"
+              />
+            </svg>
+          </button>
+          <ul
+            class="pf-c-nav__list"
+          >
+            <li
+              class="pf-c-nav__item"
+              data-ouia-component-id="OUIA-Generated-NavItem-1"
+              data-ouia-component-type="PF4/NavItem"
+              data-ouia-safe="true"
+            >
+              <a
+                aria-current="page"
+                class="pf-c-nav__link pf-m-current"
+              >
+                System Panel
+              </a>
+            </li>
+            <li
+              class="pf-c-nav__item"
+              data-ouia-component-id="OUIA-Generated-NavItem-2"
+              data-ouia-component-type="PF4/NavItem"
+              data-ouia-safe="true"
+            >
+              <a
+                class="pf-c-nav__link"
+              >
+                Policy
+              </a>
+            </li>
+            <li
+              class="pf-c-nav__item"
+              data-ouia-component-id="OUIA-Generated-NavItem-3"
+              data-ouia-component-type="PF4/NavItem"
+              data-ouia-safe="true"
+            >
+              <a
+                class="pf-c-nav__link"
+              >
+                Authentication
+              </a>
+            </li>
+            <li
+              class="pf-c-nav__item"
+              data-ouia-component-id="OUIA-Generated-NavItem-4"
+              data-ouia-component-type="PF4/NavItem"
+              data-ouia-safe="true"
+            >
+              <a
+                class="pf-c-nav__link"
+              >
+                Network Services
+              </a>
+            </li>
+            <li
+              class="pf-c-nav__item"
+              data-ouia-component-id="OUIA-Generated-NavItem-5"
+              data-ouia-component-type="PF4/NavItem"
+              data-ouia-safe="true"
+            >
+              <a
+                class="pf-c-nav__link"
+              >
+                Server
+              </a>
+            </li>
+          </ul>
+          <button
+            aria-label="Scroll right"
+            class="pf-c-nav__scroll-button"
+            disabled=""
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              height="1em"
+              role="img"
+              style="vertical-align: -0.125em;"
+              viewBox="0 0 256 512"
+              width="1em"
+            >
+              <path
+                d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page to verify skip to content points to main content region 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    data-testid="page-test-id"
+    id="PageId"
+  >
+    <a
+      class="pf-c-button pf-m-primary pf-c-skip-to-content"
+      href="#main-content-page-layout-test-nav"
+    >
+      Skip to Content
+    </a>
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      <div
+        class="pf-c-page__header-nav"
+      >
+        Navigation
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      />
+    </div>
+    <main
+      class="pf-c-page__main"
+      id="main-content-page-layout-test-nav"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-breadcrumb"
+      >
+        <nav
+          aria-label="Breadcrumb"
+          class="pf-c-breadcrumb"
+          data-ouia-component-id="OUIA-Generated-Breadcrumb-5"
+          data-ouia-component-type="PF4/Breadcrumb"
+          data-ouia-safe="true"
+        >
+          <ol
+            class="pf-c-breadcrumb__list"
+          >
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              Section Home
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                class="pf-c-breadcrumb__link"
+                href="#"
+              >
+                Section Title
+              </a>
+            </li>
+            <li
+              class="pf-c-breadcrumb__item"
+            >
+              <span
+                class="pf-c-breadcrumb__item-divider"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </span>
+              <a
+                aria-current="page"
+                class="pf-c-breadcrumb__link pf-m-current"
+                href="#"
+              >
+                Section Landing
+              </a>
+            </li>
+          </ol>
+        </nav>
+      </section>
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Page Check page vertical layout example against snapshot 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Page layout"
+    class="pf-c-page pf-m-resize-observer pf-m-breakpoint-default my-page-class"
+    id="PageId"
+  >
+    <header
+      class="pf-c-page__header"
+    >
+      <div
+        class="pf-c-page__header-brand"
+      >
+        <a
+          class="pf-c-page__header-brand-link"
+        >
+          Logo
+        </a>
+      </div>
+      PageHeaderTools | Avatar
+    </header>
+    <div
+      aria-hidden="false"
+      class="pf-c-page__sidebar pf-m-expanded"
+      id="page-sidebar"
+    >
+      <div
+        class="pf-c-page__sidebar-body"
+      >
+        Navigation
+      </div>
+    </div>
+    <main
+      class="pf-c-page__main"
+      tabindex="-1"
+    >
+      <section
+        class="pf-c-page__main-section"
+      >
+        Section with default background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-light"
+      >
+        Section with light background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-200"
+      >
+        Section with dark background
+      </section>
+      <section
+        class="pf-c-page__main-section pf-m-dark-100"
+      >
+        Section with darker background
+      </section>
+    </main>
+  </div>
+</DocumentFragment>
+`;

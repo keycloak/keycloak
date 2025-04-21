@@ -1,0 +1,331 @@
+// Media query used to create responsive classes
+@mixin pf-media-query($point) {
+  @if $point == "" or not $point or $point == "base" {
+    @content;
+  }
+
+  @else if $point == "sm" {
+    @media screen and (min-width: $pf-global--breakpoint--sm) {
+      @content;
+    }
+  }
+
+  @else if $point == "md" {
+    @media screen and (min-width: $pf-global--breakpoint--md) {
+      @content;
+    }
+  }
+
+  @else if $point == "lg" {
+    @media screen and (min-width: $pf-global--breakpoint--lg) {
+      @content;
+    }
+  }
+
+  @else if $point == "xl" {
+    @media screen and (min-width: $pf-global--breakpoint--xl) {
+      @content;
+    }
+  }
+
+  @else if $point == "2xl" {
+    @media screen and (min-width: $pf-global--breakpoint--2xl) {
+      @content;
+    }
+  }
+}
+
+// Media query used to create responsive classes
+@mixin pf-height-media-query($point) {
+  @if $point == "" or not $point or $point == "base" {
+    @content;
+  }
+
+  @else if $point == "sm" {
+    @media screen and (min-height: $pf-global--height-breakpoint--sm) {
+      @content;
+    }
+  }
+
+  @else if $point == "md" {
+    @media screen and (min-height: $pf-global--height-breakpoint--md) {
+      @content;
+    }
+  }
+
+  @else if $point == "lg" {
+    @media screen and (min-height: $pf-global--height-breakpoint--lg) {
+      @content;
+    }
+  }
+
+  @else if $point == "xl" {
+    @media screen and (min-height: $pf-global--height-breakpoint--xl) {
+      @content;
+    }
+  }
+
+  @else if $point == "2xl" {
+    @media screen and (min-height: $pf-global--height-breakpoint--2xl) {
+      @content;
+    }
+  }
+}
+
+// Create single prop / value classes, optionally add responsive suffix
+// @group mixins
+// @moduleType mixin
+// @parameter: {Suffix} xs, sm, md, lg, xl, base or null
+// @usage: @include pf-utility-builder(class-name, base sm md lg xl);
+// ===============================================================================================
+
+// ## Example sass map:
+// this must be used when order matters or a cluster of similar utilties need to overwrite each other
+
+// Justify content options
+// $pf-u-flex-options: (
+//   flex-none:  (flex none),
+//   flex-1:     (flex 1)
+// );
+
+// non-responsive, base only                @include pf-utility-builder($sass-map)
+// responsive, including all breakpoints    @include pf-utility-builder($sass-map, $pf-global--breakpoint-list)
+// responsive height breakpoints            @include pf-utility-builder($sass-map, $pf-global--height-breakpoint-list, 'height')
+
+// ## Passing individual utilities values
+// ===============================================================================================
+// Example individual utility:
+// @include pf-utility-builder(flex-fill flex "1 1 auto", $pf-global--breakpoint-list);
+
+@mixin pf-utility-builder($props, $breakpoints: null, $direction: "width") {
+  // if $class-name is a map
+
+  // stylelint-disable
+  @if type-of($props) == map {
+    @each $class, $val in $props {
+      $property: nth($val, 1);
+      $value: #{nth($val, 2) !important};
+
+      .pf-u-#{$class} {
+        #{$property}: #{$value};
+      }
+    }
+
+    // if breakpoints are requested
+    @if $breakpoints != null {
+      @each $breakpoint in $breakpoints {
+        $suffix: -on-#{$breakpoint};
+
+        @if $direction == 'height' {
+          @include pf-height-media-query($breakpoint) {
+            @each $class, $val in $props {
+              $property: nth($val, 1);
+              $value: #{nth($val, 2) !important};
+
+              .pf-u-#{$class}#{$suffix}-height {
+                #{$property}: #{$value};
+              }
+            }
+          }
+        }
+        @else if $direction == 'width' {
+          @include pf-media-query($breakpoint) {
+            @each $class, $val in $props {
+              $property: nth($val, 1);
+              $value: #{nth($val, 2) !important};
+
+              .pf-u-#{$class}#{$suffix} {
+                #{$property}: #{$value};
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @else if type-of($props) == list {
+    $class: nth($props, 1);
+    $property: nth($props, 2);
+    $value: nth($props, 3) !important;
+
+    .pf-u-#{$class} {
+      #{$property}: #{$value};
+    }
+
+    @if $breakpoints != null {
+      @each $breakpoint in $breakpoints {
+        $suffix: -on-#{$breakpoint};
+
+        .pf-u-#{$class}#{$suffix} {
+          @include pf-media-query($breakpoint) {
+            #{$property}: #{$value};
+          }
+        }
+      }
+    }
+  }
+}
+
+// stylelint-enable
+
+@mixin pf-u-screen-reader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@mixin pf-u-visible {
+  position: static;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  border: inherit;
+}
+
+@mixin pf-t-light($color: "--pf-global--Color--100") {
+  color: var(#{$color});
+
+  @extend %pf-t-light;
+}
+
+@mixin pf-t-dark($color: "--pf-global--Color--100") {
+  color: var(#{$color});
+
+  @extend %pf-t-dark;
+}
+
+@mixin pf-text-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin pf-line-clamp($line-clamp-val: 1) {
+  // stylelint-disable
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: #{$line-clamp-val};
+  // stylelint-enable
+  overflow: hidden;
+}
+
+@mixin pf-overflow-hide-scroll {
+  &::-webkit-scrollbar {
+    display: none;
+  } // hides scrollbars in Chrome
+
+  scrollbar-width: none; // hides scrollbars in Firefox 64 and up
+  -ms-overflow-style: -ms-autohiding-scrollbar; // auto hides scrollbars in Edge
+}
+
+@mixin pf-hidden-visible($val: "block") {
+  // stylelint-disable-next-line
+  --pf-hidden-visible--visible--Display: #{$val};
+
+  @extend %pf-hidden-visible;
+}
+
+@mixin pf-m-overpass-font {
+  .pf-m-overpass-font {
+    @content;
+  }
+}
+
+// Apply media query if value is passed
+@mixin pf-apply-breakpoint($breakpoint) {
+  @if ($breakpoint == "null" or $breakpoint == "base" or $breakpoint == "") {
+    @content;
+  }
+
+  @else {
+    $breakpoint: pf-breakpoint-value($breakpoint);
+
+    @media (min-width: $breakpoint) {
+      @content;
+    }
+  }
+}
+
+// Apply height media query if value is passed
+@mixin pf-apply-height-breakpoint($breakpoint) {
+  @if ($breakpoint == "null" or $breakpoint == "base" or $breakpoint == "") {
+    @content;
+  }
+
+  @else {
+    $breakpoint: pf-height-breakpoint-value($breakpoint);
+
+    @media (min-height: $breakpoint) {
+      @content;
+    }
+  }
+}
+
+@mixin pf-emit-properties($map) {
+  @each $prop, $value in $map {
+    #{$value}: #{$prop};
+  }
+}
+
+// Animate tab focus removal
+@mixin pf-animate-remove-tab-focus($element, $delay: $pf-global--TransitionDuration) {
+  @keyframes pf-remove-tab-focus {
+    to {
+      visibility: hidden;
+    }
+  }
+
+  #{$element}[hidden] {
+    animation-name: pf-remove-tab-focus;
+    animation-delay: #{$delay};
+    animation-fill-mode: forwards;
+  }
+}
+
+// Build variable stack
+@mixin pf-build-css-variable-stack($prop, $css-var, $breakpoint-map: $pf-global--breakpoint-map, $important: false) {
+  $list: ();
+
+  @each $breakpoint, $breakpoint-value in $breakpoint-map {
+    $variable-list: ();
+
+    // Build variable list
+    @if $breakpoint != "base" {
+      $list: append($list, $css-var + "-on-" + $breakpoint);
+    } @else {
+      $list: append($list, $css-var);
+    }
+
+    // Construct variable stack
+    @each $list-item in $list {
+      @if length($variable-list) == 0 {
+        $variable-list: var(#{$list-item});
+      } @else {
+        $variable-list: var(#{$list-item}, $variable-list);
+      }
+    }
+
+    // Assign variable stack to $prop
+    @include pf-apply-breakpoint($breakpoint) {
+      @if $important == true {
+        // stylelint-disable declaration-no-important
+        #{$prop}: #{$variable-list} !important;
+        // stylelint-enable
+      } @else {
+        #{$prop}: #{$variable-list};
+      }
+    }
+  }
+}
+
+// Dark theme style block
+@mixin pf-theme-dark($pf-theme-dark-class: ".pf-theme-dark", $pf-theme-dark-prefix: "") {
+  #{$pf-theme-dark-prefix}:where(#{$pf-theme-dark-class}) {
+    @content;
+  }
+}

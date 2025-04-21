@@ -1,0 +1,334 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Text example should match snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-content"
+  >
+    <h1
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-1"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Hello World
+    </h1>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-2"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla accumsan, metus ultrices eleifend gravida, nulla nunc varius lectus, nec rutrum justo nibh eu lectus. Ut vulputate semper dui. Fusce erat odio, sollicitudin vel erat vel, interdum mattis neque. Sub works as well!
+    </p>
+    <h2
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-3"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Second level
+    </h2>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-4"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Curabitur accumsan turpis pharetra 
+      <strong>
+        augue tincidunt
+      </strong>
+       blandit. Quisque condimentum maximus mi, sit amet commodo arcu rutrum id. Proin pretium urna vel cursus venenatis. Suspendisse potenti. Etiam mattis sem rhoncus lacus dapibus facilisis. Donec at dignissim dui. Ut et neque nisl.
+    </p>
+    <ul
+      class=""
+      data-pf-content="true"
+    >
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        In fermentum leo eu lectus mollis, quis dictum mi aliquet.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Morbi eu nulla lobortis, lobortis est in, fringilla felis.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Aliquam nec felis in sapien venenatis viverra fermentum nec lectus.
+        <ul
+          class=""
+          data-pf-content="true"
+        >
+          <li
+            class=""
+            data-pf-content="true"
+          >
+            In fermentum leo eu lectus mollis, quis dictum mi aliquet.
+          </li>
+          <li
+            class=""
+            data-pf-content="true"
+          >
+            Morbi eu nulla lobortis, lobortis est in, fringilla felis.
+          </li>
+        </ul>
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Ut non enim metus.
+      </li>
+    </ul>
+    <h3
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-5"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Third level
+    </h3>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-6"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Quisque ante lacus, malesuada ac auctor vitae, congue 
+      <a
+        class=""
+        data-ouia-component-id="OUIA-Generated-Text-7"
+        data-ouia-component-type="PF4/Text"
+        data-ouia-safe="true"
+        data-pf-content="true"
+        href="#"
+      >
+        non ante
+      </a>
+      . Phasellus lacus ex, semper ac tortor nec, fringilla condimentum orci. Fusce eu rutrum tellus.
+    </p>
+    <ol
+      class=""
+      data-pf-content="true"
+    >
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Donec blandit a lorem id convallis.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Cras gravida arcu at diam gravida gravida.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Integer in volutpat libero.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Donec a diam tellus.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Aenean nec tortor orci.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Quisque aliquam cursus urna, non bibendum massa viverra eget.
+      </li>
+      <li
+        class=""
+        data-pf-content="true"
+      >
+        Vivamus maximus ultricies pulvinar.
+      </li>
+    </ol>
+    <blockquote
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-8"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Ut venenatis, nisl scelerisque sollicitudin fermentum, quam libero hendrerit ipsum, ut blandit est tellus sit amet turpis.
+    </blockquote>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-9"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Quisque at semper enim, eu hendrerit odio. Etiam auctor nisl et 
+      <em>
+        justo sodales
+      </em>
+       elementum. Maecenas ultrices lacus quis neque consectetur, et lobortis nisi molestie.
+    </p>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-10"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Sed sagittis enim ac tortor maximus rutrum. Nulla facilisi. Donec mattis vulputate risus in luctus. Maecenas vestibulum interdum commodo.
+    </p>
+    <dl
+      class=""
+      data-pf-content="true"
+    >
+      <dt
+        class=""
+        data-pf-content="true"
+      >
+        Web
+      </dt>
+      <dd
+        class=""
+        data-pf-content="true"
+      >
+        The part of the Internet that contains websites and web pages
+      </dd>
+      <dt
+        class=""
+        data-pf-content="true"
+      >
+        HTML
+      </dt>
+      <dd
+        class=""
+        data-pf-content="true"
+      >
+        A markup language for creating web pages
+      </dd>
+      <dt
+        class=""
+        data-pf-content="true"
+      >
+        CSS
+      </dt>
+      <dd
+        class=""
+        data-pf-content="true"
+      >
+        A technology to make HTML look better
+      </dd>
+    </dl>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-11"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Suspendisse egestas sapien non felis placerat elementum. Morbi tortor nisl, suscipit sed mi sit amet, mollis malesuada nulla. Nulla facilisi. Nullam ac erat ante.
+    </p>
+    <h4
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-12"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Fourth level
+    </h4>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-13"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Nulla efficitur eleifend nisi, sit amet bibendum sapien fringilla ac. Mauris euismod metus a tellus laoreet, at elementum ex efficitur.
+    </p>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-14"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Maecenas eleifend sollicitudin dui, faucibus sollicitudin augue cursus non. Ut finibus eleifend arcu ut vehicula. Mauris eu est maximus est porta condimentum in eu justo. Nulla id iaculis sapien.
+    </p>
+    <small
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-15"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Sometimes you need small text to display things like date created
+    </small>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-16"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Phasellus porttitor enim id metus volutpat ultricies. Ut nisi nunc, blandit sed dapibus at, vestibulum in felis. Etiam iaculis lorem ac nibh bibendum rhoncus. Nam interdum efficitur ligula sit amet ullamcorper. Etiam tristique, leo vitae porta faucibus, mi lacus laoreet metus, at cursus leo est vel tellus. Sed ac posuere est. Nunc ultricies nunc neque, vitae ultricies ex sodales quis. Aliquam eu nibh in libero accumsan pulvinar. Nullam nec nisl placerat, pretium metus vel, euismod ipsum. Proin tempor cursus nisl vel condimentum. Nam pharetra varius metus non pellentesque.
+    </p>
+    <h5
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-17"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Fifth level
+    </h5>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-18"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Aliquam sagittis rhoncus vulputate. Cras non luctus sem, sed tincidunt ligula. Vestibulum at nunc elit. Praesent aliquet ligula mi, in luctus elit volutpat porta. Phasellus molestie diam vel nisi sodales, a eleifend augue laoreet. Sed nec eleifend justo. Nam et sollicitudin odio.
+    </p>
+    <h6
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-19"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Sixth level
+    </h6>
+    <p
+      class=""
+      data-ouia-component-id="OUIA-Generated-Text-20"
+      data-ouia-component-type="PF4/Text"
+      data-ouia-safe="true"
+      data-pf-content="true"
+    >
+      Cras in nibh lacinia, venenatis nisi et, auctor urna. Donec pulvinar lacus sed diam dignissim, ut eleifend eros accumsan. Phasellus non tortor eros. Ut sed rutrum lacus. Etiam purus nunc, scelerisque quis enim vitae, malesuada ultrices turpis. Nunc vitae maximus purus, nec consectetur dui. Suspendisse euismod, elit vel rutrum commodo, ipsum tortor maximus dui, sed varius sapien odio vitae est. Etiam at cursus metus.
+    </p>
+  </div>
+</DocumentFragment>
+`;

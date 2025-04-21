@@ -1,0 +1,165 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Description List 1 col on all breakpoints 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-1-col pf-m-1-col-on-md pf-m-1-col-on-lg pf-m-1-col-on-xl pf-m-1-col-on-2xl"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List 2 col on all breakpoints 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-2-col pf-m-2-col-on-md pf-m-2-col-on-lg pf-m-2-col-on-xl pf-m-2-col-on-2xl"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List 3 col on all breakpoints 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-3-col pf-m-3-col-on-md pf-m-3-col-on-lg pf-m-3-col-on-xl pf-m-3-col-on-2xl"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Auto Column Widths Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-auto-column-widths"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Auto fit Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-auto-fit"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Auto fit with responsive grid Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-auto-fit"
+    style="--pf-c-description-list--GridTemplateColumns--min-on-md: 100px; --pf-c-description-list--GridTemplateColumns--min-on-lg: 150px; --pf-c-description-list--GridTemplateColumns--min-on-xl: 200px; --pf-c-description-list--GridTemplateColumns--min-on-2xl: 300px;"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Compact Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-compact"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Compact Horizontal Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-horizontal pf-m-compact"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Description 1`] = `
+<DocumentFragment>
+  <dd
+    aria-labelledby="description-1"
+    class="pf-c-description-list__description custom-description-list-description"
+  >
+    <div
+      class="pf-c-description-list__text"
+    >
+      test
+    </div>
+  </dd>
+</DocumentFragment>
+`;
+
+exports[`Description List Fluid Horizontal Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-horizontal pf-m-fluid"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Group 1`] = `
+<DocumentFragment>
+  <div
+    aria-labelledby="group-1"
+    class="pf-c-description-list__group custom-description-list-group"
+  >
+    test
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Description List Horizontal Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-horizontal"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Inline Grid Description List 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-inline-grid"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List Term default 1`] = `
+<DocumentFragment>
+  <dt
+    aria-labelledby="term-1"
+    class="pf-c-description-list__term"
+  >
+    <span
+      class="pf-c-description-list__text"
+    >
+      test
+    </span>
+  </dt>
+</DocumentFragment>
+`;
+
+exports[`Description List Term helper text 1`] = `
+<DocumentFragment>
+  <dt
+    aria-labelledby="term-1"
+    class="pf-c-description-list__term"
+  >
+    <span
+      class="pf-c-description-list__text pf-m-help-text"
+      role="button"
+      tabindex="0"
+      type="button"
+    >
+      test
+    </span>
+  </dt>
+</DocumentFragment>
+`;
+
+exports[`Description List alignment breakpoints 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list pf-m-horizontal pf-m-horizontal-on-sm pf-m-vertical-on-md pf-m-horizontal-on-lg pf-m-vertical-on-xl pf-m-horizontal-on-2xl"
+  />
+</DocumentFragment>
+`;
+
+exports[`Description List default 1`] = `
+<DocumentFragment>
+  <dl
+    class="pf-c-description-list"
+  />
+</DocumentFragment>
+`;

@@ -1,0 +1,117 @@
+.pf-c-banner {
+  --pf-c-banner--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-banner--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-banner--md--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-banner--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-banner--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-banner--md--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-banner--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-banner--Color: var(--pf-global--Color--100);
+  --pf-c-banner--BackgroundColor: var(--pf-global--BackgroundColor--dark-400);
+
+  @media (min-width: $pf-global--breakpoint--md) {
+    --pf-c-banner--PaddingRight: var(--pf-c-banner--md--PaddingRight);
+    --pf-c-banner--PaddingLeft: var(--pf-c-banner--md--PaddingLeft);
+  }
+
+  // banner link variables
+  --pf-c-banner--link--Color: var(--pf-c-banner--Color);
+  --pf-c-banner--link--TextDecoration: underline;
+  --pf-c-banner--link--hover--Color: var(--pf-c-banner--Color);
+  --pf-c-banner--link--hover--FontWeight: var(--pf-global--FontWeight--semi-bold);
+  --pf-c-banner--link--disabled--Color: var(--pf-c-banner--Color);
+  --pf-c-banner--link--disabled--TextDecoration: none;
+
+  // modifier variables
+  --pf-c-banner--m-info--BackgroundColor: var(--pf-global--palette--blue-200);
+  --pf-c-banner--m-danger--BackgroundColor: var(--pf-global--danger-color--100);
+  --pf-c-banner--m-success--BackgroundColor: var(--pf-global--success-color--100);
+  --pf-c-banner--m-warning--BackgroundColor: var(--pf-global--warning-color--100);
+  --pf-c-banner--m-sticky--ZIndex: var(--pf-global--ZIndex--md);
+  --pf-c-banner--m-sticky--BoxShadow: var(--pf-global--BoxShadow--md-bottom);
+
+  @include pf-t-dark;
+  @include pf-text-overflow;
+
+  padding: var(--pf-c-banner--PaddingTop) var(--pf-c-banner--PaddingRight) var(--pf-c-banner--PaddingBottom) var(--pf-c-banner--PaddingLeft);
+  flex-shrink: 0;
+  font-size: var(--pf-c-banner--FontSize);
+  color: var(--pf-c-banner--Color);
+  white-space: nowrap;
+  background-color: var(--pf-c-banner--BackgroundColor);
+
+  &.pf-m-info {
+    @include pf-t-light;
+
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-info--BackgroundColor);
+  }
+
+  &.pf-m-danger {
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-danger--BackgroundColor);
+  }
+
+  &.pf-m-success {
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-success--BackgroundColor);
+  }
+
+  &.pf-m-warning {
+    @include pf-t-light;
+
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-warning--BackgroundColor);
+  }
+
+  &.pf-m-sticky {
+    position: sticky;
+    top: 0;
+    z-index: var(--pf-c-banner--m-sticky--ZIndex);
+    box-shadow: var(--pf-c-banner--m-sticky--BoxShadow);
+  }
+
+  a {
+    color: var(--pf-c-banner--link--Color);
+    text-decoration: var(--pf-c-banner--link--TextDecoration);
+
+    &:hover:not(.pf-m-disabled) {
+      --pf-c-banner--link--Color: var(--pf-c-banner--link--hover--Color);
+
+      font-weight: var(--pf-c-banner--link--hover--FontWeight);
+    }
+
+    // stylelint-disable selector-no-qualifying-type
+    &.pf-m-disabled {
+      --pf-c-banner--link--Color: var(--pf-c-banner--link--disabled--Color);
+      --pf-c-banner--link--TextDecoration: var(--pf-c-banner--link--disabled--TextDecoration);
+
+      cursor: not-allowed;
+    }
+    // stylelint-enable selector-no-qualifying-type
+  }
+
+  .pf-c-button.pf-m-inline {
+    --pf-c-button--m-link--Color: var(--pf-c-banner--link--Color);
+    --pf-c-button--m-link--m-inline--hover--Color: var(--pf-c-banner--link--hover--Color);
+    --pf-c-button--disabled--Color: var(--pf-c-banner--link--disabled--Color);
+
+    text-decoration: var(--pf-c-banner--link--TextDecoration);
+
+    &:hover {
+      --pf-c-banner--link--Color: var(--pf-c-banner--link--hover--Color);
+
+      font-weight: var(--pf-c-banner--link--hover--FontWeight);
+    }
+
+    &:disabled,
+    &.pf-m-disabled {
+      --pf-c-banner--link--TextDecoration: var(--pf-c-banner--link--disabled--TextDecoration);
+
+      cursor: not-allowed;
+    }
+  }
+}
+
+// stylelint-disable no-invalid-position-at-import-rule
+@import "themes/dark/banner";
+
+@include pf-theme-dark {
+  @include pf-theme-dark-banner;
+}

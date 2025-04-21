@@ -1,0 +1,348 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`menu toggle passes additional classes 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle test-class"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle renders successfully 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows badge 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__count"
+    >
+      <span
+        class="pf-c-badge pf-m-unread"
+      >
+        badge
+      </span>
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows icon 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7v-49.2c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.5-5.5-.7-11.3-5.6-14.1zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z"
+        />
+      </svg>
+    </span>
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows isDisabled 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle"
+    disabled=""
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows isExpanded 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="true"
+    class="pf-c-menu-toggle pf-m-expanded"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows isPlain 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle pf-m-plain"
+    type="button"
+  >
+    <svg
+      aria-hidden="true"
+      fill="currentColor"
+      height="1em"
+      role="img"
+      style="vertical-align: -0.125em;"
+      viewBox="0 0 192 512"
+      width="1em"
+    >
+      <path
+        d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+      />
+    </svg>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows isPrimary 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle pf-m-primary"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;
+
+exports[`menu toggle shows plain text 1`] = `
+<DocumentFragment>
+  <button
+    aria-expanded="false"
+    class="pf-c-menu-toggle pf-m-plain pf-m-text"
+    type="button"
+  >
+    <span
+      class="pf-c-menu-toggle__text"
+    >
+      Toggle
+    </span>
+    <span
+      class="pf-c-menu-toggle__controls"
+    >
+      <span
+        class="pf-c-menu-toggle__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+          />
+        </svg>
+      </span>
+    </span>
+  </button>
+</DocumentFragment>
+`;

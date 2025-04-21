@@ -1,0 +1,14 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-simple-list() {
+  .pf-c-simple-list {
+    --pf-c-simple-list__item-link--m-current--Color: var(--pf-global--active-color--100);
+    --pf-c-simple-list__item-link--m-current--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-simple-list__item-link--hover--Color: var(--pf-global--Color--100);
+    --pf-c-simple-list__item-link--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-simple-list__item-link--focus--Color: var(--pf-global--Color--100);
+    --pf-c-simple-list__item-link--focus--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-simple-list__item-link--active--Color: var(--pf-global--Color--100);
+    --pf-c-simple-list__item-link--active--BackgroundColor: var(--pf-global--BackgroundColor--400);
+  }
+}

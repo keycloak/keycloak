@@ -1,0 +1,31 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-calendar-month() {
+  .pf-c-calendar-month {
+    --pf-c-calendar-month__dates-cell--m-current__date--BackgroundColor: var(--pf-global--palette--black-500);
+    --pf-c-calendar-month__dates-cell--m-selected__date--BackgroundColor: var(--pf-global--primary-color--300);
+    --pf-c-calendar-month__dates-cell--m-selected__date--hover--BackgroundColor: var(--pf-global--palette--black-900);
+    --pf-c-calendar-month__dates-cell--m-selected__date--focus--BackgroundColor: var(--pf-global--palette--blue-400);
+    --pf-c-calendar-month__dates-cell--m-in-range--before--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-calendar-month__dates-cell--m-in-range__date--hover--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-calendar-month__dates-cell--m-in-range__date--focus--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-calendar-month__date--hover--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-calendar-month__date--focus--BackgroundColor: var(--pf-global--BackgroundColor--200);
+    --pf-c-calendar-month__date--focus--after--BorderColor: transparent;
+  }
+
+  .pf-c-calendar-month__date {
+    &:hover,
+    &.pf-m-hover {
+      --pf-c-calendar-month__date--after--BorderColor: var(--pf-global--BorderColor--100);
+      --pf-c-calendar-month__date--after--BorderWidth: var(--pf-global--BorderWidth--sm);
+    }
+
+    &:focus,
+    &.pf-m-focus {
+      --pf-c-calendar-month__date--after--BorderColor: var(--pf-global--active-color--100);
+      --pf-c-calendar-month__date--after--BorderWidth: var(--pf-global--BorderWidth--sm);
+      --pf-c-calendar-month__date--BackgroundColor: var(--pf-global--primary-color--300);
+    }
+  }
+}

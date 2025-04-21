@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ToolbarContent should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-toolbar__content string"
+  >
+    <div
+      class="pf-c-toolbar__content-section"
+    >
+      <div>
+        ReactNode
+      </div>
+    </div>
+    <div
+      class="pf-c-toolbar__expandable-content"
+      id="string-expandable-content-0"
+    >
+      <div
+        class="pf-c-toolbar__group"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;

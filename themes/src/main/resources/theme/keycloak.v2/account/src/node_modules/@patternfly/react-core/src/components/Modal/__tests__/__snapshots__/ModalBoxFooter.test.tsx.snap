@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ModalBoxFooter Test 1`] = `
+<DocumentFragment>
+  <footer
+    class="pf-c-modal-box__footer test-box-footer-class"
+  >
+    This is a ModalBox Footer
+  </footer>
+</DocumentFragment>
+`;

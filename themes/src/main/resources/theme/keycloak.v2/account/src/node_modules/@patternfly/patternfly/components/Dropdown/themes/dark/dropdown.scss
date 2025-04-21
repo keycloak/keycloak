@@ -1,0 +1,32 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-dropdown() {
+  .pf-c-dropdown {
+    --pf-c-dropdown__toggle--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-dropdown__toggle--before--BorderTopColor: transparent;
+    --pf-c-dropdown__toggle--before--BorderRightColor: transparent;
+    --pf-c-dropdown__toggle--before--BorderBottomColor: var(--pf-global--BorderColor--400);
+    --pf-c-dropdown__toggle--before--BorderLeftColor: transparent;
+    --pf-c-dropdown__toggle--disabled--BackgroundColor: var(--pf-global--palette--black-500);
+    --pf-c-dropdown__toggle--m-primary--BackgroundColor: var(--pf-global--primary-color--300);
+    --pf-c-dropdown__menu--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-dropdown__menu--Top: 100%;
+    --pf-c-dropdown--m-top__menu--TranslateY: -100%;
+    --pf-c-dropdown__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-dropdown__group-title--FontSize: var(--pf-global--FontSize--xs);
+    --pf-c-dropdown__group-title--FontWeight: var(--pf-global--FontWeight--bold);
+  }
+
+  .pf-c-dropdown__toggle {
+    &:not(.pf-m-plain) {
+      &:disabled,
+      &.pf-m-disabled {
+        color: var(--pf-global--palette--black-100); // should be a global var?
+      }
+    }
+
+    &.pf-m-plain {
+      background: transparent;
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"HintFooter.d.ts","sourceRoot":"","sources":["../../../../src/components/Hint/HintFooter.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,KAAK,MAAM,OAAO,CAAC;AAI/B,MAAM,WAAW,eAAe;IAC9B,+CAA+C;IAC/C,QAAQ,CAAC,EAAE,KAAK,CAAC,SAAS,CAAC;IAC3B,qDAAqD;IACrD,SAAS,CAAC,EAAE,MAAM,CAAC;CACpB;AAED,eAAO,MAAM,UAAU,EAAE,KAAK,CAAC,iBAAiB,CAAC,eAAe,CAQ/D,CAAC"}

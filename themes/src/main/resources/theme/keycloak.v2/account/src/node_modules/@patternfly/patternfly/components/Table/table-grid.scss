@@ -1,0 +1,559 @@
+// stylelint-disable
+@mixin pf-mobile-layout {
+  .pf-m-grid.pf-c-table {
+    @content;
+  }
+
+  .pf-m-grid-md.pf-c-table {
+    @media screen and (max-width: $pf-global--breakpoint--md) {
+      @content;
+    }
+  }
+
+  .pf-m-grid-lg.pf-c-table {
+    @media screen and (max-width: $pf-global--breakpoint--lg) {
+      @content;
+    }
+  }
+
+  .pf-m-grid-xl.pf-c-table {
+    @media screen and (max-width: $pf-global--breakpoint--xl) {
+      @content;
+    }
+  }
+
+  .pf-m-grid-2xl.pf-c-table {
+    @media screen and (max-width: $pf-global--breakpoint--2xl) {
+      @content;
+    }
+  }
+}
+
+.pf-c-table[class*="pf-m-grid"] {
+  // ============================================================ //
+  // Start non-conformant variables
+  //
+  // these variables do not conform to guidelines as styling targets individual elements
+  // this is purposeful and necessary to avoid adding selectors to each td/th
+  // ============================================================ //
+
+  // Table
+  --pf-c-table--responsive--BorderColor: var(--pf-global--BorderColor--300);
+
+  // Body
+  --pf-c-table--tbody--responsive--border-width--base: var(--pf-global--spacer--sm);
+  --pf-c-table--tbody--after--border-width--base: var(--pf-global--BorderWidth--lg);
+  --pf-c-table--tbody--after--BorderLeftWidth: 0;
+  --pf-c-table--tbody--after--BorderColor: var(--pf-global--active-color--100);
+
+  // Row
+  --pf-c-table-tr--responsive--border-width--base: var(--pf-global--spacer--sm);
+  --pf-c-table-tr--responsive--last-child--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table-tr--responsive--GridColumnGap: var(--pf-global--spacer--md);
+  --pf-c-table-tr--responsive--MarginTop: var(--pf-global--spacer--sm);
+  --pf-c-table-tr--responsive--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table-tr--responsive--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table-tr--responsive--xl--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-table-tr--responsive--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-table-tr--responsive--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table-tr--responsive--xl--PaddingLeft: var(--pf-global--spacer--md);
+
+  @media screen and (max-width: $pf-global--breakpoint--xl) {
+    --pf-c-table-tr--responsive--PaddingRight: var(--pf-c-table-tr--responsive--xl--PaddingRight);
+    --pf-c-table-tr--responsive--PaddingLeft: var(--pf-c-table-tr--responsive--xl--PaddingLeft);
+  }
+
+  --pf-c-table-tr--responsive--nested-table--PaddingTop: var(--pf-global--spacer--xl);
+  --pf-c-table-tr--responsive--nested-table--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table-tr--responsive--nested-table--PaddingBottom: var(--pf-global--spacer--xl);
+  --pf-c-table-tr--responsive--nested-table--PaddingLeft: var(--pf-global--spacer--lg);
+
+  // expandable
+  --pf-c-table--tbody--after--tr--BorderLeftWidth: 0;
+  --pf-c-table--tbody--after--tr--BorderLeftColor: transparent;
+  --pf-c-table--tbody--m-expanded--after--tr--BorderLeftWidth: var(--pf-c-table__expandable-row--after--border-width--base);
+  --pf-c-table--tbody--m-expanded--after--tr--BorderLeftColor: var(--pf-global--active-color--400);
+
+  // selected
+  --pf-c-table--tbody--m-selected--after--tr--BorderLeftWidth: var(--pf-c-table__expandable-row--after--border-width--base);
+  --pf-c-table--tbody--m-selected--after--tr--BorderLeftColor: var(--pf-global--active-color--100);
+
+  // Cell display
+  --pf-c-table--m-grid--cell--hidden-visible--Display: grid;
+
+  // Cell
+  --pf-c-table--m-grid--cell--PaddingTop: 0;
+  --pf-c-table--m-grid--cell--PaddingRight: 0;
+  --pf-c-table--m-grid--cell--PaddingBottom: 0;
+  --pf-c-table--m-grid--cell--PaddingLeft: 0;
+
+  // Td
+  --pf-c-table-td--responsive--GridColumnGap: var(--pf-global--spacer--md);
+  --pf-c-table--cell--responsive--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table--cell--responsive--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-table--cell--first-child--responsive--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-table--cell--responsive--PaddingRight: 0;
+  --pf-c-table--cell--responsive--PaddingLeft: 0;
+
+  // Compact table
+  --pf-c-table--m-compact-tr--responsive--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-tr--responsive--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-tr-td--responsive--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-table--m-compact-tr-td--responsive--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-table--m-compact__action--responsive--MarginTop: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-table--m-compact__action--responsive--MarginBottom: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-table--m-compact__toggle--c-button--responsive--MarginBottom: calc(#{pf-size-prem(6px)} * -1);
+
+  // Expandable row content
+  --pf-c-table__expandable-row-content--responsive--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table__expandable-row-content--responsive--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table__expandable-row-content--responsive--xl--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-table__expandable-row-content--responsive--xl--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-table__expandable-row-content--BackgroundColor: var(--pf-global--BackgroundColor--100);
+
+  @media screen and (max-width: $pf-global--breakpoint--xl) {
+    --pf-c-table__expandable-row-content--responsive--PaddingRight: var(--pf-c-table__expandable-row-content--responsive--xl--PaddingRight);
+    --pf-c-table__expandable-row-content--responsive--PaddingLeft: var(--pf-c-table__expandable-row-content--responsive--xl--PaddingLeft);
+  }
+
+  // Check
+  --pf-c-table__check--responsive--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-table__check--responsive--MarginTop: #{pf-size-prem(14px)};
+
+  // Favorite
+  --pf-c-table--m-grid__favorite--MarginTop: #{pf-size-prem(8px)};
+  --pf-c-table--m-grid__check--favorite--MarginLeft: var(--pf-global--spacer--xl);
+
+  // Action
+  --pf-c-table--m-grid__action--MarginTop: #{pf-size-prem(6px)};
+  --pf-c-table__action--responsive--MarginLeft: var(--pf-global--spacer--xl);
+  --pf-c-table--m-grid__favorite--action--MarginLeft: var(--pf-global--spacer--2xl);
+  --pf-c-table--m-grid__check--favorite--action--MarginLeft: calc(var(--pf-c-table--m-grid__check--favorite--MarginLeft) + var(--pf-c-table--m-grid__favorite--action--MarginLeft));
+
+  // Toggle icons
+  --pf-c-table__toggle__icon--Transition: .2s ease-in 0s;
+  --pf-c-table__toggle--m-expanded__icon--Rotate: 180deg;
+}
+
+@include pf-mobile-layout {
+  --pf-c-table--cell--PaddingTop: var(--pf-c-table--m-grid--cell--PaddingTop);
+  --pf-c-table--cell--PaddingRight: var(--pf-c-table--m-grid--cell--PaddingRight);
+  --pf-c-table--cell--PaddingBottom: var(--pf-c-table--m-grid--cell--PaddingBottom);
+  --pf-c-table--cell--PaddingLeft: var(--pf-c-table--m-grid--cell--PaddingLeft);
+
+  // Favorite
+  --pf-c-table__favorite--c-button--MarginTop: auto;
+  --pf-c-table__favorite--c-button--MarginRight: auto;
+  --pf-c-table__favorite--c-button--MarginBottom: auto;
+  --pf-c-table__favorite--c-button--MarginLeft: auto;
+
+  display: grid;
+  border: none;
+
+  // reset cell modifications
+  tr > * {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  // apply modifications to text
+  .pf-c-table__text {
+    position: relative;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    overflow: var(--pf-c-table--cell--Overflow);
+    text-overflow: var(--pf-c-table--cell--TextOverflow);
+    white-space: var(--pf-c-table--cell--WhiteSpace);
+  }
+
+  // Thead
+  thead {
+    display: none;
+    visibility: hidden;
+  }
+
+  // Tbody
+  tbody {
+    display: block;
+
+    &:first-of-type {
+      border-top: var(--pf-c-table--tbody--responsive--border-width--base) solid var(--pf-c-table--responsive--BorderColor);
+    }
+  }
+
+  // Remove the border from the body inside of the nested table
+  table.pf-m-compact > tbody {
+    border-top: 0;
+  }
+
+  // Table row
+  tr:not(.pf-c-table__expandable-row) {
+    border-bottom: var(--pf-c-table-tr--responsive--border-width--base) solid var(--pf-c-table--responsive--BorderColor);
+  }
+
+  // The last tr should always have a border width of 1px
+  tr:last-child,
+  tbody:last-of-type:not(:only-of-type) > tr {
+    border-bottom-width: var(--pf-c-table-tr--responsive--last-child--BorderBottomWidth);
+  }
+
+  tbody.pf-m-expanded {
+    border-bottom: var(--pf-c-table--border-width--base) solid var(--pf-c-table--BorderColor);
+
+    tr:not(.pf-c-table__expandable-row) {
+      border-bottom: 0;
+    }
+
+    &:not(:last-of-type) {
+      border-bottom: var(--pf-c-table--tbody--responsive--border-width--base) solid var(--pf-c-table--responsive--BorderColor);
+    }
+  }
+
+  tr.pf-m-selected {
+    --pf-c-table__expandable-row--after--BorderLeftWidth: 0;
+    --pf-c-table__expandable-row--after--BorderColor: transparent;
+  }
+
+  // Standard table row (non-expandable)
+  // exclude expandable rows
+  tr:not(.pf-c-table__expandable-row) {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: auto;
+
+    // set subsequent auto column width to max-content
+    grid-auto-columns: max-content;
+    grid-column-gap: var(--pf-c-table-tr--responsive--GridColumnGap);
+
+    // set base variables to reset later
+    padding: var(--pf-c-table-tr--responsive--PaddingTop) var(--pf-c-table-tr--responsive--PaddingRight) var(--pf-c-table-tr--responsive--PaddingBottom) var(--pf-c-table-tr--responsive--PaddingLeft);
+
+    // Reset td padding
+    & > * {
+      padding: var(--pf-c-table--cell--responsive--PaddingTop) var(--pf-c-table--cell--responsive--PaddingRight) var(--pf-c-table--cell--responsive--PaddingBottom) var(--pf-c-table--cell--responsive--PaddingLeft);
+
+      // remove padding from first child to align with kebab
+      &:first-child {
+        --pf-c-table--cell--responsive--PaddingTop: var(--pf-c-table--cell--first-child--responsive--PaddingTop);
+      }
+    }
+  }
+
+  &.pf-m-compact {
+    --pf-c-table-tr--responsive--PaddingTop: var(--pf-c-table--m-compact-tr--responsive--PaddingTop);
+    --pf-c-table-tr--responsive--PaddingBottom: var(--pf-c-table--m-compact-tr--responsive--PaddingBottom);
+    --pf-c-table--cell--responsive--PaddingTop: var(--pf-c-table--m-compact-tr-td--responsive--PaddingTop);
+    --pf-c-table--cell--responsive--PaddingBottom: var(--pf-c-table--m-compact-tr-td--responsive--PaddingBottom);
+    --pf-c-table__check--input--MarginTop: 0;
+
+    .pf-c-table__action {
+      margin-top: var(--pf-c-table--m-compact__action--responsive--MarginTop);
+      margin-bottom: var(--pf-c-table--m-compact__action--responsive--MarginTop);
+    }
+
+    .pf-c-table__toggle .pf-c-button {
+      margin-bottom: var(--pf-c-table--m-compact__toggle--c-button--responsive--MarginBottom);
+    }
+  }
+
+  .pf-c-table__icon > * {
+    text-align: left;
+  }
+
+  // Standard td, in standard row (non-expandable)
+  [data-label] {
+    // default pf-hidden-visible() mixin is called in table.scss. redefining variable here
+    --pf-c-table--cell--hidden-visible--Display: var(--pf-c-table--m-grid--cell--hidden-visible--Display);
+
+    grid-column: 1;
+    grid-column-gap: var(--pf-c-table-td--responsive--GridColumnGap);
+
+    // use minmax func to contain possible text modifier width
+    grid-template-columns: 1fr minmax(0, 1.5fr);
+    align-items: start;
+
+    // set contents of td to start at column two of td grid
+    > * {
+      grid-column: 2;
+    }
+
+    &::before {
+      font-weight: bold;
+      text-align: left;
+      content: attr(data-label);
+    }
+  }
+
+  tr > * {
+    // Remove first child padding left
+    &:first-child {
+      --pf-c-table--cell--PaddingLeft: 0;
+    }
+
+    // Remove last child padding right
+    &:last-child {
+      --pf-c-table--cell--PaddingRight: 0;
+    }
+  }
+
+  // nested tables
+  .pf-c-table {
+    --pf-c-table-tr--responsive--PaddingTop: var(--pf-c-table-tr--responsive--nested-table--PaddingTop);
+    --pf-c-table-tr--responsive--PaddingRight: var(--pf-c-table-tr--responsive--nested-table--PaddingRight);
+    --pf-c-table-tr--responsive--PaddingBottom: var(--pf-c-table-tr--responsive--nested-table--PaddingBottom);
+    --pf-c-table-tr--responsive--PaddingLeft: var(--pf-c-table-tr--responsive--nested-table--PaddingLeft);
+
+    border: 0;
+
+    tr:not(.pf-c-table__expandable-row) + tr:not(.pf-c-table__expandable-row) {
+      --pf-c-table-tr--responsive--PaddingTop: 0;
+    }
+  }
+
+  .pf-c-table__compound-expansion-toggle {
+    --pf-c-table__compound-expansion-toggle__button--before--BorderRightWidth: 0;
+    --pf-c-table__compound-expansion-toggle__button--before--BorderLeftWidth: 0;
+    --pf-c-table__compound-expansion-toggle__button--after--Top: 100%;
+  }
+
+  // Compound expansion responsive
+  // Tbody
+  tbody {
+    position: relative;
+
+    &::after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      content: "";
+      border: 0;
+      border-left: var(--pf-c-table--tbody--after--BorderLeftWidth) solid var(--pf-c-table--tbody--after--BorderColor);
+    }
+
+    &.pf-m-expanded {
+      --pf-c-table--tbody--after--BorderLeftWidth: var(--pf-c-table--tbody--after--border-width--base);
+
+      & tbody {
+        --pf-c-table--tbody--after--BorderLeftWidth: 0;
+      }
+    }
+
+    > tr > :first-child:not(.pf-c-table__check)::after {
+      --pf-c-table__expandable-row--after--BorderLeftWidth: 0;
+
+      position: static;
+      width: auto;
+      background-color: transparent;
+    }
+  }
+
+  // Expandable row
+  .pf-c-table__expandable-row {
+    --pf-c-table--cell--responsive--PaddingTop: 0;
+    --pf-c-table--cell--responsive--PaddingRight: 0;
+    --pf-c-table--cell--responsive--PaddingBottom: 0;
+    --pf-c-table--cell--responsive--PaddingLeft: 0;
+    --pf-c-table--cell--PaddingRight: 0;
+    --pf-c-table--cell--PaddingLeft: 0;
+
+    display: block;
+    max-height: var(--pf-c-table__expandable-row--MaxHeight);  // Overflow scroll should only happen on responsive
+    overflow-y: auto;
+    border-bottom: none;
+    box-shadow: none;
+
+    // cells
+    > * {
+      position: static;
+      display: block;
+    }
+
+    // Modifier - expanded tr
+    &.pf-m-expanded {
+      border-top-color: var(--pf-c-table--BorderColor);
+    }
+
+    > :first-child:not(.pf-c-table__check)::after {
+      // Border treatment
+      content: none;
+    }
+
+    td, th {
+      &.pf-m-no-padding {
+        .pf-c-table__expandable-row-content {
+          padding: 0;
+        }
+      }
+    }
+
+    &:not(.pf-m-expanded) {
+      display: none;
+      visibility: hidden;
+    }
+
+    .pf-c-table__expandable-row-content {
+      padding-right: var(--pf-c-table__expandable-row-content--responsive--PaddingRight);
+      padding-left: var(--pf-c-table__expandable-row-content--responsive--PaddingLeft);
+    }
+  }
+
+  // tr selected
+  tbody.pf-m-hoverable {
+    --pf-c-table--tbody--after--BorderLeftWidth: 0;
+    --pf-c-table--tbody--after--BorderLeftColor: transparent;
+
+    &,
+    > tr {
+      position: relative;
+    }
+
+    > tr::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: var(--pf-c-table--tbody--after--tr--BorderLeftWidth);
+      background-color: var(--pf-c-table--tbody--after--tr--BorderLeftColor);
+    }
+
+    &.pf-m-expanded {
+      --pf-c-table--tbody--after--tr--BorderLeftWidth: var(--pf-c-table--tbody--m-expanded--after--tr--BorderLeftWidth);
+      --pf-c-table--tbody--after--tr--BorderLeftColor: var(--pf-c-table--tbody--m-expanded--after--tr--BorderLeftColor);
+    }
+
+    &.pf-m-selected {
+      --pf-c-table--tbody--after--tr--BorderLeftWidth: var(--pf-c-table--tbody--m-selected--after--tr--BorderLeftWidth);
+      --pf-c-table--tbody--after--tr--BorderLeftColor: var(--pf-c-table--tbody--m-selected--after--tr--BorderLeftColor);
+    }
+  }
+
+
+  // tr selected
+  tr.pf-m-selected {
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: var(--pf-c-table--tr--m-selected--after--BorderLeftWidth);
+      background-color: var(--pf-c-table--tr--m-selected--after--BorderLeftColor);
+    }
+  }
+
+  // Set defaults
+  tr:not(.pf-c-table__expandable-row) {
+    .pf-c-table__toggle,
+    .pf-c-table__check,
+    .pf-c-table__favorite,
+    .pf-c-table__action {
+      width: auto;
+      padding: 0;
+    }
+  }
+
+  .pf-c-table__toggle {
+    grid-row-start: 20;
+    grid-column: -1;
+    justify-self: end;
+    padding-right: 0;
+
+    &::after {
+      content: none;
+    }
+  }
+
+  .pf-c-table__button {
+    --pf-c-table--cell--PaddingTop: var(--pf-c-table--m-grid--cell--PaddingTop);
+    --pf-c-table--cell--PaddingRight: var(--pf-c-table--m-grid--cell--PaddingRight);
+    --pf-c-table--cell--PaddingBottom: var(--pf-c-table--m-grid--cell--PaddingBottom);
+    --pf-c-table--cell--PaddingLeft: var(--pf-c-table--m-grid--cell--PaddingLeft);
+  }
+
+  .pf-c-table__check,
+  .pf-c-table__favorite,
+  .pf-c-table__action {
+    grid-row-start: 1;
+    grid-column-start: 2;
+  }
+
+  // Check table cell
+  .pf-c-table__check {
+    margin-top: var(--pf-c-table__check--responsive--MarginTop);
+    margin-left: var(--pf-c-table__check--responsive--MarginLeft);
+
+    ~ .pf-c-table__favorite {
+      margin-left: var(--pf-c-table--m-grid__check--favorite--MarginLeft);
+
+      ~ .pf-c-table__action {
+        margin-left: var(--pf-c-table--m-grid__check--favorite--action--MarginLeft);
+      }
+    }
+
+    ~ .pf-c-table__action {
+      margin-left: var(--pf-c-table__action--responsive--MarginLeft);
+    }
+  }
+
+  .pf-c-table__favorite {
+    margin-top: var(--pf-c-table--m-grid__favorite--MarginTop);
+
+    ~ .pf-c-table__action {
+      margin-left: var(--pf-c-table--m-grid__favorite--action--MarginLeft);
+    }
+  }
+
+  // Action cell
+  .pf-c-table__action {
+    margin-top: var(--pf-c-table--m-grid__action--MarginTop);
+    text-align: right;
+
+    // @smallest breakpoint
+    @media screen and (max-width: $pf-global--breakpoint--sm) {
+      grid-row-start: 1;
+      grid-column-start: 2;
+      margin-left: 0;
+    }
+  }
+
+  .pf-c-table__inline-edit-action {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .pf-c-table__toggle-icon {
+    transition: var(--pf-c-table__toggle__icon--Transition);
+
+    .pf-c-button.pf-m-expanded > & {
+      transform: rotate(var(--pf-c-table__toggle--m-expanded__icon--Rotate));
+    }
+  }
+
+  // No wrap
+  .pf-m-nowrap {
+    --pf-c-table--cell--Overflow: auto;
+  }
+
+  // Fit content
+  .pf-m-fit-content {
+    width: auto;
+    white-space: normal;
+  }
+
+  .pf-m-truncate {
+    --pf-c-table--cell--MaxWidth: 100%;
+  }
+
+  [class*="pf-m-width"] {
+    --pf-c-table--cell--Width: auto;
+  }
+}
+
+// stylelint-enable

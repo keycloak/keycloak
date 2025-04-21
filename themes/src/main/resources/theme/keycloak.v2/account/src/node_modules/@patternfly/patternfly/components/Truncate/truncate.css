@@ -1,0 +1,34 @@
+.pf-c-truncate {
+  --pf-c-truncate--MinWidth: 12ch;
+  --pf-c-truncate__start--MinWidth: 6ch;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: baseline;
+  min-width: var(--pf-c-truncate--MinWidth);
+}
+
+.pf-c-truncate__start,
+.pf-c-truncate__end {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-c-truncate__start {
+  min-width: var(--pf-c-truncate__start--MinWidth);
+}
+
+.pf-c-truncate__end {
+  direction: rtl;
+}
+
+.pf-c-truncate__start + .pf-c-truncate__end {
+  overflow: visible;
+  direction: ltr;
+}
+
+@supports (-webkit-hyphens: none) {
+  .pf-c-truncate__end {
+    direction: ltr;
+  }
+}

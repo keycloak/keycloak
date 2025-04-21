@@ -1,0 +1,103 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextArea disabled text input using disabled 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="disabled textarea"
+    class="pf-c-form-control"
+    disabled=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea disabled text input using isDisabled 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="is disabled textarea"
+    class="pf-c-form-control"
+    disabled=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea horizontally resizable text area 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="true"
+    aria-label="horizontal resize textarea"
+    class="pf-c-form-control pf-m-resize-horizontal"
+    required=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea read only text input using isReadOnly 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="is read only textarea"
+    class="pf-c-form-control"
+    readonly=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea read only text input using readOnly 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="read only textarea"
+    class="pf-c-form-control"
+    readonly=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea simple text input 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="simple textarea"
+    class="pf-c-form-control"
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea validated text area error 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="true"
+    aria-label="validated textarea"
+    class="pf-c-form-control"
+    required=""
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;
+
+exports[`TextArea vertically resizable text area 1`] = `
+<DocumentFragment>
+  <textarea
+    aria-invalid="false"
+    aria-label="vertical resize textarea"
+    class="pf-c-form-control pf-m-resize-vertical"
+  >
+    test textarea
+  </textarea>
+</DocumentFragment>
+`;

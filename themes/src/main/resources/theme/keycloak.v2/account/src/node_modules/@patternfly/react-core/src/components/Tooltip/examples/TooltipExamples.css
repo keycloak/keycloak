@@ -1,0 +1,21 @@
+.tooltip-box {
+  height: 450px;
+  position: relative;
+  width: 100%;
+  overflow: scroll;
+  overscroll-behavior: contain;
+  margin: 0 auto;
+  border: 2px dashed #ff6b81;
+
+}
+.tooltip-box::before,
+.tooltip-box::after {
+  content: '';
+  display: block;
+  width: 1500px;
+  height: 600px;
+}
+.tooltip-button {
+  position: absolute;
+  left: 600px;
+}

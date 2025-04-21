@@ -1,0 +1,11 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-toggle-group() {
+  .pf-c-toggle-group {
+    --pf-c-toggle-group__button--hover--BackgroundColor: var(--pf-global--palette--black-700);
+    --pf-c-toggle-group__button--focus--BackgroundColor: var(--pf-global--palette--black-700);
+    --pf-c-toggle-group__button--disabled--BackgroundColor: var(--pf-global--palette--black-600);
+    --pf-c-toggle-group__button--disabled--Color: var(--pf-global--palette--black-100);
+    --pf-c-toggle-group__button--m-selected--BackgroundColor: var(--pf-global--primary-color--300);
+  }
+}

@@ -1,0 +1,14 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-notification-drawer() {
+  .pf-c-notification-drawer {
+    --pf-c-notification-drawer--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-notification-drawer__header--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-notification-drawer__list-item--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-notification-drawer__list-item--BoxShadow: none;
+    --pf-c-notification-drawer__list-item--BorderBottomColor: var(--pf-global--BorderColor--100);
+    --pf-c-notification-drawer__list-item--m-read--BackgroundColor: var(--pf-global--BackgroundColor--100);
+    --pf-c-notification-drawer__list-item--list-item--m-read--BoxShadow: none;
+    --pf-c-notification-drawer__group-toggle--BackgroundColor: var(--pf-global--BackgroundColor--300);
+  }
+}

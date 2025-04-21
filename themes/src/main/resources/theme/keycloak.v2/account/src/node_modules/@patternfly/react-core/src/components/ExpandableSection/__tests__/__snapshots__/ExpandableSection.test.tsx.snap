@@ -1,0 +1,256 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Detached ExpandableSection renders successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section pf-m-expanded pf-m-detached"
+  >
+    <div
+      class="pf-c-expandable-section__content"
+      id="test"
+    >
+      test
+    </div>
+  </div>
+  <div
+    class="pf-c-expandable-section pf-m-expanded pf-m-detached"
+  >
+    <button
+      aria-controls="test"
+      aria-expanded="true"
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon pf-m-expand-top"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      >
+        Toggle text
+      </span>
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Disclosure ExpandableSection 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section pf-m-display-lg pf-m-limit-width"
+  >
+    <button
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      />
+    </button>
+    <div
+      class="pf-c-expandable-section__content"
+      hidden=""
+      id=""
+    >
+      test 
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ExpandableSection 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section"
+  >
+    <button
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      />
+    </button>
+    <div
+      class="pf-c-expandable-section__content"
+      hidden=""
+      id=""
+    >
+      test 
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Renders ExpandableSection expanded 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section pf-m-expanded"
+  >
+    <button
+      aria-expanded="true"
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      />
+    </button>
+    <div
+      class="pf-c-expandable-section__content"
+      id=""
+    >
+       test 
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Renders ExpandableSection indented 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section pf-m-expanded pf-m-indented"
+  >
+    <button
+      aria-expanded="true"
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      />
+    </button>
+    <div
+      class="pf-c-expandable-section__content"
+      id=""
+    >
+       test 
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Renders Uncontrolled ExpandableSection 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-expandable-section"
+  >
+    <button
+      class="pf-c-expandable-section__toggle"
+      type="button"
+    >
+      <span
+        class="pf-c-expandable-section__toggle-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 256 512"
+          width="1em"
+        >
+          <path
+            d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+          />
+        </svg>
+      </span>
+      <span
+        class="pf-c-expandable-section__toggle-text"
+      >
+        Show More
+      </span>
+    </button>
+    <div
+      class="pf-c-expandable-section__content"
+      hidden=""
+      id=""
+    >
+       test 
+    </div>
+  </div>
+</DocumentFragment>
+`;

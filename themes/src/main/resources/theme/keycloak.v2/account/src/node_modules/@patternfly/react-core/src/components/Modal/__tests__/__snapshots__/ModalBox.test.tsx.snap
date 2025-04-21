@@ -1,0 +1,86 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ModalBox Test 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box"
+    id="boxId"
+    role="dialog"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ModalBox Test large 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box pf-m-lg"
+    id="boxId"
+    role="dialog"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ModalBox Test medium 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box pf-m-md"
+    id="boxId"
+    role="dialog"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ModalBox Test small 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box pf-m-sm"
+    id="boxId"
+    role="dialog"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ModalBox Test top aligned 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box pf-m-align-top"
+    id="boxId"
+    role="dialog"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ModalBox Test top aligned distance 1`] = `
+<DocumentFragment>
+  <div
+    aria-describedby="Test Modal Box"
+    aria-modal="true"
+    class="pf-c-modal-box pf-m-align-top"
+    id="boxId"
+    role="dialog"
+    style="--pf-c-modal-box--m-align-top--spacer: 50px;"
+  >
+    This is a ModalBox
+  </div>
+</DocumentFragment>
+`;

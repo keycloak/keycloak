@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Menu should render Menu successfully 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-menu"
+    data-ouia-component-id="OUIA-Generated-Menu-1"
+    data-ouia-component-type="PF4/Menu"
+    data-ouia-safe="true"
+  >
+    content
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,223 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Accordion Accordion bordered 1`] = `
+<DocumentFragment>
+  <dl
+    aria-label=""
+    class="pf-c-accordion pf-m-bordered"
+  >
+    <dt>
+      <button
+        aria-expanded="false"
+        class="pf-c-accordion__toggle"
+        id="item-1"
+        type="button"
+      >
+        <span
+          class="pf-c-accordion__toggle-text"
+        >
+          Item One
+        </span>
+        <span
+          class="pf-c-accordion__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </dt>
+    <dd
+      aria-label=""
+      class="pf-c-accordion__expanded-content pf-m-expanded"
+      id=""
+    >
+      <div
+        class="pf-c-accordion__expanded-content-body"
+      >
+        Item One Content
+      </div>
+    </dd>
+  </dl>
+</DocumentFragment>
+`;
+
+exports[`Accordion Accordion custom content 1`] = `
+<DocumentFragment>
+  <dl
+    aria-label=""
+    class="pf-c-accordion"
+  >
+    <dt>
+      <button
+        aria-expanded="false"
+        class="pf-c-accordion__toggle"
+        id="item-1"
+        type="button"
+      >
+        <span
+          class="pf-c-accordion__toggle-text"
+        >
+          Item One
+        </span>
+        <span
+          class="pf-c-accordion__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </dt>
+    <dd
+      aria-label=""
+      class="pf-c-accordion__expanded-content pf-m-expanded"
+      id=""
+    >
+      <div
+        class="pf-c-accordion__expanded-content-body"
+      >
+        Item one content body 1
+      </div>
+      <div
+        class="pf-c-accordion__expanded-content-body"
+      >
+        Item one Content body 2
+      </div>
+    </dd>
+  </dl>
+</DocumentFragment>
+`;
+
+exports[`Accordion Accordion default 1`] = `
+<DocumentFragment>
+  <dl
+    aria-label="this is a simple accordion"
+    class="pf-c-accordion"
+  />
+</DocumentFragment>
+`;
+
+exports[`Accordion Accordion display large 1`] = `
+<DocumentFragment>
+  <dl
+    aria-label=""
+    class="pf-c-accordion pf-m-display-lg"
+  >
+    <dt>
+      <button
+        aria-expanded="false"
+        class="pf-c-accordion__toggle"
+        id="item-1"
+        type="button"
+      >
+        <span
+          class="pf-c-accordion__toggle-text"
+        >
+          Item One
+        </span>
+        <span
+          class="pf-c-accordion__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </dt>
+    <dd
+      aria-label=""
+      class="pf-c-accordion__expanded-content pf-m-expanded"
+      id=""
+    >
+      <div
+        class="pf-c-accordion__expanded-content-body"
+      >
+        Item One Content
+      </div>
+    </dd>
+  </dl>
+</DocumentFragment>
+`;
+
+exports[`Accordion Accordion with non-default headingLevel 1`] = `
+<DocumentFragment>
+  <div
+    aria-label=""
+    class="pf-c-accordion"
+  >
+    <h2>
+      <button
+        aria-expanded="false"
+        class="pf-c-accordion__toggle"
+        id="item-1"
+        type="button"
+      >
+        <span
+          class="pf-c-accordion__toggle-text"
+        >
+          Item One
+        </span>
+        <span
+          class="pf-c-accordion__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </h2>
+    <div
+      aria-label=""
+      class="pf-c-accordion__expanded-content pf-m-expanded"
+      id=""
+    >
+      <div
+        class="pf-c-accordion__expanded-content-body"
+      >
+        Item One Content
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

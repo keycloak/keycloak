@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBoxHeader Test 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-about-modal-box__header"
+  >
+    <h1
+      class="pf-c-title pf-m-4xl"
+      data-ouia-component-id="OUIA-Generated-Title-1"
+      data-ouia-component-type="PF4/Title"
+      data-ouia-safe="true"
+      id="id"
+    >
+      Product Name
+    </h1>
+  </div>
+</DocumentFragment>
+`;

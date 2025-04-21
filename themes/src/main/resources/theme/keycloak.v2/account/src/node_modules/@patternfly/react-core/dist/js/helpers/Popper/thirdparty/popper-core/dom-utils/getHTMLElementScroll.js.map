@@ -1,0 +1,1 @@
+{"version":3,"file":"getHTMLElementScroll.js","sourceRoot":"","sources":["../../../../../../../src/helpers/Popper/thirdparty/popper-core/dom-utils/getHTMLElementScroll.ts"],"names":[],"mappings":";AAAA,cAAc;;AAEd;;GAEG;AACH,SAAwB,oBAAoB,CAAC,OAAoB;IAC/D,OAAO;QACL,UAAU,EAAE,OAAO,CAAC,UAAU;QAC9B,SAAS,EAAE,OAAO,CAAC,SAAS;KAC7B,CAAC;AACJ,CAAC;AALD,uCAKC"}

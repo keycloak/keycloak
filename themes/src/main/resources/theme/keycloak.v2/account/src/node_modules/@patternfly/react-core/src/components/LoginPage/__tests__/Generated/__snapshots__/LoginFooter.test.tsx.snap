@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginFooter should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <footer
+    class="pf-c-login__footer ''"
+  >
+    ReactNode
+  </footer>
+</DocumentFragment>
+`;

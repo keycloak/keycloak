@@ -1,0 +1,136 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyState Full height 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state pf-m-lg pf-m-full-height"
+  >
+    <div
+      class="pf-c-empty-state__content"
+    >
+      <h3
+        class="pf-c-title pf-m-md"
+        data-ouia-component-id="OUIA-Generated-Title-5"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+      >
+        EmptyState large
+      </h3>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`EmptyState Main 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state"
+  >
+    <div
+      class="pf-c-empty-state__content"
+    >
+      <h5
+        class="pf-c-title pf-m-lg"
+        data-ouia-component-id="OUIA-Generated-Title-1"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+      >
+        HTTP Proxies
+      </h5>
+      <div
+        class="pf-c-empty-state__body"
+      >
+        Defining HTTP Proxies that exist on your network allows you to perform various actions through those proxies.
+      </div>
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-primary"
+        data-ouia-component-id="OUIA-Generated-Button-primary-1"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        New HTTP Proxy
+      </button>
+      <div
+        class="pf-c-empty-state__secondary"
+      >
+        <button
+          aria-disabled="false"
+          aria-label="learn more action"
+          class="pf-c-button pf-m-link"
+          data-ouia-component-id="OUIA-Generated-Button-link-1"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          Learn more about this in the documentation.
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`EmptyState Main variant large 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state pf-m-lg"
+  >
+    <div
+      class="pf-c-empty-state__content"
+    >
+      <h3
+        class="pf-c-title pf-m-md"
+        data-ouia-component-id="OUIA-Generated-Title-2"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+      >
+        EmptyState large
+      </h3>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`EmptyState Main variant small 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state pf-m-sm"
+  >
+    <div
+      class="pf-c-empty-state__content"
+    >
+      <h3
+        class="pf-c-title pf-m-md"
+        data-ouia-component-id="OUIA-Generated-Title-3"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+      >
+        EmptyState small
+      </h3>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`EmptyState Main variant xs 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-empty-state pf-m-xs"
+  >
+    <div
+      class="pf-c-empty-state__content"
+    >
+      <h3
+        class="pf-c-title pf-m-md"
+        data-ouia-component-id="OUIA-Generated-Title-4"
+        data-ouia-component-type="PF4/Title"
+        data-ouia-safe="true"
+      >
+        EmptyState small
+      </h3>
+    </div>
+  </div>
+</DocumentFragment>
+`;

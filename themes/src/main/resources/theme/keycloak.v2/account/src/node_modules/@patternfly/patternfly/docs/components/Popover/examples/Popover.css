@@ -1,0 +1,10 @@
+#ws-core-c-popover-width-auto .ws-preview-html {
+  position: relative;
+  height: 125px;
+}
+
+#ws-core-c-popover-width-auto .pf-c-popover {
+  position: absolute;
+  top: 0;
+  left: 0;
+}

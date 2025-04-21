@@ -1,0 +1,10 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-tile() {
+  .pf-c-tile {
+    --pf-c-tile--m-disabled--BackgroundColor: var(--pf-global--disabled-color--200);
+    --pf-c-tile--m-disabled__title--Color: var(--pf-global--disabled-color--300);
+    --pf-c-tile--m-disabled__icon--Color: var(--pf-global--disabled-color--300);
+    --pf-c-tile--m-disabled__body--Color: var(--pf-global--disabled-color--300);
+  }
+}

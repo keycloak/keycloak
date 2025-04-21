@@ -1,0 +1,101 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`About Modal Container Test isOpen 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-backdrop"
+  >
+    <div
+      class="pf-l-bullseye"
+    >
+      <div
+        aria-describedby="content-id"
+        aria-labelledby="header-id"
+        aria-modal="true"
+        class="pf-c-about-modal-box"
+        role="dialog"
+      >
+        <div
+          class="pf-c-about-modal-box__brand"
+        >
+          <img
+            alt="Brand Image"
+            class="pf-c-about-modal-box__brand-image"
+            src="brandImg..."
+          />
+        </div>
+        <div
+          class="pf-c-about-modal-box__close"
+        >
+          <button
+            aria-disabled="false"
+            aria-label="Close Dialog"
+            class="pf-c-button pf-m-plain"
+            data-ouia-component-id="OUIA-Generated-Button-plain-1"
+            data-ouia-component-type="PF4/Button"
+            data-ouia-safe="true"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              fill="currentColor"
+              height="1em"
+              role="img"
+              style="vertical-align: -0.125em;"
+              viewBox="0 0 352 512"
+              width="1em"
+            >
+              <path
+                d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          class="pf-c-about-modal-box__header"
+        >
+          <h1
+            class="pf-c-title pf-m-4xl"
+            data-ouia-component-id="OUIA-Generated-Title-1"
+            data-ouia-component-type="PF4/Title"
+            data-ouia-safe="true"
+            id="header-id"
+          >
+            Product Name
+          </h1>
+        </div>
+        <div
+          aria-describedby="ariaDescribedById"
+          aria-labelledby="ariaLablledbyId"
+          class="pf-c-about-modal-box__content"
+          id="content-id"
+          title="Test Modal Container title"
+        >
+          <div
+            class="pf-c-about-modal-box__body"
+          >
+            <div
+              class="pf-c-content"
+            >
+              This is ModalBox content
+            </div>
+          </div>
+          <p
+            class="pf-c-about-modal-box__strapline"
+          >
+            Trademark and copyright information here
+          </p>
+        </div>
+        <div
+          class="pf-c-about-modal-box__hero"
+          style="--pf-c-about-modal-box__hero--sm--BackgroundImage: url(backgroundImageSrc...);"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`About Modal Container Test simple 1`] = `<DocumentFragment />`;
+
+exports[`About Modal Container Test with onlose 1`] = `<DocumentFragment />`;

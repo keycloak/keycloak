@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CardActions should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-card__actions ''"
+  >
+    ReactNode
+  </div>
+</DocumentFragment>
+`;

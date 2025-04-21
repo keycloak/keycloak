@@ -1,0 +1,17 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-popover() {
+  .pf-c-popover {
+    --pf-c-popover--BoxShadow: none;
+    --pf-c-popover__arrow--BoxShadow: none;
+    --pf-c-popover__arrow--BackgroundColor: var(--pf-c-popover__content--BackgroundColor);
+    --pf-c-popover--m-default__title-text--Color: var(--pf-global--default-color--200);
+    --pf-c-popover--m-info__title-text--Color: var(--pf-global--info-color--100);
+    --pf-c-popover--m-success__title-text--Color: var(--pf-global--success-color--100);
+
+    &,
+    .pf-c-popover__arrow {
+      border: 4px solid var(--pf-global--BorderColor--400);
+    }
+  }
+}

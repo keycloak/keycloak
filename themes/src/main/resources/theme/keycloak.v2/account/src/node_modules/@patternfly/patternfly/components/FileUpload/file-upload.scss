@@ -1,0 +1,88 @@
+.pf-c-file-upload {
+  // pf-m-loading
+  --pf-c-file-upload--m-loading__file-details--before--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-file-upload--m-loading__file-details--before--Left: var(--pf-global--BorderWidth--sm);
+  --pf-c-file-upload--m-loading__file-details--before--Right: var(--pf-global--BorderWidth--sm);
+  --pf-c-file-upload--m-loading__file-details--before--Bottom: var(--pf-global--BorderWidth--sm);
+
+  // pf-m-drag-hover
+  --pf-c-file-upload--m-drag-hover--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-file-upload--m-drag-hover--before--BorderColor: var(--pf-global--primary-color--100);
+  --pf-c-file-upload--m-drag-hover--before--ZIndex: var(--pf-global--ZIndex--xs);
+  --pf-c-file-upload--m-drag-hover--after--BackgroundColor: var(--pf-global--primary-color--100);
+  --pf-c-file-upload--m-drag-hover--after--Opacity: .1;
+
+  // Text area
+  --pf-c-file-upload__file-details__c-form-control--MinHeight: calc(var(--pf-global--spacer--3xl) * 2);
+
+  // Button overrides
+  --pf-c-file-upload__file-select__c-button--m-control--OutlineOffset: calc(-1 * var(--pf-global--spacer--xs));
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  &.pf-m-drag-hover {
+    &::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: var(--pf-c-file-upload--m-drag-hover--before--ZIndex);
+      content: "";
+      border: var(--pf-c-file-upload--m-drag-hover--before--BorderWidth) solid var(--pf-c-file-upload--m-drag-hover--before--BorderColor);
+    }
+
+    &::after {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      content: "";
+      background-color: var(--pf-c-file-upload--m-drag-hover--after--BackgroundColor);
+      opacity: var(--pf-c-file-upload--m-drag-hover--after--Opacity);
+    }
+  }
+
+  &.pf-m-loading {
+    .pf-c-file-upload__file-details {
+      position: relative;
+
+      &::before {
+        position: absolute;
+        top: 0;
+        right: var(--pf-c-file-upload--m-loading__file-details--before--Left);
+        bottom: var(--pf-c-file-upload--m-loading__file-details--before--Left);
+        left: var(--pf-c-file-upload--m-loading__file-details--before--Left);
+        content: "";
+        background-color: var(--pf-c-file-upload--m-loading__file-details--before--BackgroundColor);
+      }
+    }
+  }
+}
+
+.pf-c-file-upload__file-select {
+  .pf-c-button.pf-m-control {
+    outline-offset: var(--pf-c-file-upload__file-select__c-button--m-control--OutlineOffset);
+  }
+}
+
+.pf-c-file-upload__file-details {
+  position: relative;
+  display: flex;
+
+  .pf-c-form-control {
+    flex: 1 1 auto;
+    min-height: var(--pf-c-file-upload__file-details__c-form-control--MinHeight);
+    border-top: 0;
+  }
+}
+
+.pf-c-file-upload__file-details-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

@@ -1,0 +1,18 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-tooltip() {
+  .pf-c-tooltip {
+    --pf-c-tooltip--BoxShadow: none;
+    --pf-c-tooltip__content--BackgroundColor: var(--pf-global--BackgroundColor--300);
+  }
+
+  .pf-c-tooltip,
+  .pf-c-tooltip__arrow {
+    border: var(--pf-global--BorderWidth--lg) solid var(--pf-global--BorderColor--300);
+  }
+
+  .pf-c-tooltip__arrow {
+    --pf-c-tooltip__arrow--Width: #{pf-size-prem(15px)};
+    --pf-c-tooltip__arrow--Height: #{pf-size-prem(15px)};
+  }
+}

@@ -1,0 +1,93 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BackgroundImage 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-background-image"
+    style="--pf-c-background-image--BackgroundImage: url(/assets/images/pfbg_576.jpg); --pf-c-background-image--BackgroundImage-2x: url(/assets/images/pfbg_576@2x.jpg); --pf-c-background-image--BackgroundImage--sm: url(/assets/images/pfbg_768.jpg); --pf-c-background-image--BackgroundImage--sm-2x: url(/assets/images/pfbg_768@2x.jpg); --pf-c-background-image--BackgroundImage--lg: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--Filter: url(#patternfly-background-image-filter-overlay0);"
+  >
+    <svg
+      class="pf-c-background-image__filter"
+      height="0"
+      width="0"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <filter
+        id="patternfly-background-image-filter-overlay0"
+      >
+        <fecolormatrix
+          type="matrix"
+          values="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 1 0"
+        />
+        <fecomponenttransfer
+          color-interpolation-filters="sRGB"
+          result="duotone"
+        >
+          <fefuncr
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncg
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncb
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefunca
+            tableValues="0 1"
+            type="table"
+          />
+        </fecomponenttransfer>
+      </filter>
+    </svg>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`allows passing in a single string as the image src 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-background-image"
+    style="--pf-c-background-image--BackgroundImage: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--BackgroundImage-2x: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--BackgroundImage--sm: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--BackgroundImage--sm-2x: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--BackgroundImage--lg: url(/assets/images/pfbg_1200.jpg); --pf-c-background-image--Filter: url(#patternfly-background-image-filter-overlay1);"
+  >
+    <svg
+      class="pf-c-background-image__filter"
+      height="0"
+      width="0"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <filter
+        id="patternfly-background-image-filter-overlay1"
+      >
+        <fecolormatrix
+          type="matrix"
+          values="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 1 0"
+        />
+        <fecomponenttransfer
+          color-interpolation-filters="sRGB"
+          result="duotone"
+        >
+          <fefuncr
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncg
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefuncb
+            tableValues="0.086274509803922 0.43921568627451"
+            type="table"
+          />
+          <fefunca
+            tableValues="0 1"
+            type="table"
+          />
+        </fecomponenttransfer>
+      </filter>
+    </svg>
+  </div>
+</DocumentFragment>
+`;

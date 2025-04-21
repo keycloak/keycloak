@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Verify Skip To Content 1`] = `
+<DocumentFragment>
+  <a
+    class="pf-c-button pf-m-primary pf-c-skip-to-content"
+    href="#main-content"
+  />
+</DocumentFragment>
+`;
+
+exports[`Verify Skip To Content if forced to display 1`] = `
+<DocumentFragment>
+  <a
+    class="pf-c-button pf-m-primary pf-c-skip-to-content"
+    href="#main-content"
+  />
+</DocumentFragment>
+`;

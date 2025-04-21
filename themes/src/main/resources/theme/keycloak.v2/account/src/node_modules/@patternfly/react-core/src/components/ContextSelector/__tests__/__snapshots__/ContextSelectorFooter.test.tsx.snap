@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renders ContextSelectorFooter 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-c-context-selector__menu-footer"
+  >
+    testing text
+  </div>
+</DocumentFragment>
+`;

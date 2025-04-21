@@ -1,0 +1,232 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`List icon large list 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-list pf-m-icon-lg"
+  >
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 576 512"
+          width="1em"
+        >
+          <path
+            d="M542.22 32.05c-54.8 3.11-163.72 14.43-230.96 55.59-4.64 2.84-7.27 7.89-7.27 13.17v363.87c0 11.55 12.63 18.85 23.28 13.49 69.18-34.82 169.23-44.32 218.7-46.92 16.89-.89 30.02-14.43 30.02-30.66V62.75c.01-17.71-15.35-31.74-33.77-30.7zM264.73 87.64C197.5 46.48 88.58 35.17 33.78 32.05 15.36 31.01 0 45.04 0 62.75V400.6c0 16.24 13.13 29.78 30.02 30.66 49.49 2.6 149.59 12.11 218.77 46.95 10.62 5.35 23.21-1.94 23.21-13.46V100.63c0-5.29-2.62-10.14-7.27-12.99z"
+          />
+        </svg>
+      </span>
+      Apple
+    </li>
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 1024 1024"
+          width="1em"
+        >
+          <path
+            d="M802,320 C748.980664,320 706,277.019336 706,224 C706,170.980664 748.980664,128 802,128 C855.019336,128 898,170.980664 898,224 C898,277.019336 855.019336,320 802,320 M704,0 C527.3,0 384,143.3 384,320 C383.937788,357.490503 390.505571,394.696657 403.4,429.9 L0,824.1 L0,1024 L192,1024 L192,896 L320,896 L320,768 L448,768 L597,622 C596.906403,621.881923 596.838304,621.745723 596.8,621.6 C631.220126,633.811107 667.47802,640.034477 704,640 C880.7,640 1024,496.7 1024,320 C1024,143.3 880.7,0 704,0"
+          />
+        </svg>
+      </span>
+      Banana
+    </li>
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 576 512"
+          width="1em"
+        >
+          <path
+            d="M528 0H48C21.5 0 0 21.5 0 48v320c0 26.5 21.5 48 48 48h192l-16 48h-72c-13.3 0-24 10.7-24 24s10.7 24 24 24h272c13.3 0 24-10.7 24-24s-10.7-24-24-24h-72l-16-48h192c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48zm-16 352H64V64h448v288z"
+          />
+        </svg>
+      </span>
+      Orange
+    </li>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`List icon list 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-list pf-m-plain"
+  >
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 576 512"
+          width="1em"
+        >
+          <path
+            d="M542.22 32.05c-54.8 3.11-163.72 14.43-230.96 55.59-4.64 2.84-7.27 7.89-7.27 13.17v363.87c0 11.55 12.63 18.85 23.28 13.49 69.18-34.82 169.23-44.32 218.7-46.92 16.89-.89 30.02-14.43 30.02-30.66V62.75c.01-17.71-15.35-31.74-33.77-30.7zM264.73 87.64C197.5 46.48 88.58 35.17 33.78 32.05 15.36 31.01 0 45.04 0 62.75V400.6c0 16.24 13.13 29.78 30.02 30.66 49.49 2.6 149.59 12.11 218.77 46.95 10.62 5.35 23.21-1.94 23.21-13.46V100.63c0-5.29-2.62-10.14-7.27-12.99z"
+          />
+        </svg>
+      </span>
+      Apple
+    </li>
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 1024 1024"
+          width="1em"
+        >
+          <path
+            d="M802,320 C748.980664,320 706,277.019336 706,224 C706,170.980664 748.980664,128 802,128 C855.019336,128 898,170.980664 898,224 C898,277.019336 855.019336,320 802,320 M704,0 C527.3,0 384,143.3 384,320 C383.937788,357.490503 390.505571,394.696657 403.4,429.9 L0,824.1 L0,1024 L192,1024 L192,896 L320,896 L320,768 L448,768 L597,622 C596.906403,621.881923 596.838304,621.745723 596.8,621.6 C631.220126,633.811107 667.47802,640.034477 704,640 C880.7,640 1024,496.7 1024,320 C1024,143.3 880.7,0 704,0"
+          />
+        </svg>
+      </span>
+      Banana
+    </li>
+    <li
+      class="pf-c-list__item"
+    >
+      <span
+        class="pf-c-list__item-icon"
+      >
+        <svg
+          aria-hidden="true"
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style="vertical-align: -0.125em;"
+          viewBox="0 0 576 512"
+          width="1em"
+        >
+          <path
+            d="M528 0H48C21.5 0 0 21.5 0 48v320c0 26.5 21.5 48 48 48h192l-16 48h-72c-13.3 0-24 10.7-24 24s10.7 24 24 24h272c13.3 0 24-10.7 24-24s-10.7-24-24-24h-72l-16-48h192c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48zm-16 352H64V64h448v288z"
+          />
+        </svg>
+      </span>
+      Orange
+    </li>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`List inline list 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-list pf-m-inline"
+  >
+    <ul
+      class="pf-c-list"
+    >
+      <li
+        class=""
+      >
+        First
+      </li>
+      <li
+        class=""
+      >
+        Second
+      </li>
+      <li
+        class=""
+      >
+        Third
+      </li>
+    </ul>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`List ordered list 1`] = `
+<DocumentFragment>
+  <ol
+    class="pf-c-list"
+    type="1"
+  >
+    <li
+      class=""
+    >
+      Apple
+    </li>
+    <li
+      class=""
+    >
+      Banana
+    </li>
+    <li
+      class=""
+    >
+      Orange
+    </li>
+  </ol>
+</DocumentFragment>
+`;
+
+exports[`List simple list 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-list"
+  >
+    <ul
+      class="pf-c-list"
+    >
+      <li
+        class=""
+      >
+        First
+      </li>
+      <li
+        class=""
+      >
+        Second
+      </li>
+      <li
+        class=""
+      >
+        Third
+      </li>
+    </ul>
+  </ul>
+</DocumentFragment>
+`;

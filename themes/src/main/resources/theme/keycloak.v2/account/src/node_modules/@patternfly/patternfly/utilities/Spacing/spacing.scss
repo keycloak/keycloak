@@ -1,0 +1,57 @@
+// stylelint-disable
+
+// Build spacing values
+@mixin pf-spacer-builder() {
+
+  // Loop through breakpoints
+  @each $breakpoint, $breakpoint-value in $pf-global--breakpoint-map {
+
+    // Loop through margin and padding values
+    @each $property, $property-value in $pf-global--spacer-properties-map {
+
+      // Loop through spacer values
+      @each $spacer, $spacer-value in $pf-global--spacer-map {
+
+        // If breakpoint != null, append responsive value
+        .pf-u-#{$property}-#{$spacer}#{$breakpoint-value} {
+          @include pf-media-query($breakpoint) {
+            $spacer-value: $spacer-value !important;
+
+            // If margin x property, set left and right margins
+            @if $property == "mx" {
+              margin-right: #{$spacer-value};
+              margin-left: #{$spacer-value};
+            }
+
+            // If padding x property, set left and right padding
+            @else if $property == "my" {
+              margin-top: #{$spacer-value};
+              margin-bottom: #{$spacer-value};
+            }
+
+            // If margin y property, set top and bottom margins
+            @else if $property == "px" {
+              padding-right: #{$spacer-value};
+              padding-left: #{$spacer-value};
+            }
+
+            // If padding y property, set top and bottom padding
+            @else if $property == "py" {
+              padding-top: #{$spacer-value};
+              padding-bottom: #{$spacer-value};
+            }
+
+            @else {
+              #{$property-value}: #{$spacer-value};
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// stylelint-enable
+
+// Build spacing values
+@include pf-spacer-builder();

@@ -1,0 +1,443 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Label editable label 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-editable"
+  >
+    <button
+      class="pf-c-label__content"
+    >
+      Something
+    </button>
+    <button
+      aria-disabled="false"
+      aria-label="Close Something"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-Button-plain-3"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label editable label 2`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-editable pf-m-editable-active"
+  >
+    <input
+      class="pf-c-label__content"
+      id="editable-input"
+      type="text"
+      value="Something"
+    />
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with additional class name 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label klass1"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with additional class name and props 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label class-1"
+    data-label-name="something"
+    id="label-1"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with blue color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-blue"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with blue color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-blue pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with close button 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+    <button
+      aria-disabled="false"
+      aria-label="Close Something"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-Button-plain-1"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with close button and outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+    <button
+      aria-disabled="false"
+      aria-label="Close Something"
+      class="pf-c-button pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-Button-plain-2"
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe="true"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 352 512"
+        width="1em"
+      >
+        <path
+          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+        />
+      </svg>
+    </button>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with cyan color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-cyan"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with cyan color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-cyan pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with green color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-green"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with green color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-green pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with grey color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with grey color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with href 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label"
+  >
+    <a
+      class="pf-c-label__content"
+      href="#"
+    >
+      Something
+    </a>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with href with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-outline"
+  >
+    <a
+      class="pf-c-label__content"
+      href="#"
+    >
+      Something
+    </a>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with orange color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-orange"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with orange color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-orange pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with purple color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-purple"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with purple color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-purple pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with red color 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-red"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with red color with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-red pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label label with truncation 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      <span
+        class="pf-c-label__text"
+      >
+        Something very very very very very long that should be truncated
+      </span>
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label renders 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label renders with isCompact 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-compact"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;
+
+exports[`Label renders with outline variant 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-label pf-m-outline"
+  >
+    <span
+      class="pf-c-label__content"
+    >
+      Something
+    </span>
+  </span>
+</DocumentFragment>
+`;

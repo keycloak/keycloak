@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OptionsMenuItem should match snapshot 1`] = `
+<DocumentFragment>
+  <li
+    id="''"
+    role="none"
+  >
+    <button
+      aria-disabled="true"
+      class="string"
+      data-ouia-component-id="OUIA-Generated-DropdownItem-1"
+      data-ouia-component-type="PF4/DropdownItem"
+      data-ouia-safe="true"
+      role="menuitem"
+      tabindex="-1"
+      type="button"
+    >
+      ReactNode
+    </button>
+  </li>
+   
+</DocumentFragment>
+`;

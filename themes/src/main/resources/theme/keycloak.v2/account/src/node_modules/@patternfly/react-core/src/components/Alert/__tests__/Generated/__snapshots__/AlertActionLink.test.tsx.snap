@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AlertActionLink should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="false"
+    class="pf-c-button pf-m-link pf-m-inline ''"
+    data-ouia-component-id="OUIA-Generated-Button-link-1"
+    data-ouia-component-type="PF4/Button"
+    data-ouia-safe="true"
+    type="button"
+  >
+    string
+  </button>
+</DocumentFragment>
+`;

@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NavList should match snapshot 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-c-nav__list"
+  >
+    ReactNode
+  </ul>
+</DocumentFragment>
+`;

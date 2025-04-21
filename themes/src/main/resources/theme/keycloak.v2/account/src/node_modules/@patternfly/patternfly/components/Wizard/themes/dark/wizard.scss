@@ -1,0 +1,14 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-wizard() {
+  .pf-c-wizard {
+    --pf-c-wizard__nav-link--m-disabled--Color: var(--pf-global--disabled-color--300);
+    --pf-c-wizard__nav-link--m-disabled--before--Color: var(--pf-global--disabled-color--300);
+    --pf-c-wizard__nav--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-wizard__outer-wrap--BackgroundColor: var(--pf-global--BackgroundColor--300);
+  }
+
+  .pf-c-wizard__header {
+    @include pf-theme-dark--t-dark;
+  }
+}

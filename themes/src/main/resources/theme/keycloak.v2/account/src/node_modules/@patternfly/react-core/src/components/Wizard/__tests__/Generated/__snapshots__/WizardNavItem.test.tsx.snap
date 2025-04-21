@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardNavItem should match snapshot (auto-generated) 1`] = `
+<DocumentFragment>
+  <li
+    class="pf-c-wizard__nav-item"
+  >
+    <button
+      aria-current="false"
+      class="pf-c-wizard__nav-link"
+    />
+    ReactNode
+  </li>
+</DocumentFragment>
+`;

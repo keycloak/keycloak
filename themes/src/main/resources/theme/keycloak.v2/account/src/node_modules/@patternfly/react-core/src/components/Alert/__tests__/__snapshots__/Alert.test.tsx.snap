@@ -1,0 +1,2596 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Alert Alert - danger Action Link 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-4"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-4"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Action and Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-6"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-5"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Custom aria label 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Custom aria label for danger"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-7"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-6"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Custom icon 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="danger custom icon alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-15"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 640 512"
+        width="1em"
+      >
+        <path
+          d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      custom icon alert title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some noisy alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Description 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-1"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Heading level 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-3"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h1
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h1>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-2"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger Toast alerts match snapsnot 1`] = `
+<DocumentFragment>
+  <div
+    aria-atomic="false"
+    aria-label="danger toast alert"
+    aria-live="polite"
+    class="pf-c-alert pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-11"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some toast alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger expandable variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-expandable pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-9"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__toggle"
+    >
+      <button
+        aria-disabled="false"
+        aria-expanded="false"
+        aria-label="Danger alert details"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="OUIA-Generated-Button-plain-5"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <span
+          class="pf-c-alert__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - danger inline variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Danger Alert"
+    class="pf-c-alert pf-m-inline pf-m-danger"
+    data-ouia-component-id="OUIA-Generated-Alert-danger-8"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Danger alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Action Link 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-5"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-13"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Action and Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-7"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-14"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Custom aria label 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Custom aria label for default"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-8"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-15"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Custom icon 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="default custom icon alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-16"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 640 512"
+        width="1em"
+      >
+        <path
+          d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      custom icon alert title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some noisy alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Description 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-2"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Heading level 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-4"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h1
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h1>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-3"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default Toast alerts match snapsnot 1`] = `
+<DocumentFragment>
+  <div
+    aria-atomic="false"
+    aria-label="default toast alert"
+    aria-live="polite"
+    class="pf-c-alert"
+    data-ouia-component-id="OUIA-Generated-Alert-default-12"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some toast alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default expandable variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert pf-m-expandable"
+    data-ouia-component-id="OUIA-Generated-Alert-default-10"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__toggle"
+    >
+      <button
+        aria-disabled="false"
+        aria-expanded="false"
+        aria-label="Default alert details"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="OUIA-Generated-Button-plain-14"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <span
+          class="pf-c-alert__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - default inline variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Default Alert"
+    class="pf-c-alert pf-m-inline"
+    data-ouia-component-id="OUIA-Generated-Alert-default-9"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 896 1024"
+        width="1em"
+      >
+        <path
+          d="M448,0 C465.333333,0 480.333333,6.33333333 493,19 C505.666667,31.6666667 512,46.6666667 512,64 L512,106 L514.23,106.45 C587.89,121.39 648.48,157.24 696,214 C744,271.333333 768,338.666667 768,416 C768,500 780,568.666667 804,622 C818.666667,652.666667 841.333333,684 872,716 C873.773676,718.829136 875.780658,721.505113 878,724 C890,737.333333 896,752.333333 896,769 C896,785.666667 890,800.333333 878,813 C866,825.666667 850.666667,832 832,832 L63.3,832 C44.9533333,831.84 29.8533333,825.506667 18,813 C6,800.333333 0,785.666667 0,769 C0,752.333333 6,737.333333 18,724 L24,716 L25.06,714.9 C55.1933333,683.28 77.5066667,652.313333 92,622 C116,568.666667 128,500 128,416 C128,338.666667 152,271.333333 200,214 C248,156.666667 309.333333,120.666667 384,106 L384,63.31 C384.166667,46.27 390.5,31.5 403,19 C415.666667,6.33333333 430.666667,0 448,0 Z M576,896 L576,897.08 C575.74,932.6 563.073333,962.573333 538,987 C512.666667,1011.66667 482.666667,1024 448,1024 C413.333333,1024 383.333333,1011.66667 358,987 C332.666667,962.333333 320,932 320,896 L576,896 Z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Default alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Action Link 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-4"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-10"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Action and Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-6"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-11"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Custom aria label 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Custom aria label for info"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-7"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-12"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Custom icon 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="info custom icon alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-15"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 640 512"
+        width="1em"
+      >
+        <path
+          d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      custom icon alert title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some noisy alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Description 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-1"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Heading level 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-3"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h1
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h1>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-2"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info Toast alerts match snapsnot 1`] = `
+<DocumentFragment>
+  <div
+    aria-atomic="false"
+    aria-label="info toast alert"
+    aria-live="polite"
+    class="pf-c-alert pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-11"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some toast alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info expandable variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-expandable pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-9"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__toggle"
+    >
+      <button
+        aria-disabled="false"
+        aria-expanded="false"
+        aria-label="Info alert details"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="OUIA-Generated-Button-plain-11"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <span
+          class="pf-c-alert__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - info inline variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Info Alert"
+    class="pf-c-alert pf-m-inline pf-m-info"
+    data-ouia-component-id="OUIA-Generated-Alert-info-8"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Info alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Action Link 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-4"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-1"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Action and Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-6"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-2"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Custom aria label 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Custom aria label for success"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-7"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-3"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Custom icon 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="success custom icon alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-15"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 640 512"
+        width="1em"
+      >
+        <path
+          d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      custom icon alert title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some noisy alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Description 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-1"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Heading level 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-3"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h1
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h1>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-2"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success Toast alerts match snapsnot 1`] = `
+<DocumentFragment>
+  <div
+    aria-atomic="false"
+    aria-label="success toast alert"
+    aria-live="polite"
+    class="pf-c-alert pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-11"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some toast alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success expandable variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-expandable pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-9"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__toggle"
+    >
+      <button
+        aria-disabled="false"
+        aria-expanded="false"
+        aria-label="Success alert details"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="OUIA-Generated-Button-plain-2"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <span
+          class="pf-c-alert__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - success inline variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Success Alert"
+    class="pf-c-alert pf-m-inline pf-m-success"
+    data-ouia-component-id="OUIA-Generated-Alert-success-8"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 512 512"
+        width="1em"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Success alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Action Link 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-4"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-7"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Action and Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-6"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-8"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Custom aria label 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Custom aria label for warning"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-7"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+    <div
+      class="pf-c-alert__action-group"
+    >
+      <button
+        aria-disabled="false"
+        class="pf-c-button pf-m-link pf-m-inline"
+        data-ouia-component-id="OUIA-Generated-Button-link-9"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        test
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Custom icon 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="warning custom icon alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-15"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 640 512"
+        width="1em"
+      >
+        <path
+          d="M96 224c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm448 0c35.3 0 64-28.7 64-64s-28.7-64-64-64-64 28.7-64 64 28.7 64 64 64zm32 32h-64c-17.6 0-33.5 7.1-45.1 18.6 40.3 22.1 68.9 62 75.1 109.4h66c17.7 0 32-14.3 32-32v-32c0-35.3-28.7-64-64-64zm-256 0c61.9 0 112-50.1 112-112S381.9 32 320 32 208 82.1 208 144s50.1 112 112 112zm76.8 32h-8.3c-20.8 10-43.9 16-68.5 16s-47.6-6-68.5-16h-8.3C179.6 288 128 339.6 128 403.2V432c0 26.5 21.5 48 48 48h288c26.5 0 48-21.5 48-48v-28.8c0-63.6-51.6-115.2-115.2-115.2zm-223.7-13.4C161.5 263.1 145.6 256 128 256H64c-35.3 0-64 28.7-64 64v32c0 17.7 14.3 32 32 32h65.9c6.3-47.4 34.9-87.3 75.2-109.4z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      custom icon alert title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some noisy alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Description 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-1"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Heading level 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-3"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h1
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h1>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Title 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-2"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning Toast alerts match snapsnot 1`] = `
+<DocumentFragment>
+  <div
+    aria-atomic="false"
+    aria-label="warning toast alert"
+    aria-live="polite"
+    class="pf-c-alert pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-11"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some toast alert
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning expandable variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-expandable pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-9"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__toggle"
+    >
+      <button
+        aria-disabled="false"
+        aria-expanded="false"
+        aria-label="Warning alert details"
+        class="pf-c-button pf-m-plain"
+        data-ouia-component-id="OUIA-Generated-Button-plain-8"
+        data-ouia-component-type="PF4/Button"
+        data-ouia-safe="true"
+        type="button"
+      >
+        <span
+          class="pf-c-alert__toggle-icon"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="1em"
+            role="img"
+            style="vertical-align: -0.125em;"
+            viewBox="0 0 256 512"
+            width="1em"
+          >
+            <path
+              d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+            />
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Alert Alert - warning inline variation 1`] = `
+<DocumentFragment>
+  <div
+    aria-label="Warning Alert"
+    class="pf-c-alert pf-m-inline pf-m-warning"
+    data-ouia-component-id="OUIA-Generated-Alert-warning-8"
+    data-ouia-component-type="PF4/Alert"
+    data-ouia-safe="true"
+  >
+    <div
+      class="pf-c-alert__icon"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="1em"
+        role="img"
+        style="vertical-align: -0.125em;"
+        viewBox="0 0 576 512"
+        width="1em"
+      >
+        <path
+          d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+        />
+      </svg>
+    </div>
+    <h4
+      class="pf-c-alert__title"
+    >
+      <span
+        class="pf-u-screen-reader"
+      >
+        Warning alert:
+      </span>
+      Some title
+    </h4>
+    <div
+      class="pf-c-alert__description"
+    >
+      Some alert
+    </div>
+  </div>
+</DocumentFragment>
+`;

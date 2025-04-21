@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`false Badge 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-badge pf-m-unread"
+  >
+    unread Badge
+  </span>
+</DocumentFragment>
+`;
+
+exports[`true Badge 1`] = `
+<DocumentFragment>
+  <span
+    class="pf-c-badge pf-m-read"
+  >
+    read Badge
+  </span>
+</DocumentFragment>
+`;

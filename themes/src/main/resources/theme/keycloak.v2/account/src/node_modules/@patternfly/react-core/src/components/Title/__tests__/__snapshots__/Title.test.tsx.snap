@@ -1,0 +1,79 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Title 2xl Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-2xl"
+    data-ouia-component-id="OUIA-Generated-Title-4"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    2xl Title
+  </h1>
+</DocumentFragment>
+`;
+
+exports[`Title 3xl Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-3xl"
+    data-ouia-component-id="OUIA-Generated-Title-5"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    3xl Title
+  </h1>
+</DocumentFragment>
+`;
+
+exports[`Title 4xl Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-4xl"
+    data-ouia-component-id="OUIA-Generated-Title-6"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    4xl Title
+  </h1>
+</DocumentFragment>
+`;
+
+exports[`Title lg Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-lg"
+    data-ouia-component-id="OUIA-Generated-Title-2"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    lg Title
+  </h1>
+</DocumentFragment>
+`;
+
+exports[`Title md Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-md"
+    data-ouia-component-id="OUIA-Generated-Title-1"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    md Title
+  </h1>
+</DocumentFragment>
+`;
+
+exports[`Title xl Title 1`] = `
+<DocumentFragment>
+  <h1
+    class="pf-c-title pf-m-xl"
+    data-ouia-component-id="OUIA-Generated-Title-3"
+    data-ouia-component-type="PF4/Title"
+    data-ouia-safe="true"
+  >
+    xl Title
+  </h1>
+</DocumentFragment>
+`;

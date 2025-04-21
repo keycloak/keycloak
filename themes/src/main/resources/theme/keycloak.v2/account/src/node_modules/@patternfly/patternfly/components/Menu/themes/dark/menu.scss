@@ -1,0 +1,12 @@
+@import "../../../../sass-utilities/themes/dark/all";
+
+@mixin pf-theme-dark-menu() {
+  .pf-c-menu {
+    --pf-c-menu--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-menu__list-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-menu__list-item--focus-within--BackgroundColor: var(--pf-global--BackgroundColor--400);
+    --pf-c-menu__list-item--m-disabled__item--Color: var(--pf-global--Color--200); // global var?
+    --pf-c-menu__group-title--FontWeight: var(--pf-global--FontWeight--bold);
+    --pf-c-menu__group-title--FontSize: var(--pf-global--FontSize--xs);
+  }
+}
