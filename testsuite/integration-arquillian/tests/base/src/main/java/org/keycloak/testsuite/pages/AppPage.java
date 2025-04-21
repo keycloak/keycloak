@@ -17,12 +17,10 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
@@ -35,18 +33,17 @@ public class AppPage extends AbstractPage {
     @FindBy(id = "account")
     private WebElement accountLink;
 
-    @Override
     public void open() {
-        driver.navigate().to(oauth.APP_AUTH_ROOT);
+        DroneUtils.getCurrentDriver().navigate().to(OAuthClient.APP_AUTH_ROOT);
     }
 
     @Override
     public boolean isCurrent() {
-        return removeDefaultPorts(driver.getCurrentUrl()).startsWith(oauth.APP_AUTH_ROOT);
+        return removeDefaultPorts(DroneUtils.getCurrentDriver().getCurrentUrl()).startsWith(OAuthClient.APP_AUTH_ROOT);
     }
 
     public RequestType getRequestType() {
-        return RequestType.valueOf(driver.getTitle());
+        return RequestType.valueOf(DroneUtils.getCurrentDriver().getTitle());
     }
 
     public void openAccount() {
@@ -62,7 +59,7 @@ public class AppPage extends AbstractPage {
     }
 
     public void logout(String idTokenHint) {
-        oauth.idTokenHint(idTokenHint).openLogout();
+        oauth.logoutForm().idTokenHint(idTokenHint).withRedirect().open();
     }
 
 

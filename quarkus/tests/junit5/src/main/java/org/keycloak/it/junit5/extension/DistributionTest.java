@@ -21,6 +21,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Target(ElementType.TYPE)
@@ -28,7 +29,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DistributionTest {
 
+    public static final String WIN = "win";
+    public static final String STORAGE = "storage";
+    public static final String SMOKE = "smoke";
+    public static final String SLOW = "slow";
+
     boolean debug() default false;
+    /**
+     * If the distribution should be left running after the launch.
+     */
     boolean keepAlive() default false;
     boolean enableTls() default false;
 
@@ -61,5 +70,15 @@ public @interface DistributionTest {
      * If any option must be set when starting the server.
      */
     String[] defaultOptions() default {};
+
+    /**
+     * Exposed ports when container is used
+     */
+    int[] containerExposedPorts() default {8080};
+
+    /**
+     * Default port for making HTTP requests with RestAssured
+     */
+    int requestPort() default 8080;
 }
 

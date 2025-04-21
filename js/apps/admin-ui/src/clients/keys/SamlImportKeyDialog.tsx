@@ -1,8 +1,8 @@
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { AlertVariant } from "@patternfly/react-core";
-import { FormProvider, useFormContext } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { KeyForm } from "./GenerateKeyDialog";
 import type { KeyTypes } from "./SamlKeys";
@@ -19,14 +19,16 @@ export const SamlImportKeyDialog = ({
   attr,
   onClose,
 }: SamlImportKeyDialogProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const form = useFormContext<SamlKeysDialogForm>();
+  const form = useForm<SamlKeysDialogForm>();
   const { handleSubmit } = form;
 
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {
-    submitForm(form, id, attr, (error) => {
+    submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
       } else {

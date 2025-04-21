@@ -33,21 +33,26 @@ import org.jboss.modules.ModuleLoader;
  */
 public class KeycloakDependencyProcessorWildFly extends KeycloakDependencyProcessor {
 
+    private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-core");
     private static final ModuleIdentifier KEYCLOAK_ELYTRON_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-elytron-adapter");
-    private static final ModuleIdentifier KEYCLOAK_ELYTRON_JAKARTA_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter");
+
+    @Override
+    protected void addCoreModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
+    }
 
     @Override
     protected void addPlatformSpecificModules(DeploymentPhaseContext phaseContext, ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
         if (isElytronEnabled(phaseContext)) {
-            ClassLoader classLoader = getClass().getClassLoader();
-            String classLoaderName = (classLoader instanceof ModuleClassLoader ? ((ModuleClassLoader)classLoader).getName() : "");
-            if (classLoaderName.contains("jakarta")) {
-                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_JAKARTA_ADAPTER, true, false, false, false));
-            } else {
-                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
-            }
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
         } else {
             throw new RuntimeException("Legacy WildFly security layer is no longer supported by the Keycloak WildFly adapter");
         }
+    }
+
+    private boolean isJakarta() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        String classLoaderName = (classLoader instanceof ModuleClassLoader ? ((ModuleClassLoader) classLoader).getName() : "");
+        return classLoaderName.contains("jakarta");
     }
 }

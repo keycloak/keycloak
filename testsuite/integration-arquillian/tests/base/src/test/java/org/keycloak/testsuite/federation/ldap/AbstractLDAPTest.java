@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.keycloak.common.Profile.Feature;
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -26,15 +25,14 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
-import org.junit.BeforeClass;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -78,15 +76,10 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
         afterImportTestRealm();
     }
 
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
-
-
     protected void createLDAPProvider() {
         Map<String, String> cfg = getLDAPRule().getConfig();
         ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        Assert.assertEquals("Short ID not used for ldap id", 22, ldapModelId.length());
         log.infof("LDAP Provider created");
     }
 

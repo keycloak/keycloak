@@ -10,6 +10,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
@@ -77,6 +78,9 @@ public class HttpUtils {
         };
 
         try {
+            // add common headers that are needed by some pages
+            method.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9");
+            method.addHeader(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             client.execute(method, responseHandler);
         } catch (Exception e) {
             response.setError("exception " + e.getMessage());

@@ -1,13 +1,31 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
+import {
+  createNamedContext,
+  useEnvironment,
+  useFetch,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useState } from "react";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import environment from "../../environment";
+import { useAdminClient } from "../../admin-client";
 import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
-import { useFetch } from "../../utils/useFetch";
 import { useRealm } from "../realm-context/RealmContext";
+
+// can be replaced with https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
+const RTL_LOCALES = [
+  "ar",
+  "dv",
+  "fa",
+  "ha",
+  "he",
+  "iw",
+  "ji",
+  "ps",
+  "sd",
+  "ug",
+  "ur",
+  "yi",
+];
 
 export class WhoAmI {
   #me?: WhoAmIRepresentation;
@@ -20,6 +38,9 @@ export class WhoAmI {
           console.warn("Error(s) loading locale", this.#me?.locale, error);
         }
       });
+      if (RTL_LOCALES.includes(this.#me.locale)) {
+        document.getElementsByTagName("html")[0].setAttribute("dir", "rtl");
+      }
     }
   }
 
@@ -54,6 +75,14 @@ export class WhoAmI {
 
     return this.#me.realm_access;
   }
+
+  public isTemporary(): boolean {
+    return this.#me?.temporary ?? false;
+  }
+
+  public isEmpty(): boolean {
+    return !this.#me;
+  }
 }
 
 type WhoAmIProps = {
@@ -69,19 +98,42 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
+  const { adminClient } = useAdminClient();
+  const { environment } = useEnvironment();
+
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
 
   useFetch(
-    () =>
-      adminClient.whoAmI.find({
-        realm: environment.loginRealm,
-        currentRealm: realm!,
-      }),
+    async () => {
+      try {
+        return await adminClient.whoAmI.find({
+          realm: environment.realm,
+          currentRealm: realm!,
+        });
+      } catch (error) {
+        console.warn("Error fetching whoami", error);
+      }
+      return Promise.resolve(undefined);
+    },
     (me) => {
-      const whoAmI = new WhoAmI(me);
-      setWhoAmI(whoAmI);
+      if (me === undefined) {
+        setWhoAmI(
+          new WhoAmI({
+            userId: "",
+            realm: environment.realm,
+            displayName: "",
+            locale: "en",
+            temporary: false,
+            createRealm: false,
+            realm_access: {},
+          }),
+        );
+      } else {
+        const whoAmI = new WhoAmI(me);
+        setWhoAmI(whoAmI);
+      }
     },
     [key, realm],
   );

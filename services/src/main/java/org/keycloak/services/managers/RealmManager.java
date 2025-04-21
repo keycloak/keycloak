@@ -16,9 +16,16 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Encode;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -26,6 +33,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -52,8 +61,8 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
-import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.StoreMigrateRepresentationEvent;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
@@ -61,6 +70,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Per request object
@@ -175,7 +185,8 @@ public class RealmManager {
         adminConsole.setName("${client_" + Constants.ADMIN_CONSOLE_CLIENT_ID + "}");
 
         adminConsole.setRootUrl(Constants.AUTH_ADMIN_URL_PROP);
-        String baseUrl = "/admin/" + realm.getName() + "/console/";
+
+        String baseUrl = "/admin/" + Encode.encodePathAsIs(realm.getName()) + "/console/";
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
         adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
@@ -183,11 +194,12 @@ public class RealmManager {
 
         adminConsole.setEnabled(true);
         adminConsole.setAlwaysDisplayInConsole(false);
+        adminConsole.setFullScopeAllowed(true);
         adminConsole.setPublicClient(true);
-        adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         adminConsole.setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, "S256");
+        adminConsole.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -209,10 +221,11 @@ public class RealmManager {
             adminCli.setName("${client_" + Constants.ADMIN_CLI_CLIENT_ID + "}");
             adminCli.setEnabled(true);
             adminCli.setAlwaysDisplayInConsole(false);
-            adminCli.setFullScopeAllowed(false);
+            adminCli.setFullScopeAllowed(true);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
             adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            adminCli.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, "true");
         }
 
     }
@@ -245,6 +258,8 @@ public class RealmManager {
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
         realm.setPermanentLockout(false);
+        realm.setMaxTemporaryLockouts(0);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
@@ -278,7 +293,7 @@ public class RealmManager {
             }
 
           // Refresh periodic sync tasks for configured storageProviders
-          LegacyStoreSyncEvent.fire(session, realm, true);
+          StoreSyncEvent.fire(session, realm, true);
         }
         return removed;
     }
@@ -287,6 +302,15 @@ public class RealmManager {
         realm.setEventsEnabled(rep.isEventsEnabled());
         realm.setEventsExpiration(rep.getEventsExpiration() != null ? rep.getEventsExpiration() : 0);
         if (rep.getEventsListeners() != null) {
+            for (String el : rep.getEventsListeners()) {
+                EventListenerProviderFactory elpf = (EventListenerProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(EventListenerProvider.class, el);
+                if (elpf == null) {
+                    throw new ClientErrorException("Unknown event listener", Response.Status.BAD_REQUEST);
+                }
+                if (elpf.isGlobal()) {
+                    throw new ClientErrorException("Global event listeners not allowed in realm specific configuration", Response.Status.BAD_REQUEST);
+                }
+            }
             realm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         }
         if(rep.getEnabledEventTypes() != null) {
@@ -420,7 +444,8 @@ public class RealmManager {
             accountClient.setFullScopeAllowed(false);
 
             accountClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
-            String baseUrl = "/realms/" + realm.getName() + "/account/";
+
+            String baseUrl = "/realms/" + Encode.encodePathAsIs(realm.getName()) + "/account/";
             accountClient.setBaseUrl(baseUrl);
             accountClient.addRedirectUri(baseUrl + "*");
             accountClient.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
@@ -515,6 +540,12 @@ public class RealmManager {
         } else {
             ReservedCharValidator.validate(id);
         }
+        if (StringUtil.isBlank(rep.getRealm())) {
+            throw new ModelException("Realm name cannot be empty");
+        }
+        if (session.realms().getRealmByName(rep.getRealm()) != null) {
+            throw new ModelDuplicateException("Realm " + rep.getRealm() + " already exists");
+        }
 
         RealmModel realm = model.createRealm(id, rep.getRealm());
         RealmModel currentRealm = session.getContext().getRealm();
@@ -522,6 +553,8 @@ public class RealmManager {
         try {
             session.getContext().setRealm(realm);
             ReservedCharValidator.validate(rep.getRealm());
+            ReservedCharValidator.validateLocales(rep.getSupportedLocales());
+            ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
             realm.setName(rep.getRealm());
 
             // setup defaults
@@ -532,6 +565,16 @@ public class RealmManager {
                 KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
             } else {
                 realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
+            }
+
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
+                if (rep.getAdminPermissionsClient() != null) {
+                    ClientModel client = RepresentationToModel.createClient(session, realm, rep.getAdminPermissionsClient());
+                    realm.setAdminPermissionsClient(client);
+                    RepresentationToModel.createResourceServer(client, session, false);
+                } else if (Boolean.TRUE.equals(rep.isAdminPermissionsEnabled())) {
+                    AdminPermissionsSchema.SCHEMA.init(session, realm);
+                }
             }
 
             boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
@@ -601,14 +644,25 @@ public class RealmManager {
                 KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
             }
 
-            // Refresh periodic sync tasks for configured storageProviders
-            LegacyStoreSyncEvent.fire(session, realm, false);
+            // enlistAfterCompletion(..) as we need to ensure that the realm is committed to the database before we can update the sync tasks
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    // Refresh periodic sync tasks for configured storageProviders
+                    StoreSyncEvent.fire(session, realm, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
 
             setupAuthorizationServices(realm);
             setupClientRegistrations(realm);
 
             if (rep.getKeycloakVersion() != null) {
-                LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
+                StoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
             }
 
             session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
@@ -622,7 +676,7 @@ public class RealmManager {
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {
-        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase(); 
+        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase();
         if (! hasRealmRole(rep, defaultRoleName)) {
             return defaultRoleName;
         } else {
@@ -756,7 +810,7 @@ public class RealmManager {
                 ClientModel clientModel = Optional.ofNullable(client.getId())
                         .map(realmModel::getClientById)
                         .orElseGet(() -> realmModel.getClientByClientId(client.getClientId()));
-                
+
                 if (clientModel == null) {
                     throw new RuntimeException("Cannot find provided client by dir import.");
                 }

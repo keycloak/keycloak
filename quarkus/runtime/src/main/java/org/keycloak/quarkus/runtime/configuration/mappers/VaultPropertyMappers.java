@@ -9,7 +9,7 @@ final class VaultPropertyMappers {
     private VaultPropertyMappers() {
     }
 
-    public static PropertyMapper[] getVaultPropertyMappers() {
+    public static PropertyMapper<?>[] getVaultPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")

@@ -8,18 +8,25 @@ Users within that realm can be granted realm management permissions by assigning
 Each realm has a built-in client called `realm-management`.  You can view this client by going to the
 `Clients` left menu item of your realm.  This client defines client-level roles that specify permissions that can be granted to manage the realm.
 
-* view-realm
-* view-users
-* view-clients
-* view-events
-* manage-realm
-* manage-users
 * create-client
+* impersonation
+* manage-authorization
 * manage-clients
 * manage-events
-* view-identity-providers
 * manage-identity-providers
-* impersonation
+* manage-realm
+* manage-users
+* query-clients
+* query-groups
+* query-realms
+* query-users
+* realm-admin
+* view-authorization
+* view-clients
+* view-events
+* view-identity-providers
+* view-realm
+* view-users
 
 Assign the roles you want to your users and they will only be able to use that specific part of the administration console.
 

@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   Button,
@@ -12,23 +13,22 @@ import { cellWidth } from "@patternfly/react-table";
 import { intersectionBy, sortBy, uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPath } from "../components/group/GroupPath";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../context/access/Access";
-import { emptyFormatter } from "../util";
 
 type UserGroupsProps = {
   user: UserRepresentation;
 };
 
 export const UserGroups = ({ user }: UserGroupsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
@@ -74,7 +74,10 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     const indirect: GroupRepresentation[] = [];
     if (!isDirectMembership)
       joinedUserGroups.forEach((g) => {
-        const paths = g.path?.substring(1).split("/").slice(0, -1) || [];
+        const paths = (
+          g.path?.substring(1).match(/((~\/)|[^/])+/g) || []
+        ).slice(0, -1);
+
         indirect.push(
           ...paths.map((p) => ({
             name: p,
@@ -113,6 +116,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           ),
         );
 
+        setSelectedGroups([]);
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
         addError("removedGroupMembershipError", error);
@@ -201,13 +205,14 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                 refresh();
               }}
               isChecked={isDirectMembership}
-              className="direct-membership-check"
+              className="pf-v5-u-mt-sm"
             />
             <Button
               onClick={() => leave(selectedGroups)}
               data-testid="leave-group-button"
               variant="link"
               isDisabled={selectedGroups.length === 0}
+              className="pf-v5-u-ml-md"
             >
               {t("leave")}
             </Button>
@@ -234,8 +239,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           {
             name: "groupMembership",
             displayKey: "groupMembership",
-            cellRenderer: (group: GroupRepresentation) => group.name || "",
-            cellFormatters: [emptyFormatter()],
+            cellRenderer: (group: GroupRepresentation) => group.name || "-",
             transforms: [cellWidth(40)],
           },
           {
@@ -264,10 +268,9 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                   {t("leave")}
                 </Button>
               ) : (
-                ""
+                "-"
               );
             },
-            cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(20)],
           },
         ]}

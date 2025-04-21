@@ -28,6 +28,17 @@ import java.util.List;
  */
 public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
+
+    /**
+     * Integral Value
+     */
+    public static final String INTEGER_TYPE="Integer";
+
+    /**
+     * Arbitrary number, e.g. integral, floating-point.
+     */
+    public static final String NUMBER_TYPE="Number";
+
     public static final String STRING_TYPE="String";
 
     /**
@@ -51,6 +62,11 @@ public class ProviderConfigProperty {
     public static final String MULTIVALUED_LIST_TYPE="MultivaluedList";
 
     public static final String CLIENT_LIST_TYPE="ClientList";
+
+    /**
+     * Possibility to select from user attributes defined in the user-profile, but also still have an option to configure custom value
+     */
+    public static final String USER_PROFILE_ATTRIBUTE_LIST_TYPE="UserProfileAttributeList";
     public static final String PASSWORD="Password";
 
     /**
@@ -62,6 +78,11 @@ public class ProviderConfigProperty {
      * Configure multiple (key, value) pairs
      */
     public static final String MAP_TYPE ="Map";
+
+    /**
+     * URL field
+     */
+    public static final String URL_TYPE ="Url";
 
     protected String name;
     protected String label;

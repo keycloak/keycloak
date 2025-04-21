@@ -3,15 +3,21 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
+  HelpItem,
+  KeycloakDataTable,
+  KeycloakSelect,
+  SelectVariant,
+  useFetch,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
+import {
   ClipboardCopy,
   Form,
   FormGroup,
   Grid,
   GridItem,
   PageSection,
-  Select,
   SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   Tab,
@@ -25,19 +31,16 @@ import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, useHelp } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { useAdminClient } from "../../admin-client";
 import { UserSelect } from "../../components/users/UserSelect";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
-import { useAccess } from "../../context/access/Access";
 
 import "./evaluate.css";
+import { ClientSelect } from "../../components/client/ClientSelect";
 
 export type EvaluateScopesProps = {
   clientId: string;
@@ -59,6 +62,7 @@ const ProtocolMappers = ({
       loader={() => Promise.resolve(protocolMappers)}
       ariaLabelKey="effectiveProtocolMappers"
       searchPlaceholderKey="searchForProtocol"
+      data-testid="effective-protocol-mappers"
       columns={[
         {
           name: "mapperName",
@@ -97,6 +101,7 @@ const EffectiveRoles = ({
       loader={() => Promise.resolve(effectiveRoles)}
       ariaLabelKey="effectiveRoleScopeMappings"
       searchPlaceholderKey="searchForRole"
+      data-testid="effective-role-scope-mappings"
       columns={[
         {
           name: "name",
@@ -112,6 +117,8 @@ const EffectiveRoles = ({
 };
 
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
+  const { adminClient } = useAdminClient();
+
   const prefix = "openid";
   const { t } = useTranslation();
   const { enabled } = useHelp();
@@ -144,6 +151,8 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const tabContent5 = useRef(null);
 
   const form = useForm();
+  const { watch } = form;
+  const selectedAudience: string[] = watch("targetAudience");
 
   const { hasAccess } = useAccess();
   const hasViewUsers = hasAccess("view-users");
@@ -179,9 +188,9 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     ({ mapperList, effectiveRoles }) => {
       setEffectiveRoles(effectiveRoles);
       mapperList.map((mapper) => {
-        mapper.type = mapperTypes.filter(
+        mapper.type = mapperTypes.find(
           (type) => type.id === mapper.protocolMapper,
-        )[0];
+        )!;
       });
 
       setProtocolMappers(mapperList);
@@ -195,12 +204,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       const scope = selected.join(" ");
       const user = form.getValues("user");
       if (!user) return [];
+      const audience = selectedAudience.join(" ");
 
       return await Promise.all([
         adminClient.clients.evaluateGenerateAccessToken({
           id: clientId,
           userId: user[0],
           scope,
+          audience,
         }),
         adminClient.clients.evaluateGenerateUserInfo({
           id: clientId,
@@ -219,7 +230,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
     },
-    [form.getValues("user"), selected],
+    [form.getValues("user"), selected, selectedAudience],
   );
 
   return (
@@ -245,14 +256,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
           >
             <Split hasGutter>
               <SplitItem isFilled>
-                <Select
+                <KeycloakSelect
                   toggleId="scopeParameter"
                   variant={SelectVariant.typeaheadMulti}
                   typeAheadAriaLabel={t("scopeParameter")}
                   onToggle={() => setIsScopeOpen(!isScopeOpen)}
                   isOpen={isScopeOpen}
                   selections={selected}
-                  onSelect={(_, value) => {
+                  onSelect={(value) => {
                     const option = value as string;
                     if (selected.includes(option)) {
                       if (option !== prefix) {
@@ -266,9 +277,11 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   placeholderText={t("scopeParameterPlaceholder")}
                 >
                   {selectableScopes.map((option, index) => (
-                    <SelectOption key={index} value={option.name} />
+                    <SelectOption key={index} value={option.name}>
+                      {option.name}
+                    </SelectOption>
                   ))}
-                </Select>
+                </KeycloakSelect>
               </SplitItem>
               <SplitItem>
                 <ClipboardCopy className="keycloak__scopes_evaluate__clipboard-copy">
@@ -289,6 +302,16 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               />
             </FormProvider>
           )}
+          <FormProvider {...form}>
+            <ClientSelect
+              name="targetAudience"
+              label={t("targetAudience")}
+              helpText={t("targetAudienceHelp")}
+              defaultValue={[]}
+              variant="typeaheadMulti"
+              placeholderText={t("targetAudiencePlaceHolder")}
+            />
+          </FormProvider>
         </Form>
       </PageSection>
 
@@ -362,6 +385,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveProtocolMappers"
               aria-controls="effectiveProtocolMappers"
+              data-testid="effective-protocol-mappers-tab"
               eventKey={0}
               title={
                 <TabTitleText>
@@ -379,6 +403,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="effectiveRoleScopeMappings"
               aria-controls="effectiveRoleScopeMappings"
+              data-testid="effective-role-scope-mappings-tab"
               eventKey={1}
               title={
                 <TabTitleText>
@@ -396,6 +421,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedAccessToken"
               aria-controls="generatedAccessToken"
+              data-testid="generated-access-token-tab"
               eventKey={2}
               title={
                 <TabTitleText>
@@ -413,6 +439,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedIdToken"
               aria-controls="generatedIdToken"
+              data-testid="generated-id-token-tab"
               eventKey={3}
               title={
                 <TabTitleText>
@@ -430,6 +457,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <Tab
               id="generatedUserInfo"
               aria-controls="generatedUserInfo"
+              data-testid="generated-user-info-tab"
               eventKey={4}
               title={
                 <TabTitleText>

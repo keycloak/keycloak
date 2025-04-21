@@ -22,53 +22,71 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.ScheduledTask;
+import org.keycloak.timer.TaskRunner;
+import org.keycloak.tracing.TracingProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ScheduledTaskRunner implements Runnable {
+public class ScheduledTaskRunner implements TaskRunner {
 
     private static final Logger logger = Logger.getLogger(ScheduledTaskRunner.class);
 
     protected final KeycloakSessionFactory sessionFactory;
+
     protected final ScheduledTask task;
-    private int transactionLimit;
+
+    protected final int transactionLimit;
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task) {
-        this.sessionFactory = sessionFactory;
-        this.task = task;
+        this(sessionFactory, task, 0);
     }
 
     public ScheduledTaskRunner(KeycloakSessionFactory sessionFactory, ScheduledTask task, int transactionLimit) {
-        this(sessionFactory, task);
+        this.sessionFactory = sessionFactory;
+        this.task = task;
         this.transactionLimit = transactionLimit;
     }
 
     @Override
     public void run() {
+        // trace a tracing provider directly to avoid creating a transaction that is unnecessary and would a surplus JTA transaction element to it
+        TracingProvider tracing = sessionFactory.getProviderFactory(TracingProvider.class).create(null);
         try {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
-                try {
-                    if (transactionLimit != 0) {
-                        KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
-                    }
+            tracing.trace("ScheduledTaskRunner", task.getTaskName() + ".run", span -> {
+                KeycloakModelUtils.runJobInTransaction(sessionFactory, new NamedSessionTask("Scheduled task: " + task.getTaskName()) {
 
-                    runTask(session);
-                } finally {
-                    if (transactionLimit != 0) {
-                        KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                    @Override
+                    public void run(KeycloakSession session) {
+                        try {
+                            if (transactionLimit != 0) {
+                                KeycloakModelUtils.setTransactionLimit(sessionFactory, transactionLimit);
+                            }
+
+                            runTask(session);
+                        } finally {
+                            if (transactionLimit != 0) {
+                                KeycloakModelUtils.setTransactionLimit(sessionFactory, 0);
+                            }
+                        }
                     }
-                }
+                });
             });
         } catch (Throwable t) {
-            logger.errorf(t, "Failed to run scheduled task %s", task.getClass().getSimpleName());
+            logger.errorf(t, "Failed to run scheduled task %s", task.getTaskName());
+        } finally {
+            tracing.close();
         }
     }
 
     protected void runTask(KeycloakSession session) {
         task.run(session);
 
-        logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
+        logger.debugf("Executed scheduled task %s", task.getTaskName());
     }
 
+    @Override
+    public ScheduledTask getTask() {
+        return task;
+    }
 }

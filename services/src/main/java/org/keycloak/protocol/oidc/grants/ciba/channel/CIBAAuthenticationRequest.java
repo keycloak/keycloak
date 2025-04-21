@@ -17,10 +17,10 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import javax.crypto.SecretKey;
-import java.io.UnsupportedEncodingException;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.nio.charset.StandardCharsets;
+import javax.crypto.SecretKey;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -29,6 +29,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -36,8 +37,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
 
@@ -61,12 +60,12 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
      */
     public static CIBAAuthenticationRequest deserialize(KeycloakSession session, String jwe) {
         SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
+        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Constants.INTERNAL_SIGNATURE_ALGORITHM).getSecretKey();
 
         try {
             byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, jwe);
-            jwe = new String(contentBytes, "UTF-8");
-        } catch (JWEException | UnsupportedEncodingException e) {
+            jwe = new String(contentBytes, StandardCharsets.UTF_8);
+        } catch (JWEException e) {
             throw new RuntimeException("Error decoding auth_req_id.", e);
         }
 
@@ -154,14 +153,14 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
      */
     public String serialize(KeycloakSession session) {
         try {
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Constants.INTERNAL_SIGNATURE_ALGORITHM);
             SignatureSignerContext signer = signatureProvider.signer();
             String encodedJwt = new JWSBuilder().type("JWT").jsonContent(this).sign(signer);
             SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-            SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
+            SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Constants.INTERNAL_SIGNATURE_ALGORITHM).getSecretKey();
 
-            return TokenUtil.jweDirectEncode(aesKey, hmacKey, encodedJwt.getBytes("UTF-8"));
-        } catch (JWEException | UnsupportedEncodingException e) {
+            return TokenUtil.jweDirectEncode(aesKey, hmacKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+        } catch (JWEException e) {
             throw new RuntimeException("Error encoding auth_req_id.", e);
         }
     }

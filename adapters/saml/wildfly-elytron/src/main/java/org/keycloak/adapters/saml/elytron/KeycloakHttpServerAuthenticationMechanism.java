@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.security.auth.callback.CallbackHandler;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.SamlAuthenticator;
@@ -159,7 +159,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     }
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
-    
+
     static void sendRedirect(final ElytronHttpFacade exchange, final String location) {
         if (location == null) {
             LOGGER.warn("Logout page not set.");

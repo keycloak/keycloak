@@ -25,7 +25,7 @@ Provides implementations for different environments to actually enforce authoriz
 
 * **Policy Information Point (PIP)**
 +
-Being based on {project_name} Authentication Server, you can obtain attributes from identities and runtime environment during the evaluation of authorization policies.
+Being based on {project_name} Authentication Server, you can obtain attributes from identities and a runtime environment during the evaluation of authorization policies.
 
 == The authorization process
 
@@ -74,7 +74,7 @@ what you want to protect (resource or scope) and the policies that must be satis
 
 === Policy enforcement
 
-*Policy Enforcement* involves the necessary steps to actually enforce authorization decisions to a resource server. This is achieved by enabling a *Policy Enforcement Point* or PEP at the resource server that is capable of communicating with the authorization server, ask for authorization data and control access to protected resources based on the decisions and permissions returned by the server.
+*Policy Enforcement* involves the necessary steps to actually enforce authorization decisions to a resource server. This is achieved by enabling a *Policy Enforcement Point* or PEP at the resource server that is capable of communicating with the authorization server, asking for authorization data and controlling access to protected resources based on the decisions and permissions returned by the server.
 
 image:images/pep-pattern-diagram.png[alt="PEP overview"]
 

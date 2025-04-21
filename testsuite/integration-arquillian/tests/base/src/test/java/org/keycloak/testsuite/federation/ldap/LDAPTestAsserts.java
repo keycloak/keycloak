@@ -17,11 +17,10 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import java.util.Arrays;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -35,20 +34,34 @@ import org.keycloak.storage.user.SynchronizationResult;
  */
 public class LDAPTestAsserts {
 
-    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String... expectedPostalCode) {
+    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username,
+            String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
+        return assertUserImported(userProvider, realm, username, expectedFirstName,
+                expectedLastName, expectedEmail, expectedPostalCode, new MultivaluedHashMap<>());
+    }
+
+    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName,
+            String expectedLastName, String expectedEmail, String expectedPostalCode, MultivaluedHashMap<String, String> otherAttrs) {
         UserModel user = userProvider.getUserByUsername(realm, username);
-        assertLoaded(user, username, expectedFirstName, expectedLastName, expectedEmail, expectedPostalCode);
+        assertLoaded(user, username, expectedFirstName, expectedLastName, expectedEmail, expectedPostalCode, otherAttrs);
         return user;
     }
 
+    public static void assertLoaded(UserModel user, String username, String expectedFirstName,
+            String expectedLastName, String expectedEmail, String expectedPostalCode) {
+        assertLoaded(user, username, expectedFirstName, expectedLastName, expectedEmail, expectedPostalCode, new MultivaluedHashMap<>());
+    }
 
-    public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String... expectedPostalCode) {
+    public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName,
+            String expectedEmail, String expectedPostalCode, MultivaluedHashMap<String, String> otherAttrs) {
         Assert.assertNotNull(user);
         Assert.assertEquals(expectedFirstName, user.getFirstName());
         Assert.assertEquals(expectedLastName, user.getLastName());
         Assert.assertEquals(expectedEmail, user.getEmail());
-        MatcherAssert.assertThat(expectedPostalCode == null? Collections.emptyList() : Arrays.asList(expectedPostalCode),
-                Matchers.containsInAnyOrder(user.getAttributeStream("postal_code").toArray(String[]::new)));
+        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
+        for (String name : otherAttrs.keySet()) {
+            MatcherAssert.assertThat(otherAttrs.getList(name), Matchers.containsInAnyOrder(user.getAttributeStream(name).toArray(String[]::new)));
+        }
     }
 
 

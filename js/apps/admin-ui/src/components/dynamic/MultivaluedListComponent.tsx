@@ -1,16 +1,13 @@
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
 import type { ComponentProps } from "./components";
-import { convertToName } from "./DynamicComponents";
 
 function stringToMultiline(value?: string): string[] {
   return typeof value === "string" && value.length > 0 ? value.split("##") : [];
@@ -29,6 +26,7 @@ export const MultiValuedListComponent = ({
   isDisabled = false,
   stringify,
   required,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
@@ -44,9 +42,11 @@ export const MultiValuedListComponent = ({
       <Controller
         name={convertToName(name!)}
         control={control}
-        defaultValue={defaultValue ? [defaultValue] : []}
+        defaultValue={
+          stringify ? defaultValue || "" : defaultValue ? [defaultValue] : []
+        }
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             data-testid={name}
             isDisabled={isDisabled}
@@ -61,7 +61,7 @@ export const MultiValuedListComponent = ({
             selections={
               stringify ? stringToMultiline(field.value) : field.value
             }
-            onSelect={(_, v) => {
+            onSelect={(v) => {
               const option = v.toString();
               const values = stringify
                 ? stringToMultiline(field.value)
@@ -74,17 +74,18 @@ export const MultiValuedListComponent = ({
               }
               field.onChange(stringify ? toStringValue(newValue) : newValue);
             }}
-            onClear={(event) => {
-              event.stopPropagation();
+            onClear={() => {
               field.onChange(stringify ? "" : []);
             }}
             isOpen={open}
             aria-label={t(label!)}
           >
             {options?.map((option) => (
-              <SelectOption key={option} value={option} />
+              <SelectOption key={option} value={option}>
+                {option}
+              </SelectOption>
             ))}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>

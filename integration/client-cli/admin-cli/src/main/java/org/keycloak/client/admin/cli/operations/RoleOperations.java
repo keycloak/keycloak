@@ -17,17 +17,16 @@
 package org.keycloak.client.admin.cli.operations;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.cli.util.HttpUtil.doDeleteJSON;
+import static org.keycloak.client.cli.util.HttpUtil.doGetJSON;
+import static org.keycloak.client.cli.util.HttpUtil.doPostJSON;
+
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doDeleteJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doGetJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doPostJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.getAttrForType;
-import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -38,7 +37,7 @@ public class RoleOperations {
     public static class LIST_OF_NODES extends ArrayList<ObjectNode>{};
 
     public static String getIdFromRoleName(String adminRoot, String realm, String auth, String rname) {
-        return getIdForType(adminRoot, realm, auth, "roles", "search", rname, "name");
+        return OperationUtils.getIdForType(adminRoot, realm, auth, "roles", "search", rname, "name");
     }
 
     public static void addRealmRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
@@ -60,11 +59,11 @@ public class RoleOperations {
     }
 
     public static String getRoleNameFromId(String adminRoot, String realm, String auth, String rid) {
-        return getAttrForType(adminRoot, realm, auth, "roles", "id", rid, "id","name");
+        return OperationUtils.getAttrForType(adminRoot, realm, auth, "roles", "id", rid, "id","name");
     }
 
     public static String getClientRoleNameFromId(String adminRoot, String realm, String auth, String cid, String rid) {
-        return getAttrForType(adminRoot, realm, auth, "clients/" + cid + "/roles", "id", rid, "id", "name");
+        return OperationUtils.getAttrForType(adminRoot, realm, auth, "clients/" + cid + "/roles", "id", rid, "id", "name");
     }
 
     public static List<RoleRepresentation> getRealmRoles(String rootUrl, String realm, String auth) {

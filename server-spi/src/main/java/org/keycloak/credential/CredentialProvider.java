@@ -53,4 +53,12 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
         credentialMetadata.setCredentialModel(credentialModel);
         return credentialMetadata;
     }
+
+    default boolean supportsCredentialType(CredentialModel credential) {
+        return supportsCredentialType(credential.getType());
+    }
+
+    default boolean supportsCredentialType(String type) {
+        return getType().equals(type);
+    }
 }

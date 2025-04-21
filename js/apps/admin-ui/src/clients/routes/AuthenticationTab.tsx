@@ -25,7 +25,8 @@ export const AuthorizationRoute: AppRouteObject = {
   element: <ClientDetails />,
   breadcrumb: (t) => t("clientSettings"),
   handle: {
-    access: "manage-authorization",
+    access: (accessChecker) =>
+      accessChecker.hasAny("view-authorization", "manage-authorization"),
   },
 };
 

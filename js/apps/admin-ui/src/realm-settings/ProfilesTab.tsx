@@ -1,5 +1,12 @@
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import {
+  Action,
+  KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -19,19 +26,11 @@ import { omit } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../components/table-toolbar/KeycloakDataTable";
+import CodeEditor from "../components/form/CodeEditor";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { toAddClientProfile } from "./routes/AddClientProfile";
 import { toClientProfile } from "./routes/ClientProfile";
 
@@ -42,6 +41,8 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -111,7 +112,7 @@ export default function ProfilesTab() {
         addAlert(t("deleteClientSuccess"), AlertVariant.success);
         setKey(key + 1);
       } catch (error) {
-        addError(t("deleteClientError"), error);
+        addError("deleteClientError", error);
       }
     },
   });
@@ -158,7 +159,7 @@ export default function ProfilesTab() {
         addError("updateClientProfilesError", error);
       }
     } catch (error) {
-      console.warn("Invalid json, ignoring value using {}");
+      addError("invalidJsonClientProfilesError", error);
     }
   };
 
@@ -179,7 +180,7 @@ export default function ProfilesTab() {
               onChange={() => setShow(false)}
               label={t("profilesConfigTypes.formView")}
               id="formView-profilesView"
-              className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
               data-testid="formView-profilesView"
             />
           </FlexItem>
@@ -249,24 +250,19 @@ export default function ProfilesTab() {
         />
       ) : (
         <FormGroup fieldId={"jsonEditor"}>
-          <div className="pf-u-mt-md pf-u-ml-lg">
+          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
             <CodeEditor
-              isLineNumbersVisible
-              isLanguageLabelVisible
-              isReadOnly={false}
-              code={code}
-              language={Language.json}
-              height="30rem"
-              onChange={(value) => {
-                setCode(value ?? "");
-              }}
+              value={code}
+              language="json"
+              onChange={(value) => setCode(value ?? "")}
+              height={480}
             />
           </div>
           <ActionGroup>
-            <div className="pf-u-mt-md">
+            <div className="pf-v5-u-mt-md">
               <Button
                 variant={ButtonVariant.primary}
-                className="pf-u-mr-md pf-u-ml-lg"
+                className="pf-v5-u-mr-md pf-v5-u-ml-lg"
                 onClick={save}
                 data-testid="jsonEditor-saveBtn"
               >

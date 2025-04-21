@@ -26,6 +26,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.services.ErrorResponseException;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -108,7 +110,7 @@ public class ClientRolesPartialImport {
         client.removeRole(role);
     }
 
-    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) {
         Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
         if (repList == null || repList.isEmpty()) return;
 

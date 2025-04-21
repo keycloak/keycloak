@@ -42,6 +42,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.testsuite.ProfileAssume;
@@ -49,7 +50,8 @@ import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.HttpClientUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
@@ -64,7 +66,6 @@ import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -124,8 +125,6 @@ public class AuthServerTestEnricher {
 
     public static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
-    public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
-    public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
@@ -202,65 +201,7 @@ public class AuthServerTestEnricher {
 
         suiteContext = new SuiteContext(containers);
 
-        if (AUTH_SERVER_CROSS_DC) {
-            // if cross-dc mode enabled, load-balancer is the frontend of datacenter cluster
-            containers.stream()
-                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER + "-cross-dc"))
-                .forEach(c -> {
-                    String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                    String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                    updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                    suiteContext.addAuthServerInfo(Integer.valueOf(dcString), c);
-                });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new IllegalStateException("Not found frontend container (load balancer): " + AUTH_SERVER_BALANCER);
-            }
-            if (suiteContext.getDcAuthServerInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("auth-server-" + System.getProperty("node.name") + "-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(c -> {
-                        String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                        updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-
-                        String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                        suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
-                    });
-
-            containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
-                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-                    .forEach(containerInfo -> {
-                        
-                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
-                        
-                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
-                        
-                        suiteContext.addCacheServerInfo(dcIndex, containerInfo);
-                    });
-
-            if (suiteContext.getDcAuthServerInfo().isEmpty()) {
-                throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(Objects::isNull)) {
-                throw new IllegalStateException("Frontend container (load balancer) misconfiguration");
-            }
-            if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
-                throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
-            }
-            if (suiteContext.getCacheServersInfo().isEmpty() && !CACHE_SERVER_LIFECYCLE_SKIP) {
-                throw new IllegalStateException("Cache containers misconfiguration");
-            }
-
-            log.info("Using frontend containers: " + this.suiteContext.getDcAuthServerInfo().stream()
-              .map(ContainerInfo::getQualifier)
-              .collect(Collectors.joining(", ")));
-        } else if (AUTH_SERVER_CLUSTER) {
+        if (AUTH_SERVER_CLUSTER) {
             // if cluster mode enabled, load-balancer is the frontend
             ContainerInfo container = containers.stream()
               .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BALANCER))
@@ -294,6 +235,8 @@ public class AuthServerTestEnricher {
         }
 
         if (START_MIGRATION_CONTAINER) {
+            suiteContext.getMigrationContext().setRunningMigrationTest(true);
+
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
@@ -310,7 +253,6 @@ public class AuthServerTestEnricher {
         }
 
         suiteContextProducer.set(suiteContext);
-        CrossDCTestEnricher.initializeSuiteContext(suiteContext);
         log.info("\n\n" + suiteContext);
         log.info("\n\n" + SystemInfoHelper.getSystemInfo());
 
@@ -375,7 +317,7 @@ public class AuthServerTestEnricher {
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         // this property can be used to skip start of auth-server before suite
-        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test
         if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
             log.debug("Skipping the start of auth server before suite");
             return;
@@ -436,7 +378,7 @@ public class AuthServerTestEnricher {
         log.infof("Running SQL script created by liquibase during manual migration flow", sqlScriptPath);
         String prefix = "keycloak.connectionsJpa.";
         String jdbcDriver = System.getProperty(prefix + "driver");
-        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"));
+        String dbUrl = StringPropertyReplacer.replaceProperties(System.getProperty(prefix + "url"), SystemEnvProperties.UNFILTERED::getProperty);
         String dbUser = System.getProperty(prefix + "user");
         String dbPassword = System.getProperty(prefix + "password");
 
@@ -692,7 +634,7 @@ public class AuthServerTestEnricher {
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
         // TODO workaround. Check if can be removed
         OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
-        OAuthClient oAuthClient = new OAuthClient();
+        OAuthClient oAuthClient = new OAuthClient(HttpClientUtils.createDefault(), null);
         oAuthClientProducer.set(oAuthClient);
     }
 

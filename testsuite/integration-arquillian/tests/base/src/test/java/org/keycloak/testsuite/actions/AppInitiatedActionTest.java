@@ -16,9 +16,11 @@
  */
 package org.keycloak.testsuite.actions;
 
+import java.io.IOException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -27,6 +29,9 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.TermsAndConditionsPage;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.GreenMailRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -43,33 +48,52 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
     @Page
     protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
 
+    @Page
+    protected TermsAndConditionsPage termsAndConditionsPage;
+
     @Test
     public void executeUnknownAction() {
-        oauth.kcAction("nosuch").openLoginForm();
+        oauth.loginForm().kcAction("nosuch").open();
 
         loginPage.login("test-user@localhost", "password");
 
         assertTrue(appPage.isCurrent());
 
-        String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
+        assertEquals("error", kcActionStatus);
+    }
+
+    // Issue 37526
+    @Test
+    public void executeUnknownActionAfterBeingAuthenticated() {
+        oauth.loginForm().doLogin("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        oauth.loginForm().kcAction("nosuch").open();
+        appPage.assertCurrent();
+
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
     }
 
     @Test
     public void executeUnsupportedAction() {
-        oauth.kcAction(TermsAndConditions.PROVIDER_ID).openLoginForm();
+        oauth.loginForm().kcAction(TermsAndConditions.PROVIDER_ID).open();
 
         loginPage.login("test-user@localhost", "password");
 
         assertTrue(appPage.isCurrent());
 
-        String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+        String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
     }
 
@@ -80,17 +104,48 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
         try {
             testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", configureTotp);
 
-            oauth.kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).openLoginForm();
+            oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
 
             loginPage.login("test-user@localhost", "password");
 
             assertTrue(appPage.isCurrent());
 
-            String kcActionStatus = oauth.getCurrentQuery().get("kc_action_status");
+            String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
             assertEquals("error", kcActionStatus);
         } finally {
             configureTotp.setEnabled(true);
             testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", configureTotp);
+        }
+    }
+
+    @Test
+    public void executeActionWithTermsAndConditionsUnsupportedAIA() throws IOException {
+        RealmResource realm = testRealm();
+        RequiredActionProviderRepresentation termsAndConditions = realm.flows().getRequiredAction(TermsAndConditions.PROVIDER_ID);
+        int prevPriority = termsAndConditions.getPriority();
+        boolean prevEnabled = termsAndConditions.isEnabled();
+
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(realm, "test-user@localhost")
+                .setRequiredActions(UserModel.RequiredAction.TERMS_AND_CONDITIONS).update()) {
+            // Set max priority for terms and conditions (AIA not supported) to be executed before update password
+            termsAndConditions.setPriority(1);
+            termsAndConditions.setEnabled(true);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
+
+            oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).open();
+            loginPage.login("test-user@localhost", "password");
+
+            // the update password should be displayed
+            passwordUpdatePage.assertCurrent();
+            passwordUpdatePage.changePassword("password", "password");
+
+            // once the AIA password is executed the terms and conditions should be displayed for the login
+            termsAndConditionsPage.assertCurrent();
+        } finally {
+            termsAndConditions.setPriority(prevPriority);
+            termsAndConditions.setEnabled(prevEnabled);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
         }
     }
 }

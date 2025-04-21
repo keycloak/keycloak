@@ -93,6 +93,8 @@ image:images/tokens-tab.png[Tokens Tab]
 
 [NOTE]
 ====
+The following logic is only applied if persistent user sessions are not active:
+
 For idle timeouts, a two-minute window of time exists that the session is active. For example, when you have the timeout set to 30 minutes, it will be 32 minutes before the session expires.
 
 This action is necessary for some scenarios in cluster and cross-data center environments where the token refreshes on one cluster node a short time before the expiration and the other cluster nodes incorrectly consider the session as expired because they have not yet received the message about a successful refresh from the refreshing node.

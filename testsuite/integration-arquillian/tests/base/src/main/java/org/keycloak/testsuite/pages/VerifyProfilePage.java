@@ -33,23 +33,23 @@ public class VerifyProfilePage extends AbstractPage {
     @Page
     private AccountFields.AccountErrors accountErrors;
 
-    @FindBy(id = "firstName")
+    @FindBy(name = "firstName")
     private WebElement firstNameInput;
 
-    @FindBy(id = "lastName")
+    @FindBy(name = "lastName")
     private WebElement lastNameInput;
 
-    @FindBy(id = "email")
+    @FindBy(name = "email")
     private WebElement emailInput;
-    
-    @FindBy(id = "department")
+
+    @FindBy(name = "department")
     private WebElement departmentInput;
-    
+
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
 
@@ -64,9 +64,9 @@ public class VerifyProfilePage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
-    
+
     public void update(String firstName, String lastName, String department) {
         departmentInput.clear();
         if (department != null) {
@@ -93,7 +93,7 @@ public class VerifyProfilePage extends AbstractPage {
             lastNameInput.sendKeys(lastName);
         }
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getAlertError() {
@@ -103,9 +103,9 @@ public class VerifyProfilePage extends AbstractPage {
             return null;
         }
     }
-    
+
     public String getLabelForField(String fieldId) {
-        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText().replaceAll("\\s\\*$", "");
     }
 
     public String getFirstName() {
@@ -167,11 +167,6 @@ public class VerifyProfilePage extends AbstractPage {
 
     public AccountFields.AccountErrors getInputAccountErrors(){
         return accountErrors;
-    }
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
     }
 
 }

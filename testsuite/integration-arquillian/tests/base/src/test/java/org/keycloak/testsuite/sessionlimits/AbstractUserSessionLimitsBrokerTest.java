@@ -5,7 +5,6 @@ import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimit
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
 
 import static org.junit.Assert.assertEquals;
@@ -46,6 +45,7 @@ public abstract class AbstractUserSessionLimitsBrokerTest extends AbstractInitia
         String idpAlias = bc.getIDPAlias();
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
             AuthenticationFlowModel postBrokerFlow = new AuthenticationFlowModel();
             postBrokerFlow.setAlias("post-broker");
             postBrokerFlow.setDescription("post-broker flow with session limits");
@@ -56,9 +56,9 @@ public abstract class AbstractUserSessionLimitsBrokerTest extends AbstractInitia
 
             configureSessionLimits(realm, postBrokerFlow, behavior, realmLimit, clientLimit);
 
-            IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
-            realm.updateIdentityProvider(idp);
+            session.identityProviders().update(idp);
         });
     }
 

@@ -10,7 +10,7 @@ an authorization request to the token endpoint as follows:
 [source,bash,subs="attributes+"]
 ----
 curl -X POST \
-  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "claim_token=ewogICAib3JnYW5pemF0aW9uIjogWyJhY21lIl0KfQ==" \
   --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \

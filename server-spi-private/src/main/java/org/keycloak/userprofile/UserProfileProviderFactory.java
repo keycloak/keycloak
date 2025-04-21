@@ -22,6 +22,6 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public interface UserProfileProviderFactory<U extends UserProfileProvider> extends  ProviderFactory<U> {
+public interface UserProfileProviderFactory extends  ProviderFactory<UserProfileProvider> {
 
 }

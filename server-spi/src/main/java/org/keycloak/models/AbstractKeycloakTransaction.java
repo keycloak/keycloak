@@ -17,16 +17,12 @@
 
 package org.keycloak.models;
 
-import org.jboss.logging.Logger;
-
 /**
  * Handles some common transaction logic related to start, rollback-only etc.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AbstractKeycloakTransaction implements KeycloakTransaction {
-
-    public static final Logger logger = Logger.getLogger(AbstractKeycloakTransaction.class);
 
     protected TransactionState state = TransactionState.NOT_STARTED;
 
@@ -35,6 +31,8 @@ public abstract class AbstractKeycloakTransaction implements KeycloakTransaction
         if (state != TransactionState.NOT_STARTED) {
             throw new IllegalStateException("Transaction already started");
         }
+
+        beginImpl();
 
         state = TransactionState.STARTED;
     }
@@ -84,6 +82,7 @@ public abstract class AbstractKeycloakTransaction implements KeycloakTransaction
         NOT_STARTED, STARTED, ROLLBACK_ONLY, FINISHED
     }
 
+    protected void beginImpl() {}
 
     protected abstract void commitImpl();
 

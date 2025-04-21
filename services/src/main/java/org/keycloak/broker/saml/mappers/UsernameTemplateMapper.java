@@ -77,7 +77,7 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
         property.setLabel("Template");
         property.setHelpText("Template to use to format the username to import.  Substitutions are enclosed in ${}.  For example: '${ALIAS}.${NAMEID}'.  ALIAS is the provider alias.  NAMEID is that SAML name id assertion.  ATTRIBUTE.<NAME> references a SAML attribute where name is the attribute name or friendly name. \n"
           + "The substitution can be converted to upper or lower case by appending |uppercase or |lowercase to the substituted value, e.g. '${NAMEID | lowercase} \n"
-          + "Local part of email can be extracted by appending |localpart to the substituted value, e.g. ${CLAIM.email | localpart}. If \"@\" is not part of the string, this conversion leaves the substitution untouched.");
+          + "Local part of email can be extracted by appending |localpart to the substituted value, e.g. ${ATTRIBUTE.email | localpart}. If \"@\" is not part of the string, this conversion leaves the substitution untouched.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setDefaultValue("${ALIAS}.${NAMEID}");
         configProperties.add(property);

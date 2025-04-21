@@ -17,27 +17,25 @@
 package org.keycloak.userprofile.validator;
 
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-import static org.keycloak.validate.Validators.notBlankValidator;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.AttributeContext;
-import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.Validators;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
- * 
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ImmutableAttributeValidator implements SimpleValidator {
@@ -61,7 +59,14 @@ public class ImmutableAttributeValidator implements SimpleValidator {
             return context;
         }
 
-        List<String> currentValue = user.getAttributeStream(inputHint).filter(Objects::nonNull).collect(Collectors.toList());
+        Stream<String> rawValues = user.getAttributeStream(inputHint).filter(Objects::nonNull);
+
+        // force usernames to lower-case to avoid validation errors if the external storage is using a different format
+        if (!user.isFederated() && UserModel.USERNAME.equals(inputHint)) {
+            rawValues = rawValues.map(String::toLowerCase);
+        }
+
+        List<String> currentValue = rawValues.collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
         if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
@@ -78,7 +83,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
                     return context;
                 }
 
-                List<String> email = attributeContext.getAttributes().getValues(UserModel.EMAIL);
+                List<String> email = attributeContext.getAttributes().get(UserModel.EMAIL);
 
                 if (UserModel.USERNAME.equals(attributeName) && collectionEquals(values, email)) {
                     return context;

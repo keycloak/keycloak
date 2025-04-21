@@ -21,9 +21,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 
-import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +50,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     @Override
     public void prepare(PartialImportRepresentation partialImportRep,
                          RealmModel realm,
-                         KeycloakSession session) throws ErrorResponseException {
+                         KeycloakSession session) {
         List<T> repList = getRepList(partialImportRep);
         if ((repList == null) || repList.isEmpty()) return;
 
@@ -89,7 +89,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     }
 
     @Override
-    public PartialImportResults doImport(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
+    public PartialImportResults doImport(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) {
         PartialImportResults results = new PartialImportResults();
         List<T> repList = getRepList(partialImportRep);
         if ((repList == null) || repList.isEmpty()) return results;

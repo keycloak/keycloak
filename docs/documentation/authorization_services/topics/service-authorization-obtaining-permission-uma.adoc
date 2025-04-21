@@ -13,7 +13,7 @@ to user privacy where permissions are granted based on policies defined by the u
 * *Party-to-Party Authorization*
 +
 Resource owners (e.g.: regular end-users) can manage access to their resources and authorize other parties (e.g: regular end-users)
-to access these resources. This is different than OAuth2 where consent is given to a client application acting on behalf of a user, with UMA
+to access these resources. This is different from OAuth2 where consent is given to a client application acting on behalf of a user, with UMA
 resource owners are allowed to consent access to other users, in a completely asynchronous manner.
 +
 * *Resource Sharing*

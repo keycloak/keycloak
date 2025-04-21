@@ -18,6 +18,7 @@ package org.keycloak.testsuite.migration;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.Matchers;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -30,14 +31,16 @@ import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthent
 import org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.PrioritizedComponentModel;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -45,6 +48,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -53,8 +57,9 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -64,13 +69,16 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
@@ -78,6 +86,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +107,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -105,6 +115,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.migration.migrators.MigrateTo24_0_0.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
@@ -165,7 +176,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testRhssoThemes(RealmResource realm) {
         // check themes are removed
         RealmRepresentation rep = realm.toRepresentation();
-        Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
+        assertThat("Login theme modified for test purposes", rep.getLoginTheme(), anyOf(nullValue(), equalTo(PREFERRED_DEFAULT_LOGIN_THEME)));
         Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
         // there should be either new default or left null if not set
         assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
@@ -394,6 +405,82 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo23_0_0(boolean testUserProfileMigration) {
         if (testUserProfileMigration) testUserProfile(migrationRealm2);
         testRegistrationProfileFormActionRemoved(migrationRealm2);
+    }
+
+    protected void testMigrationTo24_0_0(boolean testUserProfileMigration, boolean testLdapUseTruststoreSpiMigration) {
+        if (testUserProfileMigration) {
+            testUserProfileEnabledByDefault(migrationRealm);
+            testUnmanagedAttributePolicySet(migrationRealm, UnmanagedAttributePolicy.ENABLED);
+            testUserProfileEnabledByDefault(migrationRealm2);
+            testUnmanagedAttributePolicySet(migrationRealm2, null);
+            testHS512KeyCreated(migrationRealm);
+            testHS512KeyCreated(migrationRealm2);
+            testClientAttributes(migrationRealm);
+            testDeleteCredentialActionAvailable(migrationRealm);
+        }
+        if (testLdapUseTruststoreSpiMigration) {
+            testLdapUseTruststoreSpiMigration(migrationRealm2);
+        }
+    }
+
+    protected void testMigrationTo25_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+        testClientContainsExpectedClientScopes();
+    }
+
+    protected void testMigrationTo26_0_0(boolean testIdentityProviderConfigMigration) {
+        if (testIdentityProviderConfigMigration) {
+            testIdentityProviderConfigMigration(migrationRealm2);
+        }
+        testLightweightClientAndFullScopeAllowed(masterRealm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(masterRealm, Constants.ADMIN_CLI_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CONSOLE_CLIENT_ID);
+        testLightweightClientAndFullScopeAllowed(migrationRealm, Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    protected void testMigrationTo26_1_0(boolean testIdentityProviderConfigMigration) {
+        testRealmDefaultClientScopes(migrationRealm);
+    }
+
+    protected void testMigrationTo26_3_0() {
+        testIdpLinkActionAvailable(migrationRealm);
+    }
+
+    private void testClientContainsExpectedClientScopes() {
+        // Test OIDC client contains expected client scopes
+        ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
+        List<String> defaultClientScopes = migrationTestOIDCClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        List<String> optionalClientScopes = migrationTestOIDCClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                OIDCLoginProtocolFactory.BASIC_SCOPE,
+                OIDCLoginProtocolFactory.ACR_SCOPE,
+                OAuth2Constants.SCOPE_PROFILE,
+                OAuth2Constants.SCOPE_EMAIL
+        ));
+        assertThat(optionalClientScopes, Matchers.hasItems(
+                OAuth2Constants.SCOPE_ADDRESS,
+                OAuth2Constants.OFFLINE_ACCESS,
+                OAuth2Constants.SCOPE_PHONE
+        ));
+
+        // Test SAML client
+        ClientResource migrationTestSAMLClient = ApiUtil.findClientByClientId(migrationRealm, "migration-saml-client");
+        defaultClientScopes = migrationTestSAMLClient.getDefaultClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        optionalClientScopes = migrationTestSAMLClient.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toList());
+        assertThat(defaultClientScopes, Matchers.hasItems(
+                SamlProtocolFactory.SCOPE_ROLE_LIST
+        ));
+        Assert.assertTrue(optionalClientScopes.isEmpty());
     }
 
     protected void testDeleteAccount(RealmResource realm) {
@@ -655,7 +742,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ComponentRepresentation component = testingClient.server(MIGRATION).fetch(RunHelpers.internalComponent(components.get(0).getId()));
         assertEquals(expectedMigrationRealmKey, component.getConfig().getFirst("privateKey"));
 
-        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated");
+        components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "hmac-generated-hs512");
         assertEquals(1, components.size());
     }
 
@@ -803,8 +890,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertNotNull(oldOfflineToken);
 
         oauth.realm(MIGRATION);
-        oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
+        oauth.client("migration-test-client", "secret");
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken);
 
         if (response.getError() != null) {
             String errorMessage = String.format("Error when refreshing offline token. Error: %s, Error details: %s, offline token from previous version: %s",
@@ -820,7 +907,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         String newOfflineToken1 = response.getRefreshToken();
         assertOfflineToken(newOfflineToken1);
 
-        response = oauth.doRefreshTokenRequest(newOfflineToken1, "secret");
+        response = oauth.doRefreshTokenRequest(newOfflineToken1);
         String newOfflineToken2 = response.getRefreshToken();
         assertOfflineToken(newOfflineToken2);
     }
@@ -828,7 +915,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void assertOfflineToken(String offlineToken) {
         RefreshToken offlineTokenParsed = oauth.parseRefreshToken(offlineToken);
         assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineTokenParsed.getType());
-        assertEquals(0, offlineTokenParsed.getExpiration());
+        assertNull(offlineTokenParsed.getExp());
         assertTrue(TokenUtil.hasScope(offlineTokenParsed.getScope(), OAuth2Constants.OFFLINE_ACCESS));
     }
 
@@ -910,6 +997,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             for (RequiredActionProviderRepresentation action : actions) {
                 if (action.getAlias().equals("update_user_locale")) {
                     assertEquals(1000, action.getPriority());
+                } else if (action.getAlias().equals("delete_credential")) {
+                    assertEquals(100, action.getPriority());
+                } else if (action.getAlias().equals("idp_link")) {
+                    assertEquals(110, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }
@@ -925,26 +1016,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         // Try to login with password+otp after the migration
         try {
             oauth.realm(MIGRATION);
-            oauth.clientId("migration-test-client");
+            oauth.client("migration-test-client", "secret");
 
             TimeBasedOTP otpGenerator = new TimeBasedOTP("HmacSHA1", 8, 40, 1);
             String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
 
             // Try invalid password first
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password", otp);
+            AccessTokenResponse response = oauth.passwordGrantRequest("migration-test-user", "password").otp(otp).send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try invalid OTP then
-            response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password2", "invalid");
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").otp("invalid").send();
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try successful login now
-            response = oauth.doGrantAccessTokenRequest("secret",
-                    "migration-test-user", "password2", otp);
+            response = oauth.passwordGrantRequest("migration-test-user", "password2").otp(otp).send();
             Assert.assertNull(response.getError());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals("migration-test-user", accessToken.getPreferredUsername());
@@ -1080,6 +1168,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo23_0_0(testUserProfileMigration);
     }
 
+    protected void testMigrationTo24_x(boolean testUserProfileMigration) {
+        testMigrationTo24_0_0(testUserProfileMigration, false);
+    }
+
+    protected void testMigrationTo24_x(boolean testUserProfileMigration, boolean testLdapUseTruststoreSpiMigration) {
+        testMigrationTo24_0_0(testUserProfileMigration, testLdapUseTruststoreSpiMigration);
+    }
+
+    protected void testMigrationTo25_x() {
+        testMigrationTo25_0_0();
+    }
+
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
         if (supportedAuthzServices) {
             testDecisionStrategySetOnResourceServer();
@@ -1089,8 +1189,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testResourceTag() {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             URI url = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth").build();
-            String response = SimpleHttp.doGet(url.toString(), client).asString();
-            Matcher m = Pattern.compile("resources/([^/]*)/welcome").matcher(response);
+            String response = SimpleHttpDefault.doGet(url.toString(), client).asString();
+            Matcher m = Pattern.compile("resources/([^/]*)/common").matcher(response);
             assertTrue(m.find());
             assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{5}"));
         } catch (IOException e) {
@@ -1107,9 +1207,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testDefaultRoles(RealmResource realm) {
         String realmName = realm.toRepresentation().getRealm().toLowerCase();
         assertThat(realm.roles().get("default-roles-" + realmName).getRoleComposites().stream()
-                .map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                .map(RoleRepresentation::getName).collect(Collectors.toSet()),
             allOf(
-                hasItem(realmName + "-test-realm-role"), 
+                hasItem(realmName + "-test-realm-role"),
                 hasItem(realmName + "-test-client-role"))
             );
     }
@@ -1135,7 +1235,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         realm.clients().findByClientId("migration-saml-client")
           .forEach(clientRepresentation -> {
-                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute", 
+                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute",
                       "     00000     00010     00020     00030     00040     00050     00060     00070     00080     00090"
                     + "     00100     00110     00120     00130     00140     00150     00160     00170     00180     00190"
                     + "     00200     00210     00220     00230     00240     00250     00260     00270     00280     00290"
@@ -1183,5 +1283,99 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         log.info("testing realm attributes migration");
         Map<String, String> realmAttributes = migrationRealm.toRepresentation().getAttributes();
         assertEquals("custom_value", realmAttributes.get("custom_attribute"));
+    }
+
+    private void testUserProfileEnabledByDefault(RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        Map<String, String> attributes = rep.getAttributes();
+        String userProfileEnabled = attributes.get(REALM_USER_PROFILE_ENABLED);
+        assertNull(userProfileEnabled);
+    }
+
+    private void testUnmanagedAttributePolicySet(RealmResource realm, UnmanagedAttributePolicy policy) {
+        UPConfig upConfig = realm.users().userProfile().getConfiguration();
+        assertEquals(policy, upConfig.getUnmanagedAttributePolicy());
+    }
+
+    /**
+     * Checks if the {@code useTruststoreSpi} flag in the LDAP federation provider present in realm {@code Migration2}
+     * was properly migrated from the old value {@code ldapsOnly} to {@code always}.
+     * </p>
+     * This provider was added to the file migration-realm-19.0.3.json as a disabled provider, so it doesn't get involved
+     * in actual user searches and is there just to test the migration of the {@code useTruststoreSpi} config attribute.
+     *
+     * @param realm the migrated realm resource.
+     */
+    private void testLdapUseTruststoreSpiMigration(final RealmResource realm) {
+        RealmRepresentation rep = realm.toRepresentation();
+        List<ComponentRepresentation> componentsRep = realm.components().query(rep.getId(), UserStorageProvider.class.getName());
+        assertThat(componentsRep.size(), equalTo(1));
+        MultivaluedHashMap<String, String> config = componentsRep.get(0).getConfig();
+        assertNotNull(config);
+        assertThat(config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI), equalTo(LDAPConstants.USE_TRUSTSTORE_ALWAYS));
+    }
+
+    private void testHS512KeyCreated(RealmResource realm) {
+        List<ComponentRepresentation> keyProviders = realm.components().query(realm.toRepresentation().getId(), KeyProvider.class.getName());
+        Assert.assertTrue("Old HS256 key provider does not exists",
+                keyProviders.stream().anyMatch(c -> "hmac-generated".equals(c.getProviderId())
+                        && c.getConfig().getFirst("algorithm").equals(Algorithm.HS256)));
+        Assert.assertTrue("New HS512 key provider does not exists",
+                keyProviders.stream().anyMatch(c -> "hmac-generated".equals(c.getProviderId())
+                        && c.getConfig().getFirst("algorithm").equals(Algorithm.HS512)));
+        KeysMetadataRepresentation keysMetadata = realm.keys().getKeyMetadata();
+        Assert.assertNotNull("Old HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS256));
+        Assert.assertNotNull("New HS256 key does not exist", keysMetadata.getActive().get(Algorithm.HS512));
+    }
+
+    private void testClientAttributes(RealmResource realm) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId("migration-saml-client");
+        Assert.assertEquals(1, clients.size());
+        ClientRepresentation client = clients.get(0);
+        Assert.assertNotNull(client.getAttributes().get("saml.artifact.binding.identifier"));
+        Assert.assertNotNull(client.getAttributes().get("saml_idp_initiated_sso_url_name"));
+        List<String> clientIds = realm.clients().query("saml.artifact.binding.identifier:\"" + client.getAttributes().get("saml.artifact.binding.identifier") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
+        clientIds = realm.clients().query("saml_idp_initiated_sso_url_name:\"" + client.getAttributes().get("saml_idp_initiated_sso_url_name") + "\"")
+                .stream().map(ClientRepresentation::getClientId)
+                .collect(Collectors.toList());
+        Assert.assertEquals(Collections.singletonList(client.getClientId()), clientIds);
+    }
+
+    private void testDeleteCredentialActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("delete_credential");
+        assertNotNull(rep);
+        assertEquals("delete_credential", rep.getAlias());
+        assertEquals("delete_credential", rep.getProviderId());
+        assertEquals("Delete Credential", rep.getName());
+        assertEquals(100, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
+    }
+
+    private void testIdpLinkActionAvailable(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("idp_link");
+        assertNotNull(rep);
+        assertEquals("idp_link", rep.getAlias());
+        assertEquals("idp_link", rep.getProviderId());
+        assertEquals("Linking Identity Provider", rep.getName());
+        assertEquals(110, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
+    }
+
+    private void testIdentityProviderConfigMigration(final RealmResource realm) {
+        IdentityProviderRepresentation rep = realm.identityProviders().get("gitlab").toRepresentation();
+        // gitlab identity provider should have it's hideOnLoginPage attribute migrated from the config to the provider itself.
+        assertThat(rep.isHideOnLogin(), is(true));
+        assertThat(rep.getConfig().containsKey(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR), is(false));
+    }
+
+    private void testLightweightClientAndFullScopeAllowed(RealmResource realm, String clientId) {
+        ClientRepresentation clientRepresentation = realm.clients().findByClientId(clientId).get(0);
+        assertTrue(clientRepresentation.isFullScopeAllowed());
+        assertTrue(Boolean.parseBoolean(clientRepresentation.getAttributes().get(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED)));
     }
 }

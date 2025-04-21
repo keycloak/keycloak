@@ -34,8 +34,6 @@ public class UserCacheManager extends CacheManager {
 
     private static final Logger logger = Logger.getLogger(UserCacheManager.class);
 
-    protected volatile boolean enabled = true;
-
     public UserCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         super(cache, revisions);
     }

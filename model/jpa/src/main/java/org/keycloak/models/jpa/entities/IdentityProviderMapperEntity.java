@@ -23,10 +23,8 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import java.util.Map;
@@ -58,9 +56,8 @@ public class IdentityProviderMapperEntity {
     @CollectionTable(name="IDP_MAPPER_CONFIG", joinColumns={ @JoinColumn(name="IDP_MAPPER_ID") })
     private Map<String, String> config;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    private RealmEntity realm;
+    @Column(name = "REALM_ID")
+    private String realmId;
 
     public String getId() {
         return id;
@@ -94,12 +91,12 @@ public class IdentityProviderMapperEntity {
         this.identityProviderMapper = identityProviderMapper;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public Map<String, String> getConfig() {

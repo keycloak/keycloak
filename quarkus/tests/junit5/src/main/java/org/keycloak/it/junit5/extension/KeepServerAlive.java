@@ -17,13 +17,10 @@
 
 package org.keycloak.it.junit5.extension;
 
-import org.keycloak.it.utils.KeycloakDistribution;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.function.Consumer;
 
 /**
  * {@link KeepServerAlive} is used in a distributiontest to keep the server alive on test / method level.

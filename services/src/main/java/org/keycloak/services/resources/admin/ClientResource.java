@@ -19,15 +19,17 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import jakarta.ws.rs.core.Response.Status;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -41,7 +43,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -77,6 +78,7 @@ import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -89,12 +91,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-
-import static java.lang.Boolean.TRUE;
 
 
 /**
@@ -169,6 +170,8 @@ public class ClientResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client already exists");
+        } catch (ClientTypeException cte) {
+            throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
@@ -239,6 +242,8 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
+
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
@@ -292,7 +297,7 @@ public class ClientResource {
 
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
             session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED);
-
+            rep.setValue(secret);
             return rep;
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(),
@@ -621,6 +626,7 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Register a cluster node with the client Manually register cluster node to this client - usually it’s not needed to call this directly as adapter should handle by sending registration request to Keycloak")
+    @APIResponse(responseCode = "204", description = "No Content")
     public void registerNode(Map<String, String> formParams) {
         auth.clients().requireConfigure(client);
 
@@ -631,7 +637,7 @@ public class ClientResource {
 
         ReservedCharValidator.validate(node);
 
-        if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
+        logger.debugf("Register node: %s", node);
         client.registerNode(node, Time.currentTime());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(session.getContext().getUri(), node).success();
     }
@@ -649,7 +655,7 @@ public class ClientResource {
     public void unregisterNode(final @PathParam("node") String node) {
         auth.clients().requireConfigure(client);
 
-        if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
+        logger.debugf("Unregister node: %s", node);
 
         Integer time = client.getRegisteredNodes().get(node);
         if (time == null) {
@@ -700,6 +706,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions() {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.roles().requireView(client);
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
@@ -709,7 +716,7 @@ public class ClientResource {
         return toMgmtRef(client, permissions);
     }
 
-    public static ManagementPermissionReference toMgmtRef(ClientModel client, AdminPermissionManagement permissions) {
+    private ManagementPermissionReference toMgmtRef(ClientModel client, AdminPermissionManagement permissions) {
         ManagementPermissionReference ref = new ManagementPermissionReference();
         ref.setEnabled(true);
         ref.setResource(permissions.clients().resource(client).getId());
@@ -732,6 +739,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         auth.clients().requireManage(client);
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.clients().setPermissionsEnabled(client, ref.isEnabled());
@@ -802,14 +810,14 @@ public class ClientResource {
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
-        if (TRUE.equals(rep.isServiceAccountsEnabled())) {
-            if (serviceAccount == null) {
+        boolean serviceAccountScopeAssigned = client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+        if (Boolean.TRUE.equals(rep.isServiceAccountsEnabled())) {
+            if (serviceAccount == null || !serviceAccountScopeAssigned) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
             }
-        }
-        else {
-            if (serviceAccount != null) {
-                new UserManager(session).removeUser(realm, serviceAccount);
+        } else if (Boolean.FALSE.equals(rep.isServiceAccountsEnabled()) || !client.isServiceAccountsEnabled()) {
+            if (serviceAccount != null || serviceAccountScopeAssigned) {
+                new ClientManager(new RealmManager(session)).disableServiceAccount(client);
             }
         }
 
@@ -832,7 +840,7 @@ public class ClientResource {
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            if (Boolean.TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 authorization().enable(false);
             } else {
                 authorization().disable();

@@ -17,10 +17,12 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.provider.Provider;
 
 import java.security.cert.X509Certificate;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
@@ -39,10 +41,10 @@ public interface TruststoreProvider extends Provider {
     /**
      * @return root certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
      */
-    Map<X500Principal, X509Certificate> getRootCertificates();
+    Map<X500Principal, List<X509Certificate>> getRootCertificates();
 
     /**
      * @return intermediate certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
      */
-    Map<X500Principal, X509Certificate> getIntermediateCertificates();
+    Map<X500Principal, List<X509Certificate>> getIntermediateCertificates();
 }

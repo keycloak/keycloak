@@ -1,15 +1,17 @@
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useWatch, useFormContext } from "react-hook-form";
+import {
+  HelpItem,
+  TextControl,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup } from "@patternfly/react-core";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import environment from "../../environment";
+import type { Environment } from "../../environment";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
-import { TextField } from "../component/TextField";
 
 import "./saml-general-settings.css";
 
@@ -22,48 +24,28 @@ export const SamlGeneralSettings = ({
 }: SamlGeneralSettingsProps) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
+  const { environment } = useEnvironment<Environment>();
 
-  const {
-    register,
-    control,
-    formState: { errors },
-  } = useFormContext();
-
+  const { control } = useFormContext();
   const alias = useWatch({ control, name: "alias" });
 
   return (
     <>
       <RedirectUrl id={alias} />
 
-      <FormGroup
+      <TextControl
+        name="alias"
         label={t("alias")}
-        labelIcon={<HelpItem helpText={t("aliasHelp")} fieldLabelId="alias" />}
-        fieldId="alias"
-        isRequired
-        validated={
-          errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("required")}
-      >
-        <KeycloakTextInput
-          isRequired
-          id="alias"
-          data-testid="alias"
-          isReadOnly={isAliasReadonly}
-          validated={
-            errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          {...register("alias", { required: true })}
-        />
-      </FormGroup>
-
-      <TextField
-        field="displayName"
-        label="displayName"
-        data-testid="displayName"
+        labelIcon={t("aliasHelp")}
+        readOnly={isAliasReadonly}
+        rules={{
+          required: t("required"),
+        }}
       />
+
+      <TextControl name="displayName" label={t("displayName")} />
       <DisplayOrder />
-      {isAliasReadonly ? (
+      {isAliasReadonly && (
         <FormGroup
           label={t("endpoints")}
           fieldId="endpoints"
@@ -74,11 +56,11 @@ export const SamlGeneralSettings = ({
         >
           <FormattedLink
             title={t("samlEndpointsLabel")}
-            href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+            href={`${environment.adminBaseUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
             isInline
           />
         </FormGroup>
-      ) : null}
+      )}
     </>
   );
 };

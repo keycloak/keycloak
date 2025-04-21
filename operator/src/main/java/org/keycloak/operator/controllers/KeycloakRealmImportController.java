@@ -17,47 +17,37 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
-
+import jakarta.inject.Inject;
+import org.keycloak.operator.Config;
+import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.inject.Inject;
-
-@ControllerConfiguration(
+@Workflow(
+explicitInvocation = true,
 dependents = {
-    @Dependent(type = KeycloakRealmImportSecretDependentResource.class)
+    @Dependent(type = KeycloakRealmImportJobDependentResource.class, dependsOn = KeycloakRealmImportSecretDependentResource.DEPENDENT_NAME),
+    @Dependent(type = KeycloakRealmImportSecretDependentResource.class, name = KeycloakRealmImportSecretDependentResource.DEPENDENT_NAME)
 })
-public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport> {
+public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport> {
 
     @Inject
-    KubernetesClient client;
-
-    volatile KeycloakRealmImportJobDependentResource jobDependentResource;
-
-    @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
-        this.jobDependentResource = new KeycloakRealmImportJobDependentResource();
-        this.jobDependentResource.setKubernetesClient(context.getClient());
-        return EventSourceInitializer.nameEventSourcesFromDependentResource(context, jobDependentResource);
-    }
+    Config config;
 
     @Override
     public UpdateControl<KeycloakRealmImport> reconcile(KeycloakRealmImport realm, Context<KeycloakRealmImport> context) {
@@ -73,11 +63,14 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
                 .withName(realm.getSpec().getKeycloakCRName()).get();
 
         if (existingDeployment != null) {
-            context.managedDependentResourceContext().put(StatefulSet.class, existingDeployment);
-            jobDependentResource.reconcile(realm, context);
+            ContextUtils.storeOperatorConfig(context, config);
+            ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
+            if (getReadyReplicas(existingDeployment) > 0) {
+                context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
+            }
         }
 
-        updateStatus(statusBuilder, realm, existingJob, existingDeployment);
+        updateStatus(statusBuilder, realm, existingJob, existingDeployment, context.getClient());
 
         var status = statusBuilder.build();
 
@@ -88,7 +81,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             updateControl = UpdateControl.noUpdate();
         } else {
             realm.setStatus(status);
-            updateControl = UpdateControl.updateStatus(realm);
+            updateControl = UpdateControl.patchStatus(realm);
         }
 
         if (status
@@ -103,18 +96,23 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
     @Override
     public ErrorStatusUpdateControl<KeycloakRealmImport> updateErrorStatus(KeycloakRealmImport realm, Context<KeycloakRealmImport> context, Exception e) {
-        Log.error("--- Error reconciling", e);
+        Log.debug("--- Error reconciling", e);
         KeycloakRealmImportStatus status = new KeycloakRealmImportStatusBuilder()
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 
         realm.setStatus(status);
-        return ErrorStatusUpdateControl.updateStatus(realm);
+        return ErrorStatusUpdateControl.patchStatus(realm);
     }
 
-    public void updateStatus(KeycloakRealmImportStatusBuilder status, KeycloakRealmImport realmCR, Job existingJob, StatefulSet existingDeployment) {
+    public void updateStatus(KeycloakRealmImportStatusBuilder status, KeycloakRealmImport realmCR, Job existingJob, StatefulSet existingDeployment, KubernetesClient client) {
         if (existingDeployment == null) {
             status.addErrorMessage("No existing Deployment found, waiting for it to be created");
+            return;
+        }
+
+        if (getReadyReplicas(existingDeployment) < 1) {
+            status.addErrorMessage("Deployment not yet ready, waiting for it to be ready");
             return;
         }
 
@@ -132,7 +130,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
                 if (!lastReportedStatus.isDone()) {
                     Log.info("Job finished performing a rolling restart of the deployment");
-                    rollingRestart(realmCR); // could be based upon a hash annotation on the deployment instead
+                    rollingRestart(realmCR, client); // could be based upon a hash annotation on the deployment instead
                 }
                 status.addDone();
             } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
@@ -145,7 +143,11 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         }
     }
 
-    private void rollingRestart(KeycloakRealmImport realmCR) {
+    private Integer getReadyReplicas(StatefulSet existingDeployment) {
+        return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
+    }
+
+    private void rollingRestart(KeycloakRealmImport realmCR, KubernetesClient client) {
         client.apps().statefulSets()
                 .inNamespace(realmCR.getMetadata().getNamespace())
                 .withName(realmCR.getSpec().getKeycloakCRName())

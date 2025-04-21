@@ -17,14 +17,11 @@
 package org.keycloak.testsuite.admin.event;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.util.TestCleanup;
 
 import java.util.Collections;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *
@@ -55,13 +52,6 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
         RealmResource testRsc = testRealmResource();
         testRsc.updateRealmEventsConfig(configRep);
         configRep = testRsc.getRealmEventsConfig();
-    }
-
-    protected void enableEvents() {
-        configRep.setEventsEnabled(true);
-        configRep.setAdminEventsEnabled(Boolean.TRUE);
-
-        saveConfig();
     }
 
     protected String realmName() {

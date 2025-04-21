@@ -21,7 +21,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -49,7 +49,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 /**
  * @author Stan Silvert
  */
-public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractAppInitiatedActionTest extends AbstractChangeImportedUserPasswordsTest {
 
     protected static final String SUCCESS = "success";
     protected static final String CANCELLED = "cancelled";
@@ -79,7 +79,17 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
 
     protected void assertKcActionStatus(String expectedStatus) {
         assertThat(appPage.getRequestType(),is(RequestType.AUTH_RESPONSE));
+        String kcActionStatus = getCurrentUrlParam(KC_ACTION_STATUS);
+        assertThat(kcActionStatus, is(expectedStatus));
+    }
 
+    protected void assertKcAction(String expectedKcAction) {
+        assertThat(appPage.getRequestType(),is(RequestType.AUTH_RESPONSE));
+        String kcAction = getCurrentUrlParam(KC_ACTION);
+        assertThat(kcAction, is(expectedKcAction));
+    }
+
+    protected String getCurrentUrlParam(String paramName) {
         final URI url;
         try {
             url = new URI(this.driver.getCurrentUrl());
@@ -88,14 +98,12 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
         }
 
         List<NameValuePair> pairs = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
-        String kcActionStatus = null;
         for (NameValuePair p : pairs) {
-            if (p.getName().equals(KC_ACTION_STATUS)) {
-                kcActionStatus = p.getValue();
-                break;
+            if (p.getName().equals(paramName)) {
+                return p.getValue();
             }
         }
-        assertThat(expectedStatus, is(kcActionStatus));
+        return null;
     }
     
     protected void assertSilentCancelMessage() {

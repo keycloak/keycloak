@@ -67,7 +67,7 @@ action token is invalidated.
 As action token is just a signed JWT with few mandatory fields (see <<_action_token_anatomy,Anatomy of action token>>
 above), it can be serialized and signed as such using Keycloak's `JWSBuilder` class. This way has been already
 implemented in `serialize(session, realm, uriInfo)` method of `org.keycloak.authentication.actiontoken.DefaultActionToken`
-and can be leveraged by implementors by using that class for tokens instead of plain `JsonWebToken`.
+and can be leveraged by implementers by using that class for tokens instead of plain `JsonWebToken`.
 
 The following example shows the implementation of a simple action token. Note that the class must have a private constructor without any arguments.
 This is necessary to deserialize the token class from JWT.

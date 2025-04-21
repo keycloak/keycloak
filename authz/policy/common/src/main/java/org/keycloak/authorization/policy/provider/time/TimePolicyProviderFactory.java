@@ -1,6 +1,23 @@
+/*
+ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.authorization.policy.provider.time;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +26,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.util.PolicyValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -38,7 +56,7 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePoli
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
-        return null;
+        return provider;
     }
 
     @Override
@@ -116,8 +134,7 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePoli
         String noa = representation.getNotOnOrAfter();
 
         if (nbf != null && noa != null) {
-            validateFormat(nbf);
-            validateFormat(noa);
+            validateFormat(nbf, noa);
         }
 
         Map<String, String> config = new HashMap(policy.getConfig());
@@ -143,11 +160,20 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePoli
         policy.setConfig(config);
     }
 
-    private void validateFormat(String date) {
+    private void validateFormat(String notBefore, String notOnOrAfter) {
+        Date nbf, noa;
         try {
-            new SimpleDateFormat(TimePolicyProvider.DEFAULT_DATE_PATTERN).parse(TimePolicyProvider.format(date));
+            nbf = new SimpleDateFormat(TimePolicyProvider.DEFAULT_DATE_PATTERN).parse(TimePolicyProvider.format(notBefore));
         } catch (Exception e) {
-            throw new RuntimeException("Could not parse a date using format [" + date + "]");
+            throw new PolicyValidationException("Unable not parse a date using format [" + notBefore + "]");
+        }
+        try {
+            noa = new SimpleDateFormat(TimePolicyProvider.DEFAULT_DATE_PATTERN).parse(TimePolicyProvider.format(notOnOrAfter));
+        } catch (Exception e) {
+            throw new PolicyValidationException("Unable not parse a date using format [" + notOnOrAfter + "]");
+        }
+        if (noa.before(nbf)) {
+            throw new PolicyValidationException("Expire time can't be set to a date before start time");
         }
     }
 }

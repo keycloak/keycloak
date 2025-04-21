@@ -19,9 +19,8 @@
 package org.keycloak.testsuite.pages.x509;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -45,10 +44,10 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
     @FindBy(name = "cancel")
     private WebElement ignoreButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "alert-warning")
+    @FindBy(className = "pf-v5-c-warning")
     private WebElement loginWarningMessage;
 
     @FindBy(className = "alert-success")
@@ -85,9 +84,4 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
         return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
-    @Override
-    public void open() {
-        oauth.openLoginForm();
-        assertCurrent();
-    }
 }

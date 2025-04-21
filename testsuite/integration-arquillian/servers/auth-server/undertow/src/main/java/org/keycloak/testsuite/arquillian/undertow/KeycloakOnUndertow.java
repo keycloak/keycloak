@@ -51,7 +51,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.testsuite.JsonConfigProviderFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakApplication;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.UndertowRequestFilter;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
@@ -83,7 +83,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     private DeploymentInfo createAuthServerDeploymentInfo() {
         ResteasyDeployment deployment = new ResteasyDeploymentImpl();
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
+        deployment.setApplicationClass(ResteasyKeycloakApplication.class.getName());
 
         // RESTEASY-2034
         deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
@@ -93,15 +93,6 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
         di.setDefaultEncoding("UTF-8");
-        if (configuration.getKeycloakConfigPropertyOverridesMap() != null) {
-            try {
-                di.addInitParameter(JsonConfigProviderFactory.SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES,
-                  JsonSerialization.writeValueAsString(configuration.getKeycloakConfigPropertyOverridesMap()));
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
@@ -248,8 +239,15 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         }
 
         log.info("Stopping auth server.");
-        sessionFactory.close();
-        undertow.stop();
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
+        if (undertow != null) {
+            undertow.stop();
+        }
+
+        sessionFactory = null;
+        undertow = null;
     }
 
     private boolean isRemoteMode() {

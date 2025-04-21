@@ -25,12 +25,8 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 public abstract class LoginFailuresUpdateTask implements SessionUpdateTask<LoginFailureEntity> {
 
     @Override
-    public CacheOperation getOperation(LoginFailureEntity session) {
+    public CacheOperation getOperation() {
         return CacheOperation.REPLACE;
     }
 
-    @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<LoginFailureEntity> sessionWrapper) {
-        return CrossDCMessageStatus.SYNC;
-    }
 }

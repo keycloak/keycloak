@@ -1,0 +1,129 @@
+[id="managing-organization-members_{context}"]
+
+[[_managing_members_]]
+=  Managing members
+[role="_abstract"]
+
+An organization member is basically a realm user but with a link to a single organization. They are logically separated
+from other users in a realm so that you know exactly which users belong to an organization.
+
+There are different ways to add, or onboard, a member to an organization:
+
+* Adding an existing realm user as a member
+* Through an identity provider associated with an organization
+* Sending an invitation to create a new account
+* Sending an invitation to an existing user to join an organization
+
+Once a member of an organization, that user's account can be managed just like any regular account in a realm by accessing the *Users* section in the menu.
+
+However, you can narrow the users to only those associated with an organization by accessing the *Members* tab when managing an organization. In this tab, you have a list of all the organization members and actions to add new members and to edit and remove existing ones.
+
+.Managing organization members
+image:images/organizations-manage-members.png[alt="Managing organization members"]
+
+[[_managed_unmanaged_members_]]
+== Managed and unmanaged members
+
+When managing members, consider how their relationship with an organization affects the lifecycle of their accounts.
+Members can join an organization through different flows and each flow indicates the strength of the link between their accounts and the organization.
+
+There are two types of members:
+
+* *Managed*
+* *Unmanaged*
+
+Managed members are those managed by the organization, and they cannot exist outside of their organization. For instance, consider
+an account created through an identity provider associated with an organization. That account does not belong to a realm as it was federated from the organization.
+In this case, the single source of truth for the identity is the organization and its lifecycle is controlled
+by the organization.
+If you remove the organization or the member, the account is also removed from the realm.
+
+On the other hand, unmanaged members are those that can exist without the organization. For instance, when adding an existing
+realm user to an organization, the account belongs to the realm first and foremost and eventually linked to an organization. In this case,
+removing an organization or a member will not remove the account from the realm; the realm is
+the single-source of truth for the identity.
+
+== Adding an existing realm user as a member
+
+An existing realm user can join an organization by selecting that user from a list and adding the user to the organization.
+
+.Procedure
+
+. Click *Add member*.
+. Click *Add realm user*.
+. Select one or more users and click *Add* to add them to the organization.
+
+.Adding a realm user
+image:images/organizations-add-realm-user.png[alt="Adding a realm user"]
+
+Once a user is a member of the organization, that user is able to authenticate to the realm just like a regular user and using
+any credential supported by the realm.
+
+== Inviting users
+
+An administrator can email users to join an organization.
+
+.Procedure
+
+. Click *Add member*.
+. Click *Invite member*.
+. Provide an email address
+. Click *Send*
+
+.Inviting members
+image:images/organizations-invite-member.png[alt="Inviting members"]
+
+Optionally, you can also provide a value for the *First name* and *Last name* fields for a more personalized email
+message using a greeting message with the first and last names of the person receiving the email.
+
+An invitation is basically an email sent with a link that the person should click to perform the necessary steps to join
+an organization. These steps depend on whether the person already has an account in the realm or if a new account should
+be created before joining the organization.
+
+If the email maps to an existing user in a realm, the steps the user will follow are basically about confirming the
+intention to join the organization.
+
+On the other hand, if no user is associated with the given email address, the steps
+will involve creating a new account through the realm's self-registration flow. In this case, the user is forced
+to provide the same email address used to send the invitation.
+
+[[_onboard_member_identity_provider_]]
+== Onboarding members using an Identity Provider
+
+An organization might have its own identity provider as the single source of truth for their identities. In this case,
+users federated from the identity provider are automatically added as a member of the organization.
+
+When users join an organization through an identity provider associated with an organization, they are automatically marked
+as managed members. In this case, they will go through the broker login flows configured in the realm and join the organization
+automatically once they successfully authenticate.
+
+Onboarding new members through an identity provider can be done by either automatically redirecting the user to an organization's
+identity provider or by selecting the identity provider when at the login page.
+
+In both cases, once the user provides the email, {project_name} will try to match an organization based on the email domain. In case
+the email domain matches the organization, and an identity provider is associated with the same domain and the *Redirect when email domain matches*
+setting is enabled, the user is automatically redirected to the identity provider. Once the user authenticates at the identity provider
+and completes the first broker login flow, the user is automatically added as an organization member.
+
+On the other hand, if *Redirect when email domain matches* is not enabled, but the identity provider is configured not to
+*Hide on login page*, the user can select the identity provider and then be redirected to the identity provider to continue
+the onboarding process.
+
+For more details, see <<_managing_identity_provider_,Managing Identity Providers>>.
+
+== Removing a member
+
+You can remove a member from an organization.
+
+From the action menu next to the member you want to remove, click *Remove*.
+
+When removing a member from an organization, remember that the user may or may not be removed from a realm depending on if
+that user is managed or unmanaged member, respectively.
+
+For more details, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
+
+== Support for federated members
+
+Users coming from federated providers can also be added as members of an organization. The only exceptions are the users from LDAP providers with *import mode disabled*. Organization members are added to an internal group that is not synchronized with external providers, so even if the LDAP provider has a group mapper with mode LDAP_ONLY it won't be possible for the non-imported users to be added as members of an organization because that membership won't be synced with the LDAP server.
+
+In other words, LDAP users that are not imported can't join an organization because the membership is not stored in the local DB nor in the LDAP server. So if you want to have LDAP users joining organizations, ensure that the import mode of the LDAP provider is enabled.

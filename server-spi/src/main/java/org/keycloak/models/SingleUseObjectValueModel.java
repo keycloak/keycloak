@@ -16,8 +16,6 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.storage.SearchableModelField;
-
 import java.util.Map;
 
 /**
@@ -26,11 +24,6 @@ import java.util.Map;
  */
 public interface SingleUseObjectValueModel {
 
-    class SearchableFields {
-        public static final SearchableModelField<SingleUseObjectValueModel> ID                          = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<SingleUseObjectValueModel> OBJECT_KEY                  = new SearchableModelField<>("objectKey", String.class);
-    }
-    
     /**
      * Returns unmodifiable map of all notes.
      * @return see description. Returns empty map if no note is set, never returns {@code null}.

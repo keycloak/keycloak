@@ -22,9 +22,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,37 +30,35 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction {
+public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction implements SessionsChangelogBasedTransaction<K, V> {
 
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
-    private final KeycloakSession kcSession;
-    private final String cacheName;
-    private final Cache<K, SessionEntityWrapper<V>> cache;
-    private final RemoteCacheInvoker remoteCacheInvoker;
+    protected final KeycloakSession kcSession;
+    protected final Cache<K, SessionEntityWrapper<V>> cache;
 
-    private final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
+    protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
-    private final SessionFunction<V> lifespanMsLoader;
-    private final SessionFunction<V> maxIdleTimeMsLoader;
+    protected final SessionFunction<V> lifespanMsLoader;
+    protected final SessionFunction<V> maxIdleTimeMsLoader;
+    private final SerializeExecutionsByKey<K> serializer;
 
-    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
-                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
+    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache,
+                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, SerializeExecutionsByKey<K> serializer) {
         this.kcSession = kcSession;
-        this.cacheName = cache.getName();
         this.cache = cache;
-        this.remoteCacheInvoker = remoteCacheInvoker;
         this.lifespanMsLoader = lifespanMsLoader;
         this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
+        this.serializer = serializer;
     }
 
 
+    @Override
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
@@ -96,9 +92,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity, persistenceState);
         updates.put(key, myUpdates);
 
-        // Run the update now, so reader in same transaction can see it
-        task.runUpdate(entity);
-        myUpdates.add(task);
+        if (task != null) {
+            // Run the update now, so reader in same transaction can see it
+            task.runUpdate(entity);
+            myUpdates.add(task);
+        }
     }
 
 
@@ -138,19 +136,16 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             return wrappedEntity;
         } else {
-            V entity = myUpdates.getEntityWrapper().getEntity();
-
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
 
-                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
+                return task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE;
 
             }).findFirst().isPresent();
 
             return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }
     }
-
 
     @Override
     protected void commitImpl() {
@@ -160,6 +155,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             // Don't save transient entities to infinispan. They are valid just for current transaction
             if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
+
+            // Don't save entities in infinispan that are both added and removed within the same transaction.
+            if (!sessionUpdates.getUpdateTasks().isEmpty() && sessionUpdates.getUpdateTasks().get(0).getOperation().equals(SessionUpdateTask.CacheOperation.ADD_IF_ABSENT)
+                    && sessionUpdates.getUpdateTasks().get(sessionUpdates.getUpdateTasks().size() - 1).getOperation().equals(SessionUpdateTask.CacheOperation.REMOVE)) {
+                continue;
+            }
 
             RealmModel realm = sessionUpdates.getRealm();
 
@@ -171,17 +172,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             if (merged != null) {
                 // Now run the operation in our cluster
                 runOperationInCluster(entry.getKey(), merged, sessionWrapper);
-
-                // Check if we need to send message to second DC
-                remoteCacheInvoker.runTask(kcSession, realm, cacheName, entry.getKey(), merged, sessionWrapper);
             }
         }
     }
 
 
     private void runOperationInCluster(K key, MergedUpdate<V> task,  SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
-        SessionUpdateTask.CacheOperation operation = task.getOperation(session);
+        SessionUpdateTask.CacheOperation operation = task.getOperation();
 
         // Don't need to run update of underlying entity. Local updates were already run
         //task.runUpdate(session);
@@ -189,19 +186,16 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                CacheDecorators.skipCacheStore(cache)
-                        .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                        .remove(key);
+                CacheDecorators.ignoreReturnValues(cache).remove(key);
                 break;
             case ADD:
-                CacheDecorators.skipCacheStore(cache)
-                        .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+                CacheDecorators.ignoreReturnValues(cache)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
 
                 logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
                 break;
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStore(cache).putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+                SessionEntityWrapper<V> existing = cache.putIfAbsent(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     logger.debugf("Existing entity in cache for key: %s . Will update it", key);
 
@@ -222,49 +216,43 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     }
 
-
     private void replace(K key, MergedUpdate<V> task, SessionEntityWrapper<V> oldVersionEntity, long lifespanMs, long maxIdleTimeMs) {
-        boolean replaced = false;
-        int iteration = 0;
-        V session = oldVersionEntity.getEntity();
+        serializer.runSerialized(key, () -> {
+            SessionEntityWrapper<V> oldVersion = oldVersionEntity;
+            SessionEntityWrapper<V> returnValue = null;
+            int iteration = 0;
+            V session = oldVersion.getEntity();
+            while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
 
-        while (!replaced && iteration < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-            iteration++;
-
-            SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
-
-            // Atomic cluster-aware replace
-            replaced = CacheDecorators.skipCacheStore(cache).replace(key, oldVersionEntity, newVersionEntity, lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
-
-            // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
-            if (!replaced) {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
+                    logger.debugf("Entity %s removed after evaluation", key);
+                    CacheDecorators.ignoreReturnValues(cache).remove(key);
+                    return;
                 }
 
-                oldVersionEntity = cache.get(key);
+                SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
+                returnValue = cache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
 
-                if (oldVersionEntity == null) {
+                if (returnValue == null) {
                     logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
                     return;
                 }
 
-                session = oldVersionEntity.getEntity();
-
-                task.runUpdate(session);
-            } else {
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                if (returnValue.getVersion().equals(newVersionEntity.getVersion())){
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                    }
+                    return;
                 }
+
+                oldVersion = returnValue;
+                session = oldVersion.getEntity();
+                task.runUpdate(session);
             }
-        }
 
-        if (!replaced) {
-            logger.warnf("Failed to replace entity '%s' in cache '%s'", key, cache.getName());
-        }
-
+            logger.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), oldVersion, returnValue);
+        });
     }
-
 
     @Override
     protected void rollbackImpl() {

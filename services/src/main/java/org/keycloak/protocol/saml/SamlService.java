@@ -22,12 +22,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
@@ -56,7 +55,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -96,6 +94,10 @@ import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.SamlAuthnRequestContext;
+import org.keycloak.services.clientpolicy.context.SamlLogoutRequestContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
@@ -144,8 +146,6 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
-
 
 /**
  * Resource class for the saml connect token service
@@ -195,7 +195,7 @@ public class SamlService extends AuthorizationEndpointBase {
             }
             return null;
         }
-        
+
         protected boolean isDestinationRequired() {
             return true;
         }
@@ -262,6 +262,20 @@ public class SamlService extends AuthorizationEndpointBase {
             return response;
         }
 
+        protected Response triggerSamlEvent(ClientPolicyContext ctx) {
+            try {
+                session.clientPolicy().triggerOnEvent(ctx);
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
+            return null;
+        }
+
         protected Response handleSamlRequest(String samlRequest, String relayState) {
             SAMLDocumentHolder documentHolder = extractRequestDocument(samlRequest);
             if (documentHolder == null) {
@@ -281,8 +295,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.event(EventType.LOGOUT);
             } else {
                 event.event(EventType.LOGIN);
-                event.error(Errors.INVALID_TOKEN);
                 event.detail(Details.REASON, "Unhandled SAML document type: " + (samlObject == null ? "<null>" : samlObject.getClass().getSimpleName()));
+                event.error(Errors.INVALID_TOKEN);
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
 
@@ -320,9 +334,17 @@ public class SamlService extends AuthorizationEndpointBase {
             if (samlObject instanceof AuthnRequestType) {
                 // Get the SAML Request Message
                 AuthnRequestType authn = (AuthnRequestType) samlObject;
+                Response response = triggerSamlEvent(new SamlAuthnRequestContext(authn, client, getBindingType()));
+                if (response != null) {
+                    return response;
+                }
                 return loginRequest(relayState, authn, client);
             } else if (samlObject instanceof LogoutRequestType) {
                 LogoutRequestType logout = (LogoutRequestType) samlObject;
+                Response response = triggerSamlEvent(new SamlLogoutRequestContext(logout, client, getBindingType()));
+                if (response != null) {
+                    return response;
+                }
                 return logoutRequest(logout, client, relayState);
             } else {
                 throw new IllegalStateException("Invalid SAML object");
@@ -384,7 +406,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
                 ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor("saml-artifact-pool");
 
-                ArtifactResolutionRunnable artifactResolutionRunnable = new ArtifactResolutionRunnable(getBindingType(), asyncResponse, doc, clientArtifactBindingURI, relayState, session.getContext().getConnection());
+                ArtifactResolutionRunnable artifactResolutionRunnable = new ArtifactResolutionRunnable(getBindingType(), asyncResponse, doc, clientArtifactBindingURI, relayState);
                 ScheduledTaskRunner task = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), artifactResolutionRunnable);
                 executor.execute(task);
 
@@ -569,8 +591,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
                     //artifact binding state must be attached to the user session upon logout, as authenticated session
                     //no longer exists when the LogoutResponse message is sent
-                    if ("true".equals(clientSession.getNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get()))
-                            && SamlProtocol.useArtifactForLogout(client)){
+                    if (SamlProtocol.SAML_ARTIFACT_BINDING.equals(SamlProtocol.getLogoutBindingTypeForClientSession(clientSession))){
                         clientSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
                         userSession.setNote(JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get(), "true");
                         userSession.setNote(SamlProtocol.SAML_LOGOUT_INITIATOR_CLIENT_ID, client.getId());
@@ -896,8 +917,10 @@ public class SamlService extends AuthorizationEndpointBase {
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
         try {
-            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            List<KeyWrapper> keys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
                     .sorted(SamlService::compareKeys)
+                    .collect(Collectors.toList());
+            List<Element> signingKeys = keys.stream()
                     .map(key -> {
                         try {
                             return IDPMetadataDescriptor
@@ -909,13 +932,15 @@ public class SamlService extends AuthorizationEndpointBase {
                     .collect(Collectors.toList());
 
             return IDPMetadataDescriptor.getIDPDescriptor(
+                keys.isEmpty()? null : keys.iterator().next(),
+                realm.getAttribute(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.class, null),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.protocolUrl(uriInfo).path(SamlService.ARTIFACT_RESOLUTION_SERVICE_PATH)
                         .build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
-                true, 
+                true,
                 signingKeys);
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
@@ -1065,7 +1090,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     "ArtifactResolve message: %s", DocumentUtil.asString(soapBodyContents));
             return Soap.createFault().reason("").detail("").build();
         }
-        
+
         try {
             return artifactResolve(artifactResolveType, samlDocumentHolder);
         } catch (Exception e) {
@@ -1140,15 +1165,15 @@ public class SamlService extends AuthorizationEndpointBase {
      * @throws ProcessingException
      */
     public Response artifactResolve(ArtifactResolveType artifactResolveMessage, SAMLDocumentHolder artifactResolveHolder) throws ParsingException, ConfigurationException, ProcessingException {
-        logger.debug("Received artifactResolve message for artifact " + artifactResolveMessage.getArtifact() + "\n" +
-                "Message: \n" + DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
+        logger.debugf("Received artifactResolve message for artifact %s\n" +
+                "Message: \n%s", artifactResolveMessage.getArtifact(), DocumentUtil.getDocumentAsString(artifactResolveHolder.getSamlDocument()));
 
         String artifact = artifactResolveMessage.getArtifact(); // Artifact from resolve request
         if (artifact == null) {
             logger.errorf("Artifact to resolve was null");
             return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
         }
-        
+
         ArtifactResolver artifactResolver = getArtifactResolver(artifact);
 
         if (artifactResolver == null) {
@@ -1164,7 +1189,7 @@ public class SamlService extends AuthorizationEndpointBase {
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
         }
 
-        UserSessionModel userSessionModel = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionMapping.get(SamlProtocol.USER_SESSION_ID)));
+        UserSessionModel userSessionModel = session.sessions().getUserSession(realm, sessionMapping.get(SamlProtocol.USER_SESSION_ID));
         if (userSessionModel == null) {
             logger.errorf("UserSession with id: %s, that corresponds to artifact: %s does not exist.", sessionMapping.get(SamlProtocol.USER_SESSION_ID), artifact);
             return emptyArtifactResponseMessage(artifactResolveMessage, null);
@@ -1232,7 +1257,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         return artifactResponseMessage(artifactResolveMessage, artifactResponseDocument, clientModel);
     }
-    
+
     private Response emptyArtifactResponseMessage(ArtifactResolveType artifactResolveMessage, ClientModel clientModel) throws ProcessingException, ConfigurationException {
         return emptyArtifactResponseMessage(artifactResolveMessage, clientModel, JBossSAMLURIConstants.STATUS_SUCCESS.getUri());
     }
@@ -1251,7 +1276,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         return artifactResponseMessage(artifactResolveMessage, artifactResponseDocument, clientModel);
     }
-    
+
     private Response artifactResponseMessage(ArtifactResolveType artifactResolveMessage, Document artifactResponseDocument, ClientModel clientModel) throws ProcessingException, ConfigurationException {
         // Add "inResponseTo" to artifactResponse
         if (artifactResolveMessage.getID() != null && !artifactResolveMessage.getID().trim().isEmpty()){
@@ -1259,7 +1284,7 @@ public class SamlService extends AuthorizationEndpointBase {
             artifactResponseElement.setAttribute("InResponseTo", artifactResolveMessage.getID());
         }
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder(session);
-        
+
         if (clientModel != null) {
             SamlClient samlClient = new SamlClient(clientModel);
 
@@ -1340,36 +1365,28 @@ public class SamlService extends AuthorizationEndpointBase {
         private URI clientArtifactBindingURI;
         private String relayState;
         private Document doc;
-        private UriInfo uri;
         private String realmId;
         private ClientConnection connection;
         private String bindingType;
 
-        public ArtifactResolutionRunnable(String bindingType, AsyncResponse asyncResponse, Document doc, URI clientArtifactBindingURI, String relayState, ClientConnection connection){
+        public ArtifactResolutionRunnable(String bindingType, AsyncResponse asyncResponse, Document doc, URI clientArtifactBindingURI, String relayState){
             this.asyncResponse = asyncResponse;
             this.doc = doc;
             this.clientArtifactBindingURI = clientArtifactBindingURI;
             this.relayState = relayState;
-            this.uri = session.getContext().getUri();
             this.realmId = realm.getId();
-            this.connection = connection;
+            this.connection = session.getContext().getConnection();
             this.bindingType = bindingType;
             this.request = session.getContext().getHttpRequest();
             this.response = session.getContext().getHttpResponse();
         }
 
-
+        @Override
         public void run(KeycloakSession session){
             // Initialize context
-            Resteasy.pushContext(UriInfo.class, uri);
-
-            KeycloakTransaction tx = session.getTransactionManager();
-            Resteasy.pushContext(KeycloakTransaction.class, tx);
-
-            Resteasy.pushContext(KeycloakSession.class, session);
-            Resteasy.pushContext(HttpRequest.class, request);
-            Resteasy.pushContext(HttpResponse.class, response);
-            Resteasy.pushContext(ClientConnection.class, connection);
+            session.getContext().setHttpRequest(request);
+            session.getContext().setHttpResponse(response);
+            session.getContext().setConnection(connection);
 
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = realmManager.getRealm(realmId);
@@ -1404,7 +1421,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     if (logger.isTraceEnabled()) {
                         logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
                     }
-                    
+
                     ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
 
                     if (art.getAny() == null) {

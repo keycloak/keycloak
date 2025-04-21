@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.client;
 
 import jakarta.ws.rs.core.Response;
-
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
@@ -33,10 +33,7 @@ import org.keycloak.testsuite.runonserver.*;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -50,16 +47,25 @@ public class KeycloakTestingClient implements AutoCloseable {
         if (resteasyClient != null) {
             client = resteasyClient;
         } else {
-            ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-            resteasyClientBuilder.connectionPoolSize(10);
-            if (serverUrl.startsWith("https")) {
-                // Disable PKIX path validation errors when running tests using SSL
-                resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
-            }
-            resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+            ResteasyClientBuilder resteasyClientBuilder = getRestEasyClientBuilder(serverUrl);
             client = resteasyClientBuilder.build();
         }
         target = client.target(serverUrl);
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder(String serverUrl) {
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
+        resteasyClientBuilder.connectionPoolSize(10);
+        if ((serverUrl != null && serverUrl.startsWith("https")) || "true".equals(System.getProperty("auth.server.ssl.required"))) {
+            // Disable PKIX path validation errors when running tests using SSL
+            resteasyClientBuilder.disableTrustManager().hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
+        }
+        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
+        return resteasyClientBuilder;
+    }
+
+    public static ResteasyClientBuilder getRestEasyClientBuilder() {
+        return getRestEasyClientBuilder(null);
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -79,13 +85,25 @@ public class KeycloakTestingClient implements AutoCloseable {
     }
 
     public void enableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> enabledFeatures = testing().enableFeature(feature.toString());
-        Assert.assertFalse(enabledFeatures.contains(feature));
-        ProfileAssume.updateDisabledFeatures(enabledFeatures);
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().enableFeature(featureString);
+        Assert.assertFalse(disabledFeatures.contains(feature));
+        ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
     public void disableFeature(Profile.Feature feature) {
-        Set<Profile.Feature> disabledFeatures = testing().disableFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+        } else {
+            featureString = feature.getKey();
+        }
+        Set<Profile.Feature> disabledFeatures = testing().disableFeature(featureString);
         Assert.assertTrue(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
@@ -96,7 +114,17 @@ public class KeycloakTestingClient implements AutoCloseable {
      * @param feature
      */
     public void resetFeature(Profile.Feature feature) {
-        testing().resetFeature(feature.toString());
+        String featureString;
+        if (Profile.getFeatureVersions(feature.getUnversionedKey()).size() > 1) {
+            featureString = feature.getVersionedKey();
+            Profile.Feature featureVersionHighestPriority = Profile.getFeatureVersions(feature.getKey()).iterator().next();
+            if (featureVersionHighestPriority.getType().equals(Profile.Feature.Type.DEFAULT)) {
+                enableFeature(featureVersionHighestPriority);
+            }
+        } else {
+            featureString = feature.getKey();
+        }
+        testing().resetFeature(featureString);
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
@@ -171,6 +199,11 @@ public class KeycloakTestingClient implements AutoCloseable {
             }
         }
 
+        public Response runWithResponse(RunOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+            return testing(realm != null ? realm : "master").runOnServerWithResponse(encoded);
+        }
+
         public void runModelTest(String testClassName, String testMethodName) throws RunOnServerException {
             String result = testing(realm != null ? realm : "master").runModelTestOnServer(testClassName, testMethodName);
 
@@ -179,6 +212,8 @@ public class KeycloakTestingClient implements AutoCloseable {
 
                 if (t instanceof AssertionError) {
                     throw (AssertionError) t;
+                } else if (t instanceof AssumptionViolatedException) {
+                    throw (AssumptionViolatedException) t;
                 } else {
                     throw new RunOnServerException(t);
                 }

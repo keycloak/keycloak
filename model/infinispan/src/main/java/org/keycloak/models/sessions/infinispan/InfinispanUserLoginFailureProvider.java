@@ -18,13 +18,13 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -32,9 +32,8 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
-import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
+import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
@@ -58,11 +57,11 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
     public InfinispanUserLoginFailureProvider(KeycloakSession session,
-                                              RemoteCacheInvoker remoteCacheInvoker,
-                                              Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache) {
+                                              Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache,
+                                              SerializeExecutionsByKey<LoginFailureKey> serializer) {
         this.session = session;
         this.loginFailureCache = loginFailureCache;
-        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, remoteCacheInvoker, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs);
+        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
@@ -84,9 +83,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         log.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
         LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
-        LoginFailureEntity entity = new LoginFailureEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUserId(userId);
+        LoginFailureEntity entity = new LoginFailureEntity(realm.getId(), userId);
 
         SessionUpdateTask<LoginFailureEntity> createLoginFailureTask = Tasks.addIfAbsentSync();
         loginFailuresTx.addTask(key, createLoginFailureTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
@@ -107,8 +104,8 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
         log.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
         clusterEventsSenderTx.addEvent(
-                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId(), true),
-                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
+                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserLoginFailureProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId())
+        );
     }
 
     protected void removeAllLocalUserLoginFailuresEvent(String realmId) {
@@ -118,16 +115,16 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailureCache);
 
-        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
-
-        localCacheStoreIgnore
+        // Go through local cache data only
+        // entries from other nodes will be removed by each instance receiving the event
+        localCache
                 .entrySet()
                 .stream()
-                .filter(UserLoginFailurePredicate.create(realmId))
+                .filter(SessionWrapperPredicate.create(realmId))
                 .map(Mappers.loginFailureId())
                 .forEach(loginFailureKey -> {
                     // Remove loginFailure from remoteCache too. Use removeAsync for better perf
-                    Future future = localCache.removeAsync(loginFailureKey);
+                    Future<?> future = localCache.removeAsync(loginFailureKey);
                     futures.addTask(future);
                 });
 

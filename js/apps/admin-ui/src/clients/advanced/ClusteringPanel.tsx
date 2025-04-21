@@ -10,17 +10,13 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { TimeSelectorForm } from "../../components/time-selector/TimeSelectorForm";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { AddHostDialog } from ".././advanced/AddHostDialog";
@@ -35,6 +31,8 @@ export const ClusteringPanel = ({
   save,
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
@@ -122,7 +120,7 @@ export const ClusteringPanel = ({
         />
         <ExpandableSection
           toggleText={t("registeredClusterNodes")}
-          onToggle={setExpanded}
+          onToggle={(_event, val) => setExpanded(val)}
           isExpanded={expanded}
         >
           <KeycloakDataTable
@@ -140,6 +138,7 @@ export const ClusteringPanel = ({
                 <ToolbarItem>
                   <Button
                     id="testClusterAvailability"
+                    data-testid="test-cluster-availability"
                     onClick={testCluster}
                     variant={ButtonVariant.secondary}
                     isDisabled={Object.keys(nodes).length === 0}
@@ -150,6 +149,7 @@ export const ClusteringPanel = ({
                 <ToolbarItem>
                   <Button
                     id="registerNodeManually"
+                    data-testid="registerNodeManually"
                     onClick={() => setAddNodeOpen(true)}
                     variant={ButtonVariant.tertiary}
                   >

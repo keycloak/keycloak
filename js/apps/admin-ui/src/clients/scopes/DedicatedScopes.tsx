@@ -1,6 +1,7 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   PageSection,
@@ -10,17 +11,14 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { MapperList } from "../../client-scopes/details/MapperList";
-import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import {
   DedicatedScopeDetailsParams,
@@ -28,9 +26,11 @@ import {
   toDedicatedScope,
 } from "../routes/DedicatedScopeDetails";
 import { toMapper } from "../routes/Mapper";
-import { DedicatedScope } from "./DecicatedScope";
+import { DedicatedScope } from "./DedicatedScope";
 
 export default function DedicatedScopes() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
@@ -60,6 +60,7 @@ export default function DedicatedScopes() {
           realm,
           id: client.id!,
           mapperId: mapper.id!,
+          viewMode: "new",
         }),
       );
     } else {
@@ -98,11 +99,11 @@ export default function DedicatedScopes() {
   return (
     <>
       <ViewHeader
-        titleKey={client.clientId!}
+        titleKey={client.clientId! + "-dedicated"}
         subKey="dedicatedScopeExplain"
         divider={false}
       />
-      <PageSection variant="light" className="pf-u-p-0">
+      <PageSection variant="light" className="pf-v5-u-p-0">
         <RoutableTabs
           isBox
           mountOnEnter
@@ -122,7 +123,7 @@ export default function DedicatedScopes() {
               onAdd={addMappers}
               onDelete={onDeleteMapper}
               detailLink={(mapperId) =>
-                toMapper({ realm, id: client.id!, mapperId })
+                toMapper({ realm, id: client.id!, mapperId, viewMode: "edit" })
               }
             />
           </Tab>

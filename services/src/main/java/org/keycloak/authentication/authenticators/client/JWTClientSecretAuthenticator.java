@@ -16,8 +16,10 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
@@ -25,14 +27,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
 
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
 /**
  * Client authentication based on JWT signed by client secret instead of private key .
@@ -55,7 +55,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context);
+        JWTClientValidator validator = new JWTClientValidator(context, getId());
         if (!validator.clientAssertionParametersValidation()) return;
 
         try {
@@ -85,7 +85,17 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
             boolean signatureValid;
             try {
-                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
+                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, (jose, validatedClient) -> {
+                    DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                    String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                    ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                    if (signatureProvider == null) {
+                        throw new RuntimeException("Algorithm not supported");
+                    }
+                    if (signatureProvider.isAsymmetricAlgorithm()) {
+                        throw new RuntimeException("Algorithm is not symmetric");
+                    }
+                }, JsonWebToken.class);
                 signatureValid = jwt != null;
                 //try authenticate with client rotated secret
                 if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
@@ -101,13 +111,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             }
             // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
             // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
-
-            // Allow both "issuer" or "token-endpoint" as audience
-            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
-            }
+            validator.validateTokenAudience(context, realm, token);
 
             validator.validateToken();
             validator.validateTokenReuse();
@@ -186,7 +190,6 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     @Override
     public String getHelpText() {
         return "Validates client based on signed JWT issued by client and signed with the Client Secret";
-
     }
 
     @Override

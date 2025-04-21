@@ -1,21 +1,12 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
-
-import { adminClient } from "../../../admin-client";
-import { useFetch } from "../../../utils/useFetch";
+import { useAdminClient } from "../../../admin-client";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { AddScopeDialog } from "../../scopes/AddScopeDialog";
 
@@ -25,13 +16,10 @@ export type RequiredIdValue = {
 };
 
 export const ClientScope = () => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
-  const {
-    control,
-    getValues,
-    setValue,
-    formState: { errors },
-  } = useFormContext<{
+  const { control, getValues, setValue } = useFormContext<{
     clientScopes: RequiredIdValue[];
   }>();
 
@@ -45,11 +33,10 @@ export const ClientScope = () => {
 
   useFetch(
     () => adminClient.clientScopes.find(),
-    (scopes) => {
+    (scopes = []) => {
+      const clientScopes = getValues("clientScopes") || [];
       setSelectedScopes(
-        getValues("clientScopes").map(
-          (s) => scopes.find((c) => c.id === s.id)!,
-        ),
+        clientScopes.map((s) => scopes.find((c) => c.id === s.id)!),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },
@@ -66,18 +53,11 @@ export const ClientScope = () => {
         />
       }
       fieldId="clientScopes"
-      helperTextInvalid={t("requiredClientScope")}
-      validated={errors.clientScopes ? "error" : "default"}
-      isRequired
     >
       <Controller
         name="clientScopes"
         control={control}
         defaultValue={[]}
-        rules={{
-          validate: (value: RequiredIdValue[]) =>
-            value.filter((c) => c.id).length > 0,
-        }}
         render={({ field }) => (
           <>
             {open && (
@@ -118,7 +98,7 @@ export const ClientScope = () => {
         )}
       />
       {selectedScopes.length > 0 && (
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th>{t("clientScopeTitle")}</Th>
@@ -166,7 +146,7 @@ export const ClientScope = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       )}
     </FormGroup>
   );

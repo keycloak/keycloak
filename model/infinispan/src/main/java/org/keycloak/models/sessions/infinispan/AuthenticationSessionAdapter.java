@@ -19,20 +19,21 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
@@ -44,19 +45,19 @@ import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser
 public class AuthenticationSessionAdapter implements AuthenticationSessionModel {
 
     private final KeycloakSession session;
-    private final RootAuthenticationSessionAdapter parent;
+    private final RootAuthenticationSessionModel parent;
+    private final  SessionEntityUpdater<AuthenticationSessionEntity> updater;
     private final String tabId;
-    private AuthenticationSessionEntity entity;
 
-    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
+    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionModel parent, SessionEntityUpdater<AuthenticationSessionEntity> updater, String tabId) {
         this.session = session;
         this.parent = parent;
+        this.updater = updater;
         this.tabId = tabId;
-        this.entity = entity;
     }
 
     private void update() {
-        parent.update();
+        updater.onEntityUpdated();
     }
 
     @Override
@@ -77,70 +78,72 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public ClientModel getClient() {
-        return getRealm().getClientById(entity.getClientUUID());
+        return getRealm().getClientById(updater.getEntity().getClientUUID());
     }
 
     @Override
     public String getRedirectUri() {
-        return entity.getRedirectUri();
+        return updater.getEntity().getRedirectUri();
     }
 
     @Override
     public void setRedirectUri(String uri) {
-        entity.setRedirectUri(uri);
+        updater.getEntity().setRedirectUri(uri);
         update();
     }
 
 
     @Override
     public String getAction() {
-        return entity.getAction();
+        return updater.getEntity().getAction();
     }
 
     @Override
     public void setAction(String action) {
-        entity.setAction(action);
+        updater.getEntity().setAction(action);
         update();
     }
 
     @Override
     public Set<String> getClientScopes() {
-        if (entity.getClientScopes() == null || entity.getClientScopes().isEmpty()) return Collections.emptySet();
-        return new HashSet<>(entity.getClientScopes());
+        if (updater.getEntity().getClientScopes() == null || updater.getEntity().getClientScopes().isEmpty()) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(updater.getEntity().getClientScopes());
     }
 
     @Override
     public void setClientScopes(Set<String> clientScopes) {
-        entity.setClientScopes(clientScopes);
+        updater.getEntity().setClientScopes(clientScopes);
         update();
     }
 
     @Override
     public String getProtocol() {
-        return entity.getProtocol();
+        return updater.getEntity().getProtocol();
     }
 
     @Override
     public void setProtocol(String protocol) {
-        entity.setProtocol(protocol);
+        updater.getEntity().setProtocol(protocol);
         update();
     }
 
     @Override
     public String getClientNote(String name) {
-        return (entity.getClientNotes() != null && name != null) ? entity.getClientNotes().get(name) : null;
+        return (updater.getEntity().getClientNotes() != null && name != null) ? updater.getEntity().getClientNotes().get(name) : null;
     }
 
     @Override
     public void setClientNote(String name, String value) {
-        if (entity.getClientNotes() == null) {
-            entity.setClientNotes(new ConcurrentHashMap<>());
+        if (updater.getEntity().getClientNotes() == null) {
+            updater.getEntity().setClientNotes(new ConcurrentHashMap<>());
         }
         if (name != null) {
             if (value == null) {
-                entity.getClientNotes().remove(name);
+                updater.getEntity().getClientNotes().remove(name);
             } else {
-                entity.getClientNotes().put(name, value);
+                updater.getEntity().getClientNotes().put(name, value);
             }
         }
         update();
@@ -148,41 +151,41 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public void removeClientNote(String name) {
-        if (entity.getClientNotes() != null && name != null) {
-            entity.getClientNotes().remove(name);
+        if (updater.getEntity().getClientNotes() != null && name != null) {
+            updater.getEntity().getClientNotes().remove(name);
         }
         update();
     }
 
     @Override
     public Map<String, String> getClientNotes() {
-        if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getClientNotes());
-        return copy;
+        if (updater.getEntity().getClientNotes() == null || updater.getEntity().getClientNotes().isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return new ConcurrentHashMap<>(updater.getEntity().getClientNotes());
     }
 
     @Override
     public void clearClientNotes() {
-        entity.setClientNotes(new ConcurrentHashMap<>());
+        updater.getEntity().setClientNotes(new ConcurrentHashMap<>());
         update();
     }
 
     @Override
     public String getAuthNote(String name) {
-        return (entity.getAuthNotes() != null && name != null) ? entity.getAuthNotes().get(name) : null;
+        return (updater.getEntity().getAuthNotes() != null && name != null) ? updater.getEntity().getAuthNotes().get(name) : null;
     }
 
     @Override
     public void setAuthNote(String name, String value) {
-        if (entity.getAuthNotes() == null) {
-            entity.setAuthNotes(new ConcurrentHashMap<>());
+        if (updater.getEntity().getAuthNotes() == null) {
+            updater.getEntity().setAuthNotes(new ConcurrentHashMap<>());
         }
         if (name != null) {
             if (value == null) {
-                entity.getAuthNotes().remove(name);
+                updater.getEntity().getAuthNotes().remove(name);
             } else {
-                entity.getAuthNotes().put(name, value);
+                updater.getEntity().getAuthNotes().put(name, value);
             }
         }
         update();
@@ -190,28 +193,28 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public void removeAuthNote(String name) {
-        if (entity.getAuthNotes() != null && name != null) {
-            entity.getAuthNotes().remove(name);
+        if (updater.getEntity().getAuthNotes() != null && name != null) {
+            updater.getEntity().getAuthNotes().remove(name);
         }
         update();
     }
 
     @Override
     public void clearAuthNotes() {
-        entity.setAuthNotes(new ConcurrentHashMap<>());
+        updater.getEntity().setAuthNotes(new ConcurrentHashMap<>());
         update();
     }
 
     @Override
     public void setUserSessionNote(String name, String value) {
-        if (entity.getUserSessionNotes() == null) {
-            entity.setUserSessionNotes(new ConcurrentHashMap<>());
+        if (updater.getEntity().getUserSessionNotes() == null) {
+            updater.getEntity().setUserSessionNotes(new ConcurrentHashMap<>());
         }
         if (name != null) {
             if (value == null) {
-                entity.getUserSessionNotes().remove(name);
+                updater.getEntity().getUserSessionNotes().remove(name);
             } else {
-                entity.getUserSessionNotes().put(name, value);
+                updater.getEntity().getUserSessionNotes().put(name, value);
             }
         }
         update();
@@ -220,38 +223,34 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public Map<String, String> getUserSessionNotes() {
-        if (entity.getUserSessionNotes() == null) {
-            return Collections.EMPTY_MAP;
+        if (updater.getEntity().getUserSessionNotes() == null) {
+            return Collections.emptyMap();
         }
-        ConcurrentHashMap<String, String> copy = new ConcurrentHashMap<>();
-        copy.putAll(entity.getUserSessionNotes());
-        return copy;
+        return new ConcurrentHashMap<>(updater.getEntity().getUserSessionNotes());
     }
 
     @Override
     public void clearUserSessionNotes() {
-        entity.setUserSessionNotes(new ConcurrentHashMap<>());
+        updater.getEntity().setUserSessionNotes(new ConcurrentHashMap<>());
         update();
 
     }
 
     @Override
     public Set<String> getRequiredActions() {
-        Set<String> copy = new HashSet<>();
-        copy.addAll(entity.getRequiredActions());
-        return copy;
+        return new HashSet<>(updater.getEntity().getRequiredActions());
     }
 
     @Override
     public void addRequiredAction(String action) {
-        entity.getRequiredActions().add(action);
+        updater.getEntity().getRequiredActions().add(action);
         update();
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        entity.getRequiredActions().remove(action);
+        updater.getEntity().getRequiredActions().remove(action);
         update();
 
     }
@@ -269,25 +268,25 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
 
-        return entity.getExecutionStatus();
+        return updater.getEntity().getExecutionStatus();
     }
 
     @Override
     public void setExecutionStatus(String authenticator, AuthenticationSessionModel.ExecutionStatus status) {
-        entity.getExecutionStatus().put(authenticator, status);
+        updater.getEntity().getExecutionStatus().put(authenticator, status);
         update();
 
     }
 
     @Override
     public void clearExecutionStatus() {
-        entity.getExecutionStatus().clear();
+        updater.getEntity().getExecutionStatus().clear();
         update();
     }
 
     @Override
     public UserModel getAuthenticatedUser() {
-        if (entity.getAuthUserId() == null) {
+        if (updater.getEntity().getAuthUserId() == null) {
             return null;
         }
 
@@ -308,17 +307,17 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
             return lua;
         } else {
-            return session.users().getUserById(getRealm(), entity.getAuthUserId());
+            return session.users().getUserById(getRealm(), updater.getEntity().getAuthUserId());
         }
     }
 
     @Override
     public void setAuthenticatedUser(UserModel user) {
         if (user == null) {
-            entity.setAuthUserId(null);
+            updater.getEntity().setAuthUserId(null);
             setUserSessionNote(SESSION_NOTE_LIGHTWEIGHT_USER, null);
         } else {
-            entity.setAuthUserId(user.getId());
+            updater.getEntity().setAuthUserId(user.getId());
 
             if (isLightweightUser(user)) {
                 LightweightUserAdapter lua = (LightweightUserAdapter) user;
@@ -335,11 +334,8 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof AuthenticationSessionModel)) return false;
+        return this == o || o instanceof AuthenticationSessionModel that && that.getTabId().equals(getTabId());
 
-        AuthenticationSessionModel that = (AuthenticationSessionModel) o;
-        return that.getTabId().equals(getTabId());
     }
 
     @Override

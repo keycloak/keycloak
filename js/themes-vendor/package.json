@@ -1,0 +1,39 @@
+{
+  "name": "themes-vendor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wireit",
+    "build:rewrite-import": "node scripts/rewrite-imports.js"
+  },
+  "wireit": {
+    "build": {
+      "command": "rollup --config && pnpm build:rewrite-import",
+      "files": [
+        "rollup.config.js"
+      ],
+      "output": [
+        "target/classes/theme/keycloak/common/resources/vendor/react",
+        "target/classes/theme/keycloak/common/resources/vendor/react-dom",
+        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim"
+      ]
+    }
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.7.2",
+    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
+    "@patternfly/patternfly": "^4.224.5",
+    "patternfly": "^3.59.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rfc4648": "^1.5.4",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-replace": "^6.0.2",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.40.0"
+  }
+}

@@ -26,6 +26,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -37,10 +39,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
@@ -50,6 +52,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.validation.ValidationUtil;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 /**
@@ -67,6 +70,9 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
     public ClientRepresentation create(ClientRegistrationContext context) {
         ClientRepresentation client = context.getClient();
+        if(client.getOptionalClientScopes() != null && client.getDefaultClientScopes() == null) {
+            client.setDefaultClientScopes(List.of(OIDCLoginProtocolFactory.BASIC_SCOPE));
+        }
 
         event.event(EventType.CLIENT_REGISTER);
 
@@ -106,7 +112,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
-            client.setDirectAccessGrantsEnabled(false);
+            client.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
 
             Stream<String> defaultRolesNames = getDefaultRolesStream(clientModel);
             if (defaultRolesNames != null) {
@@ -118,6 +124,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         } catch (ModelDuplicateException e) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier in use", Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
@@ -161,6 +171,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
+        RepresentationToModel.updateClientScopes(rep, client);
 
         if (rep.getDefaultRoles() != null) {
             updateDefaultRoles(client, rep.getDefaultRoles());
@@ -190,6 +201,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             session.getContext().setClient(client);
             session.clientPolicy().triggerOnEvent(new DynamicClientUpdatedContext(session, client, auth.getJwt(), client.getRealm()));
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
         ClientRegistrationPolicyManager.triggerAfterUpdate(context, registrationAuth, client);

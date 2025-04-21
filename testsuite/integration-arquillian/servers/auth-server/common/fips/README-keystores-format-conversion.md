@@ -8,7 +8,7 @@ keytool -importkeystore -srckeystore keycloak-fips.keystore.pkcs12 -destkeystore
     -providername BCFIPS \
     -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
     -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
-    -providerpath $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/1.0.2.3/bc-fips-1.0.2.3.jar \
+    -providerpath $MAVEN_REPO_HOME/org/bouncycastle/bc-fips/1.0.2.5/bc-fips-1.0.2.5.jar \
     -J-Djava.security.properties=$KEYCLOAK_SOURCES/testsuite/integration-arquillian/servers/auth-server/common/fips/kc.keystore-create.java.security
 ```
 Default password is `passwordpassword`.

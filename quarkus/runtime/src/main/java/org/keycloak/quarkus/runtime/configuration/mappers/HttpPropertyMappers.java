@@ -1,39 +1,67 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.quarkus.runtime.util.ClassPathUtils;
+import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
-import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
-final class HttpPropertyMappers {
+public final class HttpPropertyMappers {
+    private static final int MIN_MAX_THREADS = 50;
+    private static final String QUARKUS_HTTPS_CERT_FILES = "quarkus.http.ssl.certificate.files";
+    private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
+    private static final String QUARKUS_HTTPS_KEY_STORE_FILE = "quarkus.http.ssl.certificate.key-store-file";
+    private static final String QUARKUS_HTTPS_TRUST_STORE_FILE = "quarkus.http.ssl.certificate.trust-store-file";
+    public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
+    private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
 
     private HttpPropertyMappers(){}
 
-    public static PropertyMapper[] getHttpPropertyMappers() {
+    // Transform runtime exceptions obtained from Quarkus to ours with a relevant message
+    private static void setCustomExceptionTransformer() {
+        ExecutionExceptionHandler.addExceptionTransformer(TlsUtils.class, exception -> {
+            if (exception instanceof IOException ioe) {
+                return new PropertyException("Failed to load 'https-trust-store' or 'https-key-' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
+            } else if (exception instanceof IllegalArgumentException iae) {
+                if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
+                    return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
+                            "Adjust the file extension or specify the property.", iae);
+                } else if (iae.getMessage().contains(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE)) {
+                    return new PropertyException("Unable to determine 'https-key-store-type' automatically. " +
+                            "Adjust the file extension or specify the property.", iae);
+                } else {
+                    return new PropertyException(iae.getMessage(), iae);
+                }
+            }
+            return exception;
+        });
+    }
+
+    public static PropertyMapper<?>[] getHttpPropertyMappers() {
+        setCustomExceptionTransformer();
         return new PropertyMapper[] {
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_SERVER_ENABLED)
                         .to("quarkus.http.host-enabled")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
@@ -63,17 +91,26 @@ final class HttpPropertyMappers {
                         .to("quarkus.http.ssl.protocols")
                         .paramLabel("protocols")
                         .build(),
+                fromOption(HttpOptions.HTTPS_CERTIFICATES_RELOAD_PERIOD)
+                        .to("quarkus.http.ssl.certificate.reload-period")
+                        // -1 means no reload
+                        .transformer((value, context) -> "-1".equals(value) ? null : value)
+                        .paramLabel("reload period")
+                        .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_FILE)
-                        .to("quarkus.http.ssl.certificate.files")
+                        .to(QUARKUS_HTTPS_CERT_FILES)
+                        .transformer(HttpPropertyMappers::transformPath)
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_CERTIFICATE_KEY_FILE)
-                        .to("quarkus.http.ssl.certificate.key-files")
+                        .to(QUARKUS_HTTPS_CERT_KEY_FILES)
+                        .transformer(HttpPropertyMappers::transformPath)
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_FILE
-                            .withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
-                        .to("quarkus.http.ssl.certificate.key-store-file")
+                        .withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                        .to(QUARKUS_HTTPS_KEY_STORE_FILE)
+                        .transformer(HttpPropertyMappers::transformPath)
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_PASSWORD)
@@ -82,13 +119,13 @@ final class HttpPropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(HttpOptions.HTTPS_KEY_STORE_TYPE)
-                        .to("quarkus.http.ssl.certificate.key-store-file-type")
-                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
-                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
+                        .mapFrom(SecurityOptions.FIPS_MODE, HttpPropertyMappers::resolveKeyStoreType)
+                        .to(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE)
                         .paramLabel("type")
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_FILE)
-                        .to("quarkus.http.ssl.certificate.trust-store-file")
+                        .to(QUARKUS_HTTPS_TRUST_STORE_FILE)
+                        .transformer(HttpPropertyMappers::transformPath)
                         .paramLabel("file")
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_PASSWORD)
@@ -97,62 +134,79 @@ final class HttpPropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
-                        .to("quarkus.http.ssl.certificate.trust-store-file-type")
-                        .mapFrom(SecurityOptions.FIPS_MODE.getKey())
-                        .transformer(HttpPropertyMappers::resolveKeyStoreType)
+                        .mapFrom(SecurityOptions.FIPS_MODE, HttpPropertyMappers::resolveKeyStoreType)
+                        .to(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)
                         .paramLabel("type")
+                        .build(),
+                fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
+                        .to("quarkus.thread-pool.queue-size")
+                        .paramLabel("requests")
+                        .build(),
+                fromOption(HttpOptions.HTTP_POOL_MAX_THREADS)
+                        .to("quarkus.thread-pool.max-threads")
+                        .transformer(HttpPropertyMappers::resolveMaxThreads)
+                        .paramLabel("threads")
+                        .build(),
+                fromOption(HttpOptions.HTTP_METRICS_HISTOGRAMS_ENABLED)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .build(),
+                fromOption(HttpOptions.HTTP_METRICS_SLOS)
+                        .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
+                        .paramLabel("list of buckets")
                         .build()
         };
     }
 
-    private static Optional<String> getHttpEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
-        boolean enabled = Boolean.parseBoolean(value.get());
-        ConfigValue proxy = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + "proxy");
-
-        if (Environment.isDevMode() || Environment.isImportExportMode()
-                || (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
-            enabled = true;
+    public static void validateConfig() {
+        boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
+        Optional<String> certFile = getOptionalValue(QUARKUS_HTTPS_CERT_FILES);
+        Optional<String> keystoreFile = getOptionalValue(QUARKUS_HTTPS_KEY_STORE_FILE);
+        if (!enabled && certFile.isEmpty() && keystoreFile.isEmpty()) {
+            throw new PropertyException(Messages.httpsConfigurationNotSet());
         }
-
-        if (!enabled) {
-            ConfigValue proceed = context.proceed("kc.https-certificate-file");
-
-            if (proceed == null || proceed.getValue() == null) {
-                proceed = getMapper("quarkus.http.ssl.certificate.key-store-file").getConfigValue(context);
-            }
-
-            if (proceed == null || proceed.getValue() == null) {
-                addInitializationException(Messages.httpsConfigurationNotSet());
-            }
-        }
-
-        return of(enabled ? "enabled" : "disabled");
     }
 
-    private static String getDefaultKeystorePathValue() {
+    private static String transformPath(String value, ConfigSourceInterceptorContext context) {
+        return value == null ? value : ClassPathUtils.toResourceName(Path.of(value));
+    }
+
+    private static String getHttpEnabledTransformer(String value, ConfigSourceInterceptorContext context) {
+        return isHttpEnabled(value) ? "enabled" : "disabled";
+    }
+
+    private static boolean isHttpEnabled(String value) {
+        if (Environment.isDevMode() || Environment.isNonServerMode()) {
+            return true;
+        }
+        return Boolean.parseBoolean(value);
+    }
+
+    private static File getDefaultKeystorePathValue() {
         String homeDir = Environment.getHomeDir();
 
         if (homeDir != null) {
             File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
 
             if (file.exists()) {
-                return file.getAbsolutePath();
+                return file;
             }
         }
 
         return null;
     }
 
-    private static Optional<String> resolveKeyStoreType(Optional<String> value,
+    private static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (value.isPresent()) {
-            try {
-                if (FipsMode.valueOfOption(value.get()).equals(FipsMode.STRICT)) {
-                    return of("BCFKS");
-                }
-                return empty();
-            } catch (IllegalArgumentException ignore) {
-            }
+        if (FipsMode.STRICT.toString().equals(value)) {
+            return "BCFKS";
+        }
+        return null;
+    }
+
+    private static String resolveMaxThreads(String value,
+            ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        if (value == null) {
+            return String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors()));
         }
         return value;
     }

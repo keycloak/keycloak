@@ -17,11 +17,10 @@
 
 package org.keycloak.models;
 
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +30,8 @@ import java.util.stream.Stream;
  *
  */
 public interface GroupProvider extends Provider, GroupLookupProvider {
+
+    static boolean DEFAULT_ESCAPE_SLASHES = false;
 
     /**
      * Returns groups for the given realm.
@@ -125,7 +126,9 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param realm Realm.
      * @return Stream of all top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
+        return getTopLevelGroupsStream(realm, "", false, null, null);
+    }
 
     /**
      * Returns top level groups (i.e. groups without parent group) for the given realm.
@@ -135,7 +138,20 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getTopLevelGroupsStream(realm, "", false, firstResult, maxResults);
+    }
+
+    /**
+     * Returns top level groups (i.e. groups without parent group) for the given realm.
+     *
+     * @param realm Realm.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @param search The name that should be matched
+     * @return Stream of top level groups in the realm. Never returns {@code null}.
+     */
+    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
 
     /**
      * Creates a new group with the given name in the given realm.
@@ -143,7 +159,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      *
      * @param realm Realm.
      * @param name Name.
-     * @throws ModelDuplicateException If there is already a top-level group with the given name 
+     * @throws ModelDuplicateException If there is already a top-level group with the given name
      * @return Model of the created group.
      */
     default GroupModel createGroup(RealmModel realm, String name) {
@@ -157,7 +173,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param realm Realm.
      * @param id Id.
      * @param name Name.
-     * @throws ModelDuplicateException If a group with given id already exists or there is a top-level group with the given name 
+     * @throws ModelDuplicateException If a group with given id already exists or there is a top-level group with the given name
      * @return Model of the created group
      */
     default GroupModel createGroup(RealmModel realm, String id, String name) {
@@ -188,7 +204,22 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @throws ModelDuplicateException If a group with the given id already exists or the toParent group has a subgroup with the given name
      * @return Model of the created group
      */
-    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
+    default GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
+        return createGroup(realm, id, Type.REALM, name, toParent);
+    }
+
+    /**
+     * Creates a new group with the given name, id, name and parent to the given realm.
+     *
+     * @param realm Realm.
+     * @param id Id, will be generated if {@code null}.
+     * @param type the group type. if not set, defaults to {@link Type#REALM}
+     * @param name Name.
+     * @param toParent Parent group, or {@code null} if the group is top level group
+     * @throws ModelDuplicateException If a group with the given id already exists or the toParent group has a subgroup with the given name
+     * @return Model of the created group
+     */
+    GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent);
 
     /**
      * Removes the given group for the given realm.
@@ -222,4 +253,12 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @throws ModelDuplicateException If there is already a top level group name with the same name
      */
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
+
+    /**
+     * Called when a realm is removed.
+     * Should remove all groups that belong to the realm.
+     *
+     * @param realm a reference to the realm
+     */
+    void preRemove(RealmModel realm);
 }

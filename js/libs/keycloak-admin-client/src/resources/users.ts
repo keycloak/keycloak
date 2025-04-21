@@ -7,8 +7,10 @@ import type { RequiredActionAlias } from "../defs/requiredActionProviderRepresen
 import type RoleRepresentation from "../defs/roleRepresentation.js";
 import type { RoleMappingPayload } from "../defs/roleRepresentation.js";
 import type UserConsentRepresentation from "../defs/userConsentRepresentation.js";
-import type { UserProfileConfig } from "../defs/userProfileConfig.js";
-import type { UserProfileMetadata } from "../defs/userProfileMetadata.js";
+import type {
+  UserProfileConfig,
+  UserProfileMetadata,
+} from "../defs/userProfileMetadata.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";
@@ -27,6 +29,7 @@ interface UserBaseQuery {
   firstName?: string;
   lastName?: string;
   username?: string;
+  q?: string;
 }
 
 export interface UserQuery extends PaginationQuery, SearchQuery, UserBaseQuery {
@@ -489,6 +492,15 @@ export class Users extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/{id}/consents/{clientId}",
     urlParamKeys: ["id", "clientId"],
+  });
+
+  public getUnmanagedAttributes = this.makeRequest<
+    { id: string },
+    Record<string, string[]>
+  >({
+    method: "GET",
+    path: "/{id}/unmanagedAttributes",
+    urlParamKeys: ["id"],
   });
 
   constructor(client: KeycloakAdminClient) {

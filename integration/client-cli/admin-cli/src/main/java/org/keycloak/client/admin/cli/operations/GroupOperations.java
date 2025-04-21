@@ -18,10 +18,9 @@ package org.keycloak.client.admin.cli.operations;
 
 import java.util.List;
 
-import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doDeleteJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.doPostJSON;
-import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
+import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.cli.util.HttpUtil.doDeleteJSON;
+import static org.keycloak.client.cli.util.HttpUtil.doPostJSON;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -29,11 +28,11 @@ import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
 public class GroupOperations {
 
     public static String getIdFromName(String rootUrl, String realm, String auth, String groupname) {
-        return getIdForType(rootUrl, realm, auth, "groups", "name", groupname, "name");
+        return OperationUtils.getIdForType(rootUrl, realm, auth, "groups", "search", groupname, "name", () -> new String[] { "exact", "true" });
     }
 
     public static String getIdFromPath(String rootUrl, String realm, String auth, String path) {
-        return getIdForType(rootUrl, realm, auth, "groups", "path", path, "path");
+        return OperationUtils.getIdForType(rootUrl, realm, auth, "groups", "path", path, "path");
     }
 
     public static void addRealmRoles(String rootUrl, String realm, String auth, String groupid, List<?> roles) {

@@ -20,31 +20,41 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_IMPORT;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.quarkus.runtime.configuration.mappers.ImportPropertyMappers;
 import picocli.CommandLine.Command;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.EnumSet;
 
 @Command(name = Import.NAME,
         header = "Import data from a directory or a file.",
         description = "%nImport data from a directory or a file.")
-public final class Import extends AbstractExportImportCommand implements Runnable {
+public final class Import extends AbstractNonServerCommand implements Runnable {
 
     public static final String NAME = "import";
 
-    public Import() {
-        super(ACTION_IMPORT);
+    @Override
+    protected void doBeforeRun() {
+        if (System.getProperty(ExportImportConfig.REPLACE_PLACEHOLDERS) == null) {
+            ExportImportConfig.setReplacePlaceholders(true);
+        }
+        ExportImportConfig.setAction(ACTION_IMPORT);
     }
 
     @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream().filter(optionCategory ->
-                optionCategory != OptionCategory.EXPORT).collect(Collectors.toList());
+    public void validateConfig() {
+        ImportPropertyMappers.validateConfig();
+        super.validateConfig();
     }
 
     @Override
     public String getName() {
         return NAME;
+    }
+
+    @Override
+    protected EnumSet<OptionCategory> excludedCategories() {
+        return EnumSet.of(OptionCategory.EXPORT);
     }
 
 }

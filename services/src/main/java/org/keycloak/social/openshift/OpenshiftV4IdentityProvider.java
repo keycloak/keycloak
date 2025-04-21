@@ -94,10 +94,9 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
                 getJsonProperty(metadata, "uid") != null
                         ? getJsonProperty(metadata, "uid")
                         : tryGetKubeAdmin(metadata)
-        );
+        , getConfig());
         user.setUsername(getJsonProperty(metadata, "name"));
         user.setName(getJsonProperty(profile, "fullName"));
-        user.setIdpConfig(getConfig());
         user.setIdp(this);
         return user;
     }

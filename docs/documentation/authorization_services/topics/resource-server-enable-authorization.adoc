@@ -4,7 +4,8 @@
 You can turn your OIDC client into a resource server and enable fine-grained authorization.
 
 .Procedure
-. Toggle *Authorization Enabled* to *`On*.
+. In the client settings page, scroll down to the *Capability Config* section.
+. Toggle *Authorization Enabled* to *On*.
 . Click *Save*.
 +
 .Enabling authorization services
@@ -68,7 +69,7 @@ Disables the evaluation of all policies and allows access to all resources.
 +
 * *Decision Strategy*
 +
-This configurations changes how the policy evaluation engine decides whether or not a resource or scope should be granted based on the outcome from all evaluated permissions. `Affirmative` means that at least one permission must evaluate to a positive decision in order grant access to a resource and its scopes. `Unanimous` means that all permissions must evaluate to a positive decision in order for the final decision to be also positive. As an example, if two permissions for a same resource or scope are in conflict (one of them is granting access and the other is denying access), the permission to the resource or scope will be granted if the chosen strategy is `Affirmative`. Otherwise, a single deny from any permission will also deny access to the resource or scope.
+This configuration changes how the policy evaluation engine decides whether or not a resource or scope should be granted based on the outcome from all evaluated permissions. `Affirmative` means that at least one permission must evaluate to a positive decision in order grant access to a resource and its scopes. `Unanimous` means that all permissions must evaluate to a positive decision in order for the final decision to be also positive. As an example, if two permissions for a same resource or scope are in conflict (one of them is granting access and the other is denying access), the permission to the resource or scope will be granted if the chosen strategy is `Affirmative`. Otherwise, a single deny from any permission will also deny access to the resource or scope.
 +
 * *Remote Resource Management*
 +

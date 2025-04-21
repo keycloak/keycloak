@@ -35,7 +35,6 @@ import org.keycloak.services.messages.Messages;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -75,7 +74,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             logger.debugf("Transient brokering requested. Recording user details for account '%s' and from identity provider '%s' .",
                     username, brokerContext.getIdpConfig().getAlias());
 
-            federatedUser = new LightweightUserAdapter(session, brokerContext.getBrokerSessionId());
+            federatedUser = new LightweightUserAdapter(session, context.getAuthenticationSession().getParentSession().getId());
             federatedUser.setUsername(username);
         } else if (duplication == null) {
             logger.debugf("No duplication detected. Creating account for user '%s' and linking with identity provider '%s' .",
@@ -87,7 +86,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         if (federatedUser != null) {
             federatedUser.setEnabled(true);
 
-            for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
+            for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
                     federatedUser.setAttribute(attr.getKey(), attr.getValue());
                 }

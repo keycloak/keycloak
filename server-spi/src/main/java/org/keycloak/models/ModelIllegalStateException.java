@@ -42,8 +42,4 @@ public class ModelIllegalStateException extends ModelException {
     public ModelIllegalStateException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public ModelIllegalStateException(Throwable cause) {
-        super(cause);
-    }
 }

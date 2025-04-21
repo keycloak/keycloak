@@ -30,11 +30,6 @@
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
     <name>Auth Server Services - Testsuite Providers</name>
 
-    <properties>
-        <js-adapter.version>${project.version}</js-adapter.version>
-        <js-adapter.file.path>${project.basedir}/target/classes/javascript</js-adapter.file.path>
-    </properties>
-
     <dependencies>
 
         <!-- Keycloak deps for tests -->
@@ -55,11 +50,16 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-services</artifactId>
+            <artifactId>keycloak-model-storage-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
+        </dependency>
+        <!-- pick up the transitive dependencies for the quarkus logmanager -->
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -77,22 +77,11 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-client-hotrod-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-tasks-api</artifactId>
-            <version>${infinispan.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
@@ -108,38 +97,5 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-
-        <plugins>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-javascript-adapter</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter-jar</artifactId>
-                                    <version>${js-adapter.version}</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${js-adapter.file.path}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <includes>keycloak.js</includes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 </project>

@@ -41,11 +41,19 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -67,19 +75,21 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
     private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
-    private KeycloakSession session;
-    private ResourceServer resourceServer;
+    private final KeycloakSession session;
+    private final ResourceServer resourceServer;
 
     public ResourceSetService(KeycloakSession session, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -91,8 +101,15 @@ public class ResourceSetService {
 
     @POST
     @NoCache
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "201", description = "Created",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "400", description = "Bad Request")
+    })
     public Response createPost(ResourceRepresentation resource) {
         if (resource == null) {
             return Response.status(Status.BAD_REQUEST).build();
@@ -106,6 +123,9 @@ public class ResourceSetService {
     }
 
     public ResourceRepresentation create(ResourceRepresentation resource) {
+        // direct creation of resources it's not expected for admin permission
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
+
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceOwnerRepresentation owner = resource.getOwner();
@@ -131,16 +151,21 @@ public class ResourceSetService {
         return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
-    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response update(@PathParam("resource-id") String id, ResourceRepresentation resource) {
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource.getId());
+        Resource model = resourceStore.findById(resourceServer, resource.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -153,12 +178,17 @@ public class ResourceSetService {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    @APIResponses(value = {
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Response delete(@PathParam("resource-id") String id) {
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (resource == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -167,25 +197,32 @@ public class ResourceSetService {
         //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
         ResourceRepresentation resourceRep = toRepresentation(resource, resourceServer, authorization);
 
-        storeFactory.getResourceStore().delete(resourceServer.getRealm(), id);
+        storeFactory.getResourceStore().delete(id);
 
         audit(resourceRep, OperationType.DELETE);
 
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{resource-id}")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response findById(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response findById(@PathParam("resource-id") String id) {
         return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -194,14 +231,21 @@ public class ResourceSetService {
         return Response.ok(toRepresentation.apply(model)).build();
     }
 
-    @Path("{id}/scopes")
+    @Path("{resource-id}/scopes")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getScopes(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ScopeRepresentation.class, type = SchemaType.ARRAY))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response getScopes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -237,15 +281,22 @@ public class ResourceSetService {
         return Response.ok(scopes).build();
     }
 
-    @Path("{id}/permissions")
+    @Path("{resource-id}/permissions")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getPermissions(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = PolicyRepresentation.class, type = SchemaType.ARRAY))
+        ),
+        @APIResponse(responseCode = "404", description = "Not found")
+    })
+    public Response getPermissions(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = resourceStore.findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -266,7 +317,7 @@ public class ResourceSetService {
                 resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
                 resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-            for (Resource resourceType : resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilter, null, null)) {
+            for (Resource resourceType : resourceStore.find(resourceServer, resourceFilter, null, null)) {
                 policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
         }
@@ -295,14 +346,14 @@ public class ResourceSetService {
         return Response.ok(representation).build();
     }
 
-    @Path("{id}/attributes")
+    @Path("{resource-id}/attributes")
     @GET
     @NoCache
-    @Produces("application/json")
-    public Response getAttributes(@PathParam("id") String id) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAttributes(@PathParam("resource-id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -314,9 +365,17 @@ public class ResourceSetService {
     @Path("/search")
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(
+            responseCode = "200",
+            content = @Content(schema = @Schema(implementation = ResourceRepresentation.class))
+        ),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "204", description = "No Content")
+    })
     public Response find(@QueryParam("name") String name) {
-        this.auth.realm().requireViewAuthorization();
+        this.auth.realm().requireViewAuthorization(resourceServer);
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -334,7 +393,11 @@ public class ResourceSetService {
 
     @GET
     @NoCache
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponse(
+        responseCode = "200",
+        content = @Content(schema = @Schema(implementation = ResourceRepresentation.class, type = SchemaType.ARRAY))
+    )
     public Response find(@QueryParam("_id") String id,
                          @QueryParam("name") String name,
                          @QueryParam("uri") String uri,
@@ -418,7 +481,7 @@ public class ResourceSetService {
             search.put(Resource.FilterOption.SCOPE_ID, scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
-        List<Resource> resources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+        List<Resource> resources = storeFactory.getResourceStore().find(this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
             Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
@@ -426,7 +489,7 @@ public class ResourceSetService {
             attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
             attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getClientId()});
 
-            List<Resource> serverResources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
+            List<Resource> serverResources = storeFactory.getResourceStore().find(this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override
@@ -463,13 +526,13 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.realm().requireViewAuthorization();
+            this.auth.realm().requireViewAuthorization(resourceServer);
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.realm().requireManageAuthorization();
+            this.auth.realm().requireManageAuthorization(resourceServer);
         }
     }
 

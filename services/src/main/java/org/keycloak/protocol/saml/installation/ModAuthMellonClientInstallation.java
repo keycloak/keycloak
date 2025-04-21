@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.saml.installation;
 
+import java.nio.charset.StandardCharsets;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.keycloak.Config;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -59,12 +64,12 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
             if (samlClient.requiresClientSignature()) {
                 if (samlClient.getClientSigningPrivateKey() != null) {
                     zip.putNextEntry(new ZipEntry(clientDirName + "/client-private-key.pem"));
-                    zip.write(samlClient.getClientSigningPrivateKey().getBytes());
+                    zip.write(createClientSigningPrivateKeyRfc7468Representation(samlClient.getClientSigningPrivateKey()));
                     zip.closeEntry();
                 }
                 if (samlClient.getClientSigningCertificate() != null) {
                     zip.putNextEntry(new ZipEntry(clientDirName + "/client-cert.pem"));
-                    zip.write(samlClient.getClientSigningCertificate().getBytes());
+                    zip.write(createClientSigningCertificateRfc7468Representation(samlClient.getClientSigningCertificate()));
                     zip.closeEntry();
                 }
             }
@@ -131,5 +136,23 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
     @Override
     public String getId() {
         return "mod-auth-mellon";
+    }
+
+    private static byte[] createClientSigningPrivateKeyRfc7468Representation(String clientSigningPrivateKey) {
+        String resultAsString = PemUtils.addPrivateKeyBeginEnd(wrapAt64Chars(clientSigningPrivateKey));
+        return resultAsString.getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private static byte[] createClientSigningCertificateRfc7468Representation(String clientSigningCertificate) {
+        String resultAsString = PemUtils.addCertificateBeginEnd(wrapAt64Chars(clientSigningCertificate));
+        return resultAsString.getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private static String wrapAt64Chars(String text) {
+        return Pattern.compile(".{1,64}")
+                .matcher(text)
+                .results()
+                .map(MatchResult::group)
+                .collect(Collectors.joining("\n"));
     }
 }

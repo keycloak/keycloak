@@ -22,6 +22,8 @@ import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.Test;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -67,6 +69,20 @@ public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperT
         } catch (IOException e) {}
 
         return user;
+    }
+
+    @Test
+    public void valuesMatchIfNullClaimsSpecified() {
+        createAdvancedGroupMapper(null, false, MAPPER_TEST_GROUP_PATH);
+        createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("some value").build())
+                .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2, ImmutableList.<String>builder().add("some value").build())
+                .build());
+
+        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+
+        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
+        assertThatUserHasBeenAssignedToGroup(user);
     }
 
     @Override

@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
@@ -266,12 +267,21 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     public URI getActionUrl(String executionId, String code) {
         ClientModel client = processor.getAuthenticationSession().getClient();
-        return LoginActionsService.registrationFormProcessor(processor.getUriInfo())
+        UriBuilder builder = LoginActionsService.registrationFormProcessor(processor.getUriInfo())
                 .queryParam(LoginActionsService.SESSION_CODE, code)
                 .queryParam(Constants.EXECUTION, executionId)
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())
-                .build(processor.getRealm().getName());
+                .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(processor.getSession(), processor.getAuthenticationSession()));
+
+        MultivaluedMap<String, String> query = processor.getSession().getContext().getUri().getQueryParameters();
+        List<String> token = query.get(Constants.TOKEN);
+
+        if (token != null && !token.isEmpty()) {
+            builder.queryParam(Constants.TOKEN, token.get(0));
+        }
+
+        return builder.build(processor.getRealm().getName());
     }
 
 

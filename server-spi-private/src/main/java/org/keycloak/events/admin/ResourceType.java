@@ -66,6 +66,11 @@ public enum ResourceType {
     /**
      *
      */
+    , REQUIRED_ACTION_CONFIG
+
+    /**
+     *
+     */
     , REQUIRED_ACTION
 
     /**
@@ -186,5 +191,20 @@ public enum ResourceType {
     /**
      *
      */
-    , CUSTOM;
+    , CUSTOM
+
+    /**
+     * The user profile configuration
+     */
+    , USER_PROFILE
+
+    /**
+     *
+     */
+    , ORGANIZATION
+    
+    /**
+     *
+     */
+    , ORGANIZATION_MEMBERSHIP;
 }

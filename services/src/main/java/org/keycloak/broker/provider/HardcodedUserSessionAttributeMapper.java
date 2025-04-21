@@ -114,6 +114,6 @@ public class HardcodedUserSessionAttributeMapper extends AbstractIdentityProvide
     private void setHardcodedUserSessionAttribute(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(ATTRIBUTE);
         String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
-        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
+        context.setSessionNote(attribute, attributeValue);
     }
 }

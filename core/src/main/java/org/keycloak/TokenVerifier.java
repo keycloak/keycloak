@@ -32,8 +32,12 @@ import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,11 +116,11 @@ public class TokenVerifier<T extends JsonWebToken> {
 
             return true;
         }
-    };
+    }
 
     public static class TokenTypeCheck implements Predicate<JsonWebToken> {
 
-        private static final TokenTypeCheck INSTANCE_DEFAULT_TOKEN_TYPE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP));
+        private static final TokenTypeCheck INSTANCE_DEFAULT_TOKEN_TYPE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_BEARER));
 
         private final List<String> tokenTypes;
 
@@ -131,7 +135,7 @@ public class TokenVerifier<T extends JsonWebToken> {
             }
             throw new VerificationException("Token type is incorrect. Expected '" + tokenTypes.toString() + "' but was '" + t.getType() + "'");
         }
-    };
+    }
 
 
     public static class AudienceCheck implements Predicate<JsonWebToken> {
@@ -159,7 +163,7 @@ public class TokenVerifier<T extends JsonWebToken> {
 
             throw new VerificationException("Expected audience not available in the token");
         }
-    };
+    }
 
 
     public static class IssuedForCheck implements Predicate<JsonWebToken> {
@@ -253,7 +257,6 @@ public class TokenVerifier<T extends JsonWebToken> {
     public TokenVerifier<T> withDefaultChecks()  {
         return withChecks(
           RealmUrlCheck.NULL_INSTANCE,
-          SUBJECT_EXISTS_CHECK,
           TokenTypeCheck.INSTANCE_DEFAULT_TOKEN_TYPE,
           IS_ACTIVE
         );
@@ -315,7 +318,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     /**
      * Sets the key for verification of HMAC-based signature.
      * @param secretKey
-     * @return 
+     * @return
      */
     public TokenVerifier<T> secretKey(SecretKey secretKey) {
         this.secretKey = secretKey;
@@ -430,7 +433,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     public void verifySignature() throws VerificationException {
         if (this.verifier != null) {
             try {
-                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature())) {
+                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }
             } catch (Exception e) {

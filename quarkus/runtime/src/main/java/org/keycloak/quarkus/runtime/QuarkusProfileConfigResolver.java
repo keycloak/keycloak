@@ -9,7 +9,7 @@ public class QuarkusProfileConfigResolver extends CommaSeparatedListProfileConfi
         super(getConfig("kc.features"), getConfig("kc.features-disabled"));
     }
 
-    private static String getConfig(String key) {
+    static String getConfig(String key) {
         return Configuration.getRawPersistedProperty(key)
                 .orElse(Configuration.getRawValue(key));
     }

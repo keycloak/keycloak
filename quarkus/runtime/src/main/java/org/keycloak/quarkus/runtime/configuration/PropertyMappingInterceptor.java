@@ -16,12 +16,25 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.apache.commons.collections4.IteratorUtils;
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import io.smallrye.config.Priorities;
+import jakarta.annotation.Priority;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -34,35 +47,100 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  * from Keycloak (e.g.: database) is mapped to multiple properties in Quarkus.
  *
  * <p>This interceptor must execute after the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} so that expressions
- * are properly resolved before executing this interceptor. Hence, leaving the default priority.
+ * are properly resolved before executing this interceptor.
+ * <p>
+ * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
+@Priority(Priorities.APPLICATION - 10)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
+
+    private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();
+
+    public static void disable() {
+        disable.set(true);
+    }
+
+    public static void enable() {
+        disable.remove();
+    }
+
+    /**
+     * Provides a curated iteration of names based upon the mapping logic.
+     * Quarkus logic, such as config mapping, is dependent upon seeing the quarkus
+     * form of the key. We want to expose that here, rather than in the config sources
+     * because we lack a simple way to do name mapping for some sources, such as the
+     * keystore config source.
+     * <p>
+     * We currently expose:
+     * <li>anything based upon a property mapper that has a map to a quarkus property - including
+     * our kc. properties that have defaults.
+     * <li>wildcard key names for wildcard keys that map from a keycloak property (e.g. kc.log-level)
+     *
+     * We selectively exclude:
+     * <li>Config keystore properties at build time
+     */
+    @Override
+    public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
+        Iterable<String> iterable = () -> context.iterateNames();
+
+        final Set<PropertyMapper<?>> allMappers = PropertyMappers.getMappers();
+
+        //TODO: this is still not a complete list - things like quarkus.log.console.enabled
+        // come from kc.log - but via a map from, not to.
+        // so we'd need additional logic like the getWildcardMappedFrom case for that
+
+        boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
+
+        var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+
+            if (mapper == null) {
+                return Stream.of(name);
+            }
+            if (filterRuntime && mapper.getCategory() == OptionCategory.CONFIG) {
+                return Stream.of(); // advertising the keystore type causes the keystore to be used early
+            }
+            allMappers.remove(mapper);
+
+            if (!mapper.hasWildcard()) {
+                // this is not a wildcard value, but may map to wildcards
+                // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level
+                var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
+                if (wildCard != null) {
+                    ConfigValue value = context.proceed(name);
+                    if (value != null && value.getValue() != null) {
+                        return Stream.concat(Stream.of(name), wildCard.getToFromWildcardTransformer(value.getValue()));
+                    }
+                }
+            }
+
+            mapper = mapper.forKey(name);
+
+            // there is a corner case here: -1 for the reload period has no 'to' value.
+            // if that becomes an issue we could use more metadata to perform a full mapping
+            return toDistinctStream(name, mapper.getTo());
+        });
+
+        // include anything remaining that has a default value
+        var defaultStream = allMappers.stream()
+                .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                        && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
+                .flatMap(m -> toDistinctStream(m.getTo()));
+
+        return IteratorUtils.chainedIterator(baseStream.iterator(), defaultStream.iterator());
+    }
+
+    private static Stream<String> toDistinctStream(String... values) {
+        return Stream.of(values).filter(Objects::nonNull).distinct();
+    }
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        ConfigValue value = PropertyMappers.getValue(context, name);
-
-        if (value == null || value.getValue() == null) {
-            return null;
+        if (Boolean.TRUE.equals(disable.get())) {
+            return context.proceed(name);
         }
 
-        if (!value.getValue().contains("${")) {
-            return value;
-        }
-
-        // Our mappers might have returned a value containing an expression ${...}.
-        // However, ExpressionConfigSourceInterceptor was already executed before (to expand e.g. env vars in config file).
-        // Hence, we need to manually resolve these expressions here. Not ideal, but there's no other way (at least I haven't found one).
-        return value.withValue(
-                StringPropertyReplacer.replaceProperties(value.getValue(),
-                        property -> {
-                            ConfigValue prop = context.proceed(property);
-
-                            if (prop == null) {
-                                return null;
-                            }
-
-                            return prop.getValue();
-                        }));
+        // Call through NestedPropertyMappingInterceptor to track what we are currently getting the value for
+        return NestedPropertyMappingInterceptor.getValueFromPropertyMappers(context, name);
     }
 }

@@ -1,0 +1,2 @@
+- hosts: keycloak
+  roles: [mvn_ec2_runner]

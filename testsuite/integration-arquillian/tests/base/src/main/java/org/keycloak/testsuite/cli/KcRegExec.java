@@ -3,20 +3,7 @@ package org.keycloak.testsuite.cli;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 import org.keycloak.testsuite.cli.exec.AbstractExecBuilder;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FilterOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

@@ -44,7 +44,7 @@ public class IntegerValidator extends AbstractNumberValidator implements Configu
         if (value instanceof Integer || value instanceof Long) {
             return (Number) value;
         }
-        return new Long(value.toString());
+        return Long.valueOf(value.toString());
     }
 
     @Override

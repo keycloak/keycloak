@@ -10,7 +10,7 @@ import {
 
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 
@@ -69,7 +69,7 @@ export const EmptyExecutionState = ({
               <Title headingLevel="h2" size={TitleSizes.md}>
                 {t(`${section}Title`)}
               </Title>
-              <p>{t(`authentication-help:${section}`)}</p>
+              <p>{t(section)}</p>
             </FlexItem>
             <Flex alignSelf={{ default: "alignSelfCenter" }}>
               <FlexItem>

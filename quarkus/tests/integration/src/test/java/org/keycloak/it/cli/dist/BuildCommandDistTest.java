@@ -28,7 +28,6 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
 
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
@@ -40,8 +39,8 @@ import java.nio.file.Paths;
 class BuildCommandDistTest {
 
     @Test
-    @Launch({ "build" })
-    void resetConfig(LaunchResult result) {
+    @Launch({ "build", "--db=dev-file" })
+    void resetConfig(CLIResult result) {
         assertTrue(result.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
         assertTrue(result.getOutput().contains("Quarkus augmentation completed"),
@@ -54,7 +53,7 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "--profile=dev", "build" })
-    void failIfDevProfile(LaunchResult result) {
+    void failIfDevProfile(CLIResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertTrue(result.getErrorOutput().contains("You can not 'build' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
@@ -66,53 +65,41 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
-    void testFailRuntimeOptions(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testFailRuntimeOptions(CLIResult cliResult) {
         cliResult.assertError("Run time option: '--db-username' not usable with build");
     }
 
     @Test
     @WithEnvVars({"KC_DB", "invalid"})
     @Launch({ "build" })
-    void testFailInvalidOptionInEnv(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Invalid value for option 'kc.db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource KcEnvVarConfigSource");
+    void testFailInvalidOptionInEnv(CLIResult cliResult) {
+        cliResult.assertError("Invalid value for option 'KC_DB': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
     public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
         CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
-        cliResult.assertError("Invalid value for option 'kc.db': foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. From ConfigSource PropertiesConfigSource[source");
+        cliResult.assertError("Invalid value for option 'kc.db' in keycloak.conf: foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
         distribution.setProperty("proxy", "edge");
-        distribution.run("build", "--cache=local");
+        distribution.run("build");
         distribution.removeProperty("proxy");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
-        result.assertMessage("Key material not provided to setup HTTPS");
+        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG);
+        result.assertError("Key material not provided to setup HTTPS");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     @Launch({"build", "--db=oracle"})
-    void missingOracleJdbcDriver(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-
-        String dbDriver = Database.getDriver("oracle", true).orElse("");
-        String errorMessage = String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver);
-
-        boolean isProduct = System.getProperty("product") != null;
-        if (isProduct) {
-            cliResult.assertError(errorMessage);
-            cliResult.assertNoBuild();
-        } else {
-            cliResult.assertNoMessage(errorMessage);
-            cliResult.assertBuild();
-        }
+    void missingOracleJdbcDriver(CLIResult cliResult) {
+        String dbDriver = Database.getDriver("oracle", false).orElse("");
+        cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
+        cliResult.assertNoBuild();
     }
 }

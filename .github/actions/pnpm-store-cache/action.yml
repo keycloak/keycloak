@@ -1,0 +1,20 @@
+name: Cache PNPM store
+description: Caches the PNPM store to speed up the build.
+
+runs:
+  using: composite
+  steps:
+    - id: weekly-cache-key
+      name: Key for weekly rotation of cache
+      shell: bash
+      run: echo "key=pnpm-store-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      name: Cache PNPM store
+      with:
+        # See: https://pnpm.io/npmrc#store-dir
+        path: |
+          ~/.local/share/pnpm/store
+          ~/AppData/Local/pnpm/store
+          ~/Library/pnpm/store
+        key: ${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}

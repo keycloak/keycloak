@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -55,8 +55,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         // login using another session
         configureRequiredActionsToUser("test-user@localhost");
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
-        OAuthClient oauth2 = new OAuthClient();
-        oauth2.init(driver2);
+        OAuthClient oauth2 = oauth.newConfig().driver(driver2);;
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();
         assertEquals(1, testUser.getUserSessions().size());
@@ -64,6 +63,12 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         // add the action and change it
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
         changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
+
+        if (logoutOtherSessions) {
+            events.expectLogout(event1.getSessionId())
+                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_EMAIL.name())
+                    .assertEvent();
+        }
 
         events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
                 .detail(Details.UPDATED_EMAIL, "new@localhost").assertEvent();

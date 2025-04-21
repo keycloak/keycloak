@@ -20,7 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -74,6 +74,7 @@ public class ClientRegistrationPolicyResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_REGISTRATION_POLICY)
     @Operation( summary="Base path for retrieve providers with the configProperties properly filled")
     public Stream<ComponentTypeRepresentation> getProviders() {
+        auth.realm().requireViewRealm();
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientRegistrationPolicy.class)
                 .map((ProviderFactory factory) -> {
                     ClientRegistrationPolicyFactory clientRegFactory = (ClientRegistrationPolicyFactory) factory;

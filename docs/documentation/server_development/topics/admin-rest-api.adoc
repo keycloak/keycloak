@@ -67,35 +67,7 @@ curl \
   "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 
-ifeval::[{project_community}==true]
-=== Example using Java
-
-There's a Java client library for the Admin REST API that makes it easy to use from Java. To use it from your application add a dependency on the
-`keycloak-admin-client` library.
-
-The following example shows how to use the Java client library to get the details of the master realm:
-
-[source,java,subs="attributes+"]
-----
-
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.representations.idm.RealmRepresentation;
-...
-
-Keycloak keycloak = Keycloak.getInstance(
-    "http://localhost:8080{kc_base_path}",
-    "master",
-    "admin",
-    "password",
-    "admin-cli");
-RealmRepresentation realm = keycloak.realm("master").toRepresentation();
-----
-
-Complete Javadoc for the admin client is available at {apidocs_link}[{apidocs_name}].
-endif::[]
-
 === Additional resources
 [role="_additional-resources"]
 * {adminguide_link}[{adminguide_name}]
-* {adapterguide_link}[{adapterguide_name}]
 * {apidocs_link}[{apidocs_name}]

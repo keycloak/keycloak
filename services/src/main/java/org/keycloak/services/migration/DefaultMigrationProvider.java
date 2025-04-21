@@ -103,8 +103,18 @@ public class DefaultMigrationProvider implements MigrationProvider {
     }
 
     @Override
-    public void addOIDCAcrClientScope(RealmModel realm) {
-        getOIDCLoginProtocolFactory().addAcrClientScope(realm);
+    public ClientScopeModel addOIDCAcrClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addAcrClientScope(realm);
+    }
+
+    @Override
+    public ClientScopeModel addOIDCBasicClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addBasicClientScope(realm);
+    }
+
+    @Override
+    public ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm) {
+        return getOIDCLoginProtocolFactory().addServiceAccountClientScope(realm);
     }
 
     @Override

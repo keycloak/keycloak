@@ -20,6 +20,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -69,12 +70,21 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
         Response cancelled(IdentityProviderModel idpConfig);
 
         /**
+         * Indicates that login with the particular IDP should be retried
+         *
+         * @param identityProvider provider to retry login
+         * @param authSession authentication session
+         * @return see description
+         */
+        Response retryLogin(IdentityProvider<?> identityProvider, AuthenticationSessionModel authSession);
+
+        /**
          * Called when error happened on the IDP side.
          * Assumption is that authenticationSession is set in the {@link org.keycloak.models.KeycloakContext} when this method is called
          *
          * @return see description
          */
-        Response error(String message);
+        Response error(IdentityProviderModel idpConfig, String message);
     }
 
     C getConfig();
@@ -146,4 +156,19 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
             || compatibleIdps.contains(getConfig().getProviderId());
     }
 
+    /**
+     * Reload keys for the identity provider if permitted in it.For example OIDC or
+     * SAML providers will reload the keys from the jwks or metadata endpoint.
+     * @return true if reloaded, false if not
+     */
+    default boolean reloadKeys() {
+        return false;
+    }
+
+    /**
+     * @return true if identity provider supports long value of "state" parameter (or "RelayState" parameter), which can hold relatively big amount of context data
+     */
+    default boolean supportsLongStateParameter() {
+        return true;
+    }
 }

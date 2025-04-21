@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * <p>Holds attributes, their values and provides utlity methods to manage them.
+ * <p>Holds attributes, their values and provides utility methods to manage them.
  *
  * <p>In the future, it may be useful to provide different implementations for this interface in order to plug or integrate with different
  * Policy Information Point (PIP).</p>

@@ -17,10 +17,11 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.LegacyUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -32,14 +33,15 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -100,7 +102,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
-            userProviderCache.registerUserInvalidation(realm, cached);
+            userProviderCache.registerUserInvalidation(cached);
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -174,52 +176,73 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             value = KeycloakModelUtils.toLowerCaseSafe(value);
         }
+        if (updated == null) {
+            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+            Set<String> newEntries = value != null ? Set.of(value) : Collections.emptySet();
+            if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
+                return;
+            }
+        }
+        getDelegateForUpdate();
         updated.setSingleAttribute(name, value);
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
             if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
+        if (updated == null) {
+            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
+            Set<String> newEntries;
+            if (values == null) {
+                newEntries = new HashSet<>();
+            } else {
+                newEntries = new HashSet<>(values);
+            }
+            if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
+                return;
+            }
+        }
+        getDelegateForUpdate();
         updated.setAttribute(name, values);
     }
 
     @Override
     public void removeAttribute(String name) {
-        getDelegateForUpdate();
-        updated.removeAttribute(name);
+        if (getFirstAttribute(name) != null) {
+            getDelegateForUpdate();
+            updated.removeAttribute(name);
+        }
     }
 
     @Override
     public String getFirstAttribute(String name) {
         if (updated != null) return updated.getFirstAttribute(name);
-        return cached.getFirstAttribute(name, modelSupplier);
+        return cached.getFirstAttribute(keycloakSession, name, modelSupplier);
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
         if (updated != null) return updated.getAttributeStream(name);
-        List<String> result = cached.getAttributes(modelSupplier).get(name);
+        List<String> result = cached.getAttributes(keycloakSession, modelSupplier).get(name);
         return (result == null) ? Stream.empty() : result.stream();
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
         if (updated != null) return updated.getAttributes();
-        return cached.getAttributes(modelSupplier);
+        return cached.getAttributes(keycloakSession, modelSupplier);
     }
 
     @Override
     public Stream<String> getRequiredActionsStream() {
         if (updated != null) return updated.getRequiredActionsStream();
-        return cached.getRequiredActions(modelSupplier).stream();
+        return cached.getRequiredActions(keycloakSession, modelSupplier).stream();
     }
 
     @Override
@@ -230,8 +253,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -242,8 +267,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(String action) {
-        getDelegateForUpdate();
-        updated.removeRequiredAction(action);
+        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+            getDelegateForUpdate();
+            updated.removeRequiredAction(action);
+        }
     }
 
     @Override
@@ -291,7 +318,7 @@ public class UserAdapter implements CachedUserModel {
             @Override
             public CredentialModel getStoredCredentialById(String id) {
                 if (updated == null) {
-                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                    return cached.getStoredCredentials(keycloakSession, modelSupplier).stream().filter(credential ->
                                     Objects.equals(id, credential.getId()))
                             .findFirst().orElse(null);
                 }
@@ -301,7 +328,7 @@ public class UserAdapter implements CachedUserModel {
             @Override
             public Stream<CredentialModel> getStoredCredentialsStream() {
                 if (updated == null) {
-                    return cached.getStoredCredentials(modelSupplier).stream();
+                    return cached.getStoredCredentials(keycloakSession, modelSupplier).stream();
                 }
                 return super.getStoredCredentialsStream();
             }
@@ -309,7 +336,7 @@ public class UserAdapter implements CachedUserModel {
             @Override
             public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
                 if (updated == null) {
-                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential -> Objects.equals(type, credential.getType()));
+                    return cached.getStoredCredentials(keycloakSession, modelSupplier).stream().filter(credential -> Objects.equals(type, credential.getType()));
                 }
                 return super.getStoredCredentialsByTypeStream(type);
             }
@@ -317,7 +344,7 @@ public class UserAdapter implements CachedUserModel {
             @Override
             public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
                 if (updated == null) {
-                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                    return cached.getStoredCredentials(keycloakSession, modelSupplier).stream().filter(credential ->
                             Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
                             .findFirst().orElse(null);
                 }
@@ -348,13 +375,13 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean hasDirectRole(RoleModel role) {
         if (updated != null) return updated.hasDirectRole(role);
-        return cached.getRoleMappings(modelSupplier).contains(role.getId());
+        return cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId());
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
         if (updated != null) return updated.hasRole(role);
-        return cached.getRoleMappings(modelSupplier).contains(role.getId()) ||
+        return cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId()) ||
                 getRoleMappingsStream().anyMatch(r -> r.hasRole(role)) ||
                 RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
@@ -369,7 +396,7 @@ public class UserAdapter implements CachedUserModel {
     public Stream<RoleModel> getRoleMappingsStream() {
         if (updated != null) return updated.getRoleMappingsStream();
         Set<RoleModel> roles = new HashSet<>();
-        for (String id : cached.getRoleMappings(modelSupplier)) {
+        for (String id : cached.getRoleMappings(keycloakSession, modelSupplier)) {
             RoleModel roleById = keycloakSession.roles().getRoleById(realm, id);
             if (roleById == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
@@ -390,19 +417,33 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        if (updated != null) return updated.getGroupsStream();
-        Set<GroupModel> groups = new LinkedHashSet<>();
-        for (String id : cached.getGroups(modelSupplier)) {
-            GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
-            if (groupModel == null) {
-                // chance that role was removed, so just delete to persistence and get user invalidated
-                getDelegateForUpdate();
-                return updated.getGroupsStream();
-            }
-            groups.add(groupModel);
+        Stream<GroupModel> result = Stream.empty();
 
+        if (updated != null) {
+            result = updated.getGroupsStream();
+        } else {
+            Set<GroupModel> groups = null;
+            for (String id : cached.getGroups(keycloakSession, modelSupplier)) {
+                GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
+                if (groupModel == null) {
+                    // chance that role was removed, so just delegate to persistence and get user invalidated
+                    getDelegateForUpdate();
+                    result = updated.getGroupsStream();
+                    break;
+                } else {
+                    if (groups == null) {
+                        groups = new HashSet<>();
+                    }
+                    groups.add(groupModel);
+                }
+            }
+
+            if (groups != null) {
+                result = groups.stream();
+            }
         }
-        return groups.stream();
+
+        return result.filter(g -> Type.REALM.equals(g.getType())).sorted(Comparator.comparing(GroupModel::getName));
     }
 
     @Override
@@ -427,7 +468,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
-        return cached.getGroups(modelSupplier).contains(group.getId()) || RoleUtils.isMember(getGroupsStream(), group);
+        return cached.getGroups(keycloakSession, modelSupplier).contains(group.getId()) || RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override

@@ -16,7 +16,8 @@
  */
 package org.keycloak.protocol.oidc.endpoints;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
@@ -68,7 +69,7 @@ public class TokenIntrospectionEndpoint {
 
     @POST
     @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 
@@ -102,16 +103,15 @@ public class TokenIntrospectionEndpoint {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
             token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
             throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
         }
 
         try {
-
-            Response response = provider.introspect(token);
-
-            this.event.success();
-
-            return response;
+            return provider.introspect(token, event);
         } catch (ErrorResponseException ere) {
             throw ere;
         } catch (Exception e) {

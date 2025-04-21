@@ -17,9 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -27,9 +29,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
-import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,7 +36,6 @@ import java.util.List;
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);
-
 
     private boolean shouldAttachRoute;
 
@@ -48,14 +46,14 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
 
     @Override
     public void init(Config.Scope config) {
-        this.shouldAttachRoute = config.getBoolean("shouldAttachRoute", true);
-        log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
-
+        setShouldAttachRoute(config.getBoolean("shouldAttachRoute", true));
     }
 
     // Used for testing
+    @Override
     public void setShouldAttachRoute(boolean shouldAttachRoute) {
         this.shouldAttachRoute = shouldAttachRoute;
+        log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
     }
 
     @Override
@@ -70,12 +68,12 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
 
     @Override
     public String getId() {
-        return "infinispan";
+        return InfinispanUtils.EMBEDDED_PROVIDER_ID;
     }
 
     @Override
     public int order() {
-        return PROVIDER_PRIORITY;
+        return InfinispanUtils.PROVIDER_ORDER;
     }
 
     @Override
@@ -91,7 +89,7 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     }
 
     @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    public boolean isSupported(Config.Scope config) {
+        return InfinispanUtils.isEmbeddedInfinispan();
     }
 }

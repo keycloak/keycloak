@@ -11,7 +11,7 @@ When build from the project root directory, this module is only enabled if the i
 
 ## Building
 
-Ensure you have JDK 11 (or newer) installed.
+Ensure you have JDK 17 (or newer) installed.
 
 Build the Docker image with:
 
@@ -30,18 +30,26 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 The Keycloak image can be configured, when starting the operator, using the Java property:
 
 ```
-operator.keycloak.image
+kc.operator.keycloak.image
 ```
 
 And the imagePullPolicy with:
 
 ```
-operator.keycloak.image-pull-policy
+kc.operator.keycloak.image-pull-policy
 ```
 
 ## Contributing
 
 ### Quick start on Minikube
+
+Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
+Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
+Another CNI implementation may work too.
+
+```bash
+minikube start --addons ingress --cni cilium
+```
 
 Enable the Minikube Docker daemon:
 

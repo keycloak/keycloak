@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.actions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +25,6 @@ import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -175,7 +173,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		assertEquals(String.format("The account email has been successfully updated to %s.", "new@localhost"), infoPage.getInfo());
 		//Issue #15136
 		final WebElement backToApplicationLink = driver.findElement(By.linkText("« Back to Application"));
-		assertThat(backToApplicationLink.toString(), Matchers.containsString("/auth/realms/master/app/auth"));
+		assertThat(backToApplicationLink.getDomAttribute("href"), Matchers.containsString("/auth/realms/master/app/auth"));
 
 		events.expect(EventType.UPDATE_EMAIL)
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")

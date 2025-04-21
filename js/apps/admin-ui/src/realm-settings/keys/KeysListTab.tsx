@@ -1,35 +1,36 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import {
+  KeycloakDataTable,
+  KeycloakSelect,
+  SelectVariant,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Button,
   ButtonVariant,
   PageSection,
-  Select,
   SelectOption,
-  SelectVariant,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";
-import { useFetch } from "../../utils/useFetch";
+import useFormatDate from "../../utils/useFormatDate";
 import useToggle from "../../utils/useToggle";
 import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
 
-import useFormatDate from "../../utils/useFormatDate";
-
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
+
 type FilterType = (typeof FILTER_OPTIONS)[number];
 
 type KeyData = KeyMetadataRepresentation & {
@@ -50,7 +51,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 
   const [filterDropdownOpen, toggleFilter] = useToggle();
   return (
-    <Select
+    <KeycloakSelect
       width={300}
       data-testid="filter-type-select"
       isOpen={filterDropdownOpen}
@@ -58,7 +59,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
       variant={SelectVariant.single}
       onToggle={toggleFilter}
       toggleIcon={<FilterIcon />}
-      onSelect={(_, value) => {
+      onSelect={(value) => {
         const filter =
           FILTER_OPTIONS.find((o) => o === value.toString()) ||
           FILTER_OPTIONS[0];
@@ -67,6 +68,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
         toggleFilter();
       }}
       selections={filterType}
+      aria-label={t("selectFilterType")}
     >
       {FILTER_OPTIONS.map((option) => (
         <SelectOption
@@ -77,11 +79,13 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
           {t(`keysFilter.${option}`)}
         </SelectOption>
       ))}
-    </Select>
+    </KeycloakSelect>
   );
 };
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const formatDate = useFormatDate();
@@ -91,8 +95,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
 
   const { realm } = useRealm();
 
-  const [keyData, setKeyData] = useState<KeyData[]>();
-  const [filteredKeyData, setFilteredKeyData] = useState<KeyData[]>();
+  const [keyData, setKeyData] = useState<KeyData[]>([]);
+
+  const [filter, setFilter] = useState<string>(FILTER_OPTIONS[0]);
+
+  const filteredKeyData = useMemo(
+    () => keyData?.filter(({ status }) => status === filter),
+    [keyData, filter],
+  );
 
   useFetch(
     async () => {
@@ -110,7 +120,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   );
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
-    titleKey: t("publicKeys").slice(0, -1),
+    titleKey: t("publicKey"),
     messageKey: publicKey,
     continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
@@ -136,21 +146,12 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <KeycloakDataTable
         isNotCompact
         className="kc-keys-list"
-        loader={filteredKeyData || keyData}
+        loader={filteredKeyData}
         ariaLabelKey="keysList"
         searchPlaceholderKey="searchKey"
         searchTypeComponent={
-          <SelectFilter
-            onFilter={(filterType) =>
-              setFilteredKeyData(
-                filterType !== FILTER_OPTIONS[0]
-                  ? keyData!.filter(({ status }) => status === filterType)
-                  : undefined,
-              )
-            }
-          />
+          <SelectFilter onFilter={(filterType) => setFilter(filterType)} />
         }
-        canSelectAll
         columns={[
           {
             name: "algorithm",
@@ -179,36 +180,21 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           {
             name: "provider",
             displayKey: "provider",
-            cellRenderer: ({ provider }: KeyData) => provider || "",
-            cellFormatters: [emptyFormatter()],
+            cellRenderer: ({ provider }: KeyData) => provider || "-",
             transforms: [cellWidth(10)],
           },
           {
             name: "validTo",
             displayKey: "validTo",
             cellRenderer: ({ validTo }: KeyData) =>
-              validTo ? formatDate(new Date(validTo)) : "",
-            cellFormatters: [emptyFormatter()],
+              validTo ? formatDate(new Date(validTo)) : "-",
             transforms: [cellWidth(10)],
           },
           {
             name: "publicKeys",
             displayKey: "publicKeys",
-            cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
-              if (type === "EC") {
-                return (
-                  <Button
-                    onClick={() => {
-                      togglePublicKeyDialog();
-                      setPublicKey(publicKey!);
-                    }}
-                    variant="secondary"
-                    id="kc-public-key"
-                  >
-                    {t("publicKeys").slice(0, -1)}
-                  </Button>
-                );
-              } else if (type === "RSA") {
+            cellRenderer: ({ publicKey, certificate }: KeyData) => {
+              if (certificate) {
                 return (
                   <div className="button-wrapper">
                     <Button
@@ -219,7 +205,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                       variant="secondary"
                       id={publicKey}
                     >
-                      {t("publicKeys").slice(0, -1)}
+                      {t("publicKey")}
                     </Button>
                     <Button
                       onClick={() => {
@@ -234,9 +220,21 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     </Button>
                   </div>
                 );
+              } else if (publicKey) {
+                return (
+                  <Button
+                    onClick={() => {
+                      togglePublicKeyDialog();
+                      setPublicKey(publicKey!);
+                    }}
+                    variant="secondary"
+                    id="kc-public-key"
+                  >
+                    {t("publicKey")}
+                  </Button>
+                );
               } else return "";
             },
-            cellFormatters: [],
             transforms: [cellWidth(20)],
           },
         ]}

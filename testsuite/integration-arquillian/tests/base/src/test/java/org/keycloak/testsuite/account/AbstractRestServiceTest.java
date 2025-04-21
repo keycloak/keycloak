@@ -19,7 +19,7 @@ package org.keycloak.testsuite.account;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
-import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,18 +31,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -141,7 +139,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWorks) {
         try {
-            List<SessionRepresentation> sessions = SimpleHttp.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken())
+            List<SessionRepresentation> sessions = SimpleHttpDefault.doGet(getAccountUrl("sessions"), httpClient).auth(tokenUtil.getToken())
                     .asJson(new TypeReference<List<SessionRepresentation>>() {
                     });
             assertEquals(1, sessions.size());

@@ -190,8 +190,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
 
-        client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/realms/" + REALM_SUB_CONS_NAME + "/broker/" + SUB_CONSUMER_IDP_OIDC_ALIAS + "/endpoint/*"));
+        client.setRedirectUris(List.of("*"));
 
         client.setBaseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 

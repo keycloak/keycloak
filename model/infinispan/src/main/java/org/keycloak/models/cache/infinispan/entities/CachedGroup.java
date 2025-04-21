@@ -19,6 +19,8 @@ package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
@@ -41,6 +43,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
     private final LazyLoader<GroupModel, Set<String>> subGroups;
+    private final Type type;
 
     public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
         super(revision, group.getId());
@@ -50,22 +53,23 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.type = group.getType();
     }
 
     public String getRealm() {
         return realm;
     }
 
-    public MultivaluedHashMap<String, String> getAttributes(Supplier<GroupModel> group) {
-        return attributes.get(group);
+    public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<GroupModel> group) {
+        return attributes.get(session, group);
     }
 
-    public Set<String> getRoleMappings(Supplier<GroupModel> group) {
+    public Set<String> getRoleMappings(KeycloakSession session, Supplier<GroupModel> group) {
         // it may happen that groups were not loaded before so we don't actually need to invalidate entries in the cache
         if (group == null) {
             return Collections.emptySet();
         }
-        return roleMappings.get(group);
+        return roleMappings.get(session, group);
     }
 
     public String getName() {
@@ -76,7 +80,11 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         return parentId;
     }
 
-    public Set<String> getSubGroups(Supplier<GroupModel> group) {
-        return subGroups.get(group);
+    public Set<String> getSubGroups(KeycloakSession session, Supplier<GroupModel> group) {
+        return subGroups.get(session, group);
+    }
+
+    public Type getType() {
+        return type;
     }
 }

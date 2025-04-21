@@ -22,28 +22,32 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.quarkus.logging.Log;
-
+import jakarta.enterprise.context.ApplicationScoped;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
@@ -63,9 +67,14 @@ public class KeycloakDistConfigurator {
         // register the configuration mappers for the various parts of the keycloak cr
         configureHostname();
         configureFeatures();
+        configureTracing();
         configureTransactions();
         configureHttp();
         configureDatabase();
+        configureCache();
+        configureProxy();
+        configureManagement();
+        configureBootstrapAdmin();
     }
 
     /**
@@ -79,19 +88,52 @@ public class KeycloakDistConfigurator {
 
     /* ---------- Configuration of first-class citizen fields ---------- */
 
+    void configureBootstrapAdmin() {
+        optionMapper(Function.identity())
+                .mapOption("bootstrap-admin-username",
+                        keycloakCR -> Optional.ofNullable(keycloakCR.getSpec().getBootstrapAdminSpec())
+                                .map(BootstrapAdminSpec::getUser).map(BootstrapAdminSpec.User::getSecret)
+                                .or(() -> Optional.of(KeycloakAdminSecretDependentResource.getName(keycloakCR)))
+                                .map(s -> new SecretKeySelector("username", s, null)).orElse(null))
+                .mapOption("bootstrap-admin-password",
+                        keycloakCR -> Optional.ofNullable(keycloakCR.getSpec().getBootstrapAdminSpec())
+                                .map(BootstrapAdminSpec::getUser).map(BootstrapAdminSpec.User::getSecret)
+                                .or(() -> Optional.of(KeycloakAdminSecretDependentResource.getName(keycloakCR)))
+                                .map(s -> new SecretKeySelector("password", s, null)).orElse(null));
+
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getBootstrapAdminSpec())
+                .mapOption("bootstrap-admin-client-id",
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-id", s, null)).orElse(null))
+                .mapOption("bootstrap-admin-client-secret",
+                        spec -> Optional.ofNullable(spec.getService()).map(BootstrapAdminSpec.Service::getSecret).map(s -> new SecretKeySelector("client-secret", s, null)).orElse(null));
+    }
+
     void configureHostname() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getHostnameSpec())
                 .mapOption("hostname", HostnameSpec::getHostname)
                 .mapOption("hostname-admin", HostnameSpec::getAdmin)
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
                 .mapOption("hostname-strict", HostnameSpec::isStrict)
-                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel);
+                .mapOption("hostname-strict-backchannel", HostnameSpec::isStrictBackchannel)
+                .mapOption("hostname-backchannel-dynamic", HostnameSpec::isBackchannelDynamic);
     }
 
     void configureFeatures() {
         optionMapper(keycloakCR -> keycloakCR.getSpec().getFeatureSpec())
                 .mapOptionFromCollection("features", FeatureSpec::getEnabledFeatures)
                 .mapOptionFromCollection("features-disabled", FeatureSpec::getDisabledFeatures);
+    }
+
+    void configureTracing() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getTracingSpec())
+                .mapOption("tracing-enabled", TracingSpec::getEnabled)
+                .mapOption("tracing-service-name", TracingSpec::getServiceName)
+                .mapOption("tracing-endpoint", TracingSpec::getEndpoint)
+                .mapOption("tracing-protocol", TracingSpec::getProtocol)
+                .mapOption("tracing-sampler-type", TracingSpec::getSamplerType)
+                .mapOption("tracing-sampler-ratio", TracingSpec::getSamplerRatio)
+                .mapOption("tracing-compression", TracingSpec::getCompression)
+                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString);
     }
 
     void configureTransactions() {
@@ -106,6 +148,11 @@ public class KeycloakDistConfigurator {
                 .mapOption("https-port", HttpSpec::getHttpsPort)
                 .mapOption("https-certificate-file", http -> (http.getTlsSecret() != null && !http.getTlsSecret().isEmpty()) ? Constants.CERTIFICATES_FOLDER + "/tls.crt" : null)
                 .mapOption("https-certificate-key-file", http -> (http.getTlsSecret() != null && !http.getTlsSecret().isEmpty()) ? Constants.CERTIFICATES_FOLDER + "/tls.key" : null);
+    }
+
+    void configureCache() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getCacheSpec())
+                .mapOption("cache-config-file", cache -> Optional.ofNullable(cache.getConfigMapFile()).map(c -> Constants.CACHE_CONFIG_SUBFOLDER + "/" + c.getKey()).orElse(null));
     }
 
     void configureDatabase() {
@@ -123,6 +170,16 @@ public class KeycloakDistConfigurator {
                 .mapOption("db-pool-max-size", DatabaseSpec::getPoolMaxSize);
     }
 
+    void configureProxy() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getProxySpec())
+                .mapOption("proxy-headers", ProxySpec::getHeaders);
+    }
+
+    void configureManagement() {
+        optionMapper(keycloakCR -> keycloakCR.getSpec().getHttpManagementSpec())
+                .mapOption("http-management-port", HttpManagementSpec::getPort);
+    }
+
     /* ---------- END of configuration of first-class citizen fields ---------- */
 
     /**
@@ -136,12 +193,12 @@ public class KeycloakDistConfigurator {
                 .getAdditionalOptions()
                 .stream()
                 .map(ValueOrSecret::getName)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
 
-        final var sameItems = CollectionUtil.intersection(serverConfigNames, firstClassConfigOptions.keySet());
-        if (CollectionUtil.isNotEmpty(sameItems)) {
+        serverConfigNames.retainAll(firstClassConfigOptions.keySet());
+        if (CollectionUtil.isNotEmpty(serverConfigNames)) {
             status.addWarningMessage("You need to specify these fields as the first-class citizen of the CR: "
-                    + CollectionUtil.join(sameItems, ","));
+                    + CollectionUtil.join(serverConfigNames, ","));
         }
     }
 

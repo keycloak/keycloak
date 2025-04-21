@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   Pagination,
   SearchInput,
-  ToggleTemplateProps,
+  PaginationToggleTemplateProps,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
@@ -68,7 +68,7 @@ export const ResourceToolbar = ({
             toggleTemplate={({
               firstIndex,
               lastIndex,
-            }: ToggleTemplateProps) => (
+            }: PaginationToggleTemplateProps) => (
               <b>
                 {firstIndex} - {lastIndex}
               </b>

@@ -21,7 +21,7 @@ public class LoginUsernameOnlyPage extends LoginPage {
         usernameInput.clear();
         usernameInput.sendKeys(username);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getUsernameError() {
@@ -34,7 +34,7 @@ public class LoginUsernameOnlyPage extends LoginPage {
 
     // Click button without fill anything
     public void clickSubmitButton() {
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     /**

@@ -12,20 +12,17 @@ import java.util.Set;
 public class RoleListQuery extends AbstractRevisioned implements RoleQuery, InClient {
     private final Set<String> roles;
     private final String realm;
-    private final String realmName;
     private String client;
 
     public RoleListQuery(Long revisioned, String id, RealmModel realm, Set<String> roles) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.roles = roles;
     }
 
     public RoleListQuery(Long revisioned, String id, RealmModel realm, String role) {
         super(revisioned, id);
         this.realm = realm.getId();
-        this.realmName = realm.getName();
         this.roles = new HashSet<>();
         this.roles.add(role);
     }
@@ -59,7 +56,7 @@ public class RoleListQuery extends AbstractRevisioned implements RoleQuery, InCl
     public String toString() {
         return "RoleListQuery{" +
                 "id='" + getId() + "'" +
-                ", realmName='" + realmName + '\'' +
+                ", realm='" + realm + '\'' +
                 ", clientUuid='" + client + '\'' +
                 '}';
     }

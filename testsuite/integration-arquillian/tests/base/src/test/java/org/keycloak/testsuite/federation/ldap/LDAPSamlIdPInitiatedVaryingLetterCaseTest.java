@@ -16,14 +16,12 @@
  */
 package org.keycloak.testsuite.federation.ldap;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.mappers.UsernameTemplateMapper;
 import org.keycloak.broker.saml.mappers.UsernameTemplateMapper.Target;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
@@ -46,7 +44,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.broker.KcSamlBrokerConfiguration;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.Creator;
@@ -69,8 +66,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
-import static org.keycloak.testsuite.federation.ldap.AbstractLDAPTest.TEST_REALM_NAME;
-import static org.keycloak.testsuite.federation.ldap.AbstractLDAPTest.ldapModelId;
 
 /**
  *
@@ -144,9 +139,6 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     @Before
     public void setupIdentityProvider() {
-        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure autolink flow
         AuthenticationFlowRepresentation newFlow = new AuthenticationFlowRepresentation();
         newFlow.setAlias(FLOW_AUTO_LINK);
@@ -218,9 +210,9 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         loginPage.login(USER_NAME_LDAP, USER_PASSWORD);
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, USER_PASSWORD).getIdToken();
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
     }
 
@@ -282,7 +274,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
             .build()
 
           // Now navigate to the application where the session should already be created
-          .navigateTo(oauth.getLoginFormUrl())
+          .navigateTo(oauth.loginForm().build())
 
           .assertResponse(Matchers.bodyHC(containsString("AUTH_RESPONSE")))
           .execute();

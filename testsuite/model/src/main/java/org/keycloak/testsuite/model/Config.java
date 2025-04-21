@@ -21,9 +21,10 @@ import org.keycloak.Config.Scope;
 import org.keycloak.Config.SystemPropertiesScope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -33,9 +34,7 @@ import java.util.stream.Collectors;
  */
 public class Config implements ConfigProvider {
 
-    private final Properties systemProperties = new SystemEnvProperties();
-
-    private final Map<String, String> defaultProperties = new HashMap<>();
+    private final Map<String, String> defaultProperties = new ConcurrentHashMap<>();
     private final ThreadLocal<Map<String, String>> properties = new ThreadLocal<Map<String, String>>() {
         @Override
         protected Map<String, String> initialValue() {
@@ -147,12 +146,16 @@ public class Config implements ConfigProvider {
         return getConfig().get(spiName + ".provider");
     }
 
+    public String getDefaultProvider(String spiName) {
+        return getConfig().get(spiName + ".provider.default");
+    }
+
     public Map<String, String> getConfig() {
         return useGlobalConfigurationFunc.getAsBoolean() ? defaultProperties : properties.get();
     }
 
     private String replaceProperties(String value) {
-        return StringPropertyReplacer.replaceProperties(value, systemProperties);
+        return StringPropertyReplacer.replaceProperties(value, SystemEnvProperties.UNFILTERED::getProperty);
     }
 
     @Override

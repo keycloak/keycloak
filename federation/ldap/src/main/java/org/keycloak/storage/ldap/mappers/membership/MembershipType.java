@@ -17,7 +17,6 @@
 
 package org.keycloak.storage.ldap.mappers.membership;
 
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -25,17 +24,12 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,11 +53,11 @@ public enum MembershipType {
                 String membershipLdapAttribute, LDAPDn requiredParentDn, String rdnAttr) {
             Set<String> allMemberships = LDAPUtils.getExistingMemberships(ldapProvider, membershipLdapAttribute, ldapGroup);
 
-            // Filter and keep just descendants of requiredParentDn
-            Set<LDAPDn> result = new HashSet<>();
+            // Filter and keep just descendants of requiredParentDn and with the correct RDN
+            Set<LDAPDn> result = new LinkedHashSet<>();
             for (String membership : allMemberships) {
                 LDAPDn childDn = LDAPDn.fromString(membership);
-                if (childDn.getFirstRdn().getAttrValue(rdnAttr) != null && childDn.isDescendantOf(requiredParentDn)) {
+                if (childDn.isDescendantOf(requiredParentDn) && childDn.getFirstRdn().getAttrValue(rdnAttr) != null) {
                     result.add(childDn);
                 }
             }
@@ -79,53 +73,14 @@ public enum MembershipType {
             LDAPDn usersDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
             Set<LDAPDn> userDns = getLDAPMembersWithParent(ldapProvider, ldapGroup, config.getMembershipLdapAttribute(), usersDn, ldapConfig.getRdnLdapAttribute());
 
-            if (userDns == null) {
+            if (userDns == null || userDns.size() <= firstResult) {
                 return Collections.emptyList();
             }
 
-            if (userDns.size() <= firstResult) {
-                return Collections.emptyList();
-            }
-
-            List<LDAPDn> dns = new ArrayList<>(userDns);
-            int max = Math.min(dns.size(), firstResult + maxResults);
-            dns = dns.subList(firstResult, max);
-
-            // If usernameAttrName is same like DN, we can just retrieve usernames from DNs
-            List<String> usernames = new LinkedList<>();
-            if (ldapConfig.getUsernameLdapAttribute().equals(ldapConfig.getRdnLdapAttribute())) {
-                for (LDAPDn userDn : dns) {
-                    String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
-                    usernames.add(username);
-                }
-            } else {
-                LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-                List<Condition> orSubconditions = new ArrayList<>();
-                for (LDAPDn userDn : dns) {
-                    String firstRdnAttrValue = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
-                    if (firstRdnAttrValue != null) {
-                        Condition condition = conditionsBuilder.equal(ldapConfig.getRdnLdapAttribute(), firstRdnAttrValue, EscapeStrategy.DEFAULT);
-                        orSubconditions.add(condition);
-                    }
-                }
-                Condition orCondition = conditionsBuilder.orCondition(orSubconditions.toArray(new Condition[] {}));
-                query.addWhereCondition(orCondition);
-                List<LDAPObject> ldapUsers = query.getResultList();
-                for (LDAPObject ldapUser : ldapUsers) {
-                    if (dns.contains(ldapUser.getDn())) {
-                        String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                        usernames.add(username);
-                    }
-                }
-            }
-
-            // We have dns of users, who are members of our group. Load them now
-            return ldapProvider.loadUsersByUsernames(usernames, realm);
+            return ldapProvider.loadUsersByDNs(realm, userDns, firstResult, maxResults)
+                    .collect(Collectors.toList());
         }
-
     },
-
 
     /**
      * Used if LDAP role has it's members declared in form of pure user uids. For example ( "memberUid: john" )
@@ -150,40 +105,11 @@ public enum MembershipType {
                 return Collections.emptyList();
             }
 
-            List<String> uids = new ArrayList<>(memberUids);
-            int max = Math.min(memberUids.size(), firstResult + maxResults);
-            uids = uids.subList(firstResult, max);
-
             String membershipUserAttrName = groupMapper.getConfig().getMembershipUserLdapAttribute(ldapConfig);
 
-            List<String> usernames;
-            if (membershipUserAttrName.equals(ldapConfig.getUsernameLdapAttribute())) {
-                usernames = uids; // Optimized version. No need to
-            } else {
-                usernames = new LinkedList<>();
-
-                LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
-                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-
-                Condition[] orSubconditions = new Condition[uids.size()];
-                int index = 0;
-                for (String memberUid : uids) {
-                    Condition condition = conditionsBuilder.equal(membershipUserAttrName, memberUid, EscapeStrategy.DEFAULT);
-                    orSubconditions[index] = condition;
-                    index++;
-                }
-                Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
-                query.addWhereCondition(orCondition);
-                List<LDAPObject> ldapUsers = query.getResultList();
-                for (LDAPObject ldapUser : ldapUsers) {
-                    String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                    usernames.add(username);
-                }
-            }
-
-            return groupMapper.getLdapProvider().loadUsersByUsernames(usernames, realm);
+            return ldapProvider.loadUsersByUniqueAttribute(realm, membershipUserAttrName, memberUids, firstResult, maxResults)
+                    .collect(Collectors.toList());
         }
-
     };
 
     public abstract Set<LDAPDn> getLDAPSubgroups(CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup);

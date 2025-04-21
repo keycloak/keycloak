@@ -16,19 +16,26 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -36,9 +43,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -46,11 +57,16 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.utils.StringUtil;
+import java.util.HashSet;
+import org.openqa.selenium.ElementClickInterceptedException;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTest {
+public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -66,13 +82,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected ErrorPage errorPage;
-    
-    protected boolean isDynamicForm() {
-        return false;
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
         ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
         ActionUtil.addRequiredActionForUser(testRealm, "john-doh@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
     }
@@ -87,7 +100,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 .lastName("Brady")
                 .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("test-user@localhost"));
 
         ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
@@ -97,14 +110,14 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
                 .lastName("Doh")
                 .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("john-doh@localhost"));
     }
 
     @Test
     public void updateProfile() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isCancelDisplayed());
@@ -133,7 +146,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateUsername() {
         loginPage.open();
 
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         String userId = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost").getId();
 
@@ -165,7 +178,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileMissingFirstName() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -177,11 +190,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
-        else
-            Assert.assertEquals("Please specify first name.", updateProfilePage.getInputErrors().getFirstNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
         events.assertEmpty();
     }
@@ -190,7 +199,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileMissingLastName() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -203,10 +212,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("", updateProfilePage.getLastName());
         Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        if(isDynamicForm())
-            Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
-        else
-            Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
+        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
         events.assertEmpty();
     }
@@ -215,7 +221,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileMissingEmail() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -241,7 +247,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileInvalidEmail() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -264,7 +270,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileMissingUsername() {
         loginPage.open();
 
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -287,7 +293,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileDuplicateUsername() {
         loginPage.open();
 
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -310,7 +316,7 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     public void updateProfileDuplicatedEmail() {
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -330,9 +336,59 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
     }
 
     @Test
+    public void updateProfileDuplicateUsernameWithEmail() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("user1@local.org").firstName("New first").lastName("New last").email("new@email.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assert.assertEquals("user1@local.org", updateProfilePage.getUsername());
+
+        Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileDuplicatedEmailWithUsername() {
+        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last")
+                .email("user1@local.com").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("user1@local.com", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+
+        events.assertEmpty();
+    }
+
+    @Test
     public void updateProfileExpiredCookies() {
         loginPage.open();
-        loginPage.login("john-doh@localhost", "password");
+        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         updateProfilePage.assertCurrent();
 
@@ -350,37 +406,166 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Test
     public void updateProfileWithoutRemoveCustomAttributes() {
-        UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        UserResource user = adminClient.realm("test").users().get(userRep.getId());
+        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
+        upResource.update(upConfig);
 
-        userRep.setAttributes(new HashMap<>());
-        userRep.getAttributes().put("custom", Arrays.asList("custom"));
+        try {
+            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+            UserResource user = adminClient.realm("test").users().get(userRep.getId());
 
-        user.update(userRep);
+            userRep.setAttributes(new HashMap<>());
+            userRep.getAttributes().put("custom", Arrays.asList("custom"));
 
-        loginPage.open();
+            user.update(userRep);
 
-        loginPage.login("test-user@localhost", "password");
+            loginPage.open();
 
-        updateProfilePage.assertCurrent();
-        assertFalse(updateProfilePage.isCancelDisplayed());
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
+            updateProfilePage.assertCurrent();
+            assertFalse(updateProfilePage.isCancelDisplayed());
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+            updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
-        events.expectLogin().assertEvent();
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        // assert user is really updated in persistent store
-        userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Assert.assertEquals("New first", userRep.getFirstName());
-        Assert.assertEquals("New last", userRep.getLastName());
-        Assert.assertEquals("new@email.com", userRep.getEmail());
-        Assert.assertEquals("test-user@localhost", userRep.getUsername());
-        Assert.assertNotNull(userRep.getAttributes());
-        Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
+            events.expectLogin().assertEvent();
+
+            // assert user is really updated in persistent store
+            userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+            Assert.assertEquals("New first", userRep.getFirstName());
+            Assert.assertEquals("New last", userRep.getLastName());
+            Assert.assertEquals("new@email.com", userRep.getEmail());
+            Assert.assertEquals("test-user@localhost", userRep.getUsername());
+            Assert.assertNotNull(userRep.getAttributes());
+            Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
+        } finally {
+            upConfig.setUnmanagedAttributePolicy(null);
+            upResource.update(upConfig);
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(HtmlUnitDriver.class) // we can't yet run modern JavaScript using HtmlUnit
+    public void testMultivaluedAttributes() {
+        UserProfileResource userProfile = testRealm().users().userProfile();
+        UPConfig configuration = userProfile.getConfiguration();
+
+        try {
+            UPConfig testUpConfig = configuration.clone();
+            List<String> attributes = List.of("foo", "bar", "zar");
+            List<String> values = IntStream.range(0, 5).mapToObj(Integer::toString).collect(Collectors.toList());
+            Set<String> valuesSet = new HashSet<>(values);
+
+            for (String attribute : attributes) {
+                testUpConfig.addOrReplaceAttribute(
+                        new UPAttribute(attribute, true, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)))
+                );
+            }
+
+            userProfile.update(testUpConfig);
+
+            loginPage.open();
+            loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+            updateProfilePage.assertCurrent();
+
+            for (String attribute : attributes) {
+                updateProfilePage.assertCurrent();
+
+                // add multiple values
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.toArray()));
+
+                // make sure multiple values are properly rendered
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+
+                final String lastValue = values.get(values.size() - 1);
+
+                // remove multiple values, only the last value should be kept as you can't remove the last one
+                for (String value : values) {
+                    try {
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                    } catch (ElementClickInterceptedException e) {
+                        if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
+                            throw e;
+                        }
+                    }
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
+                assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
+
+                // make sure adding/removing within the same context works
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+
+                assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
+
+                for (String value : values) {
+                    try {
+                        updateProfilePage.clickRemoveAttributeValue(attribute + "-0");
+                    } catch (ElementClickInterceptedException e) {
+                        if (! lastValue.equals(value)) {    // Ignore that the last value cannot be clicked / removed - this is by design
+                            throw e;
+                        }
+                    }
+                }
+                // make sure the last attribute is set with a value
+                if (StringUtil.isBlank(updateProfilePage.getAttribute(attribute + "-0"))) {
+                    updateProfilePage.setAttribute(attribute + "-0", lastValue);
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
+                assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
+
+                // at the end the attribute is set with multiple values
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+                for (String value : values) {
+                    String elementId = attribute + "-" + value;
+                    updateProfilePage.setAttribute(elementId, value);
+                    updateProfilePage.clickAddAttributeValue(elementId);
+                }
+                updateProfilePage.update("f", "l", "e@keycloak.org");
+
+                // restart the update profile flow
+                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
+                testRealm().users().get(userRep.getId()).update(userRep);
+                loginPage.open();
+            }
+
+            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+
+            // all attributes should be set with multiple values
+            for (String attribute : attributes) {
+                assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.toArray()));
+            }
+        } finally {
+            userProfile.update(configuration);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 export const getId = (pathname: string) => {
-  const pathParts = pathname.substr(1).split("/");
+  const pathParts = pathname.substring(1).split("/");
   return pathParts.length > 1 ? pathParts.splice(2) : undefined;
 };
 

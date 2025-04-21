@@ -17,8 +17,11 @@
 
 package org.keycloak.truststore;
 
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
@@ -31,10 +34,10 @@ public class FileTruststoreProvider implements TruststoreProvider {
     private final HostnameVerificationPolicy policy;
     private final SSLSocketFactory sslSocketFactory;
     private final KeyStore truststore;
-    private final Map<X500Principal, X509Certificate> rootCertificates;
-    private final Map<X500Principal, X509Certificate> intermediateCertificates;
+    private final Map<X500Principal, List<X509Certificate>> rootCertificates;
+    private final Map<X500Principal, List<X509Certificate>> intermediateCertificates;
 
-    public FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, X509Certificate> rootCertificates, Map<X500Principal, X509Certificate> intermediateCertificates) {
+    public FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, List<X509Certificate>> rootCertificates,Map<X500Principal, List<X509Certificate>> intermediateCertificates) {
         this.policy = policy;
         this.truststore = truststore;
         this.rootCertificates = rootCertificates;
@@ -60,12 +63,12 @@ public class FileTruststoreProvider implements TruststoreProvider {
     }
 
     @Override
-    public Map<X500Principal, X509Certificate> getRootCertificates() {
+    public Map<X500Principal, List<X509Certificate>> getRootCertificates() {
         return rootCertificates;
     }
 
     @Override
-    public Map<X500Principal, X509Certificate> getIntermediateCertificates() {
+    public Map<X500Principal, List<X509Certificate>> getIntermediateCertificates() {
         return intermediateCertificates;
     }
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:2.0" name="keycloak-client-saml-ejb">
+    <props>
+        <prop name="org.wildfly.rule.inclusion-mode" value="all-dependencies"/>
+    </props>
+    <dependencies>
+        <layer name="keycloak-client-saml"/>
+        <layer name="ejb-lite"/>
+    </dependencies>
+    <feature spec="subsystem.ejb3">
+        <feature spec="subsystem.ejb3.application-security-domain">
+            <param name="application-security-domain" value="other" />
+            <param name="security-domain" value="KeycloakDomain"/>
+        </feature>
+    </feature>
+</layer-spec>

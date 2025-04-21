@@ -37,7 +37,6 @@ import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import javax.xml.stream.XMLStreamWriter;
 import org.jboss.logging.Logger;
 import org.junit.Assert;

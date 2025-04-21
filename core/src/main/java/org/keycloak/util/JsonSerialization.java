@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,9 +40,10 @@ import java.io.OutputStream;
 public class JsonSerialization {
     public static final ObjectMapper mapper = new ObjectMapper();
     public static final ObjectMapper prettyMapper = new ObjectMapper();
-    public static final ObjectMapper sysPropertiesAwareMapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
 
     static {
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         prettyMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
@@ -67,6 +70,10 @@ public class JsonSerialization {
         return mapper.writeValueAsBytes(obj);
     }
 
+    public static JsonNode writeValueAsNode(Object obj) {
+        return mapper.valueToTree(obj);
+    }
+
     public static <T> T readValue(byte[] bytes, Class<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }
@@ -76,7 +83,7 @@ public class JsonSerialization {
     }
 
     public static <T> T readValue(InputStream bytes, Class<T> type) throws IOException {
-        return readValue(bytes, type, false);
+        return mapper.readValue(bytes, type);
     }
 
     public static <T> T readValue(String string, TypeReference<T> type) throws IOException {
@@ -85,14 +92,6 @@ public class JsonSerialization {
 
     public static <T> T readValue(InputStream bytes, TypeReference<T> type) throws IOException {
         return mapper.readValue(bytes, type);
-    }
-
-    public static <T> T readValue(InputStream bytes, Class<T> type, boolean replaceSystemProperties) throws IOException {
-        if (replaceSystemProperties) {
-            return sysPropertiesAwareMapper.readValue(bytes, type);
-        } else {
-            return mapper.readValue(bytes, type);
-        }
     }
 
     /**

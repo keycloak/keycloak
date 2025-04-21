@@ -4,10 +4,12 @@ import {
   Button,
   EmptyState,
   EmptyStateBody,
+  EmptyStateFooter,
   Grid,
   GridItem,
   HelperText,
   HelperTextItem,
+  TextInput,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment } from "react";
@@ -19,7 +21,6 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { KeySelect } from "./KeySelect";
 import { ValueSelect } from "./ValueSelect";
 
@@ -31,12 +32,16 @@ export type DefaultValue = {
 
 type KeyValueInputProps = {
   name: string;
+  label?: string;
   defaultKeyValue?: DefaultValue[];
+  isDisabled?: boolean;
 };
 
 export const KeyValueInput = ({
   name,
+  label = "attributes",
   defaultKeyValue,
+  isDisabled = false,
 }: KeyValueInputProps) => {
   const { t } = useTranslation();
   const {
@@ -62,16 +67,17 @@ export const KeyValueInput = ({
   return fields.length > 0 ? (
     <>
       <Grid hasGutter>
-        <GridItem className="pf-c-form__label" span={5}>
-          <span className="pf-c-form__label-text">{t("key")}</span>
+        <GridItem className="pf-v5-c-form__label" span={5}>
+          <span className="pf-v5-c-form__label-text">{t("key")}</span>
         </GridItem>
-        <GridItem className="pf-c-form__label" span={7}>
-          <span className="pf-c-form__label-text">{t("value")}</span>
+        <GridItem className="pf-v5-c-form__label" span={7}>
+          <span className="pf-v5-c-form__label-text">{t("value")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
-          const keyError = !!(errors as any)[name]?.[index]?.key;
-          const valueError = !!(errors as any)[name]?.[index]?.value;
-
+          const error = (errors as any)[name]?.[index];
+          const keyError = !!error?.key;
+          const valueErrorPresent = !!error?.value || !!error?.message;
+          const valueError = error?.message || t("valueError");
           return (
             <Fragment key={attribute.id}>
               <GridItem span={5}>
@@ -82,13 +88,14 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("keyPlaceholder")}
                     aria-label={t("key")}
                     data-testid={`${name}-key`}
                     {...register(`${name}.${index}.key`, { required: true })}
                     validated={keyError ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
                 {keyError && (
@@ -108,19 +115,20 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("valuePlaceholder")}
                     aria-label={t("value")}
                     data-testid={`${name}-value`}
                     {...register(`${name}.${index}.value`, { required: true })}
-                    validated={valueError ? "error" : "default"}
+                    validated={valueErrorPresent ? "error" : "default"}
                     isRequired
+                    isDisabled={isDisabled}
                   />
                 )}
-                {valueError && (
+                {valueErrorPresent && (
                   <HelperText>
                     <HelperTextItem variant="error">
-                      {t("valueError")}
+                      {valueError}
                     </HelperTextItem>
                   </HelperText>
                 )}
@@ -131,6 +139,7 @@ export const KeyValueInput = ({
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
+                  isDisabled={isDisabled}
                 >
                   <MinusCircleIcon />
                 </Button>
@@ -143,12 +152,13 @@ export const KeyValueInput = ({
         <ActionListItem>
           <Button
             data-testid={`${name}-add-row`}
-            className="pf-u-px-0 pf-u-mt-sm"
+            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
+            isDisabled={isDisabled}
           >
-            {t("addAttribute")}
+            {t("addAttribute", { label })}
           </Button>
         </ActionListItem>
       </ActionList>
@@ -156,19 +166,22 @@ export const KeyValueInput = ({
   ) : (
     <EmptyState
       data-testid={`${name}-empty-state`}
-      className="pf-u-p-0"
+      className="pf-v5-u-p-0"
       variant="xs"
     >
-      <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
-      <Button
-        data-testid={`${name}-add-row`}
-        variant="link"
-        icon={<PlusCircleIcon />}
-        isSmall
-        onClick={appendNew}
-      >
-        {t("addAttribute")}
-      </Button>
+      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+          isDisabled={isDisabled}
+        >
+          {t("addAttribute", { label })}
+        </Button>
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

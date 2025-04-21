@@ -21,16 +21,19 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -63,8 +66,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
+import static org.keycloak.OAuth2Constants.IMPLICIT;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
+import static org.keycloak.protocol.oidc.utils.OIDCResponseType.CODE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,23 +87,43 @@ public class DescriptionConverter {
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         String scopeParam = clientOIDC.getScope();
-        if (scopeParam != null) client.setOptionalClientScopes(new ArrayList<>(Arrays.asList(scopeParam.split(" "))));
+        if (scopeParam != null) {
+            client.setOptionalClientScopes(scopeParam.isEmpty() ? Collections.emptyList() : Arrays.asList(scopeParam.split(" ")));
+        }
 
         List<String> oidcResponseTypes = clientOIDC.getResponseTypes();
-        if (oidcResponseTypes == null || oidcResponseTypes.isEmpty()) {
-            oidcResponseTypes = Collections.singletonList(OIDCResponseType.CODE);
-        }
         List<String> oidcGrantTypes = clientOIDC.getGrantTypes();
+        if (oidcResponseTypes == null || oidcResponseTypes.isEmpty()) {
+            if (oidcGrantTypes == null || oidcGrantTypes.isEmpty()) {
+                // OIDC Client registration specs - https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata - If omitted, the default is that the Client will use only the code Response Type.
+                oidcResponseTypes = Collections.singletonList(CODE);
+            } else {
+                // Try to compute default responseTypes according to given grant types
+                oidcResponseTypes = new ArrayList<>();
+                if (oidcGrantTypes.contains(AUTHORIZATION_CODE)) {
+                    oidcResponseTypes.add(CODE);
+                }
+                if (oidcGrantTypes.contains(IMPLICIT)) {
+                    oidcResponseTypes.add(OIDCResponseType.ID_TOKEN);
+                }
+            }
+        }
+
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
 
         try {
             OIDCResponseType responseType = OIDCResponseType.parse(oidcResponseTypes);
-            client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE));
+            client.setStandardFlowEnabled(responseType.hasResponseType(CODE) || responseType.hasResponseType(OIDCResponseType.NONE));
             client.setImplicitFlowEnabled(responseType.isImplicitOrHybridFlow());
 
+            client.setDirectAccessGrantsEnabled(oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
             if (oidcGrantTypes != null) {
-                client.setDirectAccessGrantsEnabled(oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
-                setOidcCibaGrantEnabled(client, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
+                setOidcGrantEnabled(client, CibaConfig.OIDC_CIBA_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
+                setOidcGrantEnabled(client, OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.DEVICE_CODE_GRANT_TYPE));
+                setOidcGrantEnabled(client, OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+                client.setAuthorizationServicesEnabled(oidcGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE));
+                configWrapper.setUseRefreshToken(oidcGrantTypes.contains(OAuth2Constants.REFRESH_TOKEN));
             }
         } catch (IllegalArgumentException iae) {
             throw new ClientRegistrationException(iae.getMessage(), iae);
@@ -108,6 +134,9 @@ public class DescriptionConverter {
         if ("none".equals(authMethod)) {
             client.setClientAuthenticatorType("none");
             client.setPublicClient(Boolean.TRUE);
+            if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
+                throw new ClientRegistrationException("Token Exchange cannot be enabled in a public client");
+            }
         } else {
             ClientAuthenticatorFactory clientAuthFactory;
             if (authMethod == null) {
@@ -127,7 +156,6 @@ public class DescriptionConverter {
             throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
         }
 
-        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
             configWrapper.setUserInfoSignedResponseAlg(clientOIDC.getUserinfoSignedResponseAlg());
         }
@@ -159,9 +187,7 @@ public class DescriptionConverter {
             configWrapper.setAllowRegexPatternComparison(false);
         }
 
-        if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
-            configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
-        }
+        configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
 
         if (clientOIDC.getIdTokenEncryptedResponseAlg() != null) {
             configWrapper.setIdTokenEncryptedResponseAlg(clientOIDC.getIdTokenEncryptedResponseAlg());
@@ -261,10 +287,10 @@ public class DescriptionConverter {
         return client;
     }
 
-    private static void setOidcCibaGrantEnabled(ClientRepresentation client, Boolean isEnabled) {
+    private static void setOidcGrantEnabled(ClientRepresentation client, String grantAttributeName, Boolean isEnabled) {
         if (isEnabled == null) return;
         Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
-        attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, isEnabled.toString());
+        attributes.put(grantAttributeName, isEnabled.toString());
         client.setAttributes(attributes);
     }
 
@@ -379,6 +405,10 @@ public class DescriptionConverter {
                 throw new ClientRegistrationException("Illegal jwks format");
             }
         }
+        String defaultSignatureAlgorithm = session.getContext().getRealm().getDefaultSignatureAlgorithm();
+        if (Algorithm.RS256.equals(defaultSignatureAlgorithm) || StringUtil.isBlank(defaultSignatureAlgorithm)) {
+            defaultSignatureAlgorithm = null;
+        }
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
         if (config.isUseMtlsHokToken()) {
@@ -391,6 +421,8 @@ public class DescriptionConverter {
         }
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
+        } else if (defaultSignatureAlgorithm != null){
+            response.setIdTokenSignedResponseAlg(defaultSignatureAlgorithm);
         }
         if (config.getIdTokenEncryptedResponseAlg() != null) {
             response.setIdTokenEncryptedResponseAlg(config.getIdTokenEncryptedResponseAlg());
@@ -483,10 +515,10 @@ public class DescriptionConverter {
     private static List<String> getOIDCGrantTypes(ClientRepresentation client) {
         List<String> grantTypes = new ArrayList<>();
         if (client.isStandardFlowEnabled()) {
-            grantTypes.add(OAuth2Constants.AUTHORIZATION_CODE);
+            grantTypes.add(AUTHORIZATION_CODE);
         }
         if (client.isImplicitFlowEnabled()) {
-            grantTypes.add(OAuth2Constants.IMPLICIT);
+            grantTypes.add(IMPLICIT);
         }
         if (client.isDirectAccessGrantsEnabled()) {
             grantTypes.add(OAuth2Constants.PASSWORD);
@@ -505,8 +537,12 @@ public class DescriptionConverter {
         if (client.getAuthorizationServicesEnabled() != null && client.getAuthorizationServicesEnabled()) {
             grantTypes.add(OAuth2Constants.UMA_GRANT_TYPE);
         }
-        if (OIDCAdvancedConfigWrapper.fromClientRepresentation(client).isUseRefreshToken()) {
+        OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        if (oidcClient.isUseRefreshToken()) {
             grantTypes.add(OAuth2Constants.REFRESH_TOKEN);
+        }
+        if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
+            grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         }
         return grantTypes;
     }

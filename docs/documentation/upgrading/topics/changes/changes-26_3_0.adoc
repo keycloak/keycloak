@@ -1,0 +1,46 @@
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+
+=== Deprecated for removal the Instagram Identity Broker
+
+In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
+If you are using this broker, it is recommended to use the Facebook Identity Broker instead.
+
+If you are using the Instagram Identity Broker and want to re-enable it, you can do it by enabling the `instagram-broker`
+feature using the `features` server option:
+
+```
+--features=instagram-broker
+```
+
+It has been a while since discussions started about any activity around the Instagram Identity Broker
+and any objection from the community about deprecating it for removal. For more details, see
+https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
+
+=== Deprecated proprietary protocol for client initiated linking to the identity provider account
+
+When you want the user, who is authenticated to your client application, to link his or her account to a specific identity provider, consider using the Application initiated action (AIA) based
+mechanism with the action `idp_link`. The proprietary custom protocol for client initiated account linking is deprecated now and might be removed in the future versions. For more information, see the
+Client initiated account link section of the link:{developerguide_link}[{developerguide_name}].
+
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Usage of remote stores embedded caches is restricted
+
+The experimental feature `cache-embedded-remote-store` was removed in this release and usage of remote stores for embedded caches is now restricted.
+
+Consider one of the following cases and recommended migration steps:
+
+* If you are using remote stores for running {project_name} in multiple data centers especially if they do not have a direct networking connection to allow all {project_name} nodes to form a cluster, follow the link:{highavailabilityguide_link}[{highavailabilityguide_name}] for deploying a multi-site {project_name} setup.
+* If you are using remote stores to keep user sessions available after a {project_name} restart, use the `peristent-user-session` feature which is enabled by default.
+
+[WARNING]
+====
+* {project_name} refuses to start if the `persistent-user-session` feature is disabled and remote store is configured for any of the user session caches.
+
+* With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
+====
+

@@ -55,6 +55,17 @@ public interface Attributes {
     ProviderConfigProperty KEY_USE_PROPERTY = new ProviderConfigProperty(KEY_USE, "Key use", "Whether the key should be used for signing or encryption.", LIST_TYPE,
             KeyUse.SIG.getSpecName(), KeyUse.SIG.getSpecName(), KeyUse.ENC.getSpecName());
 
+    String EC_GENERATE_CERTIFICATE_KEY = "ecGenerateCertificate";
+    ProviderConfigProperty EC_GENERATE_CERTIFICATE_PROPERTY = new ProviderConfigProperty(
+            EC_GENERATE_CERTIFICATE_KEY,
+            "Generate Certificate",
+            """
+            If a certificate should be build on creation. If the certificate is build, it will be available in the \
+            realm JWK for the key in the claim x5c and corresponding thumbprints may be available in the claims like \
+            x5t or x5t#S256.""",
+            BOOLEAN_TYPE,
+            false);
+
     String KID_KEY = "kid";
 
     String SECRET_KEY = "secret";
@@ -71,7 +82,7 @@ public interface Attributes {
             Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512);
 
     ProviderConfigProperty HS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
-            Algorithm.HS256,
+            Algorithm.HS512,
             Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
 
     ProviderConfigProperty RS_ENC_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key encryption", LIST_TYPE,

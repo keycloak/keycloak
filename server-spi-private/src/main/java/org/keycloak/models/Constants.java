@@ -43,8 +43,6 @@ public final class Constants {
     public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
-    public static final String INSTALLED_APP_URL = "http://localhost";
-    public static final String INSTALLED_APP_LOOPBACK = "http://127.0.0.1";
 
     public static final String READ_TOKEN_ROLE = "read-token";
     public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
@@ -63,11 +61,12 @@ public final class Constants {
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
+    public static final String INTERNAL_SIGNATURE_ALGORITHM = Algorithm.HS512;
 
     public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
     public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
 
-    public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
+    public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256+","+Algorithm.RS256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
@@ -78,14 +77,23 @@ public final class Constants {
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String EXECUTION = "execution";
     public static final String CLIENT_ID = "client_id";
+    public static final String TOKEN = "token";
     public static final String TAB_ID = "tab_id";
-
+    public static final String CLIENT_DATA = "client_data";
+    public static final String REUSE_ID = "reuse_id";
     public static final String SKIP_LOGOUT = "skip_logout";
     public static final String KEY = "key";
 
     public static final String KC_ACTION = "kc_action";
+
+    public static final String KC_ACTION_PARAMETER = "kc_action_parameter";
     public static final String KC_ACTION_STATUS = "kc_action_status";
     public static final String KC_ACTION_EXECUTING = "kc_action_executing";
+    /**
+     * Auth session attribute whether an AIA is enforced, which means it cannot be cancelled.
+     * <p>Example use case: the action behind the AIA is also defined on the user (for example, UPDATE_PASSWORD).</p>
+     */
+    public static final String KC_ACTION_ENFORCED = "kc_action_enforced";
     public static final int KC_ACTION_MAX_AGE = 300;
 
     public static final String IS_AIA_REQUEST = "IS_AIA_REQUEST";
@@ -105,6 +113,8 @@ public final class Constants {
 
     // Groups already assigned by a mapper when updating brokered users.
     public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
+
+    public static final String MAPPER_SESSION_NOTES = "MAPPER_SESSION_NOTES";
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
@@ -130,6 +140,8 @@ public final class Constants {
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 
+    public static final String SNAPSHOT_VERSION = "999.0.0-SNAPSHOT";
+
     // Client Polices Realm Attributes Keys
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
@@ -137,6 +149,13 @@ public final class Constants {
 
     // Authentication session note, which contains loa of current authentication in progress
     public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";
+
+    // Key in authentication execution config (AuthenticationExecutionModel), storing the configured authentication reference value
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_VALUE = "default.reference.value";
+    public static final String AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE = "default.reference.maxAge";
+
+    // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
+    public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
 
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
     // so it is possible to check when particular level expires and needs to be re-authenticated
@@ -146,12 +165,51 @@ public final class Constants {
     public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
     public static final String ACR_LOA_MAP = "acr.loa.map";
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
+    public static final String MINIMUM_ACR_VALUE = "minimum.acr.value";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 
-    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
-    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
-
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 
+    public static final String USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED = "client.use.lightweight.access.token.enabled";
+
+    public static final String SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED = "client.introspection.response.allow.jwt.claim.enabled";
+
+    public static final String TOTP_SECRET_KEY = "TOTP_SECRET_KEY";
+
+    // Sent to clients when authentication session expired, but user is already logged-in in current browser
+    public static final String AUTHENTICATION_EXPIRED_MESSAGE = "authentication_expired";
+
+    // attribute name used in apps to mark that it is an admin console and its azp is allowed
+    public static final String SECURITY_ADMIN_CONSOLE_ATTR = "security.admin.console";
+
+    //attribute name used to mark a client as realm client
+    public static final String REALM_CLIENT = "realm_client";
+
+    //attribute name used to mark a temporary admin user/service account as temporary
+    public static final String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
+
+    public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
+
+    // Note used to store the authentication flow requested
+    public static final String REQUESTED_AUTHENTICATION_FLOW = "requested-authentication-flow";
+
+    public static final String AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION = "authentication-flow-level-of-authentication";
+
+    // Note used to store the acr values if it is matched by client policy condition
+    public static final String CLIENT_POLICY_REQUESTED_ACR = "client-policy-requested-acr";
+
+    //attribute name used to set clients from requested audience in standard token exchange
+    public static final String REQUESTED_AUDIENCE_CLIENTS = "req-aud-clients";
+    // claim used in refresh token to know the requested audience
+    public static final String REQUESTED_AUDIENCE = "req-aud";
+    // Note in clientSessionContext specifying token grant type used
+    public static final String GRANT_TYPE = OAuth2Constants.GRANT_TYPE;
+    // Note in client session to know the subject client
+    public static final String TOKEN_EXCHANGE_SUBJECT_CLIENT = "token_exchange_subject_client";
+
+    // Note in transient userSession specifying that it was created from "persistent" user session for the temporary purpose. The values of this note could be "online" and "offline"
+    public static final String CREATED_FROM_PERSISTENT = "created_from_persistent";
+    public static final String CREATED_FROM_PERSISTENT_ONLINE = "online";
+    public static final String CREATED_FROM_PERSISTENT_OFFLINE = "offline";
 }

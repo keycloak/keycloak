@@ -33,14 +33,11 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
 
     private final List<SessionUpdateTask<S>> childUpdates = new LinkedList<>();
     private CacheOperation operation;
-    private CrossDCMessageStatus crossDCMessageStatus;
     private final long lifespanMs;
     private final long maxIdleTimeMs;
 
-
-    private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus, long lifespanMs, long maxIdleTimeMs) {
+    private MergedUpdate(CacheOperation operation, long lifespanMs, long maxIdleTimeMs) {
         this.operation = operation;
-        this.crossDCMessageStatus = crossDCMessageStatus;
         this.lifespanMs = lifespanMs;
         this.maxIdleTimeMs = maxIdleTimeMs;
     }
@@ -53,13 +50,18 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     }
 
     @Override
-    public CacheOperation getOperation(S session) {
-        return operation;
+    public boolean shouldRemove(S session) {
+        for (SessionUpdateTask<S> child : childUpdates) {
+            if(child.shouldRemove(session)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<S> sessionWrapper) {
-        return crossDCMessageStatus;
+    public CacheOperation getOperation() {
+        return operation;
     }
 
     public long getLifespanMs() {
@@ -80,41 +82,31 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
         S session = sessionWrapper.getEntity();
         for (SessionUpdateTask<S> child : childUpdates) {
             if (result == null) {
-                CacheOperation operation = child.getOperation(session);
+                CacheOperation operation = child.getOperation();
 
                 if (lifespanMs == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdleTimeMs == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
                     operation = CacheOperation.REMOVE;
                     logger.tracef("Entry '%s' is expired. Will remove it from the cache", sessionWrapper);
                 }
 
-                result = new MergedUpdate<>(operation, child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
+                result = new MergedUpdate<>(operation, lifespanMs, maxIdleTimeMs);
                 result.childUpdates.add(child);
             } else {
 
-                // Merge the operations. REMOVE is special case as other operations are not needed then.
-                CacheOperation mergedOp = result.getOperation(session).merge(child.getOperation(session), session);
-                if (mergedOp == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
+                // Merge the operations.
+                result.operation = result.getOperation().merge(child.getOperation(), session);
+
+                // REMOVE is special case as other operations are not needed then.
+                if (result.operation == CacheOperation.REMOVE) {
+                    result = new MergedUpdate<>(result.operation, lifespanMs, maxIdleTimeMs);
                     result.childUpdates.add(child);
                     return result;
-                }
-
-                result.operation = mergedOp;
-
-                // Check if we need to send message to other DCs and how critical it is
-                CrossDCMessageStatus currentDCStatus = result.getCrossDCMessageStatus(sessionWrapper);
-
-                // Optimization. If we already have SYNC, we don't need to retrieve childDCStatus
-                if (currentDCStatus != CrossDCMessageStatus.SYNC) {
-                    CrossDCMessageStatus childDCStatus = child.getCrossDCMessageStatus(sessionWrapper);
-                    result.crossDCMessageStatus = currentDCStatus.merge(childDCStatus);
                 }
 
                 // Finally add another update to the result
                 result.childUpdates.add(child);
             }
         }
-
         return result;
     }
 
@@ -122,6 +114,5 @@ public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<
     public String toString() {
         return "MergedUpdate" + childUpdates;
     }
-
 
 }

@@ -1,16 +1,13 @@
 import {
-  FormGroup,
-  Select,
-  SelectOption,
+  HelpItem,
+  KeycloakSelect,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@keycloak/keycloak-ui-shared";
+import { FormGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { HelpItem } from "ui-shared";
 import type { ComponentProps } from "./components";
-import { convertToName } from "./DynamicComponents";
 
 export const ListComponent = ({
   name,
@@ -20,6 +17,7 @@ export const ListComponent = ({
   options,
   required,
   isDisabled = false,
+  convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
@@ -38,11 +36,11 @@ export const ListComponent = ({
         defaultValue={defaultValue || options?.[0] || ""}
         control={control}
         render={({ field }) => (
-          <Select
+          <KeycloakSelect
             toggleId={name}
             isDisabled={isDisabled}
             onToggle={(toggle) => setOpen(toggle)}
-            onSelect={(_, value) => {
+            onSelect={(value) => {
               field.onChange(value as string);
               setOpen(false);
             }}
@@ -56,9 +54,11 @@ export const ListComponent = ({
                 selected={option === field.value}
                 key={option}
                 value={option}
-              />
+              >
+                {option}
+              </SelectOption>
             ))}
-          </Select>
+          </KeycloakSelect>
         )}
       />
     </FormGroup>

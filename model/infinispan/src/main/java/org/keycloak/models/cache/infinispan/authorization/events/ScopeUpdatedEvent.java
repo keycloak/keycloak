@@ -17,95 +17,30 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
-import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Objects;
 import java.util.Set;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(ScopeUpdatedEvent.ExternalizerImpl.class)
-public class ScopeUpdatedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
+@ProtoTypeId(Marshalling.SCOPE_UPDATED_EVENT)
+public class ScopeUpdatedEvent extends BaseScopeEvent {
 
-    private String id;
-    private String name;
-    private String serverId;
+    @ProtoFactory
+    ScopeUpdatedEvent(String id, String name, String serverId) {
+        super(id, name, serverId);
+    }
 
     public static ScopeUpdatedEvent create(String id, String name, String serverId) {
-        ScopeUpdatedEvent event = new ScopeUpdatedEvent();
-        event.id = id;
-        event.name = name;
-        event.serverId = serverId;
-        return event;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        ScopeUpdatedEvent that = (ScopeUpdatedEvent) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(serverId, that.serverId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), id, name, serverId);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ScopeUpdatedEvent [ id=%s, name=%s ]", id, name);
+        return new ScopeUpdatedEvent(id, name, serverId);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.scopeUpdated(id, name, serverId, invalidations);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<ScopeUpdatedEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, ScopeUpdatedEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.id, output);
-            MarshallUtil.marshallString(obj.name, output);
-            MarshallUtil.marshallString(obj.serverId, output);
-        }
-
-        @Override
-        public ScopeUpdatedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public ScopeUpdatedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            ScopeUpdatedEvent res = new ScopeUpdatedEvent();
-            res.id = MarshallUtil.unmarshallString(input);
-            res.name = MarshallUtil.unmarshallString(input);
-            res.serverId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
+        cache.scopeUpdated(getId(), name, serverId, invalidations);
     }
 }

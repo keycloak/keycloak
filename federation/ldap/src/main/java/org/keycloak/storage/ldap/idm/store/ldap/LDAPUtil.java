@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
+import java.io.ByteArrayOutputStream;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -129,6 +130,23 @@ public class LDAPUtil {
         }
 
         return result.toString().toUpperCase();
+    }
+
+    /**
+     * Converts the EDirectory GUID string into the byte array.
+     * @param guid
+     * @return
+     */
+    public static byte[] encodeObjectEDirectoryGUID(String guid) {
+        String withoutDash = guid.replace("-", "");
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+
+        for (int i = 0; i < withoutDash.length(); i++) {
+            String byteStr = new StringBuilder().append(withoutDash.charAt(i)).append(withoutDash.charAt(++i)).toString();
+            result.write(Integer.parseInt(byteStr, 16));
+        }
+
+        return result.toByteArray();
     }
 
     /**

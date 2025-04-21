@@ -32,12 +32,15 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
+import org.keycloak.storage.ldap.mappers.msad.UserAccountControl;
 
 import javax.naming.AuthenticationException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP;
 
 /**
  * Mapper specific to MSAD LDS. It's able to read the msDS-UserAccountDisabled, msDS-UserPasswordExpired and pwdLastSet attributes and set actions in Keycloak based on that.
@@ -105,7 +108,7 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
 
     @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
-        return new MSADUserModelDelegate(delegate, ldapUser);
+        return new MSADUserModelDelegate(delegate, ldapUser, parseBooleanParameter(mapperModel, ALWAYS_READ_ENABLED_VALUE_FROM_LDAP));
     }
 
     @Override
@@ -115,7 +118,8 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-
+        // check if user is enabled in MSAD or not.
+        user.setEnabled(!Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED)));
     }
 
     @Override
@@ -174,32 +178,24 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     public class MSADUserModelDelegate extends UserModelDelegate {
 
         private final LDAPObject ldapUser;
+        private final boolean isAlwaysReadEnabledFromLdap;
 
-        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser) {
+        public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser, boolean isAlwaysReadEnabledFromLdap) {
             super(delegate);
             this.ldapUser = ldapUser;
+            this.isAlwaysReadEnabledFromLdap = isAlwaysReadEnabledFromLdap;
         }
 
         @Override
         public boolean isEnabled() {
-            boolean kcEnabled = super.isEnabled();
-
-            // getPwdLastSet() == -1 when is set but not commit in AD LDS (-1 set pwdLastSet time to now)
-            if (getPwdLastSet() > 0
-                || getPwdLastSet() == -1) {
-                // Merge KC and MSAD LDS
-                return kcEnabled && !Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED));
-            } else {
-                // If new MSAD LDS user is created and pwdLastSet is still 0, MSAD account is in disabled state. So read just from Keycloak DB. User is not able to login via MSAD anyway
-                return kcEnabled;
+            if (isAlwaysReadEnabledFromLdap) {
+                return !Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED));
             }
+            return super.isEnabled();
         }
 
         @Override
         public void setEnabled(boolean enabled) {
-            // Always update DB
-            super.setEnabled(enabled);
-
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
                 if (enabled) {
                     logger.debugf("Removing msDS-UserAccountDisabled of user '%s'", ldapUser.getDn().toString());
@@ -209,9 +205,10 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
                     logger.debugf("Setting msDS-UserAccountDisabled of user '%s' to value 'TRUE'", ldapUser.getDn().toString());
                     ldapUser.setSingleAttribute(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED, "TRUE");
                 }
-                
                 ldapProvider.getLdapIdentityStore().update(ldapUser);
             }
+            // Always update DB
+            super.setEnabled(enabled);
         }
 
         @Override

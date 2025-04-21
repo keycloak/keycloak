@@ -1,26 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
-import {
-  Button,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
-import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
-import { camelCase } from "lodash-es";
-
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
+import { Button, SelectOption, TextInput } from "@patternfly/react-core";
+import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import { camelCase } from "lodash-es";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { defaultContextAttributes } from "../utils";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./key-based-attribute-input.css";
 
@@ -107,10 +94,9 @@ const ValueInput = ({
           defaultValue={[]}
           control={control}
           render={({ field }) => (
-            <Select
+            <KeycloakSelect
               toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
-              name={`${name}.${rowIndex}.value`}
               chipGroupProps={{
                 numChips: 1,
                 expandedText: t("hide"),
@@ -122,18 +108,18 @@ const ValueInput = ({
               typeAheadAriaLabel={t("selectOrTypeAKey")}
               placeholderText={t("selectOrTypeAKey")}
               selections={field.value}
-              onSelect={(_, v) => {
+              onSelect={(v) => {
                 field.onChange(v);
 
                 toggleValueSelect(rowIndex, false);
               }}
             >
               {renderSelectOptionType()}
-            </Select>
+            </KeycloakSelect>
           )}
         />
       ) : (
-        <KeycloakTextInput
+        <TextInput
           id={`${getMessageBundleKey(attribute.key)}-value`}
           className="value-input"
           defaultValue={attribute.value}
@@ -174,7 +160,7 @@ export const KeyBasedAttributeInput = ({
   const watchLastValue = watch(`${name}.${fields.length - 1}.value`, "");
 
   return (
-    <TableComposable
+    <Table
       className="kc-attributes__table"
       aria-label="Role attribute keys and values"
       variant="compact"
@@ -194,17 +180,16 @@ export const KeyBasedAttributeInput = ({
                 defaultValue=""
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <KeycloakSelect
                     toggleId={`${name}.${rowIndex}.key`}
                     className="kc-attribute-key-selectable"
-                    name={`${name}.${rowIndex}.key`}
                     onToggle={(open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}
                     typeAheadAriaLabel={t("selectOrTypeAKey")}
                     placeholderText={t("selectOrTypeAKey")}
                     selections={field.value}
-                    onSelect={(_, v) => {
+                    onSelect={(v) => {
                       field.onChange(v.toString());
 
                       toggleKeySelect(rowIndex, false);
@@ -219,7 +204,7 @@ export const KeyBasedAttributeInput = ({
                         {attribute.name}
                       </SelectOption>
                     ))}
-                  </Select>
+                  </KeycloakSelect>
                 )}
               />
             </Td>
@@ -246,7 +231,7 @@ export const KeyBasedAttributeInput = ({
         <Tr>
           <Td>
             <Button
-              aria-label={t("addAttribute")}
+              aria-label={t("addAttribute", { label: t("attribute") })}
               id={`${name}-plus-icon`}
               variant="link"
               className="kc-attributes__plus-icon"
@@ -258,11 +243,11 @@ export const KeyBasedAttributeInput = ({
               isDisabled={!watchLastValue}
               data-testid="attribute-add-row"
             >
-              {t("addAttribute")}
+              {t("addAttribute", { label: t("attribute") })}
             </Button>
           </Td>
         </Tr>
       </Tbody>
-    </TableComposable>
+    </Table>
   );
 };

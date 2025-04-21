@@ -1,10 +1,7 @@
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { CSSProperties } from "react";
-import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { HelpItem } from "ui-shared";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 
 export const Time = ({
   name,
@@ -14,42 +11,16 @@ export const Time = ({
   style?: CSSProperties;
 }) => {
   const { t } = useTranslation();
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
   return (
-    <FormGroup
+    <TimeSelectorControl
+      name={name}
       style={style}
       label={t(name)}
-      fieldId={name}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${name}Help`)}
-          fieldLabelId={`realm-settings:${name}`}
-        />
-      }
-      validated={
-        errors[name] ? ValidatedOptions.error : ValidatedOptions.default
-      }
-      helperTextInvalid={t("required")}
-    >
-      <Controller
-        name={name}
-        defaultValue=""
-        control={control}
-        rules={{ required: true }}
-        render={({ field }) => (
-          <TimeSelector
-            data-testid={name}
-            value={field.value}
-            onChange={field.onChange}
-            validated={
-              errors[name] ? ValidatedOptions.error : ValidatedOptions.default
-            }
-          />
-        )}
-      />
-    </FormGroup>
+      labelIcon={t(`${name}Help`)}
+      controller={{
+        defaultValue: "",
+        rules: { required: t("required") },
+      }}
+    />
   );
 };

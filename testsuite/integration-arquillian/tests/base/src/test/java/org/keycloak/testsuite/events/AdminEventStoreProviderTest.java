@@ -224,7 +224,6 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void expireOld() {
-        Assume.assumeTrue("Map storage event store provider does not support changing expiration of existing events", keycloakUsingProviderWithId(EventStoreProvider.class, "jpa"));
         testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
         testing().onAdminEvent(create(System.currentTimeMillis() - 20000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
         testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);

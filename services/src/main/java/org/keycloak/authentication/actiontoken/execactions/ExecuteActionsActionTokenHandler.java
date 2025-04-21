@@ -18,6 +18,7 @@ package org.keycloak.authentication.actiontoken.execactions;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.*;
@@ -84,11 +85,12 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
             UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                    authSession.getClient().getClientId(), authSession.getTabId());
+                    authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setUser(authSession.getAuthenticatedUser())
                     .setSuccess(Messages.CONFIRM_EXECUTION_OF_ACTIONS)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())

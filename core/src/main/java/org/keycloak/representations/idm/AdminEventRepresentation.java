@@ -17,11 +17,14 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.Map;
+
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class AdminEventRepresentation {
 
+    private String id;
     private long time;
     private String realmId;
     private AuthDetailsRepresentation authDetails;
@@ -30,6 +33,15 @@ public class AdminEventRepresentation {
     private String resourcePath;
     private String representation;
     private String error;
+    private Map<String, String> details;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTime() {
         return time;
@@ -93,5 +105,13 @@ public class AdminEventRepresentation {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

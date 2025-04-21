@@ -9,7 +9,7 @@ export const User = () => {
       label="users"
       helpText={t("policyUsers")}
       defaultValue={[]}
-      isRequired
+      variant="typeaheadMulti"
     />
   );
 };

@@ -96,16 +96,6 @@ include::topics/service-rpt-overview.adoc[leveloffset=+2]
 
 include::topics/service-rpt-token-introspection.adoc[leveloffset=+3]
 
-include::topics/service-client-api.adoc[leveloffset=+2]
-
 include::topics/enforcer-overview.adoc[leveloffset=+1]
 
-include::topics/enforcer-configuration.adoc[leveloffset=+2]
-
-include::topics/enforcer-claim-information-point.adoc[leveloffset=+2]
-
-include::topics/enforcer-authorization-context.adoc[leveloffset=+2]
-
 include::topics/enforcer-js-adapter.adoc[leveloffset=+2]
-
-include::topics/enforcer-https.adoc[leveloffset=+2]

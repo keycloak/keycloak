@@ -1,0 +1,98 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploy {project_name} for HA with the {project_name} Operator"
+summary="Building block for a {project_name} deployment"
+tileVisible="false" >
+
+This guide describes advanced {project_name} configurations for Kubernetes which are load tested and will recover from single Pod failures.
+
+These instructions are intended for use with the setup described in the <@links.ha id="concepts-multi-site"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="bblocks-multi-site"/> {section}.
+
+== Prerequisites
+
+* OpenShift or Kubernetes cluster running.
+* Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
+* Aurora AWS database deployed using the <@links.ha id="deploy-aurora-multi-az" /> {section}.
+* {jdgserver_name} server deployed using the <@links.ha id="deploy-infinispan-kubernetes-crossdc" /> {section}.
+* Running {project_name} with OpenJDK 21, which is the default for the containers distributed for {project_name}, as this enabled virtual threads for the JGroups communication.
+
+== Procedure
+
+. Determine the sizing of the deployment using the <@links.ha id="concepts-memory-and-cpu-sizing" /> {section}.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
+
+. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="deploy-aurora-multi-az" anchor="connecting-aurora-to-keycloak" />
+
+. Notice the configuration file below options relevant for connecting to the {jdgserver_name} server from <@links.ha id="deploy-infinispan-kubernetes-crossdc" anchor="connecting-infinispan-to-keycloak" />
+
+. Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
+
+. Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
++
+[source,yaml]
+----
+include::examples/generated/keycloak.yaml[tag=keycloak]
+----
+<1> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+Adjust this number to meet the needs of your system.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
+See the <@links.ha id="concepts-database-connections" /> {section} for details.
+<2> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
+<3> Enable additional features for multi-site support like the loadbalancer probe `/lb-check`.
+<4> XA transactions are not supported by the https://github.com/awslabs/aws-advanced-jdbc-wrapper/releases/[Amazon Web Services JDBC Driver].
+<5> To be able to analyze the system under load, enable the metrics endpoint.
+The disadvantage of the setting is that the metrics will be available at the external {project_name} endpoint, so you must add a filter so that the endpoint is not available from the outside.
+Use a reverse proxy in front of {project_name} to filter out those URLs.
+
+== Verifying the deployment
+
+Confirm that the {project_name} deployment is ready.
+
+[source,bash]
+----
+kubectl wait --for=condition=Ready keycloaks.k8s.keycloak.org/keycloak
+kubectl wait --for=condition=RollingUpdate=False keycloaks.k8s.keycloak.org/keycloak
+----
+
+== Optional: Load shedding
+
+To enable load shedding, limit the number of queued requests.
+
+.Load shedding with max queued http requests
+[source,yaml,indent=0]
+----
+spec:
+  additionalOptions:
+include::examples/generated/keycloak.yaml[tag=keycloak-queue-size]
+----
+
+All exceeding requests are served with an HTTP 503.
+
+You might consider limiting the value for `http-pool-max-threads` further because multiple concurrent threads will lead to throttling by Kubernetes once the requested CPU limit is reached.
+
+See the <@links.ha id="concepts-threads" /> {section} about load shedding for details.
+
+== Optional: Disable sticky sessions
+
+When running on OpenShift and the default passthrough Ingress setup as provided by the {project_name} Operator, the load balancing done by HAProxy is done by using sticky sessions based on the IP address of the source.
+When running load tests, or when having a reverse proxy in front of HAProxy, you might want to disable this setup to avoid receiving all requests on a single {project_name} Pod.
+
+Add the following supplementary configuration under the `spec` in the {project_name} Custom Resource to disable sticky sessions.
+
+[source,yaml,subs="attributes+"]
+----
+spec:
+  ingress:
+    enabled: true
+    annotations:
+      # When running load tests, disable sticky sessions on the OpenShift HAProxy router
+      # to avoid receiving all requests on a single {project_name} Pod.
+      haproxy.router.openshift.io/balance: roundrobin
+      haproxy.router.openshift.io/disable_cookies: 'true'
+----
+
+</@tmpl.guide>

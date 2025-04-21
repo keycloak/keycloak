@@ -16,34 +16,21 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.jboss.logging.Logger;
-import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.ForbiddenException;
+import jakarta.ws.rs.ForbiddenException;
 
 /**
- * Manages default policies for all users.
- *
- *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 class RealmPermissions implements RealmPermissionEvaluator {
-    private static final Logger logger = Logger.getLogger(RealmPermissions.class);
-    protected final KeycloakSession session;
-    protected final RealmModel realm;
-    protected final AuthorizationProvider authz;
+
     protected final MgmtPermissions root;
 
-    public RealmPermissions(KeycloakSession session, RealmModel realm, AuthorizationProvider authz, MgmtPermissions root) {
-        this.session = session;
-        this.realm = realm;
-        this.authz = authz;
+    public RealmPermissions(MgmtPermissions root) {
         this.root = root;
     }
-
 
     public boolean canManageRealmDefault() {
         return root.hasOneAdminRole(AdminRoles.MANAGE_REALM);
@@ -61,11 +48,11 @@ class RealmPermissions implements RealmPermissionEvaluator {
         return root.hasOneAdminRole(AdminRoles.MANAGE_IDENTITY_PROVIDERS, AdminRoles.VIEW_IDENTITY_PROVIDERS);
     }
 
-    public boolean canManageAuthorizationDefault() {
+    public boolean canManageAuthorizationDefault(ResourceServer resourceServer) {
         return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.MANAGE_CLIENTS);
 
     }
-    public boolean canViewAuthorizationDefault() {
+    public boolean canViewAuthorizationDefault(ResourceServer resourceServer) {
         return root.hasOneAdminRole(AdminRoles.MANAGE_AUTHORIZATION, AdminRoles.VIEW_AUTHORIZATION);
     }
     public boolean canManageEventsDefault() {
@@ -86,7 +73,6 @@ class RealmPermissions implements RealmPermissionEvaluator {
             throw new ForbiddenException();
         }
     }
-
 
     @Override
     public boolean canManageRealm() {
@@ -138,24 +124,24 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
 
     @Override
-    public boolean canManageAuthorization() {
-        return canManageAuthorizationDefault();
+    public boolean canManageAuthorization(ResourceServer resourceServer) {
+        return canManageAuthorizationDefault(resourceServer);
     }
 
     @Override
-    public boolean canViewAuthorization() {
-        return canViewAuthorizationDefault();
+    public boolean canViewAuthorization(ResourceServer resourceServer) {
+        return canViewAuthorizationDefault(resourceServer);
     }
 
     @Override
-    public void requireManageAuthorization() {
-        if (!canManageAuthorization()) {
+    public void requireManageAuthorization(ResourceServer resourceServer) {
+        if (!canManageAuthorization(resourceServer)) {
             throw new ForbiddenException();
         }
     }
     @Override
-    public void requireViewAuthorization() {
-        if (!canViewAuthorization()) {
+    public void requireViewAuthorization(ResourceServer resourceServer) {
+        if (!canViewAuthorization(resourceServer)) {
             throw new ForbiddenException();
         }
     }

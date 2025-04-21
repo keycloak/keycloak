@@ -2,15 +2,17 @@
 
 <@tmpl.guide
 title="Podman"
-summary="Get started with Keycloak on Podman">
+summary="Get started with {project_name} on Podman">
 
 :containerCommand: podman
 
 :links-local: true
-:links-admin-console: http://localhost:8080/admin[Keycloak Admin Console]
-:links-account-console: http://localhost:8080/realms/myrealm/account[Keycloak Account Console]
+:links-admin-console: http://localhost:8080/admin[{project_name} Admin Console]
+:links-account-console: http://localhost:8080/realms/myrealm/account[{project_name} Account Console]
 
 == Before you start
+
+include::templates/hw-requirements.adoc[]
 
 Make sure you have Podman installed.
 

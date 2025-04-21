@@ -1,35 +1,41 @@
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  KeycloakSelect,
+  SelectVariant,
+  label,
+  useAlerts,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Alert,
   AlertVariant,
   Button,
   ButtonVariant,
+  Checkbox,
   InputGroup,
-  Select,
+  InputGroupItem,
   SelectOption,
-  SelectVariant,
   Text,
   TextContent,
+  TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import { Form } from "react-router-dom";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { isBundleKey, unWrap } from "../../user/utils";
 import { CheckIcon } from "@patternfly/react-icons";
-import { useAlerts } from "../alert/Alerts";
 import { ReactNode, useState } from "react";
-import { UserAttribute } from "./UserDataTable";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Form } from "react-router-dom";
+import { UserAttribute, UserFilter } from "./UserDataTable";
 
 type UserDataTableAttributeSearchFormProps = {
-  activeFilters: UserAttribute[];
-  setActiveFilters: (filters: UserAttribute[]) => void;
+  activeFilters: UserFilter;
+  setActiveFilters: (filters: UserFilter) => void;
   profile: UserProfileConfig;
   createAttributeSearchChips: () => ReactNode;
   searchUserWithAttributes: () => void;
 };
+
+type UserFilterForm = UserAttribute & { exact: boolean };
 
 export function UserDataTableAttributeSearchForm({
   activeFilters,
@@ -56,13 +62,16 @@ export function UserDataTableAttributeSearchForm({
     setValue,
     setError,
     clearErrors,
-  } = useForm<UserAttribute>({
+    control,
+  } = useForm<UserFilterForm>({
     mode: "onChange",
     defaultValues,
   });
 
   const isAttributeKeyDuplicate = () => {
-    return activeFilters.some((filter) => filter.name === getValues().name);
+    return activeFilters.userAttribute.some(
+      (filter) => filter.name === getValues().name,
+    );
   };
 
   const isAttributeNameValid = () => {
@@ -73,7 +82,9 @@ export function UserDataTableAttributeSearchForm({
         message: t("searchUserByAttributeMissingKeyError"),
       });
     } else if (
-      activeFilters.some((filter) => filter.name === getValues().name)
+      activeFilters.userAttribute.some(
+        (filter) => filter.name === getValues().name,
+      )
     ) {
       setError("name", {
         type: "conflict",
@@ -103,37 +114,38 @@ export function UserDataTableAttributeSearchForm({
 
   const addToFilter = () => {
     if (isAttributeValid()) {
-      setActiveFilters([
-        ...activeFilters,
-        {
-          ...getValues(),
-        },
-      ]);
-      reset();
+      setActiveFilters({
+        exact: getValues().exact,
+        userAttribute: [...activeFilters.userAttribute, { ...getValues() }],
+      });
+      reset({ exact: getValues().exact });
     } else {
-      errors.name?.message &&
+      if (errors.name?.message) {
         addAlert(errors.name.message, AlertVariant.danger);
-      errors.value?.message &&
+      }
+
+      if (errors.value?.message) {
         addAlert(errors.value.message, AlertVariant.danger);
+      }
     }
   };
 
   const clearActiveFilters = () => {
-    const filtered = [...activeFilters].filter(
+    const filtered = [...activeFilters.userAttribute].filter(
       (chip) => chip.name !== chip.name,
     );
-    setActiveFilters(filtered);
+    setActiveFilters({ exact: getValues().exact, userAttribute: filtered });
   };
 
   const createAttributeKeyInputField = () => {
     if (profile) {
       return (
-        <Select
-          data-testid="search-attribute-name"
+        <KeycloakSelect
+          data-testid="search-attribute-name-select"
           variant={SelectVariant.typeahead}
           onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
-          onSelect={(_, selectedValue) => {
+          onSelect={(selectedValue) => {
             setValue("displayName", selectedValue.toString());
             if (isAttributeKeyDuplicate()) {
               setError("name", { type: "conflict" });
@@ -153,23 +165,21 @@ export function UserDataTableAttributeSearchForm({
           {profile.attributes?.map((option) => (
             <SelectOption
               key={option.name}
-              value={
-                (isBundleKey(option.displayName)
-                  ? t(unWrap(option.displayName!))
-                  : option.displayName) || option.name
-              }
+              value={label(t, option.displayName!, option.name)}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectAttributeKeyOpen(false);
                 setValue("name", option.name!);
               }}
-            />
+            >
+              {label(t, option.displayName!, option.name)}
+            </SelectOption>
           ))}
-        </Select>
+        </KeycloakSelect>
       );
     } else {
       return (
-        <KeycloakTextInput
+        <TextInput
           id="name"
           placeholder={t("keyPlaceholder")}
           validated={errors.name && "error"}
@@ -184,22 +194,26 @@ export function UserDataTableAttributeSearchForm({
   };
 
   return (
-    <Form className="user-attribute-search-form">
+    <Form
+      className="user-attribute-search-form"
+      data-testid="user-attribute-search-form"
+    >
       <TextContent className="user-attribute-search-form-headline">
-        <Text component={TextVariants.h6}>{t("selectAttributes")}</Text>
+        <Text component={TextVariants.h2}>{t("selectAttributes")}</Text>
       </TextContent>
       <Alert
         isInline
         className="user-attribute-search-form-alert"
         variant="info"
         title={t("searchUserByAttributeDescription")}
+        component="h3"
       />
       <TextContent className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h6}>{t("key")}</Text>
+          <Text component={TextVariants.h3}>{t("key")}</Text>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h6}>{t("value")}</Text>
+          <Text component={TextVariants.h3}>{t("value")}</Text>
         </div>
       </TextContent>
       <div className="user-attribute-search-form-left">
@@ -207,35 +221,58 @@ export function UserDataTableAttributeSearchForm({
       </div>
       <div className="user-attribute-search-form-right">
         <InputGroup>
-          <KeycloakTextInput
-            id="value"
-            placeholder={t("valuePlaceholder")}
-            validated={errors.value && "error"}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addToFilter();
-              }
-            }}
-            {...register("value", {
-              required: true,
-              validate: isAttributeValueValid,
-            })}
-          />
-          <Button
-            variant="control"
-            icon={<CheckIcon />}
-            onClick={addToFilter}
-          />
+          <InputGroupItem>
+            <TextInput
+              id="value"
+              placeholder={t("valuePlaceholder")}
+              validated={errors.value && "error"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addToFilter();
+                }
+              }}
+              {...register("value", {
+                required: true,
+                validate: isAttributeValueValid,
+              })}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <Button
+              data-testid="user-attribute-search-add-filter-button"
+              variant="control"
+              icon={<CheckIcon />}
+              onClick={addToFilter}
+              aria-label={t("addToFilter")}
+            />
+          </InputGroupItem>
         </InputGroup>
       </div>
       {createAttributeSearchChips()}
+
+      <div className="pf-v5-u-pt-lg">
+        <Controller
+          name="exact"
+          defaultValue={false}
+          control={control}
+          render={({ field }) => (
+            <Checkbox
+              id="exact"
+              data-testid="exact"
+              label={t("exactSearch")}
+              isChecked={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </div>
       <ActionGroup className="user-attribute-search-form-action-group">
         <Button
           data-testid="search-user-attribute-btn"
           variant="primary"
           type="submit"
-          isDisabled={!activeFilters.length}
+          isDisabled={!activeFilters.userAttribute.length}
           onClick={searchUserWithAttributes}
         >
           {t("search")}

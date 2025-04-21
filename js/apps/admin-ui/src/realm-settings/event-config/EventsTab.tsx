@@ -1,5 +1,6 @@
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -12,14 +13,11 @@ import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertToFormValues } from "../../util";
-import { useFetch } from "../../utils/useFetch";
 import { AddEventTypesDialog } from "./AddEventTypesDialog";
 import { EventConfigForm, EventsType } from "./EventConfigForm";
 import { EventListenersForm } from "./EventListenersForm";
@@ -34,6 +32,8 @@ type EventsConfigForm = RealmEventsConfigRepresentation & {
 };
 
 export const EventsTab = ({ realm }: EventsTabProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<EventsConfigForm>();
   const { setValue, handleSubmit } = form;
@@ -49,7 +49,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [addEventType, setAddEventType] = useState(false);
 
   const { addAlert, addError } = useAlerts();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, refresh: refreshRealm } = useRealm();
 
   const setupForm = (eventConfig?: EventsConfigForm) => {
     setEvents(eventConfig);
@@ -78,7 +78,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
       } catch (error) {
-        addError(`realm-settings:${type}-events-cleared-error`, error);
+        addError(`${type}-events-cleared-error`, error);
       }
     },
   });
@@ -132,6 +132,8 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         error,
       );
     }
+
+    refreshRealm();
   };
 
   const addEventTypes = async (eventTypes: EventType[]) => {

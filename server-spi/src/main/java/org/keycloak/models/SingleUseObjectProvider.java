@@ -28,14 +28,17 @@ import java.util.Map;
  */
 public interface SingleUseObjectProvider extends Provider {
 
-    // suffix to a key to indicate that token is considered revoked
+    /**
+     * Suffix to a key to indicate that token is considered revoked.
+     * For revoked tokens, only the methods {@link #put} and {@link #contains} must be used.
+     */
     String REVOKED_KEY = ".revoked";
 
     /**
      * Stores the given data and guarantees that data should be available in the store for at least the time specified by {@param lifespanSeconds} parameter
-     * @param key
-     * @param lifespanSeconds
-     * @param notes
+     * @param key String
+     * @param lifespanSeconds Minimum lifespan for which successfully added key will be kept in the cache.
+     * @param notes For revoked tokens, this must be an empty Map.
      */
     void put(String key, long lifespanSeconds, Map<String, String> notes);
 
@@ -48,10 +51,10 @@ public interface SingleUseObjectProvider extends Provider {
 
     /**
      * This method returns data just if removal was successful. Implementation should guarantee that "remove" is single-use. So if
-     * 2 threads (even on different cluster nodes or on different cross-dc nodes) calls "remove(123)" concurrently, then just one of them
+     * 2 threads (even on different cluster nodes or on different multi-site nodes) calls "remove(123)" concurrently, then just one of them
      * is allowed to succeed and return data back. It can't happen that both will succeed.
      *
-     * @param key
+     * @param key String
      * @return context data associated to the key. It returns {@code null} if there are no context data available.
      */
     Map<String, String> remove(String key);

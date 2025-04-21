@@ -17,7 +17,9 @@
 
 package org.keycloak.broker.provider.mappersync;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 
@@ -27,9 +29,17 @@ import org.keycloak.provider.ProviderEvent;
  * @author <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public interface ConfigSynchronizer<T extends ProviderEvent> {
+    Logger LOG = Logger.getLogger(ConfigSynchronizer.class);
+
     Class<T> getEventClass();
 
-    RealmModel extractRealm(T event);
+    void handleEvent(T event);
 
-    void handleEvent(T event, IdentityProviderMapperModel idpMapper);
+    default void logEventProcessed(String configPropertyName, String previousValue, String newValue, String realmName,
+                                     String mapperName, String idpAlias) {
+        LOG.infof(
+                "Reference of type '%s' changed from '%s' to '%s' in realm '%s'. Adjusting the reference from mapper '%s' of IDP '%s'.",
+                configPropertyName, previousValue, newValue, realmName, mapperName, idpAlias);
+
+    }
 }

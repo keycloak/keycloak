@@ -18,8 +18,13 @@
 package org.keycloak.testsuite.model.session;
 
 import org.hamcrest.Matchers;
+import org.infinispan.Cache;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.interceptors.AsyncInterceptorChain;
+import org.infinispan.interceptors.impl.CacheMgmtInterceptor;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -27,11 +32,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,6 +58,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
+        s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setAccessCodeLifespanLogin(1800);
 
@@ -59,6 +69,8 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        RealmModel realm = s.realms().getRealm(realmId);
+        s.getContext().setRealm(realm);
         s.realms().removeRealm(realmId);
     }
 
@@ -194,5 +206,104 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
 
             return null;
         });
+    }
+
+    @Test
+    public void testConcurrentAuthenticationSessionsCreation() throws InterruptedException {
+        final String rootId = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            return rootAuthSession.getId();
+        });
+        ConcurrentHashMap.KeySetView<String, Boolean> tabIds = ConcurrentHashMap.newKeySet();
+        inIndependentFactories(4, 60, () -> {
+                withRealm(realmId, (session, realm) -> {
+                    RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+                    ClientModel client = realm.getClientByClientId("test-app");
+                    AuthenticationSessionModel authenticationSession = rootAuthSession.createAuthenticationSession(client);
+                    tabIds.add(authenticationSession.getTabId());
+                    return null;
+                });
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+            Assert.assertEquals(4, rootAuthSession.getAuthenticationSessions().size());
+            assertThat(rootAuthSession.getAuthenticationSessions().keySet(), Matchers.containsInAnyOrder(tabIds.toArray()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testConcurrentAuthenticationSessionsRemoval() throws InterruptedException {
+        ConcurrentLinkedQueue<String> tabIds = new ConcurrentLinkedQueue<>();
+        int concurrentTabs = 4;
+        final String rootId = withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            for (int i = 0; i < concurrentTabs; i++) {
+                tabIds.add(rootAuthSession.createAuthenticationSession(client).getTabId());
+            }
+            return rootAuthSession.getId();
+        });
+        inIndependentFactories(concurrentTabs, 60, () -> {
+            withRealm(realmId, (session, realm) -> {
+                RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+                rootAuthSession.removeAuthenticationSessionByTabId(tabIds.remove());
+                return null;
+            });
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootId);
+            Assert.assertNull(rootAuthSession);
+            return null;
+        });
+    }
+
+    @Test
+    public void testRemoveAfterCreation() {
+        var computeOperationCount = operationCounterSupplier();
+        var operationsBefore = computeOperationCount.getAsLong();
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            // optimization in place:
+            // create and remove in the same transaction should not trigger any operation in the Infinispan cache.
+            var rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+            var client = realm.getClientByClientId("test-app");
+            rootAuthSession.setTimestamp(1000);
+            var authSession = rootAuthSession.createAuthenticationSession(client);
+            rootAuthSession.removeAuthenticationSessionByTabId(authSession.getTabId());
+            session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+        });
+
+        var operationsAfter = computeOperationCount.getAsLong();
+        Assert.assertEquals("No operations expected in the cache", operationsBefore, operationsAfter);
+    }
+
+    private static long getNumberOfOperations(Cache<?, ?> cache) {
+        var statsInterceptor = ComponentRegistry.componentOf(cache, AsyncInterceptorChain.class).findInterceptorWithClass(CacheMgmtInterceptor.class);
+        statsInterceptor.setStatisticsEnabled(true);
+        return statsInterceptor.getHits() + statsInterceptor.getMisses() + // reads
+                statsInterceptor.getStores() + // writes
+                statsInterceptor.getRemoveHits() + statsInterceptor.getRemoveMisses(); // removes
+    }
+
+    private LongSupplier operationCounterSupplier() {
+        var hotRodServers = getParameters(HotRodServerRule.class).findFirst();
+        if (hotRodServers.isEmpty()) {
+            // fetch stats from embedded cache
+            return () -> withRealm(realmId, (session, realm) -> {
+                var cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+                return getNumberOfOperations(cache);
+            });
+        }
+        // fetch stats from external cache
+        return () -> hotRodServers.stream()
+                .flatMap(HotRodServerRule::streamCacheManagers)
+                .map(manager -> manager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME))
+                .mapToLong(AuthenticationSessionTest::getNumberOfOperations)
+                .sum();
+
     }
 }

@@ -24,7 +24,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -35,9 +34,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -74,8 +73,8 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = doAccessTokenRequestPostAuth(code, "password");
 
         assertEquals(200, response.getStatusCode());
 
@@ -91,9 +90,9 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     }
 
 
-    private OAuthClient.AccessTokenResponse doAccessTokenRequestPostAuth(String code, String clientSecret) {
+    private AccessTokenResponse doAccessTokenRequestPostAuth(String code, String clientSecret) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+            HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
@@ -104,16 +103,11 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
 
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
 
             try {
-                return new OAuthClient.AccessTokenResponse(client.execute(post));
+                return new AccessTokenResponse(client.execute(post));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }

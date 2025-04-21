@@ -17,41 +17,53 @@
 
 package org.keycloak.testsuite;
 
+import org.keycloak.config.ConfigProviderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import jakarta.servlet.ServletContext;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.common.util.SystemEnvProperties;
+import java.net.URL;
+import java.util.Optional;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonConfigProvider;
 
-public class JsonConfigProviderFactory extends org.keycloak.services.util.JsonConfigProviderFactory {
+public class JsonConfigProviderFactory implements ConfigProviderFactory {
 
-    public static final String SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES = "keycloak.server.context.config.property-overrides";
+    private static final Logger LOG = Logger.getLogger(JsonConfigProviderFactory.class);
 
     @Override
-    protected Properties getProperties() {
-        return new SystemEnvProperties(getPropertyOverrides());
-    }
+    public Optional<Config.ConfigProvider> create() {
 
-    private Map<String, String> getPropertyOverrides() {
-
-        ServletContext context = Resteasy.getContextData(ServletContext.class);
-        Map<String, String> propertyOverridesMap = new HashMap<>();
-        String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
+        JsonNode node = null;
 
         try {
-            if (context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES) != null) {
-                JsonNode jsonObj = JsonSerialization.mapper.readTree(propertyOverrides);
-                jsonObj.fields().forEachRemaining(e -> propertyOverridesMap.put(e.getKey(), e.getValue().asText()));
+            String configDir = System.getProperty("jboss.server.config.dir");
+            if (configDir != null) {
+                File f = new File(configDir + File.separator + "keycloak-server.json");
+                if (f.isFile()) {
+                    ServicesLogger.LOGGER.loadingFrom(f.getAbsolutePath());
+                    node = JsonSerialization.mapper.readTree(f);
+                }
+            }
+
+            if (node == null) {
+                URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+                if (resource != null) {
+                    ServicesLogger.LOGGER.loadingFrom(resource);
+                    node = JsonSerialization.mapper.readTree(resource);
+                }
             }
         } catch (IOException e) {
+            LOG.warn("Failed to load JSON config", e);
         }
 
-        return propertyOverridesMap;
+        return createJsonProvider(node);
 
     }
 
+    protected Optional<Config.ConfigProvider> createJsonProvider(JsonNode node) {
+        return Optional.ofNullable(node).map(n -> new JsonConfigProvider(n));
+    }
 }

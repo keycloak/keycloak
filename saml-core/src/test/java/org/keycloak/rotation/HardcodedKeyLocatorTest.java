@@ -139,4 +139,13 @@ public class HardcodedKeyLocatorTest {
         Assert.assertNotNull(found);
         Assert.assertEquals(cert1.getPublicKey(), found);
     }
+
+    @Test
+    public void testDuplicateKey() throws Exception {
+        KeyLocator locator = createLocatorWithoutName(cert1, cert1);
+        KeyInfo info = XMLSignatureUtil.createKeyInfo(null, null, cert1);
+        Key found = locator.getKey(info);
+        Assert.assertNotNull(found);
+        Assert.assertEquals(cert1.getPublicKey(), found);
+    }
 }

@@ -30,6 +30,7 @@ import org.keycloak.models.ModelDuplicateException;
 
 import javax.naming.NamingException;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 
 import static org.jboss.logging.Logger.Level.DEBUG;
@@ -47,7 +48,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 @MessageLogger(projectCode="KC-SERVICES", length=4)
 public interface ServicesLogger extends BasicLogger {
 
-    ServicesLogger LOGGER = Logger.getMessageLogger(ServicesLogger.class, "org.keycloak.services");
+    ServicesLogger LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ServicesLogger.class, "org.keycloak.services");
 
     @LogMessage(level = INFO)
     @Message(id=1, value="Loading config from %s")
@@ -88,7 +89,7 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=10, value="Failed to add user '%s' to realm '%s': user with username exists")
     void addUserFailedUserExists(String user, String realm);
-
+    
     @LogMessage(level = ERROR)
     @Message(id=11, value="Failed to add user '%s' to realm '%s'")
     void addUserFailed(@Cause Throwable t, String user, String realm);
@@ -253,10 +254,6 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=52, value="Failed processing type")
     void failedProcessingType(@Cause Exception e);
 
-    @LogMessage(level = WARN)
-    @Message(id=53, value="login failure for user %s from ip %s")
-    void loginFailure(String user, String ip);
-
     @LogMessage(level = ERROR)
     @Message(id=54, value="Unknown action: %s")
     void unknownAction(String action);
@@ -350,12 +347,12 @@ public interface ServicesLogger extends BasicLogger {
     void rejectedNonLocalAttemptToCreateInitialUser(String remoteAddr);
 
     @LogMessage(level = INFO)
-    @Message(id=77, value="Created initial admin user with username %s")
-    void createdInitialAdminUser(String userName);
+    @Message(id=77, value="Created temporary admin user with username %s")
+    void createdTemporaryAdminUser(String userName);
 
-    @LogMessage(level = WARN)
-    @Message(id=78, value="Rejected attempt to create initial user as user is already created")
-    void initialUserAlreadyCreated();
+    @LogMessage(level = INFO)
+    @Message(id=78, value="Created temporary admin service account with client id %s")
+    void createdTemporaryAdminService(String clientId);
 
     @LogMessage(level = WARN)
     @Message(id=79, value="Locale not specified for messages.json")
@@ -405,7 +402,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=90, value="Failed to close ProviderSession")
     void failedToCloseProviderSession(@Cause Throwable t);
 
-    @LogMessage(level = WARN)
+    @LogMessage(level = DEBUG)
     @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request.")
     @Once
     void oidcScopeMissing();
@@ -469,10 +466,19 @@ public interface ServicesLogger extends BasicLogger {
     void scriptEngineCreated(String engineName, String engineVersion, String mimeType);
 
     @LogMessage(level = DEBUG)
-    @Message(id=107, value="Skipping create admin user. Admin already exists in realm '%s'.")
-    void addAdminUserFailedAdminExists(String realm);
+    @Message(id=107, value="Skipping create admin user. User(s) already exist in realm '%s'.")
+    void addAdminUserFailedUsersExist(String realm);
 
     @LogMessage(level = WARN)
     @Message(id=108, value="URI '%s' doesn't match any trustedHost or trustedDomain")
     void uriDoesntMatch(String uri);
+    
+    @LogMessage(level = ERROR)
+    @Message(id=109, value="Failed to add client '%s' to realm '%s': client with client ID exists")
+    void addClientFailedClientExists(String clientId, String realm);
+    
+    @LogMessage(level = WARN)
+    @Message(id=110, value="Environment variable '%s' is deprecated, use '%s' instead")
+    void usingDeprecatedEnvironmentVariable(String deprecated, String supported);
+
 }

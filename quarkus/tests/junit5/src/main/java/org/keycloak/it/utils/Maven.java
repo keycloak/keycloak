@@ -57,13 +57,11 @@ public final class Maven {
             ArtifactDescriptorResult projectDescriptor = repositorySystem.readArtifactDescriptor(
                     ctx.getRepositorySystemSession(),
                     new ArtifactDescriptorRequest()
-                            .setArtifact(new DefaultArtifact(project.getGroupId(), project.getArtifactId(),                                    "pom", project.getVersion()))
+                            .setArtifact(new DefaultArtifact(project.getGroupId(), project.getArtifactId(), "pom", project.getVersion()))
                             .setRepositories(remoteRepositories));
-            Artifact artifact = resolveArtifact(groupId, artifactId, projectDescriptor.getDependencies());
-
-            if (artifact == null) {
-                resolveArtifact(groupId, artifactId, projectDescriptor.getManagedDependencies());
-            }
+            List<Dependency> dependencies = new ArrayList<>(projectDescriptor.getDependencies());
+            dependencies.addAll(projectDescriptor.getManagedDependencies());
+            Artifact artifact = resolveArtifact(groupId, artifactId, dependencies);
 
             if (artifact == null) {
                 artifact = resolveArtifactRecursively(ctx, projectDescriptor, groupId, artifactId);

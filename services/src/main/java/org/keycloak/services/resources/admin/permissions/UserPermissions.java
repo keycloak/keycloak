@@ -19,8 +19,8 @@ package org.keycloak.services.resources.admin.permissions;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
-import org.keycloak.authorization.common.UserModelIdentity;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -29,16 +29,13 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.ForbiddenException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import jakarta.ws.rs.ForbiddenException;
 
 /**
  * Manages default policies for all users.
@@ -72,11 +71,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private static final String VIEW_PERMISSION_USERS = "view.permission.users";
     private static final String USERS_RESOURCE = "Users";
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
     private final AuthorizationProvider authz;
-    private final MgmtPermissions root;
-    private final PolicyStore policyStore;
-    private final ResourceStore resourceStore;
+    protected final MgmtPermissions root;
+    protected final PolicyStore policyStore;
+    protected final ResourceStore resourceStore;
     private boolean grantIfNoPermission = false;
 
     UserPermissions(KeycloakSession session, AuthorizationProvider authz, MgmtPermissions root) {
@@ -178,10 +177,6 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         }
     }
 
-    public boolean canManageDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
-    }
-
     @Override
     public Resource resource() {
         ResourceServer server = root.realmResourceServer();
@@ -236,7 +231,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canManage() {
-        if (canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
             return true;
         }
 
@@ -275,7 +270,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canQuery() {
-        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_USERS);
+        return root.hasOneAdminRole(AdminRoles.QUERY_USERS) || canView();
     }
 
     @Override
@@ -300,7 +295,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canView() {
-        if (canViewDefault() || canManageDefault()) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS)) {
             return true;
         }
 
@@ -444,6 +439,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
+    public Map<String, Boolean> getAccessForListing(UserModel user) {
+        return Map.of("manage", canManage(user));
+    }
+
+    @Override
     public boolean canMapRoles(UserModel user) {
         if (canManage(user)) return true;
 
@@ -488,7 +488,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     }
 
-    private boolean hasPermission(String... scopes) {
+    protected boolean hasPermission(String... scopes) {
         return hasPermission(null, scopes);
     }
 
@@ -529,41 +529,39 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
 
-        RealmModel realm = server.getRealm();
-
         Policy policy = managePermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = viewPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = mapRolesPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = manageGroupMembershipPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = adminImpersonatingPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         policy = userImpersonatedPermission();
         if (policy != null) {
-            policyStore.delete(realm, policy.getId());
+            policyStore.delete(policy.getId());
 
         }
         Resource usersResource = resourceStore.findByName(server, USERS_RESOURCE);
         if (usersResource != null) {
-            resourceStore.delete(realm, usersResource.getId());
+            resourceStore.delete(usersResource.getId());
         }
     }
 
@@ -588,15 +586,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     private boolean canManageByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
-
+        return evaluateHierarchy(user, root.groups()::canManageMembers);
     }
-    private boolean canViewByGroup(UserModel user) {
+
+    protected boolean canViewByGroup(UserModel user) {
         if (authz == null) return false;
-        return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
-    }
-
-    public boolean canViewDefault() {
-        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS, AdminRoles.VIEW_USERS);
+        return evaluateHierarchy(user, root.groups()::canViewMembers);
     }
 }

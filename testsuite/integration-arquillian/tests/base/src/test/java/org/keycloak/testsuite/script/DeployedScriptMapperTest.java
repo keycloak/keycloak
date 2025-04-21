@@ -43,7 +43,8 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -99,15 +100,15 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
             app.getProtocolMappers().createMapper(mapper).close();
         }
         {
-            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
         }
     }
 
-    private OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
-        OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
-        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
+    private AccessTokenResponse browserLogin(String username, String password) {
+        AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
+        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
     }
 }

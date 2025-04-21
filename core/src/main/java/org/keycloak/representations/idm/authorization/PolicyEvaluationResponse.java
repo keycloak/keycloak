@@ -71,9 +71,10 @@ public class PolicyEvaluationResponse {
 
         private ResourceRepresentation resource;
         private List<ScopeRepresentation> scopes;
-        private List<PolicyResultRepresentation> policies;
+        private Set<PolicyResultRepresentation> policies;
         private DecisionEffect status;
-        private List<ScopeRepresentation> allowedScopes = new ArrayList<>();
+        private Set<ScopeRepresentation> allowedScopes = new HashSet<>();
+        private Set<ScopeRepresentation> deniedScopes = new HashSet<>();
 
         public void setResource(final ResourceRepresentation resource) {
             this.resource = resource;
@@ -91,11 +92,11 @@ public class PolicyEvaluationResponse {
             return scopes;
         }
 
-        public void setPolicies(final List<PolicyResultRepresentation> policies) {
+        public void setPolicies(final Set<PolicyResultRepresentation> policies) {
             this.policies = policies;
         }
 
-        public List<PolicyResultRepresentation> getPolicies() {
+        public Set<PolicyResultRepresentation> getPolicies() {
             return policies;
         }
 
@@ -107,12 +108,20 @@ public class PolicyEvaluationResponse {
             return status;
         }
 
-        public void setAllowedScopes(List<ScopeRepresentation> allowedScopes) {
+        public void setAllowedScopes(Set<ScopeRepresentation> allowedScopes) {
             this.allowedScopes = allowedScopes;
         }
 
-        public List<ScopeRepresentation> getAllowedScopes() {
+        public Set<ScopeRepresentation> getAllowedScopes() {
             return allowedScopes;
+        }
+
+        public void setDeniedScopes(Set<ScopeRepresentation> deniedScopes) {
+            this.deniedScopes = deniedScopes;
+        }
+
+        public Set<ScopeRepresentation> getDeniedScopes() {
+            return deniedScopes;
         }
     }
 
@@ -122,6 +131,7 @@ public class PolicyEvaluationResponse {
         private DecisionEffect status;
         private List<PolicyResultRepresentation> associatedPolicies;
         private Set<String> scopes = new HashSet<>();
+        private String resourceType;
 
         public PolicyRepresentation getPolicy() {
             return policy;
@@ -149,7 +159,7 @@ public class PolicyEvaluationResponse {
 
         @Override
         public int hashCode() {
-            return this.policy.hashCode();
+            return this.policy.getName().hashCode();
         }
 
         @Override
@@ -157,7 +167,7 @@ public class PolicyEvaluationResponse {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             final PolicyResultRepresentation policy = (PolicyResultRepresentation) o;
-            return this.policy.equals(policy.getPolicy());
+            return this.policy.getName().equals(policy.getPolicy().getName());
         }
 
         public void setScopes(Set<String> scopes) {
@@ -166,6 +176,14 @@ public class PolicyEvaluationResponse {
 
         public Set<String> getScopes() {
             return scopes;
+        }
+
+        public void setResourceType(String resourceType) {
+            this.resourceType = resourceType;
+        }
+
+        public String getResourceType() {
+            return resourceType;
         }
     }
 }

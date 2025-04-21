@@ -83,7 +83,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		property.setName(CONF_USER_ATTRIBUTE);
 		property.setLabel("User Attribute Name");
 		property.setHelpText("User attribute name to store information into.");
-		property.setType(ProviderConfigProperty.STRING_TYPE);
+		property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
 		configProperties.add(property);
 	}
 
@@ -204,12 +204,12 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 
 	public static Object getJsonValue(JsonNode baseNode, String fieldPath) {
-		logger.debug("Going to process JsonNode path " + fieldPath + " on data " + baseNode);
+		logger.debugf("Going to process JsonNode path %s on data %s", fieldPath, baseNode);
 		if (baseNode != null) {
 
 			List<String> fields = splitClaimPath(fieldPath);
 			if (fields.isEmpty() || fieldPath.endsWith(".")) {
-				logger.debug("JSON path is invalid " + fieldPath);
+				logger.debugf("JSON path is invalid %s", fieldPath);
 				return null;
 			}
 
@@ -222,7 +222,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 				if (currentFieldName.endsWith("]")) {
 					int bi = currentFieldName.indexOf("[");
 					if (bi == -1) {
-						logger.debug("Invalid array index construct in " + currentFieldName);
+						logger.debugf("Invalid array index construct in %s", currentFieldName);
 						return null;
 					}
 					try {
@@ -230,7 +230,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 						arrayIndex = Integer.parseInt(is);
 						if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
 					} catch (Exception e) {
-						logger.debug("Invalid array index construct in " + currentFieldName);
+						logger.debugf("Invalid array index construct in %s", currentFieldName);
 						return null;
 					}
 					currentNodeName = currentFieldName.substring(0, bi).trim();
@@ -238,12 +238,12 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 				currentNode = currentNode.get(currentNodeName);
 				if (arrayIndex > -1 && currentNode.isArray()) {
-					logger.debug("Going to take array node at index " + arrayIndex);
+					logger.debugf("Going to take array node at index %d", arrayIndex);
 					currentNode = currentNode.get(arrayIndex);
 				}
 
 				if (currentNode == null) {
-					logger.debug("JsonNode not found for name " + currentFieldName);
+					logger.debugf("JsonNode not found for name %s", currentFieldName);
 					return null;
 				}
 
@@ -262,7 +262,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 					return values ;
 				} else if (currentNode.isNull()) {
 
-					logger.debug("JsonNode is null node for name " + currentFieldName);
+					logger.debugf("JsonNode is null node for name %s", currentFieldName);
 					return null;
 				} else if (currentNode.isValueNode()) {
 					String ret = currentNode.asText();

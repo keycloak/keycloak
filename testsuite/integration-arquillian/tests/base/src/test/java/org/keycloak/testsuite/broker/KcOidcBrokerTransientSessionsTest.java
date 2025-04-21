@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.OAuth2Constants;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -49,12 +50,17 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import org.keycloak.util.TokenUtil;
@@ -74,13 +80,17 @@ import java.util.stream.Collectors;
 
 import org.junit.Rule;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
@@ -104,6 +114,9 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     protected BrokerConfiguration getBrokerConfiguration() {
         return BROKER_CONFIG_INSTANCE;
     }
+
+    @Page
+    UpdateAccountInformationPage updateAccountInformationPage;
 
     @Before
     public void setUpTotp() {
@@ -162,7 +175,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
         loginPage.open(bc.consumerRealmName());
         logInAsUserInIDPForFirstTime();
 
@@ -183,7 +196,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
         loginPage.open(bc.consumerRealmName());
 
         if (! isUsingTransientSessions()) {
@@ -221,7 +234,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             brokerApp.getAttributes().put("validateSignature", Boolean.TRUE.toString());
             clients.get(brokerApp.getId()).update(brokerApp);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -285,7 +298,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
         loginPage.open(bc.consumerRealmName());
 
         loginFetchingUserFromUserEndpoint();
@@ -302,7 +315,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -326,7 +339,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -357,7 +370,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttp.doGet(LINK, client).asResponse();
+            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
@@ -468,35 +481,100 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
     }
 
+    // Based on ConsentsTest.testConsents, modified to use consumer realm instead
+    @Test
+    public void testConsents() throws Exception {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), CONSUMER_BROKER_APP_CLIENT_ID).setConsentRequired(true).update()) {
+            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.realm(bc.consumerRealmName());
+            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+            events.clear();
+
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail());
+            WaitUtils.waitForPageToLoad();
+            consentPage.assertCurrent();
+            consentPage.confirm();
+
+            EventRepresentation loginEvent;
+            do {
+                loginEvent = events.poll();
+            } while (loginEvent != null && ! Objects.equals(EventType.LOGIN.name(), loginEvent.getType()));
+
+            assertThat(loginEvent, notNullValue());
+            assertThat(loginEvent.getClientId(), is(CONSUMER_BROKER_APP_CLIENT_ID));
+            assertThat(loginEvent.getUserId(), Matchers.containsString(LightweightUserAdapter.ID_PREFIX));
+
+            final String lwUserId = loginEvent.getUserId();
+
+            final UserResource userResource = adminClient.realm(bc.consumerRealmName()).users().get(lwUserId);
+            List<Map<String, Object>> consents = userResource.getConsents();
+            assertThat("There should be one consent", consents, hasSize(1));
+
+            Map<String, Object> consent = consents.get(0);
+            Assert.assertEquals("Consent should be given to " + CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_CLIENT_ID, consent.get("clientId"));
+
+            // list sessions. Single client should be in user session
+            List<UserSessionRepresentation> sessions = userResource.getUserSessions();
+            assertThat("There should be one active session", sessions, hasSize(1));
+            assertThat("There should be one client in user session", sessions.get(0).getClients(), aMapWithSize(1));
+
+            // Try SSO relogging into the app before revoking consent.
+            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.openLoginForm();
+            assertThat("Should be logged in", driver.getTitle(), containsString("AUTH_RESPONSE"));
+
+            // revoke consent
+            userResource.revokeConsent(CONSUMER_BROKER_APP_CLIENT_ID);
+
+            // list consents
+            consents = userResource.getConsents();
+            assertThat("There should be no consents", consents, empty());
+
+            // list sessions
+            sessions = userResource.getUserSessions();
+            assertThat("There should be one active session", sessions, hasSize(1));
+            assertThat("There should be no client in user session", sessions.get(0).getClients(), aMapWithSize(0));
+
+            // Try relogging into the app after consent was revoked.
+            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.openLoginForm();
+
+            WaitUtils.waitForPageToLoad();
+            consentPage.assertCurrent();
+            consentPage.confirm();
+
+            WaitUtils.waitForPageToLoad();
+            assertThat("Should be logged in", driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
     @Test
     public void testUserInfoEndpoint() throws Exception {
         EventRepresentation loginEvent = loginWithBrokerUsingOAuthClient(CONSUMER_BROKER_APP_CLIENT_ID);
         String lwUserId = loginEvent.getUserId();
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, CONSUMER_BROKER_APP_SECRET);
+        AccessTokenResponse tokenResponse = oauth.client(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET).doAccessTokenRequest(code);
 
         // Check that userInfo can be invoked
-        var userInfoResponse = oauth.doUserInfoRequestByGet(tokenResponse.getAccessToken());
+        var userInfoResponse = oauth.doUserInfoRequest(tokenResponse.getAccessToken());
         assertThat(userInfoResponse.getUserInfo().getSub(), is(lwUserId));
         assertThat(userInfoResponse.getUserInfo().getPreferredUsername(), is(bc.getUserLogin()));
         assertThat(userInfoResponse.getUserInfo().getEmail(), is(bc.getUserEmail()));
 
         // Check that tokenIntrospection can be invoked
-        var introspectionResponse = oauth.introspectAccessTokenWithClientCredential(CONSUMER_BROKER_APP_CLIENT_ID, CONSUMER_BROKER_APP_SECRET, tokenResponse.getAccessToken());
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken()).asJsonNode();
         org.junit.Assert.assertEquals(true, jsonNode.get("active").asBoolean());
         org.junit.Assert.assertEquals(bc.getUserEmail(), jsonNode.get("email").asText());
     }
 
     private EventRepresentation loginWithBrokerUsingOAuthClient(String consumerClientId) {
-        oauth.clientId(consumerClientId);
+        oauth.client(consumerClientId, CONSUMER_BROKER_APP_SECRET);
         oauth.realm(bc.consumerRealmName());
-        oauth.doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
         events.clear();
-        oauth.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail());
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), null, null);
 
         EventRepresentation loginEvent;
         do {
@@ -527,8 +605,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             final String sessionId = loginEvent.getSessionId();
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, CONSUMER_BROKER_APP_SECRET);
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
             AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
             String offlineTokenString = tokenResponse.getRefreshToken();
@@ -542,7 +620,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     .assertEvent();
 
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-            assertEquals(0, offlineToken.getExpiration());
+            assertNull(offlineToken.getExp());
 
             assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
@@ -551,7 +629,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             // Change offset to very big value to ensure offline session expires
             setTimeOffset(3000000);
 
-            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString, CONSUMER_BROKER_APP_SECRET);
+            AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString);
             RefreshToken newRefreshToken = oauth.parseRefreshToken(newRefreshTokenString);
             org.junit.Assert.assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
@@ -559,8 +637,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             events.expectRefresh(offlineToken.getId(), newRefreshToken.getSessionState())
                     .realm(consumerRealmRep)
                     .client(CONSUMER_BROKER_APP_CLIENT_ID)
+                    .user((String) null)
                     .error(Errors.INVALID_TOKEN)
-                    .user(lwUserId)
                     .clearDetails()
                     .assertEvent();
         } finally {
@@ -583,7 +661,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             // Ignore
         }
 
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, CONSUMER_BROKER_APP_SECRET);
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString);
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         org.junit.Assert.assertEquals(200, response.getStatusCode());
 
@@ -640,7 +718,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             userAttrMapper.setName(USER_ATTRIBUTE_NAME);
             userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-    
+
             Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
             userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, USER_ATTRIBUTE_NAME);
             userAttrMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, USER_ATTRIBUTE_NAME);
@@ -655,7 +733,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             client.setProtocolMappers(mappers);
 
             return clients;
-        }    
+        }
 
         @Override
         public List<ClientRepresentation> createConsumerClients() {

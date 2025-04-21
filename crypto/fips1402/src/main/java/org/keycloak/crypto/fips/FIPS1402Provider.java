@@ -86,6 +86,10 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.RSA1_5, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_PKCS1v1_5));
         providers.put(CryptoConstants.RSA_OAEP, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP));
         providers.put(CryptoConstants.RSA_OAEP_256, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256)));
+        providers.put(CryptoConstants.ECDH_ES, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A128KW, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A192KW, new BCFIPSEcdhEsAlgorithmProvider());
+        providers.put(CryptoConstants.ECDH_ES_A256KW, new BCFIPSEcdhEsAlgorithmProvider());
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
@@ -104,6 +108,11 @@ public class FIPS1402Provider implements CryptoProvider {
     @Override
     public Provider getBouncyCastleProvider() {
         return bcFipsProvider;
+    }
+
+    @Override
+    public int order() {
+        return 200;
     }
 
     @Override
@@ -191,12 +200,12 @@ public class FIPS1402Provider implements CryptoProvider {
     public Cipher getAesGcmCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
         return Cipher.getInstance("AES/GCM/NoPadding", BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public SecretKeyFactory getSecretKeyFact(String keyAlgorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
         return SecretKeyFactory.getInstance(keyAlgorithm, BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException {
         return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
@@ -218,11 +227,11 @@ public class FIPS1402Provider implements CryptoProvider {
     public CertPathBuilder getCertPathBuilder() throws NoSuchAlgorithmException, NoSuchProviderException {
         return CertPathBuilder.getInstance("PKIX", BouncyIntegration.PROVIDER);
     }
-    
+
     @Override
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
         return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
-            
+
     }
 
     @Override
@@ -323,13 +332,13 @@ public class FIPS1402Provider implements CryptoProvider {
         } catch (NoSuchAlgorithmException nsae) {
 
             // Fallback to regular SecureRandom
+            // We could delete this once https://issues.redhat.com/browse/RHEL-3478 is fixed
             SecureRandom secRandom = new SecureRandom();
             String origStrongAlgs = Security.getProperty("securerandom.strongAlgorithms");
             String usedAlg = secRandom.getAlgorithm() + ":" + secRandom.getProvider().getName();
             log.debugf("Strong secure random not available. Tried algorithms: %s. Using algorithm as a fallback for strong secure random: %s", origStrongAlgs, usedAlg);
 
-            String strongAlgs = origStrongAlgs == null ? usedAlg : usedAlg + "," + origStrongAlgs;
-            Security.setProperty("securerandom.strongAlgorithms", strongAlgs);
+            Security.setProperty("securerandom.strongAlgorithms", usedAlg);
 
             try {
                 // Need to insert BCFIPS provider to security providers with "strong algorithm" available
@@ -338,8 +347,6 @@ public class FIPS1402Provider implements CryptoProvider {
                 log.debugf("Initialized BCFIPS secured random");
             } catch (NoSuchAlgorithmException | NoSuchProviderException nsaee) {
                 throw new IllegalStateException("Not possible to initiate BCFIPS secure random", nsaee);
-            } finally {
-                Security.setProperty("securerandom.strongAlgorithms", origStrongAlgs != null ? origStrongAlgs : "");
             }
         }
     }

@@ -1,20 +1,22 @@
 import {
   Card,
-  CardActions,
   CardBody,
   CardFooter,
   CardHeader,
   CardTitle,
   Dropdown,
+  DropdownList,
   Flex,
   FlexItem,
-  KebabToggle,
   Label,
+  MenuToggle,
+  MenuToggleElement,
 } from "@patternfly/react-core";
 import { ReactElement, useState } from "react";
 import { Link, To } from "react-router-dom";
 
 import "./keycloak-card.css";
+import { EllipsisVIcon } from "@patternfly/react-icons";
 
 export type KeycloakCardProps = {
   title: string;
@@ -40,20 +42,34 @@ export const KeycloakCard = ({
   };
 
   return (
-    <Card isSelectable>
-      <CardHeader>
-        <CardActions>
-          {dropdownItems && (
+    <Card isSelectable isClickable>
+      <CardHeader
+        actions={{
+          actions: dropdownItems ? (
             <Dropdown
-              data-testid={`${title}-dropdown`}
-              isPlain
-              position={"right"}
-              toggle={<KebabToggle onToggle={onDropdownToggle} />}
+              popperProps={{
+                position: "right",
+              }}
+              onOpenChange={onDropdownToggle}
+              toggle={(ref: React.Ref<MenuToggleElement>) => (
+                <MenuToggle
+                  ref={ref}
+                  onClick={onDropdownToggle}
+                  variant="plain"
+                  data-testid={`${title}-dropdown`}
+                >
+                  <EllipsisVIcon />
+                </MenuToggle>
+              )}
               isOpen={isDropdownOpen}
-              dropdownItems={dropdownItems}
-            />
-          )}
-        </CardActions>
+            >
+              <DropdownList>{dropdownItems}</DropdownList>
+            </Dropdown>
+          ) : undefined,
+          hasNoOffset: false,
+          className: undefined,
+        }}
+      >
         <CardTitle data-testid="keycloak-card-title">
           <Link to={to}>{title}</Link>
         </CardTitle>

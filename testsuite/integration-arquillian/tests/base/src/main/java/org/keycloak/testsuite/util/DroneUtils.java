@@ -20,6 +20,7 @@ package org.keycloak.testsuite.util;
 import org.jboss.arquillian.graphene.context.GrapheneContext;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.page.AbstractPage;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.WebDriver;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -78,7 +79,7 @@ public final class DroneUtils {
             if (f.getAnnotation(Page.class) != null
                     && AbstractPage.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     Object o = f.get(target);
                     AbstractPage page = (AbstractPage) o;
@@ -89,7 +90,7 @@ public final class DroneUtils {
                 }
             } else if (f.getName().equals("driver") && WebDriver.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     f.set(target, driver);
 
@@ -99,7 +100,7 @@ public final class DroneUtils {
                 }
             } else if (f.getName().equals("oauth") && OAuthClient.class.isAssignableFrom(f.getType())) {
                 try {
-                    if (!f.isAccessible())
+                    if (!f.canAccess(target))
                         f.setAccessible(true);
                     Object o = f.get(target);
                     ((OAuthClient) o).setDriver(driver);

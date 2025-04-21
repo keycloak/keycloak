@@ -12,7 +12,8 @@ export const NewResourceRoute: AppRouteObject = {
   element: <ResourceDetails />,
   breadcrumb: (t) => t("createResource"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "manage-authorization"),
   },
 };
 

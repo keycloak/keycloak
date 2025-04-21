@@ -109,7 +109,7 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
     }
 }

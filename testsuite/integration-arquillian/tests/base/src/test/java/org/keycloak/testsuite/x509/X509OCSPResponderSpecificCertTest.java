@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import jakarta.ws.rs.core.Response;
 
@@ -37,7 +37,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -58,12 +58,12 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
     private Undertow ocspResponder;
 
     @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
+    @HtmlUnitBrowser
+    private WebDriver htmlUnit;
 
     @Before
     public void replaceTheDefaultDriver() {
-        replaceDefaultWebDriver(phantomJS);
+        replaceDefaultWebDriver(htmlUnit);
     }
 
     @Test
@@ -76,8 +76,8 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());
@@ -115,8 +115,8 @@ public class X509OCSPResponderSpecificCertTest extends AbstractX509Authenticatio
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assert.assertNotNull(cfgId);
 
-        oauth.clientId("resource-owner");
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+        oauth.client("resource-owner", "secret");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
 
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_request", response.getError());

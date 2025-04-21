@@ -16,15 +16,19 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.keycloak.common.Profile;
-import org.keycloak.config.StorageOptions;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-
 import static java.util.Collections.emptySet;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.keycloak.common.Profile;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.database.Database;
 
 /**
  * Ignore particular artifacts based on build configuration
@@ -32,10 +36,14 @@ import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeature
 public class IgnoredArtifacts {
 
     public static Set<String> getDefaultIgnoredArtifacts() {
-        return new Builder()
-                .append(fips())
-                .append(storage())
-                .build();
+        return Stream.of(
+                        fips(),
+                        jdbcDrivers(),
+                        health(),
+                        metrics()
+                )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     // FIPS
@@ -50,7 +58,8 @@ public class IgnoredArtifacts {
             "org.keycloak:keycloak-crypto-fips1402",
             "org.bouncycastle:bc-fips",
             "org.bouncycastle:bctls-fips",
-            "org.bouncycastle:bcpkix-fips"
+            "org.bouncycastle:bcpkix-fips",
+            "org.bouncycastle:bcutil-fips"
     );
 
     private static Set<String> fips() {
@@ -60,38 +69,105 @@ public class IgnoredArtifacts {
         return isFipsEnabled ? FIPS_ENABLED : FIPS_DISABLED;
     }
 
-    // Map Store
-    public static final Set<String> MAP_STORE = Set.of(
-            "org.keycloak:keycloak-model-map-jpa",
-            "org.keycloak:keycloak-model-map-hot-rod",
-            "org.keycloak:keycloak-model-map",
-            "org.keycloak:keycloak-model-map-file"
+    // JDBC Drivers
+    public static final Set<String> JDBC_H2 = Set.of(
+            "io.quarkus:quarkus-jdbc-h2",
+            "io.quarkus:quarkus-jdbc-h2-deployment",
+            "com.h2database:h2",
+            "org.locationtech.jts:jts-core"
     );
 
-    private static Set<String> storage() {
-        Optional<String> storage = Configuration.getOptionalValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + StorageOptions.STORAGE.getKey());
+    public static final Set<String> JDBC_POSTGRES = Set.of(
+            "io.quarkus:quarkus-jdbc-postgresql",
+            "io.quarkus:quarkus-jdbc-postgresql-deployment",
+            "org.postgresql:postgresql"
+    );
 
-        return storage.isEmpty() ? MAP_STORE : emptySet();
+    public static final Set<String> JDBC_MARIADB = Set.of(
+            "io.quarkus:quarkus-jdbc-mariadb",
+            "io.quarkus:quarkus-jdbc-mariadb-deployment",
+            "org.mariadb.jdbc:mariadb-java-client"
+    );
+
+    public static final Set<String> JDBC_MYSQL = Set.of(
+            "io.quarkus:quarkus-jdbc-mysql",
+            "io.quarkus:quarkus-jdbc-mysql-deployment",
+            "com.mysql:mysql-connector-j"
+    );
+
+    public static final Set<String> JDBC_MSSQL = Set.of(
+            "io.quarkus:quarkus-jdbc-mssql",
+            "io.quarkus:quarkus-jdbc-mssql-deployment",
+            "com.microsoft.sqlserver:mssql-jdbc"
+    );
+
+    public static final Set<String> JDBC_ORACLE = Set.of(
+            "io.quarkus:quarkus-jdbc-oracle",
+            "io.quarkus:quarkus-jdbc-oracle-deployment",
+            "com.oracle.database.jdbc:ojdbc17",
+            "com.oracle.database.nls:orai18n"
+    );
+
+    public static final Set<String> JDBC_DRIVERS = Stream.of(
+                    JDBC_H2,
+                    JDBC_POSTGRES,
+                    JDBC_MARIADB,
+                    JDBC_MYSQL,
+                    JDBC_MSSQL,
+                    JDBC_ORACLE
+            )
+            .flatMap(Collection::stream)
+            .collect(Collectors.toUnmodifiableSet());
+
+    private static Set<String> jdbcDrivers() {
+        final Set<Database.Vendor> vendorsOfAllDatasources = new HashSet<>();
+
+        Configuration.getConfig().getPropertyNames().forEach(p -> {
+            if (p.startsWith("quarkus.datasource.") && p.endsWith(".db-kind")) {
+                Configuration.getOptionalValue(p)
+                        .flatMap(Database::getVendor)
+                        .ifPresent(vendorsOfAllDatasources::add);
+            }
+        });
+
+        final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
+                .map(vendor -> switch (vendor) {
+                    case H2 -> JDBC_H2;
+                    case MYSQL -> JDBC_MYSQL;
+                    case MARIADB -> JDBC_MARIADB;
+                    case POSTGRES -> JDBC_POSTGRES;
+                    case MSSQL -> JDBC_MSSQL;
+                    case ORACLE -> JDBC_ORACLE;
+                })
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+        final Set<String> allJdbcDrivers = new HashSet<>(JDBC_DRIVERS);
+        allJdbcDrivers.removeAll(jdbcArtifacts);
+        return allJdbcDrivers;
     }
 
-    /**
-     * Builder for artifacts aggregation
-     */
-    private static final class Builder {
-        private final Set<String> finalIgnoredArtifacts;
+    // Health
+    public static final Set<String> HEALTH = Set.of(
+            "io.quarkus:quarkus-smallrye-health",
+            "io.quarkus:quarkus-smallrye-health-deployment"
+    );
 
-        public Builder() {
-            this.finalIgnoredArtifacts = new HashSet<>();
-        }
+    private static Set<String> health() {
+        boolean isHealthEnabled = Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
+        return !isHealthEnabled ? HEALTH : emptySet();
+    }
 
-        public Builder append(Set<String> ignoredArtifacts) {
-            finalIgnoredArtifacts.addAll(ignoredArtifacts);
-            return this;
-        }
+    // Metrics
+    public static Set<String> METRICS = Set.of(
+            "io.quarkus:quarkus-micrometer",
+            "io.quarkus:quarkus-micrometer-deployment",
+            "io.quarkus:quarkus-micrometer-registry-prometheus",
+            "io.quarkus:quarkus-micrometer-registry-prometheus-deployment"
+    );
 
-        public Set<String> build() {
-            return finalIgnoredArtifacts;
-        }
+    private static Set<String> metrics() {
+        boolean isMetricsEnabled = Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
+        return !isMetricsEnabled ? METRICS : emptySet();
     }
 }

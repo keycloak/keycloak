@@ -1,6 +1,7 @@
 = {{{appName}}}
 {{#headerAttributes}}
 :toc: left
+:icons: font
 :toclevels: 2
 :keywords: openapi, rest, {{appName}}
 :specDir: {{specDir}}
@@ -29,6 +30,19 @@ Version: {{version}}
 ```
 
 For example `http://localhost:8080/admin/realms`
+
+ifdef::project_community[]
+
+=== OpenAPI Definitions
+
+WARNING: The OpenAPI definitions are a feature that is currently in preview.
+Please provide your feedback by link:https://github.com/keycloak/keycloak/discussions/8898[joining this discussion] while we’re continuing to work on this.
+If you find something is outdated or wrong, create a GitHub issue and provide a pull request.
+
+* link:openapi.json[OpenAPI definition in JSON format]
+* link:openapi.yaml[OpenAPI definition in YAML format]
+
+endif::[]
 
 {{#specinclude}}intro.adoc{{/specinclude}}
 

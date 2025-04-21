@@ -14,28 +14,9 @@
     <artifactId>keycloak-admin-ui</artifactId>
 
     <name>Keycloak Admin UI</name>
-    <description>The user inferface to administrate the Keycloak server.</description>
+    <description>The user interface to administrate the Keycloak server.</description>
 
     <profiles>
-        <profile>
-            <id>withoutTranslations</id>
-            <activation>
-                <property>
-                    <name>skipCommunityTranslations</name>
-                </property>
-            </activation>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>dist</directory>
-                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
-                        <includes>
-                            <include>locales/en/**</include>
-                        </includes>
-                    </resource>
-                </resources>
-            </build>
-        </profile>
         <profile>
             <id>withTranslations</id>
             <activation>
@@ -46,13 +27,41 @@
             <build>
                 <resources>
                     <resource>
-                        <directory>dist</directory>
-                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
-                        <includes>
-                            <include>locales/**</include>
-                        </includes>
+                        <directory>maven-resources-community</directory>
                     </resource>
                 </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>jboss-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pnpm-build-lib</id>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>build-lib</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>pnpm-pack</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>pnpm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>pack --pack-destination=target</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>
@@ -62,103 +71,12 @@
             <resource>
                 <directory>maven-resources</directory>
             </resource>
-            <resource>
-                <directory>dist</directory>
-                <targetPath>theme/keycloak.v2/admin/resources</targetPath>
-                <excludes>
-                    <exclude>index.html</exclude>
-                    <exclude>locales/**</exclude>
-                </excludes>
-            </resource>
         </resources>
-
         <plugins>
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>run-build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
+                <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
-                    <installDirectory>../..</installDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.google.code.maven-replacer-plugin</groupId>
-                <artifactId>maven-replacer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>replace</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <file>dist/index.html</file>
-                    <outputFile>target/classes/theme/keycloak.v2/admin/index.ftl</outputFile>
-                    <regex>false</regex>
-                    <replacements>
-                        <replacement>
-                            <token>src="./</token>
-                            <value>src="${resourceUrl}/</value>
-                        </replacement>
-                        <replacement>
-                            <token>href="./</token>
-                            <value>href="${resourceUrl}/</value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.svg" />]]></token>
-                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
-                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak Administration UI"}</title>]]></value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[</body>]]></token>
-                            <value xml:space="preserve">
-<![CDATA[
-  <script id="environment" type="application/json">
-    {
-      "loginRealm": "${loginRealm!"master"}",
-      "clientId": "${clientId}",
-      "authServerUrl": "${authServerUrl}",
-      "authUrl": "${authUrl}",
-      "consoleBaseUrl": "${consoleBaseUrl}",
-      "resourceUrl": "${resourceUrl}",
-      "masterRealm": "${masterRealm}",
-      "resourceVersion": "${resourceVersion}",
-      "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}"
-    }
-  </script>
-</body>
-]]>
-</value>
-                        </replacement>
-                        <replacement>
-                            <token><![CDATA[</head>]]></token>
-                            <value xml:space="preserve">
-<![CDATA[
-    <#if properties.styles?has_content>
-      <#list properties.styles?split(' ') as style>
-      <link href="${resourceUrl}/${style}" rel="stylesheet"/>
-      </#list>
-    </#if>
-  </head>
-]]>
-</value>
-                        </replacement>
-                    </replacements>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
         </plugins>

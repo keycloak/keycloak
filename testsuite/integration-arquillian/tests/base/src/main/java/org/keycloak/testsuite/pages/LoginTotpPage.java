@@ -39,20 +39,23 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "password-token")
     private WebElement passwordToken;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(id = "input-error-otp-code")
+    @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
+
+    @FindBy(id = "input-error-otp-code")
+    private WebElement otpInputCodeError;
 
     public void login(String totp) {
         otpInput.clear();
         if (totp != null) otpInput.sendKeys(totp);
 
-        submitButton.click();
+        UIUtils.clickLink(submitButton);
     }
 
     public String getAlertError() {
@@ -67,7 +70,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         try {
             return UIUtils.getTextFromElement(totpInputCodeError);
         } catch (NoSuchElementException e) {
-            return null;
+            try {
+                return UIUtils.getTextFromElement(otpInputCodeError);
+            } catch (NoSuchElementException ex) {
+                return null;
+            }
         }
     }
 
@@ -80,16 +87,10 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
-
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("pf-c-tile"));
+            driver.findElement(By.className("pf-v5-c-tile"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
@@ -114,24 +115,22 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getXPathForLookupAllCards() {
-        return By.xpath("//span[contains(@class, 'pf-c-tile__title')]");
+        return By.xpath("//span[contains(@class, 'pf-v5-c-tile__title')]");
     }
 
     private By getCssSelectorForLookupActiveCard() {
-        return By.cssSelector(".pf-c-tile__input:checked + .pf-c-tile .pf-c-tile__title");
+        return By.cssSelector(".pf-m-selected");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//label[contains(@class, 'pf-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
     public void selectOtpCredential(String credentialName) {
-        waitForElement(getCssSelectorForLookupActiveCard());
-
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
-        UIUtils.clickLink(webElement);
+        UIUtils.click(webElement);
     }
 
 

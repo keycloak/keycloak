@@ -3,5 +3,5 @@ import { RequiredActionAlias } from "./defs/requiredActionProviderRepresentation
 
 export const requiredAction = RequiredActionAlias;
 export default KeycloakAdminClient;
-export { NetworkError } from "./utils/fetchWithError.js";
+export { NetworkError, fetchWithError } from "./utils/fetchWithError.js";
 export type { NetworkErrorOptions } from "./utils/fetchWithError.js";

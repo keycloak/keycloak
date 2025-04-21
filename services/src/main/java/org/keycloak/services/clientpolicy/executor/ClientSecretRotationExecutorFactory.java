@@ -3,6 +3,8 @@ package org.keycloak.services.clientpolicy.executor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -89,7 +91,7 @@ public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutor
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Feature.CLIENT_SECRET_ROTATION);
     }
 }

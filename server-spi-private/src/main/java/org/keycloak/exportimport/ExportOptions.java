@@ -26,15 +26,17 @@ public class ExportOptions {
     private boolean clientsIncluded = true;
     private boolean groupsAndRolesIncluded = true;
     private boolean onlyServiceAccountsIncluded = false;
+    private boolean partial;
 
     public ExportOptions() {
     }
 
-    public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles, boolean onlyServiceAccounts) {
+    public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles, boolean onlyServiceAccounts, boolean partial) {
         usersIncluded = users;
         clientsIncluded = clients;
         groupsAndRolesIncluded = groupsAndRoles;
         onlyServiceAccountsIncluded = onlyServiceAccounts;
+        this.partial = partial;
     }
 
     public boolean isUsersIncluded() {
@@ -67,5 +69,9 @@ public class ExportOptions {
 
     public void setOnlyServiceAccountsIncluded(boolean value) {
         onlyServiceAccountsIncluded = value;
+    }
+
+    public boolean isPartial() {
+        return partial;
     }
 }

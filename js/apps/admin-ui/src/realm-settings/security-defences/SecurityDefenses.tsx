@@ -22,6 +22,7 @@ export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
       <Tab
         id="headers"
         eventKey={10}
+        data-testid="security-defenses-headers-tab"
         title={<TabTitleText>{t("headers")}</TabTitleText>}
       >
         <PageSection variant="light">
@@ -31,6 +32,7 @@ export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
       <Tab
         id="bruteForce"
         eventKey={20}
+        data-testid="security-defenses-brute-force-tab"
         title={<TabTitleText>{t("bruteForceDetection")}</TabTitleText>}
       >
         <PageSection variant="light">

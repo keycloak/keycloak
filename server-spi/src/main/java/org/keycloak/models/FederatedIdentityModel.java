@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -84,5 +86,19 @@ public class FederatedIdentityModel {
         result = 31 * result + identityProvider.hashCode();
         result = 31 * result + (userName != null ? userName.hashCode() : 0);
         return result;
+    }
+
+    public interface FederatedIdentityCreatedEvent extends ProviderEvent {
+        KeycloakSession getKeycloakSession();
+        RealmModel getRealm();
+        UserModel getUser();
+        FederatedIdentityModel getFederatedIdentity();
+    }
+
+    public interface FederatedIdentityRemovedEvent extends ProviderEvent {
+        KeycloakSession getKeycloakSession();
+        RealmModel getRealm();
+        UserModel getUser();
+        FederatedIdentityModel getFederatedIdentity();
     }
 }

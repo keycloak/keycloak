@@ -17,21 +17,17 @@
 
 package org.keycloak.testsuite.session;
 
-import org.infinispan.Cache;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
-import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
+import org.keycloak.models.sessions.infinispan.changes.sessions.AbstractLastSessionRefreshStore;
+import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
+import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
@@ -52,18 +48,13 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     }
 
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-    }
-
     @After
     public void cleanupPeriodicTask() {
         // Cleanup unneeded periodic task, which was added during this test
         testingClient.server().run((session -> {
 
             TimerProvider timer = session.getProvider(TimerProvider.class);
-            timer.cancelTask(CrossDCLastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+            timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
 
         }));
     }
@@ -71,6 +62,9 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshCounters() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
+
         testingClient.server().run(new  LastSessionRefreshServerCounterTest());
     }
 
@@ -79,7 +73,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
         @Override
         public void run(KeycloakSession session) {
-            CrossDCLastSessionRefreshStore customStore = createStoreInstance(session, 1000000, 1000);
+            AbstractLastSessionRefreshStore customStore = createStoreInstance(session, 1000000, 1000);
             System.out.println("sss");
 
             int lastSessionRefresh = Time.currentTime();
@@ -115,6 +109,9 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshIntervals() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
+
         testingClient.server().run(new  LastSessionRefreshServerIntervalsTest());
     }
 
@@ -124,7 +121,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
         public void run(KeycloakSession session) {
             try {
                 // Long timer interval. No message due the timer wasn't executed
-                CrossDCLastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
+                AbstractLastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
                 Time.setOffset(100);
 
                 try {
@@ -135,7 +132,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
                 Assert.assertEquals(0, counter.get());
 
                 // Short timer interval 10 ms. 1 message due the interval is executed and lastRun was in the past due to Time.setOffset
-                CrossDCLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
+                AbstractLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
                 Time.setOffset(200);
 
                 Retry.execute(() -> {
@@ -163,12 +160,12 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
         AtomicInteger counter = new AtomicInteger();
 
-        CrossDCLastSessionRefreshStore createStoreInstance(KeycloakSession session, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds) {
-            CrossDCLastSessionRefreshStoreFactory factory = new CrossDCLastSessionRefreshStoreFactory() {
+        AbstractLastSessionRefreshStore createStoreInstance(KeycloakSession session, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds) {
+            PersisterLastSessionRefreshStoreFactory factory = new PersisterLastSessionRefreshStoreFactory() {
 
                 @Override
-                protected CrossDCLastSessionRefreshStore createStoreInstance(int maxIntervalBetweenMessagesSeconds, int maxCount, String eventKey) {
-                    return new CrossDCLastSessionRefreshStore(maxIntervalBetweenMessagesSeconds, maxCount, eventKey) {
+                protected PersisterLastSessionRefreshStore createStoreInstance(int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
+                    return new PersisterLastSessionRefreshStore(maxIntervalBetweenMessagesSeconds, maxCount, offline) {
 
                         @Override
                         protected void sendMessage(KeycloakSession kcSession, Map<String, SessionData> refreshesToSend) {
@@ -180,8 +177,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
             };
 
-            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-            return factory.createAndInit(session, cache, timerIntervalMs, maxIntervalBetweenMessagesSeconds, 10, false);
+            return factory.createAndInit(session, timerIntervalMs, maxIntervalBetweenMessagesSeconds, 10, false);
         }
 
     }

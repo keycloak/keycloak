@@ -1,10 +1,7 @@
 [[_limit-authentication-sessions]]
 === Limit Authentication Sessions
 
-When a login page is opened for the first time in a web browser, {project_name} creates an object called authentication session that stores some useful information about the request.
-Whenever a new login page is opened from a different tab in the same browser, {project_name} creates a new record called authentication sub-session that is stored within the authentication session.
-Authentication requests can come from any type of clients such as the Admin CLI. In that case, a new authentication session is also created with one authentication sub-session.
-Please note that authentication sessions can be created also in other ways than using a browser flow. The text below is applicable regardless of the source flow.
+<<_authentication-sessions, Authentication sessions>> track the state of the authentication. The text below is applicable regardless of the source flow.
 
 NOTE: This section describes deployments that use the {jdgserver_name} provider for authentication sessions.
 

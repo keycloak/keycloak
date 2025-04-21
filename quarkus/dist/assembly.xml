@@ -24,6 +24,7 @@
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>${dist.archive.dir}</baseDirectory>
 
     <fileSets>
         <fileSet>
@@ -78,6 +79,14 @@
             <includes>
                 <include>*.*</include>
             </includes>
+        </fileSet>
+        <!-- create an empty truststores directory -->
+        <fileSet>
+            <directory>src/main/content/conf</directory>
+            <outputDirectory>conf/truststores</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>src/main/content/data</directory>

@@ -45,5 +45,7 @@ public interface TestProvider {
      * name of the manifest resource that should be created in the provider JAR file.
      * @return
      */
-    Map<String, String> getManifestResources();
+    default Map<String, String> getManifestResources() {
+        return Map.of();
+    }
 }

@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import com.google.common.collect.ImmutableMap;
@@ -43,7 +42,6 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -78,6 +76,24 @@ public class KcOidcBrokerJWETest extends AbstractBrokerTest {
         this.encAlg = encAlg;
         this.encEnc = encEnc;
         this.sigAlg = sigAlg;
+    }
+
+    protected ComponentExportRepresentation getConsumerKeyProvider() {
+        // create the RSA component for the encryption in the specified alg
+        ComponentExportRepresentation component = new ComponentExportRepresentation();
+        component.setName("rsa-enc-generated");
+        component.setProviderId("rsa-enc-generated");
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("priority", DefaultKeyProviders.DEFAULT_PRIORITY);
+        config.putSingle("keyUse", KeyUse.ENC.name());
+        config.putSingle("algorithm", encAlg);
+        component.setConfig(config);
+        return component;
+    }
+
+    protected ComponentExportRepresentation getProviderKeyProvider() {
+        return null;
     }
 
     @Override
@@ -118,23 +134,34 @@ public class KcOidcBrokerJWETest extends AbstractBrokerTest {
                 RealmRepresentation realm = super.createConsumerRealm();
 
                 if (encAlg != null) {
-                    // create the RSA component for the encryption in the specified alg
-                    ComponentExportRepresentation component = new ComponentExportRepresentation();
-                    component.setName("rsa-enc-generated");
-                    component.setProviderId("rsa-enc-generated");
-
-                    MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-                    config.putSingle("priority", DefaultKeyProviders.DEFAULT_PRIORITY);
-                    config.putSingle("keyUse", KeyUse.ENC.name());
-                    config.putSingle("algorithm", encAlg);
-                    component.setConfig(config);
-
-                    MultivaluedHashMap<String, ComponentExportRepresentation> components = realm.getComponents();
-                    if (components == null) {
-                        components = new MultivaluedHashMap<>();
-                        realm.setComponents(components);
+                    ComponentExportRepresentation component = getConsumerKeyProvider();
+                    if (component != null) {
+                        MultivaluedHashMap<String, ComponentExportRepresentation> components = realm.getComponents();
+                        if (components == null) {
+                            components = new MultivaluedHashMap<>();
+                            realm.setComponents(components);
+                        }
+                        components.add(KeyProvider.class.getName(), component);
                     }
-                    components.add(KeyProvider.class.getName(), component);
+                }
+
+                return realm;
+            }
+            
+            @Override
+            public RealmRepresentation createProviderRealm() {
+                RealmRepresentation realm = super.createProviderRealm();
+
+                if (sigAlg != null) {
+                    ComponentExportRepresentation component = getProviderKeyProvider();
+                    if (component != null) {
+                        MultivaluedHashMap<String, ComponentExportRepresentation> components = realm.getComponents();
+                        if (components == null) {
+                            components = new MultivaluedHashMap<>();
+                            realm.setComponents(components);
+                        }
+                        components.add(KeyProvider.class.getName(), component);
+                    }
                 }
 
                 return realm;

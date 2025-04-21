@@ -16,71 +16,42 @@
  */
 package org.keycloak.models.cache.infinispan.authorization.stream;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.function.Predicate;
-
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.models.cache.infinispan.authorization.entities.InResource;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.marshalling.Marshalling;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@SerializeWith(InResourcePredicate.ExternalizerImpl.class)
-public class InResourcePredicate implements Predicate<Map.Entry<String, Revisioned>>, Serializable {
+@ProtoTypeId(Marshalling.IN_RESOURCE_PREDICATE)
+public class InResourcePredicate implements Predicate<Map.Entry<String, Revisioned>> {
 
-    private String resourceId;
+    private final String resourceId;
 
-    public static InResourcePredicate create() {
-        return new InResourcePredicate();
+    private InResourcePredicate(String resourceId) {
+        this.resourceId = Objects.requireNonNull(resourceId);
     }
 
-    public InResourcePredicate resource(String id) {
-        resourceId = id;
-        return this;
+    @ProtoFactory
+    public static InResourcePredicate create(String resourceId) {
+        return new InResourcePredicate(resourceId);
+    }
+
+    @ProtoField(1)
+    String getResourceId() {
+        return resourceId;
     }
 
     @Override
     public boolean test(Map.Entry<String, Revisioned> entry) {
-        Object value = entry.getValue();
-        if (value == null) return false;
-        if (!(value instanceof InResource)) return false;
-
-        return resourceId.equals(((InResource)value).getResourceId());
+        return entry.getValue() instanceof InResource inResource && resourceId.equals(inResource.getResourceId());
     }
 
-    public static class ExternalizerImpl implements Externalizer<InResourcePredicate> {
-        
-        private static final int VERSION_1 = 1;
-        
-        @Override
-        public void writeObject(ObjectOutput output, InResourcePredicate obj) throws IOException {
-            output.writeByte(VERSION_1);
-            
-            MarshallUtil.marshallString(obj.resourceId, output);
-        }
-        
-        @Override
-        public InResourcePredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-        
-        public InResourcePredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            InResourcePredicate res = new InResourcePredicate();
-            res.resourceId = MarshallUtil.unmarshallString(input);
-            
-            return res;
-        }
-    }
 }

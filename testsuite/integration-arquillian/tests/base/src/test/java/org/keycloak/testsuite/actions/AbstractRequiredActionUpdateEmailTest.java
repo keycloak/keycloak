@@ -132,7 +132,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		// assert that form holds submitted values during validation error
 		Assert.assertEquals("", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Please specify email.", updateEmailPage.getEmailInputError());
+		Assert.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
 
 		events.assertEmpty();
 	}

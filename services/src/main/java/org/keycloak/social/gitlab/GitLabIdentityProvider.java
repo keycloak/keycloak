@@ -107,7 +107,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 	private BrokeredIdentityContext gitlabExtractFromProfile(JsonNode profile) {
 		String id = getJsonProperty(profile, "id");
-		BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+		BrokeredIdentityContext identity = new BrokeredIdentityContext(id, getConfig());
 
 		String name = getJsonProperty(profile, "name");
 		String preferredUsername = getJsonProperty(profile, "username");

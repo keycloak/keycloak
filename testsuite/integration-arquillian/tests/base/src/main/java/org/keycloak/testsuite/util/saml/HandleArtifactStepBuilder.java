@@ -11,7 +11,6 @@ import org.apache.http.util.EntityUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
@@ -33,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.List;
@@ -219,7 +219,7 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         
         if (currentResponse.getFirstHeader("location") != null) {
             String location = currentResponse.getFirstHeader("location").getValue();
-            List<NameValuePair> params = URLEncodedUtils.parse(URI.create(location), Charset.forName("UTF-8"));
+            List<NameValuePair> params = URLEncodedUtils.parse(URI.create(location), StandardCharsets.UTF_8);
             for (NameValuePair param : params) {
                 if (GeneralConstants.SAML_ARTIFACT_KEY.equals(param.getName())) {
                     String artifact = param.getValue();

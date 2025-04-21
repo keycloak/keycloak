@@ -31,9 +31,10 @@ import io.sundr.builder.annotations.BuildableReference;
 })
 public class UnsupportedSpec {
 
-    @JsonPropertyDescription("You can configure that will be merged with the one configured by default by the operator.\n" +
-            "Use at your own risk, we reserve the possibility to remove/change the way any field gets merged in future releases without notice.\n" +
-            "Reference: https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates")
+    @JsonPropertyDescription("""
+            You can configure that will be merged with the one configured by default by the operator.
+            Use at your own risk, we reserve the possibility to remove/change the way any field gets merged in future releases without notice.
+            Reference: https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates""")
     private PodTemplateSpec podTemplate;
 
     public UnsupportedSpec() {}
@@ -46,7 +47,7 @@ public class UnsupportedSpec {
         return podTemplate;
     }
 
-    public void setPodTeplate(PodTemplateSpec podTemplate) {
+    public void setPodTemplate(PodTemplateSpec podTemplate) {
         this.podTemplate = podTemplate;
     }
 

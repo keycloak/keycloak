@@ -1,4 +1,5 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -7,24 +8,25 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../../admin-client";
-import { useAlerts } from "../../../components/alert/Alerts";
+import { useAdminClient } from "../../../admin-client";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import {
   PolicyDetailsParams,
   toPolicyDetails,
 } from "../../routes/PolicyDetails";
+import { useIsAdminPermissionsClient } from "../../../utils/useIsAdminPermissionsClient";
+import { toPermissionsConfigurationTabs } from "../../../permissions-configuration/routes/PermissionsConfigurationTabs";
+import { NewPermissionPolicyDetailsParams } from "../../../permissions-configuration/routes/NewPermissionPolicy";
+import { toPermissionPolicyDetails } from "../../../permissions-configuration/routes/PermissionPolicyDetails";
 import { Aggregate } from "./Aggregate";
 import { Client } from "./Client";
 import { ClientScope, RequiredIdValue } from "./ClientScope";
@@ -62,28 +64,30 @@ const COMPONENTS: {
 export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export default function PolicyDetails() {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
+  const { permissionClientId } = useParams<NewPermissionPolicyDetailsParams>();
   const navigate = useNavigate();
   const form = useForm();
   const { reset, handleSubmit } = form;
-
   const { addAlert, addError } = useAlerts();
-
   const [policy, setPolicy] = useState<PolicyRepresentation>();
   const isDisabled = policyType === "js";
+  const isAdminPermissionsClient =
+    useIsAdminPermissionsClient(permissionClientId);
 
   useFetch(
     async () => {
       if (policyId) {
         const result = await Promise.all([
           adminClient.clients.findOnePolicy({
-            id,
-            type: policyType,
+            id: permissionClientId ?? id,
+            type: policyType!,
             policyId,
           }) as PolicyRepresentation | undefined,
           adminClient.clients.getAssociatedPolicies({
-            id,
+            id: permissionClientId ?? id,
             permissionId: policyId,
           }),
         ]);
@@ -103,34 +107,40 @@ export default function PolicyDetails() {
       reset({ ...policy, policies });
       setPolicy(policy);
     },
-    [id, policyType, policyId],
+    [permissionClientId, id, policyType, policyId],
   );
 
-  const onSubmit = async (policy: Policy) => {
-    // remove entries that only have the boolean set and no id
+  const onSubmitPolicy = async (policy: Policy) => {
     policy.groups = policy.groups?.filter((g) => g.id);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
     policy.roles = policy.roles
       ?.filter((r) => r.id)
       .map((r) => ({ ...r, required: r.required || false }));
 
+    const clientId = isAdminPermissionsClient ? permissionClientId : id;
+    const navigateTo = isAdminPermissionsClient
+      ? toPermissionPolicyDetails
+      : toPolicyDetails;
+
     try {
       if (policyId) {
         await adminClient.clients.updatePolicy(
-          { id, type: policyType, policyId },
+          { id: clientId!, type: policyType!, policyId },
           policy,
         );
       } else {
         const result = await adminClient.clients.createPolicy(
-          { id, type: policyType },
+          { id: clientId!, type: policyType! },
           policy,
         );
+
         navigate(
-          toPolicyDetails({
-            realm,
-            id,
-            policyType,
+          navigateTo({
+            realm: realm!,
+            id: clientId!,
+            permissionClientId: clientId!,
             policyId: result.id!,
+            policyType: result.type!,
           }),
         );
       }
@@ -150,11 +160,19 @@ export default function PolicyDetails() {
     onConfirm: async () => {
       try {
         await adminClient.clients.delPolicy({
-          id,
+          id: isAdminPermissionsClient ? permissionClientId : id,
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        navigate(toAuthorizationTab({ realm, clientId: id, tab: "policies" }));
+        navigate(
+          isAdminPermissionsClient
+            ? toPermissionsConfigurationTabs({
+                realm: realm!,
+                permissionClientId,
+                tab: "policies",
+              })
+            : toAuthorizationTab({ realm, clientId: id, tab: "policies" }),
+        );
       } catch (error) {
         addError("policyDeletedError", error);
       }
@@ -197,20 +215,20 @@ export default function PolicyDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          onSubmit={handleSubmit(onSubmit)}
-          role="view-clients"
+          onSubmit={handleSubmit((policy) => onSubmitPolicy(policy))}
+          role="anyone" // if you get this far it means you have access
         >
           <FormProvider {...form}>
-            <NameDescription isDisabled={isDisabled} prefix="policy" />
+            <NameDescription isDisabled={isDisabled} />
             <ComponentType />
             <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
-            <div className="pf-u-mt-md">
+            <div className="pf-v5-u-mt-md">
               <Button
                 isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
-                className="pf-u-mr-md"
+                className="pf-v5-u-mr-md"
                 type="submit"
                 data-testid="save"
               >
@@ -223,11 +241,19 @@ export default function PolicyDetails() {
                 component={(props) => (
                   <Link
                     {...props}
-                    to={toAuthorizationTab({
-                      realm,
-                      clientId: id,
-                      tab: "policies",
-                    })}
+                    to={
+                      isAdminPermissionsClient
+                        ? toPermissionsConfigurationTabs({
+                            realm: realm!,
+                            permissionClientId,
+                            tab: "policies",
+                          })
+                        : toAuthorizationTab({
+                            realm,
+                            clientId: id,
+                            tab: "policies",
+                          })
+                    }
                   />
                 )}
               >

@@ -23,6 +23,7 @@ package org.keycloak.events;
 public interface Details {
     String PREF_PREVIOUS = "previous_";
     String PREF_UPDATED = "updated_";
+    String FIELDS_TO_UPDATE = "fields_to_update";
     
     String CUSTOM_REQUIRED_ACTION="custom_required_action";
     String CONTEXT = "context";
@@ -39,6 +40,7 @@ public interface Details {
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";
     String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
+    String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
     String FIRST_NAME = "first_name";
@@ -49,20 +51,29 @@ public interface Details {
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
+    String TOKEN_TYPE = "token_type";
+    String TOKEN_ISSUED_FOR = "token_issued_for";
+    String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
+    String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
     String REASON = "reason";
     String GRANTED_CLIENT = "granted_client";
     String REVOKED_CLIENT = "revoked_client";
+    String TOKEN_EXCHANGE_REVOKED_CLIENTS = "token_exchange_revoked_clients";
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
     String SCOPE = "scope";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
+    String REQUESTED_TOKEN_TYPE = "requested_token_type";
+    String SUBJECT_TOKEN_CLIENT_ID = "subject_token_client_id";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
+    String REDIRECTED_TO_CLIENT = "redirected_to_client";
+    String LOGIN_RETRY = "login_retry";
 
     String CONSENT = "consent";
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
@@ -86,5 +97,18 @@ public interface Details {
 
     String CREDENTIAL_TYPE = "credential_type";
     String SELECTED_CREDENTIAL_ID = "selected_credential_id";
+    String CREDENTIAL_ID = "credential_id";
     String AUTHENTICATION_ERROR_DETAIL = "authentication_error_detail";
+    String CREDENTIAL_USER_LABEL = "credential_user_label";
+
+    String NOT_BEFORE = "not_before";
+    String NUM_FAILURES = "num_failures";
+
+    String LOGOUT_TRIGGERED_BY_ACTION_TOKEN = "logout_triggered_by_action_token";
+    String LOGOUT_TRIGGERED_BY_REQUIRED_ACTION = "logout_triggered_by_required_action";
+    String ACCESS_TOKEN_EXPIRATION_TIME = "access_token_expiration_time";
+    String AGE_OF_REFRESH_TOKEN = "age_of_refresh_token";
+
+    String CLIENT_POLICY_ERROR = "client_policy_error";
+    String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
 }

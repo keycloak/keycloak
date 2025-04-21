@@ -1,8 +1,9 @@
 package org.keycloak.documentation.test.utils;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.keycloak.documentation.test.Config;
 import org.keycloak.documentation.test.Guide;
 
@@ -11,13 +12,17 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LinkUtils {
-
-    private static final Logger logger = LogManager.getLogger(LinkUtils.class);
 
     private static final LinkUtils instance = new LinkUtils();
 
@@ -66,15 +71,35 @@ public class LinkUtils {
                     String anchor = link.contains("#") ? link.split("#")[1] : null;
                     String error = null;
 
-                    HttpUtils.Response response = anchor != null ? http.load(link) : http.isValid(link);
+                    HttpUtils.Response response = http.load(link);
 
                     if (response.getRedirectLocation() != null) {
                         if (!validRedirect(response.getRedirectLocation(), Config.getInstance().getIgnoredLinkRedirects())) {
                             error = "invalid redirect to " + response.getRedirectLocation();
                         }
-                    } else if (response.isSuccess() && anchor != null) {
-                        if (!(response.getContent().contains("id=\"" + anchor + "\"") || response.getContent().contains("name=\"" + anchor + "\"") || response.getContent().contains("href=\"#" + anchor + "\""))) {
-                            error = "invalid anchor " + anchor;
+                    } else if (response.isSuccess()) {
+                        if (response.getContent().contains("http-equiv")) {
+                            // The contains() will scan the document fast, while Jsoup parse will take extra CPU cycles to parse the document.
+                            // Using Jsoup avoid parsing getting false positives from the document's contents.
+                            Document doc = Jsoup.parse(response.getContent());
+                            Element refresh = doc.selectFirst("head > meta[http-equiv=refresh]");
+                            if (refresh != null) {
+                                String content = refresh.attribute("content").getValue();
+                                if (content.contains(";")) {
+                                    String url = content.substring(content.indexOf(";") + 1).trim();
+                                    if (url.startsWith("url=")) {
+                                        url = url.substring("url=".length()).trim();
+                                        if (!validRedirect(url, Config.getInstance().getIgnoredLinkRedirects())) {
+                                            error = "invalid redirect to " + url;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (anchor != null) {
+                            if (!(response.getContent().contains("id=\"" + anchor + "\"") || response.getContent().contains("name=\"" + anchor + "\"") || response.getContent().contains("href=\"#" + anchor + "\""))) {
+                                error = "invalid anchor " + anchor;
+                            }
                         }
                     } else {
                         error = response.getError();

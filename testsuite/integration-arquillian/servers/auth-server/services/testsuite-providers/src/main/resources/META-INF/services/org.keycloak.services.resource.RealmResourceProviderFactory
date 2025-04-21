@@ -19,3 +19,5 @@ org.keycloak.testsuite.rest.TestingResourceProviderFactory
 org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory
 org.keycloak.testsuite.rest.TestSamlApplicationResourceProviderFactory
 org.keycloak.testsuite.domainextension.rest.ExampleRealmResourceProviderFactory
+org.keycloak.testsuite.broker.oidc.MissingUseJwksRealmResourceProviderFactory
+org.keycloak.testsuite.broker.oidc.UnsupportedKeyJwksRealmResourceProviderFactory

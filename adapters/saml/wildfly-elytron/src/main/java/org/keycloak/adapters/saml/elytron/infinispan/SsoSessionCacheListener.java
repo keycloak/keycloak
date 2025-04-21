@@ -18,7 +18,7 @@ package org.keycloak.adapters.saml.elytron.infinispan;
 
 import org.keycloak.adapters.spi.SessionIdMapper;
 
-import java.util.*;
+import java.util.Queue;
 import java.util.concurrent.*;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;

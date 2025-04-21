@@ -3,28 +3,34 @@ import {
   AlertVariant,
   Button,
   Checkbox,
+  Divider,
   Dropdown,
   DropdownItem,
-  DropdownPosition,
-  DropdownSeparator,
+  DropdownList,
   InputGroup,
-  KebabToggle,
+  InputGroupItem,
+  MenuToggle,
+  Spinner,
   Tooltip,
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
-import { AngleRightIcon } from "@patternfly/react-icons";
+
+import {
+  PaginatingTableToolbar,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { useAdminClient } from "../../admin-client";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useAccess } from "../../context/access/Access";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { GroupsModal } from "../GroupsModal";
 import { useSubGroups } from "../SubGroupsContext";
@@ -33,6 +39,10 @@ import { DeleteGroup } from "./DeleteGroup";
 import { MoveDialog } from "./MoveDialog";
 
 import "./group-tree.css";
+
+type ExtendedTreeViewDataItem = TreeViewDataItem & {
+  access?: Record<string, boolean>;
+};
 
 type GroupTreeContextMenuProps = {
   group: GroupRepresentation;
@@ -96,26 +106,39 @@ const GroupTreeContextMenu = ({
         }}
       />
       <Dropdown
-        toggle={<KebabToggle onToggle={toggleOpen} />}
+        popperProps={{
+          position: "right",
+        }}
+        onOpenChange={toggleOpen}
+        toggle={(ref) => (
+          <MenuToggle
+            ref={ref}
+            onClick={toggleOpen}
+            isExpanded={isOpen}
+            variant="plain"
+            aria-label="Actions"
+          >
+            <EllipsisVIcon />
+          </MenuToggle>
+        )}
         isOpen={isOpen}
-        isPlain
-        position={DropdownPosition.right}
-        dropdownItems={[
+      >
+        <DropdownList>
           <DropdownItem key="rename" onClick={toggleRenameOpen}>
             {t("rename")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="move" onClick={toggleMoveOpen}>
             {t("moveTo")}
-          </DropdownItem>,
+          </DropdownItem>
           <DropdownItem key="create" onClick={toggleCreateOpen}>
             {t("createChildGroup")}
-          </DropdownItem>,
-          <DropdownSeparator key="separator" />,
+          </DropdownItem>
+          <Divider key="separator" />
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
             {t("delete")}
-          </DropdownItem>,
-        ]}
-      />
+          </DropdownItem>
+        </DropdownList>
+      </Dropdown>
     </>
   );
 };
@@ -127,19 +150,35 @@ type GroupTreeProps = {
 
 const SUBGROUP_COUNT = 50;
 
+const TreeLoading = () => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Spinner size="sm" /> {t("spinnerLoading")}
+    </>
+  );
+};
+
+const LOADING_TREE = [
+  {
+    name: <TreeLoading />,
+  },
+];
+
 export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();
   const { hasAccess } = useAccess();
 
-  const [data, setData] = useState<TreeViewDataItem[]>();
-  const [groups, setGroups] = useState<GroupRepresentation[]>([]);
-  const { subGroups, setSubGroups } = useSubGroups();
+  const [data, setData] = useState<ExtendedTreeViewDataItem[]>();
+  const { subGroups, clear } = useSubGroups();
 
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
@@ -148,7 +187,7 @@ export const GroupTree = ({
   const prefMax = useRef(20);
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
-  const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
+  const [activeItem, setActiveItem] = useState<ExtendedTreeViewDataItem>();
 
   const [firstSub, setFirstSub] = useState(0);
 
@@ -161,7 +200,8 @@ export const GroupTree = ({
   const mapGroup = (
     group: GroupRepresentation,
     refresh: () => void,
-  ): TreeViewDataItem => {
+  ): ExtendedTreeViewDataItem => {
+    const hasSubGroups = group.subGroupCount;
     return {
       id: group.id,
       name: (
@@ -169,10 +209,12 @@ export const GroupTree = ({
           <span>{group.name}</span>
         </Tooltip>
       ),
-      children:
-        group.subGroups && group.subGroups.length > 0
-          ? group.subGroups.map((g) => mapGroup(g, refresh))
-          : undefined,
+      access: group.access || {},
+      children: hasSubGroups
+        ? search.length === 0
+          ? LOADING_TREE
+          : group.subGroups?.map((g) => mapGroup(g, refresh))
+        : undefined,
       action: (hasAccess("manage-users") || group.access?.manage) && (
         <GroupTreeContextMenu group={group} refresh={refresh} />
       ),
@@ -183,7 +225,8 @@ export const GroupTree = ({
   useFetch(
     async () => {
       const groups = await fetchAdminUI<GroupRepresentation[]>(
-        "ui-ext/groups",
+        adminClient,
+        "groups",
         Object.assign(
           {
             first: `${first}`,
@@ -197,9 +240,9 @@ export const GroupTree = ({
       let subGroups: GroupRepresentation[] = [];
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
-          "ui-ext/groups/subgroup",
+          adminClient,
+          `groups/${activeItem.id}/children`,
           {
-            id: activeItem.id!,
             first: `${firstSub}`,
             max: `${SUBGROUP_COUNT}`,
           },
@@ -208,32 +251,31 @@ export const GroupTree = ({
       return { groups, subGroups };
     },
     ({ groups, subGroups }) => {
-      const found: TreeViewDataItem[] = [];
-      if (activeItem) findGroup(data || [], activeItem.id!, [], found);
-
-      if (found.length && subGroups.length) {
-        const foundTreeItem = found.pop()!;
-        foundTreeItem.children = [
-          ...(unionBy(foundTreeItem.children || []).splice(0, SUBGROUP_COUNT),
-          subGroups.map((g) => mapGroup(g, refresh), "id")),
-          ...(subGroups.length === SUBGROUP_COUNT
-            ? [
-                {
-                  id: "next",
-                  name: (
-                    <Button
-                      variant="plain"
-                      onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
-                    >
-                      <AngleRightIcon />
-                    </Button>
-                  ),
-                },
-              ]
-            : []),
-        ];
+      if (activeItem) {
+        const found = findGroup(data || [], activeItem.id!, []);
+        if (found.length && subGroups.length) {
+          const foundTreeItem = found.pop()!;
+          foundTreeItem.children = [
+            ...(unionBy(foundTreeItem.children || []).splice(0, SUBGROUP_COUNT),
+            subGroups.map((g) => mapGroup(g, refresh), "id")),
+            ...(subGroups.length === SUBGROUP_COUNT
+              ? [
+                  {
+                    id: "next",
+                    name: (
+                      <Button
+                        variant="plain"
+                        onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
+                      >
+                        <AngleRightIcon />
+                      </Button>
+                    ),
+                  },
+                ]
+              : []),
+          ];
+        }
       }
-      setGroups(groups);
       if (search || prefFirst.current !== first || prefMax.current !== max) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
@@ -253,26 +295,49 @@ export const GroupTree = ({
   );
 
   const findGroup = (
-    groups: GroupRepresentation[] | TreeViewDataItem[],
+    groups: ExtendedTreeViewDataItem[],
     id: string,
-    path: (GroupRepresentation | TreeViewDataItem)[],
-    found: (GroupRepresentation | TreeViewDataItem)[],
+    path: ExtendedTreeViewDataItem[],
   ) => {
-    return groups.map((group) => {
-      if (found.length > 0) return;
-
-      if ("subGroups" in group && group.subGroups?.length) {
-        findGroup(group.subGroups, id, [...path, group], found);
-      }
-
-      if ("children" in group && group.children) {
-        findGroup(group.children, id, [...path, group], found);
-      }
-
+    for (let index = 0; index < groups.length; index++) {
+      const group = groups[index];
       if (group.id === id) {
-        found.push(...path, group);
+        path.push(group);
+        return path;
       }
-    });
+
+      if (group.children) {
+        path.push(group);
+        findGroup(group.children, id, path);
+        if (path[path.length - 1].id !== id) {
+          path.pop();
+        }
+      }
+    }
+    return path;
+  };
+
+  const nav = (item: TreeViewDataItem, data: ExtendedTreeViewDataItem[]) => {
+    if (item.id === "next") return;
+    setActiveItem(item);
+
+    const path = findGroup(data, item.id!, []);
+    if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) clear();
+    if (
+      canViewDetails ||
+      path.at(-1)?.access?.view ||
+      subGroups.at(-1)?.access?.view
+    ) {
+      navigate(
+        toGroups({
+          realm,
+          id: path.map((g) => g.id).join("/"),
+        }),
+      );
+    } else {
+      addAlert(t("noViewRights"), AlertVariant.warning);
+      navigate(toGroups({ realm }));
+    }
   };
 
   return data ? (
@@ -290,17 +355,22 @@ export const GroupTree = ({
       inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
-        <InputGroup className="pf-u-pt-sm">
-          <Checkbox
-            id="exact"
-            data-testid="exact-search"
-            name="exact"
-            isChecked={exact}
-            onChange={(value) => setExact(value)}
-          />
-          <label htmlFor="exact" className="pf-u-pl-sm">
-            {t("exactSearch")}
-          </label>
+        <InputGroup className="pf-v5-u-pt-sm">
+          <InputGroupItem>
+            <Checkbox
+              id="exact"
+              data-testid="exact-search"
+              name="exact"
+              isChecked={exact}
+              onChange={(_event, value) => setExact(value)}
+              className="pf-v5-u-mr-xs"
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <label htmlFor="exact" className="pf-v5-u-pl-sm">
+              {t("exactSearch")}
+            </label>
+          </InputGroupItem>
         </InputGroup>
       }
     >
@@ -312,21 +382,11 @@ export const GroupTree = ({
           hasGuides
           hasSelectableNodes
           className="keycloak_groups_treeview"
+          onExpand={(_, item) => {
+            nav(item, data);
+          }}
           onSelect={(_, item) => {
-            if (item.id === "next") return;
-            setActiveItem(item);
-            const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
-            const subGroups: GroupRepresentation[] = [];
-            findGroup(groups, id!, [], subGroups);
-            setSubGroups(subGroups);
-
-            if (canViewDetails || subGroups.at(-1)?.access?.view) {
-              navigate(toGroups({ realm, id: item.id }));
-              refresh();
-            } else {
-              addAlert(t("noViewRights"), AlertVariant.warning);
-              navigate(toGroups({ realm }));
-            }
+            nav(item, data);
           }}
         />
       )}

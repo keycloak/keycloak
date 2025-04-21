@@ -2,17 +2,18 @@ import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
+import { useHelp } from "@keycloak/keycloak-ui-shared";
+import { useAdminClient } from "../admin-client";
 import type { ClientRoleParams } from "../clients/routes/ClientRole";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
+import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter, upperCaseFormatter } from "../util";
 import { useParams } from "../utils/useParams";
 
 export const UsersInRoleTab = () => {
+  const { adminClient } = useAdminClient();
+
   const navigate = useNavigate();
   const { realm } = useRealm();
 
@@ -29,6 +30,7 @@ export const UsersInRoleTab = () => {
       return adminClient.clients.findUsersWithRole({
         roleName: role.name!,
         id: clientId,
+        briefRepresentation: true,
         first,
         max,
       });
@@ -36,6 +38,7 @@ export const UsersInRoleTab = () => {
 
     return adminClient.roles.findUsersWithRole({
       name: role.name!,
+      briefRepresentation: true,
       first,
       max,
     });
@@ -50,6 +53,7 @@ export const UsersInRoleTab = () => {
         loader={loader}
         ariaLabelKey="roleList"
         searchPlaceholderKey=""
+        data-testid="users-in-role-table"
         toolbarItem={
           enabled && (
             <Popover

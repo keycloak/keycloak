@@ -1,4 +1,5 @@
-import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { HelpItem, TextControl, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
@@ -11,19 +12,18 @@ import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-
+import { useAdminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import "../realm-settings-section.css";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
 import { toUserProfile } from "../routes/UserProfile";
 import { useUserProfile } from "./UserProfileContext";
-
-import "../realm-settings-section.css";
+import { saveTranslations, Translations } from "./attribute/TranslatableField";
+import { TranslatableField } from "./attribute/TranslatableField";
 
 function parseAnnotations(input: Record<string, unknown>): KeyValueType[] {
   return Object.entries(input).reduce((p, [key, value]) => {
@@ -43,28 +43,33 @@ function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
   );
 }
 
-type FormFields = Required<Omit<UserProfileGroup, "annotations">> & {
-  annotations: KeyValueType[];
-};
+type FormFields = Required<Omit<UserProfileGroup, "annotations">> &
+  Translations & {
+    annotations: KeyValueType[];
+  };
 
 const defaultValues: FormFields = {
   annotations: [],
   displayDescription: "",
   displayHeader: "",
   name: "",
+  translation: { key: [] },
 };
 
 export default function AttributesGroupForm() {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { config, save } = useUserProfile();
   const navigate = useNavigate();
   const params = useParams<EditAttributesGroupParams>();
   const form = useForm<FormFields>({ defaultValues });
+  const { addError } = useAlerts();
+  const editMode = params.name ? true : false;
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
-    [config?.groups],
+    [config?.groups, params.name],
   );
 
   useEffect(() => {
@@ -77,7 +82,7 @@ export default function AttributesGroupForm() {
       : [];
 
     form.reset({ ...defaultValues, ...matchingGroup, annotations });
-  }, [matchingGroup]);
+  }, [matchingGroup, form]);
 
   const onSubmit: SubmitHandler<FormFields> = async (values) => {
     if (!config) {
@@ -86,8 +91,9 @@ export default function AttributesGroupForm() {
 
     const groups = [...(config.groups ?? [])];
     const updateAt = matchingGroup ? groups.indexOf(matchingGroup) : -1;
+    const { translation, ...groupValues } = values;
     const updatedGroup: UserProfileGroup = {
-      ...values,
+      ...groupValues,
       annotations: transformAnnotations(values.annotations),
     };
 
@@ -100,77 +106,78 @@ export default function AttributesGroupForm() {
     const success = await save({ ...config, groups });
 
     if (success) {
-      navigate(toUserProfile({ realm, tab: "attributes-group" }));
+      if (realm?.internationalizationEnabled) {
+        try {
+          await saveTranslations({
+            adminClient,
+            realmName,
+            translationsData: { translation },
+          });
+        } catch (error) {
+          addError(t("errorSavingTranslations"), error);
+        }
+      }
+      navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
     }
   };
 
   return (
-    <>
+    <FormProvider {...form}>
       <ViewHeader
         titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
         divider
       />
       <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
         <FormAccess isHorizontal role="manage-realm">
-          <FormGroup
+          <TextControl
+            name="name"
             label={t("nameField")}
-            fieldId="kc-name"
-            isRequired
-            helperTextInvalid={t("required")}
-            validated={form.formState.errors.name ? "error" : "default"}
-            labelIcon={
-              <HelpItem helpText={t("nameHintHelp")} fieldLabelId="nameField" />
-            }
-          >
-            <KeycloakTextInput
-              id="kc-name"
-              isReadOnly={!!matchingGroup}
-              {...form.register("name", { required: true })}
-            />
-            {!!matchingGroup && (
-              <input type="hidden" {...form.register("name")} />
-            )}
-          </FormGroup>
+            labelIcon={t("nameHintHelp")}
+            isDisabled={!!matchingGroup || editMode}
+            rules={{
+              required: t("required"),
+            }}
+          />
           <FormGroup
-            label={t("displayHeaderField")}
-            fieldId="kc-display-header"
+            label={t("displayHeader")}
             labelIcon={
               <HelpItem
                 helpText={t("displayHeaderHintHelp")}
-                fieldLabelId="displayHeaderField"
+                fieldLabelId="displayHeader"
               />
             }
+            fieldId="kc-attributes-group-display-header"
           >
-            <KeycloakTextInput
-              id="kc-display-header"
-              {...form.register("displayHeader")}
+            <TranslatableField
+              fieldName="displayHeader"
+              attributeName="name"
+              prefix="profile.attribute-group"
             />
           </FormGroup>
           <FormGroup
-            label={t("displayDescriptionField")}
-            fieldId="kc-display-description"
+            label={t("displayDescription")}
             labelIcon={
               <HelpItem
                 helpText={t("displayDescriptionHintHelp")}
-                fieldLabelId="displayDescriptionField"
+                fieldLabelId="displayDescription"
               />
             }
+            fieldId="kc-attributes-group-display-description"
           >
-            <KeycloakTextInput
-              id="kc-display-description"
-              {...form.register("displayDescription")}
+            <TranslatableField
+              fieldName="displayDescription"
+              attributeName="name"
+              prefix="profile.attribute-group-description"
             />
           </FormGroup>
           <TextContent>
             <Text component="h2">{t("annotationsText")}</Text>
           </TextContent>
           <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
-            <FormProvider {...form}>
-              <KeyValueInput name="annotations" />
-            </FormProvider>
+            <KeyValueInput label={t("annotationsText")} name="annotations" />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" data-testid="saveGroupBtn">
               {t("save")}
             </Button>
             <Button
@@ -178,7 +185,10 @@ export default function AttributesGroupForm() {
               component={(props) => (
                 <Link
                   {...props}
-                  to={toUserProfile({ realm, tab: "attributes-group" })}
+                  to={toUserProfile({
+                    realm: realmName,
+                    tab: "attributes-group",
+                  })}
                 />
               )}
             >
@@ -187,6 +197,6 @@ export default function AttributesGroupForm() {
           </ActionGroup>
         </FormAccess>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }

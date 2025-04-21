@@ -17,14 +17,14 @@
 
 package org.keycloak.connections.infinispan;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class InfinispanConnectionSpi implements Spi {
+
+    public static final String SPI_NAME = "connectionsInfinispan";
 
     @Override
     public boolean isInternal() {
@@ -33,16 +33,16 @@ public class InfinispanConnectionSpi implements Spi {
 
     @Override
     public String getName() {
-        return "connectionsInfinispan";
+        return SPI_NAME;
     }
 
     @Override
-    public Class<? extends Provider> getProviderClass() {
+    public Class<InfinispanConnectionProvider> getProviderClass() {
         return InfinispanConnectionProvider.class;
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+    public Class<InfinispanConnectionProviderFactory> getProviderFactoryClass() {
         return InfinispanConnectionProviderFactory.class;
     }
 

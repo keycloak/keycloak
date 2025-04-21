@@ -20,7 +20,6 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,7 +52,8 @@ import org.keycloak.testsuite.federation.FailableHardcodedStorageProvider;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,8 +92,6 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() {
-        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
-
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("failure");
         memProvider.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
@@ -152,10 +150,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
      */
     @Test
     public void testKeycloak5350() throws Exception {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId("offline-client");
+        oauth.client("offline-client", "secret");
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
         oauth.doLogin(FailableHardcodedStorageProvider.username, "password");
 
@@ -168,9 +164,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         final String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String code = oauth.parseLoginResponse().getCode();
 
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret");
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
@@ -200,7 +196,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
 
         // test that once user storage provider is available again we can still access the token.
-        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString, "secret");
+        tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
         Assert.assertNotNull(tokenResponse.getAccessToken());
         token = oauth.verifyToken(tokenResponse.getAccessToken());
         offlineTokenString = tokenResponse.getRefreshToken();
@@ -248,14 +244,12 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         System.out.println(driver.getPageSource());
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        oauth.openLogout();
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        oauth.openLogoutForm();
     }
 
     @Test
     public void testKeycloak5926() {
-        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
-
         oauth.clientId("test-app");
         oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
 

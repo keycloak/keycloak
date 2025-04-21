@@ -1,0 +1,26 @@
+{
+  "id": "migration-user-profile",
+  "realm": "migration-user-profile",
+  "enabled": true,
+  "attributes" : {
+    "userProfileEnabled" : "true"
+  },
+  "components" : {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "id": "98cef18c-bcd8-40d2-9e7d-d257298317f2",
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "config-piece-0": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"edit\":[\"admin\",\"user\"],\"view\":[\"admin\",\"user\"]},\"validations\":{\"email\":{},\"length\":{\"max\":255},\"pattern\":{\"pattern\":\"[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@example.nl\",\"error-message\":\"Invalid domain selected\"}},\"annotations\":{\"\":\"\"},\"required\":{\"roles\":[\"user\"]},\"group\":null},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}},{\"name\":\"street\",\"displayName\":\"Street\",\"required\":{\"scopes\":[\"phone\"],\"roles\":[\"admin\",\"user\"]},\"validations\":{},\"selector\":{\"scopes\":[\"address\"]},\"permissions\":{\"view\":[\"user\"],\"edit\":[\"user\",\"admin\"]},\"annotations\":{\"foo\":\"bar\"}}]}"
+          ],
+          "config-pieces-count": [
+            "1"
+          ]
+        }
+      }
+    ]
+  },
+  "keycloakVersion" : "19.0.3"
+}

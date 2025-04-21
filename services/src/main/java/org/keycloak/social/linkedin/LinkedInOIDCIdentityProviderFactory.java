@@ -55,7 +55,7 @@ public class LinkedInOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public String getName() {
-        return "LinkedIn OpenID Connect";
+        return "LinkedIn";
     }
 
     @Override

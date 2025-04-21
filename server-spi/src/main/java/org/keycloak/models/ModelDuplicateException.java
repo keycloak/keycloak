@@ -24,6 +24,12 @@ public class ModelDuplicateException extends ModelException {
 
     private String duplicateFieldName;
 
+    /**
+     * Default constructor
+     *
+     * @deprecated use a variant with a message instead
+     */
+    @Deprecated
     public ModelDuplicateException() {
     }
 
@@ -38,10 +44,6 @@ public class ModelDuplicateException extends ModelException {
 
     public ModelDuplicateException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    public ModelDuplicateException(Throwable cause) {
-        super(cause);
     }
 
     public String getDuplicateFieldName() {

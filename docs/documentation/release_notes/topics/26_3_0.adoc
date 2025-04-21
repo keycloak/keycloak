@@ -1,0 +1,27 @@
+= Usage of remote stores for embedded caches is restricted
+
+Previously, usage of remote stores was discouraged and the experimental feature `cache-embedded-remote-store` needed to be enabled to run in this setup.
+In this release, the experimental feature was removed and usage of remote stores is restricted.
+If you previously used the `cache-embedded-remote-store` feature, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+
+= Asynchronous logging
+
+All available log handlers now support asynchronous logging capabilities.
+Asynchronous logging might be useful for deployments requiring **high throughput** and **low latency** to move log operations in a separate thread.
+
+For more details, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Client initiated linking of the user account to identity provider is based on AIA
+
+In this release, we added Application initiated action (AIA) implementation for linking a user account to the identity provider. The custom protocol, which was previously
+used for client initiated account linking is deprecated now. For more information, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Deprecated for removal the Instagram Identity Broker
+
+It has been a while since discussions started about any activity around the Instagram Identity Broker
+and any objection from the community about deprecating it for removal. For more details, see
+https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
+
+In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
+If you are using this broker, it is recommended to use the Facebook Identity Broker instead. For more
+details, see link:{upgradingguide_link}[{upgradingguide_name}].

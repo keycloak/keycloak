@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util.saml;
 
-import com.google.common.base.Charsets;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -13,23 +12,16 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.protocol.saml.ArtifactResolver;
-import org.keycloak.protocol.saml.ArtifactResolverProcessingException;
 import org.keycloak.protocol.saml.DefaultSamlArtifactResolver;
-import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -75,12 +67,7 @@ public class CreateArtifactMessageStepBuilder implements SamlClient.Step {
         parameters.add(new BasicNameValuePair(GeneralConstants.SAML_ARTIFACT_KEY, lastArtifact));
         LOG.infof("Sending POST request with artifact %s", lastArtifact);
 
-        UrlEncodedFormEntity formEntity;
-        try {
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         return post;

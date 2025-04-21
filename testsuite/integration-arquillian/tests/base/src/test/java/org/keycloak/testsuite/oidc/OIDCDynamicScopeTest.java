@@ -40,7 +40,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
@@ -238,7 +237,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
-        oauth.doLogout(tokens.refreshToken, "password");
+        oauth.doLogout(tokens.refreshToken);
         events.expectLogout(tokens.idToken.getSessionState())
                 .client("test-app")
                 .user(userId)

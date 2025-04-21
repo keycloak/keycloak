@@ -1,18 +1,13 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import {
-  Action,
-  KeycloakDataTable,
-} from "../../components/table-toolbar/KeycloakDataTable";
+import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toRegistrationProvider } from "../routes/AddRegistrationProvider";
 import { ClientRegistrationParams } from "../routes/ClientRegistration";
@@ -44,6 +39,8 @@ const DetailLink = (comp: ComponentRepresentation) => {
 export const ClientRegistrationList = ({
   subType,
 }: ClientRegistrationListProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { subTab } = useParams<ClientRegistrationParams>();
   const navigate = useNavigate();
@@ -103,12 +100,16 @@ export const ClientRegistrationList = ({
       )}
       <DeleteConfirm />
       <KeycloakDataTable
-        ariaLabelKey="initialAccessToken"
-        searchPlaceholderKey="searchInitialAccessToken"
+        ariaLabelKey="clientRegistration"
+        searchPlaceholderKey={t("searchClientRegistration")}
+        data-testid={`clientRegistration-${subType}`}
         loader={policies}
         toolbarItem={
           <ToolbarItem>
-            <Button data-testid="createPolicy" onClick={toggleAddDialog}>
+            <Button
+              data-testid={`createPolicy-${subType}`}
+              onClick={toggleAddDialog}
+            >
               {t("createPolicy")}
             </Button>
           </ToolbarItem>

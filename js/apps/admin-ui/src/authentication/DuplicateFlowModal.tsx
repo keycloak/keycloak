@@ -11,9 +11,8 @@ import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { NameDescription } from "./form/NameDescription";
 import { toFlow } from "./routes/Flow";
@@ -31,6 +30,8 @@ export const DuplicateFlowModal = ({
   toggleDialog,
   onComplete,
 }: DuplicateFlowModalProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { setValue, getValues, handleSubmit } = form;

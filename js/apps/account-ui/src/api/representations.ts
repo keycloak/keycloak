@@ -34,10 +34,15 @@ export interface ConsentScopeRepresentation {
   displayTest: string;
 }
 
+export interface CredentialMetadataRepresentationMessage {
+  key: string;
+  parameters?: string[];
+}
+
 export interface CredentialMetadataRepresentation {
-  infoMessage: string;
-  warningMessageTitle: string;
-  warningMessageDescription: string;
+  infoMessage: CredentialMetadataRepresentationMessage;
+  warningMessageTitle: CredentialMetadataRepresentationMessage;
+  warningMessageDescription: CredentialMetadataRepresentationMessage;
   credential: CredentialRepresentation;
 }
 
@@ -81,22 +86,16 @@ export interface UserProfileAttributeMetadata {
   readOnly: boolean;
   annotations?: { [index: string]: any };
   validators: { [index: string]: { [index: string]: any } };
+  multivalued: boolean;
 }
 
 export interface UserProfileMetadata {
   attributes: UserProfileAttributeMetadata[];
 }
 
-export interface UserRepresentation {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  emailVerified: boolean;
+export type UserRepresentation = any & {
   userProfileMetadata: UserProfileMetadata;
-  attributes: { [index: string]: string[] };
-}
+};
 
 export interface CredentialRepresentation {
   id: string;
@@ -207,4 +206,19 @@ export interface Group {
   id?: string;
   name: string;
   path: string;
+}
+
+export interface SupportedCredentialConfiguration {
+  id: string;
+  format: string;
+  scope: string;
+}
+export interface CredentialsIssuer {
+  credential_issuer: string;
+  credential_endpoint: string;
+  authorization_servers: string[];
+  credential_configurations_supported: Record<
+    string,
+    SupportedCredentialConfiguration
+  >;
 }

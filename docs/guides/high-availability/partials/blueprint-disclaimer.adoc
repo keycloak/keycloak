@@ -1,0 +1,2 @@
+NOTE: We provide these blueprints to show a minimal functionally complete example with a good baseline performance for regular installations.
+You would still need to adapt it to your environment and your organization's standards and security best practices.

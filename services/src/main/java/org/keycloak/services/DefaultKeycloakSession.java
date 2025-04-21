@@ -25,6 +25,7 @@ import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
+import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -59,18 +60,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultKeycloakSession implements KeycloakSession {
+public abstract class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
-    private final Map<Integer, Provider> providers = new HashMap<>();
+    private final Map<List<String>, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
@@ -166,16 +169,20 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz) {
-        Integer hash = clazz.hashCode();
-        T provider = (T) providers.get(hash);
+        List<String> key = List.of(clazz.getName());
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz));
+    }
+
+    private <T extends Provider> T getOrCreateProvider(List<String> key, Supplier<ProviderFactory<T>> supplier) {
+        T provider = (T) providers.get(key);
         // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
         // since per JDK-8071667 the remapping function should not modify the map during computation. While
         // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz);
+            ProviderFactory<T> providerFactory = supplier.get();
             if (providerFactory != null) {
                 provider = providerFactory.create(DefaultKeycloakSession.this);
-                providers.put(hash, provider);
+                providers.put(key, provider);
             }
         }
         return provider;
@@ -184,19 +191,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
-        Integer hash = clazz.hashCode() + id.hashCode();
-        T provider = (T) providers.get(hash);
-        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
-        // since per JDK-8071667 the remapping function should not modify the map during computation. While
-        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
-        if (provider == null) {
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
-            if (providerFactory != null) {
-                provider = providerFactory.create(DefaultKeycloakSession.this);
-                providers.put(hash, provider);
-            }
-        }
-        return provider;
+        List<String> key = List.of(clazz.getName(), id);
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, id));
     }
 
     @Override
@@ -213,22 +209,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter) {
-        Integer hash = clazz.hashCode() + componentId.hashCode();
-        T provider = (T) providers.get(hash);
+        List<String> key = List.of("component", clazz.getName(), componentId);
         final RealmModel realm = getContext().getRealm();
-
-        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
-        // since per JDK-8071667 the remapping function should not modify the map during computation. While
-        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
-        if (provider == null) {
-            final String realmId = realm == null ? null : realm.getId();
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, modelGetter);
-            if (providerFactory != null) {
-                provider = providerFactory.create(this);
-                providers.put(hash, provider);
-            }
-        }
-        return provider;
+        return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, Optional.ofNullable(realm.getId()).orElse(null), componentId, modelGetter));
     }
 
     @Override
@@ -253,6 +236,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -313,6 +297,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public SingleUseObjectProvider singleUseObjects() {
         return getDatastoreProvider().singleUseObjects();
+    }
+
+    @Override
+    public IdentityProviderStorageProvider identityProviders() {
+        return getDatastoreProvider().identityProviders();
     }
 
     @Override
@@ -418,9 +407,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return String.format("session @ %08x", System.identityHashCode(this));
     }
 
-    protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
-        return new DefaultKeycloakContext(session);
-    }
+    protected abstract DefaultKeycloakContext createKeycloakContext(KeycloakSession session);
 
     public boolean isClosed() {
         return closed;

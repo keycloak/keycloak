@@ -24,14 +24,14 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
-    private LegacyStore legacyStoreConfig;
+    private Storage storageConfig;
     private WithDatabase databaseConfig;
     private DistributionTest config;
     private KeycloakDistribution delegate;
 
-    public KeycloakDistributionDecorator(LegacyStore legacyStoreConfig, WithDatabase databaseConfig, DistributionTest config,
-            KeycloakDistribution delegate) {
-        this.legacyStoreConfig = legacyStoreConfig;
+    public KeycloakDistributionDecorator(Storage storageConfig, WithDatabase databaseConfig, DistributionTest config,
+                                         KeycloakDistribution delegate) {
+        this.storageConfig = storageConfig;
         this.databaseConfig = databaseConfig;
         this.config = config;
         this.delegate = delegate;
@@ -43,7 +43,7 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
         args.addAll(List.of(config.defaultOptions()));
 
-        return delegate.run(new ServerOptions(legacyStoreConfig, databaseConfig, args));
+        return delegate.run(new ServerOptions(storageConfig, databaseConfig, args));
     }
 
     @Override
@@ -122,15 +122,31 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     }
 
     @Override
+    public void setRequestPort() {
+        delegate.setRequestPort();
+    }
+
+    @Override
+    public void setRequestPort(int port) {
+        delegate.setRequestPort(port);
+    }
+
+    @Override
     public  <D extends KeycloakDistribution> D unwrap(Class<D> type) {
         if (!KeycloakDistribution.class.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
         }
 
         if (type.isInstance(delegate)) {
+            //noinspection unchecked
             return (D) delegate;
         }
 
         throw new IllegalArgumentException("Not a " + type + " type");
+    }
+
+    @Override
+    public void clearEnv() {
+        delegate.clearEnv();
     }
 }

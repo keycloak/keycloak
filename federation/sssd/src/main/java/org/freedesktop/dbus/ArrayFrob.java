@@ -169,7 +169,7 @@ public final class ArrayFrob {
             throw new IllegalArgumentException(_ex);
         }
 
-        throw new IllegalArgumentException(String.format("Not An Expected Convertion type from %s to %s", _o.getClass(), _c));
+        throw new IllegalArgumentException(String.format("Not An Expected Conversion type from %s to %s", _o.getClass(), _c));
     }
 
     public static Object[] type(Object[] _old, Class<Object> _c) {

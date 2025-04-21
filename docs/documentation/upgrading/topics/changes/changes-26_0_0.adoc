@@ -1,0 +1,458 @@
+= Infinispan marshalling changes
+
+Marshalling is the process of converting Java objects into bytes to send them across the network between {project_name} servers.
+With {project_name} 26, the marshalling library has changed from JBoss Marshalling to Infinispan Protostream.
+The libraries are not compatible between each other and, it requires some steps to ensure the session data is not lost.
+
+WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with each other and incorrect usage may lead to data loss.
+Consequently, all caches are cleared when upgrading to this version.
+
+To prevent losing user sessions upgrade to Keycloak 25 first and enable the persistent sessions feature as outlined in the migration guide for {project_name} 25.
+
+= Operator no longer defaults to proxy=passthrough
+
+The Operator will no longer default to the hostname v1 setting of proxy=passthrough. This allows deployments using hostname v2 for a fixed edge hostname to work as desired without additional options.
+
+= New method in `ClusterProvider` API
+
+The following method was added to `org.keycloak.cluster.ClusterProvider`:
+
+* `void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify)`
+
+When multiple events are sent to the same `taskKey`, this method batches events and just perform a single network call.
+This is an optimization to reduce traffic and network related resources.
+
+In {project_name} 26, the new method has a default implementation to keep backward compatibility with custom implementation.
+The default implementation performs a single network call per an event, and it will be removed in a future version of {project_name}.
+
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+If you have extensions handling any group-related event when a realm is removed, make sure to use the `RealmRemovedEvent` instead
+to perform any cleanup or custom processing when a realm, and their groups, are removed.
+
+The `GroupProvider` interface is also updated with a new `preRemove(RealmModel)` method to force implementations to properly
+handle the removal of groups when a realm is removed.
+
+= Automatic redirect from root to relative path
+
+User is automatically redirected to the path where {project_name} is hosted when the `http-relative-path` property is specified.
+It means when the relative path is set to `/auth`, and the user access `localhost:8080/`, the page is redirected to `localhost:8080/auth`.
+
+The same applies to the management interface when the `http-management-relative-path` or `http-relative-path` property is specified.
+
+It improves user experience as users no longer need to set the relative path to the URL explicitly.
+
+= Operator scheduling defaults
+
+Keycloak Pods will now have default affinities to prevent multiple instances from the same CR from being deployed on the same node, and all Pods from the same CR will prefer to be in the same zone to prevent stretch cache clusters.
+
+= Operator's default CPU and memory limits/requests
+
+In order to follow the best practices, the default CPU and memory limits/requests for the Operator were introduced. It affects both non-OLM and OLM installs. To override the default values for the OLM install, edit the `resources` section in the operator's https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md#resources[subscription].
+
+= Deprecations in `keycloak-common` module
+
+The following items have been deprecated for removal in upcoming {project_name} versions with no replacement:
+
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>)`
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
+- `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
+- `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
+
+= Consistent usage of UTF-8 charset for URL encoding
+
+`org.keycloak.common.util.Encode` now always uses the `UTF-8` charset for URL encoding instead relying implicitly on the `file.encoding` system property.
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties. The main
+reason is that the LDAP connection pool configuration is a JVM-level configuration rather than specific to an individual
+realm or LDAP provider instance.
+
+Compared to previous releases, any realm configuration related to the LDAP connection pool will be ignored.
+If you are migrating from previous versions where any of the following settings are set to your LDAP provider(s), consider using system properties instead:
+
+* `connectionPoolingAuthentication`
+* `connectionPoolingInitSize`
+* `connectionPoolingMaxSize`
+* `connectionPoolingPrefSize`
+* `connectionPoolingTimeout`
+* `connectionPoolingProtocol`
+* `connectionPoolingDebug`
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= Custom Footer in Login Theme
+
+This release introduced the capability to easily add a custom footer to the login pages for the `base/login` and `keycloak.v2/login` theme.
+In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
+
+For more details, see link:{developerguide_link}#_theme_custom_footer[Adding a custom footer to a login theme].
+
+= Persisting revoked access tokens across restarts
+
+In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches.
+
+To disable this behavior, use the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens` as outlined in the https://www.keycloak.org/server/all-provider-config[All provider configuration] {section}.
+
+The SPI behavior of `SingleUseObjectProvider` has changed that for revoked tokens only the methods `put` and `contains` must be used.
+This is enforced by default, and can be disabled using the SPI option `spi-single-use-object-infinispan-persist-revoked-tokens`.
+
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments are now able to handle user requests simultaneously in both sites. Previous load balancer configurations handling requests only in one site at a time will continue to work.
+
+- Active monitoring of the connectivity between the sites is now required to the replication between the sites in case of a failure. The blueprints describe a setup with Alertmanager and AWS Lambda.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times
+caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+- External {jdgserver_name} request handling has been improved to reduce memory usage and request latency.
+
+As a consequence of the above changes, the following changes are required to your existing {project_name} deployments.
+
+. `distributed-cache` definitions provided by a cache configuration file are ignored when the `multi-site` feature is enabled,
+so you must configure the connection to the external {jdgserver_name} deployment via the `cache-remote-*` command line arguments
+or Keycloak CR as outlined in the blueprints. All `remote-store` configurations must be removed from the cache configuration file.
+
+. Review your current cache configurations in the external {jdgserver_name} and update them with those outlined in the latest version of the {project_name}'s documentation.
+While previous versions of the cache configurations only logged warnings when the backup replication between sites failed, the new configurations ensure that the state in both sites stays in sync: When the transfer between the two sites fails, the caller will see an error.
+Due to that, you need to set up monitoring to disconnect the two sites in case of a site failure.
+The Keycloak High Availability Guide contains a blueprint on how to set this up.
+
+. While previous load balancer configurations will continue to work with {project_name}, consider upgrading
+an existing Route53 configuration to avoid prolonged failover times due to client side DNS caching.
+
+. If you have updated your cache configuration XML file with remote-store configurations, those will no longer work.
+Instead, enable the `multi-site` feature and use the `cache-remove-*` options.
+
+= External {jdgserver_name} in a single-site setup
+
+If you are using an external {jdgserver_name} in a single-site setup, this was not supported in earlier versions of {project_name} and it is not supported in {project_name} 26.
+To protect users from using it accidentally via a manual configuration in Keycloak's cache XML or via the CLI options, this is now guarded with a feature flag `cache-embedded-remote-store`. It is marked as experimental and is therefore not supported. {project_name} 26 will not start with such a configuration and show an error instead unless this experimental feature is enabled.
+
+If you have been using an external {jdgserver_name} to keep users logged in between restarts and upgrades, use the `persistent-user-sessions` feature instead which is enabled by default. The external {jdgserver_name} is then no longer necessary.
+
+The experimental feature `cache-embedded-remote-store` *will be removed in a future minor release*.
+
+= Admin Bootstrapping and Recovery
+
+It used to be difficult to regain access to a {project_name} instance when all admin users were locked out. The process required multiple advanced steps, including direct database access and manual changes. In an effort to improve the user experience, {project_name} now provides multiple ways to bootstrap a new admin account, which can be used to recover from such situations.
+
+Consequently, the environment variables `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` have been deprecated. You should use `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` instead. These are also general options, so they may be specified via the cli or other config sources, for example `--bootstrap-admin-username=admin`. For more information, see the new https://www.keycloak.org/server/bootstrap-admin-recovery[Bootstrap admin and recovery] guide.
+
+= Application Initiated Required Action redirect now contains kc_action Parameter
+
+The required action provider name is now returned via the `kc_action` parameter when redirecting back from an application initiated required action execution.
+This eases the detection of which required action was executed for a client. The outcome of the execution can be determined via the `kc_action_status` parameter.
+
+Note: This feature required changes to the Keycloak JS adapter, therefore it is recommended to upgrade to the latest version of the adapter if you want to make use of this feature.
+
+= Deprecations in `keycloak-services` module
+
+The class `UserSessionCrossDCManager` is deprecated and planned to be removed in a future version of {project_name}.
+Read the `UserSessionCrossDCManager` Javadoc for the alternative methods to use.
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+To obtain the query the identity providers in a realm, prefer using the `/realms/{realm-name}/identity-provider/instances` endpoint.
+This endpoint supports filters and pagination.
+
+= CLI import placeholder replacement
+
+The CLI command `kc.[sh|bat] import` now has placeholder replacement enabled. Previously placeholder replacement was only enabled for realm import at startup.
+
+If you wish to disable placeholder replacement for the `import` command, add the system property `-Dkeycloak.migration.replace-placeholders=false`
+
+= New Java API to search realms by name
+
+The `RealmProvider` Java API now contains a new method `Stream<RealmModel> getRealmsStream(String search)` which allows searching for a realm by name.
+While there is a default implementation which filters the stream after loading it from the provider, implementations are encouraged to provide this with more efficient implementation.
+
+= Keystore and trust store default format change
+
+{project_name} now determines the format of the keystore and trust store based on the file extension. If the file extension is `.p12`, `.pkcs12` or `.pfx`, the format is PKCS12. If the file extension is `.jks`, `.keystore` or `.truststore`, the format is JKS. If the file extension is `.pem`, `.crt` or `.key`, the format is PEM.
+
+You can still override automatic detection by specifying the `https-key-store-type` and `https-trust-store-type` explicitly. The same applies to the management interface and its `https-management-key-store-type`. Restrictions for the FIPS strict mode stay unchanged.
+
+NOTE: The `+spi-truststore-file-*+` options and the truststore related options `+https-trust-store-*+` are deprecated, we strongly recommend to use System Truststore. For more details refer to the relevant https://www.keycloak.org/server/keycloak-truststore[guide].
+
+= Improving performance for selection of identity providers
+
+New indexes were added to the `IDENTITY_PROVIDER` table to improve the performance of queries that fetch the IDPs associated with an organization, and fetch IDPs that are available for login (those that are `enabled`, not `link_only`, not marked as `hide_on_login`).
+
+If the table currently contains more than 300.000 entries,
+{project_name} will skip the creation of the indexes by default during the automatic schema migration, and will instead log the SQL statements
+on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.
+
+Also, the `kc.org` and `hideOnLoginPage` configuration attributes were migrated to the identity provider itself, to allow for more efficient queries when searching for providers. As such, API clients should use the `getOrganizationId/setOrganizationId` and `isHideOnLogin/setHideOnLogin` methods in the `IdentityProviderRepresentation`, and avoid setting these properties using the legacy config attributes that are now deprecated.
+
+= Removal of GELF logging handler
+
+GELF support has been deprecated for a while now, and with this release it has been finally removed from {project_name}.
+Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
+see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Paths for `common` theme resources have changed
+
+Some of the paths for the `common` resources of the `keycloak` theme have changed, specifically the resources for third-party libraries. Make sure to update your custom themes accordingly:
+
+- `node_modules/patternfly/dist` is now `vendor/patternfly-v3`
+- `node_modules/@patternfly/patternfly` is now `vendor/patternfly-v4`
+- `node_modules/@patternfly-v5/patternfly` is now `vendor/patternfly-v5`
+- `node_modules/rfc4648/lib` is now `vendor/rfc4648`
+
+Additionally, the following resources have been removed from the `common` theme:
+
+- `node_modules/alpinejs`
+- `node_modules/jquery`
+
+If you previously used any of the removed resources in your theme, make sure to add them to your own theme resources instead.
+
+= Additional datasources now require using XA
+
+{project_name} by default does not use XA datasources. However, this is considered unsafe if more than one datasource is used.
+Starting with this release, you need to use XA datasources if you are adding additional datasources to {project_name}.
+If the default datasource supports XA, you can do this by setting the `--transaction-xa-enabled=true` option. For additional datasources, you need to use
+the `quarkus.datasource.<your-datasource-name>.jdbc.transactions=xa` option in your `quarkus.properties` file.
+At most one datasource can be non-XA.
+Recovery isn't supported when you don't have persistent storage for the transaction store.
+
+= Hostname v1 feature removed
+
+The deprecated hostname v1 feature was removed. This feature was deprecated in {project_name} 25 and replaced by hostname v2. If you are still using this feature, you must migrate to hostname v2. For more details, see the https://www.keycloak.org/server/hostname[Configuring the hostname (v2)] and https://www.keycloak.org/docs/latest/upgrading/#new-hostname-options[the initial migration guide].
+
+= Proxy option removed
+
+The deprecated `proxy` option was removed. This option was deprecated in {project_name} 24 and replaced by the `proxy-headers` option in combination with hostname options as needed. For more details, see https://www.keycloak.org/server/reverseproxy[using a reverse proxy] and https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[the initial upgrading guide].
+
+= All user sessions are persisted by default
+
+Since the database is now the source of truth for user sessions, it is possible to restrict the size of the session caches to reduce memory usage.
+If you use the default `conf/cache-ispn.xml` file the caches for storing user and client sessions are by default configured to store only 10000 sessions and one owner for each entry.
+
+Update your custom embedded Infinispan cache configuration file with configuration similar to one shown below for caches `sessions`, `clientSessions`, `offlineSessions`, and `offlineClientSessions`:
+
+[,xml]
+----
+<distributed-cache name="sessions" owners="1">
+    <!-- other configuration -->
+    <memory max-count="10000"/>
+</distributed-cache>
+----
+
+For more details proceed to the https://www.keycloak.org/server/caching[Configuring distributed caches] guide.
+
+= Grace period for idle sessions removed when persistent sessions are enabled
+
+Previous versions of {project_name} added a grace period of two minutes to idle times of user and client sessions.
+This was added due to a previous architecture where session refresh times were replicated asynchronously in a cluster.
+With persistent user sessions, this is no longer necessary, and therefore the grace period is now removed.
+
+To keep the old behavior, update your realm configuration and extend the session and client idle times by two minutes.
+
+= Support for legacy `redirect_uri` parameter and SPI options has been removed
+
+Previous versions of {project_name} had supported automatic logout of the user and redirecting to the application by opening logout endpoint URL such as
+`http(s)://example-host/auth/realms/my-realm-name/protocol/openid-connect/logout?redirect_uri=encodedRedirectUri`. This functionality was deprecated in {project_name} 18 and has been removed in this version in favor of following the OpenID Connect specification.
+
+As part of this change the following related configuration options for the SPI have been removed:
+
+- `--spi-login-protocol-openid-connect-legacy-logout-redirect-uri`
+- `--spi-login-protocol-openid-connect-suppress-logout-confirmation-screen`
+
+If you were still making use these options or the `redirect_uri` parameter for logout you should implement the link:https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout specification] instead.
+
+= Additional validations on the `--optimized` startup option
+The `--optimized` startup option now requires the optimized server image to be built first. This can be achieved
+either by running `kc.sh|bat build` first or by any other server commands (like `start`, `export`, `import`)
+without the `--optimized` flag.
+
+= Adapter and misc BOM files are removed
+
+The `org.keycloak.bom:keycloak-adapter-bom` and `org.keycloak.bom:keycloak-misc-bom` BOM files are removed. The adapter BOM was no longer useful because most of the Java adapters
+are removed. The misc BOM had contained only one artifact, `keycloak-test-helper`, and that artifact is also removed in this release.
+
+= keycloak-test-helper is removed
+
+The maven artifact `org.keycloak:keycloak-test-helper` is removed in this release. The artifact provided a few helper methods for dealing with a Java admin client. If you use the
+helper methods, it is possible to fork them into your application if needed.
+
+= JEE admin-client is removed
+
+The JEE admin-client is removed in this release. We still keep supporting Jakarta admin-client.
+
+= New generalized event types for credentials
+
+There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events.
+The new event types are supported by the Email Event Listener.
+
+The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
+
+= `--import-realm` option can import the master realm
+
+When running a `start` or `start-dev` command with the `--import-realm` option before the master realm exists, it will be imported if it exists in the import material. The previous behavior was that the master realm was created first, then its import skipped.
+
+= BouncyCastle FIPS updated
+
+Our FIPS 140-2 integration is now tested and supported with version 2 of BouncyCastle FIPS libraries. This version is certified with Java 21. If you use FIPS 140-2 integration, it is recommended to
+upgrade BouncyCastle FIPS library to the versions mentioned in the latest documentation.
+
+The BouncyCastle FIPS version 2 is certified with FIPS 140-3. So {project_name} can be FIPS 140-3 compliant as long as it is used on the FIPS 140-3 compliant system.
+This might be the RHEL 9 based system, which itself is compliant with the FIPS 140-3. But note that RHEL 8 based system is only certified for the FIPS 140-2.
+
+= `setOrCreateChild()` method removed from JavaScript Admin Client
+
+The `groups.setOrCreateChild()` method has been removed from that JavaScript-based Admin Client. If you are still using this method then use the `createChildGroup()` or `updateChildGroup()` methods instead.
+
+= Keycloak JS
+
+This release includes several changes to Keycloak JS library that should be taken into account. The main motivation for these changes is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifying the code and making it easier to maintain in the future. The changes are as follows:
+
+== The library is no longer served statically from the server
+
+The Keycloak JS library is no longer served statically from the Keycloak server. This means that the following URLs are no longer available:
+
+- `/js/keycloak-authz.js`
+- `/js/keycloak-authz.min.js`
+- `/js/keycloak.js`
+- `/js/keycloak.min.js`
+- `/js/{version}/keycloak-authz.js`
+- `/js/{version}/keycloak-authz.min.js`
+- `/js/{version}/keycloak.js`
+- `/js/{version}/keycloak.min.js`
+
+Additionally, the `keycloakJsUrl` property that linked to the library on these URLs has been removed from the admin console theme. If your custom theme was using this property to include the library, you should update your theme to include the library using a different method.
+
+If you are not already you should include the library in your project using a package manager like link:https://nodejs.org/en/learn/getting-started/an-introduction-to-the-npm-package-manager[NPM]. The library is available on the NPM registry as link:https://www.npmjs.com/package/keycloak-js[`keycloak-js`]. You can install it using the following command:
+
+[source,bash]
+----
+npm install keycloak-js
+----
+
+Alternatively, the distribution of the server includes a copy of the library in the `keycloak-js-26.0.0.tgz` archive. You can copy the library from there into your project. If you are using the library directly in the browser without a build, you'll need to host the library yourself. A package manager is still the recommended way to include the library in your project, as it will make it easier to update the library in the future.
+
+== Support for the UMD distribution has been removed
+
+The UMD distribution link:https://github.com/umdjs/umd?tab=readme-ov-file#umd-universal-module-definition[Universal Module Definition] of the Keycloak JS library has been removed. This means that the library is no longer exposed as a global variable, and instead must be imported as link:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules[a module]. This change is in line with modern JavaScript development practices, and allows for a more consistent experience between browsers and build tooling, and generally results in more predictable code with less side-effects.
+
+If you are using a bundler like Vite or Webpack nothing changes, you'll have the same experience as before. If you are using the library directly in the browser, you'll need to update your code to import the library as a module:
+
+[source,html]
+----
+<!-- Before -->
+<script src="/path/to/keycloak.js"></script>
+<script>
+    const keycloak = new Keycloak();
+</script>
+
+<!-- After -->
+<script type="module">
+    import Keycloak from '/path/to/keycloak.js';
+    const keycloak = new Keycloak();
+</script>
+----
+
+You can also opt to use an link:https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/importmap[import map] make the import of the library less verbose:
+
+[source,html]
+----
+<script type="importmap">
+    {
+        "imports": {
+            "keycloak-js": "/path/to/keycloak.js"
+        }
+    }
+</script>
+<script type="module">
+    // The library can now be imported without specifying the full path, providing a similar experience as with a bundler.
+    import Keycloak from 'keycloak-js';
+    const keycloak = new Keycloak();
+</script>
+----
+
+If you are using TypeScript you may need to update your `tsconfig.json` to be able to resolve the library:
+
+[source,json]
+----
+{
+    "compilerOptions": {
+        "moduleResolution": "Bundler"
+    }
+}
+----
+
+== The configuration for the `Keycloak` instance is now required
+
+Previously it was possible to construct a `Keycloak` instance without passing any configuration. The configuration would then automatically be loaded from the server from a `keycloak.json` file based on the path of the included `keycloak.js` script. Since the library is no longer statically served from the server this feature has been removed. You now need to pass the configuration explicitly when constructing a `Keycloak` instance:
+
+[source,javascript]
+----
+// Before
+const keycloak = new Keycloak();
+
+// After
+const keycloak = new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
+
+// Alternatively, you can pass a URL to a `keycloak.json` file.
+// Note this is not recommended as it creates additional network requests, and is prone to change in the future.
+const keycloak = new Keycloak('http://keycloak-server/path/to/keycloak.json');
+----
+
+== Methods for login are now `async`
+
+Keycloak JS now utilizes the Web Crypto API for various cryptographic functions. Due to the asynchronous nature of this API the following public methods will now always return a `Promise`:
+
+- `login()`
+- `createLoginUrl()`
+- `createRegisterUrl()`
+
+Make sure to update your code to `await` these methods:
+
+[source,javascript]
+----
+// Before
+keycloak.login();
+const loginUrl = keycloak.createLoginUrl();
+const registerUrl = keycloak.createRegisterUrl();
+
+// After
+await keycloak.login();
+const loginUrl = await keycloak.createLoginUrl();
+const registerUrl = await keycloak.createRegisterUrl();
+----
+
+Make sure to update your code to `await` these methods.
+
+== A secure context is now required
+
+Keycloak JS now requires a link:https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts[secure context] to run. The reason for this is that the library now uses the Web Crypto API for various cryptographic functions. This API is only available in secure contexts, which are contexts that are served over HTTPS, `localhost` or a `.localhost` domain. If you are using the library in a non-secure context you'll need to update your development environment to use a secure context.
+
+= Stricter startup behavior for build-time options
+
+When the provided build-time options differ at startup from the values persisted in the server image during the last optimized {project_name} build, {project_name} will now fail to start. Previously, a warning message was displayed in such cases.
+
+= Features renamed
+
+With feature versions the features `account3`, `admin2`, and `login2` have been renamed. When disabling a feature there
+is no need to use the version, for example the admin console is now disabled with `--features-disabled=admin`.
+
+To use a specific version of `login` use `--features=login:v1`.
+

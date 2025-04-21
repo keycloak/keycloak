@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -24,9 +26,12 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import java.util.Optional;
 
@@ -43,11 +48,27 @@ import jakarta.ws.rs.core.Response;
  */
 public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
+    private final static Logger log = Logger.getLogger(IdpUsernamePasswordForm.class);
+
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return setupForm(context, formData, getExistingUser(context))
                 .setStatus(Response.Status.OK)
                 .createLoginUsernamePassword();
+    }
+
+    @Override
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
+        LoginFormsProvider form = setupForm(context, new MultivaluedHashMap<>(), getExistingUser(context))
+                .setExecution(context.getExecution().getId());
+        if (error != null) {
+            if (field != null) {
+                form.addError(new FormMessage(field, error));
+            } else {
+                form.setError(error);
+            }
+        }
+        return createLoginForm(form);
     }
 
     @Override
@@ -69,12 +90,14 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
+        IdentityProviderModel idpModel = context.getSession().identityProviders().getByAlias(serializedCtx.getIdentityProviderId());
+
         existingUser.ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
 
         LoginFormsProvider form = context.form()
                 .setFormData(formData)
                 .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true)
-                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, serializedCtx.getIdentityProviderId());
+                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, Validation.isBlank(idpModel.getDisplayName()) ? idpModel.getAlias() : idpModel.getDisplayName());
 
         SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
         if (serializedCtx0 != null) {

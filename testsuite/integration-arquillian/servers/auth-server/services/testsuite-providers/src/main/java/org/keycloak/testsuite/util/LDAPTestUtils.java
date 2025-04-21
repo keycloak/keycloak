@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.util;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -89,6 +91,18 @@ public class LDAPTestUtils {
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
                                          final String firstName, final String lastName, final String email, final String street, final String... postalCode) {
+        return addLDAPUser(ldapProvider, realm, username, firstName, lastName, email, street, new MultivaluedHashMap<>(), postalCode);
+    }
+
+    public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
+                                         final String firstName, final String lastName, final String email,
+                                         final MultivaluedHashMap<String, String> otherAttrs) {
+        return addLDAPUser(ldapProvider, realm, username, firstName, lastName, email, null, otherAttrs);
+    }
+
+    public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
+                                         final String firstName, final String lastName, final String email, final String street,
+                                         final MultivaluedHashMap<String, String> otherAttrs, final String... postalCode) {
         UserModel helperUser = new UserModelDelegate(null) {
 
             @Override
@@ -121,6 +135,8 @@ public class LDAPTestUtils {
                     return email;
                 } else if (UserModel.USERNAME.equals(name)) {
                     return username;
+                } else if (otherAttrs.containsKey(name)) {
+                    return otherAttrs.getFirst(name);
                 }
                 return super.getFirstAttribute(name);
             }
@@ -139,6 +155,8 @@ public class LDAPTestUtils {
                     return Stream.of(postalCode);
                 } else if ("street".equals(name) && street != null) {
                     return Stream.of(street);
+                } else if (otherAttrs.containsKey(name)) {
+                    return otherAttrs.getList(name).stream();
                 } else {
                     return Stream.empty();
                 }
@@ -159,6 +177,27 @@ public class LDAPTestUtils {
         return ldapObject;
     }
 
+    public static LDAPObject addLdapOUinBaseDn(LDAPStorageProvider ldapProvider, String name) {
+        LDAPObject ldapObject = new LDAPObject();
+        ldapObject.setRdnAttributeName("ou");
+        ldapObject.setObjectClasses(Collections.singletonList("organizationalUnit"));
+        ldapObject.setSingleAttribute("ou", name);
+        LDAPDn dn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getBaseDn());
+        dn.addFirst("ou", name);
+        ldapObject.setDn(dn);
+
+        // remove OU before adding it in case it already exists
+        try {
+            ldapProvider.getLdapIdentityStore().remove(ldapObject);
+        } catch (ModelException e) {
+                // OK
+        }
+
+        ldapProvider.getLdapIdentityStore().add(ldapObject);
+
+        return ldapObject;
+    }
+
     public static void updateLDAPPassword(LDAPStorageProvider ldapProvider, LDAPObject ldapUser, String password) {
         ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password, null);
 
@@ -176,6 +215,14 @@ public class LDAPTestUtils {
                 .orElse(null);
     }
 
+    public static ComponentModel getLdapProviderModel(RealmModel realm, String providerName) {
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .filter(component -> providerName == null || component.getName().equals(providerName))
+                .findFirst()
+                .orElse(null);
+    }
+
     public static LDAPStorageProvider getLdapProvider(KeycloakSession keycloakSession, ComponentModel ldapFedModel) {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
     }
@@ -185,6 +232,10 @@ public class LDAPTestUtils {
 
     public static void addZipCodeLDAPMapper(RealmModel realm, ComponentModel providerModel) {
         addUserAttributeMapper(realm, providerModel, "zipCodeMapper", "postal_code", LDAPConstants.POSTAL_CODE);
+    }
+
+    public static void addPostalAddressLDAPMapper(RealmModel realm, ComponentModel providerModel) {
+        addUserAttributeMapper(realm, providerModel, "postalAddressMapper", "postalAddress", "postalAddress");
     }
 
     public static ComponentModel addUserAttributeMapper(RealmModel realm, ComponentModel providerModel, String mapperName, String userModelAttributeName, String ldapAttributeName) {
@@ -248,14 +299,18 @@ public class LDAPTestUtils {
     }
 
     public static void addOrUpdateGroupMapper(RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {
-        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "groupsMapper");
+        addOrUpdateGroupMapper("groupsMapper", realm, providerModel, mode, descriptionAttrName, otherConfigOptions);
+    }
+
+    public static void addOrUpdateGroupMapper(String mapperName, RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {
+        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, mapperName);
         if (mapperModel != null) {
             mapperModel.getConfig().putSingle(GroupMapperConfig.MODE, mode.toString());
             updateGroupMapperConfigOptions(mapperModel, otherConfigOptions);
             realm.updateComponent(mapperModel);
         } else {
             String baseDn = providerModel.getConfig().getFirst(LDAPConstants.BASE_DN);
-            mapperModel = KeycloakModelUtils.createComponentModel("groupsMapper", providerModel.getId(), GroupLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+            mapperModel = KeycloakModelUtils.createComponentModel(mapperName, providerModel.getId(), GroupLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
                     GroupMapperConfig.GROUPS_DN, "ou=Groups," + baseDn,
                     GroupMapperConfig.MAPPED_GROUP_ATTRIBUTES, descriptionAttrName,
                     GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true",
@@ -332,7 +387,7 @@ public class LDAPTestUtils {
             }
         }
     }
-    
+
     public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm)) {
@@ -346,7 +401,7 @@ public class LDAPTestUtils {
             }
         }
     }
-    
+
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
@@ -400,6 +455,17 @@ public class LDAPTestUtils {
             return getGroupMapper(mapperModel, ldapProvider, appRealm).createLDAPGroup(groupName, additAttrs);
         } else {
             return getRoleMapper(mapperModel, ldapProvider, appRealm).createLDAPRole(groupName);
+        }
+    }
+
+    public static LDAPObject getLdapGroupByName(KeycloakSession session, RealmModel realm, String mapperName, String groupName) {
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+        ComponentModel mapperModel = getSubcomponentByName(realm, ldapModel, mapperName);
+        LDAPStorageProvider ldapProvider = getLdapProvider(session, ldapModel);
+        if (GroupLDAPStorageMapperFactory.PROVIDER_ID.equals(mapperModel.getProviderId())) {
+            return getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName(groupName);
+        } else {
+            return getRoleMapper(mapperModel, ldapProvider, realm).loadLDAPRoleByName(groupName);
         }
     }
 

@@ -17,8 +17,6 @@
 
 package org.keycloak.events;
 
-import org.keycloak.storage.SearchableModelField;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,16 +25,6 @@ import java.util.Map;
  */
 public class Event {
 
-    public static class SearchableFields {
-        public static final SearchableModelField<Event> ID             = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<Event> REALM_ID       = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<Event> CLIENT_ID      = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<Event> USER_ID        = new SearchableModelField<>("userId", String.class);
-        public static final SearchableModelField<Event> TIMESTAMP      = new SearchableModelField<>("timestamp", Long.class);
-        public static final SearchableModelField<Event> IP_ADDRESS     = new SearchableModelField<>("ipAddress", String.class);
-        public static final SearchableModelField<Event> EVENT_TYPE     = new SearchableModelField<>("eventType", EventType.class);
-    }
-
     private String id;
 
     private long time;
@@ -44,6 +32,7 @@ public class Event {
     private EventType type;
 
     private String realmId;
+    private String realmName;
 
     private String clientId;
 
@@ -89,6 +78,14 @@ public class Event {
         this.realmId = maxLength(realmId, 255);
     }
 
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
+    }
+
     public String getClientId() {
         return clientId;
     }
@@ -110,9 +107,14 @@ public class Event {
     }
 
     public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+        this.sessionId = maxLength(sessionId, 255);
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return ipAddress;
     }
@@ -137,12 +139,14 @@ public class Event {
         this.details = details;
     }
 
+    @Override
     public Event clone() {
         Event clone = new Event();
         clone.id = id;
         clone.time = time;
         clone.type = type;
         clone.realmId = realmId;
+        clone.realmName = realmName;
         clone.clientId = clientId;
         clone.userId = userId;
         clone.sessionId = sessionId;

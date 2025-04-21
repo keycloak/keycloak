@@ -47,10 +47,10 @@ import java.util.LinkedList;
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByServiceAccount", query="select u from UserEntity u where u.serviceAccountClientLink = :clientInternalId and u.realmId = :realmId"),
-        @NamedQuery(name="getRealmUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId"),
-        @NamedQuery(name="getRealmUserCountExcludeServiceAccount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null)"),
         @NamedQuery(name="getRealmUsersByAttributeNameAndValue", query="select u from UserEntity u join u.attributes attr " +
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
+        @NamedQuery(name="getRealmUsersByAttributeNameAndLongValue", query="select u from UserEntity u join u.attributes attr " +
+                "where u.realmId = :realmId and attr.name = :name and attr.longValueHash = :longValueHash"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
         @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
@@ -91,7 +91,10 @@ public class UserEntity {
     @Column(name = "REALM_ID")
     protected String realmId;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
+    // Explicitly not using OrphanRemoval as we're handling the removal manually through HQL but at the same time we still
+    // want to remove elements from the entity's collection in a manual way. Without this, Hibernate would do a duplicit
+    // delete query.
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = false, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
     protected Collection<UserAttributeEntity> attributes = new LinkedList<>();

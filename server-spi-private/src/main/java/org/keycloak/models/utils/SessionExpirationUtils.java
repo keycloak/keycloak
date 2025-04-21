@@ -185,7 +185,7 @@ public class SessionExpirationUtils {
         return lifespan;
     }
 
-    private static int getSsoSessionIdleTimeout(RealmModel realm) {
+    public static int getSsoSessionIdleTimeout(RealmModel realm) {
         int idle = realm.getSsoSessionIdleTimeout();
         if (idle <= 0) {
             idle = Constants.DEFAULT_SESSION_IDLE_TIMEOUT;
@@ -193,7 +193,7 @@ public class SessionExpirationUtils {
         return idle;
     }
 
-    private static int getOfflineSessionIdleTimeout(RealmModel realm) {
+    public static int getOfflineSessionIdleTimeout(RealmModel realm) {
         int idle = realm.getOfflineSessionIdleTimeout();
         if (idle <= 0) {
             idle = Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT;

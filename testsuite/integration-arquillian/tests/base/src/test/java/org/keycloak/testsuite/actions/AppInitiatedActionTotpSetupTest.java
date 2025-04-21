@@ -40,7 +40,7 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
@@ -105,20 +105,29 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
         doAIA();
-        
+
         totpPage.assertCurrent();
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         events.poll(); // skip to totp event
-        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
+        String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.USERNAME, "setuptotp").assertEvent()
+                .getDetails().get(Details.CODE_ID);
+        String authSessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
-        
-        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+
+        assertEquals(authSessionId1, authSessionId2);
+        events.expectLogin().user(userId).session(authSessionId2).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
-    
+
     @Test
     public void cancelSetupTotp() throws Exception {
         try {
@@ -187,9 +196,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.open();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "checkQrCode@mail.com", "checkQrCode", "password", "password");
-        
+
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
@@ -246,7 +255,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "setupTotpRegisterManualModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterManualModeSwitchesOnBadSubmit", "password", "password");
 
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Unable to scan?"));
@@ -277,7 +286,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit", "password", "password");
 
         doAIA();
-        
+
         String pageSource = driver.getPageSource();
 
         assertTrue(pageSource.contains("Unable to scan?"));
@@ -314,11 +323,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             registerPage.register("firstName", "lastName", "setupTotpModifiedPolicy@mail.com", "setupTotpModifiedPolicy", "password", "password");
 
             doAIA();
-            
+
             String pageSource = driver.getPageSource();
 
             assertTrue(pageSource.contains("FreeOTP"));
-            assertFalse(pageSource.contains("Google Authenticator"));
+            assertTrue(pageSource.contains("Google Authenticator"));
 
             totpPage.clickManual();
 
@@ -337,26 +346,31 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     @Test
     public void setupTotpExisting() {
         doAIA();
-        
+
         loginPage.login("test-user@localhost", "password");
-        
+
         totpPage.assertCurrent();
 
         String totpSecret = totpPage.getTotpSecret();
 
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+        String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+                .getDetails().get(Details.CODE_ID);
+        String authSessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
 
-        EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
+        assertEquals(authSessionId1, authSessionId2);
+        EventRepresentation loginEvent = events.expectLogin().session(authSessionId2).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(authSessionId).assertEvent();
+        events.expectLogout(authSessionId2).assertEvent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
@@ -378,7 +392,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
 
         doAIA();
-        
+
         // Configure totp
         totpPage.assertCurrent();
 
@@ -389,13 +403,20 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         events.poll();
-        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_TOTP)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.USERNAME, "setuptotp2").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .user(userId)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Try to login after logout
@@ -438,7 +459,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
 
         doAIA();
-        
+
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -448,15 +469,20 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
         totpPage.configure(timeBased.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+        String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+                .getDetails().get(Details.CODE_ID);
+        String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        assertEquals(sessionId1, sessionId2);
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId2).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -503,15 +529,19 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+        String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
             .getDetails().get(Details.CODE_ID);
-        
+        String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+                .getDetails().get(Details.CODE_ID);
+
         //RequestType reqType = appPage.getRequestType();
         assertKcActionStatus(SUCCESS);
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
 
-        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -525,7 +555,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginEvent = events.expectLogin().assertEvent();
 
         tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
         events.expectLogout(null).session(AssertEvents.isUUID()).assertEvent();
 
         // test lookAheadWindow

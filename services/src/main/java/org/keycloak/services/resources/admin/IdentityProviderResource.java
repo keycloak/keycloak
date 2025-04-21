@@ -23,12 +23,12 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import jakarta.ws.rs.NotFoundException;
+import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.FederatedIdentityModel;
@@ -48,14 +48,17 @@ import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.utils.ProfileHelper;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -64,6 +67,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -111,8 +115,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
-        return StripSecretsUtils.strip(rep);
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, this.identityProviderModel));
     }
 
     /**
@@ -133,7 +136,7 @@ public class IdentityProviderResource {
 
         String alias = this.identityProviderModel.getAlias();
         session.users().preRemove(realm, identityProviderModel);
-        this.realm.removeIdentityProviderByAlias(alias);
+        session.identityProviders().remove(alias);
 
         realm.getIdentityProviderMappersByAliasStream(alias)
                 .collect(Collectors.toList()).forEach(realm::removeIdentityProviderMapper);
@@ -181,12 +184,9 @@ public class IdentityProviderResource {
     }
 
     private void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
-        String internalId = providerRep.getInternalId();
-        String newProviderId = providerRep.getAlias();
-        String oldProviderId = getProviderIdByInternalId(realm, internalId);
 
-        if (oldProviderId == null) {
-            lookUpProviderIdByAlias(realm, providerRep);
+        if (!identityProviderModel.getInternalId().equals(providerRep.getInternalId())) {
+            providerRep.setInternalId(identityProviderModel.getInternalId());
         }
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
@@ -195,34 +195,20 @@ public class IdentityProviderResource {
             updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
         }
 
-        realm.updateIdentityProvider(updated);
+        session.identityProviders().update(updated);
+        // update in case of legacy hide on login attr was used.
+        providerRep.setHideOnLogin(updated.isHideOnLogin());
 
-        if (oldProviderId != null && !oldProviderId.equals(newProviderId)) {
+        String newProviderAlias = providerRep.getAlias();
+        String oldProviderAlias = identityProviderModel.getAlias();
+        if (!oldProviderAlias.equals(newProviderAlias)) {
 
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
-            logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
+            logger.debugf("Changing providerId in all clients and linked users. oldProviderId=%s, newProviderId=%s", oldProviderAlias, newProviderAlias);
 
             updateUsersAfterProviderAliasChange(session.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())),
-                    oldProviderId, newProviderId, realm, session);
+                    oldProviderAlias, newProviderAlias, realm, session);
         }
-    }
-
-    // return ID of IdentityProvider from realm based on internalId of this provider
-    private static String getProviderIdByInternalId(RealmModel realm, String providerInternalId) {
-        return realm.getIdentityProvidersStream().filter(p -> Objects.equals(p.getInternalId(), providerInternalId))
-                .map(IdentityProviderModel::getAlias)
-                .findFirst()
-                .orElse(null);
-    }
-
-    // sets internalId to IdentityProvider based on alias
-    private static void lookUpProviderIdByAlias(RealmModel realm, IdentityProviderRepresentation providerRep) {
-        IdentityProviderModel identityProviderModel = realm.getIdentityProvidersStream()
-                .filter(p -> Objects.equals(p.getAlias(), providerRep.getAlias()))
-                .findFirst()
-                .orElseThrow(NotFoundException::new);
-
-        providerRep.setInternalId(identityProviderModel.getInternalId());
     }
 
     private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
@@ -331,7 +317,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        return realm.getIdentityProviderMappersByAliasStream(identityProviderModel.getAlias())
+        return session.identityProviders().getMappersByAliasStream(identityProviderModel.getAlias())
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -355,7 +341,8 @@ public class IdentityProviderResource {
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         try {
-            model = realm.addIdentityProviderMapper(model);
+//            model = realm.addIdentityProviderMapper(model);
+            model = session.identityProviders().createMapper(model);
         } catch (Exception e) {
             throw ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
         }
@@ -386,7 +373,7 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         return ModelToRepresentation.toRepresentation(model);
     }
@@ -410,10 +397,10 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
-        realm.updateIdentityProviderMapper(model);
+        session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
 
     }
@@ -435,9 +422,9 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
+        IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        realm.removeIdentityProviderMapper(model);
+        session.identityProviders().removeMapper(model);
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).success();
 
     }
@@ -454,7 +441,12 @@ public class IdentityProviderResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference getManagementPermissions() {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireViewIdentityProviders();
+
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         if (!permissions.idps().isPermissionsEnabled(identityProviderModel)) {
@@ -463,7 +455,7 @@ public class IdentityProviderResource {
         return toMgmtRef(identityProviderModel, permissions);
     }
 
-    public static ManagementPermissionReference toMgmtRef(IdentityProviderModel model, AdminPermissionManagement permissions) {
+    private ManagementPermissionReference toMgmtRef(IdentityProviderModel model, AdminPermissionManagement permissions) {
         ManagementPermissionReference ref = new ManagementPermissionReference();
         ref.setEnabled(true);
         ref.setResource(permissions.idps().resource(model).getId());
@@ -486,13 +478,36 @@ public class IdentityProviderResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireManageIdentityProviders();
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
+
         permissions.idps().setPermissionsEnabled(identityProviderModel, ref.isEnabled());
         if (ref.isEnabled()) {
             return toMgmtRef(identityProviderModel, permissions);
         } else {
             return new ManagementPermissionReference();
         }
+    }
+
+    @GET
+    @Path("reload-keys")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation(summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.")
+    public boolean reloadKeys() {
+        this.auth.realm().requireManageIdentityProviders();
+
+        if (identityProviderModel == null) {
+            throw new jakarta.ws.rs.NotFoundException();
+        }
+
+        IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
+        return provider.reloadKeys();
     }
 }

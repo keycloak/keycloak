@@ -17,7 +17,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CacheOperation;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CrossDCMessageStatus;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
@@ -32,35 +31,46 @@ public class Tasks {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.ADD_IF_ABSENT;
         }
 
-        @Override
-        public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<SessionEntity> sessionWrapper) {
-            return CrossDCMessageStatus.SYNC;
-        }
     };
 
-    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new SessionUpdateTask<SessionEntity>() {
+    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new PersistentSessionUpdateTask<SessionEntity>() {
         @Override
         public void runUpdate(SessionEntity entity) {
         }
 
         @Override
-        public CacheOperation getOperation(SessionEntity entity) {
+        public CacheOperation getOperation() {
             return CacheOperation.REMOVE;
         }
 
         @Override
-        public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<SessionEntity> sessionWrapper) {
-            return CrossDCMessageStatus.SYNC;
+        public boolean isOffline() {
+            return false;
+        }
+    };
+
+    private static final SessionUpdateTask<? extends SessionEntity> OFFLINE_REMOVE_SYNC = new PersistentSessionUpdateTask<>() {
+        @Override
+        public void runUpdate(SessionEntity entity) {
+        }
+
+        @Override
+        public CacheOperation getOperation() {
+            return CacheOperation.REMOVE;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return true;
         }
     };
 
     /**
-     * Returns a typed task of type {@link CacheOperation#ADD_IF_ABSENT} that does no other update. This operation has DC message
-     * status {@link CrossDCMessageStatus#SYNC}.
+     * Returns a typed task of type {@link CacheOperation#ADD_IF_ABSENT} that does no other update.
      * @param <S>
      * @return
      */
@@ -69,12 +79,24 @@ public class Tasks {
     }
 
     /**
-     * Returns a typed task of type {@link CacheOperation#REMOVE} that does no other update. This operation has DC message
-     * status {@link CrossDCMessageStatus#SYNC}.
+     * Returns a typed task of type {@link CacheOperation#REMOVE} that does no other update.
      * @param <S>
      * @return
      */
     public static <S extends SessionEntity> SessionUpdateTask<S> removeSync() {
         return (SessionUpdateTask<S>) REMOVE_SYNC;
     }
+
+    /**
+     * Returns a typed task of type {@link CacheOperation#REMOVE} that does no other update.
+     *
+     * @param offline whether the operation should be performed on offline or non-offline session
+     * @param <S>
+     * @return
+     */
+    public static <S extends SessionEntity> SessionUpdateTask<S> removeSync(boolean offline) {
+        return offline ? (SessionUpdateTask<S>) OFFLINE_REMOVE_SYNC : (SessionUpdateTask<S>) REMOVE_SYNC;
+    }
+
+
 }

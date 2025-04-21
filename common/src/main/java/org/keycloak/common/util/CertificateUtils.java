@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
@@ -65,6 +66,10 @@ public class CertificateUtils {
 
     public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
         return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber);
+    }
+
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, validityEndDate);
     }
         
 }

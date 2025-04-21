@@ -16,74 +16,63 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.jboss.aesh.cl.CommandDefinition;
-import org.jboss.aesh.cl.Option;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
-import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
-import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
-import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "get", description = "[ARGUMENTS]")
-public class GetCmd extends  AbstractRequestCmd {
+@Command(name = "get", description = "[ARGUMENTS]")
+public class GetCmd extends AbstractRequestCmd {
 
-    @Option(name = "noquotes", description = "", hasValue = false)
-    boolean unquoted;
+    public GetCmd() {
+        this.httpVerb = "get";
+        this.outputResult = true;
+    }
 
-    @Option(shortName = 'F', name = "fields", description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
-    String fields;
+    @Option(names = "--noquotes", description = "")
+    public void setUnquoted(boolean unquoted) {
+        this.unquoted = unquoted;
+    }
 
-    @Option(shortName = 'H', name = "print-headers", description = "Print response headers", hasValue = false)
-    boolean printHeaders;
+    @Option(names = {"-F", "--fields"}, description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
+    public void setFields(String fields) {
+        this.fields = fields;
+    }
 
-    @Option(shortName = 'c', name = "compressed", description = "Don't pretty print the output", hasValue = false)
-    boolean compressed;
+    @Option(names = {"-H", "--print-headers"}, description = "Print response headers")
+    public void setPrintHeaders(boolean printHeaders) {
+        this.printHeaders = printHeaders;
+    }
 
-    @Option(shortName = 'o', name = "offset", description = "Number of results from beginning of resultset to skip")
-    Integer offset;
+    @Option(names = {"-c", "--compressed"}, description = "Don't pretty print the output")
+    public void setCompressed(boolean compressed) {
+        this.compressed = compressed;
+    }
 
-    @Option(shortName = 'l', name = "limit", description = "Maksimum number of results to return")
-    Integer limit;
+    @Option(names = {"-o", "--offset"}, description = "Number of results from beginning of resultset to skip")
+    public void setOffset(Integer offset) {
+        this.offset = offset;
+    }
 
-    @Option(name = "format", description = "Output format - one of: json, csv", defaultValue = "json")
-    String format;
+    @Option(names = {"-l", "--limit"}, description = "Maksimum number of results to return")
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
 
-
-    @Override
-    void initOptions() {
-        // set options on parent
-        super.fields = fields;
-        super.printHeaders = printHeaders;
-        super.returnId = false;
-        super.outputResult = true;
-        super.compressed = compressed;
-        super.offset = offset;
-        super.limit = limit;
-        super.format = format;
-        super.unquoted = unquoted;
-        super.httpVerb = "get";
+    @Option(names = "--format", description = "Output format - one of: json, csv", defaultValue = "json")
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     @Override
-    protected boolean nothingToDo() {
-        return noOptions() && (args == null || args.size() == 0);
-    }
-
-    protected String suggestHelp() {
-        return EOL + "Try '" + CMD + " help get' for more information";
-    }
-
     protected String help() {
-        return usage();
-    }
-
-    public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " get ENDPOINT_URI [ARGUMENTS]");
@@ -92,26 +81,12 @@ public class GetCmd extends  AbstractRequestCmd {
         out.println();
         out.println("Use '" + CMD + " config credentials' to establish an authenticated session, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
-        out.println();
-        out.println("Arguments:");
-        out.println();
-        out.println("  Global options:");
-        out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
-        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
-        out.println("    --token               Token to use to invoke on Keycloak.  Other credential may be ignored if this flag is set.");
-        out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
-        out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
-        out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
-        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
-        out.println();
-        out.println("  Command specific options:");
+        globalOptions(out);
         out.println("    ENDPOINT_URI              URI used to compose a target resource url. Commonly used values are:");
         out.println("                              realms, users, roles, groups, clients, keys, serverinfo, components ...");
         out.println("                              If it starts with 'http://' then it will be used as target resource url");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
-        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
+        out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE, for example --query q=username:admin");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println("    -o, --offset OFFSET       Set paging offset - adds a query parameter 'first' which some endpoints recognize");
         out.println("    -l, --limit LIMIT         Set limit to number of items in result - adds a query parameter 'max' ");
@@ -169,7 +144,7 @@ public class GetCmd extends  AbstractRequestCmd {
         out.println("Note: 'users' endpoint knows how to handle --offset and --limit. Most other endpoints don't.");
         out.println();
         out.println("Get all users whose 'username' matches '*test*' pattern, and 'email' matches '*@google.com*':");
-        out.println("  " + PROMPT + " " + CMD + " get users -r demorealm -q username=test -q email=@google.com");
+        out.println("  " + PROMPT + " " + CMD + " get users -r demorealm -q q=\"username:test email:@google.com\"");
         out.println();
         out.println("Note: it is the 'users' endpoint that interprets query parameters 'username', and 'email' in such a way that");
         out.println("it results in the described semantics. Another endpoint may provide a different semantics.");

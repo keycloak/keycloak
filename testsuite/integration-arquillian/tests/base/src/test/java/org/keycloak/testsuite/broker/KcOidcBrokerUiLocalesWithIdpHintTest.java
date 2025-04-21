@@ -55,10 +55,10 @@ public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
             driver.getPageSource(), containsString("Jelentkezzen be a fiókjába")); // Sign in to your account
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        waitForPage(driver, "felhasználói fiók adatok módosítása", false); // update account information
+        waitForPage(driver, "fiók adatainak módosítása", false); // update account information
 
         assertThat("The consumer realm should be in Hungarian even after the redirect from the IDP.",
-                driver.getPageSource(), containsString("Felhasználói fiók adatok módosítása"));// update account information
+                driver.getPageSource(), containsString("Fiók adatainak módosítása"));// update account information
 
         assertThat("We must be on correct realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.consumerRealmName() + "/"));

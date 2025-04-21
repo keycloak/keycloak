@@ -38,7 +38,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import java.security.PublicKey;
 import java.util.List;
@@ -67,7 +67,7 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
     }
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
-        AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test", login, "password", null, clientId, clientSecret);
+        AccessTokenResponse tokenResponse = oauth.client(clientId, clientSecret).doPasswordGrantRequest( login, "password");
 
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();

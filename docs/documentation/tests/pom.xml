@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <version.log4j>2.17.1</version.log4j>
         <!-- this property prevents the warning "WARN FilenoUtil: Native subprocess control requires open access" when using JRuby for the unit tests on JDK17 -->
         <surefire.system.args>
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.base/java.io=ALL-UNNAMED
         </surefire.system.args>
+        <version.jsoup>1.18.3</version.jsoup>
     </properties>
 
     <build>
@@ -83,12 +83,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>securing-apps</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>server-admin</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -125,18 +119,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${version.log4j}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${version.log4j}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctorj</artifactId>
             <version>2.5.10</version>
@@ -149,8 +131,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${version.jsoup}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

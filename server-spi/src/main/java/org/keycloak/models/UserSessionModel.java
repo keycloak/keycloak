@@ -17,34 +17,18 @@
 
 package org.keycloak.models;
 
-import org.keycloak.storage.SearchableModelField;
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.util.EnumWithStableIndex;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface UserSessionModel {
-
-    class SearchableFields {
-        public static final SearchableModelField<UserSessionModel> ID       = new SearchableModelField<>("id", String.class);
-
-        /**
-         * Represents the corresponding offline user session for the online user session.
-         * null if there is no corresponding offline user session.
-         */
-        public static final SearchableModelField<UserSessionModel> CORRESPONDING_SESSION_ID = new SearchableModelField<>("correspondingSessionId", String.class);
-        public static final SearchableModelField<UserSessionModel> REALM_ID = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<UserSessionModel> USER_ID  = new SearchableModelField<>("userId", String.class);
-        public static final SearchableModelField<UserSessionModel> CLIENT_ID  = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<UserSessionModel> BROKER_SESSION_ID  = new SearchableModelField<>("brokerSessionId", String.class);
-        public static final SearchableModelField<UserSessionModel> BROKER_USER_ID  = new SearchableModelField<>("brokerUserId", String.class);
-        public static final SearchableModelField<UserSessionModel> IS_OFFLINE  = new SearchableModelField<>("isOffline", Boolean.class);
-        public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Long.class);
-    }
 
     /**
      * Represents the corresponding online/offline user session.
@@ -67,6 +51,11 @@ public interface UserSessionModel {
 
     String getLoginUsername();
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     String getIpAddress();
 
     String getAuthMethod();
@@ -77,6 +66,10 @@ public interface UserSessionModel {
 
     int getLastSessionRefresh();
 
+    /**
+     * Set the last session refresh timestamp for the user session.
+     * If the timestamp is smaller or equal than the current timestamp, the operation is ignored.
+     */
     void setLastSessionRefresh(int seconds);
 
     boolean isOffline();
@@ -92,7 +85,8 @@ public interface UserSessionModel {
      */
     default AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
         return getAuthenticatedClientSessions().get(clientUUID);
-    };
+    }
+
     /**
      * Removes authenticated client sessions for all clients whose UUID is present in {@code removedClientUUIDS} parameter.
      * @param removedClientUUIDS
@@ -111,6 +105,8 @@ public interface UserSessionModel {
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
+    @ProtoTypeId(65536) // see org.keycloak.Marshalling
+    @Proto
     enum State implements EnumWithStableIndex {
         LOGGED_IN(0),
         LOGGING_OUT(1),

@@ -46,6 +46,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
         property.setName(ProtocolMapperUtils.USER_ATTRIBUTE);
         property.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
         AttributeStatementHelper.setConfigProperties(configProperties);
 
@@ -80,7 +81,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a to a SAML attribute.";
+        return "Map a custom user attribute to a SAML attribute.";
     }
 
     @Override

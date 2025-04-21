@@ -19,11 +19,14 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 /**
- * <p>An {@link Evaluation} is mainly used by {@link org.keycloak.authorization.policy.provider.PolicyProvider} in order to evaluate a single
+ * <p>An {@link Evaluation} is mainly used by {@link PolicyProvider} in order to evaluate a single
  * and specific {@link ResourcePermission} against the configured policies.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -74,4 +77,37 @@ public interface Evaluation {
      * Denies the requested permission if a decision was not made yet.
      */
     void denyIfNoEffect();
+
+    /**
+     * Returns the parent policy (a permission) of the policy being evaluated.
+     *
+     * @return the parent policy
+     */
+    Policy getParentPolicy();
+
+    Effect getEffect();
+
+    void setEffect(Effect effect);
+
+    /**
+     * If the given scope should be granted when the given {@code grantedPolicy} is granting access to a resource or a specific scope.
+     *
+     * @param grantedPolicy the policy granting access
+     * @param grantedScope the scope that should be granted
+     * @return {@code true} if the scope is granted. Otherwise, returns {@code false}
+     */
+    default boolean isGranted(Policy grantedPolicy, Scope grantedScope) {
+        return grantedPolicy.getScopes().contains(grantedScope);
+    }
+
+    /**
+     * If the given scope should not be granted when the given {@code deniedPolicy} denies access to a resource or a specific scope.
+     *
+     * @param deniedPolicy the policy granting access
+     * @param deniedScope the scope that should be granted
+     * @return {@code true} if the scope is granted. Otherwise, returns {@code false}
+     */
+    default boolean isDenied(Policy deniedPolicy, Scope deniedScope) {
+        return false;
+    }
 }

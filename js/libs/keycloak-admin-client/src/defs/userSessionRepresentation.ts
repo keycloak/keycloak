@@ -6,4 +6,5 @@ export default interface UserSessionRepresentation {
   start?: number;
   userId?: string;
   username?: string;
+  transientUser?: boolean;
 }

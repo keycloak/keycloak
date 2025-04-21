@@ -48,20 +48,18 @@ import java.util.Set;
 @Entity
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
-        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realmId = :realm"),
         @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realmId = :realm"),
-        @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realmId = :realm order by client.clientId"),
         @NamedQuery(name="getAlwaysDisplayInConsoleClients", query="select client.id from ClientEntity client where client.alwaysDisplayInConsole = true and client.realmId = :realm order by client.clientId"),
         @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realmId = :realm"),
-        @NamedQuery(name="searchClientsByClientId", query="select client.id from ClientEntity client where lower(client.clientId) like lower(concat('%',:clientId,'%')) and client.realmId = :realm order by client.clientId"),
-        @NamedQuery(name="getRealmClientsCount", query="select count(client) from ClientEntity client where client.realmId = :realm"),
         @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realmId = :realm"),
         @NamedQuery(name="getAllRedirectUrisOfEnabledClients", query="select new map(client as client, r as redirectUri) from ClientEntity client join client.redirectUris r where client.realmId = :realm and client.enabled = true"),
 })
 public class ClientEntity {
 
+    public static final int ID_MAX_LENGTH = 36;
+
     @Id
-    @Column(name="ID", length = 36)
+    @Column(name="ID", length = ID_MAX_LENGTH)
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
     private String id;
     @Nationalized

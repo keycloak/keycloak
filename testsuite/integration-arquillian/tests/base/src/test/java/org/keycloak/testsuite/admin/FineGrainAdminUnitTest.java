@@ -25,7 +25,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.client.admin.cli.util.ConfigUtil;
+import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -72,7 +72,8 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.oneOf;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -84,6 +85,8 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
+    public static boolean IMPERSONATION_DISABLED = "impersonation".equals(System.getProperty("feature.name"))
+            && "disabled".equals(System.getProperty("feature.value"));
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -1142,10 +1145,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll(null, true, false, 0, 1);
 
             Assert.assertEquals(1, result.size());
-            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-09"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-09"))));
 
             result = client.realm("test").clients().findAll(null, true, false, 1, 1);
-            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", Matchers.is("client-search-10"))));
+            assertThat(result, Matchers.hasItem(Matchers.hasProperty("clientId", is("client-search-10"))));
 
             Assert.assertEquals(1, result.size());
 
@@ -1196,7 +1199,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-09",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-09",
                     "client-search-10",
                     "client-search-11",
                     "client-search-12",
@@ -1210,7 +1213,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList("client-search-19",
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList("client-search-19",
                     "client-search-20",
                     "client-search-21",
                     "client-search-22",
@@ -1225,7 +1228,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             clients.addAll(result);
             Assert.assertEquals(1, result.size());
             assertThat(result, Matchers.hasItems(
-                    Matchers.hasProperty("clientId", Matchers.isOneOf("client-search-29"))));
+                    Matchers.hasProperty("clientId", is(oneOf("client-search-29")))));
         }
     }
 
@@ -1279,7 +1282,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             List<ClientRepresentation> result = client.realm("test").clients().findAll("client-search-", true, true, 0, 10);
             clients.addAll(result);
             Assert.assertEquals(10, result.size());
-            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-15",
                     "client-search-16",
                     "client-search-17",
@@ -1294,7 +1297,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             result = client.realm("test").clients().findAll("client-search-", true, true, 10, 10);
             clients.addAll(result);
             Assert.assertEquals(5, result.size());
-            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), Matchers.is(Arrays.asList(
+            assertThat(result.stream().map(rep -> rep.getClientId()).collect(Collectors.toList()), is(Arrays.asList(
                     "client-search-25",
                     "client-search-26",
                     "client-search-27",
@@ -1310,12 +1313,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     private String checkTokenExchange(boolean shouldPass) throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupTokenExchange);
         oauth.realm("master");
-        oauth.clientId("tokenexclient");
+        oauth.client("tokenexclient", "password");
         String exchanged = null;
-        String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
+        String token = oauth.doPasswordGrantRequest("admin", "admin").getAccessToken();
         Assert.assertNotNull(token);
         try {
-            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "tokenexclient", "password").getAccessToken();
+            exchanged = oauth.tokenExchangeRequest(token).audience("admin-cli").send().getAccessToken();
         } catch (AssertionError e) {
             log.info("Error message is expected from oauth: " + e.getMessage());
         }

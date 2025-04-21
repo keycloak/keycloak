@@ -43,7 +43,7 @@ public class GeneratedRsaKeyProviderFactory extends AbstractGeneratedRsaKeyProvi
             // for backward compatibility : it allows "enc" key use for "rsa-generated" provider
             model.put(Attributes.KEY_USE, KeyUse.SIG.name());
         }
-        return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
+        return new AbstractRsaKeyProvider(session.getContext().getRealm(), model){};
     }
 
     @Override

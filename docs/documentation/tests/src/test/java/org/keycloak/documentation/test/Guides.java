@@ -12,7 +12,6 @@ public class Guides {
         List<String> g = new LinkedList<>();
         g.add("authorization_services");
         g.add("release_notes");
-        g.add("securing_apps");
         g.add("server_admin");
         g.add("server_development");
         g.add("upgrading");

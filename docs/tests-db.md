@@ -56,7 +56,7 @@ Stop MySQl:
 Using built-in profiles to run database tests using docker containers
 -------
 
-The project provides specific profiles to run database tests using containers. Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db- | grep -v allocator`):
+The project provides specific profiles to run database tests using containers. Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-`):
 
 * `db-mysql`
 * `db-postgres`
@@ -84,35 +84,3 @@ name or tag for the image.
 Note that Docker containers may occupy some space even after termination, and
 especially with databases that might be easily a gigabyte. It is thus
 advisable to run `docker system prune` occasionally to reclaim that space.
-
-
-Using DB Allocator Service
--------
-
-The testsuite can use the DB Allocator Service to allocate and release desired database automatically.
-Since some of the database properties (such as JDBC URL, Username or Password) need to be used when building the Auth Server,
-the allocation and deallocation need to happen when building the `integration-arquillian` project (instead of `tests/base` as
-it happens in other cases).
-
-In order to use the DB Allocator Service, you must use the `jpa` profile with one of the `db-allocator-*`. Here's a full example to
-run JPA with Auth Server Quarkus and MSSQL 2016:
-
-```
-mvn -f testsuite/integration-arquillian/pom.xml clean verify \
-    -Pjpa,auth-server-quarkus,db-allocator-db-mssql2016 \
-    -Ddballocator.uri=<<db-allocator-servlet-url>> \
-    -Ddballocator.user=<<db-allocator-user>> \
-    -Dmaven.test.failure.ignore=true
-```
-
-Using `-Dmaven.test.failure.ignore=true` is not strictly required but highly recommended. After running the tests,
-the DB Allocator Plugin should release the allocated database.
-
-**NOTE**: If you killed the maven surefire test preliminary (for example with CTRL-C or `kill -9` command), it will be
-good to manually release the allocated database. Please check `dballocator.uri` and add `?operation=report` to the end of the URL.
-Find your DB in the GUI and release it manually.
-
-Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-allocator-db-`):
-
-* `db-allocator-db-postgres` - for testing with Postgres 9.6.x
-* `db-allocator-db-mysql` - for testing with MySQL 5.7

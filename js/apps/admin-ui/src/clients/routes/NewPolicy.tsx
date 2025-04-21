@@ -14,7 +14,8 @@ export const NewPolicyRoute: AppRouteObject = {
   element: <PolicyDetails />,
   breadcrumb: (t) => t("createPolicy"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "manage-authorization"),
   },
 };
 

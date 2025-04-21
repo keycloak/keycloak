@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;

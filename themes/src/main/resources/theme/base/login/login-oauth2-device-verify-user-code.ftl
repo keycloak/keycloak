@@ -10,7 +10,7 @@
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input id="device-user-code" name="device_user_code" autocomplete="off" type="text" class="${properties.kcInputClass!}" autofocus />
+                    <input id="device-user-code" name="device_user_code" autocomplete="off" type="text" class="${properties.kcInputClass!}" autofocus dir="ltr" />
                 </div>
             </div>
 

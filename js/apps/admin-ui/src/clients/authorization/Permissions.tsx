@@ -1,20 +1,27 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
+  ListEmptyState,
+  PaginatingTableToolbar,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Alert,
   AlertVariant,
   ButtonVariant,
   DescriptionList,
+  Divider,
   Dropdown,
   DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
+  DropdownList,
+  MenuToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -24,15 +31,10 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toNewPermission } from "../routes/NewPermission";
 import { toPermissionDetails } from "../routes/PermissionDetails";
@@ -46,6 +48,7 @@ import "./permissions.css";
 
 type PermissionsProps = {
   clientId: string;
+  isDisabled?: boolean;
 };
 
 type ExpandablePolicyRepresentation = PolicyRepresentation & {
@@ -60,13 +63,18 @@ const AssociatedPoliciesRenderer = ({
 }) => {
   return (
     <>
-      {row.associatedPolicies?.[0]?.name}{" "}
+      {row.associatedPolicies?.[0]?.name || "—"}{" "}
       <MoreLabel array={row.associatedPolicies} />
     </>
   );
 };
 
-export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
+export const AuthorizationPermissions = ({
+  clientId,
+  isDisabled = false,
+}: PermissionsProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
@@ -177,7 +185,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   const noData = permissions.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection variant="light" className="pf-u-p-0">
+    <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar
@@ -197,25 +205,29 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                   types={policyProviders}
                   search={search}
                   onSearch={setSearch}
+                  type="permission"
                 />
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <DropdownToggle
-                      onToggle={toggleCreate}
-                      isPrimary
+                  onOpenChange={toggleCreate}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      onClick={toggleCreate}
+                      isDisabled={isDisabled}
+                      variant="primary"
                       data-testid="permissionCreateDropdown"
                     >
                       {t("createPermission")}
-                    </DropdownToggle>
-                  }
+                    </MenuToggle>
+                  )}
                   isOpen={createOpen}
-                  dropdownItems={[
+                >
+                  <DropdownList>
                     <DropdownItem
                       data-testid="create-resource"
-                      key="createResourceBasedPermission"
-                      isDisabled={disabledCreate?.resources}
+                      isDisabled={isDisabled || disabledCreate?.resources}
                       component="button"
                       onClick={() =>
                         navigate(
@@ -228,12 +240,11 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       }
                     >
                       {t("createResourceBasedPermission")}
-                    </DropdownItem>,
-                    <DropdownSeparator key="separator" />,
+                    </DropdownItem>
+                    <Divider />
                     <DropdownItem
                       data-testid="create-scope"
-                      key="createScopeBasedPermission"
-                      isDisabled={disabledCreate?.scopes}
+                      isDisabled={isDisabled || disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
                         navigate(
@@ -248,22 +259,22 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       {t("createScopeBasedPermission")}
                       {disabledCreate?.scopes && (
                         <Alert
-                          className="pf-u-mt-sm"
+                          className="pf-v5-u-mt-sm"
                           variant="warning"
                           isInline
                           isPlain
                           title={t("noScopeCreateHint")}
                         />
                       )}
-                    </DropdownItem>,
-                  ]}
-                />
+                    </DropdownItem>
+                  </DropdownList>
+                </Dropdown>
               </ToolbarItem>
             </>
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -312,7 +323,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                     <Td>
                       <AssociatedPoliciesRenderer row={permission} />
                     </Td>
-                    <Td>{permission.description}</Td>
+                    <Td>{permission.description || "—"}</Td>
                     <Td
                       actions={{
                         items: [
@@ -359,15 +370,15 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}
       {noData && !searching && (
         <EmptyPermissionsState
           clientId={clientId}
-          isResourceEnabled={disabledCreate?.resources}
-          isScopeEnabled={disabledCreate?.scopes}
+          isResourceEnabled={!isDisabled && disabledCreate?.resources}
+          isScopeEnabled={!isDisabled && disabledCreate?.scopes}
         />
       )}
       {noData && searching && (

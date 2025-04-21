@@ -43,6 +43,10 @@ public final class Evaluators {
         return new IterablePermissionEvaluator(permissions.iterator(), evaluationContext, authorizationProvider);
     }
 
+    public PermissionEvaluator from(Collection<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext evaluationContext) {
+        return new IterablePermissionEvaluator(permissions.iterator(), resourceServer, evaluationContext, authorizationProvider);
+    }
+
     public PermissionEvaluator from(EvaluationContext evaluationContext, ResourceServer resourceServer, AuthorizationRequest request) {
         return new UnboundedPermissionEvaluator(evaluationContext, authorizationProvider, resourceServer, request);
     }

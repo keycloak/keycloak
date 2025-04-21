@@ -26,7 +26,7 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class TaskCallback {
+public class TaskCallback {
 
     protected static final Logger logger = Logger.getLogger(TaskCallback.class);
 

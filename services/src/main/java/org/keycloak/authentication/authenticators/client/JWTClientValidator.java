@@ -19,6 +19,10 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -33,8 +37,15 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.Urls;
 
 /**
  * Common validation for JWT client authentication with private_key_jwt or with client_secret
@@ -48,6 +59,7 @@ public class JWTClientValidator {
     private final ClientAuthenticationFlowContext context;
     private final RealmModel realm;
     private final int currentTime;
+    private final String clientAuthenticatorProviderId;
 
     private MultivaluedMap<String, String> params;
     private String clientAssertion;
@@ -55,10 +67,13 @@ public class JWTClientValidator {
     private JsonWebToken token;
     private ClientModel client;
 
-    public JWTClientValidator(ClientAuthenticationFlowContext context) {
+    private static final int ALLOWED_CLOCK_SKEW = 15; // sec
+
+    public JWTClientValidator(ClientAuthenticationFlowContext context, String clientAuthenticatorProviderId) {
         this.context = context;
         this.realm = context.getRealm();
         this.currentTime = Time.currentTime();
+        this.clientAuthenticatorProviderId = clientAuthenticatorProviderId;
     }
 
     public boolean clientAssertionParametersValidation() {
@@ -134,6 +149,11 @@ public class JWTClientValidator {
             return false;
         }
 
+        if (!clientAuthenticatorProviderId.equals(client.getClientAuthenticatorType())) {
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+            return false;
+        }
+
         return true;
     }
 
@@ -161,17 +181,65 @@ public class JWTClientValidator {
     public void validateToken() {
         if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken");
 
-        if (!token.isActive()) {
+        if (!token.isActive(ALLOWED_CLOCK_SKEW)) {
             throw new RuntimeException("Token is not active");
         }
 
+        if ((token.getExp() == null || token.getExp() <= 0) && (token.getIat() == null || token.getIat() <= 0)) {
+            throw new RuntimeException("Token cannot be validated. Neither the exp nor the iat claim are present.");
+        }
+
         // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-        if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
-            throw new RuntimeException("Token is not active");
+        if (token.getExp() == null || token.getExp() <= 0) { // in case of "exp" not exist
+            if (token.getIat() + ALLOWED_CLOCK_SKEW + 10 < currentTime) { // consider "exp" = 10, client's clock delays from Keycloak's clock
+                throw new RuntimeException("Token is not active");
+            }
+        } else {
+            if ((token.getIat() != null && token.getIat() > 0) && token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) { // consider client's clock is ahead from Keycloak's clock
+                throw new RuntimeException("Token was issued in the future");
+            }
         }
 
         if (token.getId() == null) {
             throw new RuntimeException("Missing ID on the token");
+        }
+    }
+
+    private long calculateLifespanInSeconds()  {
+        if ((token.getExp() == null || token.getExp() <= 0) && (token.getIat() == null || token.getIat() <= 0)) {
+            throw new RuntimeException("Token cannot be validated. Neither the exp nor the iat claim are present.");
+        }
+
+        // rfc7523 marks exp as required and iat as optional: https://datatracker.ietf.org/doc/html/rfc7523#section-3
+        if (token.getExp() == null || token.getExp() <= 0) {
+            // exp not present but iat present, just allow a short period of time from iat (10s)
+            final long lifespan = token.getIat() + ALLOWED_CLOCK_SKEW + 10 - currentTime;
+            if (lifespan <= 0) {
+                throw new RuntimeException("Token is not active");
+            }
+            return lifespan;
+        } else if (token.getIat() == null || token.getIat() <= 0) {
+            // iat not present but exp present, the max-exp should not be exceeded
+            final int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+            final long lifespan = token.getExp() - currentTime;
+            if (lifespan > maxExp) {
+                throw new RuntimeException("Token expiration is too far in the future and iat claim not present in token");
+            }
+            return lifespan;
+        } else {
+            // both iat and exp present, the token is just allowed to be used max-age as much
+            if (token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) {
+                throw new RuntimeException("Token was issued in the future");
+            }
+            final int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+            final long lifespan = Math.min(token.getExp() - currentTime, maxExp);
+            if (lifespan <= 0) {
+                throw new RuntimeException("Token is not active");
+            }
+            if (currentTime > token.getIat() + maxExp) {
+                throw new RuntimeException("Token was issued too far in the past to be used now");
+            }
+            return lifespan;
         }
     }
 
@@ -180,7 +248,7 @@ public class JWTClientValidator {
         if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
+        long lifespanInSecs = calculateLifespanInSeconds();
         if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
             logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
 
@@ -188,6 +256,37 @@ public class JWTClientValidator {
             logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
             throw new RuntimeException("Token reuse detected");
         }
+    }
+
+    public void validateTokenAudience(ClientAuthenticationFlowContext context, RealmModel realm, JsonWebToken token) {
+        List<String> expectedAudiences = getExpectedAudiences(context, realm);
+        if (!token.hasAnyAudience(expectedAudiences)) {
+            throw new RuntimeException("Token audience doesn't match domain. Expected audiences are any of " + expectedAudiences
+                    + " but audience from token is '" + Arrays.asList(token.getAudience()) + "'");
+        }
+
+        if (!isAllowMultipleAudiencesForJwtClientAuthentication(context) && token.getAudience().length > 1) {
+            throw new RuntimeException("Multiple audiences not allowed in the JWT token for client authentication");
+        }
+    }
+
+    private boolean isAllowMultipleAudiencesForJwtClientAuthentication(ClientAuthenticationFlowContext context) {
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) context.getSession().getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig config = loginProtocol.getConfig();
+        return config.isAllowMultipleAudiencesForJwtClientAuthentication();
+    }
+
+    private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
+
+        String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+        String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String tokenIntrospectUrl = OIDCLoginProtocolService.tokenIntrospectionUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, tokenIntrospectUrl, parEndpointUrl));
+        String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        expectedAudiences.add(backchannelAuthenticationUrl);
+
+        return expectedAudiences;
     }
 
     public ClientAuthenticationFlowContext getContext() {

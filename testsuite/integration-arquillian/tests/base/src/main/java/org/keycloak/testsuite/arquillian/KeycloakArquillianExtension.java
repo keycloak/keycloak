@@ -17,14 +17,12 @@
 
 package org.keycloak.testsuite.arquillian;
 
-import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
 import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
-import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.decider.BrowserDriverIgnoreDecider;
@@ -42,7 +40,6 @@ import org.keycloak.testsuite.arquillian.provider.URLProvider;
 import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
 import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
 import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
-import org.keycloak.testsuite.utils.arquillian.fuse.KeycloakOSGiApplicationArchiveProcessor;
 
 /**
  *
@@ -58,23 +55,14 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(ResourceProvider.class, TestContextProvider.class)
                 .service(ResourceProvider.class, AdminClientProvider.class)
                 .service(ResourceProvider.class, OAuthClientProvider.class)
-                .service(ResourceProvider.class, LoadBalancerControllerProvider.class)
-                .service(ResourceProvider.class, PostgresContainerProvider.class)
-                .service(ResourceProvider.class, CockroachdbContainerProvider.class)
-                .service(ResourceProvider.class, HotRodContainerProvider.class)
-                .service(ResourceProvider.class, LegacyKeycloakContainerProvider.class);
+                .service(ResourceProvider.class, LoadBalancerControllerProvider.class);
 
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
-                .service(TestEnricher.class, CacheStatisticsControllerEnricher.class)
                 .observer(JmxConnectorRegistryCreator.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
-                .observer(CrossDCTestEnricher.class)
-                .observer(HotRodContainerProvider.class)
-                .observer(PostgresContainerProvider.class)
-                .observer(CockroachdbContainerProvider.class)
                 .observer(H2TestEnricher.class);
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)
@@ -86,7 +74,6 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
-                .override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class)
                 .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
 
         builder

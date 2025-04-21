@@ -18,11 +18,12 @@
 
 package org.keycloak.testsuite.federation;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
@@ -42,6 +43,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -50,11 +53,12 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * UserStorage implementation created in Keycloak 4.8.3. It is used for backwards compatibility testing. Future Keycloak versions
  * should work fine without a need to change the code of this provider.
- *
+ * <p>
  * TODO: Have some good mechanims to make sure that source code of this provider is really compatible with Keycloak 4.8.3
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -88,7 +92,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     private UserModel createUser(RealmModel realm, String username) {
-        return new AbstractUserAdapterFederatedStorage(session, realm,  model) {
+        return new AbstractUserAdapterFederatedStorage(session, realm, model) {
             @Override
             public String getUsername() {
                 return username;
@@ -106,7 +110,8 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     @Override
     public boolean supportsCredentialType(String credentialType) {
         if (CredentialModel.PASSWORD.equals(credentialType)
-                || isOTPType(credentialType)) {
+                || isOTPType(credentialType)
+                || credentialType.equals(RecoveryAuthnCodesCredentialModel.TYPE)) {
             return true;
         } else {
             log.infof("Unsupported credential type: %s", credentialType);
@@ -150,7 +155,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             hashProvider.encode(userCredentialModel.getValue(), policy.getHashIterations(), newPassword);
 
             // Test expected values of credentialModel
-            assertEquals(newPassword.getAlgorithm(), policy.getHashAlgorithm());
+            assertNotNull(newPassword.getAlgorithm());
             assertNotNull(newPassword.getValue());
             assertNotNull(newPassword.getSalt());
 
@@ -171,6 +176,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             OTPPolicy otpPolicy = session.getContext().getRealm().getOTPPolicy();
 
             CredentialModel newOTP = new CredentialModel();
+            newOTP.setId(KeycloakModelUtils.generateId());
             newOTP.setType(input.getType());
             long createdDate = Time.currentTimeMillis();
             newOTP.setCreatedDate(createdDate);
@@ -184,6 +190,15 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             users.get(translateUserName(user.getUsername())).otp = newOTP;
 
             return true;
+        } else if (input.getType().equals(RecoveryAuthnCodesCredentialModel.TYPE)) {
+            CredentialModel recoveryCodesModel = new CredentialModel();
+            recoveryCodesModel.setId(KeycloakModelUtils.generateId());
+            recoveryCodesModel.setType(input.getType());
+            recoveryCodesModel.setCredentialData(input.getChallengeResponse());
+            long createdDate = Time.currentTimeMillis();
+            recoveryCodesModel.setCreatedDate(createdDate);
+            users.get(translateUserName(user.getUsername())).recoveryCodes = recoveryCodesModel;
+            return true;
         } else {
             log.infof("Attempt to update unsupported credential of type: %s", input.getType());
             return false;
@@ -191,12 +206,11 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     protected PasswordHashProvider getHashProvider(PasswordPolicy policy) {
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-        if (hash == null) {
-            log.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
-            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
+        if (policy != null && policy.getHashAlgorithm() != null) {
+            return session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
+        } else {
+            return session.getProvider(PasswordHashProvider.class);
         }
-        return hash;
     }
 
     @Override
@@ -211,6 +225,30 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     private MyUser getMyUser(UserModel user) {
         return users.get(translateUserName(user.getUsername()));
+    }
+
+    @Override
+    public Stream<CredentialModel> getCredentials(RealmModel realm, UserModel user) {
+        var myUser = getMyUser(user);
+        RecoveryAuthnCodesCredentialModel model;
+        List<CredentialModel> credentialModels = new ArrayList<>();
+        if (myUser.recoveryCodes != null) {
+            try {
+                model = RecoveryAuthnCodesCredentialModel.createFromValues(
+                        JsonSerialization.readValue(myUser.recoveryCodes.getCredentialData(), List.class),
+                        myUser.recoveryCodes.getCreatedDate(),
+                        myUser.recoveryCodes.getUserLabel()
+                );
+                credentialModels.add(model);
+            } catch (IOException e) {
+                log.error("Could not deserialize  credential of type: recovery-codes");
+            }
+        }
+        if (myUser.otp != null) {
+            credentialModels.add(myUser.getOtp());
+        }
+
+        return credentialModels.stream();
     }
 
     @Override
@@ -233,6 +271,8 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
         if (myUser == null) return false;
 
         if (isOTPType(credentialType) && myUser.otp != null) {
+            return true;
+        } else if (credentialType.equals(RecoveryAuthnCodesCredentialModel.TYPE) && myUser.recoveryCodes != null) {
             return true;
         } else {
             log.infof("Not supported credentialType '%s' for user '%s'", credentialType, user.getUsername());
@@ -283,7 +323,22 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             TimeBasedOTP validator = new TimeBasedOTP(storedOTPCredential.getAlgorithm(), storedOTPCredential.getDigits(),
                     storedOTPCredential.getPeriod(), realm.getOTPPolicy().getLookAheadWindow());
             return validator.validateTOTP(otpCredential.getValue(), storedOTPCredential.getValue().getBytes());
-        } else {
+        } else if (input.getType().equals(RecoveryAuthnCodesCredentialModel.TYPE)) {
+            CredentialModel storedRecoveryKeys = myUser.recoveryCodes;
+            if (storedRecoveryKeys == null) {
+                log.warnf("Not found credential for the user %s", user.getUsername());
+                return false;
+            }
+            List generatedKeys;
+            try {
+                generatedKeys = JsonSerialization.readValue(storedRecoveryKeys.getCredentialData(), List.class);
+            } catch (IOException e) {
+                log.warnf("Cannot deserialize recovery keys credential for the user %s", user.getUsername());
+                return false;
+            }
+
+            return generatedKeys.stream().anyMatch(key -> key.equals(input.getChallengeResponse()));
+        }  else {
             log.infof("Not supported to validate credential of type '%s' for user '%s'", input.getType(), user.getUsername());
             return false;
         }
@@ -369,6 +424,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
         private String username;
         private CredentialModel hashedPassword;
         private CredentialModel otp;
+        private CredentialModel recoveryCodes;
 
         private MyUser(String username) {
             this.username = username;
@@ -376,6 +432,10 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
         public CredentialModel getOtp() {
             return otp;
+        }
+
+        public CredentialModel getRecoveryCodes() {
+            return recoveryCodes;
         }
     }
 

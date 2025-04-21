@@ -32,7 +32,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6_CLUSTER)
 public class SAMLAdapterClusterTest extends AbstractSAMLAdapterClusteredTest {
 
     @TargetsContainer(value = TARGET_CONTAINER_NODE_1)

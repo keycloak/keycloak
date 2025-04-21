@@ -44,14 +44,8 @@ public class InstalledAppRedirectPage extends AbstractPage {
     @FindBy(id = "kc-page-title")
     private WebElement pageTitle;
 
-    @FindBy(className = "alert-error")
+    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement errorBox;
-
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException("Use method: open(code, error, errorDescription)");
-    }
-
 
     public void open(String realmName, String code, String error, String errorDescription) {
         try {

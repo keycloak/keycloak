@@ -25,7 +25,7 @@ import java.util.Date;
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
  */
 public class AdminEventBean {
-    
+
     private AdminEvent adminEvent;
 
     public AdminEventBean(AdminEvent adminEvent) {
@@ -44,10 +44,15 @@ public class AdminEventBean {
         return adminEvent.getAuthDetails().getClientId();
     }
 
+    /**
+     * Note: will not be an address when a proxy does not provide a valid one
+     *
+     * @return the ip address
+     */
     public String getIpAddress() {
         return adminEvent.getAuthDetails().getIpAddress();
     }
-    
+
     public String getResourcePath() {
         return adminEvent.getResourcePath();
     }

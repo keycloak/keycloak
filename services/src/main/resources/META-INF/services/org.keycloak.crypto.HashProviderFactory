@@ -18,3 +18,4 @@
 org.keycloak.crypto.SHA256HashProviderFactory
 org.keycloak.crypto.SHA384HashProviderFactory
 org.keycloak.crypto.SHA512HashProviderFactory
+org.keycloak.crypto.SHAKE256HashProviderFactory

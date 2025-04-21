@@ -1,13 +1,13 @@
-import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "ui-shared";
+import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
-import { beerify, convertAttributeNameToForm } from "../../util";
+import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import type { ClientSettingsProps } from "../ClientSettings";
 
@@ -23,18 +23,17 @@ export const LogoutPanel = ({
   client: { access },
 }: ClientSettingsProps) => {
   const { t } = useTranslation();
-  const {
-    register,
-    control,
-    watch,
-    formState: { errors },
-  } = useFormContext<FormFields>();
+  const { control, watch } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || access?.configure;
 
   const protocol = watch("protocol");
   const frontchannelLogout = watch("frontchannelLogout");
+  const frontchannelLogoutTooltip =
+    protocol === "openid-connect"
+      ? "frontchannelLogoutOIDCHelp"
+      : "frontchannelLogoutHelp";
 
   return (
     <FormAccess
@@ -46,7 +45,7 @@ export const LogoutPanel = ({
         label={t("frontchannelLogout")}
         labelIcon={
           <HelpItem
-            helpText={t("frontchannelLogoutHelp")}
+            helpText={t(frontchannelLogoutTooltip)}
             fieldLabelId="frontchannelLogout"
           />
         }
@@ -70,85 +69,46 @@ export const LogoutPanel = ({
         />
       </FormGroup>
       {protocol === "openid-connect" && frontchannelLogout && (
-        <FormGroup
+        <TextControl
+          data-testid="frontchannelLogoutUrl"
+          type="url"
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.frontchannel.logout.url",
+          )}
           label={t("frontchannelLogoutUrl")}
-          fieldId="frontchannelLogoutUrl"
-          labelIcon={
-            <HelpItem
-              helpText={t("frontchannelLogoutUrlHelp")}
-              fieldLabelId="frontchannelLogoutUrl"
-            />
-          }
-          helperTextInvalid={
-            errors.attributes?.[beerify("frontchannel.logout.url")]
-              ?.message as string
-          }
-          validated={
-            errors.attributes?.[beerify("frontchannel.logout.url")]?.message
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-        >
-          <KeycloakTextInput
-            id="frontchannelLogoutUrl"
-            type="url"
-            {...register(
-              convertAttributeNameToForm<FormFields>(
-                "attributes.frontchannel.logout.url",
-              ),
-              {
-                validate: (uri) =>
-                  validateUrl(uri, t("frontchannelUrlInvalid").toString()),
-              },
-            )}
-            validated={
-              errors.attributes?.[beerify("frontchannel.logout.url")]?.message
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-          />
-        </FormGroup>
+          labelIcon={t("frontchannelLogoutUrlHelp")}
+          rules={{
+            validate: (uri) =>
+              validateUrl(uri, t("frontchannelUrlInvalid").toString()),
+          }}
+        />
       )}
-      {protocol === "openid-connect" && (
+      {protocol === "openid-connect" && frontchannelLogout && (
+        <DefaultSwitchControl
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.frontchannel.logout.session.required",
+          )}
+          defaultValue="true"
+          label={t("frontchannelLogoutSessionRequired")}
+          labelIcon={t("frontchannelLogoutSessionRequiredHelp")}
+          stringify
+        />
+      )}
+      {protocol === "openid-connect" && !frontchannelLogout && (
         <>
-          <FormGroup
+          <TextControl
+            data-testid="backchannelLogoutUrl"
+            type="url"
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.backchannel.logout.url",
+            )}
             label={t("backchannelLogoutUrl")}
-            fieldId="backchannelLogoutUrl"
-            labelIcon={
-              <HelpItem
-                helpText={t("backchannelLogoutUrlHelp")}
-                fieldLabelId="backchannelLogoutUrl"
-              />
-            }
-            helperTextInvalid={
-              errors.attributes?.[beerify("backchannel.logout.url")]
-                ?.message as string
-            }
-            validated={
-              errors.attributes?.[beerify("backchannel.logout.url")]?.message
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-          >
-            <KeycloakTextInput
-              id="backchannelLogoutUrl"
-              type="url"
-              {...register(
-                convertAttributeNameToForm<FormFields>(
-                  "attributes.backchannel.logout.url",
-                ),
-                {
-                  validate: (uri) =>
-                    validateUrl(uri, t("backchannelUrlInvalid").toString()),
-                },
-              )}
-              validated={
-                errors.attributes?.[beerify("backchannel.logout.url")]?.message
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-            />
-          </FormGroup>
+            labelIcon={t("backchannelLogoutUrlHelp")}
+            rules={{
+              validate: (uri) =>
+                validateUrl(uri, t("backchannelUrlInvalid").toString()),
+            }}
+          />
           <FormGroup
             label={t("backchannelLogoutSessionRequired")}
             labelIcon={
@@ -172,7 +132,7 @@ export const LogoutPanel = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutSessionRequired")}
                 />
               )}
@@ -201,7 +161,7 @@ export const LogoutPanel = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutRevokeOfflineSessions")}
                 />
               )}
@@ -213,7 +173,7 @@ export const LogoutPanel = ({
         name="settings"
         save={save}
         reset={reset}
-        isActive={isManager}
+        isDisabled={!isManager}
       />
     </FormAccess>
   );

@@ -20,7 +20,6 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 
-import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -46,8 +45,8 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
-        return OIDCIdentityProviderFactory.parseOIDCConfig(session, inputStream);
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
+        return OIDCIdentityProviderFactory.parseOIDCConfig(session, config);
     }
 
     @Override

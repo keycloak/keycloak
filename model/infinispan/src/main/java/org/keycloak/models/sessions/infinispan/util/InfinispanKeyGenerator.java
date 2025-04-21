@@ -52,7 +52,7 @@ public class InfinispanKeyGenerator {
     }
 
 
-    private <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
+    protected <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
         String cacheName = cache.getName();
 
         // "wantsLocalKey" is true if route is not attached to the sticky session cookie. Without attached route, We want the key, which will be "owned" by this node.
@@ -61,14 +61,11 @@ public class InfinispanKeyGenerator {
         boolean wantsLocalKey = !session.getProvider(StickySessionEncoderProvider.class).shouldAttachRoute();
 
         if (wantsLocalKey && cache.getCacheConfiguration().clustering().cacheMode().isClustered()) {
-            KeyAffinityService<K> keyAffinityService = keyAffinityServices.get(cacheName);
-            if (keyAffinityService == null) {
-                keyAffinityService = createKeyAffinityService(cache, keyGenerator);
-                keyAffinityServices.put(cacheName, keyAffinityService);
-
+            KeyAffinityService<K> keyAffinityService = keyAffinityServices.computeIfAbsent(cacheName, s -> {
+                KeyAffinityService<K> k = createKeyAffinityService(cache, keyGenerator);
                 log.debugf("Registered key affinity service for cache '%s'", cacheName);
-            }
-
+                return k;
+            });
             return keyAffinityService.getKeyForAddress(cache.getCacheManager().getAddress());
         } else {
             return keyGenerator.getKey();

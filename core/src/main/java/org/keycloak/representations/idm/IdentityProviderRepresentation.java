@@ -41,7 +41,7 @@ public class IdentityProviderRepresentation {
      * <li><code>missing</code> - update profile page is presented for users with missing some of mandatory user profile fields
      * <li><code>off</code> - update profile page is newer shown after first login
      * </ul>
-     * 
+     *
      * @see #UPFLM_ON
      * @see #UPFLM_MISSING
      * @see #UPFLM_OFF
@@ -54,8 +54,10 @@ public class IdentityProviderRepresentation {
     protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
     protected boolean linkOnly;
+    protected boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
+    protected String organizationId;
     protected Map<String, String> config = new HashMap<>();
 
     public String getInternalId() {
@@ -106,10 +108,18 @@ public class IdentityProviderRepresentation {
         this.linkOnly = linkOnly;
     }
 
+    public boolean isHideOnLogin() {
+        return this.hideOnLogin;
+    }
+
+    public void setHideOnLogin(boolean hideOnLogin) {
+        this.hideOnLogin = hideOnLogin;
+    }
+
     /**
-     * 
+     *
      * Deprecated because replaced by {@link #updateProfileFirstLoginMode}. Kept here to allow import of old realms.
-     * 
+     *
      * @deprecated {@link #setUpdateProfileFirstLoginMode(String)}
      */
     @Deprecated
@@ -192,6 +202,14 @@ public class IdentityProviderRepresentation {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getOrganizationId() {
+        return this.organizationId;
+    }
+
+    public void setOrganizationId(String organizationId) {
+        this.organizationId = organizationId;
     }
 
 }

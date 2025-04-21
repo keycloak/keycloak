@@ -53,7 +53,7 @@ const groups = await kcAdminClient.groups.find();
 
 // Set a `realm` property to override the realm for only a single operation.
 // For example, creating a user in another realm:
-await this.kcAdminClient.users.create({
+await kcAdminClient.users.create({
   realm: 'a-third-realm',
   username: 'username',
   email: 'user@example.com',
@@ -107,13 +107,13 @@ setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 To build the source do a build:
 
 ```bash
-pnpm run build
+pnpm build
 ```
 
 Start the Keycloak server:
 
 ```bash
-pnpm run server:start
+pnpm server:start
 ```
 
 If you started your container manually make sure there is an admin user named 'admin' with password 'admin'.
@@ -220,6 +220,7 @@ Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin
 - Count (`GET /{realm}/groups/count`)
 - List members (`GET /{realm}/groups/{id}/members`)
 - Set or create child (`POST /{realm}/groups/{id}/children`)
+- Get children (`GET /{realm}/groups/{id}/children`)
 
 ### Group role-mapping
 

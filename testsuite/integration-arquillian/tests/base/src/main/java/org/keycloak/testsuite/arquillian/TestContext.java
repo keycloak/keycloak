@@ -18,6 +18,7 @@ package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public final class TestContext {
     private Keycloak adminClient;
     private KeycloakTestingClient testingClient;
     private List<RealmRepresentation> testRealmReps = new ArrayList<>();
+    private Map<String, String> userPasswords = new HashMap<>();
 
     // Track if particular test was initialized. What exactly means "initialized" is test dependent (Eg. some user in @Before method was created, so we can set initialized to true
     // to avoid creating user when @Before method is executed for 2nd time)
@@ -177,6 +179,14 @@ public final class TestContext {
 
     public void addTestRealmsToTestRealmReps(List<RealmRepresentation> testRealmReps) {
         this.testRealmReps.addAll(testRealmReps);
+    }
+
+    public Map<String, String> getUserPasswords() {
+        return userPasswords;
+    }
+
+    public void setUserPasswords(Map<String, String> userPasswords) {
+        this.userPasswords = userPasswords;
     }
 
     public boolean isInitialized() {

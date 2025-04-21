@@ -23,6 +23,7 @@
         <groupId>org.keycloak</groupId>
         <version>999.0.0-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-model-infinispan</artifactId>
@@ -40,11 +41,15 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy</artifactId>
+            <artifactId>keycloak-model-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-legacy-private</artifactId>
+            <artifactId>keycloak-model-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-storage-private</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -53,36 +58,35 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core-jakarta</artifactId>
+            <artifactId>infinispan-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-client-hotrod-jakarta</artifactId>
+            <artifactId>infinispan-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-client-hotrod</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <!-- required for query/search in the external Infinispan server -->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-remote-query-client</artifactId>
+        </dependency>
+        <!-- to be removed after https://issues.redhat.com/browse/ISPN-16220 -->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-query-dsl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-jboss-marshalling</artifactId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <scope>provided</scope>
         </dependency>
-        <!--dependency>
-            <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
-        </dependency-->
-
-        <!-- Needed for externalizers in package "org.keycloak.models.sessions.infinispan.entities.wildfly" .
-             Hopefully can be removed once we start to use the protobuf marshalling -->
         <dependency>
-            <groupId>${ee.maven.groupId}</groupId>
-            <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-processor</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -98,4 +102,41 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>proto-schema-compatibility-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>proto-schema-compatibility-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration combine.self="append">
+                    <remoteLockFiles>https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.0/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/archive/release/26.1/model/infinispan/proto.lock,https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/release/26.2/model/infinispan/proto.lock</remoteLockFiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.infinispan</groupId>
+                            <artifactId>infinispan-component-processor</artifactId>
+                            <version>${infinispan.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.infinispan.protostream</groupId>
+                            <artifactId>protostream-processor</artifactId>
+                            <version>${protostream.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

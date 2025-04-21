@@ -11,8 +11,10 @@ export default interface IdentityProviderRepresentation {
   firstBrokerLoginFlowAlias?: string;
   internalId?: string;
   linkOnly?: boolean;
+  hideOnLogin?: boolean;
   postBrokerLoginFlowAlias?: string;
   providerId?: string;
   storeToken?: boolean;
   trustEmail?: boolean;
+  organizationId?: string;
 }

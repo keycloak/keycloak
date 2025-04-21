@@ -58,4 +58,8 @@ public class ProfileAssume {
     public static void setTestContext(TestContext testContext) {
         TEST_CONTEXT = testContext;
     }
+    
+    public static Set<Profile.Feature> getDisabledFeatures() {
+        return DISABLED_FEATURES;
+    }
 }

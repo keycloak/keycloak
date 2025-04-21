@@ -21,35 +21,39 @@ import org.apache.commons.io.FileUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -66,6 +70,7 @@ import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
@@ -78,12 +83,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 public class ExportImportTest extends AbstractKeycloakTest {
 
     private static final String TEST_REALM = "test-realm";
-
-    @BeforeClass
-    public static void checkNotMapStorage() {
-        // Disabled temporarily, re-enable once export/import functionality is implemented for map storage
-        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -201,10 +200,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
         RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
-        // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
+        // There should be 5 files in target directory (1 realm, 16 users, 5 users per file)
         // (+ additional user service-account-test-app-authz that should not be there ???)
         File[] files = new File(targetDirPath).listFiles();
-        assertEquals(4, files.length);
+        assertEquals(5, files.length);
     }
 
     @Test
@@ -214,6 +213,17 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().setFile(targetFilePath);
 
         testFullExportImport();
+        assertExportContainsGoogleClientSecret(targetFilePath);
+    }
+
+    private static void assertExportContainsGoogleClientSecret(String targetFilePath) throws IOException {
+        assertTrue("Expected an export file to exist", new File(targetFilePath).exists());
+
+        Map<String, RealmRepresentation> realms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, new FileInputStream(new File(targetFilePath)));
+        List<IdentityProviderRepresentation> idps = realms.get("test-realm").getIdentityProviders();
+        IdentityProviderRepresentation googleIdp = idps.stream().filter(idp -> idp.getAlias().equals("google1")).findFirst().get();
+        assertNotNull(googleIdp);
+        assertEquals("googleSecret", googleIdp.getConfig().get("clientSecret"));
     }
 
     @Test
@@ -264,24 +274,25 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testImportFromRealmWithPartialAuthenticationFlows() {
+        // import a realm with no built-in authentication flows
+        importRealmFromFile("/import/partial-authentication-flows-import.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-authentication-flows-import"));
+    }
+
+    @Test
     public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
         importRealmFromFile("/import/testrealm-authenticator-config-null.json");
         Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
     }
 
     @Test
-    public void testExportUserProfileConfig() {
-        //Enable user profile on realm
+    public void testExportUserProfileConfig() throws IOException {
         RealmResource realmRes = adminClient.realm(TEST_REALM);
-        RealmRepresentation realmRep = realmRes.toRepresentation();
-        Map<String, String> realmAttr = realmRep.getAttributesOrEmpty();
-        realmAttr.put(DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
-        realmRep.setAttributes(realmAttr);
-        realmRes.update(realmRep);
 
         //add some non-default config
-        VerifyProfileTest.setUserProfileConfiguration(realmRes, VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT);
-        
+        UPConfig persistedConfig = UserProfileUtil.setUserProfileConfiguration(realmRes, UserProfileUtil.CONFIGURATION_FOR_USER_EDIT);
+
         //export
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
         exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
@@ -304,11 +315,56 @@ public class ExportImportTest extends AbstractKeycloakTest {
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());
         assertThat(config.size(), equalTo(1));
-        assertThat(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), equalTo(VerifyProfileTest.CONFIGURATION_FOR_USER_EDIT));
+        JsonTestUtils.assertJsonEquals(config.getFirst(DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY), JsonSerialization.writeValueAsString(persistedConfig), UPConfig.class);
     }
 
     @Test
     public void testImportIgnoreExistingMissingClientId() {
+        TestingExportImportResource resource = testingClient.testing().exportImport();
+
+        resource.setStrategy(Strategy.IGNORE_EXISTING);
+        resource.setProvider(DirExportProviderFactory.PROVIDER_ID);
+
+        String targetDirPath = resource.getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        File dest = new File(targetDirPath);
+        try {
+            DirExportProvider.recursiveDeleteDir(dest);
+            resource.setDir(targetDirPath);
+
+            resource.setAction(ExportImportConfig.ACTION_EXPORT);
+
+            URL url = ExportImportTest.class.getResource("/model/testrealm.json");
+            File testRealm = new File(url.getFile());
+            assertThat(testRealm, Matchers.notNullValue());
+
+            File newFile = new File("target", "test-realm-realm.json");
+
+            try {
+                FileUtils.copyFile(testRealm, newFile);
+                FileUtils.copyFileToDirectory(newFile, dest);
+            } catch (IOException e) {
+                Assert.fail("Cannot copy file. Details: " + e.getMessage());
+            }
+
+            File existingFile = FileUtils.getFile(dest, newFile.getName());
+            assertThat(existingFile, Matchers.notNullValue());
+
+            resource.runExport();
+            resource.setAction(ExportImportConfig.ACTION_IMPORT);
+
+            try {
+                resource.runImport();
+                resource.runImport();
+            } catch (Exception e) {
+                Assert.fail("Error with realm importing twice. Details: " + e.getMessage());
+            }
+        } finally {
+            DirExportProvider.recursiveDeleteDir(dest);
+        }
+    }
+
+    @UncaughtServerErrorExpected
+    public void testImportNameMismatch() {
         TestingExportImportResource resource = testingClient.testing().exportImport();
 
         resource.setStrategy(Strategy.IGNORE_EXISTING);
@@ -338,15 +394,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
             File existingFile = FileUtils.getFile(dest, newFile.getName());
             assertThat(existingFile, Matchers.notNullValue());
 
-            resource.runExport();
             resource.setAction(ExportImportConfig.ACTION_IMPORT);
 
-            try {
-                resource.runImport();
-                resource.runImport();
-            } catch (Exception e) {
-                Assert.fail("Error with realm importing twice. Details: " + e.getMessage());
-            }
+            resource.runImport();
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
         }

@@ -1,54 +1,87 @@
-import { PropsWithChildren, useEffect, useMemo } from "react";
-
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   createNamedContext,
+  useFetch,
   useRequiredContext,
   useStoredState,
-} from "ui-shared";
+} from "@keycloak/keycloak-ui-shared";
+import { PropsWithChildren, useEffect } from "react";
+import { useAdminClient } from "../admin-client";
 import { useRealm } from "./realm-context/RealmContext";
-import { useRealms } from "./RealmsContext";
+import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
-const MAX_REALMS = 4;
+const MAX_REALMS = 3;
 
-export const RecentRealmsContext = createNamedContext<string[] | undefined>(
-  "RecentRealmsContext",
-  undefined,
-);
+export const RecentRealmsContext = createNamedContext<
+  RealmNameRepresentation[] | undefined
+>("RecentRealmsContext", undefined);
+
+export type RealmNameRepresentation = {
+  name: string;
+  displayName?: string;
+};
+
+function convertRealmToNameRepresentation(
+  realm?: RealmRepresentation,
+): RealmNameRepresentation {
+  return { name: realm?.realm || "", displayName: realm?.displayName || "" };
+}
 
 export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
-  const { realms } = useRealms();
-  const { realm } = useRealm();
+  const { realmRepresentation: realm } = useRealm();
+  const { adminClient } = useAdminClient();
+
   const [storedRealms, setStoredRealms] = useStoredState(
     localStorage,
     "recentRealms",
-    [realm],
+    [{ name: "" }] as RealmNameRepresentation[],
   );
 
-  const recentRealms = useMemo(
-    () => filterRealmNames(realms, storedRealms),
-    [realms, storedRealms],
+  useFetch(
+    () =>
+      Promise.all(
+        storedRealms.map(async (r) => {
+          if (!r.name) {
+            return undefined;
+          }
+          try {
+            return (
+              await fetchAdminUI<RealmNameRepresentation[]>(
+                adminClient,
+                "ui-ext/realms/names",
+                { search: r.name },
+              )
+            )[0];
+          } catch (error) {
+            console.info("recent realm not found", error);
+            return undefined;
+          }
+        }),
+      ),
+    (realms) => setStoredRealms(realms.filter((r) => !!r)),
+    [realm?.realm === "master"],
   );
 
   useEffect(() => {
-    const newRealms = [...new Set([realm, ...recentRealms])];
-    setStoredRealms(newRealms.slice(0, MAX_REALMS));
+    if (
+      storedRealms.map((r) => r.name).includes(realm?.realm || "") ||
+      !realm
+    ) {
+      return;
+    }
+    setStoredRealms(
+      [
+        convertRealmToNameRepresentation(realm),
+        ...storedRealms.filter((r) => r.name !== ""),
+      ].slice(0, MAX_REALMS),
+    );
   }, [realm]);
 
   return (
-    <RecentRealmsContext.Provider value={recentRealms}>
+    <RecentRealmsContext.Provider value={storedRealms}>
       {children}
     </RecentRealmsContext.Provider>
   );
 };
 
 export const useRecentRealms = () => useRequiredContext(RecentRealmsContext);
-
-function filterRealmNames(realms: string[], storedRealms: string[]) {
-  // If no realms have been set yet we can't filter out any non-existent realm names.
-  if (realms.length === 0) {
-    return storedRealms;
-  }
-
-  // Only keep realm names that actually still exist.
-  return storedRealms.filter((realm) => realms.includes(realm));
-}

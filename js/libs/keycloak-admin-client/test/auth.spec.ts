@@ -42,6 +42,6 @@ describe("Authorization", () => {
       "idToken",
     );
 
-    expect(data.scope).to.equal("openid profile email");
+    expect(data.scope).to.equal("openid email profile");
   });
 });

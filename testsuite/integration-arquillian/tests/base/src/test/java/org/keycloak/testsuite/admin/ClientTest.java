@@ -51,6 +51,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -64,14 +65,15 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,12 +96,26 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
+    @Test
+    public void getRealmClients() {
+        assertTrue(realm.clients().findAll().stream().filter(client-> client.getAttributes().get(Constants.REALM_CLIENT).equals("true"))
+                .map(ClientRepresentation::getClientId)
+                .allMatch(clientId -> clientId.equals(Constants.REALM_MANAGEMENT_CLIENT_ID) || clientId.equals(Constants.BROKER_SERVICE_CLIENT_ID) || clientId.endsWith("-realm")));
+    }
+
     private ClientRepresentation createClient() {
+        return createClient(null);
+    }
+
+    private ClientRepresentation createClient(String protocol) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
         rep.setPublicClient(true);
+        if (protocol != null) {
+            rep.setProtocol(protocol);
+        }
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -113,7 +129,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     private ClientRepresentation createClientNonPublic() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setClientId("my-app");
@@ -133,7 +149,7 @@ public class ClientTest extends AbstractAdminTest {
 
         return rep;
     }
-    
+
     @Test
     public void createClientVerifyWithSecret() {
         String id = createClientNonPublic().getId();
@@ -152,6 +168,23 @@ public class ClientTest extends AbstractAdminTest {
         assertNotNull(client);
         assertNull(client.toRepresentation().getSecret());
         Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    @Test
+    public void testInvalidLengthClientIdValidation() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setId("test-long-invalid-client-id-validation-400-bad-request");
+        rep.setClientId("invalid-client-id-app");
+        rep.setDescription("invalid-client-id-app description");
+        rep.setEnabled(true);
+        rep.setPublicClient(true);
+        try (Response response = realm.clients().create(rep)) {
+            if (response.getStatus() != 400) {
+                response.bufferEntity();
+                String body = response.readEntity(String.class);
+                fail("expect 400 Bad request response code but receive: " + response.getStatus() + "\n" + body);
+            }
+        }
     }
 
     @Test
@@ -183,6 +216,49 @@ public class ClientTest extends AbstractAdminTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testSamlSpecificUrls() {
+        testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+        testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
+    }
+
+    private void testSamlSpecificUrls(boolean create, String... testUrls) {
+        ClientRepresentation rep;
+        if (create) {
+            rep = new ClientRepresentation();
+            rep.setClientId("my-app2");
+            rep.setEnabled(true);
+            rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        else {
+            rep = createClient(SamlProtocol.LOGIN_PROTOCOL);
+        }
+        rep.setAttributes(new HashMap<>());
+
+        Map<String, String> attrs = Map.of(
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
+
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            createOrUpdateClientExpectingValidationErrors(rep, create, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                createOrUpdateClientExpectingValidationErrors(rep, create, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
+        }
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -312,12 +388,12 @@ public class ClientTest extends AbstractAdminTest {
 
     @Test
     public void getClientSessions() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
-        OAuthClient.AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
 
-        OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
+        AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode());
         assertEquals(200, response2.getStatusCode());
 
         ClientResource app = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -390,14 +466,14 @@ public class ClientTest extends AbstractAdminTest {
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 hasItem(role.getName()));
 
         realm.clients().get(id).roles().deleteRole("test");
 
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"), ResourceType.CLIENT_ROLE);
 
-        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()),
                 not(hasItem(role)));
     }
 
@@ -418,29 +494,39 @@ public class ClientTest extends AbstractAdminTest {
         newClient.setClientId(client.getClientId());
         newClient.setBaseUrl("http://baseurl");
 
-        realm.clients().get(client.getId()).update(newClient);
+        ClientResource clientRes = realm.clients().get(client.getId());
+        clientRes.update(newClient);
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
-        ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
+        ClientRepresentation storedClient = clientRes.toRepresentation();
 
+        assertNull(storedClient.getSecret());
+        assertNull(clientRes.getSecret().getValue());
         assertClient(client, storedClient);
 
-        newClient.setSecret("new-secret");
+        client.setPublicClient(false);
+        newClient.setPublicClient(client.isPublicClient());
+        client.setSecret("new-secret");
+        newClient.setSecret(client.getSecret());
 
-        realm.clients().get(client.getId()).update(newClient);
+        clientRes.update(newClient);
+
+        newClient.setSecret("**********"); // secrets are masked in events
 
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), newClient, ResourceType.CLIENT);
 
-        storedClient = realm.clients().get(client.getId()).toRepresentation();
+        storedClient = clientRes.toRepresentation();
         assertClient(client, storedClient);
 
+        storedClient.setSecret(null);
         storedClient.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
 
-        realm.clients().get(storedClient.getId()).update(storedClient);
-        storedClient = realm.clients().get(client.getId()).toRepresentation();
+        clientRes.update(storedClient);
+        storedClient = clientRes.toRepresentation();
 
         assertFalse(storedClient.getAttributes().containsKey(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+        assertClient(client, storedClient);
     }
 
     @Test
@@ -488,6 +574,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
 
+        client.setSecret("**********"); // secrets are masked in events
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
 
         client.setId(id);
@@ -503,7 +590,7 @@ public class ClientTest extends AbstractAdminTest {
 
         realm.clients().get(id).registerNode(Collections.singletonMap("node", "foo#"));
     }
-    
+
     @Test
     public void nodes() {
         testingClient.testApp().clearAdminActions();
@@ -548,20 +635,21 @@ public class ClientTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
 
         Map<String, Long> offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(0), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(0), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be no offline sessions", 0, userSessions.size());
 
         oauth.realm(REALM_NAME);
+        oauth.client("test-app", "secret");
         oauth.redirectUri(client.getRedirectUris().get(0));
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.doLogin("testuser", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "secret");
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         offlineSessionCount = realm.clients().get(id).getOfflineSessionCount();
-        assertEquals(new Long(1), offlineSessionCount.get("count"));
+        assertEquals(Long.valueOf(1), offlineSessionCount.get("count"));
 
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
@@ -869,6 +957,7 @@ public class ClientTest extends AbstractAdminTest {
         if (client.getBaseUrl() != null) Assert.assertEquals(client.getBaseUrl(), storedClient.getBaseUrl());
         if (client.isSurrogateAuthRequired() != null) Assert.assertEquals(client.isSurrogateAuthRequired(), storedClient.isSurrogateAuthRequired());
         if (client.getClientAuthenticatorType() != null) Assert.assertEquals(client.getClientAuthenticatorType(), storedClient.getClientAuthenticatorType());
+        if (client.getSecret() != null) Assert.assertEquals(client.getSecret(), storedClient.getSecret());
 
         if (client.getNotBefore() != null) {
             Assert.assertEquals(client.getNotBefore(), storedClient.getNotBefore());

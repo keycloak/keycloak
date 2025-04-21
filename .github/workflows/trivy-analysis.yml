@@ -7,6 +7,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+  
 jobs:
 
   analysis:
@@ -17,20 +20,28 @@ jobs:
       matrix:
         container: [keycloak, keycloak-operator]
       fail-fast: false
+    permissions:
+      security-events: write # Required for SARIF uploads
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@fbd16365eb88e12433951383f5e99bd901fc618f
+        uses: aquasecurity/trivy-action@0.30.0
         with:
-          image-ref: quay.io/keycloak/${{ matrix.container}}:nightly
-          format: template
-          template: '@/contrib/sarif.tpl'
+          image-ref: quay.io/keycloak/${{ matrix.container }}:nightly
+          format: sarif
           output: trivy-results.sarif
           severity: MEDIUM,CRITICAL,HIGH
           ignore-unfixed: true
-          security-checks: vuln
+          version: v0.57.1
           timeout: 15m
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
+          category: ${{ matrix.container }}

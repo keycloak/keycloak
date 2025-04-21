@@ -32,6 +32,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
     public static final String IS_ACCESS_TOKEN_JWT = "isAccessTokenJWT";
+    public static final String ISSUER = "issuer";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -49,16 +50,32 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     }
 
     public String getIssuer() {
-        return getConfig().get("issuer");
+        return getConfig().get(ISSUER);
     }
     public void setIssuer(String issuer) {
-        getConfig().put("issuer", issuer);
+        getConfig().put(ISSUER, issuer);
     }
     public String getLogoutUrl() {
         return getConfig().get("logoutUrl");
     }
     public void setLogoutUrl(String url) {
         getConfig().put("logoutUrl", url);
+    }
+
+    public boolean isSendClientIdOnLogout() {
+        return Boolean.parseBoolean(getConfig().getOrDefault("sendClientIdOnLogout", Boolean.FALSE.toString()));
+    }
+
+    public void setSendClientOnLogout(boolean value) {
+        getConfig().put("sendClientIdOnLogout", Boolean.valueOf(value).toString());
+    }
+
+    public boolean isSendIdTokenOnLogout() {
+        return Boolean.parseBoolean(getConfig().getOrDefault("sendIdTokenOnLogout", Boolean.TRUE.toString()));
+    }
+
+    public void setSendIdTokenOnLogout(boolean value) {
+        getConfig().put("sendIdTokenOnLogout", Boolean.valueOf(value).toString());
     }
 
     public String getPublicKeySignatureVerifier() {
@@ -148,6 +165,18 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         } catch (NumberFormatException e) {
             // ignore it and use default
             return 0;
+        }
+    }
+
+    public boolean isDisableTypeClaimCheck() {
+        return Boolean.parseBoolean(getConfig().get("disableTypeClaimCheck"));
+    }
+
+    public void setDisableTypeClaimCheck(boolean disableTypeClaimCheck) {
+        if (disableTypeClaimCheck) {
+            getConfig().put("disableTypeClaimCheck", Boolean.TRUE.toString());
+        } else {
+            getConfig().remove("disableTypeClaimCheck");
         }
     }
 

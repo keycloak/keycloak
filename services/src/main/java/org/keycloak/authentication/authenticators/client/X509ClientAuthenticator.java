@@ -1,5 +1,6 @@
 package org.keycloak.authentication.authenticators.client;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -8,7 +9,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
 import javax.security.auth.x500.X500Principal;
@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,8 +53,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         CUSTOM_OIDS_REVERSED.put("E", "1.2.840.113549.1.9.1"); // Another synonym for "EMAILADDRESS"
     }
 
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
-
+    private final static Logger logger = Logger.getLogger(X509ClientAuthenticator.class);
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {

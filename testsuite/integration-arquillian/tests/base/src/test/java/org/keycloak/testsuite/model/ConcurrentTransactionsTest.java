@@ -53,7 +53,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
     private static final Logger logger = Logger.getLogger(ConcurrentTransactionsTest.class);
 
     @Test
-    @ModelTest
+    @ModelTest(realmName = "test")
     public void persistClient(KeycloakSession session) {
 
         final ClientModel[] client = {null};
@@ -61,7 +61,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
 
         try {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSetup) -> {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sessionSetup) -> {
 
                 RealmModel realm = sessionSetup.realms().getRealmByName("test");
                 sessionSetup.users().addUser(realm, "user1").setEmail("user1@localhost");
@@ -194,15 +194,16 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-3296 , KEYCLOAK-3494
     @Test
-    @ModelTest(skipForMapStorage = true) // skipped for map storage - to be revisited (GHI #12910)
+    @ModelTest
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
 
                 RealmModel realm = sessionSet.realms().createRealm("original");
+                sessionSet.getContext().setRealm(realm);
                 realm.setDefaultRole(sessionSet.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
-            
+
                 UserModel john = sessionSet.users().addUser(realm, "john");
                 john.setSingleAttribute("foo", "val1");
 
@@ -224,6 +225,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                             try {
                                 // Read user attribute
                                 RealmModel realm = session1.realms().getRealmByName("original");
+                                session1.getContext().setRealm(realm);
                                 UserModel john = session1.users().getUserByUsername(realm, "john");
                                 String attrVal = john.getFirstAttribute("foo");
 
@@ -290,6 +292,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
             um.removeUser(realm, realmUser2);
         }
 
+        currentSession.getContext().setRealm(realm);
         Assert.assertTrue(currentSession.realms().removeRealm(realm.getId()));
         assertThat(currentSession.realms().getRealm(realm.getId()), is(nullValue()));
     }

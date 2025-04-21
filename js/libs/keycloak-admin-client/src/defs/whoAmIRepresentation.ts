@@ -1,3 +1,8 @@
+export type AccessChecker = {
+  hasAll: (...types: AccessType[]) => boolean;
+  hasAny: (...types: AccessType[]) => boolean;
+};
+export type AccessTypeFunc = (accessChecker: AccessChecker) => boolean;
 export type AccessType =
   | "view-realm"
   | "view-identity-providers"
@@ -17,7 +22,8 @@ export type AccessType =
   | "manage-authorization"
   | "manage-clients"
   | "query-groups"
-  | "anyone";
+  | "anyone"
+  | AccessTypeFunc;
 
 export default interface WhoAmIRepresentation {
   userId: string;
@@ -26,4 +32,5 @@ export default interface WhoAmIRepresentation {
   locale: string;
   createRealm: boolean;
   realm_access: { [key: string]: AccessType[] };
+  temporary: boolean;
 }

@@ -64,7 +64,7 @@ public class RegistrationAccessTokenRotationDisabledExecutorFactory implements C
 	}
 
 	@Override
-	public boolean isSupported() {
+	public boolean isSupported(Config.Scope config) {
 		return true;
 	}
 }

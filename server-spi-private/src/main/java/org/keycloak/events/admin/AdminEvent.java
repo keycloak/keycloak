@@ -17,31 +17,21 @@
 
 package org.keycloak.events.admin;
 
-import org.keycloak.storage.SearchableModelField;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AdminEvent {
 
-    public static class SearchableFields {
-        public static final SearchableModelField<AdminEvent> ID              = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<AdminEvent> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<AdminEvent> TIMESTAMP       = new SearchableModelField<>("timestamp", Long.class);
-        public static final SearchableModelField<AdminEvent> AUTH_REALM_ID   = new SearchableModelField<>("authRealmId", String.class);
-        public static final SearchableModelField<AdminEvent> AUTH_CLIENT_ID  = new SearchableModelField<>("authClientId", String.class);
-        public static final SearchableModelField<AdminEvent> AUTH_USER_ID    = new SearchableModelField<>("authUserId", String.class);
-        public static final SearchableModelField<AdminEvent> AUTH_IP_ADDRESS = new SearchableModelField<>("authIpAddress", String.class);
-        public static final SearchableModelField<AdminEvent> OPERATION_TYPE  = new SearchableModelField<>("operationType", OperationType.class);
-        public static final SearchableModelField<AdminEvent> RESOURCE_TYPE   = new SearchableModelField<>("resourceType", String.class);
-        public static final SearchableModelField<AdminEvent> RESOURCE_PATH   = new SearchableModelField<>("resourcePath", String.class);
-    }
-
     private String id;
 
     private long time;
-    
+
     private String realmId;
+
+    private String realmName;
 
     private AuthDetails authDetails;
 
@@ -57,18 +47,22 @@ public class AdminEvent {
     private String representation;
 
     private String error;
-    
+
+    private Map<String, String> details;
+
     public AdminEvent() {}
     public AdminEvent(AdminEvent toCopy) {
         this.id = toCopy.getId();
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
+        this.realmName = toCopy.getRealmName();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
         this.resourceType = toCopy.getResourceTypeAsString();
         this.operationType = toCopy.getOperationType();
         this.resourcePath = toCopy.getResourcePath();
         this.representation = toCopy.getRepresentation();
         this.error = toCopy.getError();
+        this.details = toCopy.getDetails() == null ? null : new HashMap<>(toCopy.getDetails());
     }
 
     /**
@@ -96,7 +90,7 @@ public class AdminEvent {
     public void setTime(long time) {
         this.time = time;
     }
-    
+
     /**
      * Returns the id of the realm
      *
@@ -108,6 +102,17 @@ public class AdminEvent {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    /**
+     * @return the name of the realm
+     */
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 
     /**
@@ -216,5 +221,13 @@ public class AdminEvent {
      */
     public void setResourceTypeAsString(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

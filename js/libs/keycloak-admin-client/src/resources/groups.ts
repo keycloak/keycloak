@@ -7,12 +7,28 @@ import type { RoleMappingPayload } from "../defs/roleRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 
-export interface GroupQuery {
+interface Query {
+  q?: string;
+  search?: string;
+  exact?: boolean;
+}
+
+interface PaginatedQuery {
   first?: number;
   max?: number;
-  search?: string;
-  briefRepresentation?: boolean;
 }
+
+interface SummarizedQuery {
+  briefRepresentation?: boolean;
+  populateHierarchy?: boolean;
+}
+
+export type GroupQuery = Query & PaginatedQuery & SummarizedQuery;
+export type SubGroupQuery = Query &
+  PaginatedQuery &
+  SummarizedQuery & {
+    parentId: string;
+  };
 
 export interface GroupCountQuery {
   search?: string;
@@ -22,6 +38,15 @@ export interface GroupCountQuery {
 export class Groups extends Resource<{ realm?: string }> {
   public find = this.makeRequest<GroupQuery, GroupRepresentation[]>({
     method: "GET",
+    queryParamKeys: [
+      "search",
+      "q",
+      "exact",
+      "briefRepresentation",
+      "populateHierarchy",
+      "first",
+      "max",
+    ],
   });
 
   public create = this.makeRequest<GroupRepresentation, { id: string }>({
@@ -69,22 +94,6 @@ export class Groups extends Resource<{ realm?: string }> {
   });
 
   /**
-   * Set or create child.
-   * This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.
-   * @deprecated Use `createChildGroup` or `updateChildGroup` instead.
-   */
-  public setOrCreateChild = this.makeUpdateRequest<
-    { id: string },
-    GroupRepresentation,
-    { id: string }
-  >({
-    method: "POST",
-    path: "/{id}/children",
-    urlParamKeys: ["id"],
-    returnResourceIdInLocationHeader: { field: "id" },
-  });
-
-  /**
    * Creates a child group on the specified parent group. If the group already exists, then an error is returned.
    */
   public createChildGroup = this.makeUpdateRequest<
@@ -113,11 +122,24 @@ export class Groups extends Resource<{ realm?: string }> {
   });
 
   /**
+   * Finds all subgroups on the specified parent group matching the provided parameters.
+   */
+  public listSubGroups = this.makeRequest<SubGroupQuery, GroupRepresentation[]>(
+    {
+      method: "GET",
+      path: "/{parentId}/children",
+      urlParamKeys: ["parentId"],
+      queryParamKeys: ["search", "first", "max", "briefRepresentation"],
+      catchNotFound: true,
+    },
+  );
+
+  /**
    * Members
    */
 
   public listMembers = this.makeRequest<
-    { id: string; first?: number; max?: number },
+    { id: string; first?: number; max?: number; briefRepresentation?: boolean },
     UserRepresentation[]
   >({
     method: "GET",

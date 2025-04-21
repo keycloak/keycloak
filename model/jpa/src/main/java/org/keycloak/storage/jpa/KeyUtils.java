@@ -18,6 +18,7 @@ package org.keycloak.storage.jpa;
 
 import java.util.regex.Pattern;
 import org.jboss.logging.Logger;
+import org.keycloak.models.light.LightweightUserAdapter;
 
 /**
  *
@@ -28,24 +29,27 @@ public class KeyUtils {
     private static final Logger LOG = Logger.getLogger(KeyUtils.class);
 
     public static final Pattern UUID_PATTERN = Pattern.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
+    public static final Pattern SHORT_ID_PATTERN = Pattern.compile("[0-9A-Za-z_-]{22}");
 
     public static final Pattern EXPECTED_KEY_PATTERN = Pattern.compile(
       UUID_PATTERN.pattern()
       + "|"
-      + "f:" + UUID_PATTERN.pattern() + ":.*"
+      + "f:(" + UUID_PATTERN.pattern() + "|" + SHORT_ID_PATTERN.pattern() + "):.*"
+      + "|"
+      + LightweightUserAdapter.ID_PREFIX + UUID_PATTERN.pattern()
     );
 
     /**
-     * Returns {@code} true when the key is {@code null} or either a plain UUID or a key formatted as "f:[UUID]:any_string"
+     * Check if a string is a valid key.
      * @param key String representation of the key
-     * @return 
+     * @return true when the key is {@code null} or either a plain UUID or a key formatted as "f:[UUID]:any_string" or "f:[SHORT_ID]:any_string"
      */
     public static boolean isValidKey(String key) {
         return key == null || EXPECTED_KEY_PATTERN.matcher(key).matches();
     }
 
     /**
-     * Logs an warning when the key is not a valid key
+     * Logs a warning when the key is not a valid key
      * @param key String representation of the key
      */
     public static void assertValidKey(String key) throws IllegalArgumentException {

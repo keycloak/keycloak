@@ -30,7 +30,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvid
 
 /**
  * Migrated from old testsuite.  Previous version by Pedro Igor.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  * @author pedroigor
  */
@@ -40,16 +40,16 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcHiddenBrokerConfiguration();
     }
-    
+
     private class KcOidcHiddenBrokerConfiguration extends KcOidcBrokerConfiguration {
-        
+
         @Override
         public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
             Map<String, String> config = idp.getConfig();
             applyDefaultConfiguration(config, syncMode);
-            config.put("hideOnLoginPage", "true");
+            idp.setHideOnLogin(true);
             return idp;
         }
     }
@@ -68,9 +68,9 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        
+
         // authenticated and redirected to app
         Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
     }
-        
+
 }

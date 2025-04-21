@@ -21,7 +21,8 @@ export const NewPermissionRoute: AppRouteObject = {
   element: <PermissionDetails />,
   breadcrumb: (t) => t("createPermission"),
   handle: {
-    access: "view-clients",
+    access: (accessChecker) =>
+      accessChecker.hasAny("manage-clients", "manage-authorization"),
   },
 };
 

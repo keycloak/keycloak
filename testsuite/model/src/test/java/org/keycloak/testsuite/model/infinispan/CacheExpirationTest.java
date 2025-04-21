@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,10 @@ package org.keycloak.testsuite.model.infinispan;
 import org.infinispan.Cache;
 import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -55,6 +58,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
     @Test
     public void testCacheExpiration() throws Exception {
+        assumeFalse("Embedded caches not available for testing.", InfinispanUtils.isRemoteInfinispan());
 
         log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class));
 
@@ -66,8 +70,8 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
         });
         Instant expiryInstant = Instant.now().plusSeconds(30);
 

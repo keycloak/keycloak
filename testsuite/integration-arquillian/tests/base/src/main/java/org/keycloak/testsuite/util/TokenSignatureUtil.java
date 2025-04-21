@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.util;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -95,7 +96,7 @@ public class TokenSignatureUtil {
         JWSInput jws = new JWSInput(token);
         Signature verifier = getSignature(sigAlgName);
         verifier.initVerify(publicKey);
-        verifier.update(jws.getEncodedSignatureInput().getBytes("UTF-8"));
+        verifier.update(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8));
         return verifier.verify(jws.getSignature());
     }
 
@@ -117,6 +118,10 @@ public class TokenSignatureUtil {
             case Algorithm.ES384:
             case Algorithm.ES512:
                 registerKeyProvider(realm, "ecdsaEllipticCurveKey", convertAlgorithmToECDomainParamNistRep(jwaAlgorithmName), GeneratedEcdsaKeyProviderFactory.ID, adminClient, testContext);
+                break;
+            case Algorithm.Ed25519:
+            case Algorithm.Ed448:
+                registerKeyProvider(realm, "eddsaEllipticCurveKey", jwaAlgorithmName, "eddsa-generated", adminClient, testContext);
                 break;
         }
     }

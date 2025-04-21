@@ -1,0 +1,185 @@
+Add an admin service account
+
+Usage:
+
+kc.sh bootstrap-admin service [OPTIONS]
+
+Add an admin service account
+
+Options:
+
+--client-id <id>     Client id, defaults to temp-admin
+--client-id:env <ID> Environment variable name for the client id
+--client-secret:env <SECRET>
+                     Environment variable name for the client secret
+-h, --help           This help message.
+--help-all           This same help message but with additional options.
+--no-prompt          Run non-interactive without prompting
+--optimized          Use this option to achieve an optimal startup time if you have previously
+                       built a server image using the 'build' command.
+-v, --verbose        Print out error details when running this command.
+
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
+Database:
+
+--db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
+                       deprecated, you should explicitly specify the db instead. Possible values
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
+                       dev-file.
+--db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
+                       driver is set accordingly to the chosen database.
+--db-password <password>
+                     The password of the database user.
+--db-pool-initial-size <size>
+                     The initial size of the connection pool.
+--db-pool-max-size <size>
+                     The maximum size of the connection pool. Default: 100.
+--db-pool-min-size <size>
+                     The minimal size of the connection pool.
+--db-schema <schema> The database schema to be used.
+--db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
+                       selected database vendor. For instance, if using 'postgres', the default
+                       JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
+--db-url-database <dbname>
+                     Sets the database name of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-host <hostname>
+                     Sets the hostname of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
+--db-url-properties <properties>
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
+--db-username <username>
+                     The username of the database user.
+
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     If set to true, XA datasources will be used. Default: false.
+
+Feature:
+
+--features <feature> Enables a set of one or more features. Possible values are: <...>.
+--features-disabled <feature>
+                     Disables a set of one or more features. Possible values are: <...>.
+
+Management:
+
+--http-management-port <port>
+                     Port of the management interface. Relevant only when something is exposed on
+                       the management interface - see the guide for details. Default: 9000.
+--http-management-relative-path <path>
+                     Set the path relative to '/' for serving resources from management interface.
+                       The path must start with a '/'. If not given, the value is inherited from
+                       HTTP options. Relevant only when something is exposed on the management
+                       interface - see the guide for details. Default: /.
+--https-management-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format for
+                       the management server. If not given, the value is inherited from HTTP
+                       options. Relevant only when something is exposed on the management interface
+                       - see the guide for details.
+--https-management-certificate-key-file <file>
+                     The file path to a private key in PEM format for the management server. If not
+                       given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for details.
+--https-management-certificates-reload-period <reload period>
+                     Interval on which to reload key store, trust store, and certificate files
+                       referenced by https-management-* options for the management server. May be a
+                       java.time.Duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
+                       to disable. If not given, the value is inherited from HTTP options. Relevant
+                       only when something is exposed on the management interface - see the guide
+                       for details. Default: 1h.
+--https-management-client-auth <auth>
+                     Configures the management interface to require/request client authentication.
+                       If not given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for
+                       details. Possible values are: none, request, required. Default: none.
+--https-management-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files for the management server. If not given, the value is
+                       inherited from HTTP options. Relevant only when something is exposed on the
+                       management interface - see the guide for details.
+--https-management-key-store-password <password>
+                     The password of the key store file for the management server. If not given,
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Default:
+                       password.
+--legacy-observability-interface <true|false>
+                     DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
+                       server (not recommended). If set to true, the management interface is
+                       disabled. Default: false.
+
+Vault:
+
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
+
+Logging:
+
+--log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
+                       are: console, file, syslog. Default: console.
+--log-async <true|false>
+                     Indicates whether to log asynchronously to all handlers. Default: false.
+--log-console-async <true|false>
+                     Indicates whether to log asynchronously to console. If not set, value from the
+                       parent property 'log-async' is used. Default: false. Available only when
+                       Console log handler is activated.
+--log-console-color <true|false>
+                     Enable or disable colors when logging to console. Default: false. Available
+                       only when Console log handler is activated.
+--log-console-format <format>
+                     The format of unstructured console log entries. If the format has spaces in
+                       it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n. Available only when Console log handler is activated.
+--log-console-level <level>
+                     Set the log level for the console handler. It specifies the most verbose log
+                       level for logs shown in the output. It respects levels specified in the
+                       'log-level' option, which represents the maximal verbosity for the whole
+                       logging system. For more information, check the Logging guide. Possible
+                       values are (case insensitive): off, fatal, error, warn, info, debug, trace,
+                       all. Default: all. Available only when Console log handler is activated.
+--log-console-output <output>
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default. Available only when Console log
+                       handler is activated.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
+--log-level-<category> <level>
+                     The log level of a category. Takes precedence over the 'log-level' option.
+                       Possible values are (case insensitive): off, fatal, error, warn, info,
+                       debug, trace, all.
+
+Tracing:
+
+--tracing-enabled <true|false>
+                     Enables the OpenTelemetry tracing. Default: false. Available only when
+                       'opentelemetry' feature is enabled.
+
+Truststore:
+
+--tls-hostname-verifier <tls-hostname-verifier>
+                     The TLS hostname verification policy for out-going HTTPS and SMTP requests.
+                       Possible values are: ANY, WILDCARD (deprecated), STRICT (deprecated),
+                       DEFAULT. Default: DEFAULT.
+--truststore-paths <truststore-paths>
+                     List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
+                       directories containing those files that will be used as a system truststore.

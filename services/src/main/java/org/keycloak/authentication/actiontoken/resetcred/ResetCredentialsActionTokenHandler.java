@@ -85,12 +85,19 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHandl
             boolean firstBrokerLoginInProgress = (authenticationSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
             if (firstBrokerLoginInProgress) {
 
-                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realm, authenticationSession);
                 SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authenticationSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
                 authenticationSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, serializedCtx.getIdentityProviderId());
 
+                boolean hasExistingUserInfo = (authenticationSession.getAuthNote(AbstractIdpAuthenticator.EXISTING_USER_INFO) != null);
+                String username = "";
+
+                if (hasExistingUserInfo) {
+                    UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realm, authenticationSession);
+                    username = linkingUser.getUsername();
+                }
+
                 logger.debugf("Forget-password flow finished when authenticated user '%s' after first broker login with identity provider '%s'.",
-                        linkingUser.getUsername(), serializedCtx.getIdentityProviderId());
+                        username, serializedCtx.getIdentityProviderId());
 
                 return LoginActionsService.redirectToAfterBrokerLoginEndpoint(session, realm, uriInfo, authenticationSession, true);
             } else {

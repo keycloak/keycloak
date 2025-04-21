@@ -16,7 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.keycloak.models.RealmModel;
+import org.keycloak.authorization.model.ResourceServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,13 +43,13 @@ public interface RealmPermissionEvaluator {
 
     void requireManageIdentityProviders();
 
-    boolean canManageAuthorization();
+    boolean canManageAuthorization(ResourceServer resourceServer);
 
-    boolean canViewAuthorization();
+    boolean canViewAuthorization(ResourceServer resourceServer);
 
-    void requireManageAuthorization();
+    void requireManageAuthorization(ResourceServer resourceServer);
 
-    void requireViewAuthorization();
+    void requireViewAuthorization(ResourceServer resourceServer);
 
     boolean canManageEvents();
 

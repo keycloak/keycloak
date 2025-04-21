@@ -17,29 +17,22 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.stream.CacheCollectors;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.utils.MediaType;
-import org.infinispan.stream.CacheCollectors;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -109,35 +102,4 @@ public class TestCacheResource {
     public void processExpiration() {
         cache.getAdvancedCache().getExpirationManager().processExpiration();
     }
-
-    @GET
-    @Path("/remote-cache-stats")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getRemoteCacheStats() {
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-        if (remoteCache == null) {
-            return new HashMap<>();
-        } else {
-            return remoteCache.stats().getStatsMap();
-        }
-    }
-
-
-    @GET
-    @Path("/remote-cache-last-session-refresh/{user-session-id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public int getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId) {
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-        if (remoteCache == null) {
-            return -1;
-        } else {
-            SessionEntityWrapper<UserSessionEntity> userSession = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(userSessionId);
-            if (userSession == null) {
-                return -1;
-            } else {
-                return userSession.getEntity().getLastSessionRefresh();
-            }
-        }
-    }
-
 }

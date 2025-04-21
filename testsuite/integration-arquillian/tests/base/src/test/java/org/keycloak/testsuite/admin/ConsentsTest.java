@@ -50,7 +50,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -61,9 +60,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
-import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
 /**
@@ -270,7 +268,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
     public void testConsents() {
         oauth.realm(consumerRealmName());
         oauth.redirectUri(oauth.SERVER_ROOT + "/auth/realms/" + consumerRealmName() + "/app/auth");
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
@@ -390,10 +388,10 @@ public class ConsentsTest extends AbstractKeycloakTest {
         providerRealm.clients().get(providerAccountRep.getId()).update(providerAccountRep);
 
         log.debug("Obtain offline_token");
-        OAuthClient.AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
-                .clientId(providerAccountRep.getClientId())
+        AccessTokenResponse response = oauth.realm(providerRealmRep.getRealm())
+                .client(providerAccountRep.getClientId())
                 .scope(OAuth2Constants.SCOPE_OPENID +" " + OAuth2Constants.SCOPE_PROFILE + " " + OAuth2Constants.OFFLINE_ACCESS)
-                .doGrantAccessTokenRequest(null, getUserLogin(), getUserPassword());
+                .doPasswordGrantRequest(getUserLogin(), getUserPassword());
         assertNotNull(response.getRefreshToken());
 
         log.debug("Check for Offline Token in consents");
@@ -418,7 +416,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();
@@ -428,7 +426,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
         assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
         consentPage.confirm();
 
@@ -439,12 +437,12 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientConsentRequiredAfterLogin() {
-        oauth.realm(TEST_REALM_NAME).clientId("test-app");
+        oauth.realm(TEST_REALM_NAME).client("test-app", "password");
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(response.getCode(), "password");
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(response.getCode());
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -458,11 +456,11 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
             // try to refresh the token
             // this fails as client no longer has requested consent from user
-            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
             Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
             Assert.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
 
-            events.expectRefresh(accessTokenResponse.getRefreshToken(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+            events.expectRefresh(accessTokenResponse.getRefreshToken(), sessionId).user((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
         } finally {
             clientRepresentation.setConsentRequired(false);
             adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);
@@ -486,7 +484,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();

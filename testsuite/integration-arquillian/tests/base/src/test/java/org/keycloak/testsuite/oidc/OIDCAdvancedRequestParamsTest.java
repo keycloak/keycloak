@@ -30,7 +30,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -73,16 +72,19 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
@@ -90,7 +92,7 @@ import org.keycloak.testsuite.util.KeyUtils;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -122,6 +124,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Page
     protected AppPage appPage;
+
+    @Page
+    protected RegisterPage registerPage;
 
     @Page
     protected LoginPage loginPage;
@@ -182,8 +187,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
-        oauth.maxAge(null);
+        oauth.client("test-app", "password");
     }
 
     @Override
@@ -204,18 +208,15 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuth_time();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
         setTimeOffset(10);
 
-        // Now open login form with maxAge=1
-        oauth.maxAge("1");
-
         // Assert I need to login again through the login form. But username field is not present
-        oauth.openLoginForm();
+        oauth.loginForm().maxAge(1).open();
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
@@ -224,7 +225,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuth_time();
         Assert.assertTrue(authTime + 10 <= authTimeUpdated);
     }
 
@@ -237,24 +238,23 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuth_time();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
         setTimeOffset(10);
 
         // Now open login form with maxAge=10000
-        oauth.maxAge("10000");
+        oauth.loginForm().maxAge(10000).open();
 
         // Assert that I will be automatically logged through cookie
-        oauth.openLoginForm();
         loginEvent = events.expectLogin().assertEvent();
 
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime is still the same
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuth_time();
         Assert.assertEquals(authTime, authTimeUpdated);
     }
 
@@ -263,8 +263,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void promptNoneNotLogged() {
+
+        String expectedIssuer = oauth.doWellKnownRequest().getIssuer();
+
         // Send request with prompt=none
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+        oauth.loginForm().prompt("none").open();
 
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
@@ -272,7 +275,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         events.assertEmpty();
 
         // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
+        Assert.assertEquals(expectedIssuer, resp.getIssuer());
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
@@ -288,18 +292,18 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime = idToken.getAuthTime();
+        long authTime = idToken.getAuth_time();
 
         // Set time offset
         setTimeOffset(10);
 
         // Assert user still logged with previous authTime
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+        oauth.loginForm().prompt("none").open();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime2 = idToken.getAuthTime();
+        long authTime2 = idToken.getAuth_time();
 
         Assert.assertEquals(authTime, authTime2);
     }
@@ -313,11 +317,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         try {
             // Assert error shown when trying prompt=none and consent not yet granted
-            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            oauth.loginForm().prompt("none").open();
             assertTrue(appPage.isCurrent());
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
+            AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
             Assert.assertNull(resp.getCode());
             Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
@@ -334,10 +338,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .assertEvent();
 
             // Consent not required anymore. Login with prompt=none should success
-            driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
+            oauth.loginForm().prompt("none").open();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
+            resp = oauth.parseLoginResponse();
             Assert.assertNotNull(resp.getCode());
             Assert.assertNull(resp.getError());
 
@@ -372,19 +376,19 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(10);
 
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
-        driver.navigate().to(oauth.getLoginFormUrl());
+        oauth.openLoginForm();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime wasn't updated
-        Assert.assertEquals(oldIdToken.getAuthTime(), newIdToken.getAuthTime());
+        Assert.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
 
         // Set time offset
         setTimeOffset(20);
 
         // Assert need to re-authenticate with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+        oauth.loginForm().prompt("login").open();
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
@@ -394,11 +398,40 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuthTime() + " , new auth time: " + newIdToken.getAuthTime(),
-                oldIdToken.getAuthTime() + 20 <= newIdToken.getAuthTime());
+        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuth_time() + " , new auth time: " + newIdToken.getAuth_time(),
+                oldIdToken.getAuth_time() + 20 <= newIdToken.getAuth_time());
 
         // Assert userSession didn't change
         Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
+    }
+
+    // prompt=create
+    @Test
+    public void promptCreate() {
+
+        // Assert registration page with prompt=login
+        oauth.loginForm().prompt("create").open();
+        registerPage.assertCurrent();
+    }
+
+    // prompt=create
+    @Test
+    public void promptCreateShouldFailWhenRegistrationsAreDisabled() {
+
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        Boolean registrationAllowed = realmRep.isRegistrationAllowed();
+        realmRep.setRegistrationAllowed(false);
+        adminClient.realm("test").update(realmRep);
+
+        // Assert registration page with prompt=login
+        try {
+            oauth.loginForm().prompt("create").open();
+            errorPage.assertCurrent();
+            assertTrue(errorPage.getError().contains("Registration not allowed"));
+        } finally {
+            realmRep.setRegistrationAllowed(registrationAllowed);
+            adminClient.realm("test").update(realmRep);
+        }
     }
 
     // prompt=consent
@@ -426,7 +459,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
 
             // Re-login without prompt=consent. The previous persistent consent was used
-            driver.navigate().to(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -434,10 +467,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                     .assertEvent();
 
             // Re-login with prompt=consent.
-            String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
-                    .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_CONSENT)
-                    .build().toString();
-            driver.navigate().to(loginFormUri);
+            oauth.loginForm()
+                    .prompt(OIDCLoginProtocol.PROMPT_VALUE_CONSENT)
+                    .open();
 
             // Assert grant page displayed again. Will need to grant consent again
             grantPage.assertCurrent();
@@ -464,7 +496,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     // DISPLAY & OTHERS
     @Test
     public void nonSupportedParams() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&display=popup&foo=foobar&claims_locales=fr");
+        oauth.loginForm().param("display", "popup").param("foo", "foobar").param("claims_locales", "fr").open();
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
@@ -479,7 +511,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     // REQUEST & REQUEST_URI
     @Test
     public void requestObjectNotRequiredNotProvided() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -488,7 +519,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Send request without request object
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
@@ -496,7 +527,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectNotRequiredProvidedInRequestParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -507,10 +537,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
@@ -518,7 +546,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectNotRequiredProvidedInRequestUriParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -529,10 +556,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response2 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response2.getCode());
         Assert.assertEquals("mystate2", response2.getState());
         assertTrue(appPage.isCurrent());
@@ -540,7 +565,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredNotProvided() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -549,7 +573,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Send request without request object
         // Assert that the request is not accepted
-        oauth.openLoginForm();
+        oauth.loginForm().state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
@@ -560,7 +584,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredProvidedInRequestParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -571,10 +594,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
@@ -588,7 +609,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void requestObjectSupersedesQueryParameter() {
         String stateInRequestObject = "stateInRequestObject";
         String stateInQueryParameter = "stateInQueryParameter";
-        oauth.stateParamHardcoded(stateInQueryParameter);
+
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -599,10 +620,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", stateInRequestObject, "none");
         
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state(stateInQueryParameter).doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals(stateInRequestObject, response1.getState());
         assertTrue(appPage.isCurrent());
@@ -614,37 +633,39 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestObjectClientIdAndResponseTypeTest() {
-        oauth.stateParamHardcoded("some-state");
-
         // Test that "client_id" mandatory in the query even if set in the "request" object
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "some-state", "none");
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
+        String request = oidcClientEndpointsResource.getOIDCRequest();
         oauth.clientId(null);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).state("some-state").open();
         errorPage.assertCurrent();
 
         // Test that "response_type" mandatory in the query even if set in the "request" object
         oauth.clientId("test-app");
         oauth.responseType(null);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).state("some-state").open();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that different "client_id" in the query and in the request object is disallowed
         oauth.clientId("test-app-scope");
         oauth.responseType(OAuth2Constants.CODE);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).state("some-state").open();
         errorPage.assertCurrent();
 
         // Test that different "response_type" in the query and in the request object is disallowed
         oauth.clientId("test-app");
         oauth.responseType(OAuth2Constants.CODE + " " + OAuth2Constants.ID_TOKEN);
-        oauth.openLoginForm();
+        oauth.loginForm().request(request).state("some-state").open();
         appPage.assertCurrent();
-        Assert.assertEquals("invalid_request", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
-        Assert.assertEquals("some-state", oauth.getCurrentQuery().get(OAuth2Constants.STATE));
+        oauth.responseMode("query"); // Keycloak falls back to query in this case
+        authorizationEndpointResponse = oauth.parseLoginResponse();
+        oauth.responseMode(null);
+        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that "client_id" and "response_type" are not mandatory in the request object
         Map<String, Object> oidcRequest = new HashMap<>();
@@ -652,17 +673,15 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcRequest.put(OIDCLoginProtocol.STATE_PARAM, "request-state");
         String requestObjectString = new JWSBuilder().jsonContent(oidcRequest).none();
 
-        oauth.request(requestObjectString);
         oauth.clientId("test-app");
         oauth.responseType(OAuth2Constants.CODE);
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().request(requestObjectString).state("some-state").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals("request-state", response1.getState());
     }
 
     @Test
     public void requestObjectRequiredProvidedInRequestUriParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -673,10 +692,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response2 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response2 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response2.getCode());
         Assert.assertEquals("mystate2", response2.getState());
         assertTrue(appPage.isCurrent());
@@ -688,7 +705,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestParamNotProvided() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -697,7 +713,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Send request without request object
         // Assert that the request is not accepted
-        oauth.openLoginForm();
+        oauth.loginForm().state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
@@ -708,7 +724,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestParamProvidedInRequestParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -719,10 +734,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
@@ -734,7 +747,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestParamProvidedInRequestUriParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -745,10 +757,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "none");
         
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         // Assert that the request is accepted
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
@@ -759,7 +769,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestUriParamNotProvided() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -768,7 +777,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Send request without request object
         // Assert that the request is not accepted
-        oauth.openLoginForm();
+        oauth.loginForm().state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
@@ -779,7 +788,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestUriParamProvidedInRequestParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -790,10 +798,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "none");
         
-        // Send request object in "request" param
-        oauth.request(oidcClientEndpointsResource.getOIDCRequest());
         // Assert that the request is not accepted
-        oauth.openLoginForm();
+        oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
@@ -804,7 +810,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     
     @Test
     public void requestObjectRequiredAsRequestUriParamProvidedInRequestUriParam() {
-        oauth.stateParamHardcoded("mystate2");
         // Set request object not required for client
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
@@ -815,10 +820,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "mystate2", "none");
         
-        // Send request object reference in "request_uri" param
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
         // Assert that the request is accepted
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response1 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
         Assert.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
@@ -830,8 +833,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestParamUnsigned() {
-        oauth.stateParamHardcoded("mystate2");
-
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -839,8 +840,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, "none");
         String requestStr = oidcClientEndpointsResource.getOIDCRequest();
 
-        oauth.request(requestStr);
-        oauth.openLoginForm();
+        oauth.loginForm().request(requestStr).state("mystate2").open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
@@ -849,8 +849,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate2", "none");
         requestStr = oidcClientEndpointsResource.getOIDCRequest();
 
-        oauth.request(requestStr);
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().request(requestStr).state("mystate2").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
@@ -864,8 +863,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Send request object with invalid redirect uri.
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, "mystate1", "none");
 
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        oauth.openLoginForm();
+        String requestUri = TestApplicationResourceUrls.clientRequestUri();
+
+        oauth.loginForm().requestUri(requestUri).open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
@@ -873,7 +873,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.redirectUri("http://invalid");
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate1", "none");
 
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate1", response.getState());
         assertTrue(appPage.isCurrent());
@@ -886,14 +886,14 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate1", "none");
         ClientManager.ClientManagerBuilder clientMgrBuilder = ClientManager.realm(adminClient.realm("test")).clientId("test-app");
 
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+        String loginRequestUri = TestApplicationResourceUrls.clientRequestUri();
 
         // Test with the relative allowed request_uri - should pass
         String absoluteRequestUri = TestApplicationResourceUrls.clientRequestUri();
         String requestUri = absoluteRequestUri.substring(UriUtils.getOrigin(absoluteRequestUri).length());
         clientMgrBuilder.setRequestUris(requestUri);
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         Assert.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
@@ -901,7 +901,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         requestUri = requestUri.replace("/get-oidc-request", "/*");
         clientMgrBuilder.setRequestUris(requestUri);
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         Assert.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
@@ -909,34 +909,34 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         requestUri = absoluteRequestUri.replace("/get-oidc-request", "/*");
         clientMgrBuilder.setRequestUris(requestUri);
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         Assert.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test star only as wildcard - should pass
         clientMgrBuilder.setRequestUris("*");
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         Assert.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test with multiple request_uris - should pass
         clientMgrBuilder.setRequestUris("/foo", requestUri);
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         Assert.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test invalid request_uris - should fail
         clientMgrBuilder.setRequestUris("/foo", requestUri.replace("/*", "/foo"));
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         errorPage.assertCurrent();
 
         // Test with no request_uri set at all - should fail
         clientMgrBuilder.setRequestUris();
 
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(loginRequestUri).open();
         errorPage.assertCurrent();
 
         // Revert
@@ -954,10 +954,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(Algorithm.RS256);
         clientResource.update(clientRep);
 
+        String requestUri = TestApplicationResourceUrls.clientRequestUri();
+
         // Verify unsigned request_uri will fail
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "none");
-        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
@@ -966,7 +967,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Verify signed request_uri will fail due to failed signature validation
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", Algorithm.RS256);
-        oauth.openLoginForm();
+        oauth.loginForm().requestUri(requestUri).open();
         Assert.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
@@ -982,7 +983,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         setTimeOffset(20);
 
         // Check signed request_uri will pass
-        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate3", response.getState());
         assertTrue(appPage.isCurrent());
@@ -993,6 +994,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     }
 
     private void requestUriParamSignedIn(String expectedAlgorithm, String actualAlgorithm) {
+        requestUriParamSignedIn(expectedAlgorithm, actualAlgorithm, null);
+    }
+
+    private void requestUriParamSignedIn(String expectedAlgorithm, String actualAlgorithm, String curve) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -1006,7 +1011,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
 
             // generate and register client keypair
-            if ("none" != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm);
+            if (!"none".equals(actualAlgorithm)) oidcClientEndpointsResource.generateKeys(actualAlgorithm, curve);
 
             // register request object
             oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", actualAlgorithm);
@@ -1024,16 +1029,16 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             oauth.realm("test");
             oauth.clientId("test-app");
-            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            String requestUri = TestApplicationResourceUrls.clientRequestUri();
             if (expectedAlgorithm == null || expectedAlgorithm.equals(actualAlgorithm)) {
                 // Check signed request_uri will pass
-                OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+                AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
                 Assert.assertNotNull(response.getCode());
                 Assert.assertEquals("mystate3", response.getState());
                 appPage.assertCurrent();
             } else {
                 // Verify signed request_uri will fail due to failed signature validation
-                oauth.openLoginForm();
+                oauth.loginForm().requestUri(requestUri).open();
                 Assert.assertTrue(errorPage.isCurrent());
                 assertEquals("Invalid Request", errorPage.getError());
             }
@@ -1115,7 +1120,19 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     }
 
     @Test
-    public void requestUriParamSignedExpectedAnyActualES256() {
+    public void requestUriParamSignedExpectedEd25519ActualEd25519() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.EdDSA, Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualEd448() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.EdDSA, Algorithm.Ed448);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedAnyActualES256() throws Exception {
         // Algorithm is null if 'any'
         // will success
         requestUriParamSignedIn(null, Algorithm.ES256);
@@ -1126,7 +1143,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void loginHint() {
         // Assert need to re-authenticate with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.LOGIN_HINT_PARAM + "=test-user%40localhost");
+        oauth.loginForm().loginHint("test-user%40localhost").open();
 
                 loginPage.assertCurrent();
         Assert.assertEquals("test-user@localhost", loginPage.getUsername());
@@ -1148,8 +1165,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String claimsJson = JsonSerialization.writeValueAsString(claims);
 
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "="
-                + URLEncoder.encode(claimsJson, StandardCharsets.UTF_8.toString()));
+        oauth.loginForm().param(OIDCLoginProtocol.CLAIMS_PARAM, URLEncoder.encode(claimsJson, StandardCharsets.UTF_8)).open();
 
         // need to login so session id can be read from event
         loginPage.assertCurrent();
@@ -1188,7 +1204,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         String request = new JWSBuilder().jsonContent(oidcRequest).none();
         
-        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.REQUEST_PARAM + "=" + request);
+        oauth.loginForm().param(OIDCLoginProtocol.REQUEST_PARAM, request).open();
         
         // need to login so session id can be read from event
         loginPage.assertCurrent();
@@ -1246,11 +1262,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             oidcRequest.put(OIDCLoginProtocol.SCOPE_PARAM, "openid");
             String request = new JWSBuilder().jsonContent(oidcRequest).none();
 
-            oauth = oauth.request(request);
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(request).doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-            OAuthClient.AccessTokenResponse accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            AccessTokenResponse accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
             assertEquals("test-user@localhost", idToken.getEmail());
             assertEquals("test-user@localhost", idToken.getPreferredUsername());
@@ -1272,7 +1287,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 client.close();
             }
 
-            oauth.doLogout(accessTokenResponse.getRefreshToken(), "password");
+            oauth.doLogout(accessTokenResponse.getRefreshToken());
             events.expectLogout(accessTokenResponse.getSessionState()).client("test-app").clearDetails().assertEvent();
 
 
@@ -1294,8 +1309,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             oidcRequest.put(OIDCLoginProtocol.SCOPE_PARAM, "openid");
             request = new JWSBuilder().jsonContent(oidcRequest).none();
 
-            oauth = oauth.request(request);
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(request).doLogin("test-user@localhost", "password");
             loginEvent = events.expectLogin().assertEvent();
 
             accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
@@ -1327,8 +1341,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void testSignedRequestObject() throws IOException {
-        oauth = oauth.request(createAndSignRequestObject());
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().request(createAndSignRequestObject()).doLogin("test-user@localhost", "password");
         events.expectLogin().assertEvent();
     }
 
@@ -1339,13 +1352,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectEncryptionAlg(RSA_OAEP_256);
             clientResource.update(clientRep);
-            oauth.request(createEncryptedRequestObject(RSA_OAEP));
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP)).doLogin("test-user@localhost", "password");
             fail("Should fail due to invalid encryption algorithm");
         } catch (Exception ignore) {
             assertTrue(errorPage.isCurrent());
-            oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
             assertTrue(appPage.isCurrent());
         } finally {
             ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
@@ -1354,12 +1365,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
-        oauth.idTokenHint(idTokenHint);
-        oauth.openLogout();
-        oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
-        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
+        oauth.logoutForm().idTokenHint(idTokenHint).open();
+        oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
     }
 
@@ -1373,18 +1382,16 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
             assertEquals(JWEConstants.A192GCM, OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getRequestObjectEncryptionEnc());
-            oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
             fail("Should fail due to invalid content encryption algorithm");
         } catch (Exception ignore) {
             assertTrue(errorPage.isCurrent());
-            oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectEncryptionEnc(JWEConstants.A256GCM);
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
             assertEquals(JWEConstants.A256GCM, OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).getRequestObjectEncryptionEnc());
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
             assertTrue(appPage.isCurrent());
         } finally {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
@@ -1394,12 +1401,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
-        oauth.idTokenHint(idTokenHint);
-        oauth.openLogout();
-        oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
-        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
+        oauth.logoutForm().idTokenHint(idTokenHint).open();
+        oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
 
         clientRep = clientResource.toRepresentation();
@@ -1409,18 +1414,17 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void testSignedAndEncryptedRequestObject() throws IOException, JWEException {
-        oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.loginForm().request(createEncryptedRequestObject(RSA_OAEP_256)).doLogin("test-user@localhost", "password");
         events.expectLogin().assertEvent();
     }
 
     private String createEncryptedRequestObject(String encAlg) throws IOException, JWEException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = null;
 
@@ -1503,11 +1507,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            OIDCConfigurationRepresentation representation = SimpleHttp
+            OIDCConfigurationRepresentation representation = SimpleHttpDefault
                     .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
                             httpClient).asJson(OIDCConfigurationRepresentation.class);
             String jwksUri = representation.getJwksUri();
-            JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
+            JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
             String keyId = jweHeader.getKeyId();
 
@@ -1525,8 +1529,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             jwe.getKeyStorage()
                     .setEncryptionKey(decryptionKEK);
 
-            oauth = oauth.request(jwe.encodeJwe());
-            oauth.doLogin("test-user@localhost", "password");
+            oauth.loginForm().request(jwe.encodeJwe()).doLogin("test-user@localhost", "password");
             events.expectLogin().assertEvent();
         }
     }

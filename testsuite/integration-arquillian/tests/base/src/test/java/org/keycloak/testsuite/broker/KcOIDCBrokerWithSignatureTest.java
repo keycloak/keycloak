@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
@@ -42,11 +41,10 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -99,8 +97,6 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
     @Test
     public void testSignatureVerificationJwksUrl() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
 
@@ -309,8 +305,6 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
     @Test
     public void testClearKeysCache() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
 
@@ -336,8 +330,6 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     // Test that when I update identityProvier, then the record in publicKey cache is cleared and it's not possible to authenticate with it anymore
     @Test
     public void testPublicKeyCacheInvalidatedWhenProviderUpdated() throws Exception {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
-
         // Configure OIDC identity provider with JWKS URL
         updateIdentityProviderWithJwksUrl();
 

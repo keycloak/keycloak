@@ -17,59 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan.changes.sessions;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(SessionData.ExternalizerImpl.class)
-public class SessionData {
+@ProtoTypeId(Marshalling.SESSION_DATA)
+@Proto
+public record SessionData(String realmId, int lastSessionRefresh) {
 
-    private final String realmId;
-    private final int lastSessionRefresh;
-
-    public SessionData(String realmId, int lastSessionRefresh) {
-        this.realmId = realmId;
-        this.lastSessionRefresh = lastSessionRefresh;
-    }
-
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public int getLastSessionRefresh() {
-        return lastSessionRefresh;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("realmId: %s, lastSessionRefresh: %d", realmId, lastSessionRefresh);
-    }
-
-    public static class ExternalizerImpl implements Externalizer<SessionData> {
-
-
-        @Override
-        public void writeObject(ObjectOutput output, SessionData obj) throws IOException {
-            MarshallUtil.marshallString(obj.realmId, output);
-            KeycloakMarshallUtil.marshall(obj.lastSessionRefresh, output);
-        }
-
-
-        @Override
-        public SessionData readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            String realmId = MarshallUtil.unmarshallString(input);
-            int lastSessionRefresh = KeycloakMarshallUtil.unmarshallInteger(input);
-
-            return new SessionData(realmId, lastSessionRefresh);
-        }
-
-    }
 }

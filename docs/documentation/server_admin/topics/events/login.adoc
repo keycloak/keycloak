@@ -64,6 +64,45 @@ image:images/search-user-event.png[Search user event]
 
 |===
 
+*Brute force protection:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|User disabled by permanent lockout
+|Brute force protection disabled the user account permanently due to too many login failures.
+
+|User disabled by temporary lockout
+|Brute force protection disabled the user account temporarily due to too many login failures.
+
+|===
+
+*Identity Brokering:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Federated identity link override
+|An existing Federated identity link was overridden
+
+|Federated identity link override error
+|Error occurred when trying to override an existing Federated identity link
+
+|===
+
+*OAuth:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|OAuth2 extension grant
+|OAuth2 grant was executed
+
+|OAuth2 extension grant error
+|Error occurred during OAuth2 grant execution
+
+|===
+
 *Account events:*
 
 [cols="2",options="header"]
@@ -84,14 +123,20 @@ image:images/search-user-event.png[Search user event]
 |Send Password Reset
 |{project_name} sends a password reset email.
 
-|Update Password
+|Update Password (deprecated)
 |The password for an account changes.
 
-|Update TOTP
+|Update Credential
+|The password or (time-based) one-time Password (OTP/TOTP) settings for an account changes.
+
+|Update TOTP (deprecated)
 |The Time-based One-time Password (TOTP) settings for an account changes.
 
-|Remove TOTP
+|Remove TOTP (deprecated)
 |{project_name} removes TOTP from an account.
+
+|Remove Credential
+|{project_name} removes a credential from an account.
 
 |Send Verify Email
 |{project_name} sends an email verification email.
@@ -103,6 +148,7 @@ image:images/search-user-event.png[Search user event]
 
 Each event has a corresponding error event.
 
+[[event-listener]]
 ==== Event listener
 
 Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.
@@ -145,12 +191,28 @@ The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal
 
 ===== The Email Event Listener
 
-The Email Event Listener sends an email to the user's account when an event occurs and supports the following events:
+The Email Event Listener sends a message to the user's email address when an event occurs and supports the following events:
 
 * Login Error.
 * Update Password.
 * Update Time-based One-time Password (TOTP).
-* Remove Time-based One-time Password (TOTP).
+* Remove One-time Password (OTP).
+* Update Credential.
+* Remove Credential.
+
+Below are the optional events you can configure:
+
+* User disabled by permanent lockout.
+* User disabled by temporary lockout.
+
+The following conditions need to be met for an email to be sent:
+
+* User has an email address.
+* User's email address is marked as verified.
+
+.Prerequisites
+
+* Realm's email settings configured.
 
 .Procedure
 
@@ -168,20 +230,11 @@ You can exclude events by using the `--spi-events-listener-email-exclude-events`
 
 [source,bash]
 ----
-kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_TOTP,REMOVE_TOTP
+kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_CREDENTIAL,REMOVE_CREDENTIAL
 ----
 
-You can set a maximum length of each Event detail in the database by using the `--spi-events-store-jpa-max-detail-length` argument. This setting is useful if a detail (for example, redirect_uri) is long. For example:
-
+To enable optional events, use the following command:
 [source,bash]
 ----
-kc.[sh|bat] --spi-events-store-jpa-max-detail-length=1000
+kc.[sh|bat] --spi-events-listener-email-include-events=USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR,USER_DISABLED_BY_PERMANENT_LOCKOUT
 ----
-
-Also you can set a maximum length of all Event's details by using the `--spi-events-store-jpa-max-field-length` argument. This setting is useful if you want to adhere to the underlying storage limitation. For example:
-
-[source,bash]
-----
-kc.[sh|bat] --spi-events-store-jpa-max-field-length=2500
-----
-

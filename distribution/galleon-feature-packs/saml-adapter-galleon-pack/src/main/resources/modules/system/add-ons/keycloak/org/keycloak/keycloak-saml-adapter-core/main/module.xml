@@ -35,9 +35,9 @@
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.apache.httpcomponents"/>
+        <module name="org.apache.santuario.xmlsec"/>
+        <module name="org.bouncycastle" />
     </dependencies>
 
 </module>

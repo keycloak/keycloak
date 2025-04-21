@@ -7,33 +7,28 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  Select,
-  SelectOption,
-  SelectVariant,
-  Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import { useEffect, useState } from "react";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { HelpItem, useHelp } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-import { useAlerts } from "../../components/alert/Alerts";
+import {
+  HelpItem,
+  SelectControl,
+  SwitchControl,
+  TextControl,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
+import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
+import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
 
 const SIGNATURE_ALGORITHMS = [
@@ -43,6 +38,7 @@ const SIGNATURE_ALGORITHMS = [
   "RS256",
   "RS384",
   "RS512",
+  "Ed25519",
   "RS1",
 ] as const;
 const ATTESTATION_PREFERENCE = [
@@ -70,6 +66,7 @@ const USER_VERIFY = [
 type WeauthnSelectProps = {
   name: string;
   label: string;
+  labelIcon?: string;
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
@@ -78,71 +75,24 @@ type WeauthnSelectProps = {
 const WebauthnSelect = ({
   name,
   label,
+  labelIcon,
   options,
   labelPrefix,
   isMultiSelect = false,
 }: WeauthnSelectProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
-
-  const [open, toggle] = useState(false);
   return (
-    <FormGroup
-      label={t(label)}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${label}Help`)}
-          fieldLabelId={`authentication:${label}`}
-        />
-      }
-      fieldId={name}
-    >
-      <Controller
-        name={name}
-        defaultValue={options[0]}
-        control={control}
-        render={({ field }) => (
-          <Select
-            toggleId={name}
-            onToggle={toggle}
-            onSelect={(_, selectedValue) => {
-              if (isMultiSelect) {
-                const changedValue = field.value.find(
-                  (item: string) => item === selectedValue,
-                )
-                  ? field.value.filter((item: string) => item !== selectedValue)
-                  : [...field.value, selectedValue];
-                field.onChange(changedValue);
-              } else {
-                field.onChange(selectedValue.toString());
-                toggle(false);
-              }
-            }}
-            selections={
-              labelPrefix ? t(`${labelPrefix}.${field.value}`) : field.value
-            }
-            variant={
-              isMultiSelect
-                ? SelectVariant.typeaheadMulti
-                : SelectVariant.single
-            }
-            aria-label={t(name)}
-            typeAheadAriaLabel={t(name)}
-            isOpen={open}
-          >
-            {options.map((option) => (
-              <SelectOption
-                selected={option === field.value}
-                key={option}
-                value={option}
-              >
-                {labelPrefix ? t(`${labelPrefix}.${option}`) : option}
-              </SelectOption>
-            ))}
-          </Select>
-        )}
-      />
-    </FormGroup>
+    <SelectControl
+      name={name}
+      label={label}
+      labelIcon={labelIcon}
+      variant={isMultiSelect ? "typeaheadMulti" : "single"}
+      controller={{ defaultValue: options[0] }}
+      options={options.map((option) => ({
+        key: option,
+        value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
+      }))}
+    />
   );
 };
 
@@ -157,17 +107,17 @@ export const WebauthnPolicy = ({
   realmUpdated,
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { enabled } = useHelp();
   const form = useForm({ mode: "onChange" });
   const {
-    control,
-    register,
     setValue,
     handleSubmit,
-    formState: { isDirty, errors },
+    formState: { isDirty },
   } = form;
 
   const namePrefix = isPasswordLess
@@ -194,7 +144,7 @@ export const WebauthnPolicy = ({
   return (
     <PageSection variant="light">
       {enabled && (
-        <Popover bodyContent={t(`authentication-help:${namePrefix}FormHelp`)}>
+        <Popover bodyContent={t(`${namePrefix}FormHelp`)}>
           <TextContent className="keycloak__section_intro__help">
             <Text>
               <QuestionCircleIcon /> {t("webauthnIntro")}
@@ -209,130 +159,76 @@ export const WebauthnPolicy = ({
         onSubmit={handleSubmit(onSubmit)}
         className="keycloak__webauthn_policies_authentication__form"
       >
-        <FormGroup
-          label={t("webAuthnPolicyRpEntityName")}
-          fieldId="webAuthnPolicyRpEntityName"
-          helperTextInvalid={t("required")}
-          validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
-          isRequired
-          labelIcon={
-            <HelpItem
-              helpText={t("webAuthnPolicyRpEntityNameHelp")}
-              fieldLabelId="webAuthnPolicyRpEntityName"
-            />
-          }
-        >
-          <KeycloakTextInput
-            id="webAuthnPolicyRpEntityName"
-            data-testid="webAuthnPolicyRpEntityName"
-            validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
-            {...register(`${namePrefix}RpEntityName`, { required: true })}
-          />
-        </FormGroup>
         <FormProvider {...form}>
+          <TextControl
+            name={`${namePrefix}RpEntityName`}
+            label={t("webAuthnPolicyRpEntityName")}
+            labelIcon={t("webAuthnPolicyRpEntityNameHelp")}
+            rules={{ required: t("required") }}
+          />
           <WebauthnSelect
             name={`${namePrefix}SignatureAlgorithms`}
-            label="webAuthnPolicySignatureAlgorithms"
+            label={t("webAuthnPolicySignatureAlgorithms")}
+            labelIcon={t("webAuthnPolicySignatureAlgorithmsHelp")}
             options={SIGNATURE_ALGORITHMS}
             isMultiSelect
           />
-          <FormGroup
+          <TextControl
+            name={`${namePrefix}RpId`}
             label={t("webAuthnPolicyRpId")}
-            labelIcon={
-              <HelpItem
-                helpText={t("webAuthnPolicyRpIdHelp")}
-                fieldLabelId="webAuthnPolicyRpId"
-              />
-            }
-            fieldId="webAuthnPolicyRpId"
-          >
-            <KeycloakTextInput
-              id="webAuthnPolicyRpId"
-              data-testid="webAuthnPolicyRpId"
-              {...register(`${namePrefix}RpId`)}
-            />
-          </FormGroup>
+            labelIcon={t("webAuthnPolicyRpIdHelp")}
+          />
           <WebauthnSelect
             name={`${namePrefix}AttestationConveyancePreference`}
-            label="webAuthnPolicyAttestationConveyancePreference"
+            label={t("webAuthnPolicyAttestationConveyancePreference")}
+            labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
             labelPrefix="attestationPreference"
           />
           <WebauthnSelect
             name={`${namePrefix}AuthenticatorAttachment`}
-            label="webAuthnPolicyAuthenticatorAttachment"
+            label={t("webAuthnPolicyAuthenticatorAttachment")}
+            labelIcon={t("webAuthnPolicyAuthenticatorAttachmentHelp")}
             options={AUTHENTICATOR_ATTACHMENT}
             labelPrefix="authenticatorAttachment"
           />
           <WebauthnSelect
             name={`${namePrefix}RequireResidentKey`}
-            label="webAuthnPolicyRequireResidentKey"
+            label={t("webAuthnPolicyRequireResidentKey")}
+            labelIcon={t("webAuthnPolicyRequireResidentKeyHelp")}
             options={RESIDENT_KEY_OPTIONS}
             labelPrefix="residentKey"
           />
           <WebauthnSelect
             name={`${namePrefix}UserVerificationRequirement`}
-            label="webAuthnPolicyUserVerificationRequirement"
+            label={t("webAuthnPolicyUserVerificationRequirement")}
+            labelIcon={t("webAuthnPolicyUserVerificationRequirementHelp")}
             options={USER_VERIFY}
             labelPrefix="userVerify"
           />
-          <FormGroup
+          <TimeSelectorControl
+            name={`${namePrefix}CreateTimeout`}
             label={t("webAuthnPolicyCreateTimeout")}
-            fieldId="webAuthnPolicyCreateTimeout"
-            helperTextInvalid={t("webAuthnPolicyCreateTimeoutHint")}
-            validated={errors.webAuthnPolicyCreateTimeout ? "error" : "default"}
-            labelIcon={
-              <HelpItem
-                helpText={t("webAuthnPolicyCreateTimeoutHelp")}
-                fieldLabelId="webAuthnPolicyCreateTimeout"
-              />
-            }
-          >
-            <Controller
-              name={`${namePrefix}CreateTimeout`}
-              defaultValue={0}
-              control={control}
-              rules={{ min: 0, max: 31536 }}
-              render={({ field }) => (
-                <TimeSelector
-                  data-testid="webAuthnPolicyCreateTimeout"
-                  aria-label={t("webAuthnPolicyCreateTimeout")}
-                  value={field.value}
-                  onChange={field.onChange}
-                  units={["second", "minute", "hour"]}
-                  validated={
-                    errors.webAuthnPolicyCreateTimeout ? "error" : "default"
-                  }
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("webAuthnPolicyCreateTimeoutHelp")}
+            units={["second", "minute", "hour"]}
+            controller={{
+              defaultValue: 0,
+              rules: {
+                min: 0,
+                max: {
+                  value: 31536,
+                  message: t("webAuthnPolicyCreateTimeoutHint"),
+                },
+              },
+            }}
+          />
+          <SwitchControl
+            name={`${namePrefix}AvoidSameAuthenticatorRegister`}
             label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
-            fieldId="webAuthnPolicyAvoidSameAuthenticatorRegister"
-            labelIcon={
-              <HelpItem
-                helpText={t("webAuthnPolicyAvoidSameAuthenticatorRegisterHelp")}
-                fieldLabelId="webAuthnPolicyAvoidSameAuthenticatorRegister"
-              />
-            }
-          >
-            <Controller
-              name={`${namePrefix}AvoidSameAuthenticatorRegister`}
-              defaultValue={false}
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="webAuthnPolicyAvoidSameAuthenticatorRegister"
-                  label={t("on")}
-                  labelOff={t("off")}
-                  isChecked={field.value}
-                  onChange={field.onChange}
-                  aria-label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
-                />
-              )}
-            />
-          </FormGroup>
+            labelIcon={t("webAuthnPolicyAvoidSameAuthenticatorRegisterHelp")}
+            labelOn={t("on")}
+            labelOff={t("off")}
+          />
           <FormGroup
             label={t("webAuthnPolicyAcceptableAaguids")}
             fieldId="webAuthnPolicyAcceptableAaguids"

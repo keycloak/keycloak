@@ -90,7 +90,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
     }
 
     @Override
@@ -101,8 +101,8 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer().getId());
-        return storeFactory.getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, policy.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+        return storeFactory.getPolicyStore().findById(resourceServer, policy.getId());
     }
 
     @Override
@@ -114,7 +114,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, getResourceServer(), entity.getResource().getId());
+        return storeFactory.getResourceStore().findById(getResourceServer(), entity.getResource().getId());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        return storeFactory.getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, getResourceServer(), scope.getId());
+        return storeFactory.getScopeStore().findById(getResourceServer(), scope.getId());
     }
 
     @Override

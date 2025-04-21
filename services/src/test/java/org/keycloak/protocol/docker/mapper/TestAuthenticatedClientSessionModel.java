@@ -38,26 +38,6 @@ class TestAuthenticatedClientSessionModel implements AuthenticatedClientSessionM
     }
 
     @Override
-    public String getCurrentRefreshToken() {
-        return null;
-    }
-
-    @Override
-    public void setCurrentRefreshToken(String currentRefreshToken) {
-
-    }
-
-    @Override
-    public int getCurrentRefreshTokenUseCount() {
-        return 0;
-    }
-
-    @Override
-    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-
-    }
-
-    @Override
     public String getNote(String name) {
         return notes.get(name);
     }

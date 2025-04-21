@@ -1,0 +1,872 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Using token exchange"
+priority=120
+summary="Configuring and using Token exchange with {project_name}">
+
+Token exchange is the process that allows a client application to exchange one token for another token. In {project_name}, two features implement token exchange:
+
+* <<_standard-token-exchange,Standard token exchange: version 2 (V2)>> - This feature is the fully supported token exchange implementation that is enabled by default once the {project_name} server is started.
+* <<_legacy-token-exchange,Legacy token exchange: version 1 (V1)>> - This preview feature is not enabled by default once {project_name} server is started.
+
+The capabilities of {project_name} for token exchange are as follows:
+
+. A client can exchange an existing {project_name} token created for a specific client for a new token targeted to a different client in the same realm.
+. A client can exchange an existing {project_name} token for an external token, such as a linked Facebook account.
+. A client can exchange an external token for a {project_name} token.
+. A client can impersonate a user.
+
+The standard token exchange supports only use-case (1). The legacy token exchange support the four use-cases, but it is a preview feature. Therefore, the standard token exchange V2 is recommended  since it is supported and will be maintained for the future. The legacy token exchange is useful for last three use cases, but it may not be
+backwards compatible with future {project_name} versions. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
+provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
+
+NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
+token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
+
+[[_standard-token-exchange]]
+== Standard token exchange
+
+Standard token exchange in {project_name} implements the https://datatracker.ietf.org/doc/html/rfc8693[Token exchange specification]. It allows client application to exchange an existing {project_name} token created
+for a specific client for a new token issued to the client that triggered the token exchange request. Both clients must be in the same realm.
+
+[[_standard-token-exchange-flow]]
+=== Token exchange flow
+
+Consider this typical token exchange flow:
+
+. The user authenticates with the use of the {project_name} SSO to the client application `initial-client`. The token is issued to the `initial-client`.
+. The client `initial-client` may need to use the REST service `requester-client`, which requires authentication. So the `initial-client` sends the access token from step 1 to the `requester-client` with the
+use of the token
+. To serve the request, the `requester-client` may need to call another service `target-client`. However it may be unable to use the token sent to it from `initial-client`. For example:
+* The token has insufficient permissions or scopes.
+* The `target-client` is not specified as the token audience; the token was intended to be used to invoke `requester-client`.
+* The token has to many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
++
+Any of these situations could be the reason to invoke the token exchange. The `requester-client` may need to send the token exchange request to the {project_name} server and use the original token from step 1 as the
+_subject token_ and exchange it for another token _requested token_.
+. The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
+. The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
+
+Many other use-cases exist for token exchange, but the preceding example is the most typical.
+
+==== Example token exchange request
+
+The following is an example token exchange request of the client `requester-client` in the realm `test`. Note that `subject_token` is the access token issued to the `initial-client`:
+
+[source,bash]
+----
+POST /realms/test/protocol/openid-connect/token
+Authorization: Basic cmVxdWVzdGVyLWNsaWVudDpwYXNzd29yZA==
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange&
+subject_token=$SUBJECT_TOKEN&
+subject_token_type=urn:ietf:params:oauth:token-type:access_token&
+requested_token_type=urn:ietf:params:oauth:token-type:access_token
+----
+
+The example token exchange response may look like this:
+
+[source,json]
+----
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsIn...",
+  "expires_in": 300,
+  "token_type": "Bearer",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+  "session_state": "287f3c57-32b8-4c0f-8b00-8c7db231d701",
+  "scope": "default-scope1",
+  "refresh_expires_in": 0,
+  "not-before-policy": 0
+}
+----
+
+[[_standard-token-exchange-enable]]
+=== How to enable token exchange
+
+For standard token exchange, `token-exchange-standard:v2` is enabled by default.  However, you also need to enable the *Standard token exchange* switch for
+the client that is supposed to send token exchange requests, such as the `requester-client` from the <<_standard-token-exchange-flow,previous example>>. Note that `requester-client` must be a confidential client.
+Also, as is the case for other grant requests, the token exchange requests must be authenticated by the appropriate link:{adminguide_link}#_client-credentials[client authentication method] that is configured
+for the client.
+
+.Enabling Token Exchange
+image::token-exchange-switch.png[Enabling Token Exchange]
+
+[[_standard-token-exchange-request]]
+=== Request and response parameters
+
+The parameters are aligned with the https://datatracker.ietf.org/doc/html/rfc8693#name-token-exchange-request-and-[Token exchange specification], which are described as follows:
+
+grant_type::
+    _REQUIRED._ The value of the parameter must be `urn:ietf:params:oauth:grant-type:token-exchange`.
+
+subject_token::
+    _REQUIRED._ A security token that represents the identity of the party on behalf of whom the request is being made.
+
+subject_token_type::
+    _REQUIRED._ This parameter is the type of the token passed in the `subject_token` parameter. This must be `urn:ietf:params:oauth:token-type:access_token` when the standard token exchange is being used
+    because {project_name} does not support other types for the standard token exchange.
+
+requested_token_type::
+    _OPTIONAL._ This parameter represents the type of token that the client wants to exchange for. In this version,  only oauth and OpenID Connect token types are supported. The default value for this
+    is `urn:ietf:params:oauth:token-type:access_token`. Another possible value is `urn:ietf:params:oauth:token-type:id_token` if the ID token issued to `requester-client` is requested. The possible value might
+    be also `urn:ietf:params:oauth:token-type:refresh_token`; in this case, you will receive both an access token and refresh token within the response. However, the refresh token is allowed if the `Allow refresh token in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
+
+scope::
+   _OPTIONAL._ This parameter represents the space-delimited set of OAuth and OpenID Connect scopes that the client is requesting. You can use link:{adminguide_link}#_client_scopes[Optional client scopes]
+   of the `requester-client`. For more details, see <<_standard-token-exchange-scope,scopes and audiences>>. Omitting this parameter means that only
+   the link:{adminguide_link}#_client_scopes[Default client scopes] are effectively used.
+
+audience::
+  _OPTIONAL._ Audience specifies `client_id` of the client, which is supposed to be used as the token audience. In <<_standard-token-exchange-flow,the example above>>, it could be `target-client`. Multiple
+  values of this parameter are allowed, which means that you want the token to contain multiple audiences to be used by `requester-client` in multiple different services. For example
+  `audience=target-client1&audience=target-client2` can be used in the request. More details in <<_standard-token-exchange-scope,the section about scopes and audiences>>.
+
+A successful response is returned in the JSON format. It contains similar parameters such as the response from other grants. The following are some token exchange specifics of the more notable parameters:
+
+access_token::
+    The requested access token. Note that if request specified `requested_token_type=urn:ietf:params:oauth:token-type:id_token`, this parameter may actually contain the ID token instead of access token.
+    This behavior is per https://datatracker.ietf.org/doc/html/rfc8693#section-2.2.1[the token exchange specification].
+
+refresh_token::
+    The refresh token. It is included just if `requested_token_type=urn:ietf:params:oauth:token-type:refresh_token` is used and the client has enabled issuing refresh tokens from the token exchange
+
+issued_token_type::
+    The issued requested token type. Same value as `requested_token_type` used in the request.
+
+token_type::
+    Usually `Bearer` if issued token type was access token or refresh token. In case of ID token requested, the value is `N_A`
+
+[[_standard-token-exchange-scope]]
+=== Scopes and audiences
+
+The `scope` parameter in the token exchange request has the same meaning as other grants. This parameter is optional. When it is omitted, the effective client scopes used in the request are
+the link:{adminguide_link}#_client_scopes[Default client scopes] of the `requester-client`. When this parameter is used, the effective client scopes are the default scopes together with
+the link:{adminguide_link}#_client_scopes[Optional client scopes]
+
+By default, the used client scopes will add the audiences to the `aud` claim of the token based on the used client scopes and client roles as specified in the link:{adminguide_link}#audience-support[Audience documentation].
+
+The `audience` parameter can be used for filtering of audiences, so that the `aud` claim will contain only the audiences specified by the `audience` parameter. Similarly the client roles in the token will
+be filtered and the token will have only the client roles of the clients specified by the `audience` parameter.
+
+In addition, the `audience` parameter can be used to potentially filter client scopes as well. It works in a manner that is similar way to link:{adminguide_link}#client-scopes-permissions[Client scope permission for users].
+If the client scope does not contain any client roles (for example, it contains zero roles or it contains only realm roles), no additional filtering occurs for client scopes. However, if the client scope contains any
+client role mappings, it must include some client roles of the clients requested by the `audience` parameter. Composite roles are also included for consideration. If the client scope contains no client
+roles of the clients requested by the `audience`, the client scope will be filtered.
+
+NOTE: The `audience` parameter can be used to filter the audiences that are coming from the used client scopes. However, this parameter will not add more audiences. When the audience parameter is omitted,
+no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
+to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
+
+==== Examples
+
+Here are some examples to better illustrate the behavior for scopes and audiences.
+
+Assume we have the realm with:
+
+* Client `target-client1` with the client role `target-client1-role`
+
+* Client `target-client2` with the client role `target-client2-role`
+
+* Client `target-client3` with the client role `target-client3-role`
+
+* Client scope `default-scope1`. This client scope has role scope mapping for the client role `target-client1/target-client1-role`
+
+* Client scope `optional-scope2`. This client scope has role scope mapping for the client role `target-client2/target-client2-role`
+
+* Client `requester-client`, which has client scope `default-scope1` added as default client scope and scope `optional-scope2` added as an optional client scope
+
+* Authenticated user, who is member of both `target-client1-role` and `target-client2-role`
+
+The settings above means that using scope `default-scope1` will add the audience `target-client1` to the token and using `optional-scope2` will add the audience `target-client2`. This is because of the
+audience resolving described in the link:{adminguide_link}#_audience_resolve[Audience documentation].
+
+
+===== Example 1
+
+Token exchange request sent with `scope=optional-scope2` and without audience parameter:
+
+There will be no filtering of audience. The scopes and audiences will be resolved as is the case for any other grants as described in the link:{adminguide_link}#_client_scopes[Client scopes] and
+link:{adminguide_link}#_audience_resolve[Audience documentation] sections. The response token will be similar to this (claims not interesting for this example omitted for brevity):
+
+[source,json]
+----
+{
+  "azp": "requester-client",
+  "scope": "default-scope1 optional-scope2",
+  "aud": [ "target-client1", "target-client2" ],
+  "resource_access": {
+	"target-client1": {
+  	  "roles": [ "target-client1-role" ]
+	},
+	"target-client2": {
+  	  "roles": [ "target-client2-role" ]
+	}
+  },
+  ...
+}
+----
+
+===== Example 2
+
+Token exchange request sent with `scope=optional-scope2` and with `audience=target-client2`
+
+Same like previous example, but `target-client1` audience and client roles filtered due audience parameter was included, but only with this `target-client2` client. The client scope `default-scope1` will be
+also filtered due it contains some client roles, but at the same time, it does not contain any client roles of requested audience client `target-client2`. So token would be like:
+
+[source,json]
+----
+{
+  "azp": "requester-client",
+  "scope": "optional-scope2",
+  "aud": [ "target-client2" ],
+  "resource_access": {
+    "target-client2": {
+      "roles": [ "target-client2-role" ]
+    }
+  },
+  ...
+}
+----
+
+===== Example 3
+
+Token exchange request sent with `scope=optional-scope2` and with `audience=target-client2&audience=target-client3`
+
+The `target-client3` is not part of the token audience as user does not have any roles. So in this case, the request will be rejected as some of the requested audiences are not available.
+
+NOTE: As mentioned in the token exchange specification, it is good practice to downscope the token as much as possible and use only the audiences needed. Ideally use a single audience. This strategy increases the probability
+that request will be allowed.
+
+NOTE: If you have a more complex deployment with many various scopes and audiences, it can be challenging to model it in an appropriate way. Consider using the link:{adminguide_link}#_client_scopes_evaluate[Client scopes evaluate tab]
+to test if the token looks as expected for the given user and for the given set of scopes and audiences.
+
+[[_standard-token-exchange-details]]
+=== Token exchange - Additional details
+
+These additional points clarify the behavior of token exchange.
+
+* It is not supported for public clients to send the token exchange requests. The V1 had some very limited support to public clients, when public client can exchange the token to itself with less scopes.
+This use case can be replaced by refresh token grant.
+
+* The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
+exchanges his own token, which was issued to it. Exchanging to itself might be useful to downscope/upscope the token or filter unneeded token audiences and so on.
+
+* Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
+
+* link:{adminguide_link}#_fine_grain_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
+integration might be available to all grants. It will not be specific only to token exchange as it was in token exchange V1.
+
+* Integrating token exchange with link:{adminguide_link}#_client_policies[Client policies] is possible. This integration can be useful to address certain use cases. For example, consider the use case to reject the token exchange request if the
+client `requester-client` sends the request with `scope=some-confidential-scope`. In this example, it can be useful to create a client policy condition with combined conditions
+for `client-scope`, `grant-type` and `client-roles`.
+
+* Requesting a refresh token is allowed only if the client has the switch *Allow refresh token in Standard Token Exchange* set to a value other than `No` (the default value). The switch is available in the
+Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section. The other available value of the switch is *Same session*, which means that the refresh token is
+allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#_transient-session[Transient session] or from an
+link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request an offline token (using `scope=offline_access`).
+
+.Enabling refresh token in Token Exchange
+image::token-exchange-switch-refresh.png[Enabling refresh token in Token Exchange]
+
+* Token exchange never creates a new link:{adminguide_link}#managing-user-sessions[user session]. In case that `requested_token_type` is a refresh token, it may eventually create a new client session in the user session
+for the requester client (if the client session was not yet created).
+
+* {project_name} Token exchange does not yet have support for the `resource` parameter.
+
+* The token exchange specification mentions the concepts of https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation and delegation]. {project_name} has support for the
+impersonation use case, but not yet for the delegation use case.
+
+==== Revocation
+
+Assuming that there is a subject token `access-token1` issued to the client `initial-client`, here are some considerations related to token revocation:
+
+* For the case when the `access-token1` was exchanged to the `access-token2` of the client `requester-client`, the revocation of the `access-token1` will not revoke `access-token2`. Supporting of a "revocation chain" for access
+tokens would mean quite an overhead. So considering this,  the administrator must ensure that access tokens are short-lived and are revoked automatically after some time.
+
+* For the case when `access-token1` was exchanged to `refresh-token2` of client `requester-client`, we try to support revocation chain. This means that:
+  ** Revocation of `access-token1` will revoke also `refresh-token2`. Moreover this will remove the client session of the client `requester-client` from the
+     user session and hence all refresh tokens of `requester-client` in this user session will be effectively revoked
+  ** In case that `refresh-token2` and it's related access token was used for the further token exchange to different client, then revocation of `access-token1` will revoke those subsequent token exchanges
+     as well. In other words, the whole "chain" of exchanged tokens is going to be revoked.
+  ** Note that the access token should be valid when the revocation endpoint is invoked. If you do not have a valid access token when the original `access-token1` has expired, you can potentially use another
+     access token issued to same client in the same user session. The exchanged tokens such as `refresh-token2` and others from the "chain" should be revoked.
+
+[[_standard-token-exchange-comparison]]
+=== Comparison of standard token exchange and legacy token exchange
+
+While the preceding sections fully detail standard and legacy token exchange, the following is an overall summary that compares the two token exchange methods.
+
+[cols="3*", options="header"]
+|===
+|Capability |Standard token exchange V2 |Legacy token exchange V1
+s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
+s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
+s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
+s|Behaviour of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on scopes of
+the "target" client specified by audience parameter. Downscoping support only
+s|Behavior of `audience` parameter   | Support for more values as per the specification. Can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
+the required target audience | Support for single audience value. Token effectively issued to the client requested by audience parameter and using scopes of that client
+s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
+s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
+s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
+s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
+s|Delegation per rfc8693|Not supported yet|Not supported
+s|Resource parameter per rfc8693|Not supported yet|Not supported
+s|Federated token exchange | Not implemented yet | Implemented as a preview
+s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
+|===
+
+[[_legacy-token-exchange]]
+== Legacy token exchange
+
+:tech_feature_name: Token Exchange
+:tech_feature_id: token-exchange
+
+[NOTE]
+====
+{tech_feature_name} is
+*Preview*
+and is not fully supported. This feature is disabled by default.
+
+To enable start the server with `--features=preview`
+ifdef::tech_feature_id[]
+or `--features={tech_feature_id}`
+endif::[]
+
+{tech_feature_name} is *Technology Preview* and is not fully supported.
+====
+
+[NOTE]
+====
+To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
+For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+====
+
+=== How token exchange works
+
+In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
+A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
+A client may want to exchange a {project_name} token for a token stored for a linked social provider account.
+You may want to trust external tokens minted by other {project_name} realms or foreign IDPs. A client may have a need
+to impersonate a user.  Here's a short summary of the current capabilities of {project_name} around token exchange.
+
+* A client can exchange an existing {project_name} token created for a specific client for a new token targeted to a different client
+* A client can exchange an existing {project_name} token for an external token, i.e. a linked Facebook account
+* A client can exchange an external token for a {project_name} token.
+* A client can impersonate a user
+
+Token exchange in {project_name} is a very loose implementation of the link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth Token Exchange] specification at the IETF.
+We have extended it a little, ignored some of it, and loosely interpreted other parts of the specification.  It is
+a simple grant type invocation on a realm's OpenID Connect token endpoint.
+
+[source,subs="attributes+"]
+----
+{kc_realms_path}/{realm-name}/protocol/openid-connect/token
+----
+
+It accepts form parameters (`application/x-www-form-urlencoded`) as input and the output depends on the type of token you requested an exchange for.
+Token exchange is a client endpoint so requests must provide authentication information for the calling client.
+Public clients specify their client identifier as a form parameter.  Confidential clients can also use form parameters
+to pass their client id and secret, Basic Auth, or however your admin has configured the client authentication flow in your
+realm.
+
+==== Form parameters
+
+client_id::
+    _REQUIRED MAYBE._  This parameter is required for clients using form parameters for authentication.  If you are using
+    Basic Auth, a client JWT token, or client cert authentication, then do not specify this parameter.
+client_secret::
+    _REQUIRED MAYBE_.  This parameter is required for clients using form parameters for authentication and using a client secret as a credential.
+    Do not specify this parameter if client invocations in your realm are authenticated by a different means.
+
+grant_type::
+    _REQUIRED._  The value of the parameter must be `urn:ietf:params:oauth:grant-type:token-exchange`.
+subject_token::
+    _OPTIONAL._  A security token that represents the identity of the party on behalf of whom the request is being made.  It is required if you are exchanging an existing token for a new one.
+subject_issuer::
+    _OPTIONAL._ Identifies the issuer of the `subject_token`.  It can be left blank if the token comes from the current realm or if the issuer
+    can be determined from the `subject_token_type`.  Otherwise it is required to be specified. Valid values are the alias of an `Identity Provider` configured for your realm.  Or an issuer claim identifier
+    configured by a specific `Identity Provider`.
+subject_token_type::
+    _OPTIONAL._  This parameter is the type of the token passed with the `subject_token` parameter.  This defaults
+    to `urn:ietf:params:oauth:token-type:access_token` if the `subject_token` comes from the realm and is an access token.
+    If it is an external token, this parameter may or may not have to be specified depending on the requirements of the
+    `subject_issuer`.
+requested_token_type::
+    _OPTIONAL._ This parameter represents the type of token the client wants to exchange for.  Currently only oauth
+    and OpenID Connect token types are supported.  The default value for this depends on whether it
+    is `urn:ietf:params:oauth:token-type:refresh_token` in which case you will be returned both an access token and refresh
+    token within the response.  Other appropriate values are `urn:ietf:params:oauth:token-type:access_token` and `urn:ietf:params:oauth:token-type:id_token`
+audience::
+    _OPTIONAL._  This parameter specifies the target client you want the new token minted for.
+requested_issuer::
+    _OPTIONAL._  This parameter specifies that the client wants a token minted by an external provider.  It must
+    be the alias of an `Identity Provider` configured within the realm.
+requested_subject::
+    _OPTIONAL._ This specifies a username or user id if your client wants to impersonate a different user.
+scope::
+    _OPTIONAL._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
+    is requesting. Returned scope is the Cartesian product of scope parameter and access token scope.
+
+NOTE:   We currently only support OpenID Connect and OAuth exchanges.  Support for SAML based clients and identity providers may be added in the future depending on user demand.
+
+==== Responses from a token exchange request
+
+A successful response from an exchange invocation will return the HTTP 200 response code with a content type that
+depends on the `requested-token-type` and `requested_issuer` the client asks for.  OAuth requested token types will return
+a JSON document as described in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-token-exchange-16[OAuth Token Exchange] specification.
+
+[source,json]
+----
+{
+   "access_token" : ".....",
+   "refresh_token" : ".....",
+   "expires_in" : "...."
+ }
+----
+
+Clients requesting a refresh token will get back both an access and refresh token in the response.  Clients requesting only
+access token type will only get an access token in the response.  Expiration information may or may not be included for
+clients requesting an external issuer through the `requested_issuer` parameter.
+
+Error responses generally fall under the 400 HTTP response code category, but other error status codes may be returned
+depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.
+OAuth based exchanges may return a JSON document as follows:
+
+[source,json]
+----
+{
+   "error" : "...."
+   "error_description" : "...."
+}
+----
+
+Additional error claims may be returned depending on the exchange type.  For example, OAuth Identity Providers may include
+an additional `account-link-url` claim if the user does not have a link to an identity provider.  This link can be used
+for a client initiated link request.
+
+NOTE: Token exchange setup requires knowledge of fine grain admin permissions (See the link:{adminguide_link}[{adminguide_name}] for more information).  You will need to grant clients
+      permission to exchange.  This is discussed more later in this chapter.
+
+The rest of this chapter discusses the setup requirements and provides examples for different exchange scenarios.
+For simplicity's sake, let's call a token minted by the current realm as an _internal_ token and a token minted by
+an external realm or identity provider as an _external_ token.
+
+[[_internal-token-to-internal-token-exchange]]
+=== Internal token to internal token exchange
+
+NOTE: For internal token to internal token exchange, it is recommended to use <<_standard-token-exchange,Standard token exchange>> instead of using the legacy token exchange flow described below.
+Standard token exchange is officially supported.
+
+With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
+this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens
+when a client has a token minted for itself, and needs to make additional requests to other applications that require different
+claims and permissions within the access token.  Other reasons this type of exchange might be required is if you
+need to perform a "permission downgrade" where your app needs to invoke on a less trusted app and you don't want
+to propagate your current access token.
+
+[[_client_to_client_permission]]
+==== Granting permission for the exchange
+
+Clients that want to exchange tokens for a different client need to be authorized in the Admin Console.
+You need to define a `token-exchange` fine grain permission in the target client you want permission to exchange to.
+
+.Target Client Permission
+image::exchange-target-client-permission-unset.png[Target Client Permission]
+
+.Procedure
+
+. Toggle *Permissions Enabled* to *On*.
++
+.Target Client Permission
+image::exchange-target-client-permission-set.png[Target Client Exchange Permission Set]
++
+That page displays a *token-exchange* link.
+
+. Click that link to start defining the permission.
++
+This setup page displays.
++
+.Target Client Exchange Permission Setup
+image::exchange-target-client-permission-setup.png[Target Client Exchange Permission Setup]
+
+. Click *Client details* in the breadcrumbs at the top of the screen.
+. Define a policy for this permission.
+. Click *Authorization* in the breadcrumbs at the top of the screen.
+. Define a policy for this permission.
+. Click the *Policies* tab.
+. Create a *Client* Policy by clicking *Create policy* button.
++
+.Client Policy Creation
+image::exchange-target-client-policy.png[Client Policy Creation]
+
+. Enter in the starting client that is the authenticated client that is requesting a token exchange.
+
+. After you create this policy, go back to the target client's *token-exchange* permission and add the client policy you just defined.
++
+.Apply Client Policy
+image::exchange-target-client-exchange-apply-policy.png[Apply Client Policy]
+
+Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
+try to make an exchange.
+
+[[_internal_internal_making_request]]
+==== Making the request
+
+When your client is exchanging an existing token for a token targeting another client, you use the `audience` parameter.
+This parameter must be the client identifier for the target client that you configured in the Admin Console.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token" \
+    -d "audience=target-client" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+The `subject_token` parameter must be an access token for the target realm.  If your `requested_token_type` parameter
+is a refresh token type, then the response will contain both an access token, refresh token, and expiration.  Here's
+an example JSON response you get back from this call.
+
+When the `audience` parameter is not set, the value of the parameter defaults to the client making the token exchange request.
+
+Unlike with confidential clients, public clients are not allowed to perform token exchanges using tokens from other clients.
+If you are passing a `subject_token`, the (confidential) client that was issued the token should either match the client making the request or, if issued to a different client,
+the client making the request should be among the audiences set to the token.
+
+If you are explicitly setting a target `audience` (with a client different from the client making the request), you should also make sure that the `token-exchange` scope permission is configured for the client set to the `audience` parameter to allow
+the client making the request to successfully complete the exchange.
+
+[source,json]
+----
+{
+   "access_token" : "....",
+   "refresh_token" : "....",
+   "expires_in" : 3600
+}
+----
+
+=== Internal token to external token exchange
+
+You can exchange a realm token for an external token minted by an external identity provider.  This external identity provider
+must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external
+identity providers are supported, this includes all social providers.  {project_name} does not perform a backchannel exchange to the external provider.  So if the account
+is not linked, you will not be able to get the external token.  To be able to obtain an external token one of
+these conditions must be met:
+
+* The user must have logged in with the external identity provider at least once
+* The user must have linked with the external identity provider through the User Account Service
+* The user account was linked through the external identity provider using link:{developerguide_link}[Client Initiated Account Linking] API.
+
+Finally, the external identity provider must have been configured to store tokens, or, one of the above actions must
+have been performed with the same user session as the internal token you are exchanging.
+
+If the account is not linked, the exchange response will contain a link you can use to establish it.  This is
+discussed more in the <<_internal_external_making_request, Making the Request>> section.
+
+[[_grant_permission_external_exchange]]
+==== Granting permission for the exchange
+
+Internal to external token exchange requests will be denied with a 403, Forbidden response until you grant permission for the calling client to exchange tokens with the external identity provider.  To grant permission to the client, you go to the identity provider's configuration page to the *Permissions* tab.
+
+.Identity Provider Permission
+image::exchange-idp-permission-unset.png[Identity Provider Exchange Permission]
+
+.Procedure
+
+. Toggle *Permissions Enabled* to *On*.
++
+.Identity Provider Permission
+image::exchange-idp-permission-set.png[Identity Provider Exchange Permission Set]
++
+The page displays *token-exchange* link.
+
+. Click the link to start defining the permission.
++
+This setup page appears.
++
+.Identity Provider Exchange Permission Setup
+image::exchange-idp-permission-setup.png[Identity Provider Exchange Permission Setup]
+
+. Click *Client details* in the breadcrumbs at the top of the screen.
+
+. Click *Policies* tab to create a client policy.
++
+.Client Policy Creation
+image::exchange-idp-client-policy.png[Client Policy Creation]
+
+. Enter the starting client that is the authenticated client that is requesting a token exchange.
+
+. Return to the identity provider's *token-exchange* permission and add the client policy you just defined.
++
+.Apply Client Policy
+image::exchange-idp-apply-policy.png[Apply Client Policy]
+
+Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you try to make an exchange.
+
+[[_internal_external_making_request]]
+==== Making the request
+
+When your client is exchanging an existing internal token to an external one, you provide the `requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    -d "requested_issuer=google" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
+must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
+at this time.  Here's
+an example successful JSON response you get back from this call.
+
+[source,json]
+----
+{
+   "access_token" : "....",
+   "expires_in" : 3600
+   "account-link-url" : "https://...."
+}
+----
+
+If the external identity provider is not linked for whatever reason, you will get an HTTP 400 response code with
+this JSON document:
+
+[source,json]
+----
+{
+   "error" : "....",
+   "error_description" : "..."
+   "account-link-url" : "https://...."
+}
+----
+
+The `error` claim will be either `token_expired` or `not_linked`.  The `account-link-url` claim is provided
+so that the client can perform link:{developerguide_link}[Client Initiated Account Linking].  Most, if not all,
+providers require linking through browser OAuth protocol.  With the `account-link-url` just add a `redirect_uri`
+query parameter to it and you can forward browsers to perform the link.
+
+[[_external-token-to-internal-token-exchange]]
+=== External token to internal token exchange
+
+You can trust and exchange external tokens minted by external identity providers for internal tokens.  This can be
+used to bridge between realms or just to trust tokens from your social provider.  It works similarly to an identity provider
+browser login in that a new user is imported into your realm if it doesn't exist.
+
+NOTE:  The current limitation on external token exchanges is that if the external token maps to an existing user an
+       exchange will not be allowed unless the existing user already has an account link to the external identity
+       provider.
+
+When the exchange is complete, a user session will be created within the realm, and you will receive an access
+and or refresh token depending on the `requested_token_type` parameter value.  You should note that this new
+user session will remain active until it times out or until you call the logout endpoint of the realm passing this
+new access token.
+
+These types of changes required a configured identity provider in the Admin Console.
+
+NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
+
+==== Granting permission for the exchange
+
+Before external token exchanges can be done, you grant permission for the calling client to make the exchange.  This
+permission is granted in the same manner as <<_grant_permission_external_exchange, internal to external permission is granted>>.
+
+If you also provide an `audience` parameter whose value points to a different client other than the calling one, you
+must also grant the calling client permission to exchange to the target client specific in the `audience` parameter.  How
+to do this is <<_client_to_client_permission, discussed earlier>> in this section.
+
+==== Making the request
+
+The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access_token` or `urn:ietf:params:oauth:token-type:jwt`.
+If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
+alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
+the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the providers configuration.
+
+For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
+will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
+otherwise, it will default to also invoking on the user info service to validate the token.
+
+By default, the internal token minted will use the calling client to determine what's in the token using the protocol
+mappers defined for the calling client.  Alternatively, you can specify a different target client using the `audience`
+parameter.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    -d "subject_issuer=myOidcProvider" \
+    --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    -d "audience=target-client" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+
+If your `requested_token_type` parameter
+is a refresh token type, then the response will contain both an access token, refresh token, and expiration.  Here's
+an example JSON response you get back from this call.
+
+[source,json]
+----
+{
+   "access_token" : "....",
+   "refresh_token" : "....",
+   "expires_in" : 3600
+}
+----
+
+
+=== Impersonation
+
+For internal and external token exchanges, the client can request on behalf of a user to impersonate a different user.
+For example, you may have an admin application that needs to impersonate a user so that a support engineer can debug
+a problem.
+
+NOTE: The impersonation scenario mentioned here is different from the https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation concept of the token exchange specification].
+The specification does not support impersonating the token subject to different subject. The specification semantics rather means "impersonating the client" instead of "impersonating the user".
+
+
+==== Granting permission for the exchange
+
+The user that the subject token represents must have permission to impersonate other users.  See the
+link:{adminguide_link}[{adminguide_name}] on how to enable this permission.  It can be done through a role or through
+fine grain admin permissions.
+
+
+==== Making the request
+
+Make the request as described in other chapters except additionally specify the `requested_subject` parameter.  The
+value of this parameter must be a username or user id.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    -d "audience=target-client" \
+    -d "requested_subject=wburke" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+=== Direct Naked Impersonation
+
+You can make an internal token exchange request without providing a `subject_token`.  This is called a direct
+naked impersonation because it places a lot of trust in a client as that client can impersonate any user in the realm.
+You might need this to bridge for applications where it is impossible to obtain a subject token to exchange.  For example,
+you may be integrating a legacy application that performs login directly with LDAP.  In that case, the legacy app
+is able to authenticate users itself, but not able to obtain a token.
+
+WARNING: It is very risky to enable direct naked impersonation for a client.  If the client's credentials are ever
+         stolen, that client can impersonate any user in the system.
+
+==== Granting permission for the exchange
+
+If the `audience` parameter is provided, then the calling client must have permission to exchange to the client.  How
+to set this up is discussed earlier in this chapter.
+
+Additionally, the calling client must be granted permission to impersonate users.
+
+.Procedure
+
+. Click *Users* in the menu.
+
+. Click the *Permissions* tab.
++
+.User Permissions
+image::exchange-users-permission-unset.png[User Permissions]
+
+. Toggle *Permissions Enabled* to *On*.
++
+.Identity Provider Permission
+image::exchange-users-permission-set.png[Users Impersonation Permission Set]
++
+The page displays an *impersonate* link.
+. Click that link to start defining the permission.
++
+This setup page displays.
++
+.Users Impersonation Permission Setup
+image::exchange-users-permission-setup.png[Users Impersonation Permission Setup]
+
+. Click *Client details* in the breadcrumbs at the top of the screen.
+. Define a policy for this permission.
+. Go to the *Policies* tab and create a client policy.
++
+.Client Policy Creation
+image::exchange-users-client-policy.png[Client Policy Creation]
+
+. Enter the starting client that is the authenticated client that is requesting a token exchange.
+
+. Return to the users' *impersonation* permission and add the client policy you just
+defined.
++
+.Apply Client Policy
+image::exchange-users-apply-policy.png[Apply Client Policy]
+
+Your client now has permission to impersonate users.  If you do not do this correctly, you will get a 403 Forbidden response if you
+try to make this type of exchange.
+
+NOTE: Public clients are not allowed to do direct naked impersonations.
+
+
+==== Making the request
+
+To make the request, simply specify the `requested_subject` parameter.  This must be the username or user id of
+a valid user.  You can also specify an `audience` parameter if you wish.
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=the client secret" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "requested_subject=wburke" \
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
+----
+
+=== Expand permission model with service accounts
+
+When granting clients permission to exchange, you don't necessarily  manually enable those permissions for each and every client.
+If the client has a service account associated with it, you can use a role to group permissions together and assign exchange permissions
+by assigning a role to the client's service account.  For example, you might define a `naked-exchange` role and any service account that has that
+role can do a naked exchange.
+
+=== Exchange vulnerabilities
+
+When you start allowing token exchanges, there are various things you have to both be aware of and careful of.
+
+The first is public clients.  Public clients do not have or require a client credential in order to perform an exchange.  Anybody that has a valid
+token will be able to __impersonate__ the public client and perform the exchanges that public client is allowed to perform.  If there
+are any untrustworthy clients that are managed by your realm, public clients may open up vulnerabilities in your permission models.
+This is why direct naked exchanges do not allow public clients and will abort with an error if the calling client is public.
+
+It is possible to exchange social tokens provided by Facebook, Google, etc. for a realm token.  Be careful and vigilante on what
+the exchange token is allowed to do as it's not hard to create fake accounts on these social websites.  Use default roles, groups, and identity provider mappers to control what attributes and roles
+are assigned to the external social user.
+
+Direct naked exchanges are quite dangerous.  You are putting a lot of trust in the calling client that it will never leak out
+its client credentials.  If those credentials are leaked, then the thief can impersonate anybody in your system.  This is in direct
+contrast to confidential clients that have existing tokens.  You have two factors of authentication, the access token and the client
+credentials, and you're only dealing with one user.  So use direct naked exchanges sparingly.
+
+</@tmpl.guide>

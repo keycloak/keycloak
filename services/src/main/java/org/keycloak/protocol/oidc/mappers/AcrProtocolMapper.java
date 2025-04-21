@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -127,7 +128,7 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
     }
 }

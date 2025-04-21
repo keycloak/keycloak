@@ -5,11 +5,14 @@ body:
   - type: checkboxes
     attributes:
       label: Before reporting an issue
-      description: Please search to see if the issue is already reported, and try to reproduce the issue on the latest release.
+      description: |
+        Please search to see if the issue is already reported, and try to reproduce the issue on the latest release.
+
+        Any reported issues must be reproducible in the [latest](https://github.com/keycloak/keycloak/releases/latest) or [nightly](https://github.com/keycloak/keycloak/releases/nightly) version of Keycloak.
+
+        **⚠️ Failing to follow these guidelines may result in your issue being closed without action. ⚠️**
       options:
-        - label: I have searched existing issues
-          required: true
-        - label: I have reproduced the issue with the [latest nightly release](https://github.com/keycloak/keycloak/releases/tag/nightly)
+        - label: I have read and understood the above terms for submitting issues, and I understand that my issue may be closed without action if I do not follow them.
           required: true
   - type: dropdown
     id: area
@@ -30,8 +33,8 @@ body:
         - admin/cli
         - admin/fine-grained-permissions
         - admin/ui
-        - admin/client/node
-        - admin/client/java
+        - admin/client-java
+        - admin/client-js
         - authentication
         - authentication/webauthn
         - authorization-services
@@ -39,20 +42,23 @@ body:
         - core
         - dependencies
         - dist/quarkus
-        - dist/wildfly
         - docs
         - identity-brokering
         - import-export
         - infinispan
         - ldap
+        - login/ui
         - oidc
+        - oid4vc
         - operator
+        - organizations
         - saml
         - storage
         - testsuite
         - token-exchange
         - translations
         - user-profile
+        - welcome/ui
     validations:
       required: true
   - type: textarea
@@ -69,6 +75,13 @@ body:
       description: What version of Keycloak are you running?
     validations:
       required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression
+      description: Was the issue introduced only after upgrading Keycloak, and it worked as expected in the past?
+      options:
+        - label: The issue is a regression
   - type: textarea
     id: behaviorExpected
     attributes:

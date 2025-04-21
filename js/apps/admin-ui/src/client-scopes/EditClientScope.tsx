@@ -3,6 +3,12 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import {
+  KeycloakSpinner,
+  useAlerts,
+  useFetch,
+  useHelp,
+} from "@keycloak/keycloak-ui-shared";
+import {
   Alert,
   AlertVariant,
   ButtonVariant,
@@ -14,10 +20,7 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useHelp } from "ui-shared";
-
-import { adminClient } from "../admin-client";
-import { useAlerts } from "../components/alert/Alerts";
+import { useAdminClient } from "../admin-client";
 import {
   AllClientScopes,
   ClientScope,
@@ -25,7 +28,6 @@ import {
   changeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 import {
   RoutableTabs,
@@ -34,22 +36,21 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { MapperList } from "./details/MapperList";
 import { ScopeForm } from "./details/ScopeForm";
-import {
-  ClientScopeParams,
-  ClientScopeTab,
-  toClientScope,
-} from "./routes/ClientScope";
-import { toMapper } from "./routes/Mapper";
+import { ClientScopeParams, toClientScope } from "./routes/ClientScope";
 import { toClientScopes } from "./routes/ClientScopes";
+import { toMapper } from "./routes/Mapper";
+import { useAccess } from "../context/access/Access";
+import { AdminEvents } from "../events/AdminEvents";
 
 export default function EditClientScope() {
+  const { adminClient } = useAdminClient();
+
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { id } = useParams<ClientScopeParams>();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();
@@ -57,6 +58,7 @@ export default function EditClientScope() {
     useState<ClientScopeDefaultOptionalType>();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+  const { hasAccess } = useAccess();
 
   useFetch(
     async () => {
@@ -97,18 +99,14 @@ export default function EditClientScope() {
     return hasOptionalScope ? ClientScope.optional : AllClientScopes.none;
   }
 
-  const useTab = (tab: ClientScopeTab) =>
-    useRoutableTab(
-      toClientScope({
-        realm,
-        id,
-        tab,
-      }),
-    );
-
-  const settingsTab = useTab("settings");
-  const mappersTab = useTab("mappers");
-  const scopeTab = useTab("scope");
+  const settingsTab = useRoutableTab(
+    toClientScope({ realm, id, tab: "settings" }),
+  );
+  const mappersTab = useRoutableTab(
+    toClientScope({ realm, id, tab: "mappers" }),
+  );
+  const scopeTab = useRoutableTab(toClientScope({ realm, id, tab: "scope" }));
+  const eventsTab = useRoutableTab(toClientScope({ realm, id, tab: "events" }));
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
     const clientScope = convertFormValuesToObject({
@@ -118,7 +116,7 @@ export default function EditClientScope() {
 
     try {
       await adminClient.clientScopes.update({ id }, clientScope);
-      await changeScope({ ...clientScope, id }, clientScope.type);
+      await changeScope(adminClient, { ...clientScope, id }, clientScope.type);
 
       addAlert(t("updateSuccessClientScope"), AlertVariant.success);
     } catch (error) {
@@ -186,6 +184,7 @@ export default function EditClientScope() {
           realm,
           id: clientScope!.id!,
           mapperId: mapper.id!,
+          viewMode: "new",
         }),
       );
     } else {
@@ -234,8 +233,8 @@ export default function EditClientScope() {
         divider={false}
       />
 
-      <PageSection variant="light" className="pf-u-p-0">
-        <RoutableTabs isBox>
+      <PageSection variant="light" className="pf-v5-u-p-0">
+        <RoutableTabs isBox mountOnEnter unmountOnExit>
           <Tab
             id="settings"
             data-testid="settings"
@@ -257,7 +256,12 @@ export default function EditClientScope() {
               onAdd={addMappers}
               onDelete={onDelete}
               detailLink={(id) =>
-                toMapper({ realm, id: clientScope.id!, mapperId: id! })
+                toMapper({
+                  realm,
+                  id: clientScope.id!,
+                  mapperId: id!,
+                  viewMode: "edit",
+                })
               }
             />
           </Tab>
@@ -284,6 +288,16 @@ export default function EditClientScope() {
               save={assignRoles}
             />
           </Tab>
+          {realmRepresentation?.adminEventsEnabled &&
+            hasAccess("view-events") && (
+              <Tab
+                data-testid="admin-events-tab"
+                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+                {...eventsTab}
+              >
+                <AdminEvents resourcePath={`*client-scopes/${id}`} />
+              </Tab>
+            )}
         </RoutableTabs>
       </PageSection>
     </>

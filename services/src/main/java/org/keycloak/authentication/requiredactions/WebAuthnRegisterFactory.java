@@ -17,6 +17,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
+import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -81,7 +82,7 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, Environme
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
     }
 }

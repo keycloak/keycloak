@@ -5,32 +5,33 @@
 
 == Create a realm
 
-A realm in Keycloak is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, Keycloak
-includes a single realm, called `master`. Use this realm only for managing Keycloak and not for managing any applications.
+A realm in {project_name} is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, {project_name}
+includes a single realm, called `master`. Use this realm only for managing {project_name} and not for managing any applications.
 
 Use these steps to create the first realm.
 
 . Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *Create Realm*.
+. Click *Create Realm* next to *Current realm*.
 . Enter `myrealm` in the *Realm name* field.
 . Click *Create*.
 
+.Add realm
 image::add-realm.png[Add realm]
 
 == Create a user
 
 Initially, the realm has no users. Use these steps to create a user:
 
-. Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *myrealm*.
+. Verify that you are still in the *myrealm* realm, which is next to *Current realm*.
 . Click *Users* in the left-hand menu.
-. Click *Add user*.
+. Click *Create new user*.
 . Fill in the form with the following values:
 ** *Username*: `myuser`
 ** *First name*: any first name
 ** *Last name*: any last name
 . Click *Create*.
 
+.Create user
 image::add-user.png[Create user]
 
 This user needs a password to log in. To set the initial password:
@@ -39,4 +40,5 @@ This user needs a password to log in. To set the initial password:
 . Fill in the *Set password* form with a password.
 . Toggle *Temporary* to *Off* so that the user does not need to update this password at the first login.
 
+.Set password
 image::set-password.png[Set password]

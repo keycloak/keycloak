@@ -28,13 +28,20 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
-    <packaging>pom</packaging>
+    <!-- although this doesn't provide a JAR, this is necessary to call the DocsBuildDebugUtil class from an IDE for debugging -->
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-guides-maven-plugin</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -45,10 +52,7 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
-                        <!-- As of 3.3.0, if there is no phase specified, it will not execute.
-                        Even if there is a phase specified, it will always execute in phase process-resources,
-                        thereby executing before the keycloak-guides-maven-plugin -->
+                        <id>copy-images</id>
                         <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -58,6 +62,43 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/images</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-attributes</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/generated-guides/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/</directory>
+                                    <includes>
+                                        <include>attributes.adoc</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-included-files</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/generated-guides/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/</directory>
+                                    <includes>
+                                        <include>**/examples/**/*.*</include>
+                                        <include>**/partials/**/*.*</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -96,8 +137,6 @@
                         <idseparator>-</idseparator>
                         <docinfo1>true</docinfo1>
                         <imagesdir>../images</imagesdir>
-                        <section>guide</section>
-                        <sections>guides</sections>
                         <attribute-missing>warn</attribute-missing>
                     </attributes>
                     <logHandler>
@@ -130,6 +169,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>observability-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/observability</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/observability</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>migration-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -149,6 +199,29 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/getting-started</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-docs/getting-started</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>high-availability-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>securing-apps-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
                 </executions>

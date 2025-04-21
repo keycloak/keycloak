@@ -11,11 +11,14 @@ export const ForbiddenSection = ({
   permissionNeeded,
 }: ForbiddenSectionProps) => {
   const { t } = useTranslation();
-  const count = Array.isArray(permissionNeeded) ? permissionNeeded.length : 1;
+  const permissionNeededArray = Array.isArray(permissionNeeded)
+    ? permissionNeeded
+    : [permissionNeeded];
 
   return (
     <PageSection>
-      {t("forbidden", { count })} {permissionNeeded}
+      {t("forbidden", { count: permissionNeededArray.length })}{" "}
+      {permissionNeededArray.map((p) => p.toString()).join(", ")}
     </PageSection>
   );
 };

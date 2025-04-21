@@ -19,69 +19,34 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Set;
 
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.UserCacheManager;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@SerializeWith(UserCacheRealmInvalidationEvent.ExternalizerImpl.class)
+@ProtoTypeId(Marshalling.USER_CACHE_REALM_INVALIDATION_EVENT)
 public class UserCacheRealmInvalidationEvent  extends InvalidationEvent implements UserCacheInvalidationEvent {
 
-    private String realmId;
-
-    public static UserCacheRealmInvalidationEvent create(String realmId) {
-        UserCacheRealmInvalidationEvent event = new UserCacheRealmInvalidationEvent();
-        event.realmId = realmId;
-        return event;
+    private UserCacheRealmInvalidationEvent(String id) {
+        super(id);
     }
 
-    @Override
-    public String getId() {
-        return realmId; // Just a placeholder
+    @ProtoFactory
+    public static UserCacheRealmInvalidationEvent create(String id) {
+        return new UserCacheRealmInvalidationEvent(id);
     }
 
     @Override
     public String toString() {
-        return String.format("UserCacheRealmInvalidationEvent [ realmId=%s ]", realmId);
+        return String.format("UserCacheRealmInvalidationEvent [ realmId=%s ]", getId());
     }
 
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
-        userCache.invalidateRealmUsers(realmId, invalidations);
+        userCache.invalidateRealmUsers(getId(), invalidations);
     }
 
-    public static class ExternalizerImpl implements Externalizer<UserCacheRealmInvalidationEvent> {
-
-        private static final int VERSION_1 = 1;
-
-        @Override
-        public void writeObject(ObjectOutput output, UserCacheRealmInvalidationEvent obj) throws IOException {
-            output.writeByte(VERSION_1);
-
-            MarshallUtil.marshallString(obj.realmId, output);
-        }
-
-        @Override
-        public UserCacheRealmInvalidationEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            switch (input.readByte()) {
-                case VERSION_1:
-                    return readObjectVersion1(input);
-                default:
-                    throw new IOException("Unknown version");
-            }
-        }
-
-        public UserCacheRealmInvalidationEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
-            UserCacheRealmInvalidationEvent res = new UserCacheRealmInvalidationEvent();
-            res.realmId = MarshallUtil.unmarshallString(input);
-
-            return res;
-        }
-    }
 }

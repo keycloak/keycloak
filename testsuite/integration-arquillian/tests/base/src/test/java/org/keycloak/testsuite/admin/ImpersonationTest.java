@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.admin;
 
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -27,7 +30,6 @@ import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -41,6 +43,7 @@ import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
@@ -51,25 +54,40 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.*;
-import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.CredentialBuilder;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
 
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.*;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
@@ -215,8 +233,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         resp.close();
 
         // Open the URL for the client (will redirect to Keycloak server AuthorizationEndpoint and create authenticationSession)
-        String loginFormUrl = oauth.getLoginFormUrl();
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
         loginPage.assertCurrent();
 
         // Impersonate and get SSO cookie. Setup that cookie for webDriver
@@ -225,7 +242,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         }
 
         // Open the URL again - should be directly redirected to the app due the SSO login
-        driver.navigate().to(loginFormUrl);
+        oauth.openLoginForm();
         appPage.assertCurrent();
         //KEYCLOAK-12783
         Assert.assertEquals("/auth/realms/master/app/auth", new URL(DroneUtils.getCurrentDriver().getCurrentUrl()).getPath());
@@ -291,10 +308,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     // Return the SSO cookie from the impersonated session
     protected Set<Cookie> testSuccessfulImpersonation(String admin, String adminRealm) {
-        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-        resteasyClientBuilder.connectionPoolSize(10);
-        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
-        ResteasyClient resteasyClient = resteasyClientBuilder.build();
+        ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
 
         // Login adminClient
         try (Keycloak client = login(admin, adminRealm, resteasyClient)) {
@@ -340,7 +354,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             Assert.assertEquals(admin, notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
 
             Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE))
+                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
                     .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
                     .collect(Collectors.toSet());
 
@@ -387,6 +401,10 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             password = username.equals("admin") ? "admin" : "password";
         }
 
+        if (resteasyClient == null) {
+            resteasyClient = AdminClientUtil.createResteasyClient();
+        }
+
         return KeycloakBuilder.builder().serverUrl(getAuthServerContextRoot() + "/auth")
                 .realm(realm)
                 .username(username)
@@ -415,10 +433,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     // Return the SSO cookie from the impersonated session
     protected Set<Cookie> testSuccessfulServiceAccountImpersonation(UserRepresentation serviceAccount, String serviceAccountRealm) {
-        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-        resteasyClientBuilder.connectionPoolSize(10);
-        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
-        ResteasyClient resteasyClient = resteasyClientBuilder.build();
+        ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
 
         // Login adminClient
         try (Keycloak client = loginServiceAccount(serviceAccount, serviceAccountRealm, resteasyClient)) {
@@ -459,7 +474,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             Assert.assertNotNull(resBody);
             Assert.assertTrue(resBody.contains("redirect"));
             Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE))
+                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
                     .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
                     .collect(Collectors.toSet());
 

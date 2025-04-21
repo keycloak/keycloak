@@ -21,27 +21,30 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.ws.rs.core.Response;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -77,7 +80,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         assertEquals(500, response.getStatus());
 
         InputStream is = (InputStream) response.getEntity();
-        String responseString = StreamUtil.readString(is, Charset.forName("UTF-8"));
+        String responseString = StreamUtil.readString(is, StandardCharsets.UTF_8);
 
         Assert.assertTrue(responseString.contains("An internal server error has occurred"));
     }
@@ -90,12 +93,13 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             post.setEntity(new StringEntity("{ invalid : invalid }"));
             post.setHeader("Content-Type", "application/json");
 
-            CloseableHttpResponse response = client.execute(post);
-            assertEquals(400, response.getStatusLine().getStatusCode());
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
 
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-            assertNull(error.getErrorDescription());
+                OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+                assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+                assertNotNull("found error with " + error.getError() + "/" + error.getErrorDescription(), error.getErrorDescription());
+            }
         }
     }
 
@@ -110,12 +114,13 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             post.setHeader("Authorization", "bearer " + accessToken);
             post.setHeader("Content-Type", "application/json");
 
-            CloseableHttpResponse response = client.execute(post);
-            assertEquals(400, response.getStatusLine().getStatusCode());
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
 
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
-            assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-            assertNull(error.getErrorDescription());
+                OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+                assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+                assertNotNull("found error with " + error.getError() + "/" + error.getErrorDescription(), error.getErrorDescription());
+            }
         }
     }
 
@@ -164,7 +169,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/testing/uncaught-error").build();
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response response = SimpleHttp.doGet(uri.toString(), client).header("Accept", MediaType.TEXT_HTML_UTF_8).asResponse();
+            SimpleHttp.Response response = SimpleHttpDefault.doGet(uri.toString(), client).header("Accept", MediaType.TEXT_HTML_UTF_8).asResponse();
 
             for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
                 String expectedValue = header.getDefaultValue();
@@ -220,7 +225,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
         try {
             checkPageNotFound("/auth/realms/master/nosuch");
-            String url = driver.findElement(By.xpath("//a[text()='Deutsch']")).getAttribute("href");
+             String url = driver.findElement(By.xpath("//option[text()[contains(.,'Deutsch')]]")).getAttribute("value");
             driver.navigate().to(url);
             errorPage.assertCurrent();
         } finally {

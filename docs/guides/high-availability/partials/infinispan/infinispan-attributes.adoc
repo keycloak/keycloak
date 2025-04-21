@@ -1,0 +1,29 @@
+// Attributes present in doc/kubernetes/collector/build.sh
+// If the build.sh is changed, update the attributes in this file
+// namespace
+:ns: keycloak
+// sites: crossdc.local.name and crossdc.remote.name
+:site-a-cr: site-a
+:site-b-cr: site-b
+// crossdc.remote.secret
+:sa-secret: xsite-token-secret
+// crossdc.route.tls.keystore.secret
+:ks-secret: xsite-keystore-secret
+// crossdc.route.tls.truststore.secret
+:ts-secret: xsite-truststore-secret
+// hotrodPassword
+:hr-password: strong-password
+// cross-site service account
+:sa: xsite-sa
+// deployment name (hardcoded in ispn-helm chart)
+:cluster-name: infinispan
+
+// Other common attributes
+:ocp: OpenShift
+:ispn-operator: {jdgserver_name} Operator
+:site-a: Site-A
+:site-b: Site-B
+:stale-site: offline
+:keep-site: active
+:keep-site-name: {site-a-cr}
+:stale-site-name: {site-b-cr}

@@ -79,7 +79,7 @@ https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac 
 = Search groups by attribute
 
 It is now possible to search groups by attribute through the Admin REST API. Thanks to
-https://github.com/Redhat-Alice[Alice] for this contribution.
+https://github.com/alice-wondered[Alice] for this contribution.
 
 = View group membership in the account console
 

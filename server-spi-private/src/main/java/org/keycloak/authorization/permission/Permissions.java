@@ -73,7 +73,7 @@ public final class Permissions {
         }
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer.getRealm(), resourceServer, resourceServer.getClientId(), resource -> {
+        resourceStore.findByOwner(resourceServer, resourceServer.getClientId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
                 evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
             }
@@ -82,7 +82,7 @@ public final class Permissions {
         // resource server isn't current user
         if (!Objects.equals(resourceServer.getClientId(), identity.getId())) {
             // obtain all resources where owner is the current user
-            resourceStore.findByOwner(resourceServer.getRealm(), resourceServer, identity.getId(), resource -> {
+            resourceStore.findByOwner(resourceServer, identity.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {
                     evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
                 }
@@ -123,6 +123,13 @@ public final class Permissions {
             AuthorizationProvider authorization, AuthorizationRequest request) {
         Set<Scope> scopes = resolveScopes(resource, resourceServer, requestedScopes, authorization);
         return new ResourcePermission(resource, scopes, resourceServer, request.getClaims());
+    }
+
+    public static ResourcePermission createResourcePermissions(String resourceType, Resource resource,
+                                                               ResourceServer resourceServer, Collection<Scope> requestedScopes,
+                                                               AuthorizationProvider authorization, AuthorizationRequest request) {
+        Set<Scope> scopes = resolveScopes(resource, resourceServer, requestedScopes, authorization);
+        return new ResourcePermission(resourceType, resource, scopes, resourceServer, request.getClaims());
     }
     
     public static Set<Scope> resolveScopes(Resource resource, ResourceServer resourceServer,

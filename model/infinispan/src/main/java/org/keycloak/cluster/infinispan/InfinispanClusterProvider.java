@@ -17,6 +17,14 @@
 
 package org.keycloak.cluster.infinispan;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
@@ -24,11 +32,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 
 /**
  *
@@ -39,19 +43,19 @@ public class InfinispanClusterProvider implements ClusterProvider {
     protected static final Logger logger = Logger.getLogger(InfinispanClusterProvider.class);
 
     public static final String CLUSTER_STARTUP_TIME_KEY = "cluster-start-time";
-    private static final String TASK_KEY_PREFIX = "task::";
+    public static final String TASK_KEY_PREFIX = "task::";
 
     private final int clusterStartupTime;
     private final String myAddress;
-    private final CrossDCAwareCacheFactory crossDCAwareCacheFactory;
+    private final Cache<String, Object> workCache;
     private final InfinispanNotificationsManager notificationsManager; // Just to extract notifications related stuff to separate class
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, CrossDCAwareCacheFactory crossDCAwareCacheFactory, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
+    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, Cache<String, Object> workCache, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
         this.myAddress = myAddress;
         this.clusterStartupTime = clusterStartupTime;
-        this.crossDCAwareCacheFactory = crossDCAwareCacheFactory;
+        this.workCache = workCache;
         this.notificationsManager = notificationsManager;
         this.localExecutor = localExecutor;
     }
@@ -124,32 +128,28 @@ public class InfinispanClusterProvider implements ClusterProvider {
         this.notificationsManager.registerListener(taskKey, task);
     }
 
-
     @Override
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        this.notificationsManager.notify(taskKey, event, ignoreSender, dcNotify);
+        notificationsManager.notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
     }
 
-    private LockEntry createLockEntry() {
-        LockEntry lock = new LockEntry();
-        lock.setNode(myAddress);
-        lock.setTimestamp(Time.currentTime());
-        return lock;
+    @Override
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+        notificationsManager.notify(taskKey, events, ignoreSender, dcNotify);
     }
-
 
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
-        LockEntry myLock = createLockEntry();
+        LockEntry myLock = new LockEntry(myAddress);
 
-        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(crossDCAwareCacheFactory, cacheKey, myLock, taskTimeoutInSeconds);
+        LockEntry existingLock = (LockEntry) workCache.putIfAbsent(cacheKey, myLock, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
+                logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.node());
             }
             return false;
         } else {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.getNode());
+                logger.tracef("Successfully acquired lock for task %s. Our node is %s", cacheKey, myLock.node());
             }
             return true;
         }
@@ -160,7 +160,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
         // More attempts to send the message (it may fail if some node fails in the meantime)
         Retry.executeWithBackoff((int iteration) -> {
 
-            crossDCAwareCacheFactory.getCache().remove(cacheKey);
+            CacheDecorators.ignoreReturnValues(workCache).remove(cacheKey);
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s removed from the cache", cacheKey);
             }

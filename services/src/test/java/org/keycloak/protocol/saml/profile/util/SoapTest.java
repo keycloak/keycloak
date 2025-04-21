@@ -16,8 +16,6 @@
  */
 package org.keycloak.protocol.saml.profile.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -28,8 +26,6 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
@@ -55,10 +51,9 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.util.JsonConfigProvider;
-import org.keycloak.services.util.JsonConfigProvider.JsonScope;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+import org.keycloak.utils.ScopeUtil;
 import org.w3c.dom.Document;
 
 /**
@@ -101,33 +96,6 @@ public class SoapTest {
         server.stop(0);
     }
 
-
-    private String param(String key, String value) {
-        return "\"" + key + "\"" + " : " + "\"" + value + "\"";
-    }
-
-    private String json(Map<String, String> properties) {
-        String[] params = properties.entrySet().stream().map(e -> param(e.getKey(), e.getValue())).toArray(String[]::new);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append(String.join(",", params));
-        sb.append("}");
-
-        return sb.toString();
-    }
-
-    private JsonScope createScope(Map<String, String> properties) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            JsonNode config = mapper.readTree(json(properties));
-            return new JsonConfigProvider(config, new Properties()).new JsonScope(config);
-        } catch (IOException e) {
-            Assert.fail("Could not parse json");
-        }
-        return null;
-    }
-
     private LogoutRequestType createLogoutRequestType() throws ConfigurationException {
         NameIDType nameId = new NameIDType();
         nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()));
@@ -144,9 +112,9 @@ public class SoapTest {
         Document doc = SAML2Request.convert(request);
         Profile.defaults();
         CryptoIntegration.init(CryptoProvider.class.getClassLoader());
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        KeycloakSession session = new DefaultKeycloakSession(sessionFactory);
+        KeycloakSession session = new ResteasyKeycloakSession(sessionFactory);
 
         SOAPMessage soapResponse = Soap.createMessage()
                 .addMimeHeader("SOAPAction", "http://www.oasis-open.org/committees/security")
@@ -179,16 +147,21 @@ public class SoapTest {
             }
 
             @Override
+            public String getDefaultProvider(String spi) {
+                return null;
+            }
+
+            @Override
             public Config.Scope scope(String... scope) {
                 if (scope.length == 2 && "connectionsHttpClient".equals(scope[0]) && "default".equals(scope[1])) {
-                    return createScope(Collections.singletonMap("proxy-mappings", "localhost;http://localhost:8281"));
+                    return ScopeUtil.createScope(Collections.singletonMap("proxy-mappings", "localhost;http://localhost:8281"));
                 }
-                return createScope(new HashMap<>());
+                return ScopeUtil.createScope(new HashMap<>());
             }
         });
-        DefaultKeycloakSessionFactory sessionFactory = new DefaultKeycloakSessionFactory();
+        ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
         sessionFactory.init();
-        KeycloakSession session = new DefaultKeycloakSession(sessionFactory);
+        KeycloakSession session = new ResteasyKeycloakSession(sessionFactory);
 
         SOAPException ex = Assert.assertThrows(SOAPException.class, () -> {
             Soap.createMessage()

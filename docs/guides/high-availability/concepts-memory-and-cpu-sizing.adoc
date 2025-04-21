@@ -1,0 +1,169 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for sizing CPU and memory resources"
+summary="Understand these concepts to avoid resource exhaustion and congestion"
+tileVisible="false" >
+
+Use this as a starting point to size a product environment.
+Adjust the values for your environment as needed based on your load tests.
+
+== Performance recommendations
+
+[WARNING]
+====
+* Performance will be lowered when scaling to more Pods (due to additional overhead) and using a cross-datacenter setup (due to additional traffic and operations).
+
+* Increased cache sizes can improve the performance when {project_name} instances running for a longer time.
+This will decrease response times and reduce IOPS on the database.
+Still, those caches need to be filled when an instance is restarted, so do not set resources too tight based on the stable state measured once the caches have been filled.
+
+* Use these values as a starting point and perform your own load tests before going into production.
+====
+
+Summary:
+
+* The used CPU scales linearly with the number of requests up to the tested limit below.
+
+Recommendations:
+
+* The base memory usage for a Pod including caches of Realm data and 10,000 cached sessions is 1250 MB of RAM.
+
+* In containers, Keycloak allocates 70% of the memory limit for heap-based memory. It will also use approximately 300 MB of non-heap-based memory.
+To calculate the requested memory, use the calculation above. As memory limit, subtract the non-heap memory from the value above and divide the result by 0.7.
+
+* For each 15 password-based user logins per second, allocate 1 vCPU to the cluster (tested with up to 300 per second).
++
+{project_name} spends most of the CPU time hashing the password provided by the user, and it is proportional to the number of hash iterations.
+
+* For each 120 client credential grants per second, 1 vCPU to the cluster (tested with up to 2000 per second).^*^
++
+Most CPU time goes into creating new TLS connections, as each client runs only a single request.
+
+* For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).^*^
+
+* Leave 150% extra head-room for CPU usage to handle spikes in the load.
+This ensures a fast startup of the node, and enough capacity to handle failover tasks.
+Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
+
+* When performing requests with more than 2500 different clients concurrently, not all client information will fit into {project_name}'s caches when those are using the standard cache sizes of 10000 entries each.
+Due to this, the database may become a bottleneck as client data is reloaded frequently from the database.
+To reduce the database usage, increase the `users` cache size by two times the number of concurrently used clients, and the `realms` cache size by four times the number of concurrently used clients.
+
+{project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
+
+For every 100 login/logout/refresh requests per second:
+
+- Budget for 1400 Write IOPS.
+
+- Allocate between 0.35 and 0.7 vCPU.
+
+The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreases while the response times increase. A lower CPU quota on the database can lead to slower response times during peak loads. Choose a larger CPU quota if fast response times during peak loads are critical. See below for an example.
+
+=== Measuring the activity of a running {project_name} instance
+
+Sizing of a {project_name} instance depends on the actual and forecasted numbers for password-based user logins, refresh token requests, and client credential grants as described in the previous section.
+
+To retrieve the actual numbers of a running {project_name} instance for these three key inputs, use the metrics {project_name} provides:
+
+* The user event metric `keycloak_user_events_total` for event type `login` includes both password-based logins and cookie-based logins, still it can serve as a first approximate input for this sizing guide.
+* To find out number of password validations performed by {project_name} use the metric `keycloak_credentials_password_hashing_validations_total`.
+The metric also contains tags providing some details about the hashing algorithm used and the outcome of the validation.
+Here is the list of available tags: `realm`, `algorithm`, `hashing_strength`, `outcome`.
+* Use the user event metric `keycloak_user_events_total` for the event types `refresh_token` and `client_login` for refresh token requests and client credential grants respectively.
+
+See the <@links.observability id="event-metrics"/> and <@links.observability id="metrics-for-troubleshooting-http"/> {sections} for more information.
+
+These metrics are crucial for tracking daily and weekly fluctuations in user activity loads,
+identifying emerging trends that may indicate the need to resize the system and
+validating sizing calculations.
+By systematically measuring and evaluating these user event metrics,
+you can ensure your system remains appropriately scaled and responsive to changes in user behavior and demand.
+
+=== Calculation example (single site)
+
+Target size:
+
+* 45 logins and logouts per seconds
+* 360 client credential grants per second^*^
+* 360 refresh token requests per second (1:8 ratio for logins)^*^
+* 3 Pods
+
+Limits calculated:
+
+* CPU requested per Pod: 3 vCPU
++
+(45 logins per second = 3 vCPU, 360 client credential grants per second = 3 vCPU, 360 refresh tokens = 3 vCPU. This sums up to 9 vCPU total. With 3 Pods running in the cluster, each Pod then requests 3 vCPU)
+
+* CPU limit per Pod: 7.5 vCPU
++
+(Allow for an additional 150% CPU requested to handle peaks, startups and failover tasks)
+
+* Memory requested per Pod: 1250 MB
++
+(1250 MB base memory)
+
+* Memory limit per Pod: 1360 MB
++
+(1250 MB expected memory usage minus 300 non-heap-usage, divided by 0.7)
+
+* Aurora Database instance: either `db.t4g.large` or `db.t4g.xlarge` depending on the required response times during peak loads.
++
+(45 logins per second, 5 logouts per second, 360 refresh tokens per seconds.
+This sums up to 410 requests per second.
+This expected DB usage is 1.4 to 2.8 vCPU, with a DB idle load of 0.3 vCPU.
+This indicates either a 2 vCPU `db.t4g.large` instance or a 4 vCPU `db.t4g.xlarge` instance.
+A 2 vCPU `db.t4g.large` would be more cost-effective if the response times are allowed to be higher during peak usage.
+In our tests, the median response time for a login and a token refresh increased by up to 120 ms once the CPU saturation reached 90% on a 2 vCPU `db.t4g.large` instance given this scenario.
+For faster response times during peak usage, consider a 4 vCPU `db.t4g.xlarge` instance for this scenario.)
+
+////
+<#noparse>
+
+./benchmark.sh eu-west-1 --scenario=keycloak.scenario.authentication.AuthorizationCode --server-url=${KEYCLOAK_URL} --realm-name=realm-0 --users-per-sec=45 --ramp-up=10 --refresh-token-period=2 --refresh-token-count=8 --logout-percentage=10 --measurement=600 --users-per-realm=20000 --log-http-on-failure
+
+</#noparse>
+////
+
+=== Sizing a multi-site setup
+
+To create the sizing an active-active Keycloak setup with two AZs in one AWS region, following these steps:
+
+* Create the same number of Pods with the same memory sizing as above on the second site.
+
+* The database sizing remains unchanged. Both sites will connect to the same database writer instance.
+
+In regard to the sizing of CPU requests and limits, there are different approaches depending on the expected failover behavior:
+
+Fast failover and more expensive::
+Keep the CPU requests and limits as above for the second site. This way any remaining site can take over the traffic from the primary site immediately without the need to scale.
+
+Slower failover and more cost-effective::
+Reduce the CPU requests and limits as above by 50% for the second site. When one of the sites fails, scale the remaining site from 3 Pod to 6 Pods either manually, automated, or using a Horizontal Pod Autoscaler. This requires enough spare capacity on the cluster or cluster auto-scaling capabilities.
+
+Alternative setup for some environments::
+Reduce the CPU requests by 50% for the second site, but keep the CPU limits as above. This way, the remaining site can take the traffic, but only at the downside that the Nodes will experience CPU pressure and therefore slower response times during peak traffic.
+The benefit of this setup is that the number of Pods does not need to scale during failovers which is simpler to set up.
+
+== Reference architecture
+
+The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
+
+* OpenShift 4.17.x deployed on AWS via ROSA.
+* Machine pool with `c7g.2xlarge` instances.^*^
+* {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
+* OpenShift's reverse proxy runs in the passthrough mode where the TLS connection of the client is terminated at the Pod.
+* Database Amazon Aurora PostgreSQL in a multi-AZ setup.
+* Default user password hashing with Argon2 and 5 hash iterations and minimum memory size 7 MiB https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[as recommended by OWASP] (which is the default).
+* Client credential grants do not use refresh tokens (which is the default).
+* Database seeded with 20,000 users and 20,000 clients.
+* Infinispan local caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.
+* All authentication sessions in distributed caches as per default, with two owners per entries, allowing one failing Pod without losing data.
+* All user and client sessions are stored in the database and are not cached in-memory as this was tested in a multi-site setup.
+Expect a slightly higher performance for single-site setups as a fixed number of user and client sessions will be cached.
+* OpenJDK 21
+
+^*^ For non-ARM CPU architectures on AWS (`c7i`/`c7a` vs. `c7g`) we found that client credential grants and refresh token workloads were able to deliver up to two times the number of operations per CPU core, while password hashing was delivering a constant number of operations per CPU core. Depending on your workload and your cloud pricing, please run your own tests and make your own calculations for mixed workloads to find out which architecture delivers a better pricing for you.
+
+</@tmpl.guide>

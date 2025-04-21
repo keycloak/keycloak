@@ -17,12 +17,15 @@ image:images/user-federation.png[User federation]
 . Click *Add LDAP providers*.
 +
 {project_name} brings you to the LDAP configuration page.
++
+.Add LDAP provider
+image:images/user-fed-ldap.png[User federation]
 
 ==== Storage mode
 
 {project_name} imports users from LDAP into the local {project_name} user database. This copy of the user database synchronizes on-demand or through a periodic background task. An exception exists for synchronizing passwords. {project_name} never imports passwords. Password validation always occurs on the LDAP server.
 
-The advantage of synchronization is that all {project_name} features work efficiently because any required extra per-user data is stored locally. The disadvantage is that each time {project_name} queries a specific user for the first time, {project_name} performs a corresponding database insert.
+The advantage of synchronization is that all {project_name} features work efficiently because any required extra per-user data is stored locally. The disadvantage is that each time {project_name} queries a specific user for the first time, {project_name} performs a corresponding database insert. Also, when imported users are returned as part of a search operation, a corresponding LDAP search is performed for each one to check if the user still exists in LDAP and do some basic validation.
 
 You can synchronize the import with your LDAP server. Import synchronization is unnecessary when LDAP mappers always read particular attributes from the LDAP rather than the database.
 
@@ -35,6 +38,13 @@ The *Import Users* switch on the LDAP configuration page controls this storage m
 If you disable *Import Users*, you cannot save user profile attributes into the {project_name} database. Also, you cannot save metadata except for user profile metadata mapped to the LDAP. This metadata can include role mappings, group mappings, and other metadata based on the LDAP mappers' configuration.
 
 When you attempt to change the non-LDAP mapped user data, the user update is not possible. For example, you cannot disable the LDAP mapped user unless the user's `enabled` flag maps to an LDAP attribute.
+====
+
+[NOTE]
+====
+When working with imported users, {project_name} performs a LDAP search when the user is queried to validate the user and decorate it so that the configured mappers work properly. This means that extra care must be taken when performing unfiltered user searches that may fetch a big number of users as a LDAP search will be issued for every imported user that is found, possibly affecting the performance in a negative way.
+
+Operations that fetch a single user (for example during login) are usually cached and should not be impacted by this extra LDAP search that is performed when the user is fetched for the first time.
 ====
 
 ==== Edit mode
@@ -69,16 +79,22 @@ Toggle this switch to *ON* if you want new users created by {project_name} added
 Allow Kerberos authentication::
 Enable Kerberos/SPNEGO authentication in the realm with user data provisioned from LDAP. For more information, see the <<_kerberos,Kerberos section>>.
 
+Remove invalid users during searches::
+Remove users from the local database if they are not available from the user storage when executing searches. If this is true, users no longer available from their corresponding user storage will be deleted from the local database whenever trying to look up users. If false, then users previously imported from the user storage will be kept in the local database, as read-only and disabled, even if that user is no longer available from the user storage. For example, user was deleted directly from LDAP or the `Users DN` is invalid. Note that this behavior will only happen when the user is not yet cached.
+
+Relative User Creation DN::
+Relative DN from the `Users DN` where new users will be created. This allows users to be created in a sub-DN of the parent `Users DN` when using a `subtree` search scope. For example, if the `Users DN` is set to `ou=people,dc=myorg,dc=com` and the `Relative User Creation DN` is set to `ou=engineering`, users will be fetched from the `Users DN` and all sub-DNs, but new users will be stored in `ou=engineering,ou=people,dc=myorg,dc=com`. In other words, {project_name} concatenates the `Relative User Creation DN` with the `Users DN` (a comma is added automatically when concatenating the DNs) and uses this resulting DN to store users
+
+A similar property is also available in the group and role mappers, allowing groups and roles to be added to a sub-DN of the base DN that is used to search for the groups/roles.
+
 Other options::
 Hover the mouse pointer over the tooltips in the Admin Console to see more details about these options.
 
 ==== Connecting to LDAP over SSL
 
-When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636`), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP.
+When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636`), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP - see https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
 
-Configure the global truststore for {project_name} with the Truststore SPI. For more information about configuring the global truststore, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}. If you do not configure the Truststore SPI, the truststore falls back to the default mechanism provided by Java, which can be the file supplied by the `javax.net.ssl.trustStore` system property or the cacerts file from the JDK if the system property is unset.
-
-The `Use Truststore SPI` configuration property, in the LDAP federation provider configuration, controls the truststore SPI. By default, {project_name} sets the property to `Always`, which is adequate for most deployments.  {project_name} uses the Truststore SPI if the connection URL to LDAP starts with `ldaps` only.
+The `Use Truststore SPI` configuration property is deprecated.  It should normally be left as `Always`.
 
 ==== Synchronizing LDAP users to {project_name}
 
@@ -148,6 +164,39 @@ By default, LDAP servers such as MSAD, RHDS, or FreeIPA hash and salt passwords.
 WARNING: Always verify that user passwords are properly hashed and not stored as plaintext by inspecting a changed
 directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
 
+[[_ldap_connection_pool]]
+==== Configuring the connection pool
+
+For more efficiency when managing LDAP connections and to improve performance when handling multiple connections, you can
+enable connection pooling. By doing that, when a connection is closed, it will be returned to the pool for future use therefore
+reducing the cost of creating new connections all the time.
+
+The LDAP connection pool configuration is configured using the following system properties:
+
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+| `com.sun.jndi.ldap.connect.pool.authentication` | A list of space-separated authentication types of connections that may be pooled. Valid types are "none", "simple", and "DIGEST-MD5"
+| `com.sun.jndi.ldap.connect.pool.initsize` | The string representation of an integer that represents the number of connections per connection identity to create when initially creating a connection for the identity
+| `com.sun.jndi.ldap.connect.pool.maxsize` | The string representation of an integer that represents the maximum number of connections per connection identity that can be maintained concurrently
+| `com.sun.jndi.ldap.connect.pool.prefsize` | The string representation of an integer that represents the preferred number of connections per connection identity that should be maintained concurrently
+| `com.sun.jndi.ldap.connect.pool.timeout` | The string representation of an integer that represents the number of milliseconds that an idle connection may remain in the pool without being closed and removed from the pool
+| `com.sun.jndi.ldap.connect.pool.protocol` | A list of space-separated protocol types of connections that may be pooled. Valid types are "plain" and "ssl"
+| `com.sun.jndi.ldap.connect.pool.debug` | A string that indicates the level of debug output to produce. Valid values are "fine" (trace connection creation and removal) and "all" (all debugging information)
+|===
+
+By default, connection pooling is enabled for both `plain` and `ssl` protocols.
+
+For more details, see the link:https://docs.oracle.com/javase/jndi/tutorial/ldap/connect/config.html[Java LDAP Connection Pooling Configuration] documentation.
+
+To set any of these properties, you can set the `JAVA_OPTS_APPEND` environment variable:
+
+[source,bash]
+----
+export JAVA_OPTS_APPEND=-Dcom.sun.jndi.ldap.connect.pool.initsize=10 -Dcom.sun.jndi.ldap.connect.pool.maxsize=50
+----
+
 [[_ldap_troubleshooting]]
 ==== Troubleshooting
 
@@ -174,11 +223,10 @@ Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
 ```
 Note those messages are displayed just with the enabled DEBUG logging.
 
-- For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
-the LDAP provider to value `all`. This will add lots of additional messages to server log with the included logging for the LDAP connection
-pooling. This can be used to track the issues related to connection pooling or performance.
+- For tracking the performance or connection pooling issues, consider setting the value of property `com.sun.jndi.ldap.connect.pool.debug` to `all`. This change adds many additional messages to the server log with the included logging for the LDAP connection
+pooling. As a result, you can track the issues related to connection pooling or performance. For more details, see link:#_ldap_connection_pool[Configuring the connection pool].
 
-NOTE: After changing the configuration of connection pooling, you may need to restart the Keycloak server to enforce re-initialization
+NOTE: After changing the configuration of connection pooling, you may need to restart the {project_name} server to enforce re-initialization
 of the LDAP provider connection.
 
 If no more messages appear for connection pooling even after server restart, it can indicate that connection pooling does not work
@@ -187,4 +235,7 @@ with your LDAP server.
 - For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
 in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
 of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
-in {project_name} etc.
+in {project_name} and so on.
+
+
+

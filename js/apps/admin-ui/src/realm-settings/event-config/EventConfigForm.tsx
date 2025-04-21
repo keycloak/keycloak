@@ -5,12 +5,12 @@ import {
   FormGroup,
   Switch,
 } from "@patternfly/react-core";
-import { Controller, UseFormReturn } from "react-hook-form";
+import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { HelpItem } from "ui-shared";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 
 export type EventsType = "admin" | "user";
 
@@ -45,7 +45,7 @@ export const EventConfigForm = ({
   });
 
   return (
-    <>
+    <FormProvider {...form}>
       <DisableConfirm />
       <FormGroup
         hasNoPaddingTop
@@ -69,7 +69,7 @@ export const EventConfigForm = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
@@ -84,60 +84,24 @@ export const EventConfigForm = ({
       {eventsEnabled && (
         <>
           {type === "admin" && (
-            <FormGroup
-              hasNoPaddingTop
+            <DefaultSwitchControl
+              name="adminEventsDetailsEnabled"
               label={t("includeRepresentation")}
-              fieldId="includeRepresentation"
-              labelIcon={
-                <HelpItem
-                  helpText={t("includeRepresentationHelp")}
-                  fieldLabelId="includeRepresentation"
-                />
-              }
-            >
-              <Controller
-                name="adminEventsDetailsEnabled"
-                defaultValue={false}
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    data-testid="includeRepresentation"
-                    id="includeRepresentation"
-                    label={t("on")}
-                    labelOff={t("off")}
-                    isChecked={field.value}
-                    onChange={field.onChange}
-                    aria-label={t("includeRepresentation")}
-                  />
-                )}
-              />
-            </FormGroup>
-          )}
-          <FormGroup
-            label={t("expiration")}
-            fieldId="expiration"
-            labelIcon={
-              <HelpItem
-                helpText={t("expirationHelp")}
-                fieldLabelId="expiration"
-              />
-            }
-          >
-            <Controller
-              name={
-                type === "user" ? "eventsExpiration" : "adminEventsExpiration"
-              }
-              defaultValue=""
-              control={control}
-              render={({ field }) => (
-                <TimeSelector
-                  value={field.value}
-                  onChange={field.onChange}
-                  units={["minute", "hour", "day"]}
-                />
-              )}
+              labelIcon={t("includeRepresentationHelp")}
             />
-          </FormGroup>
+          )}
+          <TimeSelectorControl
+            name={
+              type === "user" ? "eventsExpiration" : "adminEventsExpiration"
+            }
+            label={t("expiration")}
+            labelIcon={t("expirationHelp")}
+            defaultValue=""
+            units={["minute", "hour", "day"]}
+            controller={{
+              defaultValue: "",
+            }}
+          />
         </>
       )}
       <ActionGroup>
@@ -161,7 +125,7 @@ export const EventConfigForm = ({
         labelIcon={
           <HelpItem
             helpText={t(`${type}-clearEventsHelp`)}
-            fieldLabelId={`realm-settings:clear-${type}-events`}
+            fieldLabelId={`clear-${type}-events`}
           />
         }
       >
@@ -174,6 +138,6 @@ export const EventConfigForm = ({
           {type === "user" ? t("clearUserEvents") : t("clearAdminEvents")}
         </Button>
       </FormGroup>
-    </>
+    </FormProvider>
   );
 };

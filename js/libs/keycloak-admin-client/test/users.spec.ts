@@ -10,6 +10,7 @@ import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import { RequiredActionAlias } from "../src/defs/requiredActionProviderRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
 import type UserRepresentation from "../src/defs/userRepresentation.js";
+import { UnmanagedAttributePolicy } from "../src/defs/userProfileMetadata.js";
 import { credentials } from "./constants.js";
 
 const expect = chai.expect;
@@ -24,8 +25,16 @@ describe("Users", () => {
   before(async () => {
     kcAdminClient = new KeycloakAdminClient();
     await kcAdminClient.auth(credentials);
+
+    // Enable unmanaged attributes
+    const currentProfileConfig = await kcAdminClient.users.getProfile();
+    await kcAdminClient.users.updateProfile({
+      ...currentProfileConfig,
+      unmanagedAttributePolicy: UnmanagedAttributePolicy.Enabled,
+    });
+
     // initialize user
-    const username = faker.internet.userName();
+    const username = faker.internet.username();
     const user = await kcAdminClient.users.create({
       username,
       email: "test@keycloak.org",
@@ -95,10 +104,19 @@ describe("Users", () => {
     expect(profile).to.be.ok;
   });
 
-  it.skip("find users by custom attributes", async () => {
+  it("find users by custom attributes", async () => {
     // Searching by attributes is only available from Keycloak > 15
-    const users = await kcAdminClient.users.find({ key: "value" });
-    expect(users.length).to.be.equal(2);
+    const users = await kcAdminClient.users.find({ q: "key:value" });
+    expect(users.length).to.be.equal(1);
+    expect(users[0]).to.be.deep.include(currentUser);
+  });
+
+  it("find users by builtin attributes", async () => {
+    // Searching by attributes is only available from Keycloak > 15
+    const users = await kcAdminClient.users.find({
+      q: `email:${currentUser.email}`,
+    });
+    expect(users.length).to.be.equal(1);
     expect(users[0]).to.be.deep.include(currentUser);
   });
 
@@ -324,7 +342,7 @@ describe("Users", () => {
           id: currentUser.id!,
           groupId: newGroup.id,
         });
-      } catch (e) {
+      } catch {
         fail("Didn't expect an error when deleting a valid group id");
       }
 
@@ -355,7 +373,7 @@ describe("Users", () => {
   describe("role-mappings", () => {
     before(async () => {
       // create new role
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       await kcAdminClient.roles.create({
         name: roleName,
       });
@@ -442,7 +460,7 @@ describe("Users", () => {
   describe("client role-mappings", () => {
     before(async () => {
       // create new client
-      const clientId = faker.internet.userName();
+      const clientId = faker.internet.username();
       await kcAdminClient.clients.create({
         clientId,
       });
@@ -452,7 +470,7 @@ describe("Users", () => {
       currentClient = clients[0];
 
       // create new client role
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       await kcAdminClient.clients.createRole({
         id: currentClient.id,
         name: roleName,
@@ -518,7 +536,7 @@ describe("Users", () => {
     });
 
     it("del client role-mappings from user", async () => {
-      const roleName = faker.internet.userName();
+      const roleName = faker.internet.username();
       await kcAdminClient.clients.createRole({
         id: currentClient.id,
         name: roleName,
@@ -557,7 +575,7 @@ describe("Users", () => {
       await kcAdminClient.auth(credentials);
 
       // create client
-      const clientId = faker.internet.userName();
+      const clientId = faker.internet.username();
       await kcAdminClient.clients.create({
         clientId,
         consentRequired: true,

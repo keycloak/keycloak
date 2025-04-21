@@ -23,7 +23,6 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -55,11 +54,13 @@ import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
+import org.keycloak.storage.ldap.mappers.KerberosPrincipalAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
@@ -82,6 +83,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     private static final Logger logger = Logger.getLogger(LDAPStorageProviderFactory.class);
     public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
+    private static final String LDAP_CONNECTION_POOL_PROTOCOL = "com.sun.jndi.ldap.connect.pool.protocol";
 
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
 
@@ -135,6 +137,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.USERS_DN)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
+                .property().name(LDAPConstants.RELATIVE_CREATE_DN)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
                 .property().name(LDAPConstants.AUTH_TYPE)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("simple")
@@ -172,27 +177,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_AUTHENTICATION)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_DEBUG)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_INITSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_MAXSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_PREFSIZE)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_PROTOCOL)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-                .property().name(LDAPConstants.CONNECTION_POOLING_TIMEOUT)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
                 .property().name(LDAPConstants.CONNECTION_TIMEOUT)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
@@ -202,6 +186,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.PAGINATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
+                .add()
+                .property().name(LDAPConstants.REFERRAL)
+                .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .property().name(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
@@ -224,6 +211,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .defaultValue("false")
                 .add()
                 .property().name(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(LDAPConstants.CONNECTION_TRACE)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
@@ -281,7 +272,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             }
         }
 
-        if(cfg.isStartTls() && cfg.getConnectionPooling() != null) {
+        // This parses the configuration directly as cfg.getConnectionPooling() will take into account the current StartTLS setting
+        if(cfg.isStartTls() && Boolean.parseBoolean(config.getConfig().getFirst(LDAPConstants.CONNECTION_POOLING))) {
             throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
         }
 
@@ -300,10 +292,19 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
+
+        if (config.getId() == null) {
+            // the ldap component is being created, use short id for ldap components
+            config.setId(KeycloakModelUtils.generateShortId());
+        }
     }
 
     @Override
     public void init(Config.Scope config) {
+        // set connection pooling for plain and tls protocols by default
+        if (System.getProperty(LDAP_CONNECTION_POOL_PROTOCOL) == null) {
+            System.setProperty(LDAP_CONNECTION_POOL_PROTOCOL, "plain ssl");
+        }
         this.ldapStoreRegistry = new LDAPIdentityStoreRegistry();
     }
 
@@ -431,7 +432,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         // MSAD specific mapper for account state propagation
         if (activeDirectory) {
-            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
+            mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                    MSADUserAccountControlStorageMapper.ALWAYS_READ_ENABLED_VALUE_FROM_LDAP, alwaysReadValueFromLDAP);
             realm.addComponentModel(mapperModel);
         }
 
@@ -445,6 +447,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             String defaultKerberosUserPrincipalAttr = LDAPUtils.getDefaultKerberosUserPrincipalAttribute(ldapConfig.getVendor());
             model.getConfig().putSingle(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, defaultKerberosUserPrincipalAttr);
             realm.updateComponent(model);
+        }
+
+        if (kerberosConfig.getKerberosPrincipalAttribute() != null) {
+            mapperModel = KeycloakModelUtils.createComponentModel("Kerberos principal attribute mapper", model.getId(), KerberosPrincipalAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName());
+            realm.addComponentModel(mapperModel);
         }
 
         // In case that "Sync Registration" is ON and the LDAP v3 Password-modify extension is ON, we will create hardcoded mapper to create
@@ -468,6 +475,19 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                     AuthenticationExecutionModel.Requirement.DISABLED, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         } // else: keep current settings
+
+        LDAPConfig oldConfig = new LDAPConfig(oldModel.getConfig());
+        LDAPConfig newConfig = new LDAPConfig(newModel.getConfig());
+        if (!oldConfig.getUsernameLdapAttribute().equals(newConfig.getUsernameLdapAttribute())) {
+            // propagate username LDAP attribute change to the username mapper.
+            ComponentModel usernameMapperModel = realm.getComponentsStream(oldModel.getId(), LDAPStorageMapper.class.getName())
+                    .filter(mapper -> "username".equals(mapper.getName()))
+                    .findFirst().orElse(null);
+            if (usernameMapperModel != null) {
+                usernameMapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, newConfig.getUsernameLdapAttribute());
+                realm.updateComponent(usernameMapperModel);
+            }
+        }
     }
 
     @Override

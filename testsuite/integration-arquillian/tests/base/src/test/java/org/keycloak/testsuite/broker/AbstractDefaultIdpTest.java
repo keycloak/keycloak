@@ -34,6 +34,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
 import static org.junit.Assert.assertEquals;
@@ -120,7 +121,13 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         waitForPage(driver, "sign in to", true);
 
-        WebElement errorElement = driver.findElement(By.className("alert-error"));
+        WebElement errorElement;
+        try {
+            errorElement = driver.findElement(By.className("pf-v5-c-alert"));
+        } catch (NoSuchElementException e) {
+            errorElement = driver.findElement(By.className("alert-error"));
+        }
+
         assertNotNull("Page should show an error message but it's missing", errorElement);
 
         // Login to IDP failed due consent denied. Error message is displayed on the username/password screen of the consumer realm

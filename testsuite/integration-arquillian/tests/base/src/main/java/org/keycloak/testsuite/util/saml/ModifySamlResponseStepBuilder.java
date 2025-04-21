@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,6 +127,10 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         return targetAttribute(GeneralConstants.SAML_RESPONSE_KEY);
     }
 
+    public ModifySamlResponseStepBuilder targetAttributeSamlArtifact() {
+        return targetAttribute(GeneralConstants.SAML_ARTIFACT_KEY);
+    }
+
     public URI targetUri() {
         return targetUri;
     }
@@ -168,7 +173,7 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
             String location = currentResponse.getFirstHeader("Location").getValue();
             URI locationUri = URI.create(location);
 
-            params = URLEncodedUtils.parse(locationUri, "UTF-8");
+            params = URLEncodedUtils.parse(locationUri, StandardCharsets.UTF_8);
             for (Iterator<NameValuePair> it = params.iterator(); it.hasNext();) {
                 NameValuePair param = it.next();
                 if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {

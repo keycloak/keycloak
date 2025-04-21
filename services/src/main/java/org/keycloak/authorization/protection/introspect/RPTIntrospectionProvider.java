@@ -28,6 +28,9 @@ import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProvider;
 import org.keycloak.representations.AccessToken;
@@ -40,7 +43,7 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
+public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider<AccessToken> {
 
     protected static final Logger LOGGER = Logger.getLogger(RPTIntrospectionProvider.class);
 
@@ -49,23 +52,22 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
     }
 
     @Override
-    public Response introspect(String token) {
+    public Response introspect(String tokenStr, EventBuilder eventBuilder) {
+        this.eventBuilder = eventBuilder;
         LOGGER.debug("Introspecting requesting party token");
         try {
-            AccessToken accessToken = verifyAccessToken(token);
-
             ObjectNode tokenMetadata;
-
-            if (accessToken != null) {
+            if (introspectionChecks(tokenStr)) {
+                AccessToken accessToken = this.token;
                 AccessToken metadata = new AccessToken();
 
                 metadata.id(accessToken.getId());
                 metadata.setAcr(accessToken.getAcr());
                 metadata.type(accessToken.getType());
-                metadata.expiration(accessToken.getExpiration());
-                metadata.issuedAt(accessToken.getIssuedAt());
+                metadata.exp(accessToken.getExp());
+                metadata.iat(accessToken.getIat());
                 metadata.audience(accessToken.getAudience());
-                metadata.notBefore(accessToken.getNotBefore());
+                metadata.nbf(accessToken.getNbf());
                 metadata.setRealmAccess(null);
                 metadata.setResourceAccess(null);
 
@@ -83,14 +85,17 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
 
                     tokenMetadata.putPOJO("permissions", permissions);
                 }
+                tokenMetadata.put("active", true);
+                eventBuilder.success();
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
+                tokenMetadata.put("active", false);
             }
-
-            tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
+            eventBuilder.detail(Details.REASON, e.getMessage());
+            eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             throw new RuntimeException("Error creating token introspection response.", e);
         }
     }

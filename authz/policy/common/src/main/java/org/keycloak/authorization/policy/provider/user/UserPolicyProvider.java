@@ -18,19 +18,30 @@
 package org.keycloak.authorization.policy.provider.user;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.stream.Stream;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.policy.provider.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class UserPolicyProvider implements PolicyProvider {
+public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPolicyProvider {
+
+    private static final Logger logger = Logger.getLogger(UserPolicyProvider.class);
 
     private final BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction;
 
@@ -40,15 +51,37 @@ public class UserPolicyProvider implements PolicyProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        EvaluationContext context = evaluation.getContext();
-        UserPolicyRepresentation representation = representationFunction.apply(evaluation.getPolicy(), evaluation.getAuthorizationProvider());
+        Policy policy = evaluation.getPolicy();
 
-        for (String userId : representation.getUsers()) {
-            if (context.getIdentity().getId().equals(userId)) {
-                evaluation.grant();
-                break;
-            }
+        if (policy.getConfig().getOrDefault("users", "").contains(evaluation.getContext().getIdentity().getId())) {
+            evaluation.grant();
         }
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("User policy %s evaluated to status %s on identity %s with accepted users: %s", evaluation.getPolicy().getName(), evaluation.getEffect(), evaluation.getContext().getIdentity().getId(), policy.getConfig().getOrDefault("users", ""));
+        }
+    }
+
+    @Override
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+        StoreFactory storeFactory = provider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), UserPolicyProviderFactory.ID, "users", subject.getId());
+    }
+
+    @Override
+    public boolean evaluate(KeycloakSession session, Policy policy, UserModel adminUser) {
+        return policy.getConfig().getOrDefault("users", "").contains(adminUser.getId());
+    }
+
+    @Override
+    public boolean supports(Policy policy) {
+        return UserPolicyProviderFactory.ID.equals(policy.getType());
     }
 
     @Override

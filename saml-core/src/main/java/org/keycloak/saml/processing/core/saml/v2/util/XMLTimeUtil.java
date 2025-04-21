@@ -43,7 +43,7 @@ public class XMLTimeUtil {
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     /**
-     * Add additional time in miliseconds
+     * Add additional time in milliseconds
      *
      * @param value calendar whose value needs to be updated
      * @param millis
@@ -68,10 +68,10 @@ public class XMLTimeUtil {
     }
 
     /**
-     * Subtract some miliseconds from the time value
+     * Subtract some milliseconds from the time value
      *
      * @param value
-     * @param millis miliseconds entered in a positive value
+     * @param millis milliseconds entered in a positive value
      *
      * @return
      */
@@ -128,7 +128,7 @@ public class XMLTimeUtil {
     }
 
     /**
-     * Convert the minutes into miliseconds
+     * Convert the minutes into milliseconds
      *
      * @param valueInMins
      *
