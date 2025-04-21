@@ -1,0 +1,122 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Gutter 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-split pf-m-gutter"
+  >
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Wrappable 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-split pf-m-wrap"
+  >
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+    <div
+      class="pf-l-split__item"
+    >
+      Basic Content
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`isFilled 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-split"
+  >
+    <div
+      class="pf-l-split__item pf-m-fill"
+    >
+      Main content
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`isFilled defaults to false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-split"
+  >
+    <div
+      class="pf-l-split__item"
+    >
+      Basic content
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,186 @@
+.pf-c-modal-box {
+  --pf-c-modal-box--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-modal-box--BoxShadow: var(--pf-global--BoxShadow--xl);
+  --pf-c-modal-box--ZIndex: var(--pf-global--ZIndex--xl);
+  --pf-c-modal-box--Width: 100%;
+  --pf-c-modal-box--MaxWidth: calc(100% - var(--pf-global--spacer--xl));
+  --pf-c-modal-box--m-sm--sm--MaxWidth: 35rem;
+  --pf-c-modal-box--m-md--Width: 52.5rem;
+  --pf-c-modal-box--m-lg--lg--MaxWidth: 70rem;
+  --pf-c-modal-box--MaxHeight: calc(100% - var(--pf-global--spacer--2xl));
+  --pf-c-modal-box--m-align-top--spacer: var(--pf-global--spacer--sm);
+  --pf-c-modal-box--m-align-top--xl--spacer: var(--pf-global--spacer--xl);
+  --pf-c-modal-box--m-align-top--MarginTop: var(--pf-c-modal-box--m-align-top--spacer);
+  --pf-c-modal-box--m-align-top--MaxHeight: calc(100% - min(var(--pf-c-modal-box--m-align-top--spacer), var(--pf-global--spacer--2xl)) - var(--pf-c-modal-box--m-align-top--spacer));
+  --pf-c-modal-box--m-align-top--MaxWidth: calc(100% - min(var(--pf-c-modal-box--m-align-top--spacer) * 2, var(--pf-global--spacer--xl)));
+  --pf-c-modal-box--m-danger__title-icon--Color: var(--pf-global--danger-color--100);
+  --pf-c-modal-box--m-warning__title-icon--Color: var(--pf-global--warning-color--100);
+  --pf-c-modal-box--m-success__title-icon--Color: var(--pf-global--success-color--100);
+  --pf-c-modal-box--m-info__title-icon--Color: var(--pf-global--info-color--100);
+  --pf-c-modal-box--m-default__title-icon--Color: var(--pf-global--default-color--200);
+  --pf-c-modal-box__header--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__header--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__header--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__header--last-child--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__title--LineHeight: var(--pf-global--LineHeight--sm);
+  --pf-c-modal-box__title--FontFamily: var(--pf-global--FontFamily--heading--sans-serif);
+  --pf-c-modal-box__title--FontSize: var(--pf-global--FontSize--2xl);
+  --pf-c-modal-box__title-icon--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-modal-box__title-icon--Color: var(--pf-global--Color--100);
+  --pf-c-modal-box__description--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-modal-box__body--MinHeight: calc(var(--pf-global--FontSize--md) * var(--pf-global--LineHeight--md));
+  --pf-c-modal-box__body--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__body--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__body--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__body--last-child--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__header--body--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-modal-box--c-button--Top: calc(var(--pf-global--spacer--lg));
+  --pf-c-modal-box--c-button--Right: var(--pf-global--spacer--md);
+  --pf-c-modal-box--c-button--sibling--MarginRight: calc(var(--pf-global--spacer--xl) + var(--pf-global--spacer--sm));
+  --pf-c-modal-box__footer--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__footer--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__footer--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__footer--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-modal-box__footer--c-button--MarginRight: var(--pf-global--spacer--md);
+  --pf-c-modal-box__footer--c-button--sm--MarginRight: calc(var(--pf-c-modal-box__footer--c-button--MarginRight) / 2);
+  position: relative;
+  z-index: var(--pf-c-modal-box--ZIndex);
+  display: flex;
+  flex-direction: column;
+  width: var(--pf-c-modal-box--Width);
+  max-width: var(--pf-c-modal-box--MaxWidth);
+  max-height: var(--pf-c-modal-box--MaxHeight);
+  background-color: var(--pf-c-modal-box--BackgroundColor);
+  box-shadow: var(--pf-c-modal-box--BoxShadow);
+}
+@media (min-width: 1200px) {
+  .pf-c-modal-box {
+    --pf-c-modal-box--m-align-top--spacer: var(--pf-c-modal-box--m-align-top--xl--spacer);
+  }
+}
+.pf-c-modal-box.pf-m-sm {
+  --pf-c-modal-box--Width: var(--pf-c-modal-box--m-sm--sm--MaxWidth);
+}
+.pf-c-modal-box.pf-m-md {
+  --pf-c-modal-box--Width: var(--pf-c-modal-box--m-md--Width);
+}
+.pf-c-modal-box.pf-m-lg {
+  --pf-c-modal-box--Width: var(--pf-c-modal-box--m-lg--lg--MaxWidth);
+}
+.pf-c-modal-box.pf-m-align-top {
+  top: var(--pf-c-modal-box--m-align-top--MarginTop);
+  align-self: flex-start;
+  max-width: var(--pf-c-modal-box--m-align-top--MaxWidth);
+  max-height: var(--pf-c-modal-box--m-align-top--MaxHeight);
+}
+.pf-c-modal-box.pf-m-danger {
+  --pf-c-modal-box__title-icon--Color: var(--pf-c-modal-box--m-danger__title-icon--Color);
+}
+.pf-c-modal-box.pf-m-warning {
+  --pf-c-modal-box__title-icon--Color: var(--pf-c-modal-box--m-warning__title-icon--Color);
+}
+.pf-c-modal-box.pf-m-success {
+  --pf-c-modal-box__title-icon--Color: var(--pf-c-modal-box--m-success__title-icon--Color);
+}
+.pf-c-modal-box.pf-m-default {
+  --pf-c-modal-box__title-icon--Color: var(--pf-c-modal-box--m-default__title-icon--Color);
+}
+.pf-c-modal-box.pf-m-info {
+  --pf-c-modal-box__title-icon--Color: var(--pf-c-modal-box--m-info__title-icon--Color);
+}
+.pf-c-modal-box > .pf-c-button {
+  position: absolute;
+  top: var(--pf-c-modal-box--c-button--Top);
+  right: var(--pf-c-modal-box--c-button--Right);
+}
+.pf-c-modal-box > .pf-c-button + * {
+  margin-right: var(--pf-c-modal-box--c-button--sibling--MarginRight);
+}
+
+.pf-c-modal-box__header {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding-top: var(--pf-c-modal-box__header--PaddingTop);
+  padding-right: var(--pf-c-modal-box__header--PaddingRight);
+  padding-left: var(--pf-c-modal-box__header--PaddingLeft);
+}
+.pf-c-modal-box__header.pf-m-help {
+  display: flex;
+  flex-direction: row;
+}
+.pf-c-modal-box__header:last-child {
+  padding-bottom: var(--pf-c-modal-box__header--last-child--PaddingBottom);
+}
+.pf-c-modal-box__header + .pf-c-modal-box__body {
+  --pf-c-modal-box__body--PaddingTop: var(--pf-c-modal-box__header--body--PaddingTop);
+}
+
+.pf-c-modal-box__header-main {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.pf-c-modal-box__title,
+.pf-c-modal-box__title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-c-modal-box__title {
+  flex: 0 0 auto;
+  font-family: var(--pf-c-modal-box__title--FontFamily);
+  font-size: var(--pf-c-modal-box__title--FontSize);
+  line-height: var(--pf-c-modal-box__title--LineHeight);
+}
+.pf-c-modal-box__title.pf-m-icon {
+  display: flex;
+}
+
+.pf-c-modal-box__title-icon {
+  margin-right: var(--pf-c-modal-box__title-icon--MarginRight);
+  color: var(--pf-c-modal-box__title-icon--Color);
+}
+
+.pf-c-modal-box__description {
+  padding-top: var(--pf-c-modal-box__description--PaddingTop);
+}
+
+.pf-c-modal-box__body {
+  flex: 1 1 auto;
+  min-height: var(--pf-c-modal-box__body--MinHeight);
+  padding-top: var(--pf-c-modal-box__body--PaddingTop);
+  padding-right: var(--pf-c-modal-box__body--PaddingRight);
+  padding-left: var(--pf-c-modal-box__body--PaddingLeft);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  word-break: break-word;
+  -webkit-overflow-scrolling: touch;
+}
+.pf-c-modal-box__body:last-child {
+  padding-bottom: var(--pf-c-modal-box__body--last-child--PaddingBottom);
+}
+
+.pf-c-modal-box__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding-top: var(--pf-c-modal-box__footer--PaddingTop);
+  padding-right: var(--pf-c-modal-box__footer--PaddingRight);
+  padding-bottom: var(--pf-c-modal-box__footer--PaddingBottom);
+  padding-left: var(--pf-c-modal-box__footer--PaddingLeft);
+}
+.pf-c-modal-box__footer > .pf-c-button:not(:last-child) {
+  margin-right: var(--pf-c-modal-box__footer--c-button--MarginRight);
+}
+@media screen and (min-width: 576px) {
+  .pf-c-modal-box__footer > .pf-c-button:not(:last-child) {
+    --pf-c-modal-box__footer--c-button--MarginRight: var(--pf-c-modal-box__footer--c-button--sm--MarginRight);
+  }
+}
+
+:where(.pf-theme-dark) .pf-c-modal-box {
+  --pf-c-modal-box--BackgroundColor: var(--pf-global--BackgroundColor--300);
+}

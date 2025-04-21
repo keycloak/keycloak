@@ -1,0 +1,10 @@
+.pf-c-console__vnc {
+  grid-area: main;
+}
+.pf-c-console__actions-vnc {
+  grid-area: actions-extra;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  column-gap: var(--pf-global--spacer--sm)
+}

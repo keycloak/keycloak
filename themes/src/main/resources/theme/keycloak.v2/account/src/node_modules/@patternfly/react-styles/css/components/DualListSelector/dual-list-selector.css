@@ -1,0 +1,298 @@
+.pf-c-dual-list-selector {
+  --pf-c-dual-list-selector__header--GridArea: pane-header;
+  --pf-c-dual-list-selector__tools--GridArea: pane-tools;
+  --pf-c-dual-list-selector__status--GridArea: pane-status;
+  --pf-c-dual-list-selector__menu--GridArea: pane-menu;
+  --pf-c-dual-list-selector__controls--GridArea: controls;
+  --pf-c-dual-list-selector--m-chosen__header--GridArea: pane-header-c;
+  --pf-c-dual-list-selector--m-chosen__tools--GridArea: pane-tools-c;
+  --pf-c-dual-list-selector--m-chosen__status--GridArea: pane-status-c;
+  --pf-c-dual-list-selector--m-chosen__menu--GridArea: pane-menu-c;
+  --pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--min: 12.5rem;
+  --pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--max: 28.125rem;
+  --pf-c-dual-list-selector__header--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__title-text--FontWeight: var(--pf-global--FontWeight--bold);
+  --pf-c-dual-list-selector__tools--MarginBottom: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__tools-filter--tools-actions--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__menu--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-dual-list-selector__menu--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-dual-list-selector__menu--MinHeight: 12.5rem;
+  --pf-c-dual-list-selector__menu--MaxHeight: 20rem;
+  --pf-c-dual-list-selector__list-item-row--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-dual-list-selector__list-item-row--BackgroundColor: transparent;
+  --pf-c-dual-list-selector__list-item-row--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-dual-list-selector__list-item-row--focus-within--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-dual-list-selector__list-item-row--m-selected--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-dual-list-selector__list-item--m-ghost-row--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-dual-list-selector__list-item--m-ghost-row--Opacity: .4;
+  --pf-c-dual-list-selector__item--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__item--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__item--m-expandable--PaddingLeft: 0;
+  --pf-c-dual-list-selector__item--indent--base: calc(var(--pf-global--spacer--md) + var(--pf-global--spacer--sm) + var(--pf-c-dual-list-selector__list-item-row--FontSize));
+  --pf-c-dual-list-selector__item--nested-indent--base: calc(var(--pf-c-dual-list-selector__item--indent--base) - var(--pf-global--spacer--md));
+  --pf-c-dual-list-selector__draggable--item--PaddingLeft: var(--pf-global--spacer--xs);
+  --pf-c-dual-list-selector__item-text--Color: var(--pf-global--Color--100);
+  --pf-c-dual-list-selector__list-item-row--m-selected__text--Color: var(--pf-global--active-color--100);
+  --pf-c-dual-list-selector__list-item-row--m-selected__text--FontWeight: var(--pf-global--FontWeight--bold);
+  --pf-c-dual-list-selector__list-item--m-disabled__item-text--Color: var(--pf-global--disabled-color--100);
+  --pf-c-dual-list-selector__status--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__status-text--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-dual-list-selector__status-text--Color: var(--pf-global--Color--200);
+  --pf-c-dual-list-selector__controls--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__controls--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__item-toggle--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item-toggle--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item-toggle--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item-toggle--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-dual-list-selector__item-toggle--MarginTop: calc(var(--pf-global--spacer--sm) * -1);
+  --pf-c-dual-list-selector__item-toggle--MarginBottom: calc(var(--pf-global--spacer--sm) * -1);
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: 0;
+  --pf-c-dual-list-selector__list__list__item-toggle--TranslateX: -100%;
+  --pf-c-dual-list-selector__item-check--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item-count--Marginleft: var(--pf-global--spacer--sm);
+  --pf-c-dual-list-selector__item--c-badge--m-read--BackgroundColor: var(--pf-global--disabled-color--200);
+  --pf-c-dual-list-selector__item-toggle-icon--Rotate: 0;
+  --pf-c-dual-list-selector__list-item--m-expanded__item-toggle-icon--Rotate: 90deg;
+  --pf-c-dual-list-selector__item-toggle-icon--Transition: var(--pf-global--Transition);
+  --pf-c-dual-list-selector__item-toggle-icon--MinWidth: var(--pf-c-dual-list-selector__list-item-row--FontSize);
+  --pf-c-dual-list-selector__list-item--m-disabled__item-toggle-icon--Color: var(--pf-global--disabled-color--200);
+  display: grid;
+  grid-template-areas: "pane-header . pane-header-c" "pane-tools . pane-tools-c" "pane-status . pane-status-c" "pane-menu controls pane-menu-c";
+  grid-template-columns: minmax(var(--pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--min), var(--pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--max)) min-content minmax(var(--pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--min), var(--pf-c-dual-list-selector--GridTemplateColumns--pane--MinMax--max));
+  grid-template-rows: repeat(3, auto) auto;
+}
+
+.pf-c-dual-list-selector__pane {
+  display: contents;
+}
+.pf-c-dual-list-selector__pane.pf-m-chosen {
+  --pf-c-dual-list-selector__header--GridArea: var(--pf-c-dual-list-selector--m-chosen__header--GridArea);
+  --pf-c-dual-list-selector__tools--GridArea: var(--pf-c-dual-list-selector--m-chosen__tools--GridArea);
+  --pf-c-dual-list-selector__status--GridArea: var(--pf-c-dual-list-selector--m-chosen__status--GridArea);
+  --pf-c-dual-list-selector__menu--GridArea: var(--pf-c-dual-list-selector--m-chosen__menu--GridArea);
+}
+
+.pf-c-dual-list-selector__header {
+  grid-area: var(--pf-c-dual-list-selector__header--GridArea);
+  margin-bottom: var(--pf-c-dual-list-selector__header--MarginBottom);
+}
+
+.pf-c-dual-list-selector__title-text {
+  font-weight: var(--pf-c-dual-list-selector__title-text--FontWeight);
+}
+
+.pf-c-dual-list-selector__tools {
+  display: flex;
+  grid-area: var(--pf-c-dual-list-selector__tools--GridArea);
+  margin-bottom: var(--pf-c-dual-list-selector__tools--MarginBottom);
+}
+
+.pf-c-dual-list-selector__tools-filter {
+  flex-grow: 1;
+}
+
+.pf-c-dual-list-selector__tools-actions {
+  display: flex;
+}
+.pf-c-dual-list-selector__tools-filter ~ .pf-c-dual-list-selector__tools-actions {
+  margin-left: var(--pf-c-dual-list-selector__tools-filter--tools-actions--MarginLeft);
+}
+
+.pf-c-dual-list-selector__status {
+  display: flex;
+  grid-area: var(--pf-c-dual-list-selector__status--GridArea);
+  margin-bottom: var(--pf-c-dual-list-selector__status--MarginBottom);
+}
+
+.pf-c-dual-list-selector__status-text {
+  flex-grow: 1;
+  font-size: var(--pf-c-dual-list-selector__status-text--FontSize);
+  color: var(--pf-c-dual-list-selector__status-text--Color);
+}
+
+.pf-c-dual-list-selector__menu {
+  grid-area: var(--pf-c-dual-list-selector__menu--GridArea);
+  min-height: var(--pf-c-dual-list-selector__menu--MinHeight);
+  max-height: var(--pf-c-dual-list-selector__menu--MaxHeight);
+  overflow: auto;
+  border: var(--pf-c-dual-list-selector__menu--BorderWidth) solid var(--pf-c-dual-list-selector__menu--BorderColor);
+}
+
+.pf-c-dual-list-selector__list {
+  --pf-c-dual-list-selector__item-toggle-icon--Rotate: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pf-c-dual-list-selector__list .pf-c-dual-list-selector__list {
+  --pf-c-dual-list-selector__item-toggle--MarginTop: 0;
+  --pf-c-dual-list-selector__item-toggle--MarginBottom: 0;
+}
+.pf-c-dual-list-selector__list .pf-c-dual-list-selector__list .pf-c-dual-list-selector__item-toggle {
+  position: absolute;
+  top: 0;
+  left: var(--pf-c-dual-list-selector__list__list__item-toggle--Left);
+  transform: translateX(var(--pf-c-dual-list-selector__list__list__item-toggle--TranslateX));
+}
+.pf-c-dual-list-selector__list.pf-m-drag-over {
+  overflow-anchor: none;
+}
+
+.pf-c-dual-list-selector__list-item:focus {
+  --pf-c-dual-list-selector__list-item-row--BackgroundColor: var(--pf-c-dual-list-selector__list-item-row--focus-within--BackgroundColor);
+}
+.pf-c-dual-list-selector__list-item.pf-m-expandable {
+  --pf-c-dual-list-selector__item--PaddingLeft: var(--pf-c-dual-list-selector__item--m-expandable--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item.pf-m-expanded {
+  --pf-c-dual-list-selector__item-toggle-icon--Rotate: var(--pf-c-dual-list-selector__list-item--m-expanded__item-toggle-icon--Rotate);
+}
+.pf-c-dual-list-selector__list-item.pf-m-disabled {
+  --pf-c-dual-list-selector__item-text--Color: var(--pf-c-dual-list-selector__list-item--m-disabled__item-text--Color);
+  --pf-c-dual-list-selector__item-toggle-icon--Color: var(--pf-c-dual-list-selector__list-item--m-disabled__item-toggle-icon--Color);
+  pointer-events: none;
+}
+
+.pf-c-dual-list-selector__list-item-row {
+  display: flex;
+  font-size: var(--pf-c-dual-list-selector__list-item-row--FontSize);
+  background-color: var(--pf-c-dual-list-selector__list-item-row--BackgroundColor);
+}
+.pf-c-dual-list-selector__list-item-row:hover {
+  --pf-c-dual-list-selector__list-item-row--BackgroundColor: var(--pf-c-dual-list-selector__list-item-row--hover--BackgroundColor);
+}
+.pf-c-dual-list-selector__list-item-row.pf-m-selected {
+  --pf-c-dual-list-selector__list-item-row--BackgroundColor: var(--pf-c-dual-list-selector__list-item-row--m-selected--BackgroundColor);
+}
+.pf-c-dual-list-selector__list-item-row.pf-m-selected .pf-c-dual-list-selector__item-text {
+  --pf-c-dual-list-selector__item-text--Color: var(--pf-c-dual-list-selector__list-item-row--m-selected__text--Color);
+  font-weight: var(--pf-c-dual-list-selector__list-item-row--m-selected__text--FontWeight);
+}
+.pf-c-dual-list-selector__list-item-row.pf-m-check {
+  --pf-c-dual-list-selector__list-item-row--m-selected--BackgroundColor: transparent;
+}
+.pf-c-dual-list-selector__list-item-row.pf-m-ghost-row {
+  --pf-c-dual-list-selector__list-item-row--BackgroundColor: var(--pf-c-dual-list-selector__list-item--m-ghost-row--BackgroundColor);
+  opacity: var(--pf-c-dual-list-selector__list-item--m-ghost-row--Opacity);
+}
+
+.pf-c-dual-list-selector__item,
+.pf-c-dual-list-selector__main {
+  display: flex;
+}
+
+.pf-c-dual-list-selector__item,
+.pf-c-dual-list-selector__item-main {
+  flex-basis: 100%;
+}
+
+.pf-c-dual-list-selector__draggable {
+  display: flex;
+}
+.pf-c-dual-list-selector__draggable + .pf-c-dual-list-selector__item {
+  --pf-c-dual-list-selector__item--PaddingLeft: var(--pf-c-dual-list-selector__draggable--item--PaddingLeft);
+}
+.pf-c-dual-list-selector__draggable .pf-c-button {
+  --pf-c-button--FontSize: inherit;
+  cursor: grab;
+}
+.pf-c-dual-list-selector__draggable .pf-c-button:active {
+  cursor: grabbing;
+}
+
+.pf-c-dual-list-selector__item {
+  position: relative;
+  width: 100%;
+  padding: var(--pf-c-dual-list-selector__item--PaddingTop) var(--pf-c-dual-list-selector__item--PaddingRight) var(--pf-c-dual-list-selector__item--PaddingBottom) var(--pf-c-dual-list-selector__item--PaddingLeft);
+  cursor: pointer;
+}
+
+.pf-c-dual-list-selector__item-count {
+  margin-left: var(--pf-c-dual-list-selector__item-count--Marginleft);
+}
+.pf-c-dual-list-selector__item-count .pf-c-badge.pf-m-read {
+  --pf-c-badge--m-read--BackgroundColor: var(--pf-c-dual-list-selector__item--c-badge--m-read--BackgroundColor);
+}
+
+.pf-c-dual-list-selector__item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-grow: 1;
+  color: var(--pf-c-dual-list-selector__item-text--Color);
+}
+
+.pf-c-dual-list-selector__controls {
+  grid-area: var(--pf-c-dual-list-selector__controls--GridArea);
+  align-self: center;
+  padding-right: var(--pf-c-dual-list-selector__controls--PaddingRight);
+  padding-left: var(--pf-c-dual-list-selector__controls--PaddingLeft);
+}
+
+.pf-c-dual-list-selector__item-main {
+  display: flex;
+  min-width: 0;
+}
+
+.pf-c-dual-list-selector__item-toggle {
+  padding: var(--pf-c-dual-list-selector__item-toggle--PaddingTop) var(--pf-c-dual-list-selector__item-toggle--PaddingRight) var(--pf-c-dual-list-selector__item-toggle--PaddingBottom) var(--pf-c-dual-list-selector__item-toggle--PaddingLeft);
+  margin-top: var(--pf-c-dual-list-selector__item-toggle--MarginTop);
+  margin-bottom: var(--pf-c-dual-list-selector__item-toggle--MarginBottom);
+}
+
+.pf-c-dual-list-selector__item-check {
+  display: flex;
+  align-items: center;
+  margin-right: var(--pf-c-dual-list-selector__item-check--MarginRight);
+}
+
+.pf-c-dual-list-selector__item-toggle-icon {
+  display: inline-block;
+  min-width: var(--pf-c-dual-list-selector__item-toggle-icon--MinWidth);
+  color: var(--pf-c-dual-list-selector__item-toggle-icon--Color, inherit);
+  text-align: center;
+  transition: var(--pf-c-dual-list-selector__item-toggle-icon--Transition);
+  transform: rotate(var(--pf-c-dual-list-selector__item-toggle-icon--Rotate));
+}
+
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 1 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 2 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 3 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 4 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 5 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 6 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 7 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 8 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 9 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}
+.pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item .pf-c-dual-list-selector__list-item {
+  --pf-c-dual-list-selector__item--PaddingLeft: calc(var(--pf-c-dual-list-selector__item--nested-indent--base) * 10 + var(--pf-c-dual-list-selector__item--indent--base));
+  --pf-c-dual-list-selector__list__list__item-toggle--Left: var(--pf-c-dual-list-selector__item--PaddingLeft);
+}

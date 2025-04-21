@@ -1,0 +1,10 @@
+.ws-react-l-flex .pf-l-flex {
+  padding: 1rem;
+}
+
+.ws-react-l-flex .pf-l-flex > div,
+.ws-react-l-flex .example-border {
+  border-style: dashed;
+  border-width: 2px;
+  padding: 1rem;
+}

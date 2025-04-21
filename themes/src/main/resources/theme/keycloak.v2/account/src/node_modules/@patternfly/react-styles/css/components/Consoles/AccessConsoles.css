@@ -1,0 +1,13 @@
+.pf-c-console {
+  display: grid;
+  grid-template-areas: "actions-main actions-extra"
+                       "main main";
+  row-gap: var(--pf-global--spacer--md);
+}
+.pf-c-console__actions {
+  grid-area: actions-main;
+  display: flex;
+}
+.pf-c-console__actions > div {
+  margin-right: var(--pf-global--spacer--sm);
+}

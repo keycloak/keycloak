@@ -1,0 +1,14 @@
+.ws-react-l-level {
+  padding: 9px;
+}
+
+.ws-react-l-level .pf-l-level {
+  min-height: 160px;
+}
+
+.ws-react-l-level .pf-l-level,
+.ws-react-l-level .pf-l-level > div {
+  padding: 9px;
+  border-width: 2px;
+  border-style: dashed;
+}

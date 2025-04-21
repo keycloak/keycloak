@@ -1,0 +1,8 @@
+.pf-u-min-width,
+.pf-u-max-width,
+.pf-u-min-height,
+.pf-u-max-height,
+.ws-example-u-sizing-item {
+  padding: .5rem !important;
+  border: 2px dashed #393f44;
+}

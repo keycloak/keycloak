@@ -1,0 +1,93 @@
+.pf-c-inline-edit {
+  --pf-c-inline-edit__group--item--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-inline-edit__action--c-button--m-valid--m-plain--Color: var(--pf-global--link--Color);
+  --pf-c-inline-edit__action--c-button--m-valid--m-plain--hover--Color: var(--pf-global--link--Color--hover);
+  --pf-c-inline-edit__action--m-icon-group--item--MarginRight: 0;
+  --pf-c-inline-edit__group--m-footer--MarginTop: var(--pf-global--spacer--xl);
+  --pf-c-inline-edit__label--m-bold--FontWeight: var(--pf-global--FontWeight--semi-bold);
+}
+
+.pf-c-inline-edit__group {
+  display: flex;
+  align-items: baseline;
+}
+.pf-c-inline-edit__group > * {
+  margin-right: var(--pf-c-inline-edit__group--item--MarginRight);
+}
+.pf-c-inline-edit__group.pf-m-icon-group {
+  --pf-c-inline-edit__group--item--MarginRight: var(--pf-c-inline-edit__action--m-icon-group--item--MarginRight);
+}
+.pf-c-inline-edit__group.pf-m-footer {
+  margin-top: var(--pf-c-inline-edit__group--m-footer--MarginTop);
+}
+.pf-c-inline-edit__group.pf-m-column {
+  --pf-c-inline-edit__group--item--MarginRight: 0;
+  flex-direction: column;
+}
+.pf-c-inline-edit__group > :last-child {
+  --pf-c-inline-edit__group--item--MarginRight: 0;
+}
+
+.pf-c-inline-edit__input {
+  flex: 1;
+}
+
+.pf-c-inline-edit__action.pf-m-valid .pf-c-button.pf-m-plain {
+  --pf-c-button--m-plain--Color: var(--pf-c-inline-edit__action--c-button--m-valid--m-plain--Color);
+}
+.pf-c-inline-edit__action.pf-m-valid .pf-c-button.pf-m-plain:hover {
+  --pf-c-button--m-plain--Color: var(--pf-c-inline-edit__action--c-button--m-valid--m-plain--hover--Color);
+}
+
+.pf-c-inline-edit__input,
+.pf-c-inline-edit__action,
+.pf-c-inline-edit__group.pf-m-action-group {
+  display: none;
+  visibility: hidden;
+}
+
+.pf-c-inline-edit__action.pf-m-enable-editable {
+  display: inline-block;
+  visibility: visible;
+}
+
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__input,
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__action,
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__group.pf-m-action-group,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__input,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__action,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__group.pf-m-action-group {
+  visibility: visible;
+}
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__input,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__input {
+  display: block;
+}
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__action,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__action {
+  display: inline-block;
+}
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__group.pf-m-action-group,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__group.pf-m-action-group {
+  display: inline-flex;
+}
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__value,
+.pf-c-inline-edit.pf-m-inline-editable .pf-c-inline-edit__action.pf-m-enable-editable,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__value,
+.pf-c-inline-edit .pf-m-inline-editable .pf-c-inline-edit__action.pf-m-enable-editable {
+  display: none;
+  visibility: hidden;
+}
+
+.pf-c-inline-edit__label + .pf-c-inline-edit__action.pf-m-enable > .pf-c-button {
+  margin-top: calc(var(--pf-c-button--PaddingTop) * -1);
+  margin-bottom: calc(var(--pf-c-button--PaddingBottom) * -1);
+}
+
+.pf-c-inline-edit__label.pf-m-bold {
+  font-weight: var(--pf-c-inline-edit__label--m-bold--FontWeight);
+}
+
+.pf-c-inline-edit__editable-text br {
+  display: none;
+}

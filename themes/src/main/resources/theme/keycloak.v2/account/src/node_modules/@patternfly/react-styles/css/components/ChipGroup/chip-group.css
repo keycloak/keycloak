@@ -1,0 +1,81 @@
+.pf-c-chip-group {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100);
+}
+
+.pf-c-chip-group {
+  color: var(--pf-global--Color--100);
+  --pf-c-chip-group__list--MarginBottom: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-chip-group__list--MarginRight: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-chip-group--m-category--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-chip-group--m-category--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-chip-group--m-category--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-chip-group--m-category--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-chip-group--m-category--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-chip-group--m-category--BackgroundColor: var(--pf-global--BackgroundColor--200);
+  --pf-c-chip-group__label--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-chip-group__label--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-chip-group__label--MaxWidth: 18ch;
+  --pf-c-chip-group__close--MarginTop: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-chip-group__close--MarginBottom: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-chip-group__list-item--MarginRight: var(--pf-global--spacer--xs);
+  --pf-c-chip-group__list-item--MarginBottom: var(--pf-global--spacer--xs);
+  max-width: 100%;
+}
+.pf-c-chip-group.pf-m-category {
+  padding-top: var(--pf-c-chip-group--m-category--PaddingTop);
+  padding-right: var(--pf-c-chip-group--m-category--PaddingRight);
+  padding-bottom: var(--pf-c-chip-group--m-category--PaddingBottom);
+  padding-left: var(--pf-c-chip-group--m-category--PaddingLeft);
+  background-color: var(--pf-c-chip-group--m-category--BackgroundColor);
+  border-radius: var(--pf-c-chip-group--m-category--BorderRadius);
+}
+
+.pf-c-chip-group__main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.pf-c-chip-group__list {
+  margin-right: var(--pf-c-chip-group__list--MarginRight);
+  margin-bottom: var(--pf-c-chip-group__list--MarginBottom);
+}
+
+.pf-c-chip-group,
+.pf-c-chip-group__list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+}
+
+.pf-c-chip-group__list-item {
+  display: inline-flex;
+  min-width: 0;
+  margin-right: var(--pf-c-chip-group__list-item--MarginRight);
+  margin-bottom: var(--pf-c-chip-group__list-item--MarginBottom);
+}
+
+.pf-c-chip-group__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: var(--pf-c-chip-group__label--MaxWidth);
+  margin-right: var(--pf-c-chip-group__label--MarginRight);
+  font-size: var(--pf-c-chip-group__label--FontSize);
+}
+
+.pf-c-chip-group__close {
+  display: flex;
+  align-self: flex-start;
+  margin-top: var(--pf-c-chip-group__close--MarginTop);
+  margin-bottom: var(--pf-c-chip-group__close--MarginBottom);
+}

@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`alternative component 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-l-grid"
+  >
+    <li
+      class="pf-l-grid__item"
+    >
+      Test
+    </li>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`gutter 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-grid pf-m-gutter"
+  />
+</DocumentFragment>
+`;

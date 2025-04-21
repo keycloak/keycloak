@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`alternative component 1`] = `
+<DocumentFragment>
+  <ul
+    class="pf-l-gallery"
+  >
+    <li>
+      Test
+    </li>
+  </ul>
+</DocumentFragment>
+`;
+
+exports[`gutter 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-gallery pf-m-gutter"
+  />
+</DocumentFragment>
+`;
+
+exports[`gutter breakpoints 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-gallery pf-m-gutter"
+    style="--pf-l-gallery--GridTemplateColumns--min: 100%; --pf-l-gallery--GridTemplateColumns--min-on-md: 100px; --pf-l-gallery--GridTemplateColumns--min-on-xl: 300px; --pf-l-gallery--GridTemplateColumns--max-on-md: 200px; --pf-l-gallery--GridTemplateColumns--max-on-xl: 1fr;"
+  />
+</DocumentFragment>
+`;

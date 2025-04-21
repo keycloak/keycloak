@@ -1,0 +1,7 @@
+.ws-core-u-alignment .pf-u-text-align-left,
+.ws-core-u-alignment .pf-u-text-align-center,
+.ws-core-u-alignment .pf-u-text-align-right,
+.ws-core-u-alignment .pf-u-text-align-justify {
+  padding: .5rem !important;
+  border: 2px dashed #393f44;
+}

@@ -1,0 +1,6 @@
+.ws-react-l-split .pf-l-split,
+.ws-react-l-split .pf-l-split > .pf-l-split__item {
+  padding: 1rem;
+  border-width: 2px;
+  border-style: dashed;
+}

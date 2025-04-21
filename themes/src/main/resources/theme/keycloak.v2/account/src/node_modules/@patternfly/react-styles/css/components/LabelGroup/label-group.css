@@ -1,0 +1,133 @@
+.pf-c-label-group {
+  --pf-c-label-group__list--MarginBottom: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-label-group__list--MarginRight: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-label-group--m-category--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-label-group--m-category--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-label-group--m-category--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-label-group--m-category--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-label-group--m-vertical--m-category--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-label-group--m-category--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-label-group--m-category--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-label-group--m-category--BorderColor: var(--pf-global--BorderColor--300);
+  --pf-c-label-group--m-category--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-label-group__label--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-label-group__label--MarginBottom: 0;
+  --pf-c-label-group--m-vertical__label--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-label-group__label--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-label-group__label--MaxWidth: 18ch;
+  --pf-c-label-group__close--MarginTop: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-label-group__close--MarginBottom: calc(var(--pf-global--spacer--xs) * -1);
+  --pf-c-label-group--m-vertical__close--MarginTop: calc(var(--pf-global--spacer--form-element) * -1);
+  --pf-c-label-group--m-vertical__close--MarginRight: calc(var(--pf-global--spacer--form-element) * -1);
+  --pf-c-label-group--m-vertical__close--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-label-group--m-vertical__close--c-button--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-label-group--m-vertical__close--c-button--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-label-group__list-item--MarginRight: var(--pf-global--spacer--xs);
+  --pf-c-label-group__list-item--MarginBottom: var(--pf-global--spacer--xs);
+  --pf-c-label-group__textarea--MinWidth: 12.5rem;
+  --pf-c-label-group__textarea--PaddingTop: 0.125rem;
+  --pf-c-label-group__textarea--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-label-group__textarea--PaddingBottom: 0;
+  --pf-c-label-group__textarea--PaddingLeft: var(--pf-global--spacer--xs);
+  display: inline-flex;
+  align-items: center;
+}
+.pf-c-label-group.pf-m-category {
+  padding-top: var(--pf-c-label-group--m-category--PaddingTop);
+  padding-right: var(--pf-c-label-group--m-category--PaddingRight);
+  padding-bottom: var(--pf-c-label-group--m-category--PaddingBottom);
+  padding-left: var(--pf-c-label-group--m-category--PaddingLeft);
+  background-color: var(--pf-c-label-group--m-category--BackgroundColor);
+  border: var(--pf-c-label-group--m-category--BorderWidth) solid var(--pf-c-label-group--m-category--BorderColor);
+  border-radius: var(--pf-c-label-group--m-category--BorderRadius);
+}
+.pf-c-label-group.pf-m-vertical {
+  --pf-c-label-group__list--MarginRight: 0;
+  --pf-c-label-group__list--MarginBottom: 0;
+  --pf-c-label-group__list-item--MarginRight: 0;
+  --pf-c-label-group__label--MarginRight: 0;
+  --pf-c-label-group__label--MarginBottom: var(--pf-c-label-group--m-vertical__label--MarginBottom);
+  --pf-c-label-group__close--MarginTop: var(--pf-c-label-group--m-vertical__close--MarginTop);
+  --pf-c-label-group__close--MarginLeft: var(--pf-c-label-group--m-vertical__close--MarginLeft);
+  --pf-c-label-group__close--MarginBottom: 0;
+  --pf-c-label-group__close--MarginRight: var(--pf-c-label-group--m-vertical__close--MarginRight);
+  --pf-c-label-group--m-category--PaddingRight: var(--pf-c-label-group--m-vertical--m-category--PaddingRight);
+}
+.pf-c-label-group.pf-m-vertical.pf-c-label-group {
+  align-items: flex-start;
+}
+.pf-c-label-group.pf-m-vertical .pf-c-label-group__list {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.pf-c-label-group.pf-m-vertical .pf-c-label-group__main {
+  flex-direction: column;
+}
+.pf-c-label-group.pf-m-vertical .pf-c-label-group__list-item:last-child {
+  --pf-c-label-group__list-item--MarginBottom: 0;
+}
+.pf-c-label-group.pf-m-vertical .pf-c-label-group__close .pf-c-button {
+  --pf-c-button--PaddingLeft: var(--pf-c-label-group--m-vertical__close--c-button--PaddingLeft);
+  --pf-c-button--PaddingRight: var(--pf-c-label-group--m-vertical__close--c-button--PaddingRight);
+}
+.pf-c-label-group.pf-m-editable,
+.pf-c-label-group.pf-m-editable .pf-c-label-group__main,
+.pf-c-label-group.pf-m-editable .pf-c-label-group__list {
+  display: flex;
+}
+.pf-c-label-group.pf-m-editable .pf-c-label-group__main,
+.pf-c-label-group.pf-m-editable .pf-c-label-group__list,
+.pf-c-label-group.pf-m-editable .pf-c-label-group__list-item.pf-m-textarea,
+.pf-c-label-group.pf-m-editable .pf-c-label-group__textarea {
+  flex: 1;
+}
+
+.pf-c-label-group__main {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.pf-c-label-group__list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  margin-right: var(--pf-c-label-group__list--MarginRight);
+  margin-bottom: var(--pf-c-label-group__list--MarginBottom);
+}
+
+.pf-c-label-group__list-item {
+  display: inline-flex;
+  margin-right: var(--pf-c-label-group__list-item--MarginRight);
+  margin-bottom: var(--pf-c-label-group__list-item--MarginBottom);
+}
+
+.pf-c-label-group__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: var(--pf-c-label-group__label--MaxWidth);
+  margin-right: var(--pf-c-label-group__label--MarginRight);
+  margin-bottom: var(--pf-c-label-group__label--MarginBottom);
+  font-size: var(--pf-c-label-group__label--FontSize);
+}
+
+.pf-c-label-group__close {
+  margin-top: var(--pf-c-label-group__close--MarginTop);
+  margin-right: var(--pf-c-label-group__close--MarginRight);
+  margin-bottom: var(--pf-c-label-group__close--MarginBottom);
+  margin-left: var(--pf-c-label-group__close--MarginLeft);
+}
+
+.pf-c-label-group__textarea {
+  min-width: var(--pf-c-label-group__textarea--MinWidth);
+  padding: var(--pf-c-label-group__textarea--PaddingTop) var(--pf-c-label-group__textarea--PaddingRight) var(--pf-c-label-group__textarea--PaddingBottom) var(--pf-c-label-group__textarea--PaddingLeft);
+  white-space: nowrap;
+  resize: none;
+  border: 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.pf-c-label-group__textarea::-webkit-scrollbar {
+  display: none;
+}

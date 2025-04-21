@@ -1,0 +1,13 @@
+.pf-c-draggable {
+  padding: .25em;
+}
+
+.pf-c-draggable.pf-m-dragging {
+  --pf-c-draggable--m-dragging--BackgroundColor: var(--pf-global--BackgroundColor--100);
+
+  position: absolute;
+  top: 23%;
+  left: .5em;
+  z-index: 9999;
+  width: 100%;
+}

@@ -1,0 +1,144 @@
+.pf-c-switch {
+  --pf-c-switch--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-switch__label--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-switch--ColumnGap: var(--pf-c-switch__label--PaddingLeft);
+  --pf-c-switch__toggle-icon--FontSize: calc(var(--pf-c-switch--FontSize) * .625);
+  --pf-c-switch__toggle-icon--Color: var(--pf-global--Color--light-100);
+  --pf-c-switch__toggle-icon--Left: calc(var(--pf-c-switch--FontSize) * .4);
+  --pf-c-switch__toggle-icon--Offset: 0.125rem;
+  --pf-c-switch--LineHeight: var(--pf-global--LineHeight--md);
+  --pf-c-switch--Height: auto;
+  --pf-c-switch__input--checked__toggle--BackgroundColor: var(--pf-global--primary-color--100);
+  --pf-c-switch__input--checked__toggle--before--TranslateX: calc(100% + var(--pf-c-switch__toggle-icon--Offset));
+  --pf-c-switch__input--checked__label--Color: var(--pf-global--Color--dark-100);
+  --pf-c-switch__input--not-checked__label--Color: var(--pf-global--disabled-color--100);
+  --pf-c-switch__input--disabled__label--Color: var(--pf-global--disabled-color--100);
+  --pf-c-switch__input--disabled__toggle--BackgroundColor: var(--pf-global--disabled-color--200);
+  --pf-c-switch__input--disabled__toggle--before--BackgroundColor: var(--pf-global--palette--black-150);
+  --pf-c-switch__input--focus__toggle--OutlineWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-switch__input--focus__toggle--OutlineOffset: var(--pf-global--spacer--sm);
+  --pf-c-switch__input--focus__toggle--OutlineColor: var(--pf-global--primary-color--100);
+  --pf-c-switch__toggle--Height: calc(var(--pf-c-switch--FontSize) * var(--pf-c-switch--LineHeight));
+  --pf-c-switch__toggle--BackgroundColor: var(--pf-global--palette--black-500);
+  --pf-c-switch__toggle--BorderRadius: var(--pf-c-switch__toggle--Height);
+  --pf-c-switch__toggle--before--Width: calc(var(--pf-c-switch--FontSize) - var(--pf-c-switch__toggle-icon--Offset));
+  --pf-c-switch__toggle--before--Height: var(--pf-c-switch__toggle--before--Width);
+  --pf-c-switch__toggle--before--Top: calc((var(--pf-c-switch__toggle--Height) - var(--pf-c-switch__toggle--before--Height)) / 2);
+  --pf-c-switch__toggle--before--Left: var(--pf-c-switch__toggle--before--Top);
+  --pf-c-switch__toggle--before--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-switch__toggle--before--BorderRadius: var(--pf-global--BorderRadius--lg);
+  --pf-c-switch__toggle--before--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-switch__toggle--before--Transition: transform .25s ease 0s;
+  --pf-c-switch__toggle--Width: calc(var(--pf-c-switch__toggle--Height) + var(--pf-c-switch__toggle-icon--Offset) + var(--pf-c-switch__toggle--before--Width));
+  --pf-c-switch__label--Color: var(--pf-global--Color--dark-100);
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: auto;
+  grid-auto-columns: 1fr;
+  column-gap: var(--pf-c-switch--ColumnGap);
+  height: var(--pf-c-switch--Height);
+  font-size: var(--pf-c-switch--FontSize);
+  line-height: var(--pf-c-switch--LineHeight);
+  vertical-align: middle;
+  cursor: pointer;
+}
+.pf-c-switch.pf-m-reverse .pf-c-switch__label,
+.pf-c-switch.pf-m-reverse .pf-c-switch__toggle {
+  grid-row: 1;
+}
+.pf-c-switch.pf-m-reverse .pf-c-switch__label {
+  grid-column: 1;
+}
+
+.pf-c-switch__input {
+  position: absolute;
+  cursor: pointer;
+  opacity: 0;
+}
+.pf-c-switch__input:focus ~ .pf-c-switch__toggle {
+  outline: var(--pf-c-switch__input--focus__toggle--OutlineWidth) solid var(--pf-c-switch__input--focus__toggle--OutlineColor);
+  outline-offset: var(--pf-c-switch__input--focus__toggle--OutlineOffset);
+}
+.pf-c-switch__input:checked ~ .pf-c-switch__label {
+  color: var(--pf-c-switch__input--checked__label--Color);
+}
+.pf-c-switch__input:checked ~ .pf-c-switch__toggle {
+  background-color: var(--pf-c-switch__input--checked__toggle--BackgroundColor);
+}
+.pf-c-switch__input:checked ~ .pf-c-switch__toggle::before {
+  transform: translateX(var(--pf-c-switch__input--checked__toggle--before--TranslateX));
+}
+.pf-c-switch__input:checked ~ .pf-m-off {
+  display: none;
+}
+.pf-c-switch__input:not(:checked) ~ .pf-c-switch__label {
+  color: var(--pf-c-switch__input--not-checked__label--Color);
+}
+.pf-c-switch__input:not(:checked) ~ .pf-c-switch__toggle .pf-c-switch__toggle-icon {
+  display: none;
+  visibility: hidden;
+}
+.pf-c-switch__input:not(:checked) ~ .pf-m-on {
+  display: none;
+}
+.pf-c-switch__input:disabled {
+  cursor: not-allowed;
+}
+.pf-c-switch__input:disabled ~ .pf-c-switch__label {
+  color: var(--pf-c-switch__input--disabled__label--Color);
+  cursor: not-allowed;
+}
+.pf-c-switch__input:disabled ~ .pf-c-switch__toggle {
+  cursor: not-allowed;
+  background-color: var(--pf-c-switch__input--disabled__toggle--BackgroundColor);
+}
+.pf-c-switch__input:disabled ~ .pf-c-switch__toggle::before {
+  background-color: var(--pf-c-switch__input--disabled__toggle--before--BackgroundColor);
+}
+
+.pf-c-switch__toggle {
+  position: relative;
+  display: inline-block;
+  width: var(--pf-c-switch__toggle--Width);
+  height: var(--pf-c-switch__toggle--Height);
+  background-color: var(--pf-c-switch__toggle--BackgroundColor);
+  border-radius: var(--pf-c-switch__toggle--BorderRadius);
+}
+.pf-c-switch__toggle::before {
+  position: absolute;
+  top: var(--pf-c-switch__toggle--before--Top);
+  left: var(--pf-c-switch__toggle--before--Left);
+  display: block;
+  width: var(--pf-c-switch__toggle--before--Width);
+  height: var(--pf-c-switch__toggle--before--Height);
+  content: "";
+  background-color: var(--pf-c-switch__toggle--before--BackgroundColor);
+  border-radius: var(--pf-c-switch__toggle--before--BorderRadius);
+  box-shadow: var(--pf-c-switch__toggle--before--BoxShadow);
+  transition: var(--pf-c-switch__toggle--before--Transition);
+}
+
+.pf-c-switch__toggle-icon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pf-c-switch__toggle-icon--Left);
+  display: flex;
+  align-items: center;
+  font-size: var(--pf-c-switch__toggle-icon--FontSize);
+  color: var(--pf-c-switch__toggle-icon--Color);
+}
+
+.pf-c-switch__label {
+  display: inline-block;
+  grid-column: 2;
+  color: var(--pf-c-switch__label--Color);
+  vertical-align: top;
+}
+
+:where(.pf-theme-dark) .pf-c-switch {
+  --pf-c-switch__toggle-icon--Color: var(--pf-global--BackgroundColor--100);
+  --pf-c-switch__input--not-checked__label--Color: var(--pf-global--Color--100);
+  --pf-c-switch__input--disabled__toggle--before--BackgroundColor: var(--pf-global--disabled-color--100);
+  --pf-c-switch__toggle--before--BoxShadow: none;
+}

@@ -1,0 +1,13 @@
+.pf-topology-content {
+  background-color: var(--pf-global--Color--light-200);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.pf-topology-container {
+  flex: 1;
+}

@@ -1,0 +1,316 @@
+.pf-c-description-list {
+  --pf-c-description-list--RowGap: var(--pf-global--gutter--md);
+  --pf-c-description-list--ColumnGap: var(--pf-global--spacer--lg);
+  --pf-c-description-list--GridTemplateColumns--count: 1;
+  --pf-c-description-list--GridTemplateColumns--width: 1fr;
+  --pf-c-description-list--GridTemplateColumns--min: 0;
+  --pf-c-description-list--GridTemplateColumns: repeat(var(--pf-c-description-list--GridTemplateColumns--count), var(--pf-c-description-list--GridTemplateColumns--width));
+  --pf-c-description-list__group--RowGap: var(--pf-global--spacer--sm);
+  --pf-c-description-list__group--ColumnGap: var(--pf-global--spacer--sm);
+  --pf-c-description-list__group--GridTemplateColumns: auto;
+  --pf-c-description-list__group--GridTemplateRows: auto 1fr;
+  --pf-c-description-list__group--GridColumn: auto;
+  --pf-c-description-list--m-compact--RowGap: var(--pf-global--gutter);
+  --pf-c-description-list--m-compact--ColumnGap: var(--pf-global--spacer--sm);
+  --pf-c-description-list__term--Display: inline;
+  --pf-c-description-list__term--sm--Display: flex;
+  --pf-c-description-list__term--FontWeight: var(--pf-global--FontWeight--bold);
+  --pf-c-description-list__term--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-description-list__term--LineHeight: var(--pf-global--LineHeight--sm);
+  --pf-c-description-list__term-icon--MinWidth: var(--pf-global--icon--FontSize--sm);
+  --pf-c-description-list__term-icon--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-description-list__term-icon--Color: var(--pf-global--icon--Color--light);
+  --pf-c-description-list--m-vertical__group--GridTemplateColumns: repeat(var(--pf-c-description-list--GridTemplateColumns--count));
+  --pf-c-description-list--m-vertical__group--GridTemplateRows: auto 1fr;
+  --pf-c-description-list--m-horizontal__term--width: 12ch;
+  --pf-c-description-list--m-horizontal__description--width: minmax(10ch, auto);
+  --pf-c-description-list--m-horizontal__group--GridTemplateColumns: var(--pf-c-description-list__term--width) var(--pf-c-description-list--m-horizontal__description--width);
+  --pf-c-description-list--m-horizontal__group--GridTemplateRows: auto;
+  --pf-c-description-list--m-1-col--GridTemplateColumns--count: 1;
+  --pf-c-description-list--m-2-col--GridTemplateColumns--count: 2;
+  --pf-c-description-list--m-3-col--GridTemplateColumns--count: 3;
+  --pf-c-description-list--m-auto-fit--GridTemplateColumns--min: 15.625rem;
+  --pf-c-description-list--m-auto-fit--GridTemplateColumns--minmax--min: var(--pf-c-description-list--m-auto-fit--GridTemplateColumns--min);
+  --pf-c-description-list__text--m-help-text--TextDecorationColor: var(--pf-global--BorderColor--200);
+  --pf-c-description-list__text--m-help-text--TextDecorationThickness: var(--pf-global--BorderWidth--sm);
+  --pf-c-description-list__text--m-help-text--TextDecorationOffset: 0.25rem;
+  --pf-c-description-list__text--m-help-text--hover--TextDecorationColor: var(--pf-global--Color--100);
+  --pf-c-description-list__text--m-help-text--focus--TextDecorationColor: var(--pf-global--Color--100);
+  --pf-c-description-list--m-display-lg__description--FontSize: var(--pf-global--FontSize--lg);
+  --pf-c-description-list--m-display-2xl__description--FontSize: var(--pf-global--FontSize--2xl);
+  display: grid;
+  align-items: baseline;
+  row-gap: var(--pf-c-description-list--RowGap);
+  column-gap: var(--pf-c-description-list--ColumnGap);
+  grid-template-columns: var(--pf-c-description-list--GridTemplateColumns);
+}
+@media screen and (min-width: 576px) {
+  .pf-c-description-list {
+    --pf-c-description-list__term--Display: var(--pf-c-description-list__term--sm--Display);
+  }
+}
+.pf-c-description-list[class*=pf-m-horizontal] {
+  --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width);
+}
+@media (min-width: 576px) {
+  .pf-c-description-list[class*=pf-m-horizontal] {
+    --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width-on-sm, var(--pf-c-description-list--m-horizontal__term--width));
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-description-list[class*=pf-m-horizontal] {
+    --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width-on-md, var(--pf-c-description-list--m-horizontal__term--width-on-sm, var(--pf-c-description-list--m-horizontal__term--width)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-description-list[class*=pf-m-horizontal] {
+    --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width-on-lg, var(--pf-c-description-list--m-horizontal__term--width-on-md, var(--pf-c-description-list--m-horizontal__term--width-on-sm, var(--pf-c-description-list--m-horizontal__term--width))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-description-list[class*=pf-m-horizontal] {
+    --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width-on-xl, var(--pf-c-description-list--m-horizontal__term--width-on-lg, var(--pf-c-description-list--m-horizontal__term--width-on-md, var(--pf-c-description-list--m-horizontal__term--width-on-sm, var(--pf-c-description-list--m-horizontal__term--width)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-description-list[class*=pf-m-horizontal] {
+    --pf-c-description-list__term--width: var(--pf-c-description-list--m-horizontal__term--width-on-2xl, var(--pf-c-description-list--m-horizontal__term--width-on-xl, var(--pf-c-description-list--m-horizontal__term--width-on-lg, var(--pf-c-description-list--m-horizontal__term--width-on-md, var(--pf-c-description-list--m-horizontal__term--width-on-sm, var(--pf-c-description-list--m-horizontal__term--width))))));
+  }
+}
+.pf-c-description-list.pf-m-inline-grid {
+  display: inline-grid;
+}
+.pf-c-description-list.pf-m-auto-column-widths {
+  --pf-c-description-list--GridTemplateColumns--width: minmax(8ch, max-content);
+}
+.pf-c-description-list.pf-m-auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(var(--pf-c-description-list--m-auto-fit--GridTemplateColumns--minmax--min), 1fr));
+  --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min);
+}
+@media (min-width: 576px) {
+  .pf-c-description-list.pf-m-auto-fit {
+    --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min-on-sm, var(--pf-c-description-list--GridTemplateColumns--min));
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-description-list.pf-m-auto-fit {
+    --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min-on-md, var(--pf-c-description-list--GridTemplateColumns--min-on-sm, var(--pf-c-description-list--GridTemplateColumns--min)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-description-list.pf-m-auto-fit {
+    --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min-on-lg, var(--pf-c-description-list--GridTemplateColumns--min-on-md, var(--pf-c-description-list--GridTemplateColumns--min-on-sm, var(--pf-c-description-list--GridTemplateColumns--min))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-description-list.pf-m-auto-fit {
+    --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min-on-xl, var(--pf-c-description-list--GridTemplateColumns--min-on-lg, var(--pf-c-description-list--GridTemplateColumns--min-on-md, var(--pf-c-description-list--GridTemplateColumns--min-on-sm, var(--pf-c-description-list--GridTemplateColumns--min)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-description-list.pf-m-auto-fit {
+    --pf-c-description-list--GridTemplateColumns--minmax--min: var(--pf-c-description-list--GridTemplateColumns--min-on-2xl, var(--pf-c-description-list--GridTemplateColumns--min-on-xl, var(--pf-c-description-list--GridTemplateColumns--min-on-lg, var(--pf-c-description-list--GridTemplateColumns--min-on-md, var(--pf-c-description-list--GridTemplateColumns--min-on-sm, var(--pf-c-description-list--GridTemplateColumns--min))))));
+  }
+}
+.pf-c-description-list.pf-m-compact {
+  --pf-c-description-list--RowGap: var(--pf-c-description-list--m-compact--RowGap);
+  --pf-c-description-list--ColumnGap: var(--pf-c-description-list--m-compact--ColumnGap);
+}
+.pf-c-description-list.pf-m-fluid {
+  --pf-c-description-list--m-horizontal__term--width: fit-content(20ch);
+}
+.pf-c-description-list.pf-m-fill-columns {
+  display: block;
+  column-count: var(--pf-c-description-list--GridTemplateColumns--count);
+  margin-bottom: calc(var(--pf-c-description-list--RowGap) * -1);
+}
+.pf-c-description-list.pf-m-fill-columns .pf-c-description-list__group,
+.pf-c-description-list.pf-m-fill-columns > .pf-c-card {
+  display: inline-grid;
+  width: 100%;
+  margin-bottom: var(--pf-c-description-list--RowGap);
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  -moz-column-break-inside: avoid;
+}
+.pf-c-description-list.pf-m-display-lg {
+  --pf-c-description-list__description--FontSize: var(--pf-c-description-list--m-display-lg__description--FontSize);
+}
+.pf-c-description-list.pf-m-display-2xl {
+  --pf-c-description-list__description--FontSize: var(--pf-c-description-list--m-display-2xl__description--FontSize);
+}
+.pf-c-description-list > .pf-c-card {
+  align-self: stretch;
+  padding: var(--pf-c-card--first-child--PaddingTop) var(--pf-c-card--child--PaddingRight) var(--pf-c-card--child--PaddingBottom) var(--pf-c-card--child--PaddingLeft);
+}
+
+.pf-c-description-list__group,
+.pf-c-description-list > .pf-c-card {
+  display: grid;
+  grid-column: var(--pf-c-description-list__group--GridColumn);
+  row-gap: var(--pf-c-description-list__group--RowGap);
+  column-gap: var(--pf-c-description-list__group--ColumnGap);
+  grid-template-columns: var(--pf-c-description-list__group--GridTemplateColumns);
+  grid-template-rows: var(--pf-c-description-list__group--GridTemplateRows);
+  align-items: baseline;
+}
+
+.pf-c-description-list__term,
+.pf-c-description-list__description {
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: break-word;
+}
+
+.pf-c-description-list__term {
+  display: var(--pf-c-description-list__term--Display);
+  font-size: var(--pf-c-description-list__term--FontSize);
+  font-weight: var(--pf-c-description-list__term--FontWeight);
+  line-height: var(--pf-c-description-list__term--LineHeight);
+}
+.pf-c-description-list__term .pf-c-description-list__text {
+  display: inline;
+}
+
+.pf-c-description-list__term-icon {
+  flex-shrink: 0;
+  min-width: var(--pf-c-description-list__term-icon--MinWidth);
+  margin-right: var(--pf-c-description-list__term-icon--MarginRight);
+  color: var(--pf-c-description-list__term-icon--Color);
+}
+
+.pf-c-description-list__description {
+  font-size: var(--pf-c-description-list__description--FontSize, inherit);
+}
+
+.pf-c-description-list__text {
+  min-width: 0;
+}
+.pf-c-description-list__text.pf-m-help-text {
+  text-decoration: underline;
+  cursor: pointer;
+  text-decoration-style: dashed;
+  text-decoration-thickness: var(--pf-c-description-list__text--m-help-text--TextDecorationThickness);
+  text-underline-offset: var(--pf-c-description-list__text--m-help-text--TextDecorationOffset);
+  text-decoration-color: var(--pf-c-description-list__text--m-help-text--TextDecorationColor);
+}
+.pf-c-description-list__text.pf-m-help-text:hover {
+  --pf-c-description-list__text--m-help-text--TextDecorationColor: var(--pf-c-description-list__text--m-help-text--hover--TextDecorationColor);
+}
+.pf-c-description-list__text.pf-m-help-text:focus {
+  --pf-c-description-list__text--m-help-text--TextDecorationColor: var(--pf-c-description-list__text--m-help-text--focus--TextDecorationColor);
+}
+
+.pf-c-description-list.pf-m-1-col {
+  --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+}
+.pf-c-description-list.pf-m-2-col {
+  --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+}
+.pf-c-description-list.pf-m-3-col {
+  --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+}
+.pf-c-description-list.pf-m-horizontal {
+  --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+  --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+}
+.pf-c-description-list.pf-m-vertical {
+  --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+  --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+}
+@media (min-width: 576px) {
+  .pf-c-description-list.pf-m-1-col-on-sm {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-2-col-on-sm {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-3-col-on-sm {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-horizontal-on-sm {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+  }
+  .pf-c-description-list.pf-m-vertical-on-sm {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+  }
+}
+@media (min-width: 768px) {
+  .pf-c-description-list.pf-m-1-col-on-md {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-2-col-on-md {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-3-col-on-md {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-horizontal-on-md {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+  }
+  .pf-c-description-list.pf-m-vertical-on-md {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+  }
+}
+@media (min-width: 992px) {
+  .pf-c-description-list.pf-m-1-col-on-lg {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-2-col-on-lg {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-3-col-on-lg {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-horizontal-on-lg {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+  }
+  .pf-c-description-list.pf-m-vertical-on-lg {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+  }
+}
+@media (min-width: 1200px) {
+  .pf-c-description-list.pf-m-1-col-on-xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-2-col-on-xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-3-col-on-xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-horizontal-on-xl {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+  }
+  .pf-c-description-list.pf-m-vertical-on-xl {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+  }
+}
+@media (min-width: 1450px) {
+  .pf-c-description-list.pf-m-1-col-on-2xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-1-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-2-col-on-2xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-2-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-3-col-on-2xl {
+    --pf-c-description-list--GridTemplateColumns--count: var(--pf-c-description-list--m-3-col--GridTemplateColumns--count);
+  }
+  .pf-c-description-list.pf-m-horizontal-on-2xl {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-horizontal__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-horizontal__group--GridTemplateRows);
+  }
+  .pf-c-description-list.pf-m-vertical-on-2xl {
+    --pf-c-description-list__group--GridTemplateColumns: var(--pf-c-description-list--m-vertical__group--GridTemplateColumns);
+    --pf-c-description-list__group--GridTemplateRows: var(--pf-c-description-list--m-vertical__group--GridTemplateRows);
+  }
+}

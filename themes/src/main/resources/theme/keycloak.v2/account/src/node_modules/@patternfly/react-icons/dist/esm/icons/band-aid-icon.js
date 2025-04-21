@@ -1,0 +1,14 @@
+import { createIcon } from '../createIcon';
+
+export const BandAidIconConfig = {
+  name: 'BandAidIcon',
+  height: 512,
+  width: 640,
+  svgPath: 'M0 160v192c0 35.3 28.7 64 64 64h96V96H64c-35.3 0-64 28.7-64 64zm576-64h-96v320h96c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64zM192 416h256V96H192v320zm176-232c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24zm0 96c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24zm-96-96c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24zm0 96c13.3 0 24 10.7 24 24s-10.7 24-24 24-24-10.7-24-24 10.7-24 24-24z',
+  yOffset: 0,
+  xOffset: 0,
+};
+
+export const BandAidIcon = createIcon(BandAidIconConfig);
+
+export default BandAidIcon;

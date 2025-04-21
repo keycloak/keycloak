@@ -1,0 +1,232 @@
+.pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main {
+  --pf-global--Color--100: var(--pf-global--Color--light-100);
+  --pf-global--Color--200: var(--pf-global--Color--light-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--light-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--light-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--light);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--light);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--dark-100);
+}
+.pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main .pf-c-card {
+  --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-200);
+}
+.pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main .pf-c-button {
+  --pf-c-button--m-primary--Color: var(--pf-global--primary-color--dark-100);
+  --pf-c-button--m-primary--hover--Color: var(--pf-global--primary-color--dark-100);
+  --pf-c-button--m-primary--focus--Color: var(--pf-global--primary-color--dark-100);
+  --pf-c-button--m-primary--active--Color: var(--pf-global--primary-color--dark-100);
+  --pf-c-button--m-primary--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-button--m-secondary--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--hover--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--focus--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--active--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--BorderColor: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--hover--BorderColor: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--focus--BorderColor: var(--pf-global--Color--light-100);
+  --pf-c-button--m-secondary--active--BorderColor: var(--pf-global--Color--light-100);
+}
+
+.pf-c-log-viewer {
+  --pf-c-log-viewer--Height: 100%;
+  --pf-c-log-viewer--MaxHeight: auto;
+  --pf-c-log-viewer--m-line-numbers__index--Display: inline;
+  --pf-c-log-viewer__header--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-log-viewer__main--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-log-viewer__main--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-log-viewer__main--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-log-viewer__scroll-container--Height: 37.5rem;
+  --pf-c-log-viewer__scroll-container--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-log-viewer__scroll-container--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-log-viewer--m-line-numbers__main--before--Top: 0;
+  --pf-c-log-viewer--m-line-numbers__main--before--Bottom: 0;
+  --pf-c-log-viewer--m-line-numbers__main--before--Width: var(--pf-global--BorderWidth--sm);
+  --pf-c-log-viewer--m-line-numbers__main--before--BackgroundColor: var(--pf-global--BorderColor--100);
+  --pf-c-log-viewer__list--Height: auto;
+  --pf-c-log-viewer--m-line-numbers__list--Left: var(--pf-c-log-viewer__index--Width);
+  --pf-c-log-viewer__index--Display: none;
+  --pf-c-log-viewer__index--Width: 4.0625rem;
+  --pf-c-log-viewer__index--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-log-viewer__index--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-log-viewer__index--FontFamily: var(--pf-global--FontFamily--monospace);
+  --pf-c-log-viewer__index--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-log-viewer__index--Color: var(--pf-global--Color--200);
+  --pf-c-log-viewer__index--BackgroundColor: transparent;
+  --pf-c-log-viewer__text--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-log-viewer__text--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-log-viewer__text--FontFamily: var(--pf-global--FontFamily--monospace);
+  --pf-c-log-viewer__text--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-log-viewer__text--Color: var(--pf-global--Color--100);
+  --pf-c-log-viewer__text--WordBreak: break-all;
+  --pf-c-log-viewer__text--WhiteSpace: break-spaces;
+  --pf-c-log-viewer__text--LineBreak: anywhere;
+  --pf-c-log-viewer--m-nowrap__text--WhiteSpace: nowrap;
+  --pf-c-log-viewer__string--m-match--Color: var(--pf-global--palette--gold-700);
+  --pf-c-log-viewer__string--m-match--BackgroundColor: var(--pf-global--palette--gold-100);
+  --pf-c-log-viewer__string--m-current--Color: var(--pf-global--palette--gold-700);
+  --pf-c-log-viewer__string--m-current--BackgroundColor: var(--pf-global--palette--gold-400);
+  --pf-c-log-viewer__timestamp--FontWeight: var(--pf-global--FontWeight--bold);
+  --pf-c-log-viewer--c-toolbar--PaddingTop: 0;
+  --pf-c-log-viewer--c-toolbar--PaddingBottom: 0;
+  --pf-c-log-viewer--c-toolbar__content--PaddingRight: 0;
+  --pf-c-log-viewer--c-toolbar__content--PaddingLeft: 0;
+  --pf-c-log-viewer--c-toolbar__group--m-toggle-group--spacer: 0;
+  --pf-c-log-viewer--c-toolbar__group--m-toggle-group--m-show--spacer: var(--pf-global--spacer--sm);
+  --pf-c-log-viewer--m-dark__main--BorderWidth: 0;
+  display: flex;
+  flex-direction: column;
+  height: var(--pf-c-log-viewer--Height);
+  max-height: var(--pf-c-log-viewer--MaxHeight);
+}
+.pf-c-log-viewer.pf-m-dark {
+  --pf-c-log-viewer__main--BorderWidth: var(--pf-c-log-viewer--m-dark__main--BorderWidth);
+}
+.pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main {
+  color: var(--pf-global--Color--100);
+  --pf-c-log-viewer__main--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-log-viewer__main--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-log-viewer__text--Color: var(--pf-global--Color--100);
+  --pf-c-log-viewer__index--Color: var(--pf-global--Color--200);
+  --pf-c-log-viewer--m-line-numbers__main--before--BackgroundColor: var(--pf-global--BorderColor--100);
+}
+.pf-c-log-viewer.pf-m-wrap-text {
+  word-break: break-all;
+}
+.pf-c-log-viewer.pf-m-nowrap {
+  --pf-c-log-viewer__text--WhiteSpace: var(--pf-c-log-viewer--m-nowrap__text--WhiteSpace);
+}
+.pf-c-log-viewer.pf-m-line-numbers {
+  --pf-c-log-viewer__index--Display: var(--pf-c-log-viewer--m-line-numbers__index--Display);
+}
+.pf-c-log-viewer.pf-m-line-numbers .pf-c-log-viewer__list {
+  position: absolute;
+  right: 0;
+  left: var(--pf-c-log-viewer--m-line-numbers__list--Left);
+}
+.pf-c-log-viewer.pf-m-line-numbers .pf-c-log-viewer__list::before {
+  position: absolute;
+  top: var(--pf-c-log-viewer--m-line-numbers__main--before--Top);
+  bottom: var(--pf-c-log-viewer--m-line-numbers__main--before--Bottom);
+  left: 0;
+  width: var(--pf-c-log-viewer--m-line-numbers__main--before--Width);
+  content: "";
+  background: var(--pf-c-log-viewer--m-line-numbers__main--before--BackgroundColor);
+}
+.pf-c-log-viewer .pf-c-toolbar {
+  --pf-c-toolbar--PaddingTop: var(--pf-c-log-viewer--c-toolbar--PaddingTop);
+  --pf-c-toolbar--PaddingBottom: var(--pf-c-log-viewer--c-toolbar--PaddingBottom);
+  --pf-c-toolbar__content--PaddingRight: var(--pf-c-log-viewer--c-toolbar__content--PaddingRight);
+  --pf-c-toolbar__content--PaddingLeft: var(--pf-c-log-viewer--c-toolbar__content--PaddingLeft);
+  --pf-c-toolbar__group--m-toggle-group--spacer: 0;
+  --pf-c-toolbar__group--m-toggle-group--m-show--spacer: var(--pf-c-log-viewer--c-toolbar__group--m-toggle-group--m-show--spacer);
+}
+.pf-c-log-viewer .pf-c-toolbar__content-section {
+  flex-wrap: nowrap;
+}
+.pf-c-log-viewer .pf-c-search-input {
+  width: 100%;
+}
+
+.pf-c-log-viewer__header {
+  margin-bottom: var(--pf-c-log-viewer__header--MarginBottom);
+}
+
+.pf-c-log-viewer__main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--pf-c-log-viewer__main--BackgroundColor);
+  border: var(--pf-c-log-viewer__main--BorderWidth) solid var(--pf-c-log-viewer__main--BorderColor);
+}
+
+.pf-c-log-viewer__scroll-container {
+  position: relative;
+  height: var(--pf-c-log-viewer__scroll-container--Height);
+  padding-top: var(--pf-c-log-viewer__scroll-container--PaddingTop);
+  padding-bottom: var(--pf-c-log-viewer__scroll-container--PaddingBottom);
+  overflow: auto;
+  will-change: transform;
+  direction: ltr;
+}
+
+.pf-c-log-viewer__list {
+  position: relative;
+  height: var(--pf-c-log-viewer__list--Height);
+}
+
+.pf-c-log-viewer__list-item {
+  left: 0;
+  width: 100%;
+}
+
+.pf-c-log-viewer__string.pf-m-match {
+  color: var(--pf-c-log-viewer__string--m-match--Color, inherit);
+  background-color: var(--pf-c-log-viewer__string--m-match--BackgroundColor);
+}
+.pf-c-log-viewer__string.pf-m-current {
+  color: var(--pf-c-log-viewer__string--m-current--Color, inherit);
+  background-color: var(--pf-c-log-viewer__string--m-current--BackgroundColor);
+}
+
+.pf-c-log-viewer__index {
+  position: fixed;
+  left: 0;
+  display: var(--pf-c-log-viewer__index--Display);
+  width: var(--pf-c-log-viewer__index--Width);
+  padding-right: var(--pf-c-log-viewer__index--PaddingRight);
+  padding-left: var(--pf-c-log-viewer__index--PaddingLeft);
+  font-family: var(--pf-c-log-viewer__index--FontFamily);
+  font-size: var(--pf-c-log-viewer__index--FontSize);
+  color: var(--pf-c-log-viewer__index--Color);
+  user-select: none;
+  background-color: var(--pf-c-log-viewer__index--BackgroundColor);
+}
+
+.pf-c-log-viewer__text {
+  display: block;
+  padding-right: var(--pf-c-log-viewer__text--PaddingRight);
+  padding-left: var(--pf-c-log-viewer__text--PaddingLeft);
+  font-family: var(--pf-c-log-viewer__text--FontFamily);
+  font-size: var(--pf-c-log-viewer__text--FontSize);
+  color: var(--pf-c-log-viewer__text--Color);
+  word-break: var(--pf-c-log-viewer__text--WordBreak);
+  white-space: var(--pf-c-log-viewer__text--WhiteSpace);
+  line-break: var(--pf-c-log-viewer__text--LineBreak);
+}
+
+.pf-c-log-viewer__timestamp {
+  font-weight: var(--pf-c-log-viewer__timestamp--FontWeight);
+}
+
+:where(.pf-theme-dark) .pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main {
+  --pf-global--Color--100: #e0e0e0;
+  --pf-global--Color--200: #aaabac;
+  --pf-global--BorderColor--100: #444548;
+  --pf-global--primary-color--100: #1fa7f8;
+  --pf-global--link--Color: #1fa7f8;
+  --pf-global--link--Color--hover: #73bcf7;
+  --pf-global--BackgroundColor--100: #1b1d21;
+}
+:where(.pf-theme-dark) .pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main .pf-c-card {
+  --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--100);
+}
+:where(.pf-theme-dark) .pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main .pf-c-button {
+  --pf-c-button--m-primary--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-primary--hover--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-primary--focus--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-primary--active--Color: var(--pf-global--Color--light-100);
+  --pf-c-button--m-primary--BackgroundColor: var(--pf-global--primary-color--300);
+  --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--primary-color--200);
+  --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--primary-color--200);
+  --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--primary-color--200);
+  --pf-c-button--m-secondary--Color: var(--pf-global--primary-color--100);
+  --pf-c-button--m-secondary--hover--Color: var(--pf-global--primary-color--100);
+  --pf-c-button--m-secondary--focus--Color: var(--pf-global--primary-color--100);
+  --pf-c-button--m-secondary--active--Color: var(--pf-global--primary-color--100);
+}
+
+:where(.pf-theme-dark) .pf-c-log-viewer.pf-m-dark .pf-c-log-viewer__main {
+  color: var(--pf-global--Color--100);
+}

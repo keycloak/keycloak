@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`gutter 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-stack pf-m-gutter"
+  >
+    <div
+      class="pf-l-stack__item"
+    >
+      Basic content
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`isMain defaults to false 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-stack"
+  >
+    <div
+      class="pf-l-stack__item"
+    >
+      Basic content
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`isMain set to true 1`] = `
+<DocumentFragment>
+  <div
+    class="pf-l-stack"
+  >
+    <div
+      class="pf-l-stack__item pf-m-fill"
+    >
+      Filled content
+    </div>
+  </div>
+</DocumentFragment>
+`;

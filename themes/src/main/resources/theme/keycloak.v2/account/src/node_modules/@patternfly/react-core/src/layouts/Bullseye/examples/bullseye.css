@@ -1,0 +1,6 @@
+.ws-react-l-bullseye .pf-l-bullseye,
+.ws-react-l-bullseye .pf-l-bullseye > div {
+  padding: 1rem;
+  border-width: 2px;
+  border-style: dashed;
+}

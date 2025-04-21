@@ -1,0 +1,6 @@
+export const c_button_m_primary_BackgroundColor = {
+  "name": "--pf-c-button--m-primary--BackgroundColor",
+  "value": "#fff",
+  "var": "var(--pf-c-button--m-primary--BackgroundColor)"
+};
+export default c_button_m_primary_BackgroundColor;
