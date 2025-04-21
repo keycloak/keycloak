@@ -1,0 +1,6 @@
+export const c_table_tr_m_hoverable_focus_BoxShadow: {
+  "name": "--pf-c-table--tr--m-hoverable--focus--BoxShadow",
+  "value": "0 -0.1875rem 0.25rem -0.125rem rgba(3,3,3,.08), 0 0.125rem 0.25rem -0.0625rem rgba(3, 3, 3, 0.16)",
+  "var": "var(--pf-c-table--tr--m-hoverable--focus--BoxShadow)"
+};
+export default c_table_tr_m_hoverable_focus_BoxShadow;
