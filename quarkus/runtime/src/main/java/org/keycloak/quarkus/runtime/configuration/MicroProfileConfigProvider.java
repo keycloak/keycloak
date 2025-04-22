@@ -19,20 +19,20 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.Config.BaseScope;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     public static final String NS_KEYCLOAK = "kc";
     public static final String NS_KEYCLOAK_PREFIX = NS_KEYCLOAK + ".";
+    public static final String SPI_PREFIX = NS_KEYCLOAK_PREFIX + "spi" + OPTION_PART_SEPARATOR;
     public static final String NS_QUARKUS = "quarkus";
     public static final String NS_QUARKUS_PREFIX = "quarkus" + ".";
 
@@ -58,21 +58,19 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     @Override
     public Config.Scope scope(String... scope) {
-        return new MicroProfileScope(scope);
+        return new MicroProfileScope(SPI_PREFIX, scope);
     }
 
     public class MicroProfileScope implements Config.Scope {
 
-        private final String[] scope;
         private final String prefix;
 
-        public MicroProfileScope(String... scopes) {
-            this.scope = scopes;
-            StringBuilder prefix = new StringBuilder(NS_KEYCLOAK_PREFIX).append("spi");
+        public MicroProfileScope(String prefix, String... scopes) {
+            StringBuilder prefixBuilder = new StringBuilder(prefix);
             for (String scope : scopes) {
-                prefix.append(OPTION_PART_SEPARATOR).append(scope);
+                prefixBuilder.append(toDashCase(scope)).append(OPTION_PART_SEPARATOR);
             }
-            this.prefix = prefix.toString();
+            this.prefix = prefixBuilder.toString();
         }
 
         @Override
@@ -122,22 +120,23 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
         @Override
         public Config.Scope scope(String... scope) {
-            return new MicroProfileScope(ArrayUtils.addAll(this.scope, scope));
+            return new MicroProfileScope(prefix, scope);
         }
 
         @Override
         public Set<String> getPropertyNames() {
             return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
-                    .filter(this::startWithPrefix)
+                    .filter(key -> key.startsWith(prefix))
                     .collect(Collectors.toSet());
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
+            return config.getOptionalValue(prefix.concat(toDashCase(key)), clazz).orElse(defaultValue);
         }
 
-        private boolean startWithPrefix(String key) {
-            return key.startsWith(toDashCase(prefix)) || key.startsWith(toDashCase(toEnvVarFormat(prefix)));
+        @Override
+        public BaseScope root() {
+            return new MicroProfileScope(NS_KEYCLOAK_PREFIX);
         }
     }
 
