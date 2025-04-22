@@ -48,6 +48,7 @@ import org.openqa.selenium.support.PageFactory;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
@@ -860,7 +861,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         driver.navigate().to(verificationUrl.trim());
     }
-
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled
