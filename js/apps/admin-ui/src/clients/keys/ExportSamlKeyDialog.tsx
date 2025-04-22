@@ -83,7 +83,7 @@ export const ExportSamlKeyDialog = ({
     >
       <Form
         id="export-saml-key-form"
-        className="pf-v5-u-pt-lg"
+        className="pf-v6-u-pt-lg"
         onSubmit={form.handleSubmit(download)}
       >
         <FormProvider {...form}>

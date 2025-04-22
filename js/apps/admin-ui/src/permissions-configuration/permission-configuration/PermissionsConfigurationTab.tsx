@@ -142,7 +142,7 @@ export const PermissionsConfigurationTab = ({
   const noData = permissions.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <>

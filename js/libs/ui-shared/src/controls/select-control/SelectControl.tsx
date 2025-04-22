@@ -23,6 +23,10 @@ export type SelectControlOption = {
 
 export type OptionType = string[] | SelectControlOption[];
 
+export type ChipGroupProps = Omit<LabelGroupProps, "children" | "ref"> & {
+  numChips?: number;
+};
+
 export type SelectControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
@@ -49,7 +53,7 @@ export type SelectControlProps<
     isDisabled?: boolean;
     menuAppendTo?: string;
     placeholderText?: string;
-    chipGroupProps?: LabelGroupProps;
+    chipGroupProps?: ChipGroupProps;
     onSelect?: (
       value: string | string[],
       onChangeHandler: (value: string | string[]) => void,

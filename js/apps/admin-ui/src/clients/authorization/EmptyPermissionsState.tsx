@@ -31,7 +31,7 @@ const EmptyButton = ({
     <Button
       data-testid={`create-${permissionType}`}
       className={
-        disabled ? "keycloak__permissions__empty_state " : "" + "pf-v5-u-m-sm"
+        disabled ? "keycloak__permissions__empty_state " : "" + "pf-v6-u-m-sm"
       }
       variant="secondary"
       onClick={() =>

@@ -67,7 +67,7 @@ const UserDetailLink = (user: BruteUser) => {
       {user.attributes?.["is_temporary_admin"]?.[0] === "true" && (
         <Tooltip content={t("temporaryAdmin")}>
           <WarningTriangleIcon
-            className="pf-v5-u-ml-sm"
+            className="pf-v6-u-ml-sm"
             id="temporary-admin-label"
           />
         </Tooltip>
@@ -265,7 +265,7 @@ export function UserDataTable() {
             {Object.values(activeFilters.userAttribute).map((entry) => {
               return (
                 <LabelGroup
-                  className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                  className="pf-v6-u-mt-md pf-v6-u-mr-md"
                   data-testid="user-attribute-search-chips-group"
                   key={entry.name}
                   categoryName={
