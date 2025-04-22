@@ -1,4 +1,0 @@
-[[_admin_console]]
-== Customizing the Admin Console
-
-blah blah

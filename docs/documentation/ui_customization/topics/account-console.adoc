@@ -1,4 +1,0 @@
-[[_account_console]]
-== Customizing the Account Console
-
-blah blah
