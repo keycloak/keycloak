@@ -183,16 +183,14 @@
             "async": "${keycloak.connectionsInfinispan.async:false}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
             "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
             "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
 
     "cacheRemote": {
         "default": {
-            "hostname": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
-            "port": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
+            "hostname": "${keycloak.cacheRemote.hostname:localhost}",
+            "port": "${keycloak.cacheRemote.port:11222}"
         }
     },
 

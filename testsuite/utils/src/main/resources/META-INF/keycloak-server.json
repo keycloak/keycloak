@@ -132,9 +132,6 @@
             "async": "${keycloak.connectionsInfinispan.async:}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:}",
             "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:}",
-            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:}",
             "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
