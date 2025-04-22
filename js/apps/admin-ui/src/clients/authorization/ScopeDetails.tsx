@@ -136,7 +136,7 @@ export default function ScopeDetails() {
               labelIcon={t("iconUriHelp")}
             />
             <ActionGroup>
-              <div className="pf-v5-u-mt-md">
+              <div className="pf-v6-u-mt-md">
                 <Button
                   variant={ButtonVariant.primary}
                   type="submit"

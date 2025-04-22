@@ -112,7 +112,7 @@ styles=css/login.css css/theme-styles.css
 
     const toCss = (obj?: object) =>
       Object.entries(obj || {})
-        .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
+        .map(([key, value]) => `--pf-v6-global--${key}: ${value};`)
         .join("\n");
 
     const logoCss = (
@@ -129,7 +129,7 @@ styles=css/login.css css/theme-styles.css
         --keycloak-logo-width: 300px;
         ${toCss(styles.light)}
       }
-      .pf-v5-theme-dark {
+      .pf-v6-theme-dark {
         ${toCss(styles.dark)}
       }
       `,

@@ -85,7 +85,7 @@ export default function PageList() {
   });
 
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <DeleteConfirm />
       <ViewHeader titleKey={page.id} subKey={page.helpText} divider={false} />
       <KeycloakDataTable

@@ -120,7 +120,7 @@ export const RequiredActionConfigModal = ({
           </Button>
           <Button
             icon={<TrashIcon />}
-            className="pf-v5-u-ml-3xl"
+            className="pf-v6-u-ml-3xl"
             data-testid="clear"
             variant={ButtonVariant.link}
             onClick={async () => {

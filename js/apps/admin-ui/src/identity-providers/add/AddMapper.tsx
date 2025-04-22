@@ -193,7 +193,7 @@ export default function AddMapper() {
         role="manage-identity-providers"
         isHorizontal
         onSubmit={handleSubmit(save)}
-        className="pf-v5-u-mt-lg"
+        className="pf-v6-u-mt-lg"
       >
         <FormProvider {...form}>
           {id && (

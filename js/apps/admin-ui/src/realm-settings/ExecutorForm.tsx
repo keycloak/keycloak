@@ -161,7 +161,7 @@ export default function ExecutorForm() {
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           isReadOnly={!!globalProfile}
         >
           <FormGroup

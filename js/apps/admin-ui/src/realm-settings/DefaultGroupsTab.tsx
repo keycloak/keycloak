@@ -146,7 +146,7 @@ export const DefaultsGroupsTab = () => {
           <Content
             className="keycloak__section_intro__help"
             style={{
-              paddingLeft: "var(--pf-v5-c-page__main-section--PaddingLeft)",
+              paddingLeft: "var(--pf-v6-c-page__main-section--PaddingLeft)",
             }}
           >
             <Content component="p">
@@ -240,7 +240,7 @@ export const DefaultsGroupsTab = () => {
               <Trans i18nKey="noDefaultGroupsInstructions">
                 {" "}
                 <Link
-                  className="pf-v5-u-font-weight-light"
+                  className="pf-v6-u-font-weight-light"
                   to={toUserFederation({ realm })}
                   role="navigation"
                   aria-label={t("identityBrokeringLink")}

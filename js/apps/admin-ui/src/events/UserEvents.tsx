@@ -343,7 +343,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateFrom" }}
@@ -361,7 +361,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         value={field.value}
                         onChange={(_, value) => field.onChange(value)}
                         inputProps={{ id: "kc-dateTo" }}
@@ -396,7 +396,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
           </FlexItem>
           <FlexItem>
             {Object.entries(activeFilters).length > 0 && (
-              <div className="keycloak__searchChips pf-v5-u-ml-md">
+              <div className="keycloak__searchChips pf-v6-u-ml-md">
                 {Object.entries(activeFilters).map((filter) => {
                   const [key, value] = filter as [
                     keyof UserEventSearchForm,
@@ -412,7 +412,7 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
 
                   return (
                     <LabelGroup
-                      className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                      className="pf-v6-u-mt-md pf-v6-u-mr-md"
                       key={key}
                       categoryName={filterLabels[key]}
                       onClick={() => removeFilter(key)}
