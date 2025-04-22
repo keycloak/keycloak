@@ -126,6 +126,9 @@ import java.util.stream.Stream;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 
+
+// BOGUS
+
 /**
  * Stateless object that manages authentication
  *
