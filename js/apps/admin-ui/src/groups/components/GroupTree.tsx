@@ -354,7 +354,7 @@ export const GroupTree = ({
       inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
-        <InputGroup className="pf-v5-u-pt-sm">
+        <InputGroup className="pf-v6-u-pt-sm">
           <InputGroupItem>
             <Checkbox
               id="exact"
@@ -362,11 +362,11 @@ export const GroupTree = ({
               name="exact"
               isChecked={exact}
               onChange={(_event, value) => setExact(value)}
-              className="pf-v5-u-mr-xs"
+              className="pf-v6-u-mr-xs"
             />
           </InputGroupItem>
           <InputGroupItem>
-            <label htmlFor="exact" className="pf-v5-u-pl-sm">
+            <label htmlFor="exact" className="pf-v6-u-pl-sm">
               {t("exactSearch")}
             </label>
           </InputGroupItem>

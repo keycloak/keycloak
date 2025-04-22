@@ -183,7 +183,7 @@ export const ExecutionConfigModal = ({
               {config && (
                 <Button
                   icon={<TrashIcon />}
-                  className="pf-v5-u-ml-4xl"
+                  className="pf-v6-u-ml-4xl"
                   data-testid="clear"
                   variant={ButtonVariant.link}
                   onClick={async () => {

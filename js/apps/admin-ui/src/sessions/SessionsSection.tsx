@@ -133,7 +133,7 @@ export default function SessionsSection() {
         subKey="sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         {revocationModalOpen && (
           <RevocationModal
             handleModalToggle={handleRevocationModalToggle}

@@ -131,7 +131,7 @@ export default function GroupsSection() {
           handleModalToggle={() => setRename(undefined)}
         />
       )}
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <Drawer isInline isExpanded={open} key={key} position="left">
           <DrawerContent
             panelContent={

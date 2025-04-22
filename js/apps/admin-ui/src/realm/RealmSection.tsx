@@ -188,7 +188,7 @@ export default function RealmSection() {
         />
       )}
       <ViewHeader titleKey="manageRealms" divider={false} />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}

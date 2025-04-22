@@ -78,7 +78,7 @@ test.describe("User creation", () => {
 
   test("Should check temporary admin user existence", async ({ page }) => {
     // check banner visibility first
-    await expect(page.locator(".pf-v5-c-banner")).toContainText(
+    await expect(page.locator(".pf-v6-c-banner")).toContainText(
       "You are logged in as a temporary admin user.",
     );
 

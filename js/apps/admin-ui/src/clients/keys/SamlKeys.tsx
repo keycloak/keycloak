@@ -89,7 +89,7 @@ const KeySection = ({
         />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
-        <Content className="pf-v5-u-pb-lg">
+        <Content className="pf-v6-u-pb-lg">
           <Content component="p">{t(`${title}Explain`)}</Content>
         </Content>
         <FormAccess role="manage-clients" isHorizontal>

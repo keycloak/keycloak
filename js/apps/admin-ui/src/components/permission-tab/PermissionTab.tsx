@@ -130,7 +130,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
         <CardTitle>{t("permissions")}</CardTitle>
         <CardBody>
           {t(`${type}PermissionsHint`)}
-          <Form isHorizontal className="pf-v5-u-pt-md">
+          <Form isHorizontal className="pf-v6-u-pt-md">
             <FormGroup
               hasNoPaddingTop
               className="permission-label"
@@ -164,7 +164,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       </Card>
       {permission.enabled && (
         <>
-          <Card className="pf-v5-u-mt-lg">
+          <Card className="pf-v6-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
               <Trans i18nKey="permissionsListIntro">
@@ -180,7 +180,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
             </CardBody>
           </Card>
           <Card className="keycloak__permission__permission-table">
-            <CardBody className="pf-v5-u-p-0">
+            <CardBody className="pf-v6-u-p-0">
               <Table aria-label={t("permissionsList")} variant="compact">
                 <Thead>
                   <Tr>

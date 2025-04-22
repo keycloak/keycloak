@@ -244,7 +244,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -315,7 +315,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup
@@ -447,7 +447,7 @@ export const RealmSettingsTokensTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup

@@ -70,7 +70,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
   };
 
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
       <ScrollForm
         label={t("jumpToSection")}
         sections={[
@@ -84,7 +84,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Content>
                 <FineGrainOpenIdConnect
@@ -121,7 +121,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol !== openIdConnect,
             panel: (
               <>
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {t("openIdConnectCompatibilityModesHelp")}
                 </Content>
                 <OpenIdConnectCompatibilityModes
@@ -143,7 +143,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden: protocol === openIdConnect,
             panel: (
               <>
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {t("fineGrainSamlEndpointConfigHelp")}
                 </Content>
                 <FineGrainSamlEndpointConfig
@@ -170,7 +170,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("advancedSettings"),
             panel: (
               <>
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Content>
                 <AdvancedSettings
@@ -203,7 +203,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             title: t("authenticationOverrides"),
             panel: (
               <>
-                <Content component="p" className="pf-v5-u-pb-lg">
+                <Content component="p" className="pf-v6-u-pb-lg">
                   {t("authenticationOverridesHelp")}
                 </Content>
                 <AuthenticationOverrides

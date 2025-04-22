@@ -74,7 +74,7 @@ export const ImportKeyDialog = ({
       <Content>
         <Content component="p">{t("generateKeysDescription")}</Content>
       </Content>
-      <Form className="pf-v5-u-pt-lg">
+      <Form className="pf-v6-u-pt-lg">
         <FormProvider {...form}>
           <SelectControl
             name="keystoreFormat"

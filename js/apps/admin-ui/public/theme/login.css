@@ -1,4 +1,4 @@
-.pf-v5-c-login__container {
+.pf-v6-c-login__container {
   grid-template-columns: 34rem;
   grid-template-areas: "header"
     "main"
@@ -78,17 +78,17 @@ div.kc-logo-text span {
   letter-spacing: 3px;
   line-height: 1.2em;
   white-space: normal;
-  color: var(--pf-v5-global--Color--light-100) !important;
+  color: var(--pf-v6-global--Color--light-100) !important;
   text-align: center;
 }
 
 hr {
-  margin-top: var(--pf-v5-global--spacer--sm);
-  margin-bottom: var(--pf-v5-global--spacer--md);
+  margin-top: var(--pf-v6-global--spacer--sm);
+  margin-bottom: var(--pf-v6-global--spacer--md);
 }
 
 @media (min-width: 768px) {
-  div.pf-v5-c-login__main-header {
+  div.pf-v6-c-login__main-header {
     grid-template-columns: 70% 30%;
   }
 }

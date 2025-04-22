@@ -173,7 +173,7 @@ function RealmSettingsGeneralTabForm({
                   data-testid="realmName"
                   onChange={field.onChange}
                 >
-                  {field.value}
+                  {String(field.value)}
                 </ClipboardCopy>
               )}
             />

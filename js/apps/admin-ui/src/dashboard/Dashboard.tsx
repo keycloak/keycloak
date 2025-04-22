@@ -74,7 +74,7 @@ type FeatureItemProps = {
 const FeatureItem = ({ feature }: FeatureItemProps) => {
   const { t } = useTranslation();
   return (
-    <ListItem className="pf-v5-u-mb-sm">
+    <ListItem className="pf-v6-u-mb-sm">
       {feature.name}&nbsp;
       {feature.type === FeatureType.Experimental && (
         <Label color="orange">{t("experimental")}</Label>
@@ -131,13 +131,13 @@ const Dashboard = () => {
   return (
     <>
       <PageSection hasBodyWrapper={false}>
-        <Content className="pf-v5-u-mr-sm">
+        <Content className="pf-v6-u-mr-sm">
           <Content component="h1">
             {t("realmNameTitle", { name: realm })}
           </Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <RoutableTabs
           data-testid="dashboard-tabs"
           defaultLocation={toDashboard({
@@ -154,25 +154,25 @@ const Dashboard = () => {
             {...welcomeTab}
           >
             <PageSection hasBodyWrapper={false}>
-              <div className="pf-v5-l-grid pf-v5-u-ml-lg">
-                <div className="pf-v5-l-grid__item pf-m-12-col">
+              <div className="pf-v6-l-grid pf-v6-u-ml-lg">
+                <div className="pf-v6-l-grid__item pf-m-12-col">
                   <Title
                     data-testid="welcomeTitle"
-                    className="pf-v5-u-font-weight-bold"
+                    className="pf-v6-u-font-weight-bold"
                     headingLevel="h2"
                     size="3xl"
                   >
                     {t("welcomeTo", { realmDisplayInfo })}
                   </Title>
                 </div>
-                <div className="pf-v5-l-grid__item keycloak__dashboard_welcome_tab">
+                <div className="pf-v6-l-grid__item keycloak__dashboard_welcome_tab">
                   <Content component={ContentVariants.h3}>
                     {t("welcomeText")}
                   </Content>
                 </div>
-                <div className="pf-v5-l-grid__item pf-m-10-col pf-v5-u-mt-md">
+                <div className="pf-v6-l-grid__item pf-m-10-col pf-v6-u-mt-md">
                   <Button
-                    className="pf-v5-u-px-lg pf-v5-u-py-sm"
+                    className="pf-v6-u-px-lg pf-v6-u-py-sm"
                     component="a"
                     href={helpUrls.documentation}
                     target="_blank"
@@ -181,7 +181,7 @@ const Dashboard = () => {
                     {t("viewDocumentation")}
                   </Button>
                 </div>
-                <ActionList className="pf-v5-u-mt-sm">
+                <ActionList className="pf-v6-u-mt-sm">
                   <ActionListItem>
                     <Button
                       component="a"

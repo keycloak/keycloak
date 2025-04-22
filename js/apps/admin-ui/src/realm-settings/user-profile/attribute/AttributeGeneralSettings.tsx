@@ -169,7 +169,7 @@ export const AttributeGeneralSettings = () => {
                 name="enabledWhen"
                 label={t("always")}
                 onChange={() => setHasSelector(false)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
               <Radio
                 id="scopesAsRequested"
@@ -178,7 +178,7 @@ export const AttributeGeneralSettings = () => {
                 name="enabledWhen"
                 label={t("scopesAsRequested")}
                 onChange={() => setHasSelector(true)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             {hasSelector && (
@@ -312,7 +312,7 @@ export const AttributeGeneralSettings = () => {
                     name="requiredWhen"
                     label={t("always")}
                     onChange={() => setHasRequiredScopes(false)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                   <Radio
                     id="requiredScopesAsRequested"
@@ -321,7 +321,7 @@ export const AttributeGeneralSettings = () => {
                     name="requiredWhen"
                     label={t("scopesAsRequested")}
                     onChange={() => setHasRequiredScopes(true)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                 </FormGroup>
                 {hasRequiredScopes && (

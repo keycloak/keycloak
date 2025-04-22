@@ -201,7 +201,7 @@ export const PoliciesTab = () => {
               label={t("policiesConfigTypes.formView")}
               id="formView-policiesView"
               data-testid="formView-policiesView"
-              className="kc-form-radio-btn pf-v5-u-mr-sm pf-v5-u-ml-sm"
+              className="kc-form-radio-btn pf-v6-u-mr-sm pf-v6-u-ml-sm"
             />
           </FlexItem>
           <FlexItem>
@@ -287,7 +287,7 @@ export const PoliciesTab = () => {
         />
       ) : (
         <>
-          <div className="pf-v5-u-mt-md pf-v5-u-ml-lg">
+          <div className="pf-v6-u-mt-md pf-v6-u-ml-lg">
             <CodeEditor
               value={code}
               language="json"
@@ -295,10 +295,10 @@ export const PoliciesTab = () => {
               height={480}
             />
           </div>
-          <div className="pf-v5-u-mt-md">
+          <div className="pf-v6-u-mt-md">
             <Button
               variant={ButtonVariant.primary}
-              className="pf-v5-u-mr-md pf-v5-u-ml-lg"
+              className="pf-v6-u-mr-md pf-v6-u-ml-lg"
               data-testid="jsonEditor-policies-saveBtn"
               onClick={save}
             >

@@ -31,7 +31,7 @@ export const AccessTokenDialog = ({
         isInline
         variant={AlertVariant.warning}
       />
-      <Form className="pf-v5-u-mt-md">
+      <Form className="pf-v6-u-mt-md">
         <FormGroup label={t("initialAccessToken")} fieldId="initialAccessToken">
           <ClipboardCopy
             id="initialAccessToken"

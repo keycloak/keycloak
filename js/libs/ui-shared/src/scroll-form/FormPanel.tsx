@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, CardTitle } from "@patternfly/react-core";
+import { Card, CardBody, CardTitle } from "@patternfly/react-core";
 import { PropsWithChildren, useId } from "react";
 import { FormTitle } from "./FormTitle";
 
@@ -18,11 +18,9 @@ export const FormPanel = ({
 
   return (
     <Card id={id} className={className}>
-      <CardHeader className="kc-form-panel__header">
-        <CardTitle tabIndex={0}>
-          <FormTitle id={scrollId} title={title} />
-        </CardTitle>
-      </CardHeader>
+      <CardTitle tabIndex={0}>
+        <FormTitle id={scrollId} title={title} />
+      </CardTitle>
       <CardBody className="kc-form-panel__body">{children}</CardBody>
     </Card>
   );

@@ -223,7 +223,7 @@ export default function ClientProfileForm() {
       />
       <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
-          <FormAccess isHorizontal role="view-realm" className="pf-v5-u-mt-lg">
+          <FormAccess isHorizontal role="view-realm" className="pf-v6-u-mt-lg">
             <TextControl
               name="name"
               label={t("newClientProfileName")}

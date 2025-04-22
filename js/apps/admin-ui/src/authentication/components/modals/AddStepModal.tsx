@@ -24,7 +24,7 @@ const AuthenticationProviderList = ({
   setValue,
 }: AuthenticationProviderListProps) => {
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-py-lg">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-py-lg">
       <Form isHorizontal>
         {list?.map((provider) => (
           <Radio
