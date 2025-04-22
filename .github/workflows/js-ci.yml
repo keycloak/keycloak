@@ -31,6 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 

@@ -31,6 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       documentation: ${{ steps.conditional.outputs.documentation }}
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 
