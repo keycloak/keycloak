@@ -224,11 +224,11 @@ export default function PolicyDetails() {
             <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
-            <div className="pf-v5-u-mt-md">
+            <div className="pf-v6-u-mt-md">
               <Button
                 isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
-                className="pf-v5-u-mr-md"
+                className="pf-v6-u-mr-md"
                 type="submit"
                 data-testid="save"
               >

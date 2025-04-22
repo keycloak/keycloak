@@ -115,11 +115,11 @@ export const AuthorizationResources = ({
             isInline
             isPlain
             title={t("deleteResourceWarning")}
-            className="pf-v5-u-pt-lg"
+            className="pf-v6-u-pt-lg"
           >
-            <p className="pf-v5-u-pt-xs">
+            <p className="pf-v6-u-pt-xs">
               {permissions.map((permission) => (
-                <strong key={permission.id} className="pf-v5-u-pr-md">
+                <strong key={permission.id} className="pf-v6-u-pr-md">
                   {permission.name}
                 </strong>
               ))}
@@ -150,7 +150,7 @@ export const AuthorizationResources = ({
   const noData = resources.length === 0;
   const searching = Object.keys(search).length !== 0;
   return (
-    <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+    <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
       <DeleteConfirm />
       {(!noData || searching) && (
         <PaginatingTableToolbar

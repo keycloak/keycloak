@@ -61,7 +61,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
       {Object.keys(imported).length !== 0 && (
         <>
           <Divider />
-          <p className="pf-v5-u-my-lg">{t("importResources")}</p>
+          <p className="pf-v6-u-my-lg">{t("importResources")}</p>
           <Form isHorizontal>
             <FormGroup
               label={t("policyEnforcementMode")}
@@ -82,7 +82,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 )}
                 isChecked
                 isDisabled
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             <FormGroup
@@ -102,7 +102,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 isChecked
                 isDisabled
                 label={t(`decisionStrategies.${imported.decisionStrategy}`)}
-                className="pf-v5-u-mb-md"
+                className="pf-v6-u-mb-md"
               />
             </FormGroup>
             <FormGroup
@@ -125,13 +125,13 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               />
             </FormGroup>
           </Form>
-          <div className="pf-v5-u-mt-md">
+          <div className="pf-v6-u-mt-md">
             {Object.entries(imported)
               .filter(([, value]) => Array.isArray(value))
               .map(([key, value]) => (
                 <Fragment key={key}>
                   <Divider />
-                  <p className="pf-v5-u-my-sm">
+                  <p className="pf-v6-u-my-sm">
                     <strong>
                       {value.length} {t(key)}
                     </strong>
@@ -142,7 +142,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
           <Divider />
           <Alert
             variant="warning"
-            className="pf-v5-u-mt-lg"
+            className="pf-v6-u-mt-lg"
             isInline
             title={t("importWarning")}
           />

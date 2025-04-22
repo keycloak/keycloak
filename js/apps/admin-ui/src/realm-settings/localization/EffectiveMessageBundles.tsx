@@ -204,7 +204,7 @@ export const EffectiveMessageBundles = ({
         <FlexItem>
           <Content>
             <Content
-              className="pf-v5-u-mb-md pf-v5-u-mt-0 pf-v5-u-mr-md"
+              className="pf-v6-u-mb-md pf-v6-u-mt-0 pf-v6-u-mr-md"
               component={ContentVariants.p}
             >
               {t("effectiveMessageBundlesDescription")}
@@ -221,7 +221,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-v5-u-w-25vw"
+              className="pf-v6-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
               onSubmit={(e) => e.preventDefault()}
             >
@@ -468,7 +468,7 @@ export const EffectiveMessageBundles = ({
                   )}
                 />
               </FormGroup>
-              <ActionGroup className="pf-v5-u-mt-sm">
+              <ActionGroup className="pf-v6-u-mt-sm">
                 <Button
                   variant={"primary"}
                   onClick={() => {
@@ -502,7 +502,7 @@ export const EffectiveMessageBundles = ({
                 ];
                 return (
                   <LabelGroup
-                    className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                    className="pf-v6-u-mt-md pf-v6-u-mr-md"
                     key={key}
                     categoryName={filterLabels[key]}
                     isClosable
@@ -541,7 +541,7 @@ export const EffectiveMessageBundles = ({
   if (!searchPerformed) {
     return (
       <>
-        <div className="pf-v5-u-py-lg pf-v5-u-pl-md">
+        <div className="pf-v6-u-py-lg pf-v6-u-pl-md">
           {effectiveMessageBunldesSearchFormDisplay()}
         </div>
         <Divider />

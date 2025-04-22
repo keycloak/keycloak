@@ -270,7 +270,7 @@ export default function RealmRoleTabs() {
         ]}
         divider={false}
       />
-      <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs isBox mountOnEnter defaultLocation={toTab("details")}>
             <Tab

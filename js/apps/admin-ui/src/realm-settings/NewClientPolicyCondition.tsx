@@ -199,7 +199,7 @@ export default function NewClientPolicyCondition() {
           isHorizontal
           role="manage-realm"
           isReadOnly={isGlobalPolicy}
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup

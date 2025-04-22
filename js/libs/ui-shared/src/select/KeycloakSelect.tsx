@@ -10,6 +10,10 @@ export enum SelectVariant {
   typeaheadMulti = "typeaheadMulti",
 }
 
+export type ChipGroupProps = Omit<LabelGroupProps, "children" | "ref"> & {
+  numChips?: number;
+};
+
 export const propertyToString = (prop: string | number | undefined) =>
   typeof prop === "number" ? prop + "px" : prop;
 
@@ -33,7 +37,7 @@ export type KeycloakSelectProps<> = Omit<
   selections?: string | string[] | number | number[];
   validated?: "success" | "warning" | "error" | "default";
   typeAheadAriaLabel?: string;
-  chipGroupProps?: Omit<LabelGroupProps, "children" | "ref">;
+  chipGroupProps?: ChipGroupProps;
   chipGroupComponent?: React.ReactNode;
   footer?: React.ReactNode;
 };

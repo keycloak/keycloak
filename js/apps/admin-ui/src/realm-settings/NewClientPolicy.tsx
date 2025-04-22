@@ -469,7 +469,7 @@ export default function NewClientPolicy() {
           onSubmit={handleSubmit(save)}
           isHorizontal
           role="view-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
         >
           <FormProvider {...form}>
             <TextControl

@@ -64,7 +64,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
         <Badge
           key={`${identityProvider.providerId}-disabled`}
           isRead
-          className="pf-v5-u-ml-sm"
+          className="pf-v6-u-ml-sm"
         >
           {t("disabled")}
         </Badge>
@@ -206,8 +206,8 @@ export default function IdentityProvidersSection() {
       />
       <PageSection
         hasBodyWrapper={false}
-        variant={!hasProviders ? "default" : "light"}
-        className={!hasProviders ? "" : "pf-v5-u-p-0"}
+        variant={!hasProviders ? "default" : "secondary"}
+        className={!hasProviders ? "" : "pf-v6-u-p-0"}
       >
         {!hasProviders && (
           <>
@@ -218,13 +218,13 @@ export default function IdentityProvidersSection() {
               <Fragment key={group}>
                 <Content>
                   <Content
-                    className="pf-v5-u-mt-lg"
+                    className="pf-v6-u-mt-lg"
                     component={ContentVariants.h2}
                   >
                     {group}:
                   </Content>
                 </Content>
-                <hr className="pf-v5-u-mb-lg" />
+                <hr className="pf-v6-u-mb-lg" />
                 <Gallery hasGutter>
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <ClickableCard

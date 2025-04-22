@@ -138,7 +138,7 @@ export const MapComponent = ({
         <ActionListItem>
           <Button
             data-testid={`${fieldName}-add-row`}
-            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
+            className="pf-v6-u-px-0 pf-v6-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={() => appendNew()}
@@ -151,7 +151,7 @@ export const MapComponent = ({
   ) : (
     <EmptyState
       data-testid={`${name}-empty-state`}
-      className="pf-v5-u-p-0"
+      className="pf-v6-u-p-0"
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>

@@ -158,7 +158,7 @@ export const UserForm = ({
       onSubmit={handleSubmit(save)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
-      className="pf-v5-u-mt-lg"
+      className="pf-v6-u-mt-lg"
     >
       <FormProvider {...form}>
         {open && (

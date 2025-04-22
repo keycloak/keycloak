@@ -132,11 +132,11 @@ export default function ResourceDetails() {
             isInline
             isPlain
             title={t("deleteResourceWarning")}
-            className="pf-v5-u-pt-lg"
+            className="pf-v6-u-pt-lg"
           >
-            <p className="pf-v5-u-pt-xs">
+            <p className="pf-v6-u-pt-xs">
               {permissions?.map((permission) => (
-                <strong key={permission.id} className="pf-v5-u-pr-md">
+                <strong key={permission.id} className="pf-v6-u-pr-md">
                   {permission.name}
                 </strong>
               ))}
@@ -256,7 +256,7 @@ export default function ResourceDetails() {
               <KeyValueInput name="attributes" isDisabled={isDisabled} />
             </FormGroup>
             <ActionGroup>
-              <div className="pf-v5-u-mt-md">
+              <div className="pf-v6-u-mt-md">
                 <Button
                   variant={ButtonVariant.primary}
                   type="submit"

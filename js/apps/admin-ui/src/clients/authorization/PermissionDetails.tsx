@@ -359,7 +359,7 @@ export default function PermissionDetails() {
                         name="decisionStrategies"
                         onChange={() => field.onChange(strategy)}
                         label={t(`decisionStrategies.${strategy}`)}
-                        className="pf-v5-u-mb-md"
+                        className="pf-v6-u-mb-md"
                       />
                     ))}
                   </>
@@ -367,7 +367,7 @@ export default function PermissionDetails() {
               />
             </FormGroup>
             <ActionGroup>
-              <div className="pf-v5-u-mt-md">
+              <div className="pf-v6-u-mt-md">
                 <Button
                   variant={ButtonVariant.primary}
                   type="submit"
