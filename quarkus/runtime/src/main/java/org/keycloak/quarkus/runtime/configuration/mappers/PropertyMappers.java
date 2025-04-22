@@ -41,7 +41,7 @@ import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourcePro
 
 public final class PropertyMappers {
 
-    public static final String KC_SPI_PREFIX = "kc.spi";
+    public static final String KC_SPI_PREFIX = "kc.spi-";
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);

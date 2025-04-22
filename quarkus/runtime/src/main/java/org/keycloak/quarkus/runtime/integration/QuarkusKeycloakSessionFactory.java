@@ -18,8 +18,10 @@
 package org.keycloak.quarkus.runtime.integration;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +29,10 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -57,7 +63,10 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         serverStartupTimestamp = System.currentTimeMillis();
         spis = factories.keySet();
 
+        Map<String, Spi> spiMapping = new HashMap<String, Spi>();
+
         for (Spi spi : spis) {
+            spiMapping.put(Configuration.toDashCase(spi.getName()), spi);
             for (Map<String, Class<? extends ProviderFactory>> factoryClazz : factories.get(spi).values()) {
                 for (Map.Entry<String, Class<? extends ProviderFactory>> entry : factoryClazz.entrySet()) {
                     ProviderFactory factory = preConfiguredProviders.get(entry.getKey());
@@ -76,6 +85,24 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
                     factoriesMap.computeIfAbsent(spi.getProviderClass(), k -> new HashMap<>()).put(factory.getId(), factory);
                 }
             }
+        }
+
+        if (Boolean.parseBoolean(PersistedConfigSource.getInstance().getValue(Configuration.KC_OPTIMIZED))) {
+            Picocli.checkChangesInBuildOptions((key, oldValue, newValue) -> {
+                if (newValue != null && key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
+                    String spi;
+                    if (key.endsWith("-provider")) {
+                        spi = key.substring(PropertyMappers.KC_SPI_PREFIX.length(), key.length() - "-provider".length());
+                    } else if (key.endsWith("-provider-default")) {
+                        spi = key.substring(PropertyMappers.KC_SPI_PREFIX.length(), key.length() - "-provider-default".length());
+                    } else if (key.endsWith("-enabled")) {
+                        // linear scan of spi / provider combinations - seems like this information may be incomplete (if built as not enabled
+                        // it won't be present
+                        return;
+                    }
+                    // check if valid spi
+                }
+            });
         }
     }
 

@@ -65,7 +65,6 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
-import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -356,7 +355,10 @@ public class Picocli {
                 if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
                     throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
                 } else if (newValue != null && !isIgnoredPersistedOption(key)
-                        && isUserModifiable(Configuration.getConfigValue(key))) {
+                        && isUserModifiable(Configuration.getConfigValue(key))
+                        // we don't know for sure what is an spi build time option
+                        // at this point - we'll check later once quarkus has started
+                        && !key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
                     ignoredBuildTime.add(key);
                 }
             });
@@ -938,7 +940,7 @@ public class Picocli {
         );
     }
 
-    private static void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
+    public static void checkChangesInBuildOptions(TriConsumer<String, String, String> valueChanged) {
         var current = getNonPersistedBuildTimeOptions();
         var persisted = Configuration.getRawPersistedProperties();
 

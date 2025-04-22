@@ -69,7 +69,6 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
-    @DryRun
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
