@@ -270,9 +270,13 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             testRealm.addComponentModel(ldapModel);
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
-            // if AD, create new OU in a base DN because users.ldif is ignored for AD
-            if (LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(ldapModel.getConfig().getFirst(LDAPConstants.VENDOR))) {
+            // if AD or RHDS, create new OU in a base DN because users.ldif is ignored for AD/RHDS
+            String vendor = ldapModel.getConfig().getFirst(LDAPConstants.VENDOR);
+            if (LDAPConstants.VENDOR_ACTIVE_DIRECTORY.equals(vendor)) {
                 LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OtherPeople2");
+                LDAPTestUtils.removeAllLDAPUsers(ldapProvider, testRealm);
+            } else if (LDAPConstants.VENDOR_RHDS.equals(vendor)) {
+                LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "OtherPeople");
                 LDAPTestUtils.removeAllLDAPUsers(ldapProvider, testRealm);
             }
             LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, testRealm, "anotherjohn", "AnotherJohn", "AnotherDoe", "anotherjohn@email.org", null, "1234");
