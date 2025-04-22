@@ -599,7 +599,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         var updateCondition = k8sclient.resource(kc).informOnCondition(kcs -> {
             try {
-                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, "Performing Keycloak update");
+                assertKeycloakStatusCondition(kcs.get(0), KeycloakStatusCondition.READY, false, null);
                 return true;
             } catch (AssertionError e) {
                 return false;
