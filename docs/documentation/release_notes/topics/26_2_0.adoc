@@ -140,7 +140,7 @@ user storage provider.
 
 = Token based authentication for SMTP (XOAUTH2)
 
-The Keycloak outgoing link:{adminguide_email_name}[SMTP mail configuration] now supports token authentication (XOAUTH2).
+The Keycloak outgoing link:{adminguide_email_link}[SMTP mail configuration] now supports token authentication (XOAUTH2).
 Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
 The token is gathered using Client Credentials Grant.
 
