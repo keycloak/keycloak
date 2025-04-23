@@ -391,7 +391,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(120);
+        return TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
