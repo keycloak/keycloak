@@ -433,8 +433,8 @@ importers:
         specifier: ^1.8.0
         version: 1.8.0
       '@patternfly-v5/patternfly':
-        specifier: npm:@patternfly/patternfly@^5.4.2
-        version: '@patternfly/patternfly@5.4.2'
+        specifier: npm:@patternfly/patternfly@^6.2.0
+        version: '@patternfly/patternfly@6.2.1'
       '@patternfly/patternfly':
         specifier: ^4.224.5
         version: 4.224.5
@@ -1061,8 +1061,8 @@ packages:
   '@patternfly/patternfly@4.224.5':
     resolution: {integrity: sha512-io0huj+LCP5FgDZJDaLv1snxktTYs8iCFz/W1VDRneYoebNHLmGfQdF7Yn8bS6PF7qmN6oJKEBlq3AjmmE8vdA==}
 
-  '@patternfly/patternfly@5.4.2':
-    resolution: {integrity: sha512-+BaokNR8/AmTYMESxby9UtQXPGACg449BXQd0KejAvW/uGxlgO6mY1X1205DeBEHoK3e/vXkYXjvZPpv/tcxSA==}
+  '@patternfly/patternfly@6.2.1':
+    resolution: {integrity: sha512-aKl1dy8pI1SIJHFlhbQOQl9ScMvQDi7wxN73nWq73OgdFfvVpYg7obWQh3yqX8NzvbAsC6oBnNMw5eWVC9ngVg==}
 
   '@patternfly/react-core@6.2.0':
     resolution: {integrity: sha512-yh5de7Tv1ft8c4+xHi5wr49yk4E/FgOXsxj3bl2VjdieTxXmZEmeWcqeYFXoUdnMSqCay4Mt5k6gyRYgO0y9oQ==}
@@ -5070,7 +5070,7 @@ snapshots:
 
   '@patternfly/patternfly@4.224.5': {}
 
-  '@patternfly/patternfly@5.4.2': {}
+  '@patternfly/patternfly@6.2.1': {}
 
   '@patternfly/react-core@6.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
