@@ -3,7 +3,7 @@ import {
   GroupQuery,
   SubGroupQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/groups";
-import { SearchInput, ToolbarItem } from "@patternfly/react-core";
+import { PageSection, SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
@@ -119,117 +119,119 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
           onClose={() => setMove(undefined)}
         />
       )}
-      <KeycloakDataTable
-        key={`${id}${key}`}
-        onSelect={(rows) => setSelectedRows([...rows])}
-        canSelectAll
-        loader={loader}
-        ariaLabelKey="groups"
-        isPaginated
-        isSearching={!!search}
-        toolbarItem={
-          <>
-            <ToolbarItem>
-              <SearchInput
-                data-testid="group-search"
-                placeholder={t("filterGroups")}
-                value={search}
-                onChange={(_, value) => {
-                  setSearch(value);
+      <PageSection>
+        <KeycloakDataTable
+          key={`${id}${key}`}
+          onSelect={(rows) => setSelectedRows([...rows])}
+          canSelectAll
+          loader={loader}
+          ariaLabelKey="groups"
+          isPaginated
+          isSearching={!!search}
+          toolbarItem={
+            <>
+              <ToolbarItem>
+                <SearchInput
+                  data-testid="group-search"
+                  placeholder={t("filterGroups")}
+                  value={search}
+                  onChange={(_, value) => {
+                    setSearch(value);
                   if (value === "") {
                     refresh();
                   }
-                }}
-                onSearch={refresh}
-                onClear={() => {
-                  setSearch("");
-                  refresh();
-                }}
+                  }}
+                  onSearch={refresh}
+                  onClear={() => {
+                    setSearch("");
+                    refresh();
+                  }}
+                />
+              </ToolbarItem>
+              <GroupToolbar
+                toggleCreate={toggleCreateOpen}
+                toggleDelete={toggleShowDelete}
+                kebabDisabled={selectedRows!.length === 0}
               />
-            </ToolbarItem>
-            <GroupToolbar
-              toggleCreate={toggleCreateOpen}
-              toggleDelete={toggleShowDelete}
-              kebabDisabled={selectedRows!.length === 0}
-            />
-          </>
-        }
-        actions={
-          !isManager
-            ? []
-            : [
-                {
-                  title: t("edit"),
-                  onRowClick: async (group) => {
-                    setRename(group);
-                    return false;
+            </>
+          }
+          actions={
+            !isManager
+              ? []
+              : [
+                  {
+                    title: t("edit"),
+                    onRowClick: async (group) => {
+                      setRename(group);
+                      return false;
+                    },
                   },
-                },
-                {
-                  title: t("moveTo"),
-                  onRowClick: async (group) => {
-                    setMove(group);
-                    return false;
+                  {
+                    title: t("moveTo"),
+                    onRowClick: async (group) => {
+                      setMove(group);
+                      return false;
+                    },
                   },
-                },
-                {
-                  title: t("createChildGroup"),
-                  onRowClick: async (group) => {
-                    setSelectedRows([group]);
-                    toggleCreateOpen();
-                    return false;
+                  {
+                    title: t("createChildGroup"),
+                    onRowClick: async (group) => {
+                      setSelectedRows([group]);
+                      toggleCreateOpen();
+                      return false;
+                    },
                   },
-                },
-                ...(!id
-                  ? [
-                      {
-                        title: t("duplicate"),
-                        onRowClick: async (group: GroupRepresentation) => {
-                          setDuplicateId(group.id);
-                          return false;
+                  ...(!id
+                    ? [
+                        {
+                          title: t("duplicate"),
+                          onRowClick: async (group: GroupRepresentation) => {
+                            setDuplicateId(group.id);
+                            return false;
+                          },
                         },
-                      },
-                    ]
-                  : []),
-                {
-                  isSeparator: true,
-                },
-                {
-                  title: t("delete"),
-                  onRowClick: async (group: GroupRepresentation) => {
-                    setSelectedRows([group]);
-                    toggleShowDelete();
-                    return true;
+                      ]
+                    : []),
+                  {
+                    isSeparator: true,
                   },
-                },
-              ]
-        }
-        columns={[
-          {
-            name: "name",
-            displayKey: "groupName",
-            cellRenderer: (group) =>
-              group.access?.view ? (
-                <Link key={group.id} to={`${location.pathname}/${group.id}`}>
-                  {group.name}
-                </Link>
-              ) : (
-                <span>{group.name}</span>
-              ),
-          },
-        ]}
-        emptyState={
-          <ListEmptyState
-            hasIcon={true}
-            message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
-            instructions={t(
-              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`,
-            )}
-            primaryActionText={t("createGroup")}
-            onPrimaryAction={toggleCreateOpen}
-          />
-        }
-      />
+                  {
+                    title: t("delete"),
+                    onRowClick: async (group: GroupRepresentation) => {
+                      setSelectedRows([group]);
+                      toggleShowDelete();
+                      return true;
+                    },
+                  },
+                ]
+          }
+          columns={[
+            {
+              name: "name",
+              displayKey: "groupName",
+              cellRenderer: (group) =>
+                group.access?.view ? (
+                  <Link key={group.id} to={`${location.pathname}/${group.id}`}>
+                    {group.name}
+                  </Link>
+                ) : (
+                  <span>{group.name}</span>
+                ),
+            },
+          ]}
+          emptyState={
+            <ListEmptyState
+              hasIcon={true}
+              message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
+              instructions={t(
+                `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`,
+              )}
+              primaryActionText={t("createGroup")}
+              onPrimaryAction={toggleCreateOpen}
+            />
+          }
+        />
+      </PageSection>
     </>
   );
 };

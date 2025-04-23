@@ -330,7 +330,6 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             className="keycloak__events_search__type_select"
                             data-testid="resource-types-searchField"
                             chipGroupProps={{
-                              numChips: 1,
                               expandedText: t("hide"),
                               collapsedText: t("showRemaining"),
                             }}
@@ -398,7 +397,6 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             className="keycloak__events_search__type_select"
                             data-testid="operation-types-searchField"
                             chipGroupProps={{
-                              numChips: 1,
                               expandedText: t("hide"),
                               collapsedText: t("showRemaining"),
                             }}
