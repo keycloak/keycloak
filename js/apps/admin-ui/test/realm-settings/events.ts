@@ -30,6 +30,7 @@ export async function fillEventListener(page: Page, listener: string) {
   await eventListener.click();
   await eventListener.fill(listener);
   await page.getByRole("option", { name: listener }).click();
+  await page.keyboard.press("Escape");
 }
 
 export async function clickRevertButton(page: Page) {
